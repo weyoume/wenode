@@ -1,13 +1,10 @@
-//#ifdef IS_TEST_NET
-
 #include <boost/test/unit_test.hpp>
-#include <node/chain/node_objects.hpp>
 #include <node/protocol/exceptions.hpp>
 #include <node/chain/database.hpp>
 #include <node/chain/database_exceptions.hpp>
 #include <node/chain/util/reward.hpp
 #include <fc/crypto/digest.hpp>
-#include <tests/common/database_fixture.hpp>
+#include "../common/database_fixture.hpp"
 
 #include <cmath>
 #include <iostream>

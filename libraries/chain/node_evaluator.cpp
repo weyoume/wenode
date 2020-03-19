@@ -239,9 +239,9 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
    _db.create< account_authority_object >( [&]( account_authority_object& auth )
    {
       auth.account = o.new_account_name;
-      auth.owner = o.owner_auth;
-      auth.active = o.active_auth;
-      auth.posting = o.posting_auth;
+      auth.owner_auth = o.owner_auth;
+      auth.active_auth = o.active_auth;
+      auth.posting_auth = o.posting_auth;
       auth.last_owner_update = now;
    });
 
@@ -316,46 +316,6 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
          "Profile accounts must be registered by its nominated governance account." );
       FC_ASSERT( governance_approved,
          "Governance Accounts must be approved by a threshold of subscriptions before creating profile accounts." );
-   
-   // Business account validation
-   
-      FC_ASSERT( o.governance_account.size(),
-         "Business accounts must have an initial governance account.");
-      FC_ASSERT( o.business_type.valid() && o.officer_vote_threshold.valid() && o.business_public_key.valid(),
-         "Business accounts must select business type, officer vote threshold and business key.");
-      FC_ASSERT( *o.business_type == OPEN_BUSINESS ||
-         *o.business_type == PUBLIC_BUSINESS ||
-         *o.business_type == PRIVATE_BUSINESS,
-         "Business accounts type is invalid.");
-      FC_ASSERT( *o.officer_vote_threshold >= 0,
-         "Business account requires an officer threshold greater than or equal to 0.");
-   
-
-   
-      _db.create< account_business_object >( [&]( account_business_object& abo )
-      {
-         abo.account = o.new_account_name;
-         abo.business_type = *o.business_type;
-         abo.business_public_key = public_key_type( *o.business_public_key );
-         abo.executive_board.CHIEF_EXECUTIVE_OFFICER = o.registrar;
-         abo.officer_vote_threshold = *o.officer_vote_threshold;
-      });
-
-      _db.create< account_officer_vote_object >( [&]( account_officer_vote_object& aovo )
-      {
-         aovo.account = o.registrar;
-         aovo.business_account = o.new_account_name;
-         aovo.officer_account = o.registrar;
-      });
-
-      _db.create< account_enterprise_vote_object >( [&]( account_enterprise_vote_object& aevo )
-      {
-         aevo.account = o.registrar;
-         aevo.business_account = o.new_account_name;
-         aevo.executive_account = o.registrar;
-         aevo.role = CHIEF_EXECUTIVE_OFFICER;          // Create CEO vote in business account for the registrar account.
-      });
-   
  * 
  * 
  */
@@ -401,7 +361,7 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
       _db.get_account( a.first );
    }
    
-   const comment_object* pinned_post_ptr;
+   const comment_object* pinned_post_ptr = nullptr;
    if( o.pinned_permlink.size() )
    {
       pinned_post_ptr = _db.find_comment( o.account, o.pinned_permlink );
@@ -457,9 +417,84 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
 
    _db.modify( account_auth, [&]( account_authority_object& auth )
    {
-      auth.active = o.active_auth;
-      auth.posting = o.posting_auth;
+      auth.active_auth = o.active_auth;
+      auth.posting_auth = o.posting_auth;
    });
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
+
+void account_business_evaluator::do_apply( const account_business_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_chief( o.signatory ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   time_point now = _db.head_block_time();
+   const account_object& gov_account = _db.get_account( o.governance_account );
+   FC_ASSERT( gov_account.active, 
+      "Governance Account: ${s} must be active.",("s", o.governance_account) );
+
+   const auto& gov_idx = _db.get_index< governance_subscription_index >().indices().get< by_account_governance >();
+   auto gov_itr = gov_idx.find( boost::make_tuple( o.account, o.governance_account ) );
+
+   const auto& business_idx = _db.get_index< account_business_index >().indices().get< by_account >();
+   auto business_itr = business_idx.find( o.account );
+
+   if( business_itr != business_idx.end() )
+   {
+      _db.create< account_business_object >( [&]( account_business_object& abo )
+      {
+         abo.account = o.account;
+         abo.governance_account = o.governance_account;
+         abo.business_type = o.business_type;
+         abo.business_public_key = public_key_type( o.business_public_key );
+         abo.executive_board.CHIEF_EXECUTIVE_OFFICER = o.init_ceo_account;
+         abo.officer_vote_threshold = o.officer_vote_threshold;
+         abo.last_updated = now;
+         abo.created = now;
+      });
+
+      _db.create< account_officer_vote_object >( [&]( account_officer_vote_object& aovo )
+      {
+         aovo.account = o.init_ceo_account;
+         aovo.business_account = o.account;
+         aovo.officer_account = o.init_ceo_account;
+      });
+
+      _db.create< account_executive_vote_object >( [&]( account_executive_vote_object& aevo )
+      {
+         aevo.account = o.init_ceo_account;
+         aevo.business_account = o.account;
+         aevo.executive_account = o.init_ceo_account;
+         aevo.role = executive_role_type::CHIEF_EXECUTIVE_OFFICER;
+      });
+   }
+   else
+   {
+      const account_business_object& business = *business_itr;
+
+      _db.modify( business, [&]( account_business_object& abo )
+      {
+         abo.governance_account = o.governance_account;
+         abo.business_public_key = public_key_type( o.business_public_key );
+         abo.officer_vote_threshold = o.officer_vote_threshold;
+         abo.last_updated = now;
+      });
+
+      _db.update_business_account( business );
+   }
+
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -727,7 +762,7 @@ void account_vote_officer_evaluator::do_apply( const account_vote_officer_operat
 
    const auto& rank_idx = _db.get_index< account_officer_vote_index >().indices().get< by_account_business_rank >();
    const auto& officer_idx = _db.get_index< account_officer_vote_index >().indices().get< by_account_business_officer >();
-   auto rank_itr = rank_idx.find( boost::make_tuple( voter.name, o.business_account, o.vote_rank ) ); 
+   auto rank_itr = rank_idx.find( boost::make_tuple( voter.name, o.business_account, o.vote_rank ) );
    auto officer_itr = officer_idx.find( boost::make_tuple( voter.name, o.business_account, o.officer_account ) );
 
    if( o.approved )       // Adding or modifying vote
@@ -3160,9 +3195,9 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
       "Daily Budget must specify a budget less than the total amount of funds available per day." );
    
    uint16_t milestone_sum = 0;
-   for( auto milestone : o.milestones )
+   for( auto milestone : o.milestone_shares )
    {
-      milestone_sum += milestone.second;
+      milestone_sum += milestone;
    }
    FC_ASSERT( milestone_sum == PERCENT_100, 
       "Milestone Sum must equal 100 percent." );
@@ -3185,10 +3220,7 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
          "Investment Asset cannot be market issued." );
    }
 
-   shared_string enterprise_id;
-   from_string( enterprise_id, o.enterprise_id );
-
-   const community_enterprise_object* ent_ptr = _db.find_community_enterprise( o.creator, enterprise_id );
+   const community_enterprise_object* ent_ptr = _db.find_community_enterprise( o.creator, o.enterprise_id );
 
    if( ent_ptr != nullptr ) // Updating or removing existing proposal 
    { 
@@ -3199,9 +3231,9 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
             "Begin time must be at least 7 days after creation." );
          
          uint16_t milestone_sum = 0;
-         for( auto milestone : o.milestones )
+         for( auto milestone : o.milestone_shares )
          {
-            milestone_sum += milestone.second;
+            milestone_sum += milestone;
          }
          FC_ASSERT( milestone_sum == PERCENT_100, 
             "Milestone Sum must equal 100 percent." );
@@ -3234,16 +3266,24 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
             ceo.begin = o.begin;
             ceo.duration = o.duration;
             ceo.end = o.begin + fc::days( o.duration );
-            for( auto mile : o.milestones )
+
+            ceo.milestone_shares.reserve( o.milestone_shares.size() );
+
+            for( auto& mile : o.milestone_shares )
             {
-               shared_string description;
-               from_string( description, mile.first );
-               ceo.milestones.push_back( std::make_pair( description, mile.second ) );
+               ceo.milestone_shares.push_back( mile );
+            }
+
+            ceo.milestone_details.reserve( o.milestone_details.size() );
+
+            for( size_t i = 0; i < ceo.milestone_details.size(); i++ )
+            {
+               from_string( ceo.milestone_details[ i ], o.milestone_details[ i ] );
             }
          }
       });
    }
-   else  // Create new community enterprise proposal
+   else        // Create new community enterprise proposal
    {
       FC_ASSERT( o.begin  > ( now + fc::days(7) ), 
          "Begin time must be at least 7 days in the future." );
@@ -3286,16 +3326,23 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
          ceo.pending_budget = asset( 0, o.daily_budget.symbol );
          ceo.total_distributed = asset( 0, o.daily_budget.symbol );
 
-         for( auto mile : o.milestones )
+         ceo.milestone_shares.reserve( o.milestone_shares.size() );
+
+         for( auto& mile : o.milestone_shares )
          {
-            shared_string description;
-            from_string( description, mile.first );
-            ceo.milestones.push_back( std::make_pair( description, mile.second ) );
+            ceo.milestone_shares.push_back( mile );
+         }
+         
+         ceo.milestone_details.reserve( o.milestone_shares.size() );
+
+         for( size_t i = 0; i < ceo.milestone_details.size(); i++ )
+         {
+            from_string( ceo.milestone_details[ i ], o.milestone_details[ i ] );
          }
 
-         shared_string history;
-         from_string( history, "Milestone History: Initial Claim." );
-         ceo.milestone_history.push_back( history );
+         ceo.milestone_history.reserve( o.milestone_shares.size() );
+
+         from_string( ceo.milestone_history[ 0 ], string( "Milestone History: Initial Claim." ) );
 
          if( o.investment.valid() )
          {
@@ -3335,11 +3382,8 @@ void claim_enterprise_milestone_evaluator::do_apply( const claim_enterprise_mile
       FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-
-   shared_string enterprise_id;
-   from_string( enterprise_id, o.enterprise_id );
    
-   const community_enterprise_object& enterprise = _db.get_community_enterprise( o.creator, enterprise_id );
+   const community_enterprise_object& enterprise = _db.get_community_enterprise( o.creator, o.enterprise_id );
    FC_ASSERT( o.milestone > enterprise.approved_milestones,
       "Claimed milestone has already been approved." );
    FC_ASSERT( o.milestone != enterprise.claimed_milestones,
@@ -3347,14 +3391,13 @@ void claim_enterprise_milestone_evaluator::do_apply( const claim_enterprise_mile
 
    const dynamic_global_property_object props = _db.get_dynamic_global_properties();
    const producer_schedule_object& producer_schedule = _db.get_producer_schedule();
-   shared_string new_history;
-   from_string( new_history, o.details );
 
    _db.modify( enterprise, [&]( community_enterprise_object& ceo )
    { 
-      if( new_history.size())
+      if( o.details.size() )
       {
-         ceo.milestone_history.push_back( new_history );
+         ceo.milestone_history.reserve( enterprise.milestone_shares.size() );
+         from_string( ceo.milestone_history[ o.milestone ], o.details );
       }
       ceo.claimed_milestones = o.milestone;
    });
@@ -3381,10 +3424,8 @@ void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_
    }
 
    const account_object& account = _db.get_account( o.account );
-   shared_string enterprise_id;
-   from_string( enterprise_id, o.enterprise_id );
+   const community_enterprise_object& enterprise = _db.get_community_enterprise( o.creator, o.enterprise_id );
 
-   const community_enterprise_object& enterprise = _db.get_community_enterprise( o.creator, enterprise_id );
    FC_ASSERT( o.milestone <= enterprise.claimed_milestones,
       "Cannot approve milestone that has not yet been claimed by the enterprise creator." );
 
@@ -3401,7 +3442,7 @@ void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_
    const auto& account_rank_idx = _db.get_index< enterprise_approval_index >().indices().get< by_account_rank >();
    const auto& account_enterprise_idx = _db.get_index< enterprise_approval_index >().indices().get< by_account_enterprise >();
    auto account_rank_itr = account_rank_idx.find( boost::make_tuple( o.account, o.vote_rank ) );
-   auto account_enterprise_itr = account_enterprise_idx.find( boost::make_tuple( o.account, enterprise.creator, enterprise_id ) );
+   auto account_enterprise_itr = account_enterprise_idx.find( boost::make_tuple( o.account, enterprise.creator, o.enterprise_id ) );
 
    if( o.approved )      // Adding or modifying vote
    {
@@ -3741,18 +3782,19 @@ void comment_evaluator::do_apply( const comment_operation& o )
          {
             com.interface = o.interface;
          }
-         for( auto& link : o.ipfs )
+
+         com.ipfs.reserve( o.ipfs.size() );
+         for( size_t i = 0; i < o.ipfs.size(); i++ )
          {
-            shared_string l;
-            from_string( l, link );
-            com.ipfs.push_back( l );
+            from_string( com.ipfs[ i ], o.ipfs[ i ] );
          }
-         for( auto& link : o.magnet )
+
+         com.magnet.reserve( o.magnet.size() );
+         for( size_t i = 0; i < o.magnet.size(); i++ )
          {
-            shared_string l;
-            from_string( l, link );
-            com.magnet.push_back( l );
+            from_string( com.magnet[ i ], o.magnet[ i ] );
          }
+
          for( auto& tag : o.tags )
          {
             com.tags.push_back( tag );
@@ -3917,17 +3959,16 @@ void comment_evaluator::do_apply( const comment_operation& o )
             {
                from_string( com.json, o.json );  
             }
-            for( auto link : o.ipfs )
+            com.ipfs.reserve( o.ipfs.size() );
+            for( size_t i = 0; i < o.ipfs.size(); i++ )
             {
-               shared_string l;
-               from_string( l, link );
-               com.ipfs.push_back( l );
+               from_string( com.ipfs[ i ], o.ipfs[ i ] );
             }
-            for( auto link : o.magnet )
+            
+            com.magnet.reserve( o.magnet.size() );
+            for( size_t i = 0; i < o.magnet.size(); i++ )
             {
-               shared_string l;
-               from_string( l, link );
-               com.magnet.push_back( l );
+               from_string( com.magnet[ i ], o.magnet[ i ] );
             }
             for( auto& tag : o.tags )
             {
@@ -4924,7 +4965,7 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
    const comment_object& comment = _db.get_comment( o.author, o.permlink );
    const governance_account_object* gov_ptr = _db.find_governance_account( o.moderator );
 
-   const community_object* community_ptr;
+   const community_object* community_ptr = nullptr;
    if( comment.community.size() )
    {
       community_ptr = _db.find_community( comment.community );
@@ -5116,7 +5157,7 @@ void community_update_evaluator::do_apply( const community_update_operation& o )
    FC_ASSERT( community_member.is_administrator( o.account ),
       "Only administrators of the community can update it.");
 
-   const comment_object* pinned_post_ptr;
+   const comment_object* pinned_post_ptr = nullptr;
 
    if( o.pinned_author.size() || o.pinned_permlink.size() )
    {
@@ -5876,11 +5917,8 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
    FC_ASSERT( author.active, 
       "Author: ${s} must be active for content to be used as ad creative.",("s", o.author) );
 
-   shared_string creative_id;
-   from_string( creative_id, o.creative_id );
-
    const auto& creative_idx = _db.get_index< ad_creative_index >().indices().get< by_creative_id >();
-   auto creative_itr = creative_idx.find( boost::make_tuple( o.account, creative_id ) );
+   auto creative_itr = creative_idx.find( boost::make_tuple( o.account, o.creative_id ) );
 
    switch( o.format_type )
    {
@@ -6103,10 +6141,7 @@ void ad_inventory_evaluator::do_apply( const ad_inventory_operation& o )
       "Creating Ad Inventory requires an active interface." );
 
    const account_object& provider = _db.get_account( o.provider );
-
-   shared_string audience_id;
-   from_string( audience_id, o.audience_id );
-   const ad_audience_object& audience = _db.get_ad_audience( provider.name, audience_id );
+   const ad_audience_object& audience = _db.get_ad_audience( provider.name, o.audience_id );
    FC_ASSERT( audience.active, 
       "Audience: ${s} must be active to broadcast transaction.",("s", o.audience_id) );
 
@@ -6179,10 +6214,6 @@ void ad_audience_evaluator::do_apply( const ad_audience_operation& o )
    }
 
    const account_object& account = _db.get_account( o.account );
-
-   shared_string audience_id;
-   from_string( audience_id, o.audience_id );
-
    flat_set< account_name_type > audience_set;
 
    for( auto a : o.audience )   // Ensure all audience member accounts exist
@@ -6200,7 +6231,7 @@ void ad_audience_evaluator::do_apply( const ad_audience_operation& o )
    time_point now = _db.head_block_time();
 
    const auto& audience_idx = _db.get_index< ad_audience_index >().indices().get< by_audience_id >();
-   auto audience_itr = audience_idx.find( boost::make_tuple( o.account, audience_id ) );
+   auto audience_itr = audience_idx.find( boost::make_tuple( o.account, o.audience_id ) );
 
    if( audience_itr == audience_idx.end() )    // Ad audience does not exist
    {
@@ -6250,18 +6281,9 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
    const account_object& author = _db.get_account( o.author );
    const account_object& provider = _db.get_account( o.provider );
 
-   shared_string campaign_id;
-   from_string( campaign_id, o.campaign_id );
-   shared_string creative_id;
-   from_string( creative_id, o.creative_id );
-   shared_string inventory_id;
-   from_string( inventory_id, o.inventory_id );
-   shared_string bid_id;
-   from_string( bid_id, o.bid_id );
-
-   const ad_campaign_object& campaign = _db.get_ad_campaign( account.name, campaign_id );
-   const ad_creative_object& creative = _db.get_ad_creative( author.name, creative_id );
-   const ad_inventory_object& inventory = _db.get_ad_inventory( provider.name, inventory_id );
+   const ad_campaign_object& campaign = _db.get_ad_campaign( account.name, o.campaign_id );
+   const ad_creative_object& creative = _db.get_ad_creative( author.name, o.creative_id );
+   const ad_inventory_object& inventory = _db.get_ad_inventory( provider.name, o.inventory_id );
    const ad_audience_object& inventory_audience = _db.get_ad_audience( provider.name, inventory.audience_id );
 
    time_point now = _db.head_block_time();
@@ -6299,9 +6321,7 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
    {
       for( auto a : o.included_audiences )   // Ensure all include audience objects exist
       {
-         shared_string audience_id;
-         from_string( audience_id, a );
-         const ad_audience_object& aud = _db.get_ad_audience( bidder.name, audience_id );
+         const ad_audience_object& aud = _db.get_ad_audience( bidder.name, a );
          FC_ASSERT( aud.active,
             "Bid contains an inactive audience.");
          for( account_name_type name : aud.audience )
@@ -6325,9 +6345,7 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
    {
       for( auto a : o.excluded_audiences )   // Ensure all excluded audience objects exist
       {
-         shared_string audience_id;
-         from_string( audience_id, a );
-         const ad_audience_object& aud = _db.get_ad_audience( bidder.name, audience_id );
+         const ad_audience_object& aud = _db.get_ad_audience( bidder.name, a );
          FC_ASSERT( aud.active,
             "Bid contains an inactive audience.");
          for( account_name_type name : aud.audience )
@@ -6336,19 +6354,16 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
          }
       }
    }
-      
-   shared_string new_audience_id;
-   from_string( new_audience_id, o.bid_id );
 
    const auto& audience_idx = _db.get_index< ad_audience_index >().indices().get< by_audience_id >();
-   auto audience_itr = audience_idx.find( boost::make_tuple( o.bidder, new_audience_id ) );
+   auto audience_itr = audience_idx.find( boost::make_tuple( o.bidder, o.bid_id ) );
    
-   if( audience_itr == audience_idx.end() )    // Combined Ad audience for this bid_id does not exist, creating new one
+   if( audience_itr == audience_idx.end() )    // Combined Ad audience for this bid_id does not exist, creating new one.
    {
       _db.create< ad_audience_object >( [&]( ad_audience_object& aao )
       {
          aao.account = o.bidder;
-         aao.audience_id = new_audience_id;
+         from_string( aao.audience_id, o.bid_id );     // New audience ID is bid_id of the bid.
          from_string( aao.json, o.json );
          aao.audience = combined_audience;
          aao.created = now;
@@ -6367,7 +6382,7 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
    }
    
    const auto& bid_idx = _db.get_index< ad_bid_index >().indices().get< by_bid_id >();
-   auto bid_itr = bid_idx.find( boost::make_tuple( bidder.name, bid_id ) );
+   auto bid_itr = bid_idx.find( boost::make_tuple( bidder.name, o.bid_id ) );
 
    if( bid_itr == bid_idx.end() )    // Ad bid does not exist, creating new bid.
    {
@@ -6645,13 +6660,14 @@ void transfer_accept_evaluator::do_apply( const transfer_accept_operation& o )
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   shared_string request_id;
-   from_string( request_id, o.request_id );
+
    const account_object& from_account = _db.get_account( o.from );
    const account_object& to_account = _db.get_account( o.to );
+
    FC_ASSERT( to_account.active, 
       "Account: ${s} must be active to receive transfer.",("s", o.to) );
-   const transfer_request_object& request = _db.get_transfer_request( o.to, request_id );
+
+   const transfer_request_object& request = _db.get_transfer_request( o.to, o.request_id );
    const asset_object& asset_obj = _db.get_asset( request.amount.symbol );
    time_point now = _db.head_block_time();
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
@@ -6713,10 +6729,8 @@ void transfer_recurring_evaluator::do_apply( const transfer_recurring_operation&
    time_point now = _db.head_block_time();
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
    const account_permission_object& from_account_permissions = _db.get_account_permissions( o.from );
-   shared_string transfer_id;
-   from_string( transfer_id, o.transfer_id );
-
    asset from_liquid = _db.get_liquid_balance( o.from, o.amount.symbol );
+
    FC_ASSERT( from_liquid >= o.amount,
       "Account: ${f} does not have sufficient funds for transfer amount.",("f", o.from) );
    FC_ASSERT( to_account_permissions.is_authorized_transfer( o.from, asset_obj ),
@@ -6727,7 +6741,7 @@ void transfer_recurring_evaluator::do_apply( const transfer_recurring_operation&
       "Recurring transfer cannot be both extensible and fill or kill." );
    
    const auto& recurring_idx = _db.get_index< transfer_recurring_index >().indices().get< by_transfer_id >();
-   auto recurring_itr = recurring_idx.find( boost::make_tuple( from_account.name, transfer_id ) );
+   auto recurring_itr = recurring_idx.find( boost::make_tuple( from_account.name, o.transfer_id ) );
 
    if( recurring_itr == recurring_idx.end() )    // Recurring transfer does not exist, creating new recurring transfer.
    {
@@ -6818,8 +6832,6 @@ void transfer_recurring_request_evaluator::do_apply( const transfer_recurring_re
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
    const account_permission_object& from_account_permissions = _db.get_account_permissions( o.from );
    asset from_liquid = _db.get_liquid_balance( o.from, o.amount.symbol );
-   shared_string request_id;
-   from_string( request_id, o.request_id );
 
    FC_ASSERT( to_account_permissions.is_authorized_transfer( o.from, asset_obj ),
       "Transfer is not authorized, due to recipient account's asset permisssions" );
@@ -6831,7 +6843,7 @@ void transfer_recurring_request_evaluator::do_apply( const transfer_recurring_re
       "Recurring transfer cannot be both extensible and fill or kill." );
 
    const auto& req_idx = _db.get_index< transfer_recurring_request_index >().indices().get< by_request_id >();
-   auto req_itr = req_idx.find( boost::make_tuple( o.to, request_id ) );
+   auto req_itr = req_idx.find( boost::make_tuple( o.to, o.request_id ) );
 
    if( req_itr == req_idx.end() )   // Recurring transfer request does not exist, creating new recurring transfer request.
    {
@@ -6902,9 +6914,7 @@ void transfer_recurring_accept_evaluator::do_apply( const transfer_recurring_acc
    FC_ASSERT( to_account.active, 
       "Account: ${s} must be active to receive transfer.",("s", o.to) );
    const account_object& from_account = _db.get_account( o.from );
-   shared_string request_id;
-   from_string( request_id, o.request_id );
-   const transfer_recurring_request_object& request = _db.get_transfer_recurring_request( to_account.name, request_id );
+   const transfer_recurring_request_object& request = _db.get_transfer_recurring_request( to_account.name, o.request_id );
    const asset_object& asset_obj = _db.get_asset( request.amount.symbol );
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
    const account_permission_object& from_account_permissions = _db.get_account_permissions( o.from );
@@ -7303,11 +7313,8 @@ void transfer_from_savings_evaluator::do_apply( const transfer_from_savings_oper
    FC_ASSERT( savings >= o.amount,
       "Insufficient Savings balance." );
 
-   shared_string request_id;
-   from_string( request_id, o.request_id );
-
    const auto& savings_idx = _db.get_index< savings_withdraw_index >().indices().get< by_request_id >();
-   auto savings_itr = savings_idx.find( boost::make_tuple( from_account.name, request_id ) );
+   auto savings_itr = savings_idx.find( boost::make_tuple( from_account.name, o.request_id ) );
 
    if( savings_itr == savings_idx.end() )     // Savings request does not exist
    {
@@ -7545,10 +7552,7 @@ void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   shared_string escrow_id;
-   from_string( escrow_id, o.escrow_id );
-
-   const escrow_object& escrow = _db.get_escrow( o.escrow_from, escrow_id );
+   const escrow_object& escrow = _db.get_escrow( o.escrow_from, o.escrow_id );
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
    const account_object& mediator_account = _db.get_account( o.mediator );
    FC_ASSERT( mediator_account.active, 
@@ -7646,11 +7650,7 @@ void escrow_dispute_evaluator::do_apply( const escrow_dispute_operation& o )
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   shared_string escrow_id;
-   from_string( escrow_id, o.escrow_id );
-
-   const escrow_object& escrow = _db.get_escrow( o.escrow_from, escrow_id );
-
+   const escrow_object& escrow = _db.get_escrow( o.escrow_from, o.escrow_id );
    time_point now = _db.head_block_time();
 
    FC_ASSERT( o.account == escrow.to || o.account == escrow.from,
@@ -7683,11 +7683,7 @@ void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   shared_string escrow_id;
-   from_string( escrow_id, o.escrow_id );
-
-   const escrow_object& escrow = _db.get_escrow( o.escrow_from, escrow_id );
-
+   const escrow_object& escrow = _db.get_escrow( o.escrow_from, o.escrow_id );
    time_point now = _db.head_block_time();
    
    FC_ASSERT( escrow.is_approved(),
@@ -7773,11 +7769,8 @@ void limit_order_evaluator::do_apply( const limit_order_operation& o )
          "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
    }
 
-   shared_string order_id;
-   from_string( order_id, o.order_id );
-
    const auto& limit_idx = _db.get_index< limit_order_index >().indices().get< by_account >();
-   auto limit_itr = limit_idx.find( std::make_tuple( o.owner, order_id ) );
+   auto limit_itr = limit_idx.find( std::make_tuple( o.owner, o.order_id ) );
 
    if( limit_itr == limit_idx.end() )    // Limit order does not already exist
    {
@@ -7888,9 +7881,6 @@ void margin_order_evaluator::do_apply( const margin_order_operation& o )
    FC_ASSERT( position_asset.asset_type != asset_property_type::CREDIT_POOL_ASSET && position_asset.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET, 
       "Cannot open margin positions in assets issued by liquidity or credit pools." );
 
-   shared_string order_id;
-   from_string( order_id, o.order_id );
-
    const asset_credit_pool_object& pool = _db.get_credit_pool( o.amount_to_borrow.symbol, false );
    asset min_collateral = ( o.amount_to_borrow * median_props.margin_open_ratio ) / PERCENT_100;        // Min margin collateral equal to 20% of debt value.
    share_type collateralization;
@@ -7928,7 +7918,7 @@ void margin_order_evaluator::do_apply( const margin_order_operation& o )
       "Margin loan with provided collateral, position, and debt is not viable with current asset liquidity conditions. Please lower debt." );
 
    const auto& margin_idx = _db.get_index< margin_order_index >().indices().get< by_account >();
-   auto margin_itr = margin_idx.find( std::make_tuple( o.owner, order_id ) );
+   auto margin_itr = margin_idx.find( std::make_tuple( o.owner, o.order_id ) );
 
    if( margin_itr == margin_idx.end() )    // margin order does not already exist
    {
@@ -9939,7 +9929,7 @@ void asset_publish_feed_evaluator::do_apply( const asset_publish_feed_operation&
    
    if( base.is_producer_fed() )     // Verify that the publisher is authoritative to publish a feed.
    {
-      FC_ASSERT( _db.get_account_authority( PRODUCER_ACCOUNT ).active.account_auths.count( o.publisher ),
+      FC_ASSERT( _db.get_account_authority( PRODUCER_ACCOUNT ).active_auth.account_auths.count( o.publisher ),
          "Only active producers are allowed to publish price feeds for this asset" );
    }
    else
@@ -10285,9 +10275,9 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
       _db.create< account_authority_object >( [&]( account_authority_object& auth )
       {
          auth.account = miner_account;
-         auth.owner = authority( 1, ok, 1 );
-         auth.active = auth.owner;
-         auth.posting = auth.owner;
+         auth.owner_auth = authority( 1, ok, 1 );
+         auth.active_auth = auth.owner_auth;
+         auth.posting_auth = auth.owner_auth;
       });
 
       _db.create< producer_object >( [&]( producer_object& p )
@@ -10523,21 +10513,21 @@ void producer_violation_evaluator::do_apply( const producer_violation_operation&
 
    // Check signatures on transactions to ensure that they are signed by the producers
    
-   auto get_active  = [&]( const string& name ) { return authority( _db.get< account_authority_object, by_account >( name ).active ); };
-   auto get_owner   = [&]( const string& name ) { return authority( _db.get< account_authority_object, by_account >( name ).owner );  };
-   auto get_posting = [&]( const string& name ) { return authority( _db.get< account_authority_object, by_account >( name ).posting );  };
+   auto get_active  = [&]( const string& name ) { return authority( _db.get< account_authority_object, by_account >( name ).active_auth ); };
+   auto get_owner   = [&]( const string& name ) { return authority( _db.get< account_authority_object, by_account >( name ).owner_auth );  };
+   auto get_posting = [&]( const string& name ) { return authority( _db.get< account_authority_object, by_account >( name ).posting_auth );  };
 
    first_trx.verify_authority( chain_id, get_active, get_owner, get_posting, MAX_SIG_CHECK_DEPTH );
    second_trx.verify_authority( chain_id, get_active, get_owner, get_posting, MAX_SIG_CHECK_DEPTH );
    
-   uint32_t first_height;
-   uint32_t second_height;
-   block_id_type first_block_id;
-   block_id_type second_block_id;
-   account_name_type first_producer;
-   account_name_type second_producer;
-   asset first_stake;
-   asset second_stake;
+   uint32_t first_height = 0;
+   uint32_t second_height = 0;
+   block_id_type first_block_id = block_id_type();
+   block_id_type second_block_id = block_id_type();
+   account_name_type first_producer = account_name_type();
+   account_name_type second_producer = account_name_type();
+   asset first_stake = asset();
+   asset second_stake = asset();
 
    for( operation op : first_trx.operations )
    {

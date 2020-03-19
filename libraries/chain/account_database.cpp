@@ -325,14 +325,14 @@ void database::update_owner_authority( const account_object& account, const auth
       create< owner_authority_history_object >( [&]( owner_authority_history_object& hist )
       {
          hist.account = account.name;
-         hist.previous_owner_authority = get< account_authority_object, by_account >( account.name ).owner;
+         hist.previous_owner_authority = get< account_authority_object, by_account >( account.name ).owner_auth;
          hist.last_valid_time = head_block_time();
       });
    }
 
    modify( get< account_authority_object, by_account >( account.name ), [&]( account_authority_object& auth )
    {
-      auth.owner = owner_authority;
+      auth.owner_auth = owner_authority;
       auth.last_owner_update = head_block_time();
    });
 }
@@ -903,6 +903,72 @@ void database::account_recovery_processing()
    }
 }
 
+void database::clear_network_votes( const account_object& a )
+{
+   const auto& producer_vote_idx = get_index< producer_vote_index >().indices().get< by_account_producer >();
+   auto producer_vote_itr = producer_vote_idx.lower_bound( a.name );
+   while( producer_vote_itr != producer_vote_idx.end() && producer_vote_itr->account == a.name )
+   {
+      const producer_vote_object& vote = *producer_vote_itr;
+      ++producer_vote_itr;
+      remove(vote);
+   }
+
+   const auto& officer_vote_idx = get_index< network_officer_vote_index >().indices().get< by_account_officer >();
+   auto officer_vote_itr = officer_vote_idx.lower_bound( a.name );
+   while( officer_vote_itr != officer_vote_idx.end() && officer_vote_itr->account == a.name )
+   {
+      const network_officer_vote_object& vote = *officer_vote_itr;
+      ++officer_vote_itr;
+      remove(vote);
+   }
+
+   const auto& executive_vote_idx = get_index< executive_board_vote_index >().indices().get< by_account_executive >();
+   auto executive_vote_itr = executive_vote_idx.lower_bound( a.name );
+   while( executive_vote_itr != executive_vote_idx.end() && executive_vote_itr->account == a.name )
+   {
+      const executive_board_vote_object& vote = *executive_vote_itr;
+      ++executive_vote_itr;
+      remove(vote);
+   }
+
+   const auto& enterprise_approval_idx = get_index< enterprise_approval_index >().indices().get< by_account_enterprise >();
+   auto enterprise_approval_itr = enterprise_approval_idx.lower_bound( a.name );
+   while( enterprise_approval_itr != enterprise_approval_idx.end() && enterprise_approval_itr->account == a.name )
+   {
+      const enterprise_approval_object& vote = *enterprise_approval_itr;
+      ++enterprise_approval_itr;
+      remove(vote);
+   }
+
+   const auto& community_moderator_vote_idx = get_index< community_moderator_vote_index >().indices().get< by_account >();
+   auto community_moderator_vote_itr = community_moderator_vote_idx.lower_bound( a.name );
+   while( community_moderator_vote_itr != community_moderator_vote_idx.end() && community_moderator_vote_itr->account == a.name )
+   {
+      const community_moderator_vote_object& vote = *community_moderator_vote_itr;
+      ++community_moderator_vote_itr;
+      remove(vote);
+   }
+
+   const auto& account_officer_vote_idx = get_index< account_officer_vote_index >().indices().get< by_account_business_officer >();
+   auto account_officer_vote_itr = account_officer_vote_idx.lower_bound( a.name );
+   while( account_officer_vote_itr != account_officer_vote_idx.end() && account_officer_vote_itr->account == a.name )
+   {
+      const account_officer_vote_object& vote = *account_officer_vote_itr;
+      ++account_officer_vote_itr;
+      remove(vote);
+   }
+
+   const auto& account_executive_vote_idx = get_index< account_executive_vote_index >().indices().get< by_account_business_executive >();
+   auto account_executive_vote_itr = account_executive_vote_idx.lower_bound( a.name );
+   while( account_executive_vote_itr != account_executive_vote_idx.end() && account_executive_vote_itr->account == a.name )
+   {
+      const account_executive_vote_object& vote = *account_executive_vote_itr;
+      ++account_executive_vote_itr;
+      remove(vote);
+   }
+}
+
 void database::process_decline_voting_rights()
 {
    time_point now = head_block_time();
@@ -932,23 +998,6 @@ void database::process_decline_voting_rights()
 
       remove( *req_itr );
    }
-}
-
-void database::clear_producer_votes( const account_object& a )
-{
-   const auto& vidx = get_index< producer_vote_index >().indices().get<by_account_producer>();
-   auto itr = vidx.lower_bound( a.name );
-   while( itr != vidx.end() && itr->account == a.name )
-   {
-      const auto& current = *itr;
-      ++itr;
-      remove(current);
-   }
-
-   modify( a, [&](account_object& acc )
-   {
-      acc.producer_vote_count = 0;
-   });
 }
 
 } } //node::chain

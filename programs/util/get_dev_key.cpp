@@ -66,7 +66,8 @@ int main( int argc, char** argv )
       {
          std::string arg = argv[i];
          std::string prefix;
-         int lep = -1, rep;
+         int lep = -1;
+         int rep = -1;
          auto dash_pos = arg.rfind('-');
          if( dash_pos != string::npos )
          {

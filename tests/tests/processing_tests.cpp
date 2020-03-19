@@ -1,26 +1,21 @@
-//#ifdef IS_TEST_NET
 #include <boost/test/unit_test.hpp>
-
 #include <node/protocol/exceptions.hpp>
-
 #include <node/chain/block_summary_object.hpp>
 #include <node/chain/database.hpp>
 #include <node/chain/history_object.hpp>
-#include <node/chain/node_objects.hpp>
-
 #include <node/chain/util/reward.hpp>
-
 #include <node/plugins/debug_node/debug_node_plugin.hpp>
-
 #include <fc/crypto/digest.hpp>
-
 #include "../common/database_fixture.hpp"
 
 #include <cmath>
+#include <iostream>
+#include <stdexcept>
 
 using namespace node;
 using namespace node::chain;
 using namespace node::protocol;
+using std::string;
 
 BOOST_FIXTURE_TEST_SUITE( processing_tests, clean_database_fixture )
 
@@ -45,22 +40,22 @@ BOOST_AUTO_TEST_CASE( comment_processing_test )
       struct author_actor
       {
          author_actor(
-            const std::string& n,
+            const string& n,
             fc::ecc::private_key pk,
             fc::optional<asset> mpay = fc::optional<asset>() )
             : name(n), private_key(pk), max_accepted_payout(mpay) {}
-         std::string             name;
+         string             name;
          fc::ecc::private_key    private_key;
          fc::optional< asset >   max_accepted_payout;
       };
 
       struct voter_actor
       {
-         voter_actor( const std::string& n, fc::ecc::private_key pk, std::string fa )
+         voter_actor( const string& n, fc::ecc::private_key pk, string fa )
             : name(n), private_key(pk), favorite_author(fa) {}
-         std::string             name;
+         string             name;
          fc::ecc::private_key    private_key;
-         std::string             favorite_author;
+         string             favorite_author;
       };
 
 
@@ -139,20 +134,18 @@ BOOST_AUTO_TEST_CASE( comment_processing_test )
 
       for( const auto& author : authors )
       {
-         const account_object& a = db.get_account( author.name );
          const account_balance_object& bal = db.get_account_balance( author.name, SYMBOL_COIN );
          ilog( "${n} : ${r}", ("n", author.name)("r", bal.reward_balance) );
       }
       for( const auto& voter : voters )
       {
-         const account_object& a = db.get_account( voter.name );
          const account_balance_object& bal = db.get_account_balance( voter.name, SYMBOL_COIN );
          ilog( "${n} : ${r}", ("n", voter.name)("r", bal.reward_balance) );
       }
       
       const account_balance_object& alice_account_balance = db.get_account_balance( "alice", SYMBOL_COIN );
-      const account_balance_object& bob_account_balance   = db.get_account_balance( "bob", SYMBOL_COIN );
-      const account_balance_object& dan_account_balance  = db.get_account_balance( "dan", SYMBOL_COIN );
+      const account_balance_object& bob_account_balance = db.get_account_balance( "bob", SYMBOL_COIN );
+      const account_balance_object& dan_account_balance = db.get_account_balance( "dan", SYMBOL_COIN );
 
       BOOST_CHECK( alice_account_balance.reward_balance.value > 0);
       BOOST_CHECK( bob_account_balance.reward_balance.value == 0 );
@@ -281,7 +274,7 @@ BOOST_AUTO_TEST_CASE( recent_content_claims_decay_test )
       const comment_object& alice_comment = db.get_comment( "alice", string( "test" ) );
 
       uint128_t alice_reward_curve = util::evaluate_reward_curve(
-         uint128_t( alice_comment.net_reward ),
+         uint128_t( alice_comment.net_reward.value ),
          alice_comment.cashouts_received,
          rf.author_reward_curve,
          median_props.content_reward_decay_rate,
@@ -308,7 +301,7 @@ BOOST_AUTO_TEST_CASE( recent_content_claims_decay_test )
       auto bob_cashout_time = bob_comment.cashout_time;
 
       auto bob_reward_curve = util::evaluate_reward_curve( 
-         uint128_t( bob_comment.net_reward ),
+         uint128_t( bob_comment.net_reward.value ),
          bob_comment.cashouts_received,
          rf.author_reward_curve,
          median_props.content_reward_decay_rate,
@@ -453,33 +446,27 @@ BOOST_AUTO_TEST_CASE( comment_payout_test )
       util::comment_reward_context ctx = db.get_comment_reward_context( rf );
 
       util::fill_comment_reward_context_local_state( ctx, alice_comment );
-      share_type alice_reward = util::get_comment_reward( ctx );
+      asset alice_reward = util::get_comment_reward( ctx );
 
       util::fill_comment_reward_context_local_state( ctx, bob_comment );
-      share_type bob_reward = util::get_comment_reward( ctx );
+      asset bob_reward = util::get_comment_reward( ctx );
 
-      asset alice_comment_payout = asset( alice_reward, SYMBOL_COIN );
-      asset bob_comment_payout = asset( bob_reward, SYMBOL_COIN );
-
-      BOOST_REQUIRE( rf.content_reward_balance == reward - alice_comment_payout );
+      BOOST_REQUIRE( rf.content_reward_balance == reward - alice_reward );
 
       recent_content_claims = rf.recent_content_claims;
       reward = rf.content_reward_balance;
 
       generate_block();
 
-      util::comment_reward_context ctx = db.get_comment_reward_context( rf );
+      ctx = db.get_comment_reward_context( rf );
 
       util::fill_comment_reward_context_local_state( ctx, alice_comment );
-      share_type alice_reward = util::get_comment_reward( ctx );
+      alice_reward = util::get_comment_reward( ctx );
 
       util::fill_comment_reward_context_local_state( ctx, bob_comment );
-      share_type bob_reward = util::get_comment_reward( ctx );
+      bob_reward = util::get_comment_reward( ctx );
 
-      asset alice_comment_payout = asset( alice_reward, SYMBOL_COIN );
-      asset bob_comment_payout = asset( bob_reward, SYMBOL_COIN );
-
-      BOOST_REQUIRE( rf.content_reward_balance == reward - bob_comment_payout );
+      BOOST_REQUIRE( rf.content_reward_balance == reward - bob_reward );
 
       validate_database();
 
@@ -539,23 +526,20 @@ BOOST_AUTO_TEST_CASE( comment_payout_test )
 
       generate_blocks( candice_comment.cashout_time, true );
       
-      util::comment_reward_context ctx = db.get_comment_reward_context( rf );
+      ctx = db.get_comment_reward_context( rf );
 
       util::fill_comment_reward_context_local_state( ctx, candice_comment );
-      share_type candice_reward = util::get_comment_reward( ctx );
+      asset candice_reward = util::get_comment_reward( ctx );
 
       util::fill_comment_reward_context_local_state( ctx, dan_comment );
-      share_type dan_reward = util::get_comment_reward( ctx );
-
-      asset candice_comment_payout = asset( candice_reward, SYMBOL_COIN );
-      asset dan_comment_payout = asset( dan_reward, SYMBOL_COIN );
+      asset dan_reward = util::get_comment_reward( ctx );
    
-      BOOST_REQUIRE( rf.content_reward_balance == reward - candice_comment_payout - dan_comment_payout );
+      BOOST_REQUIRE( rf.content_reward_balance == reward - candice_reward - dan_reward );
 
-      BOOST_REQUIRE( alice_comment.total_payout_value == db.asset_to_USD( alice_comment_payout ) );
-      BOOST_REQUIRE( bob_comment.total_payout_value == db.asset_to_USD( bob_comment_payout ) );
-      BOOST_REQUIRE( candice_comment.total_payout_value == db.asset_to_USD( candice_comment_payout ) );
-      BOOST_REQUIRE( dan_comment.total_payout_value == db.asset_to_USD( dan_comment_payout ) );
+      BOOST_REQUIRE( alice_comment.total_payout_value == db.asset_to_USD( alice_reward ) );
+      BOOST_REQUIRE( bob_comment.total_payout_value == db.asset_to_USD( bob_reward ) );
+      BOOST_REQUIRE( candice_comment.total_payout_value == db.asset_to_USD( candice_reward ) );
+      BOOST_REQUIRE( dan_comment.total_payout_value == db.asset_to_USD( dan_reward ) );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Nested Comments Payout" );
       
@@ -702,7 +686,6 @@ BOOST_AUTO_TEST_CASE( network_credit_interest_test )
 
       const asset_credit_data_object& credit = db.get_credit_data( SYMBOL_CREDIT );
       asset_symbol_type cs = credit.symbol;
-      const asset_dynamic_data_object& dyn_data = db.get_dynamic_data( cs );
       price buyback = credit.buyback_price;
       price market = db.get_liquidity_pool( credit.buyback_asset, credit.symbol ).base_hour_median_price( credit.buyback_asset );
       
@@ -711,8 +694,8 @@ BOOST_AUTO_TEST_CASE( network_credit_interest_test )
       share_type pr = PERCENT_100;
       share_type hpr = PERCENT_100 / 2;
 
-      share_type mar = ( market * unit ).amount;    // Market price of the credit asset
-      share_type buy = ( buyback * unit ).amount;   // Buyback price of the credit asset
+      share_type mar = ( unit * market ).amount;    // Market price of the credit asset
+      share_type buy = ( unit * buyback ).amount;   // Buyback price of the credit asset
 
       share_type liqf = credit.liquid_fixed_interest_rate;
       share_type staf = credit.staked_fixed_interest_rate;

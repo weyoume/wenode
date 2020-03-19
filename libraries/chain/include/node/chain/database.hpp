@@ -275,8 +275,14 @@ namespace node { namespace chain {
          const community_enterprise_object& get_community_enterprise( const account_name_type& creator, const shared_string& enterprise_id )const;
          const community_enterprise_object* find_community_enterprise( const account_name_type& creator, const shared_string& enterprise_id )const;
 
+         const community_enterprise_object& get_community_enterprise( const account_name_type& creator, const string& enterprise_id )const;
+         const community_enterprise_object* find_community_enterprise( const account_name_type& creator, const string& enterprise_id )const;
+
          const enterprise_approval_object& get_enterprise_approval( const account_name_type& creator, const shared_string& enterprise_id, const account_name_type& account )const;
          const enterprise_approval_object* find_enterprise_approval( const account_name_type& creator, const shared_string& enterprise_id, const account_name_type& account )const;
+
+         const enterprise_approval_object& get_enterprise_approval( const account_name_type& creator, const string& enterprise_id, const account_name_type& account )const;
+         const enterprise_approval_object* find_enterprise_approval( const account_name_type& creator, const string& enterprise_id, const account_name_type& account )const;
 
          const community_object& get_community( const community_name_type& community )const;
          const community_object* find_community( const community_name_type& community )const;
@@ -305,17 +311,32 @@ namespace node { namespace chain {
          const ad_creative_object& get_ad_creative( const account_name_type& account, const shared_string& creative_id )const;
          const ad_creative_object* find_ad_creative( const account_name_type& account, const shared_string& creative_id )const;
 
+         const ad_creative_object& get_ad_creative( const account_name_type& account, const string& creative_id )const;
+         const ad_creative_object* find_ad_creative( const account_name_type& account, const string& creative_id )const;
+
          const ad_campaign_object& get_ad_campaign( const account_name_type& account, const shared_string& campaign_id )const;
          const ad_campaign_object* find_ad_campaign( const account_name_type& account, const shared_string& campaign_id )const;
+
+         const ad_campaign_object& get_ad_campaign( const account_name_type& account, const string& campaign_id )const;
+         const ad_campaign_object* find_ad_campaign( const account_name_type& account, const string& campaign_id )const;
 
          const ad_inventory_object& get_ad_inventory( const account_name_type& account, const shared_string& inventory_id )const;
          const ad_inventory_object* find_ad_inventory( const account_name_type& account, const shared_string& inventory_id )const;
 
+         const ad_inventory_object& get_ad_inventory( const account_name_type& account, const string& inventory_id )const;
+         const ad_inventory_object* find_ad_inventory( const account_name_type& account, const string& inventory_id )const;
+
          const ad_audience_object& get_ad_audience( const account_name_type& account, const shared_string& audience_id )const;
          const ad_audience_object* find_ad_audience( const account_name_type& account, const shared_string& audience_id )const;
 
+         const ad_audience_object& get_ad_audience( const account_name_type& account, const string& audience_id )const;
+         const ad_audience_object* find_ad_audience( const account_name_type& account, const string& audience_id )const;
+
          const ad_bid_object& get_ad_bid( const account_name_type& account, const shared_string& bid_id )const;
          const ad_bid_object* find_ad_bid( const account_name_type& account, const shared_string& bid_id )const;
+
+         const ad_bid_object& get_ad_bid( const account_name_type& account, const string& bid_id )const;
+         const ad_bid_object* find_ad_bid( const account_name_type& account, const string& bid_id )const;
 
          const asset_liquidity_pool_object& get_liquidity_pool( const asset_symbol_type& symbol_a, const asset_symbol_type& symbol_b )const;
          const asset_liquidity_pool_object* find_liquidity_pool( const asset_symbol_type& symbol_a, const asset_symbol_type& symbol_b )const;
@@ -332,14 +353,38 @@ namespace node { namespace chain {
          const credit_loan_object& get_loan( const account_name_type& owner, const shared_string& loan_id  )const;
          const credit_loan_object* find_loan( const account_name_type& owner, const shared_string& loan_id )const;
 
+         const credit_loan_object& get_loan( const account_name_type& owner, const string& loan_id  )const;
+         const credit_loan_object* find_loan( const account_name_type& owner, const string& loan_id )const;
+
          const escrow_object& get_escrow( const account_name_type& name, const shared_string& escrow_id )const;
          const escrow_object* find_escrow( const account_name_type& name, const shared_string& escrow_id )const;
+
+         const escrow_object& get_escrow( const account_name_type& name, const string& escrow_id )const;
+         const escrow_object* find_escrow( const account_name_type& name, const string& escrow_id )const;
 
          const limit_order_object& get_limit_order(  const account_name_type& owner, const shared_string& order_id )const;
          const limit_order_object* find_limit_order( const account_name_type& owner, const shared_string& order_id )const;
 
+         const limit_order_object& get_limit_order(  const account_name_type& owner, const string& order_id )const;
+         const limit_order_object* find_limit_order( const account_name_type& owner, const string& order_id )const;
+
          const margin_order_object& get_margin_order( const account_name_type& name, const shared_string& margin_id )const;
          const margin_order_object* find_margin_order( const account_name_type& name, const shared_string& margin_id )const;
+
+         const margin_order_object& get_margin_order( const account_name_type& name, const string& margin_id )const;
+         const margin_order_object* find_margin_order( const account_name_type& name, const string& margin_id )const;
+
+         const option_order_object& get_option_order( const account_name_type& name, const shared_string& option_id )const;
+         const option_order_object* find_option_order( const account_name_type& name, const shared_string& option_id )const;
+
+         const option_order_object& get_option_order( const account_name_type& name, const string& option_id )const;
+         const option_order_object* find_option_order( const account_name_type& name, const string& option_id )const;
+
+         const auction_order_object& get_auction_order( const account_name_type& name, const shared_string& auction_id )const;
+         const auction_order_object* find_auction_order( const account_name_type& name, const shared_string& auction_id )const;
+
+         const auction_order_object& get_auction_order( const account_name_type& name, const string& auction_id )const;
+         const auction_order_object* find_auction_order( const account_name_type& name, const string& auction_id )const;
 
          const call_order_object& get_call_order( const account_name_type& name, const asset_symbol_type& symbol )const;
          const call_order_object* find_call_order( const account_name_type& name, const asset_symbol_type& symbol )const;
@@ -353,14 +398,26 @@ namespace node { namespace chain {
          const transfer_request_object& get_transfer_request( const account_name_type& name, const shared_string& request_id )const;
          const transfer_request_object* find_transfer_request( const account_name_type& name, const shared_string& request_id )const;
 
+         const transfer_request_object& get_transfer_request( const account_name_type& name, const string& request_id )const;
+         const transfer_request_object* find_transfer_request( const account_name_type& name, const string& request_id )const;
+
          const transfer_recurring_object& get_transfer_recurring( const account_name_type& name, const shared_string& transfer_id )const;
          const transfer_recurring_object* find_transfer_recurring( const account_name_type& name, const shared_string& transfer_id )const;
+
+         const transfer_recurring_object& get_transfer_recurring( const account_name_type& name, const string& transfer_id )const;
+         const transfer_recurring_object* find_transfer_recurring( const account_name_type& name, const string& transfer_id )const;
 
          const transfer_recurring_request_object& get_transfer_recurring_request( const account_name_type& name, const shared_string& request_id )const;
          const transfer_recurring_request_object* find_transfer_recurring_request( const account_name_type& name, const shared_string& request_id )const;
 
+         const transfer_recurring_request_object& get_transfer_recurring_request( const account_name_type& name, const string& request_id )const;
+         const transfer_recurring_request_object* find_transfer_recurring_request( const account_name_type& name, const string& request_id )const;
+
          const savings_withdraw_object& get_savings_withdraw( const account_name_type& owner, const shared_string& request_id )const;
          const savings_withdraw_object* find_savings_withdraw( const account_name_type& owner, const shared_string& request_id )const;
+
+         const savings_withdraw_object& get_savings_withdraw( const account_name_type& owner, const string& request_id )const;
+         const savings_withdraw_object* find_savings_withdraw( const account_name_type& owner, const string& request_id )const;
 
          annotated_signed_transaction get_transaction( const transaction_id_type& id )const;
          
@@ -379,7 +436,6 @@ namespace node { namespace chain {
 
          /// Reset the object graph in-memory
          void initialize_indexes();
-         void init_schema();
          
          /**
           *  This method validates transactions without adding it to the pending state.
@@ -396,8 +452,6 @@ namespace node { namespace chain {
          /* For testing and debugging only. Given a hardfork
             with id N, applies all hardforks with id <= N */
          void set_hardfork( uint32_t hardfork, bool process_now = true );
-
-         
 
          const std::string& get_json_schema() const;
 
@@ -665,8 +719,6 @@ namespace node { namespace chain {
 
          void process_decline_voting_rights();
 
-         void clear_producer_votes( const account_object& a );
-
 
 
          //==========================//
@@ -675,21 +727,21 @@ namespace node { namespace chain {
 
 
 
-         share_type pay_voters( const comment_object& c, const share_type& max_rewards );
+         asset pay_voters( const comment_object& c, const asset& max_rewards );
 
-         share_type pay_viewers( const comment_object& c, const share_type& max_rewards );
+         asset pay_viewers( const comment_object& c, const asset& max_rewards );
 
-         share_type pay_sharers( const comment_object& c, const share_type& max_rewards );
+         asset pay_sharers( const comment_object& c, const asset& max_rewards );
 
-         share_type pay_commenters( const comment_object& c, const share_type& max_rewards );
+         asset pay_commenters( const comment_object& c, const asset& max_rewards );
 
-         share_type pay_moderators( const comment_object& c, const share_type& max_rewards );
+         asset pay_moderators( const comment_object& c, const asset& max_rewards );
 
-         share_type pay_storage( const comment_object& c, const share_type& max_rewards );
+         asset pay_storage( const comment_object& c, const asset& max_rewards );
 
-         share_type pay_content_rewards( share_type reward );
+         asset pay_content_rewards( asset reward );
 
-         share_type distribute_comment_reward( util::comment_reward_context& ctx, const comment_object& comment );
+         asset distribute_comment_reward( util::comment_reward_context& ctx, const comment_object& comment );
 
          util::comment_reward_context get_comment_reward_context( const reward_fund_object& reward_fund );
 
@@ -904,18 +956,6 @@ namespace node { namespace chain {
          void close_margin_order( const margin_order_object& order );
 
          bool maybe_cull_small_order( const margin_order_object& order );
-         
-
-#ifdef IS_TEST_NET
-         bool liquidity_rewards_enabled = true;
-         bool skip_price_feed_limit_check = true;
-         bool skip_transaction_delta_check = true;
-#endif
-
-      protected:
-         //Mark pop_undo() as protected -- we do not want outside calling pop_undo(); it should call pop_block() instead
-         //void pop_undo() { object_database::pop_undo(); }
-         void notify_changed_objects();
 
       private:
          optional< chainbase::database::session > _pending_tx_session;

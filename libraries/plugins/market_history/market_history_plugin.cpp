@@ -33,7 +33,7 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
       fill_order_operation op = o.op.get< fill_order_operation >();
 
       auto& db = _self.database();
-      const auto& duration_idx = db.get_index< market_duration_index >().indices().get< by_new_asset_pair >();
+      const auto& duration_idx = db.get_index< market_history::market_duration_index >().indices().get< by_new_asset_pair >();
 
       db.create< order_history_object >( [&]( order_history_object& ho )
       {
@@ -44,14 +44,14 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
       if( !_maximum_history_per_duration_size ) return;
       if( !_tracked_durations.size() ) return;
 
-      for( auto duration : _tracked_durations )
+      for( uint32_t duration : _tracked_durations )
       {
-         auto cutoff = db.head_block_time() - fc::seconds( duration * _maximum_history_per_duration_size );
+         time_point cutoff = db.head_block_time() - fc::seconds( duration * _maximum_history_per_duration_size );
 
          time_point open_time = fc::time_point( fc::microseconds( ( db.head_block_time().time_since_epoch().count() / duration ) * duration ) ); // round down to opening time point
 
-         auto itr = duration_idx.find( boost::make_tuple( op.symbol_a, op.symbol_b, duration, open_time ) );
-         if( itr == duration_idx.end() )
+         auto duration_itr = duration_idx.find( boost::make_tuple( op.symbol_a, op.symbol_b, duration, open_time ) );
+         if( duration_itr == duration_idx.end() )
          {
             db.create< market_duration_object >( [&]( market_duration_object& mdo )
             {
@@ -80,7 +80,7 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
          }
          else
          {
-            db.modify( *itr, [&]( market_duration_object& mdo )
+            db.modify( *duration_itr, [&]( market_duration_object& mdo )
             {
                if( op.open_pays.symbol == op.symbol_a )
                {
@@ -117,13 +117,13 @@ void market_history_plugin_impl::update_market_histories( const operation_notifi
             if( _maximum_history_per_duration_size > 0 )
             {
                open_time = fc::time_point();
-               itr = duration_idx.lower_bound( boost::make_tuple( op.symbol_a, op.symbol_b, duration, open_time ) );
+               duration_itr = duration_idx.lower_bound( boost::make_tuple( op.symbol_a, op.symbol_b, duration, open_time ) );
 
-               while( itr->seconds == duration && itr->open_time < cutoff )
+               while( duration_itr->seconds == duration && duration_itr->open_time < cutoff )
                {
-                  auto old_itr = itr;
-                  ++itr;
-                  db.remove( *old_itr );
+                  auto old_duration_itr = duration_itr;
+                  ++duration_itr;
+                  db.remove( *old_duration_itr );
                }
             }
          }

@@ -6,11 +6,9 @@
 #include <node/chain/node_objects.hpp>
 #include <node/chain/node_object_types.hpp>
 #include <node/chain/history_object.hpp>
-
+#include <node/producer/producer_plugin.hpp>
 #include <node/tags/tags_plugin.hpp>
 
-#include <node/follow/follow_plugin.hpp>
-#include <node/producer/producer_plugin.hpp>
 
 #include <fc/api.hpp>
 #include <fc/optional.hpp>
@@ -75,7 +73,7 @@ struct discussion_query
 
    string                  tag = string();               ///< Name of the tag being querired.
 
-   string                  sort_type = "quality";        ///< Sorting index type.
+   string                  sort_option = "quality";      ///< Sorting index type.
 
    string                  sort_time = "standard";       ///< Time preference of the sorting type.
    
@@ -127,7 +125,7 @@ struct search_query
    void validate()const
    {
       FC_ASSERT( limit <= 100 );
-      FC_ASSERT( margin_percent <= PERCENT_100 );
+      FC_ASSERT( margin_percent <= uint16_t( PERCENT_100 ) );
    }
 
    string                            account;                            ///< Name of the account creating the search.
@@ -136,7 +134,7 @@ struct search_query
 
    uint32_t                          limit = 20;                         ///< The amount of results to include in the results.
 
-   uint16_t                          margin_percent = 25 * PERCENT_100;  ///< Search result must match within this percentage to be included.
+   uint16_t                          margin_percent = PERCENT_1 * 25;    ///< Search result must match within this percentage to be included.
 
    bool                              include_accounts = true;            ///< Set True to include account results.
 
@@ -147,8 +145,6 @@ struct search_query
    bool                              include_assets = true;              ///< Set True to include asset results.
 
    bool                              include_posts = true;               ///< Set True to include post results by title.
-
-
 };
 
 /**
@@ -166,11 +162,9 @@ struct ad_query
 
    string                  viewer;                ///< Name of the audience member account receiving the ad.
 
-   string                  format_type;           ///< Type of ad inventory format being queried.
+   string                  ad_metric;             ///< Type of ad price metric being queried.
 
-   discussion_query        discussion_query;      ///< The Discussion feed display query of the ad context.
-
-   search_query            search_query;          ///< The Search display query of the ad context.
+   string                  ad_format;             ///< Type of ad inventory format being queried.
    
    uint32_t                limit = 0;
 };
@@ -483,14 +477,14 @@ class database_api
       //=========================//
 
 
-      void on_api_startup();
+      void                                on_api_startup();
 
    private:
       void set_url( discussion& d )const;
-      discussion get_discussion( comment_id_type, uint32_t truncate_body = 0 )const;
+      discussion get_discussion( comment_id_type id, uint32_t truncate_body )const;
 
       static bool filter_default( const comment_api_obj& c ) { return false; }
-      static bool exit_default( const comment_api_obj& c )   { return false; }
+      static bool exit_default( const comment_api_obj& c ) { return false; }
       static bool tag_exit_default( const tags::tag_object& c ) { return false; }
 
       template< typename Index, typename StartItr >
@@ -501,11 +495,11 @@ class database_api
          comment_id_type parent,
          const Index& idx, 
          StartItr itr,
-         uint32_t truncate_body = 0,
-         const std::function< bool( const comment_api_obj& ) >& filter = &database_api::filter_default,
-         const std::function< bool( const comment_api_obj& ) >& exit   = &database_api::exit_default,
-         const std::function< bool( const tags::tag_object& ) >& tag_exit = &database_api::tag_exit_default,
-         bool ignore_parent = false
+         uint32_t truncate_body,
+         const std::function< bool( const comment_api_obj& ) >& filter,
+         const std::function< bool( const comment_api_obj& ) >& exit,
+         const std::function< bool( const tags::tag_object& ) >& tag_exit,
+         bool ignore_parent
          )const;
          
       comment_id_type get_parent( const discussion_query& q )const;
@@ -524,8 +518,8 @@ FC_REFLECT( node::app::scheduled_hardfork,
          );
 
 FC_REFLECT( node::app::withdraw_route,
-         (from_account)
-         (to_account)
+         (from)
+         (to)
          (percent)
          (auto_stake)
          );
@@ -540,7 +534,7 @@ FC_REFLECT( node::app::discussion_query,
          (account)
          (community)
          (tag)
-         (sort_type)
+         (sort_option)
          (sort_time)
          (feed_type)
          (blog_type)
@@ -571,9 +565,8 @@ FC_REFLECT( node::app::search_query,
 FC_REFLECT( node::app::ad_query,
          (interface)
          (viewer)
-         (format_type)
-         (discussions_query)
-         (search_query)
+         (ad_format)
+         (ad_metric)
          (limit)
          );
 

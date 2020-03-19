@@ -7,11 +7,261 @@
 
 namespace node { namespace protocol {
 
+   /**
+    * Measures distributed currency reward value denominated in USD for each post.
+    */
+   struct content_reward_operation : public virtual_operation 
+   {
+      content_reward_operation() {}
+      content_reward_operation( 
+         const account_name_type& a, 
+         const string& p, 
+         const asset& r ) : 
+         post_author(a), 
+         post_permlink(p), 
+         reward_usd_value(r) {}
+
+      account_name_type      post_author;
+
+      string                 post_permlink;
+
+      asset                  reward_usd_value;               ///< Denominated in USD
+
+      void get_creator_name( account_name_type a )const{ a = post_author; }
+   };
+
+
+   /**
+    * Measures distributed currency rewards to the account that is the author of a post.
+    */
    struct author_reward_operation : public virtual_operation 
    {
-      author_reward_operation(){}
-      author_reward_operation( const account_name_type& a, const string& p, const asset& r )
-         :author(a), permlink(p), reward(r){}
+      author_reward_operation() {}
+      author_reward_operation( 
+         const account_name_type& a, 
+         const string& p, 
+         const asset& r ) : 
+         post_author(a), 
+         post_permlink(p), 
+         reward(r) {}
+
+      account_name_type      post_author;
+
+      string                 post_permlink;
+
+      asset                  reward;
+
+      void get_creator_name( account_name_type a )const{ a = post_author; }
+   };
+
+
+   /**
+    * Measures distributed currency rewards to accounts that vote on a post.
+    */
+   struct vote_reward_operation : public virtual_operation
+   {
+      vote_reward_operation() {}
+      vote_reward_operation( 
+         const string& v,  
+         const string& a, 
+         const string& p,
+         const asset& r ) :
+         voter(v),  
+         post_author(a), 
+         post_permlink(p),
+         reward(r) {}
+
+      account_name_type      voter;
+
+      account_name_type      post_author;
+
+      string                 post_permlink;
+
+      asset                  reward;
+
+      
+
+      void get_creator_name( account_name_type a )const{ a = voter; }
+   };
+
+
+   /**
+    * Measures distributed currency rewards to accounts that view a post.
+    */
+   struct view_reward_operation : public virtual_operation
+   {
+      view_reward_operation() {}
+      view_reward_operation(
+         const string& v, 
+         const string& a, 
+         const string& p,
+         const asset& r ) :
+         viewer(v),  
+         post_author(a), 
+         post_permlink(p),
+         reward(r) {}
+
+      account_name_type      viewer;
+
+      account_name_type      post_author;
+
+      string                 post_permlink;
+
+      asset                  reward;
+
+      void get_creator_name( account_name_type a )const{ a = viewer; }
+   };
+
+
+   /**
+    * Measures distributed currency rewards to the accounts that share a post.
+    */
+   struct share_reward_operation : public virtual_operation
+   {
+      share_reward_operation() {}
+      share_reward_operation(
+         const string& v, 
+         const string& a, 
+         const string& p,
+         const asset& r ) :
+         sharer(v),  
+         post_author(a), 
+         post_permlink(p),
+         reward(r) {}
+
+      account_name_type      sharer;
+
+      account_name_type      post_author;
+
+      string                 post_permlink;
+
+      asset                  reward;
+
+      void get_creator_name( account_name_type a )const{ a = sharer; }
+   };
+
+
+   /**
+    * Measures distributed currency rewards to creators of comments on a post.
+    */
+   struct comment_reward_operation : public virtual_operation
+   {
+      comment_reward_operation(){}
+      comment_reward_operation( 
+         const account_name_type& ca, 
+         const string& cpl, 
+         const account_name_type& pa, 
+         const string& ppl, 
+         const asset& r ) : 
+         comment_author(ca),
+         comment_permlink(cpl),
+         post_author(pa),
+         post_permlink(ppl),
+         reward(r) {}
+
+      account_name_type       comment_author;
+
+      string                  comment_permlink;
+
+      account_name_type       post_author;
+
+      string                  post_permlink;
+
+      asset                   reward;
+
+      void get_creator_name( account_name_type a )const{ a = comment_author; }
+   };
+
+
+   /**
+    * Measures distributed currency rewards to the supernodes 
+    * nominated as file hosts for viewers of post.
+    */
+   struct supernode_reward_operation : public virtual_operation
+   {
+      supernode_reward_operation() {}
+      supernode_reward_operation(
+         const string& s, 
+         const string& a, 
+         const string& p,
+         const asset& r ) :
+         supernode(s),  
+         post_author(a), 
+         post_permlink(p),
+         reward(r) {}
+
+      account_name_type      supernode;
+
+      account_name_type      post_author;
+
+      string                 post_permlink;
+
+      asset                  reward;
+
+      void get_creator_name( account_name_type a )const{ a = supernode; }
+   };
+
+
+   /**
+    * Measures distributed currency rewards to the moderators 
+    * of the community that a post is created within.
+    */
+   struct moderation_reward_operation : public virtual_operation
+   {
+      moderation_reward_operation() {}
+      moderation_reward_operation(
+         const string& m, 
+         const string& a, 
+         const string& p,
+         const asset& r ) :
+         moderator(m),  
+         post_author(a), 
+         post_permlink(p),
+         reward(r) {}
+
+      account_name_type      moderator;
+
+      account_name_type      post_author;
+
+      string                 post_permlink;
+
+      asset                  reward;
+
+      void get_creator_name( account_name_type a )const{ a = moderator; }
+   };
+
+
+   struct comment_payout_update_operation : public virtual_operation
+   {
+      comment_payout_update_operation() {}
+      comment_payout_update_operation( 
+         const account_name_type& a, 
+         const string& p ) : 
+         author( a ), 
+         permlink( p ) {}
+
+      account_name_type     author;
+
+      string                permlink;
+
+      void get_creator_name( account_name_type a )const{ a = author; }
+   };
+
+
+   struct comment_benefactor_reward_operation : public virtual_operation
+   {
+      comment_benefactor_reward_operation() {}
+      comment_benefactor_reward_operation( 
+         const account_name_type& b, 
+         const account_name_type& a, 
+         const string& p, 
+         const asset& r ) : 
+         benefactor( b ), 
+         author( a ), 
+         permlink( p ), 
+         reward( r ) {}
+
+      account_name_type     benefactor;
 
       account_name_type     author;
 
@@ -19,41 +269,7 @@ namespace node { namespace protocol {
 
       asset                 reward;
 
-      void get_creator_name( account_name_type a )const{ a = author; }
-   };
-
-
-   struct curation_reward_operation : public virtual_operation
-   {
-      curation_reward_operation(){}
-      curation_reward_operation( const string& c, const asset& r, const string& a, const string& p )
-         :curator(c), reward(r), comment_author(a), comment_permlink(p) {}
-
-      account_name_type      curator;
-
-      asset                  reward;
-
-      account_name_type      comment_author;
-
-      string                 comment_permlink;
-
-      void get_creator_name( account_name_type a )const{ a = curator; }
-   };
-
-
-   struct comment_reward_operation : public virtual_operation
-   {
-      comment_reward_operation(){}
-      comment_reward_operation( const account_name_type& a, const string& pl, const asset& p )
-         :author(a), permlink(pl), payout(p){}
-
-      account_name_type       author;
-
-      string                  permlink;
-
-      asset                   payout;
-
-      void get_creator_name( account_name_type a )const{ a = author; }
+      void get_creator_name( account_name_type a )const{ a = benefactor; }
    };
 
 
@@ -121,6 +337,7 @@ namespace node { namespace protocol {
       void get_creator_name( account_name_type a )const{ a = current_owner; }
    };
 
+
    struct asset_settle_cancel_operation : public virtual_operation
    {
       asset_settle_cancel_operation(){}
@@ -166,6 +383,7 @@ namespace node { namespace protocol {
       void get_creator_name( account_name_type a )const{ a = from; }
    };
 
+
    struct hardfork_operation : public virtual_operation
    {
       hardfork_operation() {}
@@ -176,21 +394,6 @@ namespace node { namespace protocol {
       void get_creator_name( account_name_type a )const{ a = account_name_type( NULL_ACCOUNT ); }
    };
 
-   struct comment_payout_update_operation : public virtual_operation
-   {
-      comment_payout_update_operation() {}
-      comment_payout_update_operation( 
-         const account_name_type& a, 
-         const string& p ) : 
-         author( a ), 
-         permlink( p ) {}
-
-      account_name_type     author;
-
-      string                permlink;
-
-      void get_creator_name( account_name_type a )const{ a = author; }
-   };
 
    struct return_asset_delegation_operation : public virtual_operation
    {
@@ -208,29 +411,6 @@ namespace node { namespace protocol {
       void get_creator_name( account_name_type a )const{ a = account; }
    };
 
-   struct comment_benefactor_reward_operation : public virtual_operation
-   {
-      comment_benefactor_reward_operation() {}
-      comment_benefactor_reward_operation( 
-         const account_name_type& b, 
-         const account_name_type& a, 
-         const string& p, 
-         const asset& r ) : 
-         benefactor( b ), 
-         author( a ), 
-         permlink( p ), 
-         reward( r ) {}
-
-      account_name_type     benefactor;
-
-      account_name_type     author;
-
-      string                permlink;
-
-      asset                 reward;
-
-      void get_creator_name( account_name_type a )const{ a = benefactor; }
-   };
 
    struct producer_reward_operation : public virtual_operation
    {
@@ -246,8 +426,8 @@ namespace node { namespace protocol {
       asset                 reward;
 
       void get_creator_name( account_name_type a )const{ a = producer; }
-
    };
+
 
    struct execute_bid_operation : public virtual_operation
    {
@@ -270,37 +450,86 @@ namespace node { namespace protocol {
       void get_creator_name( account_name_type a )const{ a = bidder; }
    };
 
+
 } } //node::protocol
 
-FC_REFLECT( node::protocol::author_reward_operation, 
+FC_REFLECT( node::protocol::content_reward_operation,
+         (post_author)
+         (post_permlink)
+         (reward_usd_value) 
+         );
+
+FC_REFLECT( node::protocol::author_reward_operation,
+         (post_author)
+         (post_permlink)
+         (reward) 
+         );
+
+FC_REFLECT( node::protocol::vote_reward_operation,
+         (voter)
+         (post_author)
+         (post_permlink)
+         (reward)
+         );
+
+FC_REFLECT( node::protocol::view_reward_operation,
+         (viewer)
+         (post_author)
+         (post_permlink)
+         (reward)
+         );
+
+FC_REFLECT( node::protocol::share_reward_operation,
+         (sharer)
+         (post_author)
+         (post_permlink)
+         (reward)
+         );
+
+FC_REFLECT( node::protocol::comment_reward_operation,
+         (post_author)
+         (post_permlink)
+         (comment_author)
+         (comment_permlink)
+         (reward) 
+         );
+
+FC_REFLECT( node::protocol::supernode_reward_operation,
+         (supernode)
+         (post_author)
+         (post_permlink)
+         (reward)
+         );
+
+FC_REFLECT( node::protocol::moderation_reward_operation,
+         (moderator)
+         (post_author)
+         (post_permlink)
+         (reward)
+         );
+
+FC_REFLECT( node::protocol::comment_payout_update_operation,
+         (author)
+         (permlink) 
+         );
+
+FC_REFLECT( node::protocol::comment_benefactor_reward_operation,
+         (benefactor)
          (author)
          (permlink)
          (reward) 
          );
 
-FC_REFLECT( node::protocol::curation_reward_operation, 
-         (curator)
-         (reward)
-         (comment_author)
-         (comment_permlink) 
-         );
-
-FC_REFLECT( node::protocol::comment_reward_operation, 
-         (author)
-         (permlink)
-         (payout) 
-         );
-
-FC_REFLECT( node::protocol::interest_operation, 
+FC_REFLECT( node::protocol::interest_operation,
          (owner)
          (interest) 
          );
 
-FC_REFLECT( node::protocol::shutdown_producer_operation, 
+FC_REFLECT( node::protocol::shutdown_producer_operation,
          (owner) 
          );
 
-FC_REFLECT( node::protocol::fill_order_operation, 
+FC_REFLECT( node::protocol::fill_order_operation,
          (current_owner)
          (current_order_id)
          (current_pays)
@@ -311,12 +540,12 @@ FC_REFLECT( node::protocol::fill_order_operation,
          (symbol_b)
          );
 
-FC_REFLECT( node::protocol::asset_settle_cancel_operation, 
+FC_REFLECT( node::protocol::asset_settle_cancel_operation,
          (account)
          (amount)
          );
 
-FC_REFLECT( node::protocol::fill_transfer_from_savings_operation, 
+FC_REFLECT( node::protocol::fill_transfer_from_savings_operation,
          (from)
          (to)
          (amount)
@@ -324,28 +553,16 @@ FC_REFLECT( node::protocol::fill_transfer_from_savings_operation,
          (memo) 
          );
 
-FC_REFLECT( node::protocol::hardfork_operation, 
+FC_REFLECT( node::protocol::hardfork_operation,
          (hardfork_id) 
          );
 
-FC_REFLECT( node::protocol::comment_payout_update_operation, 
-         (author)
-         (permlink) 
-         );
-
-FC_REFLECT( node::protocol::return_asset_delegation_operation, 
+FC_REFLECT( node::protocol::return_asset_delegation_operation,
          (account)
          (amount) 
          );
 
-FC_REFLECT( node::protocol::comment_benefactor_reward_operation, 
-         (benefactor)
-         (author)
-         (permlink)
-         (reward) 
-         );
-
-FC_REFLECT( node::protocol::producer_reward_operation, 
+FC_REFLECT( node::protocol::producer_reward_operation,
          (producer)
          (reward) 
          );

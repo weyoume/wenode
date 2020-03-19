@@ -1,13 +1,10 @@
-//#ifdef IS_TEST_NET
-
 #include <boost/test/unit_test.hpp>
-#include <node/chain/node_objects.hpp>
 #include <node/protocol/exceptions.hpp>
 #include <node/chain/database.hpp>
 #include <node/chain/database_exceptions.hpp>
 #include <node/chain/util/reward.hpp>
 #include <fc/crypto/digest.hpp>
-#include <tests/common/database_fixture.hpp>
+#include "../common/database_fixture.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -32,16 +29,16 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
    {
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT CREATE" );
 
-      account_create_operation op;
-      op.registrar = "alice";
-      op.new_account_name = "bob";
+      account_create_operation create;
+      create.registrar = "alice";
+      create.new_account_name = "bob";
 
       flat_set< account_name_type > auths;
       flat_set< account_name_type > expected;
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: owner authority" );
 
-      op.get_required_owner_authorities( auths );
+      create.get_required_owner_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: owner authority" );
@@ -49,7 +46,7 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_TEST_MESSAGE( "│   ├── Testing: active authority" );
 
       expected.insert( "alice" );
-      op.get_required_active_authorities( auths );
+      create.get_required_active_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: active authority" );
@@ -58,7 +55,7 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
 
       expected.clear();
       auths.clear();
-      op.get_required_posting_authorities( auths );
+      create.get_required_posting_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: posting authority" );
@@ -71,31 +68,30 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       const account_object& init = db.get_account( INIT_ACCOUNT );
       fund( INIT_ACCOUNT, init_starting_balance );
       const dynamic_global_property_object& props = db.get_dynamic_global_properties();
-      account_create_operation op;
 
-      op.signatory = INIT_ACCOUNT;
-      op.registrar = INIT_ACCOUNT;
-      op.new_account_name = "alice";
-      op.referrer = INIT_ACCOUNT;
-      op.proxy = INIT_ACCOUNT;
-      op.governance_account = INIT_ACCOUNT;
-      op.recovery_account = INIT_ACCOUNT;
-      op.reset_account = INIT_ACCOUNT;
-      op.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
-      op.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
-      op.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
-      op.json_private = "{\"cookie_price\":\"3.50000000 MUSD\"}";
-      op.owner = authority( 1, priv_key.get_public_key(), 1 );
-      op.active = authority( 2, priv_key.get_public_key(), 2 );
-      op.posting = authority( 1, priv_key.get_public_key(), 1 );
-      op.secure_public_key = string( public_key_type( priv_key.get_public_key() ) );
-      op.connection_public_key = string( public_key_type( priv_key.get_public_key() ) );
-      op.friend_public_key = string( public_key_type( priv_key.get_public_key() ) );
-      op.companion_public_key = string( public_key_type( priv_key.get_public_key() ) );
-      op.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      create.signatory = INIT_ACCOUNT;
+      create.registrar = INIT_ACCOUNT;
+      create.new_account_name = "alice";
+      create.referrer = INIT_ACCOUNT;
+      create.proxy = INIT_ACCOUNT;
+      create.governance_account = INIT_ACCOUNT;
+      create.recovery_account = INIT_ACCOUNT;
+      create.reset_account = INIT_ACCOUNT;
+      create.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
+      create.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
+      create.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      create.json_private = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      create.owner_auth = authority( 1, priv_key.get_public_key(), 1 );
+      create.active_auth = authority( 2, priv_key.get_public_key(), 2 );
+      create.posting_auth = authority( 1, priv_key.get_public_key(), 1 );
+      create.secure_public_key = string( public_key_type( priv_key.get_public_key() ) );
+      create.connection_public_key = string( public_key_type( priv_key.get_public_key() ) );
+      create.friend_public_key = string( public_key_type( priv_key.get_public_key() ) );
+      create.companion_public_key = string( public_key_type( priv_key.get_public_key() ) );
+      create.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( create );
       tx.sign( init_account_priv_key, db.get_chain_id() );
       tx.validate();
       db.push_transaction( tx, 0 );
@@ -112,9 +108,9 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( acct.recovery_account == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.reset_account == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.created == now() );
-      BOOST_REQUIRE( acct_auth.owner == authority( 1, priv_key.get_public_key(), 1 ) );
-      BOOST_REQUIRE( acct_auth.active == authority( 2, priv_key.get_public_key(), 2 ) );
-      BOOST_REQUIRE( acct_auth.posting == authority( 1, priv_key.get_public_key(), 1 ) );
+      BOOST_REQUIRE( acct_auth.owner_auth == authority( 1, priv_key.get_public_key(), 1 ) );
+      BOOST_REQUIRE( acct_auth.active_auth == authority( 2, priv_key.get_public_key(), 2 ) );
+      BOOST_REQUIRE( acct_auth.posting_auth == authority( 1, priv_key.get_public_key(), 1 ) );
       BOOST_REQUIRE( acct.secure_public_key == priv_key.get_public_key() );
       BOOST_REQUIRE( acct.connection_public_key == priv_key.get_public_key() );
       BOOST_REQUIRE( acct.friend_public_key == priv_key.get_public_key() );
@@ -122,11 +118,11 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( acct.id._id == acct_auth.id._id );
       BOOST_REQUIRE( acct.id._id == acct_follow.id._id );
       
-      BOOST_REQUIRE( db.get_staked_balance( "alice", SYMBOL_COIN ) == op.fee );
+      BOOST_REQUIRE( db.get_staked_balance( "alice", SYMBOL_COIN ) == create.fee );
 
       const asset& init_liquid = db.get_liquid_balance( INIT_ACCOUNT, SYMBOL_COIN );
       
-      BOOST_REQUIRE( ( init_starting_balance - op.fee ) == init_liquid );
+      BOOST_REQUIRE( ( init_starting_balance - create.fee ) == init_liquid );
 
       validate_database();
 
@@ -137,8 +133,8 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       tx.signatures.clear();
       tx.operations.clear();
 
-      op.new_account_name = "bob";
-      tx.operations.push_back( op );
+      create.new_account_name = "bob";
+      tx.operations.push_back( create );
       tx.sign( init_account_priv_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -154,9 +150,9 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( acct.recovery_account == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.reset_account == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.created == now() );
-      BOOST_REQUIRE( acct_auth.owner == authority( 1, priv_key.get_public_key(), 1 ) );
-      BOOST_REQUIRE( acct_auth.active == authority( 2, priv_key.get_public_key(), 2 ) );
-      BOOST_REQUIRE( acct_auth.posting == authority( 1, priv_key.get_public_key(), 1 ) );
+      BOOST_REQUIRE( acct_auth.owner_auth == authority( 1, priv_key.get_public_key(), 1 ) );
+      BOOST_REQUIRE( acct_auth.active_auth == authority( 2, priv_key.get_public_key(), 2 ) );
+      BOOST_REQUIRE( acct_auth.posting_auth == authority( 1, priv_key.get_public_key(), 1 ) );
       BOOST_REQUIRE( acct.secure_public_key == public_key_type( priv_key.get_public_key() ) );
       BOOST_REQUIRE( acct.connection_public_key == public_key_type( priv_key.get_public_key() ));
       BOOST_REQUIRE( acct.friend_public_key == public_key_type( priv_key.get_public_key() ) );
@@ -164,7 +160,7 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( acct.id._id == acct_auth.id._id );
       BOOST_REQUIRE( acct.id._id == acct_follow.id._id );
 
-      BOOST_REQUIRE( db.get_staked_balance( "bob", SYMBOL_COIN ) == op.fee );
+      BOOST_REQUIRE( db.get_staked_balance( "bob", SYMBOL_COIN ) == create.fee );
 
       validate_database();
 
@@ -172,13 +168,22 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: business account creation" );
 
+      account_business_operation business_create;
+
+      business_create.signatory = "ionstudios";
+      business_create.account = "ionstudios";
+      business_create.business_type = business_structure_type::PUBLIC_BUSINESS;
+      business_create.officer_vote_threshold = BLOCKCHAIN_PRECISION * 1000;
+      business_create.business_public_key = priv_key.get_public_key();
+      business_create.governance_account = INIT_ACCOUNT;
+      business_create.init_ceo_account = "alice";
+      business_create.validate();
+
+
       tx.signatures.clear();
       tx.operations.clear();
-      op.officer_vote_threshold = BLOCKCHAIN_PRECISION * 1000;
-      op.business_type = PUBLIC_BUSINESS;
-      op.business_public_key = priv_key.get_public_key();
-      op.new_account_name = "ionstudios";
-      tx.operations.push_back( op );
+      
+      tx.operations.push_back( create );
       tx.sign( init_account_priv_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -197,9 +202,9 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( acct.recovery_account == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.reset_account == INIT_ACCOUNT );
       BOOST_REQUIRE( acct.created == now() );
-      BOOST_REQUIRE( acct_auth.owner == authority( 1, priv_key.get_public_key(), 1 ) );
-      BOOST_REQUIRE( acct_auth.active == authority( 2, priv_key.get_public_key(), 2 ) );
-      BOOST_REQUIRE( acct_auth.posting == authority( 1, priv_key.get_public_key(), 1 ) );
+      BOOST_REQUIRE( acct_auth.owner_auth == authority( 1, priv_key.get_public_key(), 1 ) );
+      BOOST_REQUIRE( acct_auth.active_auth == authority( 2, priv_key.get_public_key(), 2 ) );
+      BOOST_REQUIRE( acct_auth.posting_auth == authority( 1, priv_key.get_public_key(), 1 ) );
       BOOST_REQUIRE( acct.secure_public_key == public_key_type( priv_key.get_public_key() ) );
       BOOST_REQUIRE( acct.connection_public_key == public_key_type( priv_key.get_public_key() ) );
       BOOST_REQUIRE( acct.friend_public_key == public_key_type( priv_key.get_public_key() ) );
@@ -209,7 +214,7 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( acct.id._id == acct_follow.id._id );
       BOOST_REQUIRE( acct.id._id == acct_bus.id._id );
 
-      BOOST_REQUIRE( db.get_staked_balance( "ionstudios", SYMBOL_COIN ) == op.fee );
+      BOOST_REQUIRE( db.get_staked_balance( "ionstudios", SYMBOL_COIN ) == create.fee );
 
       validate_database();
 
@@ -226,10 +231,10 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       tx.signatures.clear();
       tx.operations.clear();
 
-      op.fee = asset( init_liquid + asset( 1 , SYMBOL_COIN ), SYMBOL_COIN );    // Fee slightly greater than liquid balance.
+      create.fee = asset( init_liquid + asset( 1 , SYMBOL_COIN ), SYMBOL_COIN );    // Fee slightly greater than liquid balance.
 
-      op.new_account_name = "bob";
-      tx.operations.push_back( op );
+      create.new_account_name = "bob";
+      tx.operations.push_back( create );
       tx.sign( init_account_priv_key, db.get_chain_id() );
 
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -253,8 +258,8 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       generate_block();
 
       tx.clear();
-      op.fee = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      tx.operations.push_back( op );
+      create.fee = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      tx.operations.push_back( create );
       tx.sign( init_account_priv_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
       validate_database();
@@ -276,19 +281,19 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
 
       ACTORS( (alice)(bob) );
 
-      account_update_operation op;
+      account_update_operation update;
 
-      op.account = "alice";
-      op.details = "Details.";
-      op.json = "{\"json\":\"valid\"}";
-      op.posting = authority();
-      op.posting.weight_threshold = 1;
-      op.posting.add_authorities( "abcdefghijklmnopq", 1 );
-      op.validate();
+      update.account = "alice";
+      update.details = "Details.";
+      update.json = "{\"json\":\"valid\"}";
+      update.posting_auth = authority();
+      update.posting_auth.weight_threshold = 1;
+      update.posting_auth.add_authorities( "abcdefghijklmnopq", 1 );
+      update.validate();
 
       signed_transaction tx;
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( update );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
 
       try
@@ -305,19 +310,19 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: account update authorities" );
 
-      op.posting = authority();
-      op.validate();
+      update.posting_auth = authority();
+      update.validate();
 
       private_key_type active_key = generate_private_key( "aliceactivecorrecthorsebatterystaple" );
 
       db.modify( db.get< account_authority_object, by_account >( "alice" ), [&]( account_authority_object& a )
       {
-         a.active = authority( 1, active_key.get_public_key(), 1 );
+         a.active_auth = authority( 1, active_key.get_public_key(), 1 );
       });
 
       tx.signatures.clear();
       tx.operations.clear();
-      tx.operations.push_back( op );
+      tx.operations.push_back( update );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
 
       db.push_transaction( tx, 0 );
@@ -375,8 +380,8 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
 
       tx.signatures.clear();
       tx.operations.clear();
-      op.owner = authority( 1, active_key.get_public_key(), 1 );    
-      tx.operations.push_back( op );
+      update.owner_auth = authority( 1, active_key.get_public_key(), 1 );    
+      tx.operations.push_back( update );
       tx.sign( active_key, db.get_chain_id() );    // Updates owner to active, signed with active instead of owner
       REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_missing_owner_auth );
 
@@ -422,15 +427,15 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
       tx.signatures.clear();
       tx.operations.clear();
 
-      op.owner = authority( 1, new_private_key.get_public_key(), 1 );
-      op.active = authority( 2, new_private_key.get_public_key(), 2 );
-      op.secure_public_key = string( public_key_type( new_private_key.get_public_key() ) );
-      op.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
-      op.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
-      op.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
-      op.json_private = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      update.owner_auth = authority( 1, new_private_key.get_public_key(), 1 );
+      update.active_auth = authority( 2, new_private_key.get_public_key(), 2 );
+      update.secure_public_key = string( public_key_type( new_private_key.get_public_key() ) );
+      update.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
+      update.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
+      update.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      update.json_private = "{\"cookie_price\":\"3.50000000 MUSD\"}";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( update );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -439,8 +444,8 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
       const account_authority_object& acct_auth = db.get< account_authority_object, by_account >( "alice" );
 
       BOOST_REQUIRE( acct.name == "alice" );
-      BOOST_REQUIRE( acct_auth.owner == authority( 1, new_private_key.get_public_key(), 1 ) );
-      BOOST_REQUIRE( acct_auth.active == authority( 2, new_private_key.get_public_key(), 2 ) );
+      BOOST_REQUIRE( acct_auth.owner_auth == authority( 1, new_private_key.get_public_key(), 1 ) );
+      BOOST_REQUIRE( acct_auth.active_auth == authority( 2, new_private_key.get_public_key(), 2 ) );
       BOOST_REQUIRE( acct.secure_public_key == public_key_type( new_private_key.get_public_key() ) );
       validate_database();
 
@@ -451,8 +456,8 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.account = "bob";
-      tx.operations.push_back( op );
+      update.account = "bob";
+      tx.operations.push_back( update );
       tx.sign( new_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception )
       validate_database();
@@ -464,11 +469,11 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.account = "alice";
-      op.posting = authority();
-      op.posting.weight_threshold = 1;
-      op.posting.add_authorities( "dan", 1 );
-      tx.operations.push_back( op );
+      update.account = "alice";
+      update.posting_auth = authority();
+      update.posting_auth.weight_threshold = 1;
+      update.posting_auth.add_authorities( "dan", 1 );
+      tx.operations.push_back( update );
       tx.sign( new_private_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
       validate_database();
@@ -491,18 +496,18 @@ BOOST_AUTO_TEST_CASE( account_membership_operation_test )
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
       fund( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      account_membership_operation op;
-      op.signatory = "alice";
-      op.account = "alice";
-      op.membership_type = membership_tier_type::STANDARD_MEMBERSHIP;
-      op.months = 1;
-      op.interface = INIT_ACCOUNT;
+      account_membership_operation membership;
+      membership.signatory = "alice";
+      membership.account = "alice";
+      membership.membership_type = membership_tier_type::STANDARD_MEMBERSHIP;
+      membership.months = 1;
+      membership.interface = INIT_ACCOUNT;
 
-      op.validate();
+      membership.validate();
 
       signed_transaction tx;
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( membership );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -523,10 +528,10 @@ BOOST_AUTO_TEST_CASE( account_membership_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "bob";
-      op.account = "bob";
+      membership.signatory = "bob";
+      membership.account = "bob";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( membership );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -555,18 +560,17 @@ BOOST_AUTO_TEST_CASE( account_vote_executive_operation_test )
       fund( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
 
-      account_vote_executive_operation op;
-      op.signatory = "alice";
-      op.account = "alice";
-      op.business_account = INIT_ACCOUNT;
-      op.executive_account = INIT_CEO;
-      op.role = executive_role_type::CHIEF_EXECUTIVE_OFFICER;
-
-      op.validate();
+      account_vote_executive_operation vote;
+      vote.signatory = "alice";
+      vote.account = "alice";
+      vote.business_account = INIT_ACCOUNT;
+      vote.executive_account = INIT_CEO;
+      vote.role = executive_role_type::CHIEF_EXECUTIVE_OFFICER;
+      vote.validate();
 
       signed_transaction tx;
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -587,10 +591,10 @@ BOOST_AUTO_TEST_CASE( account_vote_executive_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "bob";
-      op.account = "bob";
+      vote.signatory = "bob";
+      vote.account = "bob";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -605,12 +609,12 @@ BOOST_AUTO_TEST_CASE( account_vote_executive_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "alice";
-      op.account = "alice";
-      op.approved = false;
-      op.validate();
+      vote.signatory = "alice";
+      vote.account = "alice";
+      vote.approved = false;
+      vote.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -640,17 +644,18 @@ BOOST_AUTO_TEST_CASE( account_vote_officer_operation_test )
       fund( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
 
-      account_vote_officer_operation op;
-      op.signatory = "alice";
-      op.account = "alice";
-      op.business_account = INIT_ACCOUNT;
-      op.officer_account = INIT_CEO;
+      account_vote_officer_operation vote;
 
-      op.validate();
+      vote.signatory = "alice";
+      vote.account = "alice";
+      vote.business_account = INIT_ACCOUNT;
+      vote.officer_account = INIT_CEO;
+
+      vote.validate();
 
       signed_transaction tx;
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -670,10 +675,10 @@ BOOST_AUTO_TEST_CASE( account_vote_officer_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "bob";
-      op.account = "bob";
+      vote.signatory = "bob";
+      vote.account = "bob";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -688,12 +693,12 @@ BOOST_AUTO_TEST_CASE( account_vote_officer_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
       
-      op.signatory = "alice";
-      op.account = "alice";
-      op.approved = false;
-      op.validate();
+      vote.signatory = "alice";
+      vote.account = "alice";
+      vote.approved = false;
+      vote.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -719,17 +724,17 @@ BOOST_AUTO_TEST_CASE( account_member_request_operation_test )
       
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
-      account_member_request_operation op;
-      op.signatory = "alice";
-      op.account = "alice";
-      op.business_account = INIT_ACCOUNT;
-      op.message = "Hello";
+      account_member_request_operation request;
+      request.signatory = "alice";
+      request.account = "alice";
+      request.business_account = INIT_ACCOUNT;
+      request.message = "Hello";
 
-      op.validate();
+      request.validate();
 
       signed_transaction tx;
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( request );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -749,7 +754,7 @@ BOOST_AUTO_TEST_CASE( account_member_request_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
       
-      tx.operations.push_back( op );
+      tx.operations.push_back( request );
       tx.sign( alice_private_active_key, db.get_chain_id() );
 
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -760,13 +765,13 @@ BOOST_AUTO_TEST_CASE( account_member_request_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: cancel request" );
 
-      op.requested = false;
-      op.validate();
+      request.requested = false;
+      request.validate();
 
       tx.operations.clear();
       tx.signatures.clear();
       
-      tx.operations.push_back( op );
+      tx.operations.push_back( request );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -792,13 +797,14 @@ BOOST_AUTO_TEST_CASE( account_member_invite_operation_test )
       
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
-      account_member_invite_operation op;
-      op.signatory = "alice";
-      op.account = "alice";
-      op.business_account = INIT_ACCOUNT;
-      op.member = "bob";
-      op.message = "Hello";
-      op.encrypted_business_key = string( alice_public_owner_key );
+      account_member_invite_operation invite;
+
+      invite.signatory = "alice";
+      invite.account = "alice";
+      invite.business_account = INIT_ACCOUNT;
+      invite.member = "bob";
+      invite.message = "Hello";
+      invite.encrypted_business_key = string( alice_public_owner_key );
 
       const account_business_object& bus_acc = db.get_account_business( INIT_ACCOUNT );
 
@@ -807,11 +813,11 @@ BOOST_AUTO_TEST_CASE( account_member_invite_operation_test )
          b.officers[ "alice" ] = BLOCKCHAIN_PRECISION * 1000000;    // Add alice to officers
       });
 
-      op.validate();
+      invite.validate();
 
       signed_transaction tx;
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( invite );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -832,7 +838,7 @@ BOOST_AUTO_TEST_CASE( account_member_invite_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
       
-      tx.operations.push_back( op );
+      tx.operations.push_back( invite );
       tx.sign( alice_private_active_key, db.get_chain_id() );
 
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -843,13 +849,13 @@ BOOST_AUTO_TEST_CASE( account_member_invite_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: cancel invite" );
 
-      op.invited = false;
-      op.validate();
+      invite.invited = false;
+      invite.validate();
 
       tx.operations.clear();
       tx.signatures.clear();
       
-      tx.operations.push_back( op );
+      tx.operations.push_back( invite );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1023,15 +1029,15 @@ BOOST_AUTO_TEST_CASE( account_accept_invite_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      account_accept_invite_operation op;
+      account_accept_invite_operation invite;
 
-      op.signatory = "dan";   // dan has not been invited
-      op.account = "dan";
-      op.business_account = INIT_ACCOUNT;
+      invite.signatory = "dan";   // dan has not been invited
+      invite.account = "dan";
+      invite.business_account = INIT_ACCOUNT;
 
-      op.validate();
+      invite.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( invite );
       tx.sign( dan_private_active_key, db.get_chain_id() );
 
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -1065,17 +1071,17 @@ BOOST_AUTO_TEST_CASE( account_remove_member_operation_test )
 
       BOOST_REQUIRE( bus_acc.is_member( "bob" ) );
 
-      account_remove_member_operation op;
-      op.signatory = "alice";
-      op.account = "alice";
-      op.member = "bob";
-      op.business_account = INIT_ACCOUNT;
+      account_remove_member_operation remove;
 
-      op.validate();
+      remove.signatory = "alice";
+      remove.account = "alice";
+      remove.member = "bob";
+      remove.business_account = INIT_ACCOUNT;
+      remove.validate();
 
       signed_transaction tx;
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( remove );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1099,15 +1105,15 @@ BOOST_AUTO_TEST_CASE( account_remove_member_operation_test )
 
       BOOST_REQUIRE( bus_acc.is_member( "bob" ) );
 
-      account_remove_member_operation op;
-      op.signatory = "bob";    // Bob is not an officer and cannot remove alice
-      op.account = "bob";
-      op.member = "alice";
-      op.business_account = INIT_ACCOUNT;
+      account_remove_member_operation remove;
 
-      op.validate();
+      remove.signatory = "bob";    // Bob is not an officer and cannot remove alice
+      remove.account = "bob";
+      remove.member = "alice";
+      remove.business_account = INIT_ACCOUNT;
+      remove.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( remove );
       tx.sign( bob_private_active_key, db.get_chain_id() );
 
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -1131,18 +1137,18 @@ BOOST_AUTO_TEST_CASE( account_update_list_operation_test )
       
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
-      account_update_list_operation op;
-      op.signatory = "alice";
-      op.account = "alice";
-      op.listed_account = "bob";
-      op.blacklisted = true;
-      op.whitelisted = false;
+      account_update_list_operation list;
+      list.signatory = "alice";
+      list.account = "alice";
+      list.listed_account = "bob";
+      list.blacklisted = true;
+      list.whitelisted = false;
       
-      op.validate();
+      list.validate();
 
       signed_transaction tx;
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( list );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1159,10 +1165,10 @@ BOOST_AUTO_TEST_CASE( account_update_list_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
       
-      op.blacklisted = false;
-      op.validate();
+      list.blacklisted = false;
+      list.validate();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( list );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1212,16 +1218,16 @@ BOOST_AUTO_TEST_CASE( account_producer_vote_operation_test )
          candice_producer_key.get_public_key()
       );
 
-      account_producer_vote_operation op;
-      op.signatory = "bob";
-      op.account = "bob";
-      op.producer = "alice";
-      op.vote_rank = 1;
-      op.approved = true;
+      account_producer_vote_operation vote;
+      vote.signatory = "bob";
+      vote.account = "bob";
+      vote.producer = "alice";
+      vote.vote_rank = 1;
+      vote.approved = true;
 
       signed_transaction tx;
       tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1240,9 +1246,9 @@ BOOST_AUTO_TEST_CASE( account_producer_vote_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: additional producer vote" );
 
-      op.producer = "candice";   // Vote for candice at rank one will move alice to rank two
+      vote.producer = "candice";   // Vote for candice at rank one will move alice to rank two
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1267,11 +1273,11 @@ BOOST_AUTO_TEST_CASE( account_producer_vote_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: cancel producer vote" );
 
-      op.approved = false;
+      vote.approved = false;
 
       tx.operations.clear();
       tx.signatures.clear();
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
 
       db.push_transaction( tx, 0 );
@@ -1289,11 +1295,11 @@ BOOST_AUTO_TEST_CASE( account_producer_vote_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: cancel additional producer vote" );
 
-      op.producer = "alice";
+      vote.producer = "alice";
 
       tx.operations.clear();
       tx.signatures.clear();
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
 
       db.push_transaction( tx, 0 );
@@ -1320,10 +1326,10 @@ BOOST_AUTO_TEST_CASE( account_producer_vote_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.producer = "eve";
-      op.approved = true;
+      vote.producer = "eve";
+      vote.approved = true;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( vote );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
 
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -1335,8 +1341,8 @@ BOOST_AUTO_TEST_CASE( account_producer_vote_operation_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-      op.producer = "elon";
-      tx.operations.push_back( op );
+      vote.producer = "elon";
+      tx.operations.push_back( vote );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
 
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -1372,14 +1378,14 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
       fund( "dan", asset( 7000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "dan", asset( 7000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      account_update_proxy_operation op;
+      account_update_proxy_operation proxy;
 
-      op.signatory = "bob";
-      op.account = "bob";
-      op.proxy = "alice";
+      proxy.signatory = "bob";
+      proxy.account = "bob";
+      proxy.proxy = "alice";
 
       signed_transaction tx;
-      tx.operations.push_back( op );
+      tx.operations.push_back( proxy );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
 
@@ -1400,8 +1406,8 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.proxy = "sam";
-      tx.operations.push_back( op );
+      proxy.proxy = "sam";
+      tx.operations.push_back( proxy );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
 
       db.push_transaction( tx, 0 );     // bob->sam
@@ -1429,11 +1435,11 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "sam";
-      op.account = "sam";
-      op.proxy = "dan";
+      proxy.signatory = "sam";
+      proxy.account = "sam";
+      proxy.proxy = "dan";
       
-      tx.operations.push_back( op );
+      tx.operations.push_back( proxy );
       tx.sign( sam_private_owner_key, db.get_chain_id() );
 
       db.push_transaction( tx, 0 );     // bob->sam->dan
@@ -1458,11 +1464,11 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "alice";
-      op.account = "alice";
-      op.proxy = "sam";
+      proxy.signatory = "alice";
+      proxy.account = "alice";
+      proxy.proxy = "sam";
       
-      tx.operations.push_back( op );
+      tx.operations.push_back( proxy );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
 
       db.push_transaction( tx, 0 );
@@ -1484,11 +1490,11 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "bob";
-      op.account = "bob";
-      op.proxy = PROXY_TO_SELF_ACCOUNT;
+      proxy.signatory = "bob";
+      proxy.account = "bob";
+      proxy.proxy = PROXY_TO_SELF_ACCOUNT;
       
-      tx.operations.push_back( op );
+      tx.operations.push_back( proxy );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
 
       db.push_transaction( tx, 0 );    // alice->sam->dan
@@ -1529,9 +1535,9 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       acc_create.recovery_account = "alice";
       acc_create.reset_account = "alice";
       acc_create.new_account_name = "bob";
-      acc_create.owner = authority( 1, generate_private_key( "bob_owner" ).get_public_key(), 1 );
-      acc_create.active = authority( 1, generate_private_key( "bob_active" ).get_public_key(), 1 );
-      acc_create.posting = authority( 1, generate_private_key( "bob_posting" ).get_public_key(), 1 );
+      acc_create.owner_auth = authority( 1, generate_private_key( "bob_owner" ).get_public_key(), 1 );
+      acc_create.active_auth = authority( 1, generate_private_key( "bob_active" ).get_public_key(), 1 );
+      acc_create.posting_auth = authority( 1, generate_private_key( "bob_posting" ).get_public_key(), 1 );
       acc_create.secure_public_key = string( public_key_type( generate_private_key( "bob_secure" ).get_public_key() ) );
       acc_create.connection_public_key = string( public_key_type( generate_private_key( "bob_connection" ).get_public_key() ) );
       acc_create.friend_public_key = string( public_key_type( generate_private_key( "bob_friend" ).get_public_key() ) );
@@ -1548,8 +1554,8 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const auto& bob_auth = db.get< account_authority_object, by_account >( "bob" );
-      BOOST_REQUIRE( bob_auth.owner == acc_create.owner );
+      shared_authority bob_auth = db.get< account_authority_object, by_account >( "bob" );
+      BOOST_REQUIRE( bob_auth.owner_auth == acc_create.owner_auth );
 
       // Changing bob's owner authority
 
@@ -1557,7 +1563,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
 
       acc_update.signatory = "bob";
       acc_update.account = "bob";
-      acc_update.owner = authority( 1, generate_private_key( "bad_key" ).get_public_key(), 1 );
+      acc_update.owner_auth = authority( 1, generate_private_key( "bad_key" ).get_public_key(), 1 );
       acc_update.secure_public_key = string( public_key_type( generate_private_key( "bob_secure" ).get_public_key() ) );
       acc_update.connection_public_key = string( public_key_type( generate_private_key( "bob_connection" ).get_public_key() ) );
       acc_update.friend_public_key = string( public_key_type( generate_private_key( "bob_friend" ).get_public_key() ) );
@@ -1574,7 +1580,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.sign( generate_private_key( "bob_owner" ), db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( bob_auth.owner == acc_update.owner );
+      BOOST_REQUIRE( bob_auth.owner_auth == acc_update.owner_auth );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -1589,7 +1595,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( bob_auth.owner == acc_update.owner );
+      BOOST_REQUIRE( bob_auth.owner_auth == acc_update.owner_auth );
 
       generate_blocks( now() + OWNER_UPDATE_LIMIT );
 
@@ -1600,13 +1606,13 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       recover.signatory = "bob";
       recover.account_to_recover = "bob";
       recover.new_owner_authority = request.new_owner_authority;
-      recover.recent_owner_authority = acc_create.owner;
+      recover.recent_owner_authority = acc_create.owner_auth;
 
       tx.operations.push_back( recover );
       tx.sign( generate_private_key( "bob_owner" ), db.get_chain_id() );
       tx.sign( generate_private_key( "new_key" ), db.get_chain_id() );
       db.push_transaction( tx, 0 );
-      const auto& owner1 = db.get< account_authority_object, by_account >("bob").owner;
+      shared_authority owner1 = db.get< account_authority_object, by_account >("bob").owner_auth;
 
       BOOST_REQUIRE( owner1 == recover.new_owner_authority );
 
@@ -1634,7 +1640,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.sign( generate_private_key( "bob_owner" ), db.get_chain_id() );
       tx.sign( generate_private_key( "idontknow" ), db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-      const auto& owner2 = db.get< account_authority_object, by_account >("bob").owner;
+      shared_authority owner2 = db.get< account_authority_object, by_account >("bob").owner_auth;
       BOOST_REQUIRE( owner2 == authority( 1, generate_private_key( "new_key" ).get_public_key(), 1 ) );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when bob does not have new requested authority" );
@@ -1651,7 +1657,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.sign( generate_private_key( "foo bar" ), db.get_chain_id() );
       tx.sign( generate_private_key( "idontknow" ), db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-      const auto& owner3 = db.get< account_authority_object, by_account >("bob").owner;
+      shared_authority owner3 = db.get< account_authority_object, by_account >("bob").owner_auth;
       BOOST_REQUIRE( owner3 == authority( 1, generate_private_key( "new_key" ).get_public_key(), 1 ) );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when bob does not have old authority" );
@@ -1669,7 +1675,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.sign( generate_private_key( "foo bar" ), db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const auto& owner4 = db.get< account_authority_object, by_account >("bob").owner;
+      shared_authority owner4 = db.get< account_authority_object, by_account >("bob").owner_auth;
       BOOST_REQUIRE( owner4 == recover.new_owner_authority );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: using the same old owner auth again for recovery" );
@@ -1718,14 +1724,14 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.sign( generate_private_key( "bob_owner" ), db.get_chain_id() );
 
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );   // Recover won't work, because request expired
-      const auto& owner5 = db.get< account_authority_object, by_account >("bob").owner;
+      shared_authority owner5 = db.get< account_authority_object, by_account >("bob").owner_auth;
       BOOST_REQUIRE( owner5 == authority( 1, generate_private_key( "foo bar" ).get_public_key(), 1 ) );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: creating a recovery request that will expire" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Expiring owner authority history" );
 
-      acc_update.owner = authority( 1, generate_private_key( "new_key" ).get_public_key(), 1 );
+      acc_update.owner_auth = authority( 1, generate_private_key( "new_key" ).get_public_key(), 1 );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -1759,7 +1765,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.sign( generate_private_key( "bob_owner" ), db.get_chain_id() );
       tx.sign( generate_private_key( "last key" ), db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );   // bob_owner key has expired
-      const auto& owner6 = db.get< account_authority_object, by_account >("bob").owner;
+      shared_authority owner6 = db.get< account_authority_object, by_account >("bob").owner_auth;
       BOOST_REQUIRE( owner6 == authority( 1, generate_private_key( "new_key" ).get_public_key(), 1 ) );
 
       recover.recent_owner_authority = authority( 1, generate_private_key( "foo bar" ).get_public_key(), 1 );
@@ -1772,7 +1778,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.sign( generate_private_key( "foo bar" ), db.get_chain_id() );
       tx.sign( generate_private_key( "last key" ), db.get_chain_id() );
       db.push_transaction( tx, 0 );     // foo bar key has not yet expired
-      const auto& owner7 = db.get< account_authority_object, by_account >("bob").owner;
+      shared_authority owner7 = db.get< account_authority_object, by_account >("bob").owner_auth;
       BOOST_REQUIRE( owner7 == authority( 1, generate_private_key( "last key" ).get_public_key(), 1 ) );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Expiring owner authority history" );
@@ -1781,12 +1787,12 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
 
       auto change_recovery_account = [&]( const std::string& account_to_recover, const std::string& new_recovery_account )
       {
-         change_recovery_account_operation op;
-         op.account_to_recover = account_to_recover;
-         op.new_recovery_account = new_recovery_account;
+         change_recovery_account_operation recovery;
+         recovery.account_to_recover = account_to_recover;
+         recovery.new_recovery_account = new_recovery_account;
 
          signed_transaction tx;
-         tx.operations.push_back( op );
+         tx.operations.push_back( recovery );
          tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
          tx.sign( alice_private_owner_key, db.get_chain_id() );
          db.push_transaction( tx, 0 );
@@ -1794,13 +1800,13 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
 
       auto recover_account = [&]( const std::string& account_to_recover, const fc::ecc::private_key& new_owner_key, const fc::ecc::private_key& recent_owner_key )
       {
-         recover_account_operation op;
-         op.account_to_recover = account_to_recover;
-         op.new_owner_authority = authority( 1, public_key_type( new_owner_key.get_public_key() ), 1 );
-         op.recent_owner_authority = authority( 1, public_key_type( recent_owner_key.get_public_key() ), 1 );
+         recover_account_operation recovery;
+         recovery.account_to_recover = account_to_recover;
+         recovery.new_owner_authority = authority( 1, public_key_type( new_owner_key.get_public_key() ), 1 );
+         recovery.recent_owner_authority = authority( 1, public_key_type( recent_owner_key.get_public_key() ), 1 );
 
          signed_transaction tx;
-         tx.operations.push_back( op );
+         tx.operations.push_back( recovery );
          tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
          tx.sign( recent_owner_key, db.get_chain_id() );
          // only Alice -> throw
@@ -1816,13 +1822,13 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
 
       auto request_account_recovery = [&]( const std::string& recovery_account, const fc::ecc::private_key& recovery_account_key, const std::string& account_to_recover, const public_key_type& new_owner_key )
       {
-         request_account_recovery_operation op;
-         op.recovery_account    = recovery_account;
-         op.account_to_recover  = account_to_recover;
-         op.new_owner_authority = authority( 1, new_owner_key, 1 );
+         request_account_recovery_operation recovery;
+         recovery.recovery_account    = recovery_account;
+         recovery.account_to_recover  = account_to_recover;
+         recovery.new_owner_authority = authority( 1, new_owner_key, 1 );
 
          signed_transaction tx;
-         tx.operations.push_back( op );
+         tx.operations.push_back( recovery );
          tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
          tx.sign( recovery_account_key, db.get_chain_id() );
          db.push_transaction( tx, 0 );
@@ -1830,12 +1836,12 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
 
       auto change_owner = [&]( const std::string& account, const fc::ecc::private_key& old_private_key, const public_key_type& new_public_key )
       {
-         account_update_operation op;
-         op.account = account;
-         op.owner = authority( 1, new_public_key, 1 );
+         account_update_operation recovery;
+         recovery.account = account;
+         recovery.owner_auth = authority( 1, new_public_key, 1 );
 
          signed_transaction tx;
-         tx.operations.push_back( op );
+         tx.operations.push_back( recovery );
          tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
          tx.sign( old_private_key, db.get_chain_id() );
          db.push_transaction( tx, 0 );
@@ -1892,9 +1898,9 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
       acc_create.recovery_account = "alice";
       acc_create.reset_account = "alice";
       acc_create.new_account_name = "bob";
-      acc_create.owner = authority( 1, generate_private_key( "bob_owner" ).get_public_key(), 1 );
-      acc_create.active = authority( 1, generate_private_key( "bob_active" ).get_public_key(), 1 );
-      acc_create.posting = authority( 1, generate_private_key( "bob_posting" ).get_public_key(), 1 );
+      acc_create.owner_auth = authority( 1, generate_private_key( "bob_owner" ).get_public_key(), 1 );
+      acc_create.active_auth = authority( 1, generate_private_key( "bob_active" ).get_public_key(), 1 );
+      acc_create.posting_auth = authority( 1, generate_private_key( "bob_posting" ).get_public_key(), 1 );
       acc_create.secure_public_key = string( public_key_type( generate_private_key( "bob_secure" ).get_public_key() ) );
       acc_create.connection_public_key = string( public_key_type( generate_private_key( "bob_connection" ).get_public_key() ) );
       acc_create.friend_public_key = string( public_key_type( generate_private_key( "bob_friend" ).get_public_key() ) );
@@ -1911,8 +1917,8 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const auto& bob_auth = db.get< account_authority_object, by_account >( "bob" );
-      BOOST_REQUIRE( bob_auth.owner == acc_create.owner );
+      shared_authority bob_auth = db.get< account_authority_object, by_account >( "bob" );
+      BOOST_REQUIRE( bob_auth.owner_auth == acc_create.owner_auth );
 
       generate_blocks( now() + ( fc::days( bob.reset_account_delay_days ) - BLOCK_INTERVAL ) );
 
@@ -1931,7 +1937,7 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
 
       db.push_transaction( tx, 0 );    // reset now valid
 
-      BOOST_REQUIRE( bob_auth.owner == reset.new_owner_authority );
+      BOOST_REQUIRE( bob_auth.owner_auth == reset.new_owner_authority );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: normal account reset" );
 
@@ -1974,7 +1980,7 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
 
       db.push_transaction( tx, 0 );    // reset now valid
 
-      BOOST_REQUIRE( bob_auth.owner == reset.new_owner_authority );
+      BOOST_REQUIRE( bob_auth.owner_auth == reset.new_owner_authority );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: additional account reset" );
 
@@ -2025,14 +2031,14 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       generate_block();
 
-      decline_voting_rights_operation op;
-      op.signatory = "alice";
-      op.account = "alice";
+      decline_voting_rights_operation decline;
+      decline.signatory = "alice";
+      decline.account = "alice";
 
       signed_transaction tx;
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( decline );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2051,7 +2057,7 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( decline );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
 
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -2060,12 +2066,12 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: success cancelling a request" );
 
-      op.declined = false;
+      decline.declined = false;
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( decline );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2081,7 +2087,7 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( decline );
       
       tx.sign( alice_private_owner_key, db.get_chain_id() );
 
@@ -2091,12 +2097,12 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: check account can vote during waiting period" );
 
-      op.declined = true;
+      decline.declined = true;
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( decline );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2445,19 +2451,19 @@ BOOST_AUTO_TEST_CASE( account_follow_operation_test )
 
       ACTORS( (alice)(bob) );
 
-      account_follow_operation op;
+      account_follow_operation follow;
 
-      op.signatory = "alice";
-      op.follower = "alice";
-      op.following = "bob";
-      op.interface = INIT_ACCOUNT;
-      op.added = true;
-      op.followed = true;
+      follow.signatory = "alice";
+      follow.follower = "alice";
+      follow.following = "bob";
+      follow.interface = INIT_ACCOUNT;
+      follow.added = true;
+      follow.followed = true;
 
       signed_transaction tx;
 
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( follow );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2474,11 +2480,11 @@ BOOST_AUTO_TEST_CASE( account_follow_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "bob";
-      op.follower = "bob";
-      op.following = "alice";
+      follow.signatory = "bob";
+      follow.follower = "bob";
+      follow.following = "alice";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( follow );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2494,11 +2500,11 @@ BOOST_AUTO_TEST_CASE( account_follow_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "bob";
-      op.follower = "bob";
-      op.following = "alice";
+      follow.signatory = "bob";
+      follow.follower = "bob";
+      follow.following = "alice";
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( follow );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
@@ -2509,26 +2515,26 @@ BOOST_AUTO_TEST_CASE( account_follow_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "bob";
-      op.follower = "bob";
-      op.following = "alice";
-      op.added = false;
-      op.followed = true;
+      follow.signatory = "bob";
+      follow.follower = "bob";
+      follow.following = "alice";
+      follow.added = false;
+      follow.followed = true;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( follow );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.signatory = "alice";
-      op.follower = "alice";
-      op.following = "bob";
-      op.added = false;
-      op.followed = true;
+      follow.signatory = "alice";
+      follow.follower = "alice";
+      follow.following = "bob";
+      follow.added = false;
+      follow.followed = true;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( follow );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2543,14 +2549,14 @@ BOOST_AUTO_TEST_CASE( account_follow_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: filtering" );
 
-      op.signatory = "alice";
-      op.follower = "alice";
-      op.following = "bob";
+      follow.signatory = "alice";
+      follow.follower = "alice";
+      follow.following = "bob";
       
-      op.added = true;
-      op.followed = false;
+      follow.added = true;
+      follow.followed = false;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( follow );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2576,19 +2582,19 @@ BOOST_AUTO_TEST_CASE( tag_follow_operation_test )
 
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
-      tag_follow_operation op;
+      tag_follow_operation follow;
 
-      op.signatory = "alice";
-      op.follower = "alice";
-      op.tag = "test";
-      op.interface = INIT_ACCOUNT;
-      op.added = true;
-      op.followed = true;
+      follow.signatory = "alice";
+      follow.follower = "alice";
+      follow.tag = "test";
+      follow.interface = INIT_ACCOUNT;
+      follow.added = true;
+      follow.followed = true;
 
       signed_transaction tx;
 
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( op );
+      tx.operations.push_back( follow );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2605,7 +2611,7 @@ BOOST_AUTO_TEST_CASE( tag_follow_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( follow );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
@@ -2616,9 +2622,9 @@ BOOST_AUTO_TEST_CASE( tag_follow_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      op.added = false;
+      follow.added = false;
 
-      tx.operations.push_back( op );
+      tx.operations.push_back( follow );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 

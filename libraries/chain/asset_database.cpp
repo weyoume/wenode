@@ -1304,7 +1304,7 @@ share_type database::get_equity_voting_power( const account_name_type& a, const 
 
 string database::to_pretty_string( const asset& a )const
 {
-   return a.amount_to_pretty_string(a);
+   return a.to_string();
 }
 
 

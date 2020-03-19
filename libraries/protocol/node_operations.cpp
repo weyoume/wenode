@@ -346,7 +346,7 @@ namespace node { namespace protocol {
       }
       if( listed_asset.valid() )
       {
-         is_valid_symbol( *listed_asset );
+         FC_ASSERT( is_valid_symbol( *listed_asset ) );
       }
    }
 
@@ -830,15 +830,20 @@ namespace node { namespace protocol {
             "Beneficiary percent is too large." );
       }
 
-      FC_ASSERT( milestones.size() >= 2, 
+      FC_ASSERT( milestone_details.size() >= 2, 
+         "Proposal must have at least 2 milestones." );
+      FC_ASSERT( milestone_shares.size() >= 2, 
          "Proposal must have at least 2 milestones." );
 
-      for( auto mile : milestones )
+      for( auto mile : milestone_shares )
       {
-         FC_ASSERT( mile.first.size() < MAX_STRING_LENGTH,
-            "Milestone is too long" );
-         FC_ASSERT( mile.second <= PERCENT_100,
-            "Milestone percent is too large." );
+         FC_ASSERT( mile <= PERCENT_100,
+            "Milestone share percent is too large." );
+      }
+      for( auto mile : milestone_details )
+      {
+         FC_ASSERT( mile.size() < MAX_STRING_LENGTH,
+            "Milestone details are too long." );
       }
 
       FC_ASSERT( duration <= 3650,
@@ -1557,6 +1562,7 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( bidder );
       validate_account_name( account );
+      validate_account_name( author );
       validate_account_name( provider );
 
       FC_ASSERT( bid_id.size(),
@@ -1608,6 +1614,8 @@ namespace node { namespace protocol {
          "Bid price must be greater than zero." );
       FC_ASSERT( is_valid_symbol( bid_price.symbol ),
          "Symbol ${symbol} is not a valid symbol", ( "symbol", bid_price.symbol ) );
+      FC_ASSERT( bid_price.symbol == SYMBOL_COIN,
+         "Bid Price must be denominated in core asset." );
       FC_ASSERT( expiration > GENESIS_TIME,
          "Begin time must be after genesis time." );
 

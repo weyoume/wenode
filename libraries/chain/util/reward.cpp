@@ -42,7 +42,7 @@ void fill_comment_reward_context_local_state( comment_reward_context& ctx, const
    ctx.max_reward = comment.max_accepted_payout;
 }
 
-share_type get_comment_reward( const comment_reward_context& ctx )
+asset get_comment_reward( const comment_reward_context& ctx )
 { try {
    FC_ASSERT( ctx.reward > 0 );
    FC_ASSERT( ctx.recent_content_claims > 0 );
@@ -67,11 +67,11 @@ share_type get_comment_reward( const comment_reward_context& ctx )
       payout = 0;
    }
 
-   asset max_reward = USD_to_asset( ctx.current_COIN_USD_price, ctx.max_reward );
+   asset max_reward = util::USD_to_asset( ctx.current_COIN_USD_price, ctx.max_reward );
 
    payout = std::min( payout, share_type( max_reward.amount.value ) );
 
-   return payout;
+   return asset( payout, ctx.total_reward_fund.symbol );
 } FC_CAPTURE_AND_RETHROW( (ctx) ) }
 
 

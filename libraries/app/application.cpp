@@ -272,14 +272,14 @@ namespace detail {
 
             _chain_db->set_flush_interval( _options->at("flush").as<uint32_t>() );
 
-            flat_map<uint32_t,block_id_type> loaded_checkpoints;
+            flat_map<uint64_t,block_id_type> loaded_checkpoints;
             if( _options->count("checkpoint") )
             {
                auto cps = _options->at("checkpoint").as<vector<string>>();
                loaded_checkpoints.reserve( cps.size() );
                for( auto cp : cps )
                {
-                  auto item = fc::json::from_string(cp).as<std::pair<uint32_t,block_id_type> >();
+                  auto item = fc::json::from_string(cp).as<std::pair<uint64_t,block_id_type> >();
                   loaded_checkpoints[item.first] = item.second;
                }
             }
@@ -872,7 +872,7 @@ namespace detail {
          // notify GUI or something cool
       }
 
-      void get_max_block_age( int32_t& result )
+      void get_max_block_age( uint64_t& result )
       {
          result = _max_block_age;
          return;
@@ -908,7 +908,7 @@ namespace detail {
       std::map<string, std::shared_ptr<abstract_plugin> > _plugins_enabled;
       flat_map< std::string, std::function< fc::api_ptr( const api_context& ) > >   _api_factories_by_name;
       std::vector< std::string >                          _public_apis;
-      int32_t                                             _max_block_age = -1;
+      uint64_t                                            _max_block_age = -1;
       uint64_t                                            _shared_file_size;
 
       bool                                                _running;
@@ -1055,7 +1055,7 @@ fc::api_ptr application::create_api_by_name( const api_context& ctx )
    return my->create_api_by_name( ctx );
 }
 
-void application::get_max_block_age( int32_t& result )
+void application::get_max_block_age( uint64_t& result )
 {
    my->get_max_block_age( result );
 }

@@ -12,6 +12,9 @@ using namespace node::protocol;
 
 DEFINE_EVALUATOR( account_create )
 DEFINE_EVALUATOR( account_update )
+DEFINE_EVALUATOR( account_business )
+DEFINE_EVALUATOR( account_profile )
+DEFINE_EVALUATOR( account_verification )
 DEFINE_EVALUATOR( account_membership )
 DEFINE_EVALUATOR( account_vote_executive )
 DEFINE_EVALUATOR( account_vote_officer )
@@ -35,15 +38,6 @@ DEFINE_EVALUATOR( account_follow )
 DEFINE_EVALUATOR( tag_follow )
 DEFINE_EVALUATOR( activity_reward )
 
-// Post and Comment Evaluators
-
-DEFINE_EVALUATOR( comment )
-DEFINE_EVALUATOR( message )
-DEFINE_EVALUATOR( vote )
-DEFINE_EVALUATOR( view )
-DEFINE_EVALUATOR( share )
-DEFINE_EVALUATOR( moderation_tag )
-
 // Network Evaluators
 
 DEFINE_EVALUATOR( update_network_officer )
@@ -58,6 +52,15 @@ DEFINE_EVALUATOR( update_mediator )
 DEFINE_EVALUATOR( create_community_enterprise )
 DEFINE_EVALUATOR( claim_enterprise_milestone )
 DEFINE_EVALUATOR( approve_enterprise_milestone )
+
+// Post and Comment Evaluators
+
+DEFINE_EVALUATOR( comment )
+DEFINE_EVALUATOR( message )
+DEFINE_EVALUATOR( vote )
+DEFINE_EVALUATOR( view )
+DEFINE_EVALUATOR( share )
+DEFINE_EVALUATOR( moderation_tag )
 
 // Community Evaluators
 
@@ -74,6 +77,8 @@ DEFINE_EVALUATOR( community_invite_accept )
 DEFINE_EVALUATOR( community_remove_member )
 DEFINE_EVALUATOR( community_blacklist )
 DEFINE_EVALUATOR( community_subscribe )
+DEFINE_EVALUATOR( community_event )
+DEFINE_EVALUATOR( community_event_attend )
 
 // Advertising Evaluators
 
@@ -82,6 +87,13 @@ DEFINE_EVALUATOR( ad_campaign )
 DEFINE_EVALUATOR( ad_inventory )
 DEFINE_EVALUATOR( ad_audience )
 DEFINE_EVALUATOR( ad_bid )
+
+// Graph Data Evaluators
+
+DEFINE_EVALUATOR( graph_node )
+DEFINE_EVALUATOR( graph_edge )
+DEFINE_EVALUATOR( graph_node_property )
+DEFINE_EVALUATOR( graph_edge_property )
 
 // Transfer Evaluators
 
@@ -104,6 +116,8 @@ DEFINE_EVALUATOR( delegate_asset )
 
 // Marketplace Evaluators
 
+DEFINE_EVALUATOR( product_update )
+DEFINE_EVALUATOR( product_purchase )
 DEFINE_EVALUATOR( escrow_transfer )
 DEFINE_EVALUATOR( escrow_approve )
 DEFINE_EVALUATOR( escrow_dispute )
@@ -113,7 +127,9 @@ DEFINE_EVALUATOR( escrow_release )
 
 DEFINE_EVALUATOR( limit_order )
 DEFINE_EVALUATOR( margin_order )
+DEFINE_EVALUATOR( auction_order )
 DEFINE_EVALUATOR( call_order )
+DEFINE_EVALUATOR( option_order )
 DEFINE_EVALUATOR( bid_collateral )
 
 // Liquidity Pool Evaluators

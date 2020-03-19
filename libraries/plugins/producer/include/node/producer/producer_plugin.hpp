@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <node/app/plugin.hpp>

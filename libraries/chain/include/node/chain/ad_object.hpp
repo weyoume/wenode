@@ -200,7 +200,9 @@ namespace node { namespace chain {
 
          asset                            bid_price;         ///< Price offered per metric. Asset symbol must be the same as the inventory price.
 
-         ad_metric_type                   metric;            ///< Type of expense metric used.
+         ad_format_type                   format;            ///< Type of ad format for the referenced creative.
+
+         ad_metric_type                   metric;            ///< Type of expense metric used for the bid price.
 
          shared_string                    objective;         ///< Creative Objective for bid rank ordering.
 
@@ -387,7 +389,7 @@ namespace node { namespace chain {
    struct by_bidder_inventory;
    struct by_bidder_campaign;
    struct by_provider_inventory;
-   struct by_provider_metric_price;
+   struct by_provider_metric_format_price;
 
    struct by_bidder_updated;
    struct by_account_updated;
@@ -440,16 +442,18 @@ namespace node { namespace chain {
                std::less< ad_bid_id_type >
             >
          >,
-         ordered_unique< tag< by_provider_metric_price >,
+         ordered_unique< tag< by_provider_metric_format_price >,
             composite_key< ad_bid_object,
                member< ad_bid_object, account_name_type, &ad_bid_object::provider >,
                member< ad_bid_object, ad_metric_type, &ad_bid_object::metric >,
+               member< ad_bid_object, ad_format_type, &ad_bid_object::format >,
                member< ad_bid_object, asset, &ad_bid_object::bid_price >,
                member< ad_bid_object, ad_bid_id_type, &ad_bid_object::id >
             >,
             composite_key_compare<
                std::less< account_name_type >,
                std::less< ad_metric_type >,
+               std::less< ad_format_type >,
                std::greater< asset >,
                std::less< ad_bid_id_type >
             >
@@ -603,6 +607,7 @@ FC_REFLECT( node::chain::ad_bid_object,
          (provider)
          (inventory_id)
          (bid_price)
+         (format)
          (metric)
          (objective)
          (requested)

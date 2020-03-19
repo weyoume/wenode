@@ -335,86 +335,94 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          community_enterprise_object( Constructor&& c, allocator< Allocator > a ) :
-         enterprise_id(a), milestones( a.get_segment_manager() ), milestone_history( a.get_segment_manager() ), details(a), url(a), json(a)
+         enterprise_id(a), 
+         milestone_shares( a.get_segment_manager() ), 
+         milestone_details( a.get_segment_manager() ), 
+         milestone_history( a.get_segment_manager() ), 
+         details(a), 
+         url(a), 
+         json(a)
          {
             c( *this );
          }
 
-         id_type                                 id;
+         id_type                                     id;
 
-         account_name_type                       creator;                                         ///< The name of the governance account that created the community enterprise proposal.
+         account_name_type                           creator;                                         ///< The name of the governance account that created the community enterprise proposal.
 
-         shared_string                           enterprise_id;                                   ///< UUIDv4 for referring to the proposal.
+         shared_string                               enterprise_id;                                   ///< UUIDv4 for referring to the proposal.
 
-         bool                                    active = true;                                   ///< True if the project is active, set false to deactivate.
+         bool                                        active = true;                                   ///< True if the project is active, set false to deactivate.
 
-         proposal_distribution_type              proposal_type;                                   ///< The type of proposal, determines release schedule.
+         proposal_distribution_type                  proposal_type;                                   ///< The type of proposal, determines release schedule.
 
-         flat_map< account_name_type, uint16_t >     beneficiaries;                               ///< Map of account names and percentages of budget value.
+         flat_map< account_name_type, uint16_t >     beneficiaries;                                   ///< Map of account names and percentages of budget value.
 
-         shared_vector< pair < shared_string, uint16_t > >     milestones;                        ///< Ordered vector of milestone descriptions and percentages of budget value.
+         shared_vector< uint16_t >                   milestone_shares;                                ///< Ordered vector of release milestone descriptions.
 
-         shared_vector< shared_string >          milestone_history;                               ///< Ordered vector of the details of every claimed milestone.
+         shared_vector< shared_string >              milestone_details;                               ///< Ordered vector of release milestone percentages of budget value.
 
-         int16_t                                 approved_milestones;                             ///< Number of the last approved milestone by the community.
+         shared_vector< shared_string >              milestone_history;                               ///< Ordered vector of the details of every claimed milestone.
 
-         int16_t                                 claimed_milestones;                              ///< Number of milestones claimed for release.  
+         int16_t                                     approved_milestones;                             ///< Number of the last approved milestone by the community.
 
-         fc::optional < asset_symbol_type >      investment;                                      ///< Symbol of the asset to be purchased with the funding if the proposal is investment type. 
+         int16_t                                     claimed_milestones;                              ///< Number of milestones claimed for release.  
 
-         shared_string                           details;                                         ///< The proposals's details description.
+         fc::optional < asset_symbol_type >          investment;                                      ///< Symbol of the asset to be purchased with the funding if the proposal is investment type. 
 
-         shared_string                           url;                                             ///< The proposals's reference URL.
+         shared_string                               details;                                         ///< The proposals's details description.
 
-         shared_string                           json;                                            ///< Json metadata of the proposal.
+         shared_string                               url;                                             ///< The proposals's reference URL.
 
-         time_point                              begin;                                           ///< Enterprise proposal start time. Budget payments begin past this time.
+         shared_string                               json;                                            ///< Json metadata of the proposal.
 
-         time_point                              end;                                             ///< Enterprise proposal end time. Determined by start plus remaining interval number of days.
+         time_point                                  begin;                                           ///< Enterprise proposal start time. Budget payments begin past this time.
 
-         time_point                              expiration;                                      ///< Time that the proposal expires, and transfers all remaining pending budget back to the community fund. 
+         time_point                                  end;                                             ///< Enterprise proposal end time. Determined by start plus remaining interval number of days.
 
-         asset                                   daily_budget;                                    ///< Daily amount of Core asset requested for project compensation and funding.
+         time_point                                  expiration;                                      ///< Time that the proposal expires, and transfers all remaining pending budget back to the community fund. 
 
-         uint16_t                                duration;                                        ///< Number of days that the proposal lasts for. 
+         asset                                       daily_budget;                                    ///< Daily amount of Core asset requested for project compensation and funding.
 
-         asset                                   pending_budget;                                  ///< Funds held in the proposal for release. 
+         uint16_t                                    duration;                                        ///< Number of days that the proposal lasts for. 
 
-         asset                                   total_distributed;                               ///< Total amount of funds distributed for the proposal. 
+         asset                                       pending_budget;                                  ///< Funds held in the proposal for release. 
 
-         uint16_t                                days_paid = 0;                                   ///< Number of days that the proposal has been paid for. 
+         asset                                       total_distributed;                               ///< Total amount of funds distributed for the proposal. 
 
-         uint32_t                                total_approvals = 0;                             ///< The overall number of accounts that support the enterprise proposal.
+         uint16_t                                    days_paid = 0;                                   ///< Number of days that the proposal has been paid for. 
 
-         share_type                              total_voting_power = 0;                          ///< The oveall amount of voting power that supports the enterprise proposal.
+         uint32_t                                    total_approvals = 0;                             ///< The overall number of accounts that support the enterprise proposal.
 
-         uint32_t                                total_producer_approvals = 0;                    ///< The overall number of top 50 producers that support the enterprise proposal.
+         share_type                                  total_voting_power = 0;                          ///< The oveall amount of voting power that supports the enterprise proposal.
 
-         share_type                              total_producer_voting_power = 0;                 ///< The overall amount of producer voting power that supports the enterprise proposal.
+         uint32_t                                    total_producer_approvals = 0;                    ///< The overall number of top 50 producers that support the enterprise proposal.
 
-         uint32_t                                current_approvals = 0;                           ///< The number of accounts that support the latest claimed milestone.
+         share_type                                  total_producer_voting_power = 0;                 ///< The overall amount of producer voting power that supports the enterprise proposal.
 
-         share_type                              current_voting_power = 0;                        ///< The amount of voting power that supports the latest claimed milestone.
+         uint32_t                                    current_approvals = 0;                           ///< The number of accounts that support the latest claimed milestone.
 
-         uint32_t                                current_producer_approvals = 0;                  ///< The number of top 50 producers that support the latest claimed milestone.
+         share_type                                  current_voting_power = 0;                        ///< The amount of voting power that supports the latest claimed milestone.
 
-         share_type                              current_producer_voting_power = 0;               ///< The amount of producer voting power that supports the latest claimed milestone.
+         uint32_t                                    current_producer_approvals = 0;                  ///< The number of top 50 producers that support the latest claimed milestone.
 
-         time_point                              last_updated;                                    ///< Time that the proposal was last updated. 
+         share_type                                  current_producer_voting_power = 0;               ///< The amount of producer voting power that supports the latest claimed milestone.
 
-         time_point                              created;                                         ///< The time the proposal was created.
+         time_point                                  last_updated;                                    ///< Time that the proposal was last updated. 
 
-         asset                                   total_budget()const                              ///< Returns the total amount of funding requested by the proposal.
+         time_point                                  created;                                         ///< The time the proposal was created.
+
+         asset                                       total_budget()const                              ///< Returns the total amount of funding requested by the proposal.
          {
             return duration * daily_budget;
          }
 
-         asset                                   remaining_budget()const                          ///< Returns the total amount of funding remaining for payment.
+         asset                                       remaining_budget()const                          ///< Returns the total amount of funding remaining for payment.
          {
             return ( duration - days_paid ) * daily_budget;
          }
 
-         bool                                    is_beneficiary( const account_name_type& beneficiary )         ///< Finds if a given account name is in the beneficiarys set.
+         bool                                        is_beneficiary( const account_name_type& beneficiary )         ///< Finds if a given account name is in the beneficiarys set.
          {
             if( beneficiaries[ beneficiary ] > 0 )
             {
@@ -426,7 +434,7 @@ namespace node { namespace chain {
             }
          }
 
-         void                                    adjust_pending_budget(const asset& delta)
+         void                                        adjust_pending_budget(const asset& delta)
          {
             assert(delta.symbol == SYMBOL_COIN);
             pending_budget += delta;
@@ -1003,7 +1011,8 @@ FC_REFLECT( node::chain::community_enterprise_object,
          (active)
          (proposal_type)
          (beneficiaries)
-         (milestones)
+         (milestone_shares)
+         (milestone_details)
          (milestone_history)
          (approved_milestones)
          (claimed_milestones)

@@ -348,15 +348,13 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       node::chain::database&                          _db;
 
-      std::shared_ptr< node::follow::follow_api >     _follow_api;
-
       boost::signals2::scoped_connection              _block_applied_connection;
 
       bool                                            _disable_get_block = false;
 
       void set_url( discussion& d )const;
 
-      discussion get_discussion( comment_id_type, uint32_t truncate_body = 0 )const;
+      discussion                                      get_discussion( comment_id_type id, uint32_t truncate_body )const;
 
       static bool filter_default( const comment_api_obj& c ) { return false; }
       static bool exit_default( const comment_api_obj& c )   { return false; }
@@ -368,13 +366,13 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
          const string& community,
          const string& tag,
          comment_id_type parent,
-         const Index& idx, 
+         const Index& idx,
          StartItr itr,
-         uint32_t truncate_body = 0,
-         const std::function< bool( const comment_api_obj& ) >& filter = &database_api::filter_default,
-         const std::function< bool( const comment_api_obj& ) >& exit   = &database_api::exit_default,
-         const std::function< bool( const tags::tag_object& ) >& tag_exit = &database_api::tag_exit_default,
-         bool ignore_parent = false
+         uint32_t truncate_body,
+         const std::function< bool( const comment_api_obj& ) >& filter,
+         const std::function< bool( const comment_api_obj& ) >& exit,
+         const std::function< bool( const tags::tag_object& ) >& tag_exit,
+         bool ignore_parent
          )const;
          
       comment_id_type get_parent( const discussion_query& q )const;
@@ -399,13 +397,6 @@ database_api_impl::database_api_impl( const node::app::api_context& ctx )
    wlog( "creating database api ${x}", ("x",int64_t(this)) );
 
    _disable_get_block = ctx.app._disable_get_block;
-
-   try
-   {
-      ctx.app.get_plugin< follow::follow_plugin >( FOLLOW_PLUGIN_NAME );
-      _follow_api = std::make_shared< node::follow::follow_api >( ctx );
-   }
-   catch( fc::assert_exception ) { ilog( "Follow Plugin not loaded" ); }
 }
 
 database_api_impl::~database_api_impl()
@@ -835,12 +826,11 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
          }
 
          auto business_itr = business_idx.find( name );
+
          if( business_itr != business_idx.end() )
          {
             results.back().business.business = account_business_api_obj( *business_itr );
          }
-
-         auto business_itr = business_idx.begin();
 
          while( business_itr != business_idx.end() )
          {
@@ -916,8 +906,8 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             ++connection_b_itr;
          }
 
-         auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::FRIEND ) );
-         auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::FRIEND ) );
+         connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::FRIEND ) );
+         connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::FRIEND ) );
          while( connection_a_itr != connection_a_idx.end() && 
             connection_a_itr->account_a == name &&
             connection_a_itr->connection_type == connection_tier_type::FRIEND )
@@ -935,8 +925,8 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             ++connection_b_itr;
          }
 
-         auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::COMPANION ) );
-         auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::COMPANION ) );
+         connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::COMPANION ) );
+         connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::COMPANION ) );
          while( connection_a_itr != connection_a_idx.end() && 
             connection_a_itr->account_a == name &&
             connection_a_itr->connection_type == connection_tier_type::COMPANION )
@@ -1101,7 +1091,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
          for( auto conv : conversations )
          {
             vector< message_api_obj > thread = conv.second;
-            std::sort( thread.begin(), thread.end(), [&](auto a, auto b)
+            std::sort( thread.begin(), thread.end(), [&]( message_api_obj a, message_api_obj b )
             {
                return a.created < b.created;
             });
@@ -1119,12 +1109,6 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
          {
             results.back().communities.outgoing_moderator_votes[ moderator_itr->community ][ moderator_itr->moderator ] = moderator_itr->vote_rank;
             ++moderator_itr;
-         }
-
-         results.back().tags_usage = get_tags_used_by_author( name );
-         if( _follow_api )
-         {
-            results.back().top_shared = _follow_api->get_blog_authors( name );
          }
 
          auto history_itr = history_idx.lower_bound( name );
@@ -1180,6 +1164,9 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                }
                break;
                case operation::tag<comment_operation>::value:
+               case operation::tag<author_reward_operation>::value:
+               case operation::tag<comment_reward_operation>::value:
+               case operation::tag<comment_benefactor_reward_operation>::value:
                {
                   results.back().operations.post_history[ item.first ] = item.second;
                }
@@ -1190,21 +1177,25 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                }
                break;
                case operation::tag<vote_operation>::value:
+               case operation::tag<vote_reward_operation>::value:
                {
                   results.back().operations.vote_history[ item.first ] = item.second;
                }
                break;
                case operation::tag<view_operation>::value:
+               case operation::tag<view_reward_operation>::value:
                {
                   results.back().operations.view_history[ item.first ] = item.second;
                }
                break;
                case operation::tag<share_operation>::value:
+               case operation::tag<share_reward_operation>::value:
                {
                   results.back().operations.share_history[ item.first ] = item.second;
                }
                break;
                case operation::tag<moderation_tag_operation>::value:
+               case operation::tag<moderation_reward_operation>::value:
                {
                   results.back().operations.moderation_history[ item.first ] = item.second;
                }
@@ -1241,9 +1232,6 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                case operation::tag<transfer_recurring_operation>::value:
                case operation::tag<transfer_recurring_request_operation>::value:
                case operation::tag<transfer_recurring_accept_operation>::value:
-               case operation::tag<author_reward_operation>::value:
-               case operation::tag<curation_reward_operation>::value:
-               case operation::tag<comment_benefactor_reward_operation>::value:
                {
                   results.back().operations.transfer_history[ item.first ] = item.second;
                }
@@ -1312,6 +1300,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                case operation::tag<update_governance_operation>::value:
                case operation::tag<subscribe_governance_operation>::value:
                case operation::tag<update_supernode_operation>::value:
+               case operation::tag<supernode_reward_operation>::value:
                case operation::tag<update_interface_operation>::value:
                case operation::tag<update_mediator_operation>::value:
                case operation::tag<create_community_enterprise_operation>::value:
@@ -1447,7 +1436,7 @@ vector< message_state > database_api_impl::get_messages( vector< string > names 
       for( auto conv : conversations )
       {
          vector< message_api_obj > thread = conv.second;
-         std::sort( thread.begin(), thread.end(), [&]( auto a, auto b )
+         std::sort( thread.begin(), thread.end(), [&]( message_api_obj a, message_api_obj b )
          {
             return a.created < b.created;
          });
@@ -1502,8 +1491,8 @@ vector< key_state > database_api_impl::get_keychains( vector< string > names )co
          ++connection_b_itr;
       }
 
-      auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::FRIEND ) );
-      auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::FRIEND ) );
+      connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::FRIEND ) );
+      connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::FRIEND ) );
       while( connection_a_itr != connection_a_idx.end() && 
          connection_a_itr->account_a == name &&
          connection_a_itr->connection_type == connection_tier_type::FRIEND )
@@ -1519,8 +1508,8 @@ vector< key_state > database_api_impl::get_keychains( vector< string > names )co
          ++connection_b_itr;
       }
 
-      auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::COMPANION ) );
-      auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::COMPANION ) );
+      connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::COMPANION ) );
+      connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::COMPANION ) );
       while( connection_a_itr != connection_a_idx.end() && 
          connection_a_itr->account_a == name &&
          connection_a_itr->connection_type == connection_tier_type::COMPANION )
@@ -1777,11 +1766,10 @@ optional< escrow_api_obj > database_api::get_escrow( string from, string escrow_
 optional< escrow_api_obj > database_api_impl::get_escrow( string from, string escrow_id )const
 {
    optional< escrow_api_obj > results;
-   shared_string eid;
-   from_string( eid, escrow_id );
+
    try
    {
-      results = _db.get_escrow( from, eid );
+      results = _db.get_escrow( from, escrow_id );
    }
    catch ( ... ) {}
 
@@ -1987,7 +1975,7 @@ vector< extended_community > database_api_impl::get_communities( vector< string 
    const auto& community_inv_idx = _db.get_index< community_join_invite_index >().indices().get< by_community >();
    const auto& community_req_idx = _db.get_index< community_join_request_index >().indices().get< by_community_account >();
 
-   for( auto community : communities )
+   for( string community : communities )
    {
       auto community_itr = community_idx.find( community );
       if( community_itr != community_idx.end() )
@@ -2843,8 +2831,8 @@ market_margin_orders database_api_impl::get_margin_orders( string buy_symbol, st
    auto max_sell = price::max( asset_symbol_type( sell_symbol ), asset_symbol_type( buy_symbol ) );
    auto max_buy = price::max( asset_symbol_type( buy_symbol ), asset_symbol_type( sell_symbol ) );
    
-   auto margin_sell_itr = margin_price_idx.lower_bound( max_sell );
-   auto margin_buy_itr = margin_price_idx.lower_bound( max_buy );
+   auto margin_sell_itr = margin_price_idx.lower_bound( boost::make_tuple( false, max_sell ) );
+   auto margin_buy_itr = margin_price_idx.lower_bound( boost::make_tuple( false, max_buy ) );
    auto margin_end = margin_price_idx.end();
 
    while( margin_sell_itr != margin_end &&
@@ -3088,7 +3076,7 @@ market_state database_api_impl::get_market_state( string buy_symbol, string sell
 
    const asset_object& buy_asset = _db.get_asset( buy_symbol );
    const asset_object& sell_asset = _db.get_asset( sell_symbol );
-   if( buy_asset.is_market_issued )
+   if( buy_asset.is_market_issued() )
    {
       const asset_bitasset_data_object& buy_bitasset = _db.get_bitasset_data( buy_symbol );
       if( buy_bitasset.backing_asset == sell_symbol )
@@ -3096,7 +3084,7 @@ market_state database_api_impl::get_market_state( string buy_symbol, string sell
          results.call_orders = get_call_orders( buy_symbol, sell_symbol );
       }
    }
-   if( sell_asset.is_market_issued )
+   if( sell_asset.is_market_issued() )
    {
       const asset_bitasset_data_object& sell_bitasset = _db.get_bitasset_data( sell_symbol );
       if( sell_bitasset.backing_asset == buy_symbol )
@@ -3138,10 +3126,16 @@ vector< account_ad_state > database_api_impl::get_account_ads( vector< string > 
    const auto& campaign_idx   = _db.get_index< ad_campaign_index >().indices().get< by_latest >();
    const auto& audience_idx   = _db.get_index< ad_audience_index >().indices().get< by_latest >();
    const auto& inventory_idx  = _db.get_index< ad_inventory_index >().indices().get< by_latest >();
+
+   const auto& creative_id_idx   = _db.get_index< ad_creative_index >().indices().get< by_creative_id >();
+   const auto& campaign_id_idx   = _db.get_index< ad_campaign_index >().indices().get< by_campaign_id >();
+   const auto& audience_id_idx   = _db.get_index< ad_audience_index >().indices().get< by_audience_id >();
+   const auto& inventory_id_idx  = _db.get_index< ad_inventory_index >().indices().get< by_inventory_id >();
+
    const auto& bidder_idx     = _db.get_index< ad_bid_index >().indices().get< by_bidder_updated >();
    const auto& account_idx    = _db.get_index< ad_bid_index >().indices().get< by_account_updated >();
    const auto& author_idx     = _db.get_index< ad_bid_index >().indices().get< by_author_updated >();
-   const auto& provider_idx   = _db.get_index< ad_bid_index >().indices().get< by_provider_metric_price >();
+   const auto& provider_idx   = _db.get_index< ad_bid_index >().indices().get< by_provider_updated >();
 
    for( auto name : names )
    {
@@ -3201,26 +3195,26 @@ vector< account_ad_state > database_api_impl::get_account_ads( vector< string > 
       {
          astate.incoming_bids.push_back( ad_bid_state( *provider_itr ) );
 
-         auto cr_itr = creative_idx.find( boost::make_tuple( provider_itr->author, provider_itr->creative_id ) );
-         if( cr_itr != creative_idx.end() )
+         auto cr_itr = creative_id_idx.find( boost::make_tuple( provider_itr->author, provider_itr->creative_id ) );
+         if( cr_itr != creative_id_idx.end() )
          {
             astate.incoming_bids.back().creative = ad_creative_api_obj( *cr_itr );
          }
 
-         auto c_itr = campaign_idx.find( boost::make_tuple( provider_itr->account, provider_itr->campaign_id ) );
-         if( c_itr != campaign_idx.end() )
+         auto c_itr = campaign_id_idx.find( boost::make_tuple( provider_itr->account, provider_itr->campaign_id ) );
+         if( c_itr != campaign_id_idx.end() )
          {
             astate.incoming_bids.back().campaign = ad_campaign_api_obj( *c_itr );
          }
 
-         auto i_itr = inventory_idx.find( boost::make_tuple( provider_itr->provider, provider_itr->inventory_id ) );
-         if( i_itr != inventory_idx.end() )
+         auto i_itr = inventory_id_idx.find( boost::make_tuple( provider_itr->provider, provider_itr->inventory_id ) );
+         if( i_itr != inventory_id_idx.end() )
          {
             astate.incoming_bids.back().inventory = ad_inventory_api_obj( *i_itr );
          }
 
-         auto a_itr = audience_idx.find( boost::make_tuple( provider_itr->bidder, provider_itr->audience_id ) );
-         if( a_itr != audience_idx.end() )
+         auto a_itr = audience_id_idx.find( boost::make_tuple( provider_itr->bidder, provider_itr->audience_id ) );
+         if( a_itr != audience_id_idx.end() )
          {
             astate.incoming_bids.back().audience = ad_audience_api_obj( *a_itr );
          }
@@ -3254,46 +3248,59 @@ vector< ad_bid_state > database_api_impl::get_interface_audience_bids( const ad_
    account_name_type viewer = query.viewer;
 
    ad_format_type format = ad_format_type::STANDARD_FORMAT;
-   for( auto i = 0; i < ad_format_values.size(); i++ )
+   ad_metric_type metric = ad_metric_type::VIEW_METRIC;
+
+   for( size_t i = 0; i < ad_format_values.size(); i++ )
    {
-      if( query.format_type == ad_format_values[ i ] )
+      if( query.ad_format == ad_format_values[ i ] )
       {
          format = ad_format_type( i );
          break;
       }
    }
-   
-   const auto& creative_idx = _db.get_index< ad_creative_index >().indices().get< by_latest >();
-   const auto& campaign_idx = _db.get_index< ad_campaign_index >().indices().get< by_latest >();
-   const auto& audience_idx = _db.get_index< ad_audience_index >().indices().get< by_latest >();
-   const auto& inventory_idx = _db.get_index< ad_inventory_index >().indices().get< by_latest >();
-   const auto& provider_idx = _db.get_index< ad_bid_index >().indices().get< by_provider_metric_price >();
 
-   auto provider_itr = provider_idx.lower_bound( boost::make_tuple( interface, format ) );
+   for( size_t i = 0; i < ad_metric_values.size(); i++ )
+   {
+      if( query.ad_metric == ad_metric_values[ i ] )
+      {
+         metric = ad_metric_type( i );
+         break;
+      }
+   }
+   
+   const auto& creative_id_idx   = _db.get_index< ad_creative_index >().indices().get< by_creative_id >();
+   const auto& campaign_id_idx   = _db.get_index< ad_campaign_index >().indices().get< by_campaign_id >();
+   const auto& audience_id_idx   = _db.get_index< ad_audience_index >().indices().get< by_audience_id >();
+   const auto& inventory_id_idx  = _db.get_index< ad_inventory_index >().indices().get< by_inventory_id >();
+   const auto& provider_idx = _db.get_index< ad_bid_index >().indices().get< by_provider_metric_format_price >();
+
+   auto provider_itr = provider_idx.lower_bound( boost::make_tuple( interface, metric, format ) );
+   auto provider_end = provider_idx.upper_bound( boost::make_tuple( interface, metric, format ) );
+
    while( provider_itr != provider_idx.end() && 
-      provider_itr->provider == interface &&
+      provider_itr != provider_end &&
       results.size() < query.limit )
    {
-      auto a_itr = audience_idx.find( boost::make_tuple( provider_itr->bidder, provider_itr->audience_id ) );
-      if( a_itr != audience_idx.end() )
+      auto a_itr = audience_id_idx.find( boost::make_tuple( provider_itr->bidder, provider_itr->audience_id ) );
+      if( a_itr != audience_id_idx.end() )
       {
          const ad_audience_object& aud = *a_itr;
          if( aud.is_audience( viewer ) )
          {
             results.push_back( ad_bid_state( *provider_itr ) );
             results.back().audience = ad_audience_api_obj( *a_itr );
-            auto cr_itr = creative_idx.find( boost::make_tuple( provider_itr->author, provider_itr->creative_id ) );
-            if( cr_itr != creative_idx.end() )
+            auto cr_itr = creative_id_idx.find( boost::make_tuple( provider_itr->author, provider_itr->creative_id ) );
+            if( cr_itr != creative_id_idx.end() )
             {
                results.back().creative = ad_creative_api_obj( *cr_itr );
             }
-            auto c_itr = campaign_idx.find( boost::make_tuple( provider_itr->account, provider_itr->campaign_id ) );
-            if( c_itr != campaign_idx.end() )
+            auto c_itr = campaign_id_idx.find( boost::make_tuple( provider_itr->account, provider_itr->campaign_id ) );
+            if( c_itr != campaign_id_idx.end() )
             {
                results.back().campaign = ad_campaign_api_obj( *c_itr );
             }
-            auto i_itr = inventory_idx.find( boost::make_tuple( provider_itr->provider, provider_itr->inventory_id ) );
-            if( i_itr != inventory_idx.end() )
+            auto i_itr = inventory_id_idx.find( boost::make_tuple( provider_itr->provider, provider_itr->inventory_id ) );
+            if( i_itr != inventory_id_idx.end() )
             {
                results.back().inventory = ad_inventory_api_obj( *i_itr );
             }
@@ -3325,7 +3332,6 @@ search_result_state database_api::get_search_query( const search_query& query )c
 search_result_state database_api_impl::get_search_query( const search_query& query )const
 {
    search_result_state results;
-   account_name_type account = query.account;
    string q = query.query;
    size_t margin = ( ( q.size() * query.margin_percent ) / PERCENT_100 ) + 1;
 
@@ -3339,13 +3345,13 @@ search_result_state database_api_impl::get_search_query( const search_query& que
    auto community_itr = community_idx.begin();
    auto tag_itr = tag_idx.begin();
    auto asset_itr = asset_idx.begin();
-   auto post_itr = post_idx.upper_bound( shared_string() );    // Skip index posts with no title
+   auto post_itr = post_idx.upper_bound( string() );    // Skip index posts with no title
 
    vector< pair< account_name_type, size_t > > accounts;
    vector< pair< community_name_type, size_t > > communities;
    vector< pair< tag_name_type, size_t > > tags;
    vector< pair< asset_symbol_type, size_t > > assets;
-   vector< pair< shared_string, size_t > > posts;
+   vector< pair< string, size_t > > posts;
 
    accounts.reserve( account_idx.size() );
    communities.reserve( community_idx.size() );
@@ -3374,7 +3380,7 @@ search_result_state database_api_impl::get_search_query( const search_query& que
          ++account_itr;
       }
 
-      std::sort( accounts.begin(), accounts.end(), [&]( auto a, auto b )
+      std::sort( accounts.begin(), accounts.end(), [&]( pair< account_name_type, size_t > a, pair< account_name_type, size_t > b )
       {
          return a.second > b.second;
       });
@@ -3405,7 +3411,7 @@ search_result_state database_api_impl::get_search_query( const search_query& que
          ++community_itr;
       }
 
-      std::sort( communities.begin(), communities.end(), [&]( auto a, auto b )
+      std::sort( communities.begin(), communities.end(), [&]( pair< community_name_type, size_t > a, pair< community_name_type, size_t > b )
       {
          return a.second > b.second;
       });
@@ -3436,7 +3442,7 @@ search_result_state database_api_impl::get_search_query( const search_query& que
          ++tag_itr;
       }
 
-      std::sort( tags.begin(), tags.end(), [&]( auto a, auto b )
+      std::sort( tags.begin(), tags.end(), [&]( pair< tag_name_type, size_t > a, pair< tag_name_type, size_t > b )
       {
          return a.second > b.second;
       });
@@ -3467,7 +3473,7 @@ search_result_state database_api_impl::get_search_query( const search_query& que
          ++asset_itr;
       }
 
-      std::sort( assets.begin(), assets.end(), [&]( auto a, auto b )
+      std::sort( assets.begin(), assets.end(), [&]( pair< asset_symbol_type, size_t > a, pair< asset_symbol_type, size_t > b )
       {
          return a.second > b.second;
       });
@@ -3490,15 +3496,16 @@ search_result_state database_api_impl::get_search_query( const search_query& que
    {
       while( post_itr != post_idx.end() )
       {
-         size_t edit_dist = edit_distance( to_string( post_itr->title ), q );
+         string title = to_string( post_itr->title );
+         size_t edit_dist = edit_distance( title, q );
          if( edit_dist <= margin )
          {
-            posts.push_back( std::make_pair( post_itr->title, edit_dist ) );
+            posts.push_back( std::make_pair( title, edit_dist ) );
          }
          ++post_itr;
       }
 
-      std::sort( posts.begin(), posts.end(), [&]( auto a, auto b )
+      std::sort( posts.begin(), posts.end(), [&]( pair< string, size_t > a, pair< string, size_t > b )
       {
          return a.second > b.second;
       });
@@ -3651,9 +3658,9 @@ set< public_key_type > database_api_impl::get_required_signatures( const signed_
    set< public_key_type > results = trx.get_required_signatures(
       CHAIN_ID,
       available_keys,
-      [&]( string account_name ){ return authority( _db.get< account_authority_object, by_account >( account_name ).active  ); },
-      [&]( string account_name ){ return authority( _db.get< account_authority_object, by_account >( account_name ).owner   ); },
-      [&]( string account_name ){ return authority( _db.get< account_authority_object, by_account >( account_name ).posting ); },
+      [&]( string account_name ){ return authority( _db.get< account_authority_object, by_account >( account_name ).active_auth  ); },
+      [&]( string account_name ){ return authority( _db.get< account_authority_object, by_account >( account_name ).owner_auth   ); },
+      [&]( string account_name ){ return authority( _db.get< account_authority_object, by_account >( account_name ).posting_auth ); },
       MAX_SIG_CHECK_DEPTH );
    return results;
 }
@@ -3674,21 +3681,21 @@ set< public_key_type > database_api_impl::get_potential_signatures( const signed
       flat_set< public_key_type >(),
       [&]( account_name_type account_name )
       {
-         const auto& auth = _db.get< account_authority_object, by_account >(account_name).active;
+         const auto& auth = _db.get< account_authority_object, by_account >(account_name).active_auth;
          for( const auto& k : auth.get_keys() )
             results.insert(k);
          return authority( auth );
       },
       [&]( account_name_type account_name )
       {
-         const auto& auth = _db.get< account_authority_object, by_account >(account_name).owner;
+         const auto& auth = _db.get< account_authority_object, by_account >(account_name).owner_auth;
          for( const auto& k : auth.get_keys() )
             results.insert(k);
          return authority( auth );
       },
       [&]( account_name_type account_name )
       {
-         const auto& auth = _db.get< account_authority_object, by_account >(account_name).posting;
+         const auto& auth = _db.get< account_authority_object, by_account >(account_name).posting_auth;
          for( const auto& k : auth.get_keys() )
             results.insert(k);
          return authority( auth );
@@ -3711,9 +3718,9 @@ bool database_api_impl::verify_authority( const signed_transaction& trx )const
 {
    trx.verify_authority( 
       CHAIN_ID,
-      [&]( string account_name ){ return authority( _db.get< account_authority_object, by_account >( account_name ).active  ); },
-      [&]( string account_name ){ return authority( _db.get< account_authority_object, by_account >( account_name ).owner   ); },
-      [&]( string account_name ){ return authority( _db.get< account_authority_object, by_account >( account_name ).posting ); },
+      [&]( string account_name ){ return authority( _db.get< account_authority_object, by_account >( account_name ).active_auth  ); },
+      [&]( string account_name ){ return authority( _db.get< account_authority_object, by_account >( account_name ).owner_auth   ); },
+      [&]( string account_name ){ return authority( _db.get< account_authority_object, by_account >( account_name ).posting_auth ); },
       MAX_SIG_CHECK_DEPTH );
    return true;
 }
@@ -3768,7 +3775,7 @@ vector< vote_state > database_api_impl::get_active_votes( string author, string 
       vote_state vstate;
       vstate.voter = itr->voter;
       vstate.weight = itr->weight;
-      vstate.reward = itr->reward;
+      vstate.reward = itr->reward.value;
       vstate.percent = itr->vote_percent;
       vstate.time = itr->last_updated;
       results.push_back( vstate );
@@ -3797,7 +3804,7 @@ vector< view_state > database_api_impl::get_active_views( string author, string 
       view_state vstate;
       vstate.viewer = itr->viewer;
       vstate.weight = itr->weight;
-      vstate.reward = itr->reward;
+      vstate.reward = itr->reward.value;
       vstate.time = itr->created;
       results.push_back( vstate );
       ++itr;
@@ -3825,7 +3832,7 @@ vector< share_state > database_api_impl::get_active_shares( string author, strin
       share_state sstate;
       sstate.sharer = itr->sharer;
       sstate.weight = itr->weight;
-      sstate.reward = itr->reward;
+      sstate.reward = itr->reward.value;
       sstate.time = itr->created;
 
       results.push_back( sstate );
@@ -3883,21 +3890,18 @@ vector< account_vote > database_api_impl::get_account_votes( string account, str
    limit = std::min( limit, uint32_t( 1000 ) );
    results.reserve( limit );
 
-   const account_object& account = _db.get_account( account );
-   const auto& idx = _db.get_index< comment_vote_index >().indices().get< by_voter_comment >();
+   const auto& com_vote_idx = _db.get_index< comment_vote_index >().indices().get< by_voter_comment >();
 
-   comment_id_type start;
-
-   auto itr = idx.lower_bound( account );
-   auto end = idx.upper_bound( account );
+   auto itr = com_vote_idx.lower_bound( account );
+   auto end = com_vote_idx.upper_bound( account );
 
    if( from_author.length() && from_permlink.length() )
    {
-      start = _db.get_comment( from_author, from_permlink ).id;
-      auto from_itr = idx.find( account, start );
-      if( from_itr != idx.end() )
+      const comment_object& com = _db.get_comment( from_author, from_permlink );
+      auto from_itr = com_vote_idx.find( boost::make_tuple( account, com.id ) );
+      if( from_itr != com_vote_idx.end() )
       {
-         itr = idx.iterator_to( *from_itr );
+         itr = com_vote_idx.iterator_to( *from_itr );
       }
    }
 
@@ -3908,7 +3912,7 @@ vector< account_vote > database_api_impl::get_account_votes( string account, str
       avote.author = comment.author;
       avote.permlink = to_string( comment.permlink );
       avote.weight = itr->weight;
-      avote.reward = itr->reward;
+      avote.reward = itr->reward.value;
       avote.percent = itr->vote_percent;
       avote.time = itr->last_updated;
       results.push_back( avote );
@@ -3931,21 +3935,17 @@ vector< account_view > database_api_impl::get_account_views( string account, str
    limit = std::min( limit, uint32_t( 1000 ) );
    results.reserve( limit );
 
-   const account_object& account = _db.get_account( account );
-   const auto& idx = _db.get_index< comment_view_index >().indices().get< by_viewer_comment >();
-
-   comment_id_type start;
-
-   auto itr = idx.lower_bound( account );
-   auto end = idx.upper_bound( account );
+   const auto& com_view_idx = _db.get_index< comment_view_index >().indices().get< by_viewer_comment >();
+   auto itr = com_view_idx.lower_bound( account );
+   auto end = com_view_idx.upper_bound( account );
 
    if( from_author.length() && from_permlink.length() )
    {
-      start = _db.get_comment( from_author, from_permlink ).id;
-      auto from_itr = idx.find( account, start );
-      if( from_itr != idx.end() )
+      const comment_object& com = _db.get_comment( from_author, from_permlink );
+      auto from_itr = com_view_idx.find( boost::make_tuple( account, com.id ) );
+      if( from_itr != com_view_idx.end() )
       {
-         itr = idx.iterator_to( *from_itr );
+         itr = com_view_idx.iterator_to( *from_itr );
       }
    }
 
@@ -3956,7 +3956,7 @@ vector< account_view > database_api_impl::get_account_views( string account, str
       aview.author = comment.author;
       aview.permlink = to_string( comment.permlink );
       aview.weight = itr->weight;
-      aview.reward = itr->reward;
+      aview.reward = itr->reward.value;
       aview.time = itr->created;
       results.push_back( aview );
       ++itr;
@@ -3978,21 +3978,17 @@ vector< account_share > database_api_impl::get_account_shares( string account, s
    limit = std::min( limit, uint32_t( 1000 ) );
    results.reserve( limit );
 
-   const account_object& account = _db.get_account( account );
-   const auto& idx = _db.get_index< comment_share_index >().indices().get< by_sharer_comment >();
-
-   comment_id_type start;
-
-   auto itr = idx.lower_bound( account );
-   auto end = idx.upper_bound( account );
+   const auto& com_share_idx = _db.get_index< comment_share_index >().indices().get< by_sharer_comment >();
+   auto itr = com_share_idx.lower_bound( account );
+   auto end = com_share_idx.upper_bound( account );
 
    if( from_author.length() && from_permlink.length() )
    {
-      start = _db.get_comment( from_author, from_permlink ).id;
-      auto from_itr = idx.find( account, start );
-      if( from_itr != idx.end() )
+      const comment_object& com = _db.get_comment( from_author, from_permlink );
+      auto from_itr = com_share_idx.find( boost::make_tuple( account, com.id ) );
+      if( from_itr != com_share_idx.end() )
       {
-         itr = idx.iterator_to( *from_itr );
+         itr = com_share_idx.iterator_to( *from_itr );
       }
    }
 
@@ -4003,7 +3999,7 @@ vector< account_share > database_api_impl::get_account_shares( string account, s
       ashare.author = comment.author;
       ashare.permlink = to_string( comment.permlink );
       ashare.weight = itr->weight;
-      ashare.reward = itr->reward;
+      ashare.reward = itr->reward.value;
       ashare.time = itr->created;
       results.push_back( ashare );
       ++itr;
@@ -4025,21 +4021,17 @@ vector< account_moderation > database_api_impl::get_account_moderation( string a
    limit = std::min( limit, uint32_t( 1000 ) );
    results.reserve( limit );
 
-   const account_object& account = _db.get_account( account );
-   const auto& idx = _db.get_index< moderation_tag_index >().indices().get< by_moderator_comment >();
-
-   comment_id_type start;
-
-   auto itr = idx.lower_bound( account );
-   auto end = idx.upper_bound( account );
+   const auto& com_mod_idx = _db.get_index< moderation_tag_index >().indices().get< by_moderator_comment >();
+   auto itr = com_mod_idx.lower_bound( account );
+   auto end = com_mod_idx.upper_bound( account );
 
    if( from_author.length() && from_permlink.length() )
    {
-      start = _db.get_comment( from_author, from_permlink ).id;
-      auto from_itr = idx.find( account, start );
-      if( from_itr != idx.end() )
+      const comment_object& com = _db.get_comment( from_author, from_permlink );
+      auto from_itr = com_mod_idx.find( boost::make_tuple( account, com.id ) );
+      if( from_itr != com_mod_idx.end() )
       {
-         itr = idx.iterator_to( *from_itr );
+         itr = com_mod_idx.iterator_to( *from_itr );
       }
    }
 
@@ -4085,7 +4077,7 @@ vector< tag_following_api_obj > database_api_impl::get_tag_followings( vector< s
    return results;
 }
 
-vector< pair< tag_name_type, uint32_t > >database_api::get_tags_used_by_author( string author )const 
+vector< pair< tag_name_type, uint32_t > > database_api::get_tags_used_by_author( string author )const 
 {
    return my->_db.with_read_lock( [&]()
    {
@@ -4105,10 +4097,10 @@ vector< pair< tag_name_type, uint32_t > > database_api_impl::get_tags_used_by_au
       "Account not found." );
 
    const auto& tidx = _db.get_index< tags::author_tag_stats_index >().indices().get< tags::by_author_posts_tag >();
-   auto itr = tidx.lower_bound( boost::make_tuple( acnt->id, 0 ) );
+   auto itr = tidx.lower_bound( author );
    vector< pair< tag_name_type, uint32_t > > results;
 
-   while( itr != tidx.end() && itr->author == acnt->id && results.size() < 1000 )
+   while( itr != tidx.end() && itr->author == acnt->name && results.size() < 1000 )
    {
       results.push_back( std::make_pair( itr->tag, itr->total_posts ) );
       ++itr;
@@ -4222,7 +4214,7 @@ vector< discussion > database_api::get_replies_by_last_update( account_name_type
 {
    return my->_db.with_read_lock( [&]()
    {
-      return my->get_replies_by_last_update( start_parent_author, start_permlink, limit);
+      return my->get_replies_by_last_update( start_parent_author, start_permlink, limit );
    });
 }
 
@@ -4261,15 +4253,23 @@ vector< discussion > database_api_impl::get_replies_by_last_update( account_name
 
 discussion database_api::get_discussion( comment_id_type id, uint32_t truncate_body )const
 {
-   discussion d = my->_db.get( id );
+   return my->_db.with_read_lock( [&]()
+   {
+      return my->get_discussion( id, truncate_body );
+   });
+}
+
+discussion database_api_impl::get_discussion( comment_id_type id, uint32_t truncate_body )const
+{
+   discussion d = _db.get( id );
    set_url( d );
    
    d.active_votes = get_active_votes( d.author, d.permlink );
    d.active_views = get_active_views( d.author, d.permlink );
    d.active_shares = get_active_shares( d.author, d.permlink );
    d.active_mod_tags = get_active_mod_tags( d.author, d.permlink );
-
    d.body_length = d.body.size();
+
    if( truncate_body ) 
    {
       d.body = d.body.substr( 0, truncate_body );
@@ -4282,9 +4282,30 @@ discussion database_api::get_discussion( comment_id_type id, uint32_t truncate_b
    return d;
 }
 
-
 template< typename Index, typename StartItr >
 vector< discussion > database_api::get_discussions( 
+   const discussion_query& query,
+   const string& community,
+   const string& tag,
+   comment_id_type parent,
+   const Index& tidx,
+   StartItr tidx_itr,
+   uint32_t truncate_body,
+   const std::function< bool( const comment_api_obj& ) >& filter,
+   const std::function< bool( const comment_api_obj& ) >& exit,
+   const std::function< bool( const tags::tag_object& ) >& tag_exit,
+   bool ignore_parent
+   )const
+{
+   return my->_db.with_read_lock( [&]()
+   {
+      return my->get_discussions( query, community, tag, parent, tidx, tidx_itr, truncate_body, filter, exit, tag_exit, ignore_parent );
+   });
+}
+
+
+template< typename Index, typename StartItr >
+vector< discussion > database_api_impl::get_discussions( 
    const discussion_query& query,
    const string& community,
    const string& tag,
@@ -4300,26 +4321,28 @@ vector< discussion > database_api::get_discussions(
 {
    vector< discussion > results;
 
-   if( !my->_db.has_index<tags::tag_index>() )
+   if( !_db.has_index<tags::tag_index>() )
    {
       return results;
    }
       
-   const auto& cidx = my->_db.get_index< tags::tag_index >().indices().get< tags::by_comment >();
+   const auto& comment_tag_idx = _db.get_index< tags::tag_index >().indices().get< tags::by_comment >();
    comment_id_type start;
 
    if( query.start_author && query.start_permlink ) 
    {
-      start = my->_db.get_comment( *query.start_author, *query.start_permlink ).id;
-      auto itr = cidx.find( start );
-      while( itr != cidx.end() && itr->comment == start )
+      const comment_object& start_comment = _db.get_comment( *query.start_author, *query.start_permlink );
+      start = start_comment.id;
+      auto comment_tag_itr = comment_tag_idx.find( start );
+      
+      while( comment_tag_itr != comment_tag_idx.end() && comment_tag_itr->comment == start )
       {
-         if( itr->tag == tag && itr->community == community ) 
+         if( comment_tag_itr->tag == tag && comment_tag_itr->community == community )
          {
-            tidx_itr = tidx.iterator_to( *itr );
+            tidx_itr = tidx.iterator_to( *comment_tag_itr );
             break;
          }
-         ++itr;
+         ++comment_tag_itr;
       }
    }
 
@@ -4328,6 +4351,7 @@ vector< discussion > database_api::get_discussions(
    uint64_t filter_count = 0;
    uint64_t exc_count = 0;
    uint64_t max_itr_count = 10 * query.limit;
+
    while( count > 0 && tidx_itr != tidx.end() )
    {
       ++itr_count;
@@ -4355,7 +4379,7 @@ vector< discussion > database_api::get_discussions(
 
          if( query.post_include_time.size() )
          {
-            time_point now = my->_db.head_block_time();
+            time_point now = _db.head_block_time();
             time_point created = tidx_itr->created;
             bool old_post = false;
 
@@ -4426,7 +4450,13 @@ vector< discussion > database_api::get_discussions(
 
          if( query.select_communities.size() )
          {
-            auto tag_itr = tidx.lower_bound( tidx_itr->comment );
+            auto tag_itr = tidx.begin();
+            auto comment_tag_itr = comment_tag_idx.find( tidx_itr->comment );
+            
+            if( comment_tag_itr != comment_tag_idx.end() && comment_tag_itr->comment == tidx_itr->comment )
+            {
+               tag_itr = tidx.iterator_to( *comment_tag_itr );
+            }
 
             bool found = false;
             while( tag_itr != tidx.end() && tag_itr->comment == tidx_itr->comment )
@@ -4447,7 +4477,13 @@ vector< discussion > database_api::get_discussions(
 
          if( query.select_tags.size() )
          {
-            auto tag_itr = tidx.lower_bound( tidx_itr->comment );
+            auto tag_itr = tidx.begin();
+            auto comment_tag_itr = comment_tag_idx.find( tidx_itr->comment );
+            
+            if( comment_tag_itr != comment_tag_idx.end() && comment_tag_itr->comment == tidx_itr->comment )
+            {
+               tag_itr = tidx.iterator_to( *comment_tag_itr );
+            }
 
             bool found = false;
             while( tag_itr != tidx.end() && tag_itr->comment == tidx_itr->comment )
@@ -4480,10 +4516,16 @@ vector< discussion > database_api::get_discussions(
 
          if( query.filter_communities.size() )
          {
-            auto tag_itr = tidx_idx.lower_bound( tidx_itr->comment );
+            auto tag_itr = tidx.begin();
+            auto comment_tag_itr = comment_tag_idx.find( tidx_itr->comment );
+            
+            if( comment_tag_itr != comment_tag_idx.end() && comment_tag_itr->comment == tidx_itr->comment )
+            {
+               tag_itr = tidx.iterator_to( *comment_tag_itr );
+            }
 
             bool found = false;
-            while( tag_itr != tidx_idx.end() && tag_itr->comment == tidx_itr->comment )
+            while( tag_itr != tidx.end() && tag_itr->comment == tidx_itr->comment )
             {
                if( query.filter_communities.find( tag_itr->community ) != query.filter_communities.end() )
                {
@@ -4501,10 +4543,16 @@ vector< discussion > database_api::get_discussions(
 
          if( query.filter_tags.size() )
          {
-            auto tag_itr = tidx_idx.lower_bound( tidx_itr->comment );
+            auto tag_itr = tidx.begin();
+            auto comment_tag_itr = comment_tag_idx.find( tidx_itr->comment );
+            
+            if( comment_tag_itr != comment_tag_idx.end() && comment_tag_itr->comment == tidx_itr->comment )
+            {
+               tag_itr = tidx.iterator_to( *comment_tag_itr );
+            }
 
             bool found = false;
-            while( tag_itr != tag_idx.end() && tag_itr->comment == tidx_itr->comment )
+            while( tag_itr != tidx.end() && tag_itr->comment == tidx_itr->comment )
             {
                if( query.filter_tags.find( tag_itr->tag ) != query.filter_tags.end() )
                {
@@ -4551,13 +4599,19 @@ comment_id_type database_api::get_parent( const discussion_query& query )const
 {
    return my->_db.with_read_lock( [&]()
    {
-      comment_id_type parent;
-      if( query.parent_author && query.parent_permlink ) 
-      {
-         parent = my->_db.get_comment( *query.parent_author, *query.parent_permlink ).id;
-      }
-      return parent;
+      return my->get_parent( query );
    });
+}
+
+
+comment_id_type database_api_impl::get_parent( const discussion_query& query )const
+{
+   comment_id_type parent;
+   if( query.parent_author && query.parent_permlink ) 
+   {
+      parent = _db.get_comment( *query.parent_author, *query.parent_permlink ).id;
+   }
+   return parent;
 }
 
 vector< discussion > database_api::get_discussions_by_sort_rank( const discussion_query& query )const
@@ -4576,277 +4630,566 @@ vector< discussion > database_api_impl::get_discussions_by_sort_rank( const disc
    }
 
    query.validate();
-   auto community = fc::to_lower( query.community );
-   auto tag = fc::to_lower( query.tag );
-   auto parent = get_parent( query );
+   string community = fc::to_lower( query.community );
+   string tag = fc::to_lower( query.tag );
+   comment_id_type parent = get_parent( query );
 
-   string sort_type;
+   string sort_option;
    string sort_time;
 
-   if( query.sort_type.size() && query.sort_time.size() )
+   if( query.sort_option.size() && query.sort_time.size() )
    {
-      sort_type = query.sort_type;
+      sort_option = query.sort_option;
       sort_time = query.sort_time;
    }
 
-   const auto& tag_sort_index = _db.get_index< tags::tag_quality_sort_index >().indices().get< tags::by_parent_quality_standard >();
+   sort_option_type option_type = sort_option_type::QUALITY_SORT;
 
-   if( sort_type == sort_option_values[ sort_option_type::QUALITY_SORT ] )
+   for( size_t i = 0; i < sort_option_values.size(); i++ )
    {
-      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
+      if( sort_option == sort_option_values[ i ] )
       {
-         const auto& tag_sort_index = _db.get_index< tags::tag_quality_sort_index >().indices().get< tags::by_parent_quality_active >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_quality_sort_index >().indices().get< tags::by_parent_quality_rapid >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_quality_sort_index >().indices().get< tags::by_parent_quality_standard >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_quality_sort_index >().indices().get< tags::by_parent_quality_top >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_quality_sort_index >().indices().get< tags::by_parent_quality_elite >();
-      }
-   }
-   else if( sort_type == sort_option_values[ sort_option_type::VOTES_SORT ] )
-   {
-      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_votes_sort_index >().indices().get< tags::by_parent_votes_active >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_votes_sort_index >().indices().get< tags::by_parent_votes_rapid >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_votes_sort_index >().indices().get< tags::by_parent_votes_standard >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_votes_sort_index >().indices().get< tags::by_parent_votes_top >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_votes_sort_index >().indices().get< tags::by_parent_votes_elite >();
-      }
-   }
-   else if( sort_type == sort_option_values[ sort_option_type::VIEWS_SORT ] )
-   {
-      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_views_sort_index >().indices().get< tags::by_parent_views_active >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_views_sort_index >().indices().get< tags::by_parent_views_rapid >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_views_sort_index >().indices().get< tags::by_parent_views_standard >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_views_sort_index >().indices().get< tags::by_parent_views_top >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_views_sort_index >().indices().get< tags::by_parent_views_elite >();
-      }
-   }
-   else if( sort_type == sort_option_values[ sort_option_type::SHARES_SORT ] )
-   {
-      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_shares_sort_index >().indices().get< tags::by_parent_shares_active >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_shares_sort_index >().indices().get< tags::by_parent_shares_rapid >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_shares_sort_index >().indices().get< tags::by_parent_shares_standard >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_shares_sort_index >().indices().get< tags::by_parent_shares_top >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_shares_sort_index >().indices().get< tags::by_parent_shares_elite >();
-      }
-   }
-   else if( sort_type == sort_option_values[ sort_option_type::COMMENTS_SORT ] )
-   {
-      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_comments_sort_index >().indices().get< tags::by_parent_comments_active >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_comments_sort_index >().indices().get< tags::by_parent_comments_rapid >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_comments_sort_index >().indices().get< tags::by_parent_comments_standard >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_comments_sort_index >().indices().get< tags::by_parent_comments_top >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_comments_sort_index >().indices().get< tags::by_parent_comments_elite >();
-      }
-   }
-   else if( sort_type == sort_option_values[ sort_option_type::POPULAR_SORT ] )
-   {
-      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_popular_sort_index >().indices().get< tags::by_parent_popular_active >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_popular_sort_index >().indices().get< tags::by_parent_popular_rapid >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_popular_sort_index >().indices().get< tags::by_parent_popular_standard >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_popular_sort_index >().indices().get< tags::by_parent_popular_top >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_popular_sort_index >().indices().get< tags::by_parent_popular_elite >();
-      }
-   }
-   else if( sort_type == sort_option_values[ sort_option_type::VIRAL_SORT ] )
-   {
-      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_viral_sort_index >().indices().get< tags::by_parent_viral_active >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_viral_sort_index >().indices().get< tags::by_parent_viral_rapid >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_viral_sort_index >().indices().get< tags::by_parent_viral_standard >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_viral_sort_index >().indices().get< tags::by_parent_viral_top >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_viral_sort_index >().indices().get< tags::by_parent_viral_elite >();
-      }
-   }
-   else if( sort_type == sort_option_values[ sort_option_type::DISCUSSION_SORT ] )
-   {
-      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_discussion_sort_index >().indices().get< tags::by_parent_discussion_active >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_discussion_sort_index >().indices().get< tags::by_parent_discussion_rapid >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_discussion_sort_index >().indices().get< tags::by_parent_discussion_standard >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_discussion_sort_index >().indices().get< tags::by_parent_discussion_top >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_discussion_sort_index >().indices().get< tags::by_parent_discussion_elite >();
-      }
-   }
-   else if( sort_type == sort_option_values[ sort_option_type::PROMINENT_SORT ] )
-   {
-      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_prominent_sort_index >().indices().get< tags::by_parent_prominent_active >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_prominent_sort_index >().indices().get< tags::by_parent_prominent_rapid >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_prominent_sort_index >().indices().get< tags::by_parent_prominent_standard >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_prominent_sort_index >().indices().get< tags::by_parent_prominent_top >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_prominent_sort_index >().indices().get< tags::by_parent_prominent_elite >();
-      }
-   }
-   else if( sort_type == sort_option_values[ sort_option_type::CONVERSATION_SORT ] )
-   {
-      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_conversation_sort_index >().indices().get< tags::by_parent_conversation_active >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_conversation_sort_index >().indices().get< tags::by_parent_conversation_rapid >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_conversation_sort_index >().indices().get< tags::by_parent_conversation_standard >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_conversation_sort_index >().indices().get< tags::by_parent_conversation_top >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_conversation_sort_index >().indices().get< tags::by_parent_conversation_elite >();
-      }
-   }
-   else if( sort_type == sort_option_values[ sort_option_type::DISCOURSE_SORT ] )
-   {
-      if( sort_time == sort_time_values[ sort_time_type::ACTIVE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_discourse_sort_index >().indices().get< tags::by_parent_discourse_active >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::RAPID_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_discourse_sort_index >().indices().get< tags::by_parent_discourse_rapid >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::STANDARD_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_discourse_sort_index >().indices().get< tags::by_parent_discourse_standard >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::TOP_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_discourse_sort_index >().indices().get< tags::by_parent_discourse_top >();
-      }
-      else if( sort_time == sort_time_values[ sort_time_type::ELITE_TIME ] )
-      {
-         const auto& tag_sort_index = _db.get_index< tags::tag_discourse_sort_index >().indices().get< tags::by_parent_discourse_elite >();
+         option_type = sort_option_type( i );
+         break;
       }
    }
 
-   auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
-   return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ) { return c.net_reward <= 0; } );
+   sort_time_type time_type = sort_time_type::STANDARD_TIME;
+
+   for( size_t i = 0; i < sort_time_values.size(); i++ )
+   {
+      if( sort_time == sort_time_values[ i ] )
+      {
+         time_type = sort_time_type( i );
+         break;
+      }
+   }
+
+   switch( option_type )
+   {
+      case sort_option_type::QUALITY_SORT:
+      {
+         switch( time_type )
+         {
+            case sort_time_type::ACTIVE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_quality_sort_index >().indices().get< tags::by_parent_quality_active >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::RAPID_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_quality_sort_index >().indices().get< tags::by_parent_quality_rapid >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::STANDARD_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_quality_sort_index >().indices().get< tags::by_parent_quality_standard >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::TOP_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_quality_sort_index >().indices().get< tags::by_parent_quality_top >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::ELITE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_quality_sort_index >().indices().get< tags::by_parent_quality_elite >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            default:
+            {
+               return vector< discussion >();
+            }
+            break;
+         }
+      }
+      break;
+      case sort_option_type::VOTES_SORT:
+      {
+         switch( time_type )
+         {
+            case sort_time_type::ACTIVE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_votes_sort_index >().indices().get< tags::by_parent_votes_active >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::RAPID_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_votes_sort_index >().indices().get< tags::by_parent_votes_rapid >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::STANDARD_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_votes_sort_index >().indices().get< tags::by_parent_votes_standard >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::TOP_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_votes_sort_index >().indices().get< tags::by_parent_votes_top >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::ELITE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_votes_sort_index >().indices().get< tags::by_parent_votes_elite >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            default:
+            {
+               return vector< discussion >();
+            }
+            break;
+         }
+      }
+      break;
+      case sort_option_type::VIEWS_SORT:
+      {
+         switch( time_type )
+         {
+            case sort_time_type::ACTIVE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_views_sort_index >().indices().get< tags::by_parent_views_active >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::RAPID_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_views_sort_index >().indices().get< tags::by_parent_views_rapid >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::STANDARD_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_views_sort_index >().indices().get< tags::by_parent_views_standard >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::TOP_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_views_sort_index >().indices().get< tags::by_parent_views_top >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::ELITE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_views_sort_index >().indices().get< tags::by_parent_views_elite >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            default:
+            {
+               return vector< discussion >();
+            }
+            break;
+         }
+      }
+      break;
+      case sort_option_type::SHARES_SORT:
+      {
+         switch( time_type )
+         {
+            case sort_time_type::ACTIVE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_shares_sort_index >().indices().get< tags::by_parent_shares_active >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::RAPID_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_shares_sort_index >().indices().get< tags::by_parent_shares_rapid >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::STANDARD_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_shares_sort_index >().indices().get< tags::by_parent_shares_standard >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::TOP_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_shares_sort_index >().indices().get< tags::by_parent_shares_top >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::ELITE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_shares_sort_index >().indices().get< tags::by_parent_shares_elite >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            default:
+            {
+               return vector< discussion >();
+            }
+            break;
+         }
+      }
+      break;
+      case sort_option_type::COMMENTS_SORT:
+      {
+         switch( time_type )
+         {
+            case sort_time_type::ACTIVE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_comments_sort_index >().indices().get< tags::by_parent_comments_active >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::RAPID_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_comments_sort_index >().indices().get< tags::by_parent_comments_rapid >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::STANDARD_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_comments_sort_index >().indices().get< tags::by_parent_comments_standard >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::TOP_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_comments_sort_index >().indices().get< tags::by_parent_comments_top >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::ELITE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_comments_sort_index >().indices().get< tags::by_parent_comments_elite >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            default:
+            {
+               return vector< discussion >();
+            }
+            break;
+         }
+      }
+      break;
+      case sort_option_type::POPULAR_SORT:
+      {
+         switch( time_type )
+         {
+            case sort_time_type::ACTIVE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_popular_sort_index >().indices().get< tags::by_parent_popular_active >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::RAPID_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_popular_sort_index >().indices().get< tags::by_parent_popular_rapid >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::STANDARD_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_popular_sort_index >().indices().get< tags::by_parent_popular_standard >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::TOP_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_popular_sort_index >().indices().get< tags::by_parent_popular_top >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::ELITE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_popular_sort_index >().indices().get< tags::by_parent_popular_elite >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            default:
+            {
+               return vector< discussion >();
+            }
+            break;
+         }
+      }
+      break;
+      case sort_option_type::VIRAL_SORT:
+      {
+         switch( time_type )
+         {
+            case sort_time_type::ACTIVE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_viral_sort_index >().indices().get< tags::by_parent_viral_active >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::RAPID_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_viral_sort_index >().indices().get< tags::by_parent_viral_rapid >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::STANDARD_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_viral_sort_index >().indices().get< tags::by_parent_viral_standard >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::TOP_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_viral_sort_index >().indices().get< tags::by_parent_viral_top >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::ELITE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_viral_sort_index >().indices().get< tags::by_parent_viral_elite >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            default:
+            {
+               return vector< discussion >();
+            }
+            break;
+         }
+      }
+      break;
+      case sort_option_type::DISCUSSION_SORT:
+      {
+         switch( time_type )
+         {
+            case sort_time_type::ACTIVE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_discussion_sort_index >().indices().get< tags::by_parent_discussion_active >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::RAPID_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_discussion_sort_index >().indices().get< tags::by_parent_discussion_rapid >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::STANDARD_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_discussion_sort_index >().indices().get< tags::by_parent_discussion_standard >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::TOP_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_discussion_sort_index >().indices().get< tags::by_parent_discussion_top >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::ELITE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_discussion_sort_index >().indices().get< tags::by_parent_discussion_elite >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            default:
+            {
+               return vector< discussion >();
+            }
+            break;
+         }
+      }
+      break;
+      case sort_option_type::PROMINENT_SORT:
+      {
+         switch( time_type )
+         {
+            case sort_time_type::ACTIVE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_prominent_sort_index >().indices().get< tags::by_parent_prominent_active >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::RAPID_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_prominent_sort_index >().indices().get< tags::by_parent_prominent_rapid >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::STANDARD_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_prominent_sort_index >().indices().get< tags::by_parent_prominent_standard >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::TOP_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_prominent_sort_index >().indices().get< tags::by_parent_prominent_top >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::ELITE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_prominent_sort_index >().indices().get< tags::by_parent_prominent_elite >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            default:
+            {
+               return vector< discussion >();
+            }
+            break;
+         }
+      }
+      break;
+      case sort_option_type::CONVERSATION_SORT:
+      {
+         switch( time_type )
+         {
+            case sort_time_type::ACTIVE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_conversation_sort_index >().indices().get< tags::by_parent_conversation_active >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::RAPID_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_conversation_sort_index >().indices().get< tags::by_parent_conversation_rapid >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::STANDARD_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_conversation_sort_index >().indices().get< tags::by_parent_conversation_standard >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::TOP_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_conversation_sort_index >().indices().get< tags::by_parent_conversation_top >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::ELITE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_conversation_sort_index >().indices().get< tags::by_parent_conversation_elite >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            default:
+            {
+               return vector< discussion >();
+            }
+            break;
+         }
+      }
+      break;
+      case sort_option_type::DISCOURSE_SORT:
+      {
+         switch( time_type )
+         {
+            case sort_time_type::ACTIVE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_discourse_sort_index >().indices().get< tags::by_parent_discourse_active >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::RAPID_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_discourse_sort_index >().indices().get< tags::by_parent_discourse_rapid >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::STANDARD_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_discourse_sort_index >().indices().get< tags::by_parent_discourse_standard >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::TOP_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_discourse_sort_index >().indices().get< tags::by_parent_discourse_top >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            case sort_time_type::ELITE_TIME:
+            {
+               const auto& tag_sort_index = _db.get_index< tags::tag_discourse_sort_index >().indices().get< tags::by_parent_discourse_elite >();
+               auto tag_sort_itr = tag_sort_index.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<double>::max() ) );
+               return get_discussions( query, community, tag, parent, tag_sort_index, tag_sort_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
+            }
+            break;
+            default:
+            {
+               return vector< discussion >();
+            }
+            break;
+         }
+      }
+      break;
+      default:
+      {
+         return vector< discussion >();
+      }
+      break;
+   }
 }
 
 
@@ -4872,20 +5215,20 @@ vector< discussion > database_api_impl::get_discussions_by_feed( const discussio
    if( query.account.size() )
    {
       account = query.account;
-      const account_object& acc_obj = _db.get_account( account );
    }
    else
    {
       return vector< discussion >();
    }
-   
+
+   const auto& tag_idx = _db.get_index< tags::tag_index >().indices().get<tags::by_comment>();
    const auto& f_idx = _db.get_index< feed_index >().indices().get< by_new_account_type >();
    auto feed_itr = f_idx.lower_bound( account );
    feed_reach_type reach = feed_reach_type::FOLLOW_FEED;
 
    if( query.feed_type.size() )
    {
-      for( auto i = 0; i < feed_reach_values.size(); i++ )
+      for( size_t i = 0; i < feed_reach_values.size(); i++ )
       {
          if( query.feed_type == feed_reach_values[ i ] )
          {
@@ -4897,11 +5240,12 @@ vector< discussion > database_api_impl::get_discussions_by_feed( const discussio
       feed_itr = f_idx.lower_bound( boost::make_tuple( account, reach ) );
    }
 
-   const auto& c_idx = _db.get_index< feed_index >().indices().get< by_comment >();
+   const auto& feed_idx = _db.get_index< feed_index >().indices().get< by_comment >();
    if( start_author.size() || start_permlink.size() )
    {
-      auto start_c = c_idx.find( boost::make_tuple( _db.get_comment( start_author, start_permlink ).id, account ) );
-      FC_ASSERT( start_c != c_idx.end(),
+      const comment_object& com = _db.get_comment( start_author, start_permlink );
+      auto start_c = feed_idx.find( com.id );
+      FC_ASSERT( start_c != feed_idx.end(),
          "Comment is not in account's feed" );
       feed_itr = f_idx.iterator_to( *start_c );
    }
@@ -4920,7 +5264,7 @@ vector< discussion > database_api_impl::get_discussions_by_feed( const discussio
       {
          auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
 
-         time_point now = my->_db.head_block_time();
+         time_point now = _db.head_block_time();
          time_point created = tag_itr->created;
          bool old_post = false;
 
@@ -4981,7 +5325,7 @@ vector< discussion > database_api_impl::get_discussions_by_feed( const discussio
          }
       }
 
-      if( query.max_rating =< 9 )
+      if( query.max_rating <= 9 )
       {
          auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
 
@@ -5068,8 +5412,6 @@ vector< discussion > database_api_impl::get_discussions_by_feed( const discussio
 
       if( query.filter_authors.size()  )
       {
-         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
-
          if( query.filter_authors.find( feed_itr->account ) != query.filter_authors.end() )
          {
             ++feed_itr;
@@ -5142,7 +5484,7 @@ vector< discussion > database_api_impl::get_discussions_by_feed( const discussio
 
       try
       {
-         results.push_back( get_discussion( feed_itr->comment ) );
+         results.push_back( get_discussion( feed_itr->comment, query.truncate_body ) );
          results.back().feed = feed_api_obj( *feed_itr );
       }
       catch ( const fc::exception& e )
@@ -5173,298 +5515,337 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
 
    query.validate();
 
-   auto start_author = query.start_author ? *( query.start_author ) : "";
-   auto start_permlink = query.start_permlink ? *( query.start_permlink ) : "";
+   string start_author = query.start_author ? *( query.start_author ) : "";
+   string start_permlink = query.start_permlink ? *( query.start_permlink ) : "";
 
    string account;
    string community;
    string tag;
+
    if( query.account.size() )
    {
       account = query.account;
       const account_object& acc_obj = _db.get_account( account );
+      if( !acc_obj.active )
+      {
+         return vector< discussion >();
+      }
    }
 
    if( query.community.size() )
    {
       community = query.community;
       const community_object& community_obj = _db.get_community( community );
+      if( !community_obj.active )
+      {
+         return vector< discussion >();
+      }
    }
 
    if( query.tag.size() )
    {
       tag = query.tag;
-      const tag_following_object& tag_obj = _db.get_tag_following( tag );
+   }
+
+   blog_reach_type reach_type = blog_reach_type::ACCOUNT_BLOG;
+
+   for( size_t i = 0; i < blog_reach_values.size(); i++ )
+   {
+      if( query.blog_type == blog_reach_values[ i ] )
+      {
+         reach_type = blog_reach_type( i );
+         break;
+      }
    }
 
    const auto& tag_idx = _db.get_index< tags::tag_index >().indices().get<tags::by_comment>();
-   const auto& c_idx = _db.get_index< blog_index >().indices().get< by_comment >();
-   const auto& b_idx = _db.get_index< blog_index >().indices().get< by_new_account_blog >();
+   const auto& blog_idx = _db.get_index< blog_index >().indices().get< by_comment >();
+   auto blog_itr = blog_idx.begin();
 
-   string subject = account;
-
-   if( query.blog_type.size() )
+   switch( reach_type )
    {
-      if( query.blog_type == blog_reach_values[ blog_reach_type::ACCOUNT_BLOG ] )
+      case blog_reach_type::ACCOUNT_BLOG:
       {
-         const auto& b_idx = _db.get_index< blog_index >().indices().get< by_new_account_blog >();
+         const auto& account_blog_idx = _db.get_index< blog_index >().indices().get< by_new_account_blog >();
+         auto blog_itr = account_blog_idx.lower_bound( account );
+         if( start_author.size() || start_permlink.size() )
+         {
+            const comment_object& com = _db.get_comment( start_author, start_permlink );
+            auto start_c = blog_idx.find( com.id );
+            FC_ASSERT( start_c != blog_idx.end(),
+               "Comment is not in account's blog" );
+            blog_itr = account_blog_idx.iterator_to( *start_c );
+         }
       }
-      else if( query.blog_type == blog_reach_values[ blog_reach_type::COMMUNITY_BLOG ] )
+      break;
+      case blog_reach_type::COMMUNITY_BLOG:
       {
-         const auto& b_idx = _db.get_index< blog_index >().indices().get< by_new_community_blog >();
-         subject = community;
+         const auto& community_blog_idx = _db.get_index< blog_index >().indices().get< by_new_community_blog >();
+         auto blog_itr = community_blog_idx.lower_bound( community );
+         if( start_author.size() || start_permlink.size() )
+         {
+            const comment_object& com = _db.get_comment( start_author, start_permlink );
+            auto start_c = blog_idx.find( com.id );
+            FC_ASSERT( start_c != blog_idx.end(),
+               "Comment is not in community's blog" );
+            blog_itr = community_blog_idx.iterator_to( *start_c );
+         }
       }
-      else if( query.blog_type == blog_reach_values[ blog_reach_type::TAG_BLOG ] )
+      break;
+      case blog_reach_type::TAG_BLOG:
       {
-         const auto& b_idx = _db.get_index< blog_index >().indices().get< by_new_tag_blog >();
-         subject = tag;
+         const auto& tag_blog_idx = _db.get_index< blog_index >().indices().get< by_new_tag_blog >();
+         auto blog_itr = tag_blog_idx.lower_bound( tag );
+         if( start_author.size() || start_permlink.size() )
+         {
+            const comment_object& com = _db.get_comment( start_author, start_permlink );
+            auto start_c = blog_idx.find( com.id );
+            FC_ASSERT( start_c != blog_idx.end(),
+               "Comment is not in tag's blog" );
+            blog_itr = tag_blog_idx.iterator_to( *start_c );
+         }
       }
-   }
-
-   auto blog_itr = b_idx.lower_bound( subject );
-
-   if( start_author.size() || start_permlink.size() )
-   {
-      auto start_c = c_idx.find( boost::make_tuple( _db.get_comment( start_author, start_permlink ).id, account ) );
-      FC_ASSERT( start_c != c_idx.end(),
-         "Comment is not in account's blog" );
-      blog_itr = b_idx.iterator_to( *start_c );
+      break;
+      default:
+      {
+         return vector< discussion >();
+      }
    }
 
    vector< discussion > results;
    results.reserve( query.limit );
 
-   while( results.size() < query.limit && blog_itr != b_idx.end() )
+   while( results.size() < query.limit && blog_itr != blog_idx.end() )
    { 
+      if( account.size() && blog_itr->account != account && query.blog_type == blog_reach_values[ blog_reach_type::ACCOUNT_BLOG ] )
+      {
+         break;
+      }
+      if( community.size() && blog_itr->community != community && query.blog_type == blog_reach_values[ blog_reach_type::COMMUNITY_BLOG ] )
+      {
+         break;
+      }
+      if( tag.size() && blog_itr->tag != tag && query.blog_type == blog_reach_values[ blog_reach_type::TAG_BLOG ] )
+      {
+         break;
+      }
+
+      if( query.post_include_time.size() )
+      {
+         auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
+
+         time_point now = _db.head_block_time();
+         time_point created = tag_itr->created;
+         bool old_post = false;
+
+         if( query.post_include_time == post_time_values[ post_time_type::ALL_TIME ] )
+         {
+            old_post = false;
+         }
+         else if( query.post_include_time == post_time_values[ post_time_type::LAST_HOUR ] )
+         {
+            if( created + fc::hours(1) > now )
+            {
+               old_post = true;
+            }
+         }
+         else if( query.post_include_time == post_time_values[ post_time_type::LAST_DAY ] )
+         {
+            if( created + fc::days(1) > now ) 
+            {
+               old_post = true;
+            }
+         }
+         else if( query.post_include_time == post_time_values[ post_time_type::LAST_WEEK ] )
+         {
+            if( created + fc::days(7) > now ) 
+            {
+               old_post = true;
+            }
+         }
+         else if( query.post_include_time == post_time_values[ post_time_type::LAST_MONTH ] )
+         {
+            if( created + fc::days(30) > now ) 
+            {
+               old_post = true;
+            }
+         }
+         else if( query.post_include_time == post_time_values[ post_time_type::LAST_YEAR ] )
+         {
+            if( created + fc::days(365) > now ) 
+            {
+               old_post = true;
+            }
+         }
+
+         if( old_post )
+         {
+            ++blog_itr;
+            continue;
+         }
+      }
+
+      if( !query.include_private )
+      {
+         auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
+         if( tag_itr->encrypted )
+         {
+            ++blog_itr;
+            continue;
+         }
+      }
+
+      if( query.max_rating <= 9 )
+      {
+         auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
+
+         if( tag_itr->rating > query.max_rating )
+         {
+            ++blog_itr;
+            continue;
+         }
+      }
+
+      if( query.select_authors.size() && query.select_authors.find( blog_itr->account ) == query.select_authors.end() )
+      {
+         ++blog_itr;
+         continue;
+      }
+
+      if( query.select_languages.size() ) 
+      {
+         auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
+
+         bool found = false;
+         while( tag_itr != tag_idx.end() && tag_itr->comment == blog_itr->comment )
+         {
+            if( query.select_languages.find( tag_itr->language ) != query.select_languages.end() )
+            {
+               found = true; 
+               break;
+            }
+            ++tag_itr;
+         }
+         if( !found ) 
+         {
+            ++blog_itr;
+            continue;
+         }
+      }
+
+      if( query.select_communities.size() ) 
+      {
+         auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
+
+         bool found = false;
+         while( tag_itr != tag_idx.end() && tag_itr->comment == blog_itr->comment )
+         {
+            if( query.select_communities.find( tag_itr->community ) != query.select_communities.end() )
+            {
+               found = true; 
+               break;
+            }
+            ++tag_itr;
+         }
+         if( !found ) 
+         {
+            ++blog_itr;
+            continue;
+         }
+      }
+
+      if( query.select_tags.size() ) 
+      {
+         auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
+
+         bool found = false;
+         while( tag_itr != tag_idx.end() && tag_itr->comment == blog_itr->comment )
+         {
+            if( query.select_tags.find( tag_itr->tag ) != query.select_tags.end() )
+            {
+               found = true; 
+               break;
+            }
+            ++tag_itr;
+         }
+         if( !found ) 
+         {
+            ++blog_itr;
+            continue;
+         }
+      }
+
+      if( query.filter_authors.size() && query.filter_authors.find( blog_itr->account ) != query.filter_authors.end() )
+      {
+         ++blog_itr;
+         continue;
+      }
+
+      if( query.filter_languages.size() )
+      {
+         auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
+
+         bool found = false;
+         while( tag_itr != tag_idx.end() && tag_itr->comment == blog_itr->comment )
+         {
+            if( query.filter_languages.find( tag_itr->language ) != query.filter_languages.end() )
+            {
+               found = true; 
+               break;
+            }
+            ++tag_itr;
+         }
+         if( found ) 
+         {
+            ++blog_itr;
+            continue;
+         }
+      }
+
+      if( query.filter_communities.size() ) 
+      {
+         auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
+
+         bool found = false;
+         while( tag_itr != tag_idx.end() && tag_itr->comment == blog_itr->comment )
+         {
+            if( query.filter_communities.find( tag_itr->community ) != query.filter_communities.end() )
+            {
+               found = true; 
+               break;
+            }
+            ++tag_itr;
+         }
+         if( found ) 
+         {
+            ++blog_itr;
+            continue;
+         }
+      }
+
+      if( query.filter_tags.size() ) 
+      {
+         auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
+
+         bool found = false;
+         while( tag_itr != tag_idx.end() && tag_itr->comment == blog_itr->comment )
+         {
+            if( query.filter_tags.find( tag_itr->tag ) != query.filter_tags.end() )
+            {
+               found = true; 
+               break;
+            }
+            ++tag_itr;
+         }
+         if( found ) 
+         {
+            ++blog_itr;
+            continue;
+         }
+      }
+
       try
       {
-         if( account.size() && blog_itr->account != account && query.blog_type == blog_reach_values[ blog_reach_type::ACCOUNT_BLOG ] )
-         {
-            break;
-         }
-         if( community.size() && blog_itr->community != community && query.blog_type == blog_reach_values[ blog_reach_type::COMMUNITY_BLOG ] )
-         {
-            break;
-         }
-         if( tag.size() && blog_itr->tag != tag && query.blog_type == blog_reach_values[ blog_reach_type::TAG_BLOG ] )
-         {
-            break;
-         }
-
-         if( query.post_include_time.size() )
-         {
-            auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
-
-            time_point now = my->_db.head_block_time();
-            time_point created = tag_itr->created;
-            bool old_post = false;
-
-            if( query.post_include_time == post_time_values[ post_time_type::ALL_TIME ] )
-            {
-               old_post = false;
-            }
-            else if( query.post_include_time == post_time_values[ post_time_type::LAST_HOUR ] )
-            {
-               if( created + fc::hours(1) > now )
-               {
-                  old_post = true;
-               }
-            }
-            else if( query.post_include_time == post_time_values[ post_time_type::LAST_DAY ] )
-            {
-               if( created + fc::days(1) > now ) 
-               {
-                  old_post = true;
-               }
-            }
-            else if( query.post_include_time == post_time_values[ post_time_type::LAST_WEEK ] )
-            {
-               if( created + fc::days(7) > now ) 
-               {
-                  old_post = true;
-               }
-            }
-            else if( query.post_include_time == post_time_values[ post_time_type::LAST_MONTH ] )
-            {
-               if( created + fc::days(30) > now ) 
-               {
-                  old_post = true;
-               }
-            }
-            else if( query.post_include_time == post_time_values[ post_time_type::LAST_YEAR ] )
-            {
-               if( created + fc::days(365) > now ) 
-               {
-                  old_post = true;
-               }
-            }
-
-            if( old_post )
-            {
-               ++blog_itr;
-               continue;
-            }
-         }
-
-         if( !query.include_private )
-         {
-            auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
-            if( tag_itr->encrypted )
-            {
-               ++blog_itr;
-               continue;
-            }
-         }
-
-         if( query.max_rating =< 9 )
-         {
-            auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
-
-            if( tag_itr->rating > query.max_rating )
-            {
-               ++blog_itr;
-               continue;
-            }
-         }
-
-         if( query.select_authors.size() && query.select_authors.find( blog_itr->account ) == query.select_authors.end() )
-         {
-            ++blog_itr;
-            continue;
-         }
-
-         if( query.select_languages.size() ) 
-         {
-            auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
-
-            bool found = false;
-            while( tag_itr != tag_idx.end() && tag_itr->comment == blog_itr->comment )
-            {
-               if( query.select_languages.find( tag_itr->language ) != query.select_languages.end() )
-               {
-                  found = true; 
-                  break;
-               }
-               ++tag_itr;
-            }
-            if( !found ) 
-            {
-               ++blog_itr;
-               continue;
-            }
-         }
-
-         if( query.select_communities.size() ) 
-         {
-            auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
-
-            bool found = false;
-            while( tag_itr != tag_idx.end() && tag_itr->comment == blog_itr->comment )
-            {
-               if( query.select_communities.find( tag_itr->community ) != query.select_communities.end() )
-               {
-                  found = true; 
-                  break;
-               }
-               ++tag_itr;
-            }
-            if( !found ) 
-            {
-               ++blog_itr;
-               continue;
-            }
-         }
-
-         if( query.select_tags.size() ) 
-         {
-            auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
-
-            bool found = false;
-            while( tag_itr != tag_idx.end() && tag_itr->comment == blog_itr->comment )
-            {
-               if( query.select_tags.find( tag_itr->tag ) != query.select_tags.end() )
-               {
-                  found = true; 
-                  break;
-               }
-               ++tag_itr;
-            }
-            if( !found ) 
-            {
-               ++blog_itr;
-               continue;
-            }
-         }
-
-         if( query.filter_authors.size() && query.filter_authors.find( blog_itr->account ) != query.filter_authors.end() )
-         {
-            ++blog_itr;
-            continue;
-         }
-
-         if( query.filter_languages.size() )
-         {
-            auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
-
-            bool found = false;
-            while( tag_itr != tag_idx.end() && tag_itr->comment == blog_itr->comment )
-            {
-               if( query.filter_languages.find( tag_itr->language ) != query.filter_languages.end() )
-               {
-                  found = true; 
-                  break;
-               }
-               ++tag_itr;
-            }
-            if( found ) 
-            {
-               ++blog_itr;
-               continue;
-            }
-         }
-
-         if( query.filter_communities.size() ) 
-         {
-            auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
-
-            bool found = false;
-            while( tag_itr != tag_idx.end() && tag_itr->comment == blog_itr->comment )
-            {
-               if( query.filter_communities.find( tag_itr->community ) != query.filter_communities.end() )
-               {
-                  found = true; 
-                  break;
-               }
-               ++tag_itr;
-            }
-            if( found ) 
-            {
-               ++blog_itr;
-               continue;
-            }
-         }
-
-         if( query.filter_tags.size() ) 
-         {
-            auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
-
-            bool found = false;
-            while( tag_itr != tag_idx.end() && tag_itr->comment == blog_itr->comment )
-            {
-               if( query.filter_tags.find( tag_itr->tag ) != query.filter_tags.end() )
-               {
-                  found = true; 
-                  break;
-               }
-               ++tag_itr;
-            }
-            if( found ) 
-            {
-               ++blog_itr;
-               continue;
-            }
-         }
-         
          results.push_back( get_discussion( blog_itr->comment, query.truncate_body ) );
          results.back().blog = blog_api_obj( *blog_itr );
       }
@@ -5532,9 +5913,9 @@ vector< discussion > database_api_impl::get_discussions_by_recommended( const di
          for( uint32_t i = 0; i < query.limit; ++i )
          {
             uint64_t k = now_hi +      uint64_t(i)*2685757105773633871ULL;
-            uint64_t l = now_hi >> 1 + uint64_t(i)*9519819187187829351ULL;
-            uint64_t m = now_hi >> 2 + uint64_t(i)*5891972902484196198ULL;
-            uint64_t n = now_hi >> 3 + uint64_t(i)*2713716410970705441ULL;
+            uint64_t l = ( now_hi >> 1 ) + uint64_t(i)*9519819187187829351ULL;
+            uint64_t m = ( now_hi >> 2 ) + uint64_t(i)*5891972902484196198ULL;
+            uint64_t n = ( now_hi >> 3 ) + uint64_t(i)*2713716410970705441ULL;
          
             k ^= (l >> 7);
             l ^= (m << 9);
@@ -5561,7 +5942,7 @@ vector< discussion > database_api_impl::get_discussions_by_recommended( const di
 
             uint32_t j = i + rand % max;
             std::swap( recommended_posts[i], recommended_posts[j] );
-            results.push_back( get_discussion( recommended_posts[i] ) );    // Returns randomly selected comments from the recommended posts collection
+            results.push_back( get_discussion( recommended_posts[i], query.truncate_body ) );    // Returns randomly selected comments from the recommended posts collection
          }
       }
       else
@@ -5591,17 +5972,17 @@ vector< discussion > database_api_impl::get_discussions_by_comments( const discu
    query.validate();
    FC_ASSERT( query.start_author,
       "Must get comments for a specific author" );
-   auto start_author = *( query.start_author );
-   auto start_permlink = query.start_permlink ? *( query.start_permlink ) : "";
+   string start_author = *( query.start_author );
+   string start_permlink = query.start_permlink ? *( query.start_permlink ) : "";
 
-   const auto& c_idx = _db.get_index< comment_index >().indices().get< by_permlink >();
+   const auto& comment_idx = _db.get_index< comment_index >().indices().get< by_permlink >();
    const auto& t_idx = _db.get_index< comment_index >().indices().get< by_author_last_update >();
    auto comment_itr = t_idx.lower_bound( start_author );
 
    if( start_permlink.size() )
    {
-      auto start_c = c_idx.find( boost::make_tuple( start_author, start_permlink ) );
-      FC_ASSERT( start_c != c_idx.end(),
+      auto start_c = comment_idx.find( boost::make_tuple( start_author, start_permlink ) );
+      FC_ASSERT( start_c != comment_idx.end(),
          "Comment is not in account's comments" );
       comment_itr = t_idx.iterator_to( *start_c );
    }
@@ -5618,7 +5999,7 @@ vector< discussion > database_api_impl::get_discussions_by_comments( const discu
       {
          try
          {
-            results.push_back( get_discussion( comment_itr->id ) );
+            results.push_back( get_discussion( comment_itr->id, query.truncate_body ) );
          }
          catch( const fc::exception& e )
          {
@@ -5650,10 +6031,10 @@ vector< discussion > database_api_impl::get_discussions_by_payout( const discuss
    query.validate();
    string community = fc::to_lower( query.community );
    string tag = fc::to_lower( query.tag );
-   auto parent = get_parent( query );
+   comment_id_type parent = get_parent( query );
 
    const auto& tidx = _db.get_index< tags::tag_index >().indices().get< tags::by_net_reward >();
-   auto tidx_itr = tidx.lower_bound( community, tag );
+   auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag ) );
 
    return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
 }
@@ -5676,9 +6057,9 @@ vector< discussion > database_api_impl::get_post_discussions_by_payout( const di
    query.validate();
    string community = fc::to_lower( query.community );
    string tag = fc::to_lower( query.tag );
-   auto parent = comment_id_type();    // Root posts
+   comment_id_type parent = comment_id_type();    // Root posts
 
-   const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_reward_fund_net_reward>();
+   const auto& tidx = _db.get_index< tags::tag_index >().indices().get< tags::by_reward_fund_net_reward >();
    auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, true ) );
 
    return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body, []( const comment_api_obj& c ){ return c.net_reward <= 0; }, exit_default, tag_exit_default, true );
@@ -5700,9 +6081,9 @@ vector< discussion > database_api_impl::get_comment_discussions_by_payout( const
    }
 
    query.validate();
-   auto community = fc::to_lower( query.community );
-   auto tag = fc::to_lower( query.tag );
-   auto parent = comment_id_type(1);
+   string community = fc::to_lower( query.community );
+   string tag = fc::to_lower( query.tag );
+   comment_id_type parent = comment_id_type(1);
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_reward_fund_net_reward>();
    auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, false ) );
@@ -5728,14 +6109,14 @@ vector< discussion > database_api_impl::get_discussions_by_created( const discus
    }
 
    query.validate();
-   auto community = fc::to_lower( query.community );
-   auto tag = fc::to_lower( query.tag );
-   auto parent = get_parent( query );
+   string community = fc::to_lower( query.community );
+   string tag = fc::to_lower( query.tag );
+   comment_id_type parent = get_parent( query );
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_created>();
    auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, fc::time_point::maximum() )  );
 
-   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body, filter_default, exit_default, tag_exit_default, false );
 }
 
 vector< discussion > database_api::get_discussions_by_active( const discussion_query& query )const
@@ -5754,14 +6135,14 @@ vector< discussion > database_api_impl::get_discussions_by_active( const discuss
    }
 
    query.validate();
-   auto community = fc::to_lower( query.community );
-   auto tag = fc::to_lower( query.tag );
-   auto parent = get_parent( query );
+   string community = fc::to_lower( query.community );
+   string tag = fc::to_lower( query.tag );
+   comment_id_type parent = get_parent( query );
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_active>();
    auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, fc::time_point::maximum() )  );
 
-   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body, filter_default, exit_default, tag_exit_default, false );
 }
 
 vector< discussion > database_api::get_discussions_by_votes( const discussion_query& query )const
@@ -5780,14 +6161,14 @@ vector< discussion > database_api_impl::get_discussions_by_votes( const discussi
    }
 
    query.validate();
-   auto community = fc::to_lower( query.community );
-   auto tag = fc::to_lower( query.tag );
-   auto parent = get_parent( query );
+   string community = fc::to_lower( query.community );
+   string tag = fc::to_lower( query.tag );
+   comment_id_type parent = get_parent( query );
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_net_votes>();
    auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<int32_t>::max() ) );
 
-   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body, filter_default, exit_default, tag_exit_default, false );
 }
 
 vector< discussion > database_api::get_discussions_by_views( const discussion_query& query )const
@@ -5806,14 +6187,14 @@ vector< discussion > database_api_impl::get_discussions_by_views( const discussi
    }
 
    query.validate();
-   auto community = fc::to_lower( query.community );
-   auto tag = fc::to_lower( query.tag );
-   auto parent = get_parent( query );
+   string community = fc::to_lower( query.community );
+   string tag = fc::to_lower( query.tag );
+   comment_id_type parent = get_parent( query );
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_view_count>();
    auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<int32_t>::max() )  );
 
-   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body, filter_default, exit_default, tag_exit_default, false );
 }
 
 vector< discussion > database_api::get_discussions_by_shares( const discussion_query& query )const
@@ -5832,14 +6213,14 @@ vector< discussion > database_api_impl::get_discussions_by_shares( const discuss
    }
 
    query.validate();
-   auto community = fc::to_lower( query.community );
-   auto tag = fc::to_lower( query.tag );
-   auto parent = get_parent( query );
+   string community = fc::to_lower( query.community );
+   string tag = fc::to_lower( query.tag );
+   comment_id_type parent = get_parent( query );
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_share_count>();
    auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<int32_t>::max() )  );
 
-   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body, filter_default, exit_default, tag_exit_default, false );
 }
 
 vector< discussion > database_api::get_discussions_by_children( const discussion_query& query )const
@@ -5858,14 +6239,14 @@ vector< discussion > database_api_impl::get_discussions_by_children( const discu
    }
 
    query.validate();
-   auto community = fc::to_lower( query.community );
-   auto tag = fc::to_lower( query.tag );
-   auto parent = get_parent( query );
+   string community = fc::to_lower( query.community );
+   string tag = fc::to_lower( query.tag );
+   comment_id_type parent = get_parent( query );
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_children>();
    auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<int32_t>::max() )  );
 
-   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body, filter_default, exit_default, tag_exit_default, false );
 }
 
 vector< discussion > database_api::get_discussions_by_vote_power( const discussion_query& query )const
@@ -5886,12 +6267,12 @@ vector< discussion > database_api_impl::get_discussions_by_vote_power( const dis
    query.validate();
    string community = fc::to_lower( query.community );
    string tag = fc::to_lower( query.tag );
-   auto parent = get_parent( query );
+   comment_id_type parent = get_parent( query );
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_vote_power>();
    auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<int32_t>::max() ) );
 
-   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body, filter_default, exit_default, tag_exit_default, false );
 }
 
 vector< discussion > database_api::get_discussions_by_view_power( const discussion_query& query )const
@@ -5912,12 +6293,12 @@ vector< discussion > database_api_impl::get_discussions_by_view_power( const dis
    query.validate();
    string community = fc::to_lower( query.community );
    string tag = fc::to_lower( query.tag );
-   auto parent = get_parent( query );
+   comment_id_type parent = get_parent( query );
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_view_power>();
    auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<int32_t>::max() ) );
 
-   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body, filter_default, exit_default, tag_exit_default, false );
 }
 
 
@@ -5939,12 +6320,12 @@ vector< discussion > database_api_impl::get_discussions_by_share_power( const di
    query.validate();
    string community = fc::to_lower( query.community );
    string tag = fc::to_lower( query.tag );
-   auto parent = get_parent( query );
+   comment_id_type parent = get_parent( query );
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_share_power>();
    auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<int32_t>::max() ) );
 
-   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body, filter_default, exit_default, tag_exit_default, false );
 }
 
 vector< discussion > database_api::get_discussions_by_comment_power( const discussion_query& query )const
@@ -5965,12 +6346,12 @@ vector< discussion > database_api_impl::get_discussions_by_comment_power( const 
    query.validate();
    string community = fc::to_lower( query.community );
    string tag = fc::to_lower( query.tag );
-   auto parent = get_parent( query );
+   comment_id_type parent = get_parent( query );
 
    const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_comment_power>();
    auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, std::numeric_limits<int32_t>::max() ) );
 
-   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body );
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body, filter_default, exit_default, tag_exit_default, false );
 }
 
 /**
@@ -6118,7 +6499,6 @@ state database_api_impl::get_state( string path )const
          q.account = acnt;
          q.blog_type = blog_reach_type::ACCOUNT_BLOG;
          vector< discussion > blog_posts = get_discussions_by_blog( q );
-         const auto& blog_idx = _db.get_index< blog_index >().indices().get< by_comment_account >();
          _state.blogs[ acnt ] = vector< string >();
 
          for( auto b : blog_posts )
@@ -6134,7 +6514,6 @@ state database_api_impl::get_state( string path )const
          q.account = acnt;
          q.feed_type = feed_reach_type::FOLLOW_FEED;
          vector< discussion > feed_posts = get_discussions_by_feed( q );
-         const auto& feed_idx = _db.get_index< feed_index >().indices().get< by_new_account >();
          _state.blogs[ acnt ] = vector< string >();
 
          for( auto f: feed_posts )

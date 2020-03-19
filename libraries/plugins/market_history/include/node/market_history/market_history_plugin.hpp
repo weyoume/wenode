@@ -28,6 +28,7 @@ namespace node { namespace market_history {
 
 using namespace chain;
 using node::app::application;
+using fc::time_point;
 
 enum market_history_object_types
 {
@@ -76,25 +77,25 @@ struct market_duration_object : public object< market_duration_object_type, mark
 
    id_type              id;
 
-   fc::time_point       open_time;
+   time_point           open_time;
 
    uint32_t             seconds = 0;
 
-   asset_symbol_type    symbol_a;          // Asset with the lower ID. Base of prices.
+   asset_symbol_type    symbol_a;          ///< Asset with the lower ID. Base of prices.
 
-   asset_symbol_type    symbol_b;          // Asset with the greater ID. Quote of prices.
+   asset_symbol_type    symbol_b;          ///< Asset with the greater ID. Quote of prices.
 
-   price                open_price;        // The price of the first closed order in the time duration.
+   price                open_price;        ///< The price of the first closed order in the time duration.
 
-   price                high_price;        // The price of the highest closed order in the time duration.
+   price                high_price;        ///< The price of the highest closed order in the time duration.
 
-   price                low_price;         // The price of the lowest closed order in the time duration.
+   price                low_price;         ///< The price of the lowest closed order in the time duration.
 
-   price                close_price;       // The price of the last closed order in the time duration.
+   price                close_price;       ///< The price of the last closed order in the time duration.
    
-   asset                volume_a;          // The exchanged amount of asset A.
+   asset                volume_a;          ///< The exchanged amount of asset A.
 
-   asset                volume_b;          // The exchanged amount of asset B.
+   asset                volume_b;          ///< The exchanged amount of asset B.
 
    double open_price_real( asset_symbol_type base )const 
    {
@@ -154,7 +155,7 @@ struct order_history_object : public object< order_history_object_type, order_hi
 
    id_type                              id;
 
-   fc::time_point                       time;
+   time_point                           time;
 
    protocol::fill_order_operation       op;
 
@@ -191,7 +192,7 @@ typedef multi_index_container<
             std::less< asset_symbol_type >, 
             std::less< asset_symbol_type >, 
             std::less< uint32_t >, 
-            std::less< fc::time_point > 
+            std::less< time_point > 
          >
       >,
       ordered_unique< tag< by_new_asset_pair >,
@@ -205,7 +206,7 @@ typedef multi_index_container<
             std::less< asset_symbol_type >, 
             std::less< asset_symbol_type >, 
             std::less< uint32_t >, 
-            std::greater< fc::time_point > 
+            std::greater< time_point > 
          >
       >,
       ordered_unique< tag< by_duration >,
@@ -213,7 +214,10 @@ typedef multi_index_container<
             member< market_duration_object, uint32_t, &market_duration_object::seconds >,
             member< market_duration_object, time_point, &market_duration_object::open_time >
          >,
-         composite_key_compare< std::less< uint32_t >, std::less< fc::time_point > >
+         composite_key_compare< 
+            std::less< uint32_t >, 
+            std::less< time_point > 
+         >
       >
    >,
    allocator< market_duration_object >
@@ -236,8 +240,8 @@ typedef multi_index_container<
          composite_key_compare< 
             std::less< asset_symbol_type >,
             std::less< asset_symbol_type >,
-            std::less< uint32_t >,
-            std::less< fc::time_point >
+            std::less< time_point >,
+            std::less< order_history_id_type >
          >
       >,
       ordered_unique< tag< by_new_asset_pair >,
@@ -248,10 +252,10 @@ typedef multi_index_container<
             member< order_history_object, order_history_id_type, &order_history_object::id >
          >,
          composite_key_compare< 
-            std::less< asset_symbol_type >, 
-            std::less< asset_symbol_type >, 
-            std::less< uint32_t >, 
-            std::greater< fc::time_point > 
+            std::less< asset_symbol_type >,
+            std::less< asset_symbol_type >,
+            std::greater< time_point >,
+            std::less< order_history_id_type >
          >
       >
    >,
@@ -263,9 +267,9 @@ typedef multi_index_container<
 FC_REFLECT( node::market_history::market_duration_object,
          (id)
          (open_time)
+         (seconds)
          (symbol_a)
          (symbol_b)
-         (seconds)
          (open_price)
          (high_price)
          (low_price)

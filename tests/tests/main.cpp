@@ -14,9 +14,9 @@ boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[])
    const char* genesis_timestamp_str = getenv("TESTING_GENESIS_TIMESTAMP");
    if( genesis_timestamp_str != nullptr )
    {
-      TESTING_GENESIS_TIMESTAMP = std::stoul( genesis_timestamp_str );
+      TESTING_GENESIS_TIMESTAMP = fc::time_point( fc::seconds( std::stoul( genesis_timestamp_str ) ) );
    }
-   std::cout << "TESTING_GENESIS_TIMESTAMP is " << TESTING_GENESIS_TIMESTAMP << std::endl;
+   std::cout << "TESTING_GENESIS_TIMESTAMP is " << std::string( TESTING_GENESIS_TIMESTAMP ) << std::endl;
 
    return nullptr;
 }

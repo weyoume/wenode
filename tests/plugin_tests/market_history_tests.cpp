@@ -1,24 +1,17 @@
-//#ifdef IS_TEST_NET
 #include <boost/test/unit_test.hpp>
-
-#include <node/chain/account_object.hpp>
-#include <node/chain/comment_object.hpp>
-#include <node/protocol/node_operations.hpp>
 #include <node/chain/database.hpp>
-
+#include <node/protocol/node_operations.hpp>
 #include <node/market_history/market_history_plugin.hpp>
-
 #include "../common/database_fixture.hpp"
 
 using namespace node::chain;
 using namespace node::protocol;
+using namespace node::market_history;
 
 BOOST_FIXTURE_TEST_SUITE( market_history_tests, clean_database_fixture )
 
 BOOST_AUTO_TEST_CASE( market_history_test )
 {
-   using namespace node::market_history;
-
    try
    {
       auto mh_plugin = app.register_plugin< market_history_plugin >();
@@ -370,4 +363,3 @@ BOOST_AUTO_TEST_CASE( market_history_test )
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-//#endif

@@ -1,13 +1,10 @@
-//#ifdef IS_TEST_NET
-
 #include <boost/test/unit_test.hpp>
-#include <node/chain/node_objects.hpp>
-#include <node/protocol/exceptions.hpp>
 #include <node/chain/database.hpp>
+#include <node/protocol/exceptions.hpp>
 #include <node/chain/database_exceptions.hpp>
 #include <node/chain/util/reward.hpp>
 #include <fc/crypto/digest.hpp>
-#include <tests/common/database_fixture.hpp>
+#include "../common/database_fixture.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -32,7 +29,7 @@ BOOST_AUTO_TEST_CASE( update_network_officer_operation_test )
    {
       BOOST_TEST_MESSAGE( "├── Testing: NETWORK OFFICER SEQUENCE" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: network officer creation" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Network officer creation" );
 
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme)(kathryn)(leonie)(margot)(natalie)(olivia)(peter)(quentin)(rachel)(sam)(tim)(veronica) );
 
@@ -369,8 +366,6 @@ BOOST_AUTO_TEST_CASE( update_network_officer_operation_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      const network_officer_object& alice_officer = db.get_network_officer( "alice" );
       
       BOOST_REQUIRE( alice_officer.account == "alice" );
       BOOST_REQUIRE( alice_officer.officer_type == network_officer_role_type::DEVELOPMENT );
@@ -393,7 +388,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       BOOST_TEST_MESSAGE( "│   ├── Testing: executive board creation" );
 
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme)(kathryn)(leonie)(margot)(natalie)(olivia)(peter)(quentin)(rachel)(sam)(tim)(veronica) 
-      (alice2)(bob2)(candice2)(dan2)(elon2)(fred2)(george2)(haz2)(isabelle2)(jayme2)(kathryn2)(leonie2)(margot2)(natalie2)(olivia2)(peter2)(quentin2)(rachel2)(sam2)(tim2)(veronica2));
+      (alice2)(bob2)(candice2)(dan2)(elon2)(fred2)(george2)(haz2)(isabelle2)(jayme2)(kathryn2)(leonie2)(margot2)(natalie2)(olivia2)(peter2)(quentin2)(rachel2)(sam2)(tim2)(veronica2)(execboard));
 
       fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -563,38 +558,25 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       fund( "veronica2", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       producer_create( "veronica2", veronica2_private_owner_key, veronica2_public_owner_key );
 
-      account_create_operation create;
+      fund_stake( "execboard", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "execboard", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "execboard", execboard_private_owner_key, execboard_public_owner_key );
 
-      create.signatory = "alice";
-      create.registrar = "alice";
-      create.new_account_name = "execboard";
-      create.governance_account = INIT_ACCOUNT;
-      create.business_type = PUBLIC_BUSINESS;
-      create.officer_vote_threshold = BLOCKCHAIN_PRECISION;
-      create.business_public_key = alice_public_posting_key;
-      create.referrer = INIT_ACCOUNT;
-      create.proxy = INIT_ACCOUNT;
-      create.governance_account = INIT_ACCOUNT;
-      create.recovery_account = INIT_ACCOUNT;
-      create.reset_account = INIT_ACCOUNT;
-      create.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
-      create.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
-      create.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
-      create.json_private = "{\"cookie_price\":\"3.50000000 MUSD\"}";
-      create.owner = authority( 1, alice_public_owner_key, 1 );
-      create.active = authority( 2, alice_public_active_key, 2 );
-      create.posting = authority( 1, alice_public_posting_key, 1 );
-      create.secure_public_key = string( alice_public_posting_key );
-      create.connection_public_key = string( alice_public_posting_key );
-      create.friend_public_key = string( alice_public_posting_key );
-      create.companion_public_key = string( alice_public_posting_key );
-      create.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      create.validate();
+      account_business_operation business_create;
+
+      business_create.signatory = "execboard";
+      business_create.account = "execboard";
+      business_create.business_type = business_structure_type::PUBLIC_BUSINESS;
+      business_create.officer_vote_threshold = BLOCKCHAIN_PRECISION;
+      business_create.business_public_key = alice_public_posting_key;
+      business_create.governance_account = INIT_ACCOUNT;
+      business_create.init_ceo_account = "alice";
+      business_create.validate();
 
       signed_transaction tx;
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( create );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
+      tx.operations.push_back( business_create );
+      tx.sign( execboard_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       fund_stake( "execboard", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
@@ -653,7 +635,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       member.account = "execboard";
 
       tx.operations.push_back( member );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
+      tx.sign( execboard_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -829,9 +811,9 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       create.registrar = "execboard";
       create.new_account_name = "newuser";
       create.governance_account = "execboard";
-      create.owner = authority( 1, alice_public_owner_key, 1 );
-      create.active = authority( 2, alice_public_active_key, 2 );
-      create.posting = authority( 1, alice_public_posting_key, 1 );
+      create.owner_auth = authority( 1, alice_public_owner_key, 1 );
+      create.active_auth = authority( 2, alice_public_active_key, 2 );
+      create.posting_auth = authority( 1, alice_public_posting_key, 1 );
       create.secure_public_key = string( alice_public_posting_key );
       create.connection_public_key = string( alice_public_posting_key );
       create.friend_public_key = string( alice_public_posting_key );
@@ -1302,8 +1284,6 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      const executive_board_object& executive = db.get_executive_board( "execboard" );
       
       BOOST_REQUIRE( executive.account == "execboard" );
       BOOST_REQUIRE( executive.board_approved == true );
@@ -1417,9 +1397,6 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
       create.registrar = "alice";
       create.new_account_name = "govaccount";
       create.governance_account = INIT_ACCOUNT;
-      create.business_type = PUBLIC_BUSINESS;
-      create.officer_vote_threshold = BLOCKCHAIN_PRECISION;
-      create.business_public_key = alice_public_posting_key;
       create.referrer = INIT_ACCOUNT;
       create.proxy = INIT_ACCOUNT;
       create.governance_account = INIT_ACCOUNT;
@@ -1429,9 +1406,9 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
       create.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
       create.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
       create.json_private = "{\"cookie_price\":\"3.50000000 MUSD\"}";
-      create.owner = authority( 1, alice_public_owner_key, 1 );
-      create.active = authority( 2, alice_public_active_key, 2 );
-      create.posting = authority( 1, alice_public_posting_key, 1 );
+      create.owner_auth = authority( 1, alice_public_owner_key, 1 );
+      create.active_auth = authority( 2, alice_public_active_key, 2 );
+      create.posting_auth = authority( 1, alice_public_posting_key, 1 );
       create.secure_public_key = string( alice_public_posting_key );
       create.connection_public_key = string( alice_public_posting_key );
       create.friend_public_key = string( alice_public_posting_key );
@@ -1694,8 +1671,6 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      const governance_account_object& governance = db.get_governance_account( "govaccount" );
       
       BOOST_REQUIRE( governance.account == "govaccount" );
       BOOST_REQUIRE( governance.account_approved == true );
@@ -1753,7 +1728,7 @@ BOOST_AUTO_TEST_CASE( update_supernode_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: supernode viewing process" );
 
-      const comment_object& alice_post = comment_create( "alice", alice_private_posting_key, "alicetestpost" );
+      comment_create( "alice", alice_private_posting_key, "alicetestpost" );
 
       view_operation view;
 
@@ -1772,8 +1747,6 @@ BOOST_AUTO_TEST_CASE( update_supernode_operation_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-      
-      const supernode_object& alice_supernode = db.get_supernode( "alice" );
       
       BOOST_REQUIRE( alice_supernode.account == "alice" );
       BOOST_REQUIRE( alice_supernode.daily_active_users == PERCENT_100 );
@@ -1858,7 +1831,7 @@ BOOST_AUTO_TEST_CASE( update_interface_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: supernode viewing process" );
 
-      const comment_object& alice_post = comment_create( "alice", alice_private_posting_key, "alicetestpost" );
+      comment_create( "alice", alice_private_posting_key, "alicetestpost" );
 
       view_operation view;
 
@@ -1880,8 +1853,6 @@ BOOST_AUTO_TEST_CASE( update_interface_operation_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      const interface_object& alice_interface = db.get_interface( "alice" );
       
       BOOST_REQUIRE( alice_interface.account == "alice" );
       BOOST_REQUIRE( alice_interface.daily_active_users == PERCENT_100 );
@@ -2072,8 +2043,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
       create.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
       create.proposal_type = proposal_distribution_type::FUNDING;
       create.beneficiaries[ "alice" ] = PERCENT_100;
-      create.milestones.push_back( std::make_pair( "Begin proposal", 50*PERCENT_1 ) );
-      create.milestones.push_back( std::make_pair( "Finish proposal", 50*PERCENT_1 ) );
+      create.milestone_details.push_back( "Begin proposal" );
+      create.milestone_shares.push_back( 50*PERCENT_1 );
+      create.milestone_details.push_back( "Finish proposal" );
+      create.milestone_shares.push_back( 50*PERCENT_1 );
       create.details = "details";
       create.url = "www.url.com";
       create.json = "{\"json\":\"valid\"}";
@@ -2092,7 +2065,7 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const community_enterprise_object& enterprise = db.get_community_enterprise( "alice", "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7" );
+      const community_enterprise_object& enterprise = db.get_community_enterprise( create.creator, create.enterprise_id );
       
       BOOST_REQUIRE( enterprise.creator == "alice" );
       BOOST_REQUIRE( enterprise.approved_milestones == -1 );
@@ -2323,8 +2296,6 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
       const producer_schedule_object& producer_schedule = db.get_producer_schedule();
       db.update_enterprise( enterprise, producer_schedule, props );
 
-      const community_enterprise_object& enterprise = db.get_community_enterprise( "alice", "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7" );
-
       BOOST_REQUIRE( enterprise.creator == "alice" );
       BOOST_REQUIRE( enterprise.approved_milestones == 0 );    // initial milestone now approved
       BOOST_REQUIRE( enterprise.claimed_milestones == 0 );
@@ -2359,11 +2330,7 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
-      const producer_schedule_object& producer_schedule = db.get_producer_schedule();
       db.update_enterprise( enterprise, producer_schedule, props );
-
-      const community_enterprise_object& enterprise = db.get_community_enterprise( "alice", "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7" );
 
       BOOST_REQUIRE( enterprise.creator == "alice" );
       BOOST_REQUIRE( enterprise.approved_milestones == 0 );
@@ -2375,14 +2342,11 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: community enterprise proposal next milestone approval" );
 
-      approve_enterprise_milestone_operation approve;
-
       approve.signatory = "alice";
       approve.account = "alice";
       approve.creator = "alice";
       approve.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
       approve.milestone = 1;
-      approve.details = "details";
       approve.vote_rank = 1;
       approve.approved = true;
       approve.validate();
@@ -2591,11 +2555,7 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
-      const producer_schedule_object& producer_schedule = db.get_producer_schedule();
       db.update_enterprise( enterprise, producer_schedule, props );
-
-      const community_enterprise_object& enterprise = db.get_community_enterprise( "alice", "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7" );
 
       BOOST_REQUIRE( enterprise.creator == "alice" );
       BOOST_REQUIRE( enterprise.approved_milestones == 1 );    // next milestone now approved

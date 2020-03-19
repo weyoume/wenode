@@ -25,7 +25,7 @@ endif()
 
 add_library( node_wallet wallet.cpp ${CMAKE_CURRENT_BINARY_DIR}/api_documentation.cpp ${HEADERS} )
 # I don't know why node_app is required twice in the following line, I just know the linker breaks if it isn't.
-target_link_libraries( node_wallet PRIVATE node_app graphene_net node_chain node_protocol graphene_utilities fc node_private_message node_app node_follow node_account_by_key ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS} )
+target_link_libraries( node_wallet PRIVATE node_app graphene_net node_chain node_protocol graphene_utilities fc node_app node_account_by_key ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS} )
 target_include_directories( node_wallet PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 
 if(MSVC)

@@ -131,7 +131,8 @@ void debug_node_api_impl::debug_mine( debug_mine_result& result, const debug_min
    }
    else
    {
-      op.props = db->get_median_chain_properties();
+      chain::chain_properties props;
+      op.props = props;
    }
       
    const auto& acct_idx  = db->get_index< chain::account_index >().indices().get< chain::by_name >();
@@ -144,17 +145,17 @@ void debug_node_api_impl::debug_mine( debug_mine_result& result, const debug_min
    {
       // this copies logic from get_dev_key
       priv = fc::ecc::private_key::regenerate( fc::sha256::hash( key_storage.dev_key_prefix + args.miner_account ) );
-      op.new_owner_key = priv->get_public_key();
+      op.new_owner_key = string( chain::public_key_type( priv->get_public_key() ) );
    }
    else
    {
       chain::public_key_type pubkey;
-      if( acct_auth->active.key_auths.size() != 1 )
+      if( acct_auth->active_auth.key_auths.size() != 1 )
       {
          elog( "debug_mine does not understand authority for miner account ${miner}", ("miner", args.miner_account) );
       }
-      FC_ASSERT( acct_auth->active.key_auths.size() == 1 );
-      pubkey = acct_auth->active.key_auths.begin()->first;
+      FC_ASSERT( acct_auth->active_auth.key_auths.size() == 1 );
+      pubkey = acct_auth->active_auth.key_auths.begin()->first;
       key_storage.maybe_get_private_key( priv, pubkey, args.miner_account );
    }
    FC_ASSERT( priv.valid(), "debug_node_api does not know private key for miner account ${miner}", ("miner", args.miner_account) );

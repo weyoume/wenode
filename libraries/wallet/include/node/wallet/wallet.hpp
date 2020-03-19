@@ -1,8 +1,6 @@
 #pragma once
 
 #include <node/app/api.hpp>
-#include <node/private_message/private_message_plugin.hpp>
-#include <node/follow/follow_plugin.hpp>
 #include <node/app/node_api_objects.hpp>
 
 #include <graphene/utilities/key_conversion.hpp>
@@ -18,10 +16,8 @@ using namespace std;
 namespace node { namespace wallet {
 
 using node::app::discussion;
-using namespace node::private_message;
 
 typedef uint16_t transaction_handle_type;
-
 
 
 /**
@@ -321,18 +317,26 @@ class wallet_api
       /**
        * Get the WIF private key corresponding to a public key. 
        * The private key must already be in the wallet.
+       * 
+       * @param pubkey The public key to retrieve the wallet's private key for. 
+       * @returns The private key corresponding to the public key.
        */
       string                                 get_private_key( public_key_type pubkey )const;
 
       /**
-       *  @param role - active | owner | posting | memo
+       * Gets the WIF private key that is generated from a specified account using a provided password for 
+       * an authority type.
+       * @param account The name of the account.
+       * @param role active | owner | posting | memo
+       * @param password the string password to be used for key generation.
+       * @returns The WIF Private key of the password. 
        */
       pair< public_key_type, string >        get_private_key_from_password( string account, string role, string password )const;
 
       /** 
        * Suggests a safe seed phrase to use for creating your account.
        * 
-       * \c create_account_with_seed_phrase() requires you to specify a 'seed phrase',
+       * create_account_with_seed_phrase() requires you to specify a 'seed phrase',
        * a long passphrase that provides enough entropy to generate cryptographic
        * keys. This function will suggest a suitably random string that should
        * be easy to write down (and, with effort, memorize).
@@ -359,7 +363,7 @@ class wallet_api
        * Dumps all private keys owned by the wallet.
        *
        * The keys are printed in WIF format. Import these keys into another wallet
-       * using \c import_key()
+       * using import_key()
        * 
        * @returns map containing the wallet's private keys, indexed by their public key.
        */
@@ -396,8 +400,7 @@ class wallet_api
       /** 
        * Returns the blockchain's rapidly-changing properties.
        * 
-       * The returned @ref dynamic_global_property_object contains
-       * information that changes every block interval
+       * Contains information that changes every block interval
        * such as the head block number, and the next producer.
        * 
        * @returns The current dynamic global properties.
@@ -563,12 +566,12 @@ class wallet_api
        * 
        * This returns a list of all account names sorted by account name.
        *
-       * Use the \c lowerbound and limit parameters to page through the list.
-       * To retrieve all accounts, start by setting \c lowerbound to the empty string \c "",
+       * Use the lowerbound and limit parameters to page through the list.
+       * To retrieve all accounts, start by setting lowerbound to the empty string "",
        * and then each iteration, pass the last account name returned 
-       * as the \c lowerbound for the next \c list_accounts() call.
+       * as the lowerbound for the next list_accounts() call.
        *
-       * @param lowerbound The name of the first account to return. If the named account does not exist, the list will start at the first account that comes after \c lowerbound .
+       * @param lower_bound_name The name of the first account to return.
        * @param limit Maximum number of accounts to return (max: 1000).
        * @returns List of alphabetically ordered account names.
        */
@@ -603,6 +606,7 @@ class wallet_api
        * Gets an accounts bandwidth information.
        * 
        * @param account The name of the account to query.
+       * @param type the variant of bandwidth to be queried post | forum | market 
        * @returns Account bandwidth object from the specified account.
        */
       optional< account_bandwidth_api_obj >           get_account_bandwidth( string account, producer::bandwidth_type type )const;
@@ -680,6 +684,8 @@ class wallet_api
        * Returns active asset delegations from an account.
        *
        * @param account Account to query delegations.
+       * @param from First delegating account to return results from.
+       * @param limit maximum amount of delegations to retrieve.
        * @returns Delegation balances from an account.
        */
       vector< asset_delegation_api_obj >              get_asset_delegations( string account, string from, uint32_t limit = 100 )const;
@@ -811,7 +817,7 @@ class wallet_api
       /** 
        * Returns a specifed network officer.
        *
-       * @param names names of the officer.
+       * @param name name of the officer.
        * @returns Network officer object information pertaining to the specified officer. 
        */
       network_officer_api_obj                         get_network_officer_by_account( string name )const;
@@ -1138,7 +1144,7 @@ class wallet_api
        * for custom transaction construction.
        *
        * Any operation the blockchain supports can be created using the transaction builder's
-       * \c add_operation_to_builder_transaction() , describes the
+       * add_operation_to_builder_transaction() , describes the
        * JSON form of the operation for reference. 
        * 
        * This will give you a template you can fill in.
@@ -1348,8 +1354,9 @@ class wallet_api
       /**
        * Retrieves the Discussion information relating to the comments most recently updated on posts made by a given author.
        * 
-       * @param parent The author to query.
-       * @param parent_permlink The Permlink of the first post to return.
+       * @param start_author The author to query.
+       * @param start_permlink The Permlink of the first post to return.
+       * @param limit the maximum number of replies to retrieve.
        * @returns The Discussion information from the comments made on posts by the author.
        */
       vector< discussion >                 get_replies_by_last_update( account_name_type start_author, string start_permlink, uint32_t limit )const;
@@ -1411,8 +1418,7 @@ class wallet_api
       /**
        * Retrieves the Discussion information relating to the comments most recently updated by a given author.
        * 
-       * @param parent The author to query.
-       * @param parent_permlink The Permlink of the first post to return.
+       * @param query The details of the posts to return, and sorting options used. 
        * @returns The Discussion information from the comments of the author.
        */
       vector< discussion >                 get_discussions_by_comments( const discussion_query& query )const;
@@ -1915,7 +1921,7 @@ class wallet_api
       annotated_signed_transaction           recover_account(
          string signatory,
          string account_to_recover,
-         authority new_owner_uthority,
+         authority new_owner_authority,
          authority recent_owner_authority,
          bool broadcast );
 
@@ -1933,7 +1939,7 @@ class wallet_api
          string signatory,
          string reset_account,
          string account_to_reset,
-         authority new_owner_uthority,
+         authority new_owner_authority,
          bool broadcast );
 
 
@@ -2303,7 +2309,8 @@ class wallet_api
        * @param enterprise_id uuidv4 referring to the proposal.
        * @param proposal_type The type of proposal, determines release schedule.
        * @param beneficiaries Set of account names and percentages of budget value. Should not include the null account.
-       * @param milestones Ordered vector of release milestone descriptions and percentages of budget value.
+       * @param milestone_shares Ordered vector of release milestone percentages of budget value.
+       * @param milestone_details Ordered vector of release milestone descriptions.
        * @param investment Symbol of the asset to be purchased with the funding if the proposal is investment type. 
        * @param details The proposals's details description. 
        * @param url The proposals's reference URL. 
@@ -2321,7 +2328,8 @@ class wallet_api
          string enterprise_id,
          string proposal_type,
          map< string, uint16_t > beneficiaries,
-         vector< pair < string, uint16_t > > milestones,
+         vector< uint16_t > milestone_shares,
+         vector< string > milestone_details,
          string investment,
          string details,
          string url,
@@ -2912,7 +2920,6 @@ class wallet_api
        * @param min_price Minimum bidding price per metric.
        * @param inventory Total metrics available.
        * @param json JSON metadata for the inventory.
-       * @param agents Set of Accounts authorized to create bids for the campaign.
        * @param active True if the inventory is enabled for display, false to deactivate.
        * @param broadcast Set True to broadcast transaction.
        */
@@ -3430,7 +3437,7 @@ class wallet_api
          asset amount_to_borrow,
          price stop_loss_price,
          price take_profit_price,
-         price limit_top_loss_price,
+         price limit_stop_loss_price,
          price limit_take_profit_price,
          string interface,
          time_point expiration,
@@ -3661,7 +3668,7 @@ class wallet_api
        * @param signatory The name of the account signing the transaction.
        * @param issuer Name of the issuing account, can create units and administrate the asset.
        * @param asset_to_update The ticker symbol of this asset.
-       * @param options Series of options paramters that apply to all asset types.
+       * @param new_options Series of options paramters that apply to all asset types.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             asset_update(
@@ -3891,8 +3898,8 @@ class wallet_api
       annotated_signed_transaction             producer_violation(
          string signatory,
          string reporter,
-         signed_transaction first_trx,
-         signed_transaction second_trx,
+         vector< char > first_trx,
+         vector< char > second_trx,
          bool broadcast = false );
 
 
@@ -4024,7 +4031,7 @@ FC_API( node::wallet::wallet_api,
          (get_producer_schedule)
          (get_hardfork_version)
          (get_next_scheduled_hardfork)
-         (get_reward_fund)
+         (get_reward_funds)
 
          // Account API
 

@@ -1,8 +1,6 @@
-
 #pragma once
 
 #include <node/app/application.hpp>
-
 #include <node/chain/evaluator.hpp>
 #include <node/chain/database.hpp>
 

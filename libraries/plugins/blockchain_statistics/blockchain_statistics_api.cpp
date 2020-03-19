@@ -35,7 +35,7 @@ namespace detail
       const auto& bucket_itr = _app.chain_database()->get_index< bucket_index >().indices().get< by_bucket >();
       const auto& sizes = _app.get_plugin< blockchain_statistics_plugin >( BLOCKCHAIN_STATISTICS_PLUGIN_NAME )->get_tracked_buckets();
       auto size_itr = sizes.rbegin();
-      auto time = start;
+      time_point time = start;
 
       // This is a greedy algorithm, same as the ubiquitous "making change" problem.
       // So long as the bucket sizes share a common denominator, the greedy solution
@@ -44,9 +44,11 @@ namespace detail
       {
          auto itr = bucket_itr.find( boost::make_tuple( *size_itr, time ) );
 
-         while( itr != bucket_itr.end() && itr->seconds == *size_itr && time + itr->seconds <= end )
+         while( itr != bucket_itr.end() && 
+            itr->seconds == *size_itr && 
+            ( time + fc::seconds( itr->seconds ) ) <= end )
          {
-            time += *size_itr;
+            time += fc::seconds( *size_itr );
             result += *itr;
             itr++;
          }
@@ -104,49 +106,23 @@ statistics& statistics::operator +=( const bucket_object& b )
    this->operations                             += b.operations;
    this->transactions                           += b.transactions;
    this->transfers                              += b.transfers;
-   this->assets_transferred                        += b.assets_transferred;
-   this->USD_transferred                        += b.USD_transferred;
-   this->USD_paid_as_interest                   += b.USD_paid_as_interest;
-   this->accounts_created                       += b.paid_accounts_created + b.mined_accounts_created;
-   this->paid_accounts_created                  += b.paid_accounts_created;
-   this->mined_accounts_created                 += b.mined_accounts_created;
-   this->total_comments                         += b.root_comments + b.replies;
-   this->total_comment_edits                    += b.root_comment_edits + b.reply_edits;
-   this->total_comments_deleted                 += b.root_comments_deleted + b.replies_deleted;
+   this->accounts_created                       += b.accounts_created;
+   this->communities_created                    += b.communities_created;
+   this->assets_created                         += b.assets_created;
    this->root_comments                          += b.root_comments;
-   this->root_comment_edits                     += b.root_comment_edits;
-   this->root_comments_deleted                  += b.root_comments_deleted;
    this->replies                                += b.replies;
-   this->reply_edits                            += b.reply_edits;
-   this->replies_deleted                        += b.replies_deleted;
-   this->total_votes                            += b.new_root_votes + b.changed_root_votes + b.new_reply_votes + b.changed_reply_votes;
-   this->new_votes                              += b.new_root_votes + b.new_reply_votes;
-   this->changed_votes                          += b.changed_root_votes + b.changed_reply_votes;
-   this->total_root_votes                       += b.new_root_votes + b.changed_root_votes;
-   this->new_root_votes                         += b.new_root_votes;
-   this->changed_root_votes                     += b.changed_root_votes;
-   this->total_reply_votes                      += b.new_reply_votes + b.changed_reply_votes;
-   this->new_reply_votes                        += b.new_reply_votes;
-   this->changed_reply_votes                    += b.changed_reply_votes;
-   this->payouts                                += b.payouts;
-   this->USD_paid_to_authors                    += b.USD_paid_to_authors;
-   this->rewards_paid_to_authors                  += b.rewards_paid_to_authors;
-   this->rewards_paid_to_curators                 += b.rewards_paid_to_curators;
-   this->liquidity_rewards_paid                 += b.liquidity_rewards_paid;
-   this->asset_stake_transfers                   += b.asset_stake_transfers;
-   this->asset_stake_value                           += b.asset_stake_value;
-   this->asset_unstake_transfers        += b.asset_unstake_transfers;
-   this->asset_unstake_rate_total            += b.asset_unstake_rate_total;
-   this->asset_unstake_adjustments   += b.asset_unstake_adjustments;
-   this->asset_unstake_withdrawals          += b.asset_unstake_withdrawals;
-   this->asset_unstake_completed           += b.asset_unstake_completed;
-   this->total_assets_unstaked                        += b.total_assets_unstaked;
-   this->total_stake_transferred                      += b.total_stake_transferred;
-   this->limit_orders_created                   += b.limit_orders_created;
-   this->limit_orders_filled                    += b.limit_orders_filled;
-   this->limit_orders_cancelled                 += b.limit_orders_cancelled;
+   this->comment_votes                          += b.comment_votes;
+   this->comment_views                          += b.comment_views;
+   this->comment_shares                         += b.comment_shares;
+   this->activity_rewards                       += b.activity_rewards;
    this->total_pow                              += b.total_pow;
    this->estimated_hashpower                    += b.estimated_hashpower;
+   this->ad_bids_created                        += b.ad_bids_created;
+   this->limit_orders                           += b.limit_orders;
+   this->margin_orders                          += b.margin_orders;
+   this->auction_orders                         += b.auction_orders;
+   this->call_orders                            += b.call_orders;
+   this->option_orders                          += b.option_orders;
 
    return ( *this );
 }

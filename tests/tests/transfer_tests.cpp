@@ -1,13 +1,10 @@
-//#ifdef IS_TEST_NET
-
 #include <boost/test/unit_test.hpp>
-#include <node/chain/node_objects.hpp>
 #include <node/protocol/exceptions.hpp>
 #include <node/chain/database.hpp>
 #include <node/chain/database_exceptions.hpp>
 #include <node/chain/util/reward.hpp>
 #include <fc/crypto/digest.hpp>
-#include <tests/common/database_fixture.hpp>
+#include "../common/database_fixture.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -128,7 +125,7 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
       account_update_operation update_op;
 
       update_op.account = "corp";
-      update_op.active = authority( 2, "alice", 1, "bob", 1, "candice", 1 );
+      update_op.active_auth = authority( 2, "alice", 1, "bob", 1, "candice", 1 );
 
       tx.operations.push_back( update_op );
       tx.sign( corp_private_active_key, db.get_chain_id() );

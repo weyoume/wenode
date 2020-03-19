@@ -1,48 +1,22 @@
-//#ifdef IS_TEST_NET
 #include <boost/test/unit_test.hpp>
-
-#include <node/chain/node_objects.hpp>
 #include <node/chain/database.hpp>
-
+#include <node/protocol/exceptions.hpp>
+#include <node/chain/database_exceptions.hpp>
 #include <fc/crypto/digest.hpp>
 #include <fc/crypto/elliptic.hpp>
 #include <fc/reflect/variant.hpp>
-
 #include "../common/database_fixture.hpp"
 
 #include <cmath>
+#include <iostream>
+#include <stdexcept>
 
 using namespace node;
 using namespace node::chain;
 using namespace node::protocol;
+using std::string;
 
-BOOST_FIXTURE_TEST_SUITE( serialization_MEC, clean_database_fixture )
-
-BOOST_AUTO_TEST_CASE( account_name_type_test )
-{
-   auto test = []( const string& data )
-   {
-      fixed_string<> a(data);
-      std::string    b(data);
-
-      auto ap = fc::raw::pack( a );
-      auto bp = fc::raw::pack( b );
-
-      FC_ASSERT( ap.size() == bp.size() );
-      FC_ASSERT( std::equal( ap.begin(), ap.end(), bp.begin() ) );
-
-      auto sfa = fc::raw::unpack<std::string>( ap );
-      auto afs = fc::raw::unpack<fixed_string<>>( bp );
-   };
-
-   test( std::string() );
-   test( "helloworld" );
-   test( "1234567890123456" );
-
-   auto packed_long_string = fc::raw::pack( std::string( "12345678901234567890" ) );
-   auto unpacked = fc::raw::unpack<fixed_string<>>( packed_long_string );
-   idump( (unpacked) );
-}
+BOOST_FIXTURE_TEST_SUITE( serialization_tests, clean_database_fixture );
 
 
 BOOST_AUTO_TEST_CASE( serialization_raw_test )
@@ -51,25 +25,24 @@ BOOST_AUTO_TEST_CASE( serialization_raw_test )
    {
       ACTORS( (alice)(bob) );
 
-      transfer_operation op;
+      transfer_operation transfer;
 
-      op.signatory = "alice";
-      op.from = "alice";
-      op.to = "bob";
-      op.amount = asset( 1000, SYMBOL_COIN );
-      op.memo = "Hello";
+      transfer.signatory = "alice";
+      transfer.from = "alice";
+      transfer.to = "bob";
+      transfer.amount = asset( 1000, SYMBOL_COIN );
+      transfer.memo = "Hello";
 
-      trx.operations.push_back( op );
-      auto packed = fc::raw::pack( trx );
-      signed_transaction unpacked = fc::raw::unpack<signed_transaction>(packed);
+      signed_transaction tx;
+
+      tx.operations.push_back( transfer );
+      auto packed = fc::raw::pack( tx );
+
+      signed_transaction unpacked = fc::raw::unpack< signed_transaction >( packed );
       unpacked.validate();
-      BOOST_CHECK( trx.digest() == unpacked.digest() );
+      BOOST_CHECK( tx.digest() == unpacked.digest() );
    } 
-   catch( fc::exception& e ) 
-   {
-      edump((e.to_detail_string()));
-      throw;
-   }
+   FC_LOG_AND_RETHROW()
 }
 
 
@@ -79,29 +52,28 @@ BOOST_AUTO_TEST_CASE( serialization_json_test )
    {
       ACTORS( (alice)(bob) );
 
-      transfer_operation op;
+      transfer_operation transfer;
 
-      op.signatory = "alice";
-      op.from = "alice";
-      op.to = "bob";
-      op.amount = asset( 1000, SYMBOL_COIN );
-      op.memo = "Hello";
+      transfer.signatory = "alice";
+      transfer.from = "alice";
+      transfer.to = "bob";
+      transfer.amount = asset( 1000, SYMBOL_COIN );
+      transfer.memo = "Hello";
 
-      fc::variant test( op.amount );
-      auto tmp = test.as<asset>();
-      BOOST_REQUIRE( tmp == op.amount );
+      fc::variant test( transfer.amount );
+      auto tmp = test.as< asset >();
+      BOOST_REQUIRE( tmp == transfer.amount );
 
-      trx.operations.push_back( op );
-      fc::variant packed(trx);
-      signed_transaction unpacked = packed.as<signed_transaction>();
+      signed_transaction tx;
+
+      tx.operations.push_back( transfer );
+      fc::variant packed(tx);
+
+      signed_transaction unpacked = packed.as< signed_transaction >();
       unpacked.validate();
-      BOOST_CHECK( trx.digest() == unpacked.digest() );
+      BOOST_CHECK( tx.digest() == unpacked.digest() );
    } 
-   catch (fc::exception& e) 
-   {
-      edump((e.to_detail_string()));
-      throw;
-   }
+   FC_LOG_AND_RETHROW()
 }
 
 BOOST_AUTO_TEST_CASE( asset_test )
@@ -173,14 +145,10 @@ BOOST_AUTO_TEST_CASE( extended_private_key_type_test )
                                                                        fc::sha256(),
                                                                        0, 0, 0 );
       extended_private_key_type type = extended_private_key_type( key );
-      std::string packed = std::string( type );
+      string packed = string( type );
       extended_private_key_type unpacked = extended_private_key_type( packed );
       BOOST_CHECK( type == unpacked );
-   } catch ( const fc::exception& e )
-   {
-      edump((e.to_detail_string()));
-      throw;
-   }
+   } FC_LOG_AND_RETHROW()
 }
 
 
@@ -192,14 +160,10 @@ BOOST_AUTO_TEST_CASE( extended_public_key_type_test )
                                                                        fc::sha256(),
                                                                        0, 0, 0 );
       extended_public_key_type type = extended_public_key_type( key );
-      std::string packed = std::string( type );
+      string packed = string( type );
       extended_public_key_type unpacked = extended_public_key_type( packed );
       BOOST_CHECK( type == unpacked );
-   } catch ( const fc::exception& e )
-   {
-      edump((e.to_detail_string()));
-      throw;
-   }
+   } FC_LOG_AND_RETHROW()
 }
 
 
@@ -245,7 +209,7 @@ BOOST_AUTO_TEST_CASE( version_test )
       ver_str = fc::variant( "1.0.0.1" );
       REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
    }
-   FC_LOG_AND_RETHROW();
+   FC_LOG_AND_RETHROW()
 }
 
 
@@ -292,20 +256,19 @@ BOOST_AUTO_TEST_CASE( hardfork_version_test )
       ver_str = fc::variant( "1.0.0.1" );
       REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
    }
-   FC_LOG_AND_RETHROW();
+   FC_LOG_AND_RETHROW()
 }
 
 BOOST_AUTO_TEST_CASE( min_block_size )
 {
-   signed_block b;
-   while( b.producer.length() < MIN_ACCOUNT_NAME_LENGTH )
+   try
    {
-      b.producer += 'a';
+      signed_block b;
+      b.producer = "aaa";
+      size_t min_size = fc::raw::pack_size( b );
+      BOOST_CHECK( min_size == MIN_BLOCK_SIZE );
    }
-      
-   size_t min_size = fc::raw::pack_size( b );
-   BOOST_CHECK( min_size == MIN_BLOCK_SIZE );
+   FC_LOG_AND_RETHROW()
 }
 
 BOOST_AUTO_TEST_SUITE_END()
-//#endif

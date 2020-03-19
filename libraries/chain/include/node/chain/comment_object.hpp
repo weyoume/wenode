@@ -354,7 +354,7 @@ namespace node { namespace chain {
 
          uint128_t               max_weight = 0;     ///< Used to define relative contribution of this view to rewards.
 
-         time_point              created;            ///< Time the view was created
+         time_point              created;            ///< Time the view was created.
    };
 
 
@@ -381,7 +381,7 @@ namespace node { namespace chain {
 
          uint128_t               max_weight = 0;     ///< Used to define relative contribution of this share to rewards.
 
-         time_point              created;            ///< Time the share was created
+         time_point              created;            ///< Time the share was created.
    };
 
 
@@ -615,7 +615,12 @@ namespace node { namespace chain {
                member< comment_view_object, time_point, &comment_view_object::created>,
                member< comment_view_object, comment_id_type, &comment_view_object::comment>
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< account_name_type >, std::greater< time_point >, std::less< comment_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< account_name_type >, 
+               std::greater< time_point >, 
+               std::less< comment_id_type >
+            >
          >,
          ordered_unique< tag< by_supernode_viewer >,
             composite_key< comment_view_object,
@@ -624,7 +629,12 @@ namespace node { namespace chain {
                member< comment_view_object, time_point, &comment_view_object::created>,
                member< comment_view_object, comment_id_type, &comment_view_object::comment>
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< account_name_type >, std::greater< time_point >, std::less< comment_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< account_name_type >, 
+               std::greater< time_point >, 
+               std::less< comment_id_type > 
+            >
          >,
          ordered_unique< tag< by_comment_weight_viewer >,
             composite_key< comment_view_object,
@@ -632,7 +642,11 @@ namespace node { namespace chain {
                member< comment_view_object, uint128_t, &comment_view_object::weight>,
                member< comment_view_object, account_name_type, &comment_view_object::viewer>
             >,
-            composite_key_compare< std::less< comment_id_type >, std::greater< uint128_t >, std::less< account_name_type > >
+            composite_key_compare< 
+               std::less< comment_id_type >, 
+               std::greater< uint128_t >, 
+               std::less< account_name_type > 
+            >
          >
       >,
       allocator< comment_view_object >
@@ -665,7 +679,11 @@ namespace node { namespace chain {
                member< comment_share_object, uint128_t, &comment_share_object::weight>,
                member< comment_share_object, account_name_type, &comment_share_object::sharer>
             >,
-            composite_key_compare< std::less< comment_id_type >, std::greater< uint128_t >, std::less< account_name_type > >
+            composite_key_compare< 
+               std::less< comment_id_type >, 
+               std::greater< uint128_t >, 
+               std::less< account_name_type > 
+            >
          >
       >,
       allocator< comment_share_object >
@@ -899,7 +917,7 @@ namespace node { namespace chain {
    > blog_index;
 
    struct by_root_author;
-   struct by_cashout_time; // cashout_time
+   struct by_currency_cashout_time; // cashout_time
    struct by_permlink; // author, perm
    struct by_root;
    struct by_root_weight;
@@ -930,10 +948,16 @@ namespace node { namespace chain {
             >,
             composite_key_compare< std::less< bool >, std::less< account_name_type >, std::less< comment_id_type > >
          >,
-         ordered_unique< tag< by_cashout_time >,
+         ordered_unique< tag< by_currency_cashout_time >,
             composite_key< comment_object,
+               member< comment_object, asset_symbol_type, &comment_object::reward_currency >,
                member< comment_object, time_point, &comment_object::cashout_time>,
                member< comment_object, comment_id_type, &comment_object::id >
+            >,
+            composite_key_compare< 
+               std::less< asset_symbol_type >,
+               std::less< time_point >,
+               std::less< comment_id_type >
             >
          >,
          ordered_unique< tag< by_permlink >,

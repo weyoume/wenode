@@ -16,6 +16,7 @@ namespace node { namespace protocol {
 
             account_create_operation,
             account_update_operation,
+            account_business_operation,
             account_profile_operation,
             account_verification_operation,
             account_membership_operation,
@@ -173,9 +174,17 @@ namespace node { namespace protocol {
 
             /// virtual operations 
 
+            content_reward_operation,
             author_reward_operation,
-            curation_reward_operation,
+            vote_reward_operation,
+            view_reward_operation,
+            share_reward_operation,
             comment_reward_operation,
+            supernode_reward_operation,
+            moderation_reward_operation,
+            comment_payout_update_operation,
+            comment_benefactor_reward_operation,
+
             interest_operation,
             fill_order_operation,
             execute_bid_operation,
@@ -183,9 +192,7 @@ namespace node { namespace protocol {
             shutdown_producer_operation,
             fill_transfer_from_savings_operation,
             hardfork_operation,
-            comment_payout_update_operation,
             return_asset_delegation_operation,
-            comment_benefactor_reward_operation,
             producer_reward_operation
          > operation;
 

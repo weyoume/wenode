@@ -5,7 +5,7 @@
 #include <node/chain/history_object.hpp>
 #include <node/chain/transaction_object.hpp>
 #include <node/tags/tags_plugin.hpp>
-#include <plugins/producer/include/node/producer/producer_objects.hpp>
+#include <node/producer/producer_objects.hpp>
 
 namespace node { namespace app {
 
@@ -16,17 +16,114 @@ typedef chain::block_summary_object                    block_summary_api_obj;
 typedef chain::comment_vote_object                     comment_vote_api_obj;
 typedef chain::comment_view_object                     comment_view_api_obj;
 typedef chain::comment_share_object                    comment_share_api_obj;
-typedef chain::comment_share_object                    comment_share_api_obj;
-typedef chain::escrow_object                           escrow_api_obj;
 typedef chain::unstake_asset_route_object              unstake_asset_route_api_obj;
 typedef chain::decline_voting_rights_request_object    decline_voting_rights_request_api_obj;
 typedef chain::producer_vote_object                    producer_vote_api_obj;
 typedef chain::producer_schedule_object                producer_schedule_api_obj;
 typedef chain::asset_delegation_object                 asset_delegation_api_obj;
 typedef chain::asset_delegation_expiration_object      asset_delegation_expiration_api_obj;
-typedef chain::reward_fund_object                      reward_fund_api_obj;
-typedef chain::median_chain_property_object            median_chain_property_api_obj;
 typedef producer::account_bandwidth_object             account_bandwidth_api_obj;
+
+struct median_chain_property_api_obj
+{
+   median_chain_property_api_obj( const chain::median_chain_property_object& o ) :
+      id( o.id ),
+      account_creation_fee( o.account_creation_fee ),
+      maximum_block_size( o.maximum_block_size ),
+      pow_target_time( o.pow_target_time ),
+      pow_decay_time( o.pow_decay_time ),
+      txn_stake_decay_time( o.txn_stake_decay_time ),
+      escrow_bond_percent( o.escrow_bond_percent ),
+      credit_interest_rate( o.credit_interest_rate ),
+      credit_open_ratio( o.credit_open_ratio ),
+      credit_liquidation_ratio( o.credit_liquidation_ratio ),
+      credit_min_interest( o.credit_min_interest ),
+      credit_variable_interest( o.credit_variable_interest ),
+      market_max_credit_ratio( o.market_max_credit_ratio ),
+      margin_open_ratio( o.margin_open_ratio ),
+      margin_liquidation_ratio( o.margin_liquidation_ratio ),
+      maximum_asset_feed_publishers( o.maximum_asset_feed_publishers ),
+      membership_base_price( o.membership_base_price ),
+      membership_mid_price( o.membership_mid_price ),
+      membership_top_price( o.membership_top_price ),
+      author_reward_percent( o.author_reward_percent ),
+      vote_reward_percent( o.vote_reward_percent ),
+      view_reward_percent( o.view_reward_percent ),
+      share_reward_percent( o.share_reward_percent ),
+      comment_reward_percent( o.comment_reward_percent ),
+      storage_reward_percent( o.storage_reward_percent ),
+      moderator_reward_percent( o.moderator_reward_percent ),
+      content_reward_decay_rate( o.content_reward_decay_rate ),
+      content_reward_interval( o.content_reward_interval ),
+      vote_reserve_rate( o.vote_reserve_rate ),
+      view_reserve_rate( o.view_reserve_rate ),
+      share_reserve_rate( o.share_reserve_rate ),
+      comment_reserve_rate( o.comment_reserve_rate ),
+      vote_recharge_time( o.vote_recharge_time ),
+      view_recharge_time( o.view_recharge_time ),
+      share_recharge_time( o.share_recharge_time ),
+      comment_recharge_time( o.comment_recharge_time ),
+      vote_curation_decay( o.vote_curation_decay ),
+      view_curation_decay( o.view_curation_decay ),
+      share_curation_decay( o.share_curation_decay ),
+      comment_curation_decay( o.comment_curation_decay ),
+      supernode_decay_time( o.supernode_decay_time ),
+      enterprise_vote_percent_required( o.enterprise_vote_percent_required ),
+      maximum_asset_whitelist_authorities( o.maximum_asset_whitelist_authorities ),
+      max_stake_intervals( o.max_stake_intervals ),
+      max_unstake_intervals( o.max_unstake_intervals ),
+      max_exec_budget( o.max_exec_budget ){}
+
+   median_chain_property_api_obj(){}
+
+   median_chain_property_id_type       id;
+   asset                  account_creation_fee;                 ///< Minimum fee required to create a new account by staking.
+   uint64_t               maximum_block_size;                   ///< The maximum block size of the network in bytes. No Upper bound on block size limit.
+   fc::microseconds       pow_target_time;                      ///< The targeted time for each proof of work
+   fc::microseconds       pow_decay_time;                       ///< Time over which proof of work output is averaged over
+   fc::microseconds       txn_stake_decay_time;                 ///< Time over which transaction stake is averaged over
+   uint16_t               escrow_bond_percent;                  ///< Percentage of an escrow transfer that is deposited for dispute resolution
+   uint16_t               credit_interest_rate;                 ///< The credit interest rate paid to holders of network credit assets.
+   uint16_t               credit_open_ratio;                    ///< The minimum required collateralization ratio for a credit loan to be opened. 
+   uint16_t               credit_liquidation_ratio;             ///< The minimum permissible collateralization ratio before a loan is liquidated. 
+   uint16_t               credit_min_interest;                  ///< The minimum component of credit pool interest rates. 
+   uint16_t               credit_variable_interest;             ///< The variable component of credit pool interest rates, applied at equal base and borrowed balances.
+   uint16_t               market_max_credit_ratio;              ///< The maximum percentage of core asset liquidity balances that can be loaned.
+   uint16_t               margin_open_ratio;                    ///< The minimum required collateralization ratio for a credit loan to be opened. 
+   uint16_t               margin_liquidation_ratio;             ///< The minimum permissible collateralization ratio before a loan is liquidated. 
+   uint16_t               maximum_asset_feed_publishers;        ///< The maximum number of accounts that can publish price feeds for a bitasset.
+   asset                  membership_base_price;                ///< The price for standard membership per month.
+   asset                  membership_mid_price;                 ///< The price for Mezzanine membership per month.
+   asset                  membership_top_price;                 ///< The price for top level membership per month.
+   uint32_t               author_reward_percent;                ///< The percentage of content rewards distributed to post authors.
+   uint32_t               vote_reward_percent;                  ///< The percentage of content rewards distributed to post voters.
+   uint32_t               view_reward_percent;                  ///< The percentage of content rewards distributed to post viewers.
+   uint32_t               share_reward_percent;                 ///< The percentage of content rewards distributed to post sharers.
+   uint32_t               comment_reward_percent;               ///< The percentage of content rewards distributed to post commenters.
+   uint32_t               storage_reward_percent;               ///< The percentage of content rewards distributed to viewing supernodes.
+   uint32_t               moderator_reward_percent;             ///< The percentage of content rewards distributed to community moderators.
+   fc::microseconds       content_reward_decay_rate;            ///< The time over which content rewards are distributed
+   fc::microseconds       content_reward_interval;              ///< Time taken per distribution of content rewards.
+   uint32_t               vote_reserve_rate;                    ///< The number of votes regenerated per day.
+   uint32_t               view_reserve_rate;                    ///< The number of views regenerated per day.
+   uint32_t               share_reserve_rate;                   ///< The number of shares regenerated per day.
+   uint32_t               comment_reserve_rate;                 ///< The number of comments regenerated per day.
+   fc::microseconds       vote_recharge_time;                   ///< Time taken to fully recharge voting power.
+   fc::microseconds       view_recharge_time;                   ///< Time taken to fully recharge viewing power.
+   fc::microseconds       share_recharge_time;                  ///< Time taken to fully recharge sharing power.
+   fc::microseconds       comment_recharge_time;                ///< Time taken to fully recharge commenting power.
+   fc::microseconds       curation_auction_decay_time;          ///< time of curation reward decay after a post is created. 
+   double                 vote_curation_decay;                  ///< Number of votes for the half life of voting curation reward decay.
+   double                 view_curation_decay;                  ///< Number of views for the half life of viewer curation reward decay.
+   double                 share_curation_decay;                 ///< Number of shares for the half life of sharing curation reward decay.
+   double                 comment_curation_decay;               ///< Number of comments for the half life of comment curation reward decay.
+   fc::microseconds       supernode_decay_time;                 ///< Amount of time to average the supernode file weight over. 
+   uint16_t               enterprise_vote_percent_required;     ///< Percentage of total voting power required to approve enterprise milestones. 
+   uint64_t               maximum_asset_whitelist_authorities;  ///< The maximum amount of whitelisted or blacklisted authorities for user issued assets 
+   uint8_t                max_stake_intervals;                  ///< Maximum weeks that an asset can stake over.
+   uint8_t                max_unstake_intervals;                ///< Maximum weeks that an asset can unstake over.
+   asset                  max_exec_budget;                      ///< Maximum budget that an executive board can claim.
+};
 
 struct comment_api_obj
 {
@@ -155,23 +252,23 @@ struct comment_api_obj
    int32_t                        net_votes;                    ///< The amount of upvotes, minus downvotes on the post.
    uint32_t                       view_count;                   ///< The amount of views on the post.
    uint32_t                       share_count;                  ///< The amount of shares on the post.
-   int64_t                       net_reward;                   ///< Net reward is the sum of all vote, view, share and comment power.
-   int64_t                       vote_power;                   ///< Sum of weighted voting power from votes.
-   int64_t                       view_power;                   ///< Sum of weighted voting power from viewers.
-   int64_t                       share_power;                  ///< Sum of weighted voting power from shares.
-   int64_t                       comment_power;                ///< Sum of weighted voting power from comments.
+   int64_t                        net_reward;                   ///< Net reward is the sum of all vote, view, share and comment power.
+   int64_t                        vote_power;                   ///< Sum of weighted voting power from votes.
+   int64_t                        view_power;                   ///< Sum of weighted voting power from viewers.
+   int64_t                        share_power;                  ///< Sum of weighted voting power from shares.
+   int64_t                        comment_power;                ///< Sum of weighted voting power from comments.
    time_point                     cashout_time;                 ///< 24 hours from the weighted average of vote time
    uint32_t                       cashouts_received;            ///< Number of times that the comment has received content rewards
    uint128_t                      total_vote_weight;            ///< the total weight of votes, used to calculate pro-rata share of curation payouts
    uint128_t                      total_view_weight;            ///< the total weight of views, used to calculate pro-rata share of curation payouts
    uint128_t                      total_share_weight;           ///< the total weight of shares, used to calculate pro-rata share of curation payouts
    uint128_t                      total_comment_weight;         ///< the total weight of comments, used to calculate pro-rata share of curation payouts
-   asset                          total_payout_value;           ///< The total payout this comment has received over time, measured in USD */
-   asset                          curator_payout_value;
+   asset                          total_payout_value;           ///< The total payout this comment has received over time, measured in USD
+   asset                          curator_payout_value;         
    asset                          beneficiary_payout_value;
    asset                          content_rewards;
    int64_t                        percent_liquid;
-   uint128_t                      reward;                       ///< The amount of reward_curve this comment is responsible for in its root post.
+   int64_t                        reward;                       ///< The amount of reward_curve this comment is responsible for in its root post.
    uint128_t                      weight;                       ///< Used to define the comment curation reward this comment receives.
    uint128_t                      max_weight;                   ///< Used to define relative contribution of this comment to rewards.
    asset                          max_accepted_payout;          ///< USD value of the maximum payout this post will receive
@@ -274,7 +371,7 @@ struct feed_api_obj
 
 struct account_api_obj
 {
-   account_api_obj( const chain::account_object& a, const database& db ):
+   account_api_obj( const chain::account_object& a, const database& db ) :
       id( a.id ),
       name( a.name ),
       details( to_string( a.details ) ),
@@ -338,9 +435,9 @@ struct account_api_obj
       active( a.active )
       {
          const auto& auth = db.get< account_authority_object, by_account >( name );
-         owner = authority( auth.owner );
-         active = authority( auth.active );
-         posting = authority( auth.posting );
+         owner_auth = authority( auth.owner_auth );
+         active_auth = authority( auth.active_auth );
+         posting_auth = authority( auth.posting_auth );
          last_owner_update = auth.last_owner_update;
 
          if( db.has_index< producer::account_bandwidth_index >() )
@@ -382,10 +479,10 @@ struct account_api_obj
    public_key_type                  connection_public_key;                 ///< Key used for encrypting posts for connection level visibility. 
    public_key_type                  friend_public_key;                     ///< Key used for encrypting posts for friend level visibility.
    public_key_type                  companion_public_key;                  ///< Key used for encrypting posts for companion level visibility.
-   authority                        owner;
-   authority                        active;
-   authority                        posting;
-   comment_id_type                  pinned_post;                        ///< Post pinned to the top of the account's profile. 
+   authority                        owner_auth;
+   authority                        active_auth;
+   authority                        posting_auth;
+   comment_id_type                  pinned_post;                           ///< Post pinned to the top of the account's profile. 
    account_name_type                proxy;                                 ///< Account that votes on behalf of this account
    vector< account_name_type>       proxied;                               ///< Accounts that have set this account to be their proxy voter.
    account_name_type                registrar;                             ///< The name of the account that created the account;
@@ -400,34 +497,34 @@ struct account_api_obj
    uint32_t                         following_count;
    uint32_t                         post_vote_count;
    uint32_t                         post_count;
-   uint16_t                         voting_power;               ///< current voting power of this account, falls after every vote, recovers over time.
-   uint16_t                         viewing_power;              ///< current viewing power of this account, falls after every view, recovers over time.
-   uint16_t                         sharing_power;              ///< current sharing power of this account, falls after every share, recovers over time.
-   uint16_t                         commenting_power;           ///< current commenting power of this account, falls after every comment, recovers over time.
+   uint16_t                         voting_power;                          ///< current voting power of this account, falls after every vote, recovers over time.
+   uint16_t                         viewing_power;                         ///< current viewing power of this account, falls after every view, recovers over time.
+   uint16_t                         sharing_power;                         ///< current sharing power of this account, falls after every share, recovers over time.
+   uint16_t                         commenting_power;                      ///< current commenting power of this account, falls after every comment, recovers over time.
    uint8_t                          savings_withdraw_requests;
    uint16_t                         withdraw_routes;
-   int64_t                          posting_rewards;                      ///< Rewards in core asset earned from author rewards.
-   int64_t                          curation_rewards;                     ///< Rewards in core asset earned from voting, shares, views, and commenting
-   int64_t                          moderation_rewards;                   ///< Rewards in core asset from moderation rewards. 
-   int64_t                          total_rewards;                        ///< Rewards in core asset earned from all reward sources.
-   int64_t                          author_reputation;                    ///< 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
+   int64_t                          posting_rewards;                       ///< Rewards in core asset earned from author rewards.
+   int64_t                          curation_rewards;                      ///< Rewards in core asset earned from voting, shares, views, and commenting
+   int64_t                          moderation_rewards;                    ///< Rewards in core asset from moderation rewards. 
+   int64_t                          total_rewards;                         ///< Rewards in core asset earned from all reward sources.
+   int64_t                          author_reputation;                     ///< 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
    asset                            loan_default_balance;
    int64_t                          recent_activity_claims;
    uint16_t                         producer_vote_count;
-   uint16_t                         officer_vote_count;                         ///< Number of network officers that the account has voted for.
-   uint16_t                         executive_board_vote_count;                 ///< Number of Executive boards that the account has voted for.
-   uint16_t                         governance_subscriptions;                  ///< Number of governance accounts that the account subscribes to.   
-   uint16_t                         enterprise_approval_count;                 ///< Number of Enterprise proposals that the account votes for. 
-   uint16_t                         recurring_membership;                      ///< Amount of months membership should be automatically renewed for on expiration
-   time_point                       created;                                   ///< Time that the account was created.
-   time_point                       membership_expiration;                     ///< Time that the account has its current membership subscription until.
-   time_point                       last_account_update;                       ///< Time that the account's details were last updated.
-   time_point                       last_vote_time;                            ///< Time that the account last voted on a comment.
-   time_point                       last_view_time;                            ///< Time that the account last viewed a post.
-   time_point                       last_share_time;                           ///< Time that the account last viewed a post.
-   time_point                       last_post;                                 ///< Time that the user most recently created a comment 
-   time_point                       last_root_post;                            ///< Time that the account last created a post.
-   time_point                       last_transfer_time;                        ///< Time that the account last sent a transfer or created a trading txn. 
+   uint16_t                         officer_vote_count;                    ///< Number of network officers that the account has voted for.
+   uint16_t                         executive_board_vote_count;            ///< Number of Executive boards that the account has voted for.
+   uint16_t                         governance_subscriptions;              ///< Number of governance accounts that the account subscribes to.   
+   uint16_t                         enterprise_approval_count;             ///< Number of Enterprise proposals that the account votes for. 
+   uint16_t                         recurring_membership;                  ///< Amount of months membership should be automatically renewed for on expiration
+   time_point                       created;                               ///< Time that the account was created.
+   time_point                       membership_expiration;                 ///< Time that the account has its current membership subscription until.
+   time_point                       last_account_update;                   ///< Time that the account's details were last updated.
+   time_point                       last_vote_time;                        ///< Time that the account last voted on a comment.
+   time_point                       last_view_time;                        ///< Time that the account last viewed a post.
+   time_point                       last_share_time;                       ///< Time that the account last viewed a post.
+   time_point                       last_post;                             ///< Time that the user most recently created a comment 
+   time_point                       last_root_post;                        ///< Time that the account last created a post.
+   time_point                       last_transfer_time;                    ///< Time that the account last sent a transfer or created a trading txn. 
    time_point                       last_activity_reward;
    time_point                       last_account_recovery;
    time_point                       last_community_created;
@@ -480,7 +577,7 @@ struct account_concise_api_obj
    public_key_type                  connection_public_key;                 ///< Key used for encrypting posts for connection level visibility. 
    public_key_type                  friend_public_key;                     ///< Key used for encrypting posts for friend level visibility.
    public_key_type                  companion_public_key;                  ///< Key used for encrypting posts for companion level visibility.
-   comment_id_type                  pinned_post;                        ///< Post pinned to the top of the account's profile. 
+   comment_id_type                  pinned_post;                           ///< Post pinned to the top of the account's profile. 
    uint32_t                         follower_count;                        ///< Number of account followers.
    uint32_t                         following_count;                       ///< Number of accounts that the account follows. 
    int64_t                          total_rewards;                         ///< Rewards in core asset earned from all reward sources.
@@ -542,6 +639,7 @@ struct account_business_api_obj
       id( a.id ),
       account( a.account ),
       business_type( business_structure_values[ a.business_type ] ),
+      business_public_key( a.business_public_key ),
       executive_board( a.executive_board ),
       officer_vote_threshold( a.officer_vote_threshold.value )
       {
@@ -588,6 +686,7 @@ struct account_business_api_obj
    account_business_id_type                                        id;
    account_name_type                                               account;                    ///< Username of the business account, lowercase letters only.
    string                                                          business_type;              ///< Type of business account, controls authorizations for transactions of different types.
+   public_key_type                                                 business_public_key;        ///< Type of business account, controls authorizations for transactions of different types.
    executive_officer_set                                           executive_board;            ///< Set of highest voted executive accounts for each role.
    vector< pair< account_name_type, pair< string, int64_t > > >    executive_votes;            ///< Set of all executive names.
    vector< account_name_type >                                     executives;                 ///< Set of accounts voted as executives.
@@ -658,19 +757,19 @@ struct account_following_api_obj
    account_following_api_obj(){}
 
    account_following_id_type       id;
-   account_name_type               account;              ///< Name of the account.
-   vector< account_name_type >     followers;            ///< Accounts that follow this account.
-   vector< account_name_type >     following;            ///< Accounts that this account follows.
-   vector< account_name_type >     mutual_followers;     ///< Accounts that are both following and followers of this account.
-   vector< account_name_type >     connections;          ///< Accounts that are connections of this account.
-   vector< account_name_type >     friends;              ///< Accounts that are friends of this account.
-   vector< account_name_type >     companions;           ///< Accounts that are companions of this account.
-   vector< community_name_type >       followed_communities;      ///< Communities that the account subscribes to.
-   vector< tag_name_type >         followed_tags;        ///< Tags that the account follows.
-   vector< account_name_type >     filtered;             ///< Accounts that this account has filtered. Interfaces should not show posts by these users.
-   vector< community_name_type >       filtered_communities;      ///< Communities that this account has filtered. Posts will not display if they are in these communities.
-   vector< tag_name_type >         filtered_tags;        ///< Tags that this account has filtered. Posts will not display if they have any of these tags. 
-   time_point                      last_updated;          ///< Last time that the account changed its following sets.
+   account_name_type               account;                ///< Name of the account.
+   vector< account_name_type >     followers;              ///< Accounts that follow this account.
+   vector< account_name_type >     following;              ///< Accounts that this account follows.
+   vector< account_name_type >     mutual_followers;       ///< Accounts that are both following and followers of this account.
+   vector< account_name_type >     connections;            ///< Accounts that are connections of this account.
+   vector< account_name_type >     friends;                ///< Accounts that are friends of this account.
+   vector< account_name_type >     companions;             ///< Accounts that are companions of this account.
+   vector< community_name_type >   followed_communities;   ///< Communities that the account subscribes to.
+   vector< tag_name_type >         followed_tags;          ///< Tags that the account follows.
+   vector< account_name_type >     filtered;               ///< Accounts that this account has filtered. Interfaces should not show posts by these users.
+   vector< community_name_type >   filtered_communities;   ///< Communities that this account has filtered. Posts will not display if they are in these communities.
+   vector< tag_name_type >         filtered_tags;          ///< Tags that this account has filtered. Posts will not display if they have any of these tags. 
+   time_point                      last_updated;           ///< Last time that the account changed its following sets.
 };
 
 
@@ -724,8 +823,8 @@ struct message_api_obj
       message( to_string( m.message ) ),
       json( to_string( m.json ) ),
       uuid( to_string( m.uuid ) ),
-      created( m.created ),
-      last_updated( m.last_updated ){}
+      last_updated( m.last_updated ),
+      created( m.created ){}
 
    message_api_obj(){}
 
@@ -737,8 +836,8 @@ struct message_api_obj
    string                  message;                  ///< Encrypted private message ciphertext.
    string                  json;                     ///< Encrypted Message metadata.
    string                  uuid;                     ///< uuidv4 uniquely identifying the message for local storage.
-   time_point              created;                  ///< Time the message was sent.
    time_point              last_updated;             ///< Time the message was last changed, used to reload encrypted message storage.
+   time_point              created;                  ///< Time the message was sent.
 };
 
 
@@ -756,6 +855,7 @@ struct connection_api_obj
       consecutive_days( c.consecutive_days ),
       last_message_time_a( c.last_message_time_a ),
       last_message_time_b( c.last_message_time_b ),
+      last_updated( c.last_updated ),
       created( c.created ){}
 
    connection_api_obj(){}
@@ -771,6 +871,7 @@ struct connection_api_obj
    uint32_t                     consecutive_days;         ///< Number of consecutive days that the connected accounts have both sent a message.
    time_point                   last_message_time_a;      ///< Time since the account A last sent a message
    time_point                   last_message_time_b;      ///< Time since the account B last sent a message
+   time_point                   last_updated;             ///< Time that the connection was lat updated.
    time_point                   created;                  ///< Time the connection was created. 
 };
 
@@ -845,9 +946,9 @@ struct community_request_api_obj
 
    community_request_api_obj(){}
 
-   community_join_request_id_type              id;                 
+   community_join_request_id_type          id;                 
    account_name_type                       account;        
-   community_name_type                         community;  
+   community_name_type                     community;  
    string                                  message;
    time_point                              expiration;   
 };
@@ -865,9 +966,9 @@ struct community_invite_api_obj
 
    community_invite_api_obj(){}
 
-   community_join_invite_id_type               id;                 
+   community_join_invite_id_type           id;                 
    account_name_type                       account;             
-   community_name_type                         community; 
+   community_name_type                     community; 
    account_name_type                       member;      
    string                                  message;
    time_point                              expiration;   
@@ -955,6 +1056,121 @@ struct transfer_recurring_request_api_obj
 };
 
 
+struct escrow_api_obj
+{
+   escrow_api_obj( const chain::escrow_object& o ) :
+      id( o.id ),
+      from( o.from ),
+      to( o.to ),
+      from_mediator( o.from_mediator ),
+      to_mediator( o.to_mediator ),
+      payment( o.payment ),
+      balance( o.balance ),
+      escrow_id( to_string( o.escrow_id ) ),
+      memo( to_string( o.memo ) ),
+      json( to_string( o.json ) ),
+      acceptance_time( o.acceptance_time ),
+      escrow_expiration( o.escrow_expiration ),
+      dispute_release_time( o.dispute_release_time ),
+      created( o.created ),
+      last_updated( o.last_updated ),
+      disputed( o.disputed )
+      {
+         for( auto m : o.mediators )
+         {
+            mediators.push_back( m );
+         }
+         for( auto r : o.release_percentages )
+         {
+            release_percentages[ r.first ] = r.second;
+         }
+         for( auto a : o.approvals )
+         {
+            approvals[ a.first ] = a.second;
+         }
+      }
+
+   escrow_api_obj(){}
+
+   escrow_id_type                            id;
+   account_name_type                         from;                   ///< Account sending funds.
+   account_name_type                         to;                     ///< Account receiving funds.
+   account_name_type                         from_mediator;          ///< Representative of the sending account.
+   account_name_type                         to_mediator;            ///< Representative of the receiving account.
+   asset                                     payment;                ///< Total payment to be transferred.
+   asset                                     balance;                ///< Current funds deposited in the escrow.
+   string                                    escrow_id;              ///< uuidv4 referring to the escrow payment.
+   string                                    memo;                   ///< Details of the transaction for reference. 
+   string                                    json;                   ///< Additonal JSON object attribute details.
+   time_point                                acceptance_time;        ///< time that the transfer must be approved by.
+   time_point                                escrow_expiration;      ///< Time that the escrow is able to be claimed by either TO or FROM.
+   time_point                                dispute_release_time;   ///< Time that the balance is distributed to median release percentage.
+   vector< account_name_type >               mediators;              ///< Set of accounts able to mediate the dispute.
+   map< account_name_type, uint16_t >        release_percentages;    ///< Declared release percentages of all accounts.
+   map< account_name_type, bool >            approvals;              ///< Map of account approvals, paid into balance.
+   time_point                                created;                ///< Time that the order was created.
+   time_point                                last_updated;           ///< Time that the order was last updated, approved, or disputed.
+   bool                                      disputed;               ///< True when escrow is in dispute.
+};
+
+
+struct reward_fund_api_obj
+{
+   reward_fund_api_obj( const chain::reward_fund_object& o ) :
+      id( o.id ),
+      symbol( o.symbol ),
+      content_reward_balance( o.content_reward_balance ),
+      validation_reward_balance( o.validation_reward_balance ),
+      txn_stake_reward_balance( o.txn_stake_reward_balance ),
+      work_reward_balance( o.work_reward_balance ),
+      producer_activity_reward_balance( o.producer_activity_reward_balance ),
+      supernode_reward_balance( o.supernode_reward_balance ),
+      power_reward_balance( o.power_reward_balance ),
+      community_fund_balance( o.community_fund_balance ),
+      development_reward_balance( o.development_reward_balance ),
+      marketing_reward_balance( o.marketing_reward_balance ),
+      advocacy_reward_balance( o.advocacy_reward_balance ),
+      activity_reward_balance( o.activity_reward_balance ),
+      premium_partners_fund_balance( o.premium_partners_fund_balance ),
+      total_pending_reward_balance( o.total_pending_reward_balance ),
+      recent_content_claims( o.recent_content_claims ),
+      recent_activity_claims( o.recent_activity_claims ),
+      content_constant( o.content_constant ),
+      content_reward_decay_rate( o.content_reward_decay_rate ),
+      content_reward_interval( o.content_reward_interval ),
+      author_reward_curve( o.author_reward_curve ),
+      curation_reward_curve( o.curation_reward_curve ),
+      last_updated( o.last_updated ){}
+
+   reward_fund_api_obj(){}
+
+   reward_fund_id_type     id;
+   asset_symbol_type       symbol;                                                    ///< Currency symbol of the asset that the reward fund issues.
+   asset                   content_reward_balance;                                    ///< Balance awaiting distribution to content creators.
+   asset                   validation_reward_balance;                                 ///< Balance distributed to block validating producers. 
+   asset                   txn_stake_reward_balance;                                  ///< Balance distributed to block producers based on the stake weighted transactions in each block.
+   asset                   work_reward_balance;                                       ///< Balance distributed to each proof of work block producer. 
+   asset                   producer_activity_reward_balance;                          ///< Balance distributed to producers that receive activity reward votes.
+   asset                   supernode_reward_balance;                                  ///< Balance distributed to supernodes, based on stake weighted comment views.
+   asset                   power_reward_balance;                                      ///< Balance distributed to staked units of the currency.
+   asset                   community_fund_balance;                                    ///< Balance distributed to community proposal funds on the currency. 
+   asset                   development_reward_balance;                                ///< Balance distributed to elected developers. 
+   asset                   marketing_reward_balance;                                  ///< Balance distributed to elected marketers. 
+   asset                   advocacy_reward_balance;                                   ///< Balance distributed to elected advocates. 
+   asset                   activity_reward_balance;                                   ///< Balance distributed to content creators that are active each day. 
+   asset                   premium_partners_fund_balance;                             ///< Receives income from memberships, distributed to premium creators. 
+   asset                   total_pending_reward_balance;                              ///< Total of all reward balances. 
+   uint128_t               recent_content_claims;                                     ///< Recently claimed content reward balance shares.
+   uint128_t               recent_activity_claims;                                    ///< Recently claimed activity reward balance shares.
+   uint128_t               content_constant;                                          ///< Contstant added to content claim shares.
+   fc::microseconds        content_reward_decay_rate;                                 ///< Time taken to distribute all content rewards.
+   fc::microseconds        content_reward_interval;                                   ///< Time between each individual distribution of content rewards. 
+   curve_id                author_reward_curve;                                       ///< Type of reward curve used for author content reward calculation. 
+   curve_id                curation_reward_curve;                                     ///< Type of reward curve used for curation content reward calculation.
+   time_point              last_updated;                                              ///< Time that the reward fund was last updated. 
+};
+
+
 struct community_api_obj
 {
    community_api_obj( const chain::community_object& b ):
@@ -981,26 +1197,26 @@ struct community_api_obj
 
    community_api_obj(){}
 
-   community_id_type                      id;
-   community_name_type                    name;                               ///< Name of the community, lowercase letters, numbers and hyphens only.
-   account_name_type                  founder;                            ///< The account that created the community, able to add and remove administrators.
-   string                             community_privacy;                      ///< Community privacy level, open, public, private, or exclusive
-   public_key_type                    community_public_key;                   ///< Key used for encrypting and decrypting posts. Private key shared with accepted members.
-   string                             json;                               ///< Public plaintext json information about the community, its topic and rules.
-   string                             json_private;                       ///< Private ciphertext json information about the community.
-   comment_id_type                    pinned_post;                     ///< Post pinned to the top of the community's page. 
-   uint32_t                           subscriber_count;               ///< number of accounts that are subscribed to the community
-   uint32_t                           post_count;                     ///< number of posts created in the community
-   uint32_t                           comment_count;                  ///< number of comments on posts in the community
-   uint32_t                           vote_count;                     ///< accumulated number of votes received by all posts in the community
-   uint32_t                           view_count;                     ///< accumulated number of views on posts in the community 
-   uint32_t                           share_count;                    ///< accumulated number of shares on posts in the community 
-   asset                              total_content_rewards = asset(0, SYMBOL_COIN);   ///< total amount of rewards earned by posts in the community
-   time_point                         created;                            ///< Time that the community was created.
-   time_point                         last_community_update;                  ///< Time that the community's details were last updated.
-   time_point                         last_post;                          ///< Time that the user most recently created a comment.
-   time_point                         last_root_post;                     ///< Time that the community last created a post. 
-   bool                               active;
+   community_id_type                  id;
+   community_name_type                name;                       ///< Name of the community, lowercase letters, numbers and hyphens only.
+   account_name_type                  founder;                    ///< The account that created the community, able to add and remove administrators.
+   string                             community_privacy;          ///< Community privacy level, open, public, private, or exclusive
+   public_key_type                    community_public_key;       ///< Key used for encrypting and decrypting posts. Private key shared with accepted members.
+   string                             json;                       ///< Public plaintext json information about the community, its topic and rules.
+   string                             json_private;               ///< Private ciphertext json information about the community.
+   comment_id_type                    pinned_post;                ///< Post pinned to the top of the community's page. 
+   uint32_t                           subscriber_count;           ///< number of accounts that are subscribed to the community
+   uint32_t                           post_count;                 ///< number of posts created in the community
+   uint32_t                           comment_count;              ///< number of comments on posts in the community
+   uint32_t                           vote_count;                 ///< accumulated number of votes received by all posts in the community
+   uint32_t                           view_count;                 ///< accumulated number of views on posts in the community 
+   uint32_t                           share_count;                ///< accumulated number of shares on posts in the community 
+   asset                              total_content_rewards;      ///< total amount of rewards earned by posts in the community
+   time_point                         created;                    ///< Time that the community was created.
+   time_point                         last_community_update;      ///< Time that the community's details were last updated.
+   time_point                         last_post;                  ///< Time that the user most recently created a comment.
+   time_point                         last_root_post;             ///< Time that the community last created a post. 
+   bool                               active;                     ///< True when community is active.
 };
 
 
@@ -1134,7 +1350,7 @@ struct bitasset_data_api_obj
       issuer( b.issuer ),
       backing_asset( b.backing_asset ),
       current_feed( b.current_feed ),
-      current_feed_publication_time( current_feed_publication_time ),
+      current_feed_publication_time( b.current_feed_publication_time ),
       force_settled_volume( b.force_settled_volume.value ),
       settlement_price( b.settlement_price ),
       settlement_fund( b.settlement_fund ),
@@ -1854,9 +2070,13 @@ struct community_enterprise_api_obj
          {
             beneficiaries[ beneficiary.first ] = beneficiary.second;
          }
-         for( auto milestone : o.milestones )
+         for( auto milestone : o.milestone_shares )
          {
-            milestones.push_back( std::make_pair( to_string( milestone.first ), milestone.second ) );
+            milestone_shares.push_back( milestone );
+         }
+         for( auto milestone : o.milestone_details )
+         {
+            milestone_details.push_back( to_string( milestone) );
          }
          for( auto milestone : o.milestone_history )
          {
@@ -1872,7 +2092,8 @@ struct community_enterprise_api_obj
    bool                               active;                                     ///< True if the project is active, set false to deactivate.
    string                             proposal_type;                              ///< The type of proposal, determines release schedule.
    map< account_name_type, uint16_t > beneficiaries;                              ///< Map of account names and percentages of budget value.
-   vector< pair < string, uint16_t > > milestones;                                ///< Ordered vector of milestone descriptions and percentages of budget value.
+   vector< uint16_t >                 milestone_shares;                           ///< Ordered vector of release milestone descriptions.
+   vector< string >                   milestone_details;                          ///< Ordered vector of release milestone percentages of budget value.
    vector< string >                   milestone_history;                          ///< Ordered vector of the details of every claimed milestone.
    int16_t                            approved_milestones;                        ///< Number of the last approved milestone by the community.
    int16_t                            claimed_milestones;                         ///< Number of milestones claimed for release.  
@@ -2042,36 +2263,53 @@ struct ad_bid_api_obj
       id( o.id ),
       bidder( o.bidder ),
       bid_id( to_string( o.bid_id ) ),
+      audience_id( to_string( o.audience_id ) ),
       account( o.account ),
-      creative_id( to_string( o.creative_id ) ),
       campaign_id( to_string( o.campaign_id ) ),
+      author( o.author ),
+      creative_id( to_string( o.creative_id ) ),
       provider( o.provider ),
       inventory_id( to_string( o.inventory_id ) ),
-      audience_id( to_string( o.audience_id ) ),
       bid_price( o.bid_price ),
+      format( ad_format_values[ o.format ] ),
+      metric( ad_metric_values[ o.metric ] ),
+      objective( to_string( o.objective ) ),
       requested( o.requested ),
       remaining( o.remaining ),
+      json( to_string( o.json ) ),
       created( o.created ),
       last_updated( o.last_updated ),
-      expiration( o.expiration ){}
+      expiration( o.expiration )
+      {
+         for( auto d : o.delivered )
+         {
+            delivered.push_back( d );
+         }
+      }
 
    ad_bid_api_obj(){}
 
    ad_bid_id_type                   id;
    account_name_type                bidder;            ///< Account that created the ad budget, or an agent of the campaign.
    string                           bid_id;            ///< Bid uuidv4 for referring to the bid and updating it or cancelling it.
-   account_name_type                account;           ///< Account that created the campaign that this bid is directed towards.  
-   string                           creative_id;       ///< Desired creative for display. 
+   string                           audience_id;       ///< Desired audience for display acceptance. Audience must include only members of the inventory audience.
+   account_name_type                account;           ///< Account that created the campaign that this bid is directed towards.
    string                           campaign_id;       ///< Ad campaign uuidv4 to utilise for the bid.
+   account_name_type                author;            ///< Account that created the creative that is being bidded on.
+   string                           creative_id;       ///< Desired creative for display.
    account_name_type                provider;          ///< Account offering inventory supply.
    string                           inventory_id;      ///< Inventory uuidv4 offering to bid on.
-   string                           audience_id;       ///< Desired audience for display acceptance. Audience must include only members of the inventory audience.
    asset                            bid_price;         ///< Price offered per metric. Asset symbol must be the same as the inventory price.
+   string                           format;            ///< Ad Creative format.
+   string                           metric;            ///< Type of expense metric used.
+   string                           objective;         ///< Creative Objective for bid rank ordering.
    uint32_t                         requested;         ///< Maximum total metrics requested.
    uint32_t                         remaining;         ///< Current amount of inventory remaining. Decrements when delivered.
-   time_point                       created;           ///< Time audience was created.
-   time_point                       last_updated;      ///< Time audiences's details were last updated or inventory was delivered.
-   time_point                       expiration;        ///< Time audience was created.
+   vector< account_name_type >      delivered;         ///< List of audience accounts that have been delivered creative.
+   string                           json;              ///< JSON Metadata of the ad bid.
+   time_point                       created;           ///< Time that the bid was created.
+   time_point                       last_updated;      ///< Time that the bid's details were last updated or inventory was delivered.
+   time_point                       expiration;        ///< Time that the bid was will expire.
 };
 
 
@@ -2086,11 +2324,11 @@ struct tag_api_obj
       net_votes( o.net_votes ),
       view_count( o.view_count ),
       share_count( o.share_count ),
-      net_reward( o.net_reward ),
-      vote_power( o.vote_power ),
-      view_power( o.view_power ),
-      share_power( o.share_power ),
-      comment_power( o.comment_power ){}
+      net_reward( o.net_reward.value ),
+      vote_power( o.vote_power.value ),
+      view_power( o.view_power.value ),
+      share_power( o.share_power.value ),
+      comment_power( o.comment_power.value ){}
 
    tag_api_obj() {}
 
@@ -2102,11 +2340,11 @@ struct tag_api_obj
    int32_t                    net_votes;       ///< The amount of upvotes, minus downvotes for all posts using the tag.
    int32_t                    view_count;      ///< The amount of views for all posts using the tag.
    int32_t                    share_count;     ///< The amount of shares for all posts using the tag.
-   int64_t                   net_reward;      ///< Net reward is the sum of all vote, view, share and comment power, with the reward curve formula applied. 
-   int64_t                   vote_power;      ///< Sum of weighted voting power for all posts using the tag.
-   int64_t                   view_power;      ///< Sum of weighted view power for all posts using the tag.
-   int64_t                   share_power;     ///< Sum of weighted share power for all posts using the tag.
-   int64_t                   comment_power;   ///< Sum of weighted comment power for all posts using the tag.
+   int64_t                    net_reward;      ///< Net reward is the sum of all vote, view, share and comment power, with the reward curve formula applied. 
+   int64_t                    vote_power;      ///< Sum of weighted voting power for all posts using the tag.
+   int64_t                    view_power;      ///< Sum of weighted view power for all posts using the tag.
+   int64_t                    share_power;     ///< Sum of weighted share power for all posts using the tag.
+   int64_t                    comment_power;   ///< Sum of weighted comment power for all posts using the tag.
 };
 
 
@@ -2161,6 +2399,56 @@ struct dynamic_global_property_api_obj : public dynamic_global_property_object
 
 
 } } ///< node::app
+
+FC_REFLECT( node::app::median_chain_property_api_obj,
+         (id)
+         (account_creation_fee)
+         (maximum_block_size)
+         (pow_target_time)
+         (pow_decay_time)
+         (txn_stake_decay_time)
+         (escrow_bond_percent)
+         (credit_interest_rate)
+         (credit_open_ratio)
+         (credit_liquidation_ratio)
+         (credit_min_interest)
+         (credit_variable_interest)
+         (market_max_credit_ratio)
+         (margin_open_ratio)
+         (margin_liquidation_ratio)
+         (maximum_asset_feed_publishers)
+         (membership_base_price)
+         (membership_mid_price)
+         (membership_top_price)
+         (author_reward_percent)
+         (vote_reward_percent)
+         (view_reward_percent)
+         (share_reward_percent)
+         (comment_reward_percent)
+         (storage_reward_percent)
+         (moderator_reward_percent)
+         (content_reward_decay_rate)
+         (content_reward_interval)
+         (vote_reserve_rate)
+         (view_reserve_rate)
+         (share_reserve_rate)
+         (comment_reserve_rate)
+         (vote_recharge_time)
+         (view_recharge_time)
+         (share_recharge_time)
+         (comment_recharge_time)
+         (curation_auction_decay_time)
+         (vote_curation_decay)
+         (view_curation_decay)
+         (share_curation_decay)
+         (comment_curation_decay)
+         (supernode_decay_time)
+         (enterprise_vote_percent_required)
+         (maximum_asset_whitelist_authorities)
+         (max_stake_intervals)
+         (max_unstake_intervals)
+         (max_exec_budget)
+         );
 
 FC_REFLECT( node::app::comment_api_obj,
          (id)
@@ -2511,6 +2799,53 @@ FC_REFLECT( node::app::transfer_recurring_request_api_obj,
          (expiration)
          );
 
+FC_REFLECT( node::app::escrow_api_obj,
+         (id)
+         (from)
+         (to)
+         (from_mediator)
+         (to_mediator)
+         (payment)
+         (balance)
+         (escrow_id)
+         (memo)
+         (json)
+         (acceptance_time)
+         (escrow_expiration)
+         (dispute_release_time)
+         (mediators)
+         (release_percentages)
+         (approvals)
+         (created)
+         (last_updated)
+         (disputed)
+         );
+
+FC_REFLECT( node::app::reward_fund_api_obj,
+         (id)
+         (content_reward_balance)
+         (validation_reward_balance) 
+         (txn_stake_reward_balance) 
+         (work_reward_balance)
+         (producer_activity_reward_balance) 
+         (supernode_reward_balance)
+         (power_reward_balance)
+         (community_fund_balance)
+         (development_reward_balance)
+         (marketing_reward_balance)
+         (advocacy_reward_balance)
+         (activity_reward_balance)
+         (premium_partners_fund_balance)
+         (total_pending_reward_balance)
+         (recent_content_claims)
+         (recent_activity_claims)
+         (content_constant)
+         (content_reward_decay_rate)
+         (author_reward_curve)
+         (curation_reward_curve)
+         (last_updated)
+         );
+
 FC_REFLECT( node::app::community_api_obj,
          (id)
          (name)
@@ -2623,8 +2958,6 @@ FC_REFLECT( node::app::credit_data_api_obj,
          (buyback_asset)
          (buyback_pool)
          (buyback_price)
-         (symbol_a)
-         (symbol_b)
          (last_buyback)
          (buyback_share_percent)
          (liquid_fixed_interest_rate)
@@ -2885,7 +3218,8 @@ FC_REFLECT( node::app::community_enterprise_api_obj,
          (active)
          (proposal_type)
          (beneficiaries)
-         (milestones)
+         (milestone_shares)
+         (milestone_details)
          (milestone_history)
          (approved_milestones)
          (claimed_milestones)
@@ -2952,7 +3286,6 @@ FC_REFLECT( node::app::ad_inventory_api_obj,
          (inventory)
          (remaining)
          (json)
-         (agents)
          (created)
          (last_updated)
          (expiration)
@@ -2983,9 +3316,11 @@ FC_REFLECT( node::app::ad_bid_api_obj,
          (inventory_id)
          (bid_price)
          (metric)
+         (objective)
          (requested)
          (remaining)
-         (audience)
+         (delivered)
+         (json)
          (created)
          (last_updated)
          (expiration)
@@ -2993,12 +3328,18 @@ FC_REFLECT( node::app::ad_bid_api_obj,
 
 FC_REFLECT( node::app::tag_api_obj,
          (id)
-         (name)
-         (total_payouts)
+         (tag)
+         (total_payout)
+         (post_count)
+         (children)
          (net_votes)
-         (top_posts)
-         (comments)
-         (trending)
+         (view_count)
+         (share_count)
+         (net_reward)
+         (vote_power)
+         (view_power)
+         (share_power)
+         (comment_power)
          );
 
 FC_REFLECT_DERIVED( node::app::signed_block_api_obj, (node::protocol::signed_block),

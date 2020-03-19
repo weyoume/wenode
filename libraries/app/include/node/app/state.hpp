@@ -1,9 +1,7 @@
 #pragma once
 #include <node/app/applied_operation.hpp>
 #include <node/app/node_api_objects.hpp>
-
 #include <node/chain/global_property_object.hpp>
-#include <node/chain/account_object.hpp>
 #include <node/chain/node_objects.hpp>
 
 namespace node { namespace app {
@@ -41,7 +39,7 @@ namespace node { namespace app {
    {
       string         voter;
       uint128_t      weight = 0;
-      int64_t       reward = 0;
+      int64_t        reward = 0;
       int16_t        percent = 0;
       time_point     time;
    };
@@ -50,7 +48,7 @@ namespace node { namespace app {
    {
       string         viewer;
       uint128_t      weight = 0;
-      int64_t       reward = 0;
+      int64_t        reward = 0;
       time_point     time;
    };
 
@@ -58,7 +56,7 @@ namespace node { namespace app {
    {
       string         sharer;
       uint128_t      weight = 0;
-      int64_t       reward = 0;
+      int64_t        reward = 0;
       time_point     time;
    };
 
@@ -118,6 +116,20 @@ namespace node { namespace app {
       vector< call_order_api_obj >           call_orders;
       vector< credit_loan_api_obj >          loan_orders;
       vector< credit_collateral_api_obj >    collateral;
+   };
+
+   struct balance_state
+   {
+      map< asset_symbol_type, account_balance_api_obj >       balances;
+   };
+
+   struct key_state
+   {
+      map< account_name_type, encrypted_keypair_type >       connection_keys;
+      map< account_name_type, encrypted_keypair_type >       friend_keys;
+      map< account_name_type, encrypted_keypair_type >       companion_keys;
+      map< community_name_type, encrypted_keypair_type >         community_keys;
+      map< account_name_type, encrypted_keypair_type >       business_keys;
    };
 
    struct operation_state
@@ -224,6 +236,36 @@ namespace node { namespace app {
       feed_api_obj                  feed;                      // Details injected if using get_discussions_by_feed.
    };
 
+   struct ad_bid_state : public ad_bid_api_obj
+   {
+      ad_bid_state(){}
+      ad_bid_state( const ad_bid_object& a ):ad_bid_api_obj( a ){}
+
+      ad_creative_api_obj                     creative;
+      ad_campaign_api_obj                     campaign;
+      ad_inventory_api_obj                    inventory;
+      ad_audience_api_obj                     audience;
+   };
+
+   struct account_ad_state
+   {
+      vector< ad_creative_api_obj >           creatives;
+      vector< ad_campaign_api_obj >           campaigns;
+      vector< ad_audience_api_obj >           audiences;
+      vector< ad_inventory_api_obj >          inventories;
+      vector< ad_bid_api_obj >                created_bids;
+      vector< ad_bid_api_obj >                account_bids;
+      vector< ad_bid_api_obj >                creative_bids;
+      vector< ad_bid_state >                  incoming_bids;
+   };
+
+   struct message_state
+   {
+      vector< message_api_obj >                                inbox;
+      vector< message_api_obj >                                outbox;
+      map< account_name_type, vector< message_api_obj > >      conversations;
+   };
+
    struct extended_account : public account_api_obj
    {
       extended_account(){}
@@ -237,7 +279,7 @@ namespace node { namespace app {
       key_state                                         keychain;
       message_state                                     messages;
       transfer_state                                    transfers;
-      community_state                                       communities;
+      community_state                                   communities;
       network_state                                     network;
       account_ad_state                                  active_ads; 
       vector< pair< account_name_type, uint32_t > >     top_shared;
@@ -251,15 +293,15 @@ namespace node { namespace app {
       extended_community(){}
       extended_community( const community_object& b ):community_api_obj( b ){}
 
-      vector< account_name_type >                       subscribers;                 // List of accounts that subscribe to the posts made in the community.
-      vector< account_name_type >                       members;                     // List of accounts that are permitted to post in the community. Can invite and accept on public communities
-      vector< account_name_type >                       moderators;                  // Accounts able to filter posts. Can invite and accept on private communities.
-      vector< account_name_type >                       administrators;              // Accounts able to add and remove moderators and update community details. Can invite and accept on Exclusive communities. 
-      vector< account_name_type >                       blacklist;                   // Accounts that are not able to post in this community, or request to join.
-      map< account_name_type, int64_t >                 mod_weight;                  // Map of all moderator voting weights for distributing rewards. 
-      int64_t                                           total_mod_weight = 0;        // Total of all moderator weights. 
-      map< account_name_type, community_request_api_obj >   requests;
-      map< account_name_type, community_invite_api_obj >    invites;
+      vector< account_name_type >                             subscribers;                 // List of accounts that subscribe to the posts made in the community.
+      vector< account_name_type >                             members;                     // List of accounts that are permitted to post in the community. Can invite and accept on public communities
+      vector< account_name_type >                             moderators;                  // Accounts able to filter posts. Can invite and accept on private communities.
+      vector< account_name_type >                             administrators;              // Accounts able to add and remove moderators and update community details. Can invite and accept on Exclusive communities. 
+      vector< account_name_type >                             blacklist;                   // Accounts that are not able to post in this community, or request to join.
+      map< account_name_type, int64_t >                       mod_weight;                  // Map of all moderator voting weights for distributing rewards. 
+      int64_t                                                 total_mod_weight = 0;        // Total of all moderator weights. 
+      map< account_name_type, community_request_api_obj >     requests;
+      map< account_name_type, community_invite_api_obj >      invites;
    };
 
    struct extended_asset : public asset_api_obj
@@ -282,27 +324,7 @@ namespace node { namespace app {
       credit_pool_api_obj                      credit_pool;
       map< string, liquidity_pool_api_obj >    liquidity_pools;
    };
-
-   struct message_state
-   {
-      vector< message_api_obj >                                inbox;
-      vector< message_api_obj >                                outbox;
-      map< account_name_type, vector< message_api_obj > >      conversations;
-   };
-
-   struct balance_state
-   {
-      map< asset_symbol_type, account_balance_api_obj >       balances;
-   };
-
-   struct key_state
-   {
-      map< account_name_type, encrypted_keypair_type >       connection_keys;
-      map< account_name_type, encrypted_keypair_type >       friend_keys;
-      map< account_name_type, encrypted_keypair_type >       companion_keys;
-      map< community_name_type, encrypted_keypair_type >         community_keys;
-      map< account_name_type, encrypted_keypair_type >       business_keys;
-   };
+   
 
    struct market_limit_orders
    {
@@ -338,18 +360,6 @@ namespace node { namespace app {
       market_credit_loans                     credit_loans;
    };
 
-   struct account_ad_state
-   {
-      vector< ad_creative_api_obj >           creatives;
-      vector< ad_campaign_api_obj >           campaigns;
-      vector< ad_audience_api_obj >           audiences;
-      vector< ad_inventory_api_obj >          inventories;
-      vector< ad_bid_api_obj >                created_bids;
-      vector< ad_bid_api_obj >                account_bids;
-      vector< ad_bid_api_obj >                creative_bids;
-      vector< ad_bid_state >                  incoming_bids;
-   };
-
    struct search_result_state
    {
       vector< account_api_obj >               accounts;
@@ -357,17 +367,6 @@ namespace node { namespace app {
       vector< tag_following_api_obj >         tags;
       vector< asset_api_obj >                 assets;
       vector< discussion >                    posts;
-   };
-
-   struct ad_bid_state : public ad_bid_api_obj
-   {
-      ad_bid_state(){}
-      ad_bid_state( const ad_bid_object& a ):ad_bid_api_obj( a ){}
-
-      ad_creative_api_obj                     creative;
-      ad_campaign_api_obj                     campaign;
-      ad_inventory_api_obj                    inventory;
-      ad_audience_api_obj                     audience;
    };
 
    struct state 
@@ -426,14 +425,14 @@ FC_REFLECT( node::app::vote_state,
          );
 
 FC_REFLECT( node::app::view_state,
-         (voter)
+         (viewer)
          (weight)
          (reward)
          (time) 
          );
 
 FC_REFLECT( node::app::share_state,
-         (voter)
+         (sharer)
          (weight)
          (reward)
          (time) 
@@ -489,6 +488,10 @@ FC_REFLECT( node::app::order_state,
          (call_orders)
          (loan_orders)
          (collateral)
+         );
+
+FC_REFLECT( node::app::balance_state,
+         (balances)
          );
 
 FC_REFLECT( node::app::operation_state,

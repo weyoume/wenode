@@ -2,10 +2,7 @@
 
 #include <node/chain/node_objects.hpp>
 
-namespace node { namespace market_history {
-
-namespace detail
-{
+namespace node { namespace market_history { namespace detail {
 
 class market_history_api_impl
 {
@@ -46,7 +43,7 @@ market_ticker market_history_api_impl::get_ticker( string buy_symbol, string sel
       symbol_a = sell_asset.symbol;
    }
 
-   const auto& duration_idx = db->get_index< market_duration_index >().indices().get< by_asset_pair >();
+   const auto& duration_idx = db->get_index< market_history::market_duration_index >().indices().get< by_new_asset_pair >();
    auto current_itr = duration_idx.lower_bound( boost::make_tuple( symbol_a, symbol_b, 60, db->head_block_time() ) );
 
    auto hour_itr = duration_idx.lower_bound( boost::make_tuple( symbol_a, symbol_b, 60, ( db->head_block_time() - fc::hours(1) ) ) );
@@ -76,7 +73,7 @@ market_ticker market_history_api_impl::get_ticker( string buy_symbol, string sel
 
    if( day_itr != duration_idx.end() )
    {
-      double day_price = day_itr->last_price.to_real();
+      double day_price = day_itr->close_price_real( asset_symbol_type( sell_symbol ) );
       result.day_percent_change = ( ( result.last_price - day_price ) / day_price ) * 100;
    }
    else
@@ -139,7 +136,7 @@ market_volume market_history_api_impl::get_volume( string buy_symbol, string sel
       symbol_b = buy_asset.symbol;
       symbol_a = sell_asset.symbol;
    }
-   const auto& duration_idx = db->get_index< market_duration_index >().indices().get< by_asset_pair >();
+   const auto& duration_idx = db->get_index< market_history::market_duration_index >().indices().get< by_new_asset_pair >();
    auto itr = duration_idx.lower_bound( boost::make_tuple( symbol_a, symbol_b, 60, ( db->head_block_time() - fc::days(1) ) ) );
    market_volume result;
 
@@ -178,15 +175,15 @@ order_book market_history_api_impl::get_order_book( string buy_symbol, string se
    auto max_sell = price::max( asset_symbol_type( sell_symbol ), asset_symbol_type( buy_symbol ) );
    auto max_buy = price::max( asset_symbol_type( buy_symbol ), asset_symbol_type( sell_symbol ) );
 
-   const auto& limit_price_idx = db->get_index<limit_order_index>().indices().get<by_price>();
-   const auto& margin_price_idx = db->get_index<margin_order_index>().indices().get<by_price>();
+   const auto& limit_price_idx = db->get_index< chain::limit_order_index >().indices().get< by_price >();
+   const auto& margin_price_idx = db->get_index< chain::margin_order_index >().indices().get< by_price >();
 
    auto limit_sell_itr = limit_price_idx.lower_bound( max_sell );
    auto limit_buy_itr = limit_price_idx.lower_bound( max_buy );
    auto limit_end = limit_price_idx.end();
 
-   auto margin_sell_itr = margin_price_idx.lower_bound (max_sell );
-   auto margin_buy_itr = margin_price_idx.lower_bound( max_buy );
+   auto margin_sell_itr = margin_price_idx.lower_bound( boost::make_tuple( false, max_sell ) );
+   auto margin_buy_itr = margin_price_idx.lower_bound( boost::make_tuple( false, max_buy ) );
    auto margin_end = margin_price_idx.end();
 
    while( ( ( limit_sell_itr != limit_end &&
@@ -195,7 +192,8 @@ order_book market_history_api_impl::get_order_book( string buy_symbol, string se
       margin_sell_itr->sell_price.base.symbol == asset_symbol_type( sell_symbol ) ) ) && 
       result.bids.size() < limit )
    {
-      if( limit_sell_itr->sell_price >= margin_sell_itr->sell_price && limit_sell_itr->sell_price.base.symbol == asset_symbol_type( sell_symbol ) )
+      if( limit_sell_itr->sell_price >= margin_sell_itr->sell_price && 
+         limit_sell_itr->sell_price.base.symbol == asset_symbol_type( sell_symbol ) )
       {
          order cur;
          auto itr = limit_sell_itr;
@@ -207,8 +205,14 @@ order_book market_history_api_impl::get_order_book( string buy_symbol, string se
          result.bids.push_back( cur );
          ++limit_sell_itr;
       }
-      else if( margin_sell_itr->sell_price >= limit_sell_itr->sell_price && margin_sell_itr->sell_price.base.symbol == asset_symbol_type( sell_symbol ) )
+      else if( margin_sell_itr->sell_price >= limit_sell_itr->sell_price && 
+         margin_sell_itr->sell_price.base.symbol == asset_symbol_type( sell_symbol ) )
       {
+         if( margin_sell_itr->filled() )
+         {
+            ++margin_sell_itr;
+            continue;
+         }
          order cur;
          auto itr = margin_sell_itr;
          cur.order_price = itr->sell_price;
@@ -244,6 +248,11 @@ order_book market_history_api_impl::get_order_book( string buy_symbol, string se
       }
       else if( margin_buy_itr->sell_price >= limit_buy_itr->sell_price && margin_buy_itr->sell_price.base.symbol == asset_symbol_type( buy_symbol ) )
       {
+         if( margin_buy_itr->filled() )
+         {
+            ++margin_buy_itr;
+            continue;
+         }
          order cur;
          auto itr = margin_buy_itr;
          cur.order_price = ~(itr->sell_price);
@@ -281,7 +290,7 @@ std::vector< market_trade > market_history_api_impl::get_trade_history( string b
       symbol_a = sell_asset.symbol;
    }
 
-   const auto& order_idx = db->get_index< order_history_index >().indices().get< by_old_asset_pair >();
+   const auto& order_idx = db->get_index< market_history::order_history_index >().indices().get< by_old_asset_pair >();
    auto itr = order_idx.lower_bound( boost::make_tuple( symbol_a, symbol_b, start ) );
 
    std::vector< market_trade > result;
@@ -318,12 +327,12 @@ vector< market_trade > market_history_api_impl::get_recent_trades( string buy_sy
       symbol_a = sell_asset.symbol;
    }
 
-   const auto& order_idx = db->get_index< order_history_index >().indices().get< by_new_asset_pair >();
+   const auto& order_idx = db->get_index< market_history::order_history_index >().indices().get< by_new_asset_pair >();
    auto itr = order_idx.lower_bound( boost::make_tuple( symbol_a, symbol_b ) );
 
    vector< market_trade > result;
 
-   while( itr != order_idx.rend() && result.size() < limit )
+   while( itr != order_idx.end() && result.size() < limit )
    {
       market_trade trade;
       trade.date = itr->time;
@@ -354,7 +363,7 @@ std::vector< candle_stick > market_history_api_impl::get_market_history( string 
       symbol_a = sell_asset.symbol;
    }
 
-   const auto& duration_idx = db->get_index< market_duration_index >().indices().get< by_old_asset_pair >();
+   const auto& duration_idx = db->get_index< market_history::market_duration_index >().indices().get< by_old_asset_pair >();
    auto itr = duration_idx.lower_bound( boost::make_tuple( symbol_a, symbol_b, seconds, start ) );
 
    std::vector< candle_stick > result;

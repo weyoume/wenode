@@ -96,7 +96,7 @@ database::~database()
 void database::open( const fc::path& data_dir, const fc::path& shared_mem_dir, uint64_t shared_file_size = 0, 
    uint32_t chainbase_flags = 0, const public_key_type& init_public_key = INIT_PUBLIC_KEY )
 { try {
-   init_schema();
+   
    chainbase::database::open( shared_mem_dir, chainbase_flags, shared_file_size );
 
    initialize_indexes();
@@ -195,12 +195,12 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< account_authority_object >( [&]( account_authority_object& auth )
    {
       auth.account = INIT_ACCOUNT;
-      auth.owner.add_authority( get_key( INIT_ACCOUNT, "owner", INIT_ACCOUNT_PASSWORD ), 1 );
-      auth.owner.weight_threshold = 1;
-      auth.active.add_authority( get_key( INIT_ACCOUNT, "active", INIT_ACCOUNT_PASSWORD ), 1 );
-      auth.active.weight_threshold = 1;
-      auth.posting.add_authority( get_key( INIT_ACCOUNT, "posting", INIT_ACCOUNT_PASSWORD ), 1 );
-      auth.posting.weight_threshold = 1;
+      auth.owner_auth.add_authority( get_key( INIT_ACCOUNT, "owner", INIT_ACCOUNT_PASSWORD ), 1 );
+      auth.owner_auth.weight_threshold = 1;
+      auth.active_auth.add_authority( get_key( INIT_ACCOUNT, "active", INIT_ACCOUNT_PASSWORD ), 1 );
+      auth.active_auth.weight_threshold = 1;
+      auth.posting_auth.add_authority( get_key( INIT_ACCOUNT, "posting", INIT_ACCOUNT_PASSWORD ), 1 );
+      auth.posting_auth.weight_threshold = 1;
    });
 
    create< account_following_object >( [&]( account_following_object& afo )
@@ -239,12 +239,12 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< account_authority_object >( [&]( account_authority_object& auth )
    {
       auth.account = INIT_CEO;
-      auth.owner.add_authority( get_key( INIT_CEO, "owner", INIT_ACCOUNT_PASSWORD ), 1 );
-      auth.owner.weight_threshold = 1;
-      auth.active.add_authority( get_key( INIT_CEO, "active", INIT_ACCOUNT_PASSWORD ), 1 );
-      auth.active.weight_threshold = 1;
-      auth.posting.add_authority( get_key( INIT_CEO, "posting", INIT_ACCOUNT_PASSWORD ), 1 );
-      auth.posting.weight_threshold = 1;
+      auth.owner_auth.add_authority( get_key( INIT_CEO, "owner", INIT_ACCOUNT_PASSWORD ), 1 );
+      auth.owner_auth.weight_threshold = 1;
+      auth.active_auth.add_authority( get_key( INIT_CEO, "active", INIT_ACCOUNT_PASSWORD ), 1 );
+      auth.active_auth.weight_threshold = 1;
+      auth.posting_auth.add_authority( get_key( INIT_CEO, "posting", INIT_ACCOUNT_PASSWORD ), 1 );
+      auth.posting_auth.weight_threshold = 1;
    });
 
    create< account_following_object >( [&]( account_following_object& afo ) 
@@ -389,8 +389,8 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< account_authority_object >( [&]( account_authority_object& auth )
    {
       auth.account = PRODUCER_ACCOUNT;
-      auth.owner.weight_threshold = 1;
-      auth.active.weight_threshold = 1;
+      auth.owner_auth.weight_threshold = 1;
+      auth.active_auth.weight_threshold = 1;
    });
 
    create< account_object >( [&]( account_object& a )
@@ -422,8 +422,8 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< account_authority_object >( [&]( account_authority_object& auth )
    {
       auth.account = NULL_ACCOUNT;
-      auth.owner.weight_threshold = 1;
-      auth.active.weight_threshold = 1;
+      auth.owner_auth.weight_threshold = 1;
+      auth.active_auth.weight_threshold = 1;
    });
 
    create< account_object >( [&]( account_object& a )
@@ -455,8 +455,8 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< account_authority_object >( [&]( account_authority_object& auth )
    {
       auth.account = TEMP_ACCOUNT;
-      auth.owner.weight_threshold = 0;
-      auth.active.weight_threshold = 0;
+      auth.owner_auth.weight_threshold = 0;
+      auth.active_auth.weight_threshold = 0;
    });
 
    // Create core asset
@@ -920,10 +920,10 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       create< account_authority_object >( [&]( account_authority_object& auth )
       {
          auth.account = GENESIS_ACCOUNT_BASE_NAME + ( i ? fc::to_string( i ) : std::string() );
-         auth.owner.add_authority( init_public_key, 1 );
-         auth.owner.weight_threshold = 1;
-         auth.active = auth.owner;
-         auth.posting = auth.active;
+         auth.owner_auth.add_authority( init_public_key, 1 );
+         auth.owner_auth.weight_threshold = 1;
+         auth.active_auth = auth.owner_auth;
+         auth.posting_auth = auth.active_auth;
       });
 
       create< producer_object >( [&]( producer_object& p )
@@ -1596,12 +1596,32 @@ const community_enterprise_object* database::find_community_enterprise( const ac
    return find< community_enterprise_object, by_enterprise_id >( boost::make_tuple( creator, enterprise_id ) );
 }
 
+const community_enterprise_object& database::get_community_enterprise( const account_name_type& creator, const string& enterprise_id )const
+{ try {
+   return get< community_enterprise_object, by_enterprise_id >( boost::make_tuple( creator, enterprise_id ) );
+} FC_CAPTURE_AND_RETHROW( (creator)(enterprise_id) ) }
+
+const community_enterprise_object* database::find_community_enterprise( const account_name_type& creator, const string& enterprise_id )const
+{
+   return find< community_enterprise_object, by_enterprise_id >( boost::make_tuple( creator, enterprise_id ) );
+}
+
 const enterprise_approval_object& database::get_enterprise_approval( const account_name_type& creator, const shared_string& enterprise_id, const account_name_type& account )const
 { try {
    return get< enterprise_approval_object, by_enterprise_id >( boost::make_tuple( creator, enterprise_id, account ) );
 } FC_CAPTURE_AND_RETHROW( (creator)(enterprise_id)(account) ) }
 
 const enterprise_approval_object* database::find_enterprise_approval( const account_name_type& creator, const shared_string& enterprise_id, const account_name_type& account )const
+{
+   return find< enterprise_approval_object, by_enterprise_id >( boost::make_tuple( creator, enterprise_id, account ) );
+}
+
+const enterprise_approval_object& database::get_enterprise_approval( const account_name_type& creator, const string& enterprise_id, const account_name_type& account )const
+{ try {
+   return get< enterprise_approval_object, by_enterprise_id >( boost::make_tuple( creator, enterprise_id, account ) );
+} FC_CAPTURE_AND_RETHROW( (creator)(enterprise_id)(account) ) }
+
+const enterprise_approval_object* database::find_enterprise_approval( const account_name_type& creator, const string& enterprise_id, const account_name_type& account )const
 {
    return find< enterprise_approval_object, by_enterprise_id >( boost::make_tuple( creator, enterprise_id, account ) );
 }
@@ -1696,12 +1716,32 @@ const ad_creative_object* database::find_ad_creative( const account_name_type& a
    return find< ad_creative_object, by_creative_id >( boost::make_tuple( account, creative_id ) );
 }
 
+const ad_creative_object& database::get_ad_creative( const account_name_type& account, const string& creative_id )const
+{ try {
+   return get< ad_creative_object, by_creative_id >( boost::make_tuple( account, creative_id ) );
+} FC_CAPTURE_AND_RETHROW( (account)(creative_id) ) }
+
+const ad_creative_object* database::find_ad_creative( const account_name_type& account, const string& creative_id )const
+{
+   return find< ad_creative_object, by_creative_id >( boost::make_tuple( account, creative_id ) );
+}
+
 const ad_campaign_object& database::get_ad_campaign( const account_name_type& account, const shared_string& campaign_id )const
 { try {
    return get< ad_campaign_object, by_campaign_id >( boost::make_tuple( account, campaign_id ) );
 } FC_CAPTURE_AND_RETHROW( (account)(campaign_id) ) }
 
 const ad_campaign_object* database::find_ad_campaign( const account_name_type& account, const shared_string& campaign_id )const
+{
+   return find< ad_campaign_object, by_campaign_id >( boost::make_tuple( account, campaign_id ) );
+}
+
+const ad_campaign_object& database::get_ad_campaign( const account_name_type& account, const string& campaign_id )const
+{ try {
+   return get< ad_campaign_object, by_campaign_id >( boost::make_tuple( account, campaign_id ) );
+} FC_CAPTURE_AND_RETHROW( (account)(campaign_id) ) }
+
+const ad_campaign_object* database::find_ad_campaign( const account_name_type& account, const string& campaign_id )const
 {
    return find< ad_campaign_object, by_campaign_id >( boost::make_tuple( account, campaign_id ) );
 }
@@ -1716,6 +1756,16 @@ const ad_inventory_object* database::find_ad_inventory( const account_name_type&
    return find< ad_inventory_object, by_inventory_id >( boost::make_tuple( account, inventory_id ) );
 }
 
+const ad_inventory_object& database::get_ad_inventory( const account_name_type& account, const string& inventory_id )const
+{ try {
+   return get< ad_inventory_object, by_inventory_id >( boost::make_tuple( account, inventory_id ) );
+} FC_CAPTURE_AND_RETHROW( (account)(inventory_id) ) }
+
+const ad_inventory_object* database::find_ad_inventory( const account_name_type& account, const string& inventory_id )const
+{
+   return find< ad_inventory_object, by_inventory_id >( boost::make_tuple( account, inventory_id ) );
+}
+
 const ad_audience_object& database::get_ad_audience( const account_name_type& account, const shared_string& audience_id )const
 { try {
    return get< ad_audience_object, by_audience_id >( boost::make_tuple( account, audience_id ) );
@@ -1726,12 +1776,32 @@ const ad_audience_object* database::find_ad_audience( const account_name_type& a
    return find< ad_audience_object, by_audience_id >( boost::make_tuple( account, audience_id ) );
 }
 
+const ad_audience_object& database::get_ad_audience( const account_name_type& account, const string& audience_id )const
+{ try {
+   return get< ad_audience_object, by_audience_id >( boost::make_tuple( account, audience_id ) );
+} FC_CAPTURE_AND_RETHROW( (account)(audience_id) ) }
+
+const ad_audience_object* database::find_ad_audience( const account_name_type& account, const string& audience_id )const
+{
+   return find< ad_audience_object, by_audience_id >( boost::make_tuple( account, audience_id ) );
+}
+
 const ad_bid_object& database::get_ad_bid( const account_name_type& account, const shared_string& bid_id )const
 { try {
    return get< ad_bid_object, by_bid_id >( boost::make_tuple( account, bid_id ) );
 } FC_CAPTURE_AND_RETHROW( (account)(bid_id) ) }
 
 const ad_bid_object* database::find_ad_bid( const account_name_type& account, const shared_string& bid_id )const
+{
+   return find< ad_bid_object, by_bid_id >( boost::make_tuple( account, bid_id ) );
+}
+
+const ad_bid_object& database::get_ad_bid( const account_name_type& account, const string& bid_id )const
+{ try {
+   return get< ad_bid_object, by_bid_id >( boost::make_tuple( account, bid_id ) );
+} FC_CAPTURE_AND_RETHROW( (account)(bid_id) ) }
+
+const ad_bid_object* database::find_ad_bid( const account_name_type& account, const string& bid_id )const
 {
    return find< ad_bid_object, by_bid_id >( boost::make_tuple( account, bid_id ) );
 }
@@ -1800,12 +1870,32 @@ const credit_loan_object* database::find_loan( const account_name_type& owner, c
    return find< credit_loan_object, by_loan_id >( boost::make_tuple( owner, loan_id ) );
 }
 
+const credit_loan_object& database::get_loan( const account_name_type& owner, const string& loan_id  )const
+{ try {
+   return get< credit_loan_object, by_loan_id >( boost::make_tuple( owner, loan_id ) );
+} FC_CAPTURE_AND_RETHROW( (owner)(loan_id) ) }
+
+const credit_loan_object* database::find_loan( const account_name_type& owner, const string& loan_id )const
+{
+   return find< credit_loan_object, by_loan_id >( boost::make_tuple( owner, loan_id ) );
+}
+
 const escrow_object& database::get_escrow( const account_name_type& name, const shared_string& escrow_id )const
 { try {
    return get< escrow_object, by_from_id >( boost::make_tuple( name, escrow_id ) );
 } FC_CAPTURE_AND_RETHROW( (name)(escrow_id) ) }
 
 const escrow_object* database::find_escrow( const account_name_type& name, const shared_string& escrow_id )const
+{
+   return find< escrow_object, by_from_id >( boost::make_tuple( name, escrow_id ) );
+}
+
+const escrow_object& database::get_escrow( const account_name_type& name, const string& escrow_id )const
+{ try {
+   return get< escrow_object, by_from_id >( boost::make_tuple( name, escrow_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(escrow_id) ) }
+
+const escrow_object* database::find_escrow( const account_name_type& name, const string& escrow_id )const
 {
    return find< escrow_object, by_from_id >( boost::make_tuple( name, escrow_id ) );
 }
@@ -1820,12 +1910,32 @@ const transfer_request_object* database::find_transfer_request( const account_na
    return find< transfer_request_object, by_request_id >( boost::make_tuple( name, request_id ) );
 }
 
+const transfer_request_object& database::get_transfer_request( const account_name_type& name, const string& request_id )const
+{ try {
+   return get< transfer_request_object, by_request_id >( boost::make_tuple( name, request_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(request_id) ) }
+
+const transfer_request_object* database::find_transfer_request( const account_name_type& name, const string& request_id )const
+{
+   return find< transfer_request_object, by_request_id >( boost::make_tuple( name, request_id ) );
+}
+
 const transfer_recurring_object& database::get_transfer_recurring( const account_name_type& name, const shared_string& transfer_id )const
 { try {
    return get< transfer_recurring_object, by_transfer_id >( boost::make_tuple( name, transfer_id ) );
 } FC_CAPTURE_AND_RETHROW( (name)(transfer_id) ) }
 
 const transfer_recurring_object* database::find_transfer_recurring( const account_name_type& name, const shared_string& transfer_id )const
+{
+   return find< transfer_recurring_object, by_transfer_id >( boost::make_tuple( name, transfer_id ) );
+}
+
+const transfer_recurring_object& database::get_transfer_recurring( const account_name_type& name, const string& transfer_id )const
+{ try {
+   return get< transfer_recurring_object, by_transfer_id >( boost::make_tuple( name, transfer_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(transfer_id) ) }
+
+const transfer_recurring_object* database::find_transfer_recurring( const account_name_type& name, const string& transfer_id )const
 {
    return find< transfer_recurring_object, by_transfer_id >( boost::make_tuple( name, transfer_id ) );
 }
@@ -1840,12 +1950,32 @@ const transfer_recurring_request_object* database::find_transfer_recurring_reque
    return find< transfer_recurring_request_object, by_request_id >( boost::make_tuple( name, request_id ) );
 }
 
+const transfer_recurring_request_object& database::get_transfer_recurring_request( const account_name_type& name, const string& request_id )const
+{ try {
+   return get< transfer_recurring_request_object, by_request_id >( boost::make_tuple( name, request_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(request_id) ) }
+
+const transfer_recurring_request_object* database::find_transfer_recurring_request( const account_name_type& name, const string& request_id )const
+{
+   return find< transfer_recurring_request_object, by_request_id >( boost::make_tuple( name, request_id ) );
+}
+
 const limit_order_object& database::get_limit_order( const account_name_type& name, const shared_string& order_id )const
 { try {
    return get< limit_order_object, by_account >( boost::make_tuple( name, order_id ) );
 } FC_CAPTURE_AND_RETHROW( (name)(order_id) ) }
 
 const limit_order_object* database::find_limit_order( const account_name_type& name, const shared_string& order_id )const
+{
+   return find< limit_order_object, by_account >( boost::make_tuple( name, order_id ) );
+}
+
+const limit_order_object& database::get_limit_order( const account_name_type& name, const string& order_id )const
+{ try {
+   return get< limit_order_object, by_account >( boost::make_tuple( name, order_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(order_id) ) }
+
+const limit_order_object* database::find_limit_order( const account_name_type& name, const string& order_id )const
 {
    return find< limit_order_object, by_account >( boost::make_tuple( name, order_id ) );
 }
@@ -1858,6 +1988,56 @@ const margin_order_object& database::get_margin_order( const account_name_type& 
 const margin_order_object* database::find_margin_order( const account_name_type& name, const shared_string& margin_id )const
 {
    return find< margin_order_object, by_account >( boost::make_tuple( name, margin_id ) );
+}
+
+const margin_order_object& database::get_margin_order( const account_name_type& name, const string& margin_id )const
+{ try {
+   return get< margin_order_object, by_account >( boost::make_tuple( name, margin_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(margin_id) ) }
+
+const margin_order_object* database::find_margin_order( const account_name_type& name, const string& margin_id )const
+{
+   return find< margin_order_object, by_account >( boost::make_tuple( name, margin_id ) );
+}
+
+const option_order_object& database::get_option_order( const account_name_type& name, const shared_string& option_id )const
+{ try {
+   return get< option_order_object, by_account >( boost::make_tuple( name, option_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(option_id) ) }
+
+const option_order_object* database::find_option_order( const account_name_type& name, const shared_string& option_id )const
+{
+   return find< option_order_object, by_account >( boost::make_tuple( name, option_id ) );
+}
+
+const option_order_object& database::get_option_order( const account_name_type& name, const string& option_id )const
+{ try {
+   return get< option_order_object, by_account >( boost::make_tuple( name, option_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(option_id) ) }
+
+const option_order_object* database::find_option_order( const account_name_type& name, const string& option_id )const
+{
+   return find< option_order_object, by_account >( boost::make_tuple( name, option_id ) );
+}
+
+const auction_order_object& database::get_auction_order( const account_name_type& name, const shared_string& auction_id )const
+{ try {
+   return get< auction_order_object, by_account >( boost::make_tuple( name, auction_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(auction_id) ) }
+
+const auction_order_object* database::find_auction_order( const account_name_type& name, const shared_string& auction_id )const
+{
+   return find< auction_order_object, by_account >( boost::make_tuple( name, auction_id ) );
+}
+
+const auction_order_object& database::get_auction_order( const account_name_type& name, const string& auction_id )const
+{ try {
+   return get< auction_order_object, by_account >( boost::make_tuple( name, auction_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(auction_id) ) }
+
+const auction_order_object* database::find_auction_order( const account_name_type& name, const string& auction_id )const
+{
+   return find< auction_order_object, by_account >( boost::make_tuple( name, auction_id ) );
 }
 
 const call_order_object& database::get_call_order( const account_name_type& name, const asset_symbol_type& symbol )const
@@ -1896,6 +2076,16 @@ const savings_withdraw_object& database::get_savings_withdraw( const account_nam
 } FC_CAPTURE_AND_RETHROW( (owner)(request_id) ) }
 
 const savings_withdraw_object* database::find_savings_withdraw( const account_name_type& owner, const shared_string& request_id )const
+{
+   return find< savings_withdraw_object, by_request_id >( boost::make_tuple( owner, request_id ) );
+}
+
+const savings_withdraw_object& database::get_savings_withdraw( const account_name_type& owner, const string& request_id )const
+{ try {
+   return get< savings_withdraw_object, by_request_id >( boost::make_tuple( owner, request_id ) );
+} FC_CAPTURE_AND_RETHROW( (owner)(request_id) ) }
+
+const savings_withdraw_object* database::find_savings_withdraw( const account_name_type& owner, const string& request_id )const
 {
    return find< savings_withdraw_object, by_request_id >( boost::make_tuple( owner, request_id ) );
 }
@@ -2190,7 +2380,6 @@ void database::_push_transaction( const signed_transaction& trx )
    _apply_transaction( trx );
    _pending_tx.push_back( trx );
 
-   notify_changed_objects();
    // The transaction applied successfully. Merge its changes into the pending block session.
    temp_session.squash();
 
@@ -3817,7 +4006,7 @@ void database::process_community_enterprise_fund()
 
          for( auto i = 0; i <= enterprise.approved_milestones; i++ )
          {
-            percent_released += enterprise.milestones[ i ].second;  // Accumulate all approved milestone percentages
+            percent_released += enterprise.milestone_shares[ i ];  // Accumulate all approved milestone percentages
          }
 
          asset release_limit = ( enterprise.total_budget() * percent_released ) / PERCENT_100;
@@ -4748,8 +4937,6 @@ void database::_apply_block( const signed_block& next_block )
    process_hardforks();
 
    notify_applied_block( next_block );      // notify observers that the block has been applied
-
-   notify_changed_objects();
 } FC_CAPTURE_LOG_AND_RETHROW( (next_block.block_num()) ) }
 
 
@@ -4829,9 +5016,9 @@ void database::_apply_transaction( const signed_transaction& trx )
 
    if( !(skip & (skip_transaction_signatures | skip_authority_check) ) )
    {
-      auto get_active  = [&]( const string& name ) { return authority( get< account_authority_object, by_account >( name ).active ); };
-      auto get_owner   = [&]( const string& name ) { return authority( get< account_authority_object, by_account >( name ).owner );  };
-      auto get_posting = [&]( const string& name ) { return authority( get< account_authority_object, by_account >( name ).posting );  };
+      auto get_active  = [&]( const string& name ) { return authority( get< account_authority_object, by_account >( name ).active_auth ); };
+      auto get_owner   = [&]( const string& name ) { return authority( get< account_authority_object, by_account >( name ).owner_auth );  };
+      auto get_posting = [&]( const string& name ) { return authority( get< account_authority_object, by_account >( name ).posting_auth );  };
 
       try
       {

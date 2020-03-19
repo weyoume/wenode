@@ -198,12 +198,11 @@ struct operation_visitor
     */
    void create_tag( const string& community, const string& tag, const comment_object& comment, const sort_options& sort )const
    {
-      comment_id_type parent;
-      account_id_type author = _db.get_account( comment.author ).id;
+      comment_id_type parent_id;
 
       if( comment.parent_author.size() )
       {
-         parent = _db.get_comment( comment.parent_author, comment.parent_permlink ).id;
+         parent_id = _db.get_comment( comment.parent_author, comment.parent_permlink ).id;
       }
          
       const auto& tag_obj = _db.create< tag_object >( [&]( tag_object& obj )
@@ -215,7 +214,7 @@ struct operation_visitor
          obj.rating            = comment.rating;
          obj.language          = to_string( comment.language );
          obj.author_reputation = comment.author_reputation;
-         obj.parent            = parent;
+         obj.parent            = parent_id;
          obj.created           = comment.created;
          obj.active            = comment.active;
          obj.cashout           = comment.cashout_time;
@@ -231,15 +230,15 @@ struct operation_visitor
          obj.comment_power     = comment.comment_power;
 
          obj.net_reward        = comment.net_reward;
-         obj.author            = author;
+         obj.author            = comment.author;
          obj.sort              = sort;
       });
 
       add_stats( tag_obj, get_stats( tag ) );
 
       const auto& idx = _db.get_index< author_tag_stats_index >().indices().get<by_author_tag_posts>();
-      auto itr = idx.lower_bound( boost::make_tuple(author,tag) );
-      if( itr != idx.end() && itr->author == author && itr->tag == tag )
+      auto itr = idx.lower_bound( boost::make_tuple( comment.author, tag ) );
+      if( itr != idx.end() && itr->author == comment.author && itr->tag == tag )
       {
          _db.modify( *itr, [&]( author_tag_stats_object& stats )
          {
@@ -250,7 +249,7 @@ struct operation_visitor
       {
          _db.create< author_tag_stats_object >( [&]( author_tag_stats_object& stats )
          {
-            stats.author        = author;
+            stats.author        = comment.author;
             stats.tag           = tag;
             stats.total_posts   = 1;
          });
@@ -274,10 +273,10 @@ struct operation_visitor
    template< int16_t LF, int16_t EF, int16_t REPF, int16_t AF, int16_t VR, int16_t VIR, int16_t SR, int16_t CR >
    double calculate_total_post_score( const comment_object& c, const comment_metrics_object& m )const 
    {
-      double weighted_vote_power = double(c.vote_power) * ( 1 - ( double(EF) / 100 ) ) + double(c.vote_count) * double(m.average_vote_power) * ( double(EF) / 100 );
-      double weighted_view_power = double(c.view_power) * ( 1 - ( double(EF) / 100 ) ) + double(c.view_count) * double(m.average_view_power) * ( double(EF) / 100 );
-      double weighted_share_power = double(c.share_power) * ( 1 - ( double(EF) / 100 ) ) + double(c.share_count) * double(m.average_share_power) * ( double(EF) / 100 );
-      double weighted_comment_power = double(c.comment_power) * ( 1 - ( double(EF) / 100 ) ) + double(c.comment_count) * double(m.average_comment_power) * ( double(EF) / 100 );
+      double weighted_vote_power = double(c.vote_power.value) * ( 1 - ( double(EF) / 100 ) ) + double(c.net_votes) * double(m.average_vote_power.value) * ( double(EF) / 100 );
+      double weighted_view_power = double(c.view_power.value) * ( 1 - ( double(EF) / 100 ) ) + double(c.view_count) * double(m.average_view_power.value) * ( double(EF) / 100 );
+      double weighted_share_power = double(c.share_power.value) * ( 1 - ( double(EF) / 100 ) ) + double(c.share_count) * double(m.average_share_power.value) * ( double(EF) / 100 );
+      double weighted_comment_power = double(c.comment_power.value) * ( 1 - ( double(EF) / 100 ) ) + double(c.children) * double(m.average_comment_power.value) * ( double(EF) / 100 );
 
       int vote_sign = 0;
       if( weighted_vote_power > 0 )
@@ -295,7 +294,7 @@ struct operation_visitor
       double comment_score = log2( weighted_comment_power + 1 ) * m.vote_comment_ratio;
 
       double base_post_score = vote_score * ( double(VR) / 100 ) + view_score * ( double(VIR) / 100 ) + share_score * ( double(SR) / 100 ) + comment_score * ( double(CR) / 100 );
-      double post_score = base_post_score * ( 1 + double( ( 10 * c.author_reputation ) / BLOCKCHAIN_PRECISION ) * ( double(REPF) / 100 ) );
+      double post_score = base_post_score * ( 1 + double( ( 10 * c.author_reputation.value ) / BLOCKCHAIN_PRECISION.value ) * ( double(REPF) / 100 ) );
       double activity_weighted_time = double(c.created.sec_since_epoch()) * ( 1 - ( double(AF) / 100 ) ) + double(c.active.sec_since_epoch()) * ( double(AF) / 100 );
       return post_score * ( 1 - ( double(LF) / 100 ) ) + ( activity_weighted_time / 3600 ) * ( LF / 100 );
    }
@@ -1385,82 +1384,41 @@ struct operation_visitor
          auto follow_itr = following_idx.find( name );
          const account_following_object& acc_following = *follow_itr;
 
-         for( auto sec_name : acc_following.followers )
+         account_name_type account_a;
+         account_name_type account_b;
+
+         if( acc_following.id < f.id )
          {
-            account_name_type account_a;
-            account_name_type account_b;
-            if( acc_following.id < f.id )
+            account_a = acc_following.account;
+            account_b = f.account;
+         }
+         else
+         {
+            account_b = acc_following.account;
+            account_a = f.account;
+         }
+         
+         auto adjacency_itr = adjacency_idx.find( boost::make_tuple( account_a, account_b ) );
+         if( adjacency_itr != adjacency_idx.end() )
+         {
+            if( ( now - adjacency_itr->last_updated ) >= fc::days(1) )
             {
-               account_a = acc_following.account;
-               account_b = f.account;
-            }
-            else
-            {
-               account_b = acc_following.account;
-               account_a = f.account;
-            }
-            
-            auto adjacency_itr = adjacency_idx.find( boost::make_tuple( account_a, account_b ) );
-            if( adjacency_itr != adjacency_idx.end() )
-            {
-               if( ( now - adjacency_itr->last_updated ) >= fc::days(1) )
+               _db.modify( *adjacency_itr, [&]( account_adjacency_object& o )
                {
-                  _db.modify( *adjacency_itr, [&]( account_adjacency_object& o )
-                  {
-                     o.adjacency = f.adjacency_value( acc_following );
-                     o.last_updated = now;
-                  });
-               }
-            }
-            else
-            {
-               _db.create< account_adjacency_object >( [&]( account_adjacency_object& o )
-               {
-                  o.account_a = account_a;
-                  o.account_b = account_b;
                   o.adjacency = f.adjacency_value( acc_following );
                   o.last_updated = now;
                });
             }
          }
-
-         for( auto sec_name : acc_following.following )
+         else
          {
-            account_name_type account_a;
-            account_name_type account_b;
-            if( acc_following.id < f.id )
+            _db.create< account_adjacency_object >( [&]( account_adjacency_object& o )
             {
-               account_a = acc_following.account;
-               account_b = f.account;
-            }
-            else
-            {
-               account_b = acc_following.account;
-               account_a = f.account;
-            }
-            
-            auto adjacency_itr = adjacency_idx.find( boost::make_tuple( account_a, account_b ) );
-            if( adjacency_itr != adjacency_idx.end() )
-            {
-               if( ( now - adjacency_itr->last_updated ) >= fc::days(1) )
-               {
-                  _db.modify( *adjacency_itr, [&]( account_adjacency_object& o )
-                  {
-                     o.adjacency = f.adjacency_value( acc_following );
-                     o.last_updated = now;
-                  });
-               }
-            }
-            else
-            {
-               _db.create< account_adjacency_object >( [&]( account_adjacency_object& o ) 
-               {
-                  o.account_a = account_a;
-                  o.account_b = account_b;
-                  o.adjacency = f.adjacency_value( acc_following );
-                  o.last_updated = now;
-               });
-            }
+               o.account_a = account_a;
+               o.account_b = account_b;
+               o.adjacency = f.adjacency_value( acc_following );
+               o.last_updated = now;
+            });
          }
       }
 
@@ -1468,83 +1426,42 @@ struct operation_visitor
       {
          auto follow_itr = following_idx.find( name );
          const account_following_object& acc_following = *follow_itr;
+         
+         account_name_type account_a;
+         account_name_type account_b;
 
-         for( auto sec_name : acc_following.followers )
+         if( acc_following.id < f.id )
          {
-            account_name_type account_a;
-            account_name_type account_b;
-            if( acc_following.id < f.id )
+            account_a = acc_following.account;
+            account_b = f.account;
+         }
+         else
+         {
+            account_b = acc_following.account;
+            account_a = f.account;
+         }
+         
+         auto adjacency_itr = adjacency_idx.find( boost::make_tuple( account_a, account_b ) );
+         if( adjacency_itr != adjacency_idx.end() )
+         {
+            if( ( now - adjacency_itr->last_updated ) >= fc::days(1) )
             {
-               account_a = acc_following.account;
-               account_b = f.account;
-            }
-            else
-            {
-               account_b = acc_following.account;
-               account_a = f.account;
-            }
-            
-            auto adjacency_itr = adjacency_idx.find( boost::make_tuple( account_a, account_b ) );
-            if( adjacency_itr != adjacency_idx.end() )
-            {
-               if( ( now - adjacency_itr->last_updated ) >= fc::days(1) )
+               _db.modify( *adjacency_itr, [&]( account_adjacency_object& o )
                {
-                  _db.modify( *adjacency_itr, [&]( account_adjacency_object& o )
-                  {
-                     o.adjacency = f.adjacency_value( acc_following );
-                     o.last_updated = now;
-                  });
-               }
-            }
-            else
-            {
-               _db.create< account_adjacency_object >( [&]( account_adjacency_object& o ) 
-               {
-                  o.account_a = account_a;
-                  o.account_b = account_b;
                   o.adjacency = f.adjacency_value( acc_following );
                   o.last_updated = now;
                });
             }
          }
-
-         for( auto sec_name : acc_following.following )
+         else
          {
-            account_name_type account_a;
-            account_name_type account_b;
-            if( acc_following.id < f.id )
+            _db.create< account_adjacency_object >( [&]( account_adjacency_object& o ) 
             {
-               account_a = acc_following.account;
-               account_b = f.account;
-            }
-            else
-            {
-               account_b = acc_following.account;
-               account_a = f.account;
-            }
-            
-            auto adjacency_itr = adjacency_idx.find( boost::make_tuple( account_a, account_b ) );
-            if( adjacency_itr != adjacency_idx.end() )
-            {
-               if( ( now - adjacency_itr->last_updated ) >= fc::days(1) )
-               {
-                  _db.modify( *adjacency_itr, [&]( account_adjacency_object& o )
-                  {
-                     o.adjacency = f.adjacency_value( acc_following );
-                     o.last_updated = now;
-                  });
-               }
-            }
-            else
-            {
-               _db.create< account_adjacency_object >( [&]( account_adjacency_object& o ) 
-               {
-                  o.account_a = account_a;
-                  o.account_b = account_b;
-                  o.adjacency = f.adjacency_value( acc_following );
-                  o.last_updated = now;
-               });
-            }
+               o.account_a = account_a;
+               o.account_b = account_b;
+               o.adjacency = f.adjacency_value( acc_following );
+               o.last_updated = now;
+            });
          }
       }
    }
@@ -1607,7 +1524,6 @@ struct operation_visitor
       } 
    }
 
-
    void update_tag_adjacency( const tag_following_object& t )const
    {
       time_point now = _db.head_block_time();
@@ -1665,38 +1581,22 @@ struct operation_visitor
       } 
    }
 
-
-   const peer_stats_object& get_or_create_peer_stats( account_id_type voter, account_id_type peer )const
+   const peer_stats_object& get_or_create_peer_stats( account_name_type voter, account_name_type peer )const
    {
-      const auto& peeridx = _db.get_index< peer_stats_index >().indices().get< by_voter_peer >();
-      auto itr = peeridx.find( boost::make_tuple( voter, peer ) );
-      if( itr == peeridx.end() )
+      const auto& peer_idx = _db.get_index< peer_stats_index >().indices().get< by_voter_peer >();
+      auto itr = peer_idx.find( boost::make_tuple( voter, peer ) );
+      if( itr == peer_idx.end() )
       {
          return _db.create<peer_stats_object>( [&]( peer_stats_object& obj ) 
          {
             obj.voter = voter;
-            obj.peer  = peer;
+            obj.peer = peer;
          });
       }
       return *itr;
    }
 
-   const peer_stats_object& get_or_create_peer_stats( account_id_type voter, account_id_type peer )const
-   {
-      const auto& peeridx = _db.get_index<peer_stats_index>().indices().get<by_voter_peer>();
-      auto itr = peeridx.find( boost::make_tuple( voter, peer ) );
-      if( itr == peeridx.end() )
-      {
-         return _db.create<peer_stats_object>( [&]( peer_stats_object& obj ) 
-         {
-            obj.voter = voter;
-            obj.peer  = peer;
-         });
-      }
-      return *itr;
-   }
-
-   void update_indirect_vote( account_id_type a, account_id_type b, int positive )const
+   void update_indirect_vote( account_name_type a, account_name_type b, int positive )const
    {
       if( a == b )
          return;
@@ -1721,7 +1621,7 @@ struct operation_visitor
       if( voter.id == author.id ) return; /// ignore votes for yourself
       if( c.parent_author.size() ) return; /// only count top level posts
 
-      const auto& stat = get_or_create_peer_stats( voter.id, author.id );
+      const auto& stat = get_or_create_peer_stats( voter.name, author.name );
       _db.modify( stat, [&]( peer_stats_object& obj )
       {
          obj.direct_votes++;
@@ -1729,25 +1629,24 @@ struct operation_visitor
          obj.update_rank();
       });
 
-      const auto& voteidx = _db.get_index<comment_vote_index>().indices().get<by_comment_voter>();
-      auto itr = voteidx.lower_bound( boost::make_tuple( comment_id_type(c.id), account_id_type() ) );
+      const auto& voteidx = _db.get_index< comment_vote_index >().indices().get< by_comment_voter >();
+      auto itr = voteidx.lower_bound( boost::make_tuple( comment_id_type(c.id), account_name_type() ) );
       while( itr != voteidx.end() && itr->comment == c.id )
       {
-         update_indirect_vote( voter.id, author.id, (itr->vote_percent > 0) == (vote > 0) );
+         update_indirect_vote( voter.name, author.name, (itr->vote_percent > 0) == (vote > 0) );
          ++itr;
       }
    }
 
    flat_set< comment_id_type > get_recommendations( const account_name_type& account )const
    {
-      const auto& acc_obj = _db.get_account( account );
-      const auto& following_obj = _db.get_account_following( account );
-      flat_set< comment_id_type > selected;    
+      const account_following_object& following_obj = _db.get_account_following( account );
+      flat_set< comment_id_type > selected;
 
       const auto& curation_idx = _db.get_index< account_curation_metrics_index >().indices().get< by_account >();
       auto curation_itr = curation_idx.find( account );
 
-      if( curation_itr != curation_idx.end() )    // finds the top 10 authors, communities, and tags that the user has interacted with
+      if( curation_itr != curation_idx.end() )    // Finds the top 10 authors, communities, and tags that the user has interacted with.
       {
          const account_curation_metrics_object& metrics = *curation_itr;
          flat_map< account_name_type, share_type > authors;
@@ -1812,17 +1711,17 @@ struct operation_visitor
             ranked_tags.push_back( std::make_pair( tag.first, tag.second ) );
          }
 
-         std::sort( ranked_communities.begin(), ranked_communities.end(), [&]( auto a, auto b )
+         std::sort( ranked_authors.begin(), ranked_authors.end(), [&]( pair < account_name_type, share_type > a, pair < account_name_type, share_type > b )
          {
             return a.second < b.second;
          });
 
-         std::sort( ranked_tags.begin(), ranked_tags.end(), [&]( auto a, auto b )
+         std::sort( ranked_communities.begin(), ranked_communities.end(), [&]( pair < community_name_type, share_type > a, pair < community_name_type, share_type > b )
          {
             return a.second < b.second;
          });
 
-         std::sort( ranked_authors.begin(), ranked_authors.end(), [&]( auto a, auto b )
+         std::sort( ranked_tags.begin(), ranked_tags.end(), [&]( pair < tag_name_type, share_type > a, pair < tag_name_type, share_type > b )
          {
             return a.second < b.second;
          });
@@ -2090,7 +1989,7 @@ struct operation_visitor
 
          for( auto author : total_authors )   // Get the top 6 unviewed most recent, most voted, most viewed, most shared and most commented posts per author
          {
-            auto blog_itr = blog_idx.lower_bound( boost::make_tuple( community_name_type(), tag_name_type(), author ) );
+            auto blog_itr = blog_idx.lower_bound( author );
             uint32_t count = 0;
             while( blog_itr != blog_idx.end() && blog_itr->account == author && count < 4 )
             {
@@ -2103,7 +2002,7 @@ struct operation_visitor
             }
 
             auto author_vote_itr = author_vote_idx.lower_bound( boost::make_tuple( community_name_type(), tag_name_type(), author ) );
-            uint32_t count = 0;
+            count = 0;
             while( author_vote_itr != author_vote_idx.end() && author_vote_itr->author == author && count < 2 )
             {
                if( view_idx.find( boost::make_tuple( account, author_vote_itr->comment ) ) == view_idx.end() )     
@@ -2115,7 +2014,7 @@ struct operation_visitor
             }
 
             auto author_view_itr = author_view_idx.lower_bound( boost::make_tuple( community_name_type(), tag_name_type(), author ) );
-            uint32_t count = 0;
+            count = 0;
             while( author_view_itr != author_view_idx.end() && author_view_itr->author == author && count < 2 )
             {
                if( view_idx.find( boost::make_tuple( account, author_view_itr->comment ) ) == view_idx.end() )     
@@ -2127,7 +2026,7 @@ struct operation_visitor
             }
 
             auto author_share_itr = author_share_idx.lower_bound( boost::make_tuple( community_name_type(), tag_name_type(), author ) );
-            uint32_t count = 0;
+            count = 0;
             while( author_share_itr != author_share_idx.end() && author_share_itr->author == author && count < 2 )
             {
                if( view_idx.find( boost::make_tuple( account, author_share_itr->comment ) ) == view_idx.end() )     
@@ -2139,7 +2038,7 @@ struct operation_visitor
             }
 
             auto author_comment_itr = author_comment_idx.lower_bound( boost::make_tuple( community_name_type(), tag_name_type(), author ) );
-            uint32_t count = 0;
+            count = 0;
             while( author_comment_itr != author_comment_idx.end() && author_comment_itr->author == author && count < 2 )
             {
                if( view_idx.find( boost::make_tuple( account, author_comment_itr->comment ) ) == view_idx.end() )     
@@ -2525,9 +2424,9 @@ struct operation_visitor
       update_tag_adjacency( _db.get_tag_following( op.tag ) );
    }
 
-   void operator()( const comment_reward_operation& op )const
+   void operator()( const content_reward_operation& op )const
    {
-      const auto& c = _db.get_comment( op.author, op.permlink );
+      const comment_object& c = _db.get_comment( op.post_author, op.post_permlink );
       update_tags( c, _db.get_comment_metrics(), false );
 
       comment_metadata meta = filter_tags( c );
@@ -2536,7 +2435,7 @@ struct operation_visitor
       {
          _db.modify( get_stats( tag ), [&]( tag_stats_object& ts )
          {
-            ts.total_payout += op.payout;
+            ts.total_payout += op.reward_usd_value;
          });
       }
    }

@@ -28,15 +28,15 @@ namespace node { namespace chain {
 
          id_type                id;
 
-         uint32_t               head_block_number = 0;                                    ///< Number of the current highest block in the network that the node has processed. 
+         uint64_t               head_block_number = 0;                                    ///< Number of the current highest block in the network that the node has processed. 
 
          block_id_type          head_block_id;                                            ///< The block id of the most recently produced block.
 
-         uint32_t               last_irreversible_block_num = 0;                          ///< The number of the last block that has been produced on top of by at least #IRREVERSIBLE_THRESHOLD of block producers.
+         uint64_t               last_irreversible_block_num = 0;                          ///< The number of the last block that has been produced on top of by at least #IRREVERSIBLE_THRESHOLD of block producers.
 
          block_id_type          last_irreversible_block_id;                               ///< The block id of the last irreversible block.
 
-         uint32_t               last_committed_block_num = 0;                             ///< The number of the last block that has been committed by #IRREVERSIBLE_THRESHOLD of block producers.
+         uint64_t               last_committed_block_num = 0;                             ///< The number of the last block that has been committed by #IRREVERSIBLE_THRESHOLD of block producers.
 
          block_id_type          last_committed_block_id;                                  ///< The block id of the last irreversible block.
   

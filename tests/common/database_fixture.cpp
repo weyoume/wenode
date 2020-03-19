@@ -125,7 +125,7 @@ live_database_fixture::live_database_fixture()
       auto ahplugin = app.register_plugin< node::account_history::account_history_plugin >();
       ahplugin->plugin_initialize( boost::program_options::variables_map() );
 
-      db.open( _chain_dir, _chain_dir );
+      db.open( _chain_dir, _chain_dir, 1024 * 1024 * 8, chainbase::database::read_write, init_account_pub_key );
 
       validate_database();
       generate_block();
@@ -193,8 +193,9 @@ const account_object& database_fixture::account_create(
    const string& governance_account,
    const private_key_type& registrar_key,
    const share_type& fee,
-   const public_key_type& key,
-   const public_key_type& post_key,
+   const public_key_type& owner_key,
+   const public_key_type& active_key,
+   const public_key_type& posting_key,
    const string& details,
    const string& url,
    const string& json
@@ -215,13 +216,13 @@ const account_object& database_fixture::account_create(
       op.url = url;
       op.json = json;
       op.json_private = json;
-      op.owner_auth = authority( 1, key, 1 );
-      op.active_auth = authority( 1, key, 1 );
-      op.posting_auth = authority( 1, post_key, 1 );
-      op.secure_public_key = string( key );
-      op.connection_public_key = string( key );
-      op.friend_public_key = string( key );
-      op.companion_public_key = string( key );
+      op.owner_auth = authority( 1, owner_key, 1 );
+      op.active_auth = authority( 1, active_key, 1 );
+      op.posting_auth = authority( 1, posting_key, 1 );
+      op.secure_public_key = string( posting_key );
+      op.connection_public_key = string( posting_key );
+      op.friend_public_key = string( posting_key );
+      op.companion_public_key = string( posting_key );
       op.fee = asset( fee, SYMBOL_COIN );
       op.delegation = asset( 0, SYMBOL_COIN );
       
@@ -244,6 +245,7 @@ const account_object& database_fixture::account_create(
 const account_object& database_fixture::account_create(
    const string& name,
    const public_key_type& owner_key,
+   const public_key_type& active_key,
    const public_key_type& posting_key )
 {
    try
@@ -255,6 +257,7 @@ const account_object& database_fixture::account_create(
          init_account_priv_key,
          std::max( db.get_median_chain_properties().account_creation_fee.amount, share_type( 100 ) ),
          owner_key,
+         active_key,
          posting_key,
          "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.",
          "https://en.wikipedia.org/wiki/Loch_Ness_Monster",
@@ -268,117 +271,7 @@ const account_object& database_fixture::account_create(
    const public_key_type& key
 )
 {
-   return account_create( name, key, key );
-}
-
-const account_object& database_fixture::profile_create(
-   const string& name,
-   const string& registrar,
-   const string& governance_account,
-   const private_key_type& registrar_key,
-   const share_type& fee,
-   const public_key_type& key,
-   const public_key_type& post_key,
-   const string& details,
-   const string& url,
-   const string& json
-   )
-{
-   try
-   {
-      account_create_operation op;
-
-      op.signatory = registrar;
-      op.registrar = registrar;
-      op.new_account_name = name;
-      op.referrer = registrar;
-      op.proxy = governance_account;
-      op.governance_account = governance_account;
-      op.recovery_account = governance_account;
-      op.details = details;
-      op.url = url;
-      op.json = json;
-      op.json_private = json;
-      op.owner_auth = authority( 1, key, 1 );
-      op.active_auth = authority( 1, key, 1 );
-      op.posting_auth = authority( 1, post_key, 1 );
-      op.secure_public_key = string( key );
-      op.connection_public_key = string( key );
-      op.friend_public_key = string( key );
-      op.companion_public_key = string( key );
-      op.fee = asset( fee, SYMBOL_COIN );
-      op.delegation = asset( 0, SYMBOL_COIN );
-      
-      trx.operations.push_back( op );
-      
-      trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      trx.sign( registrar_key, db.get_chain_id() );
-      trx.validate();
-      db.push_transaction( trx, 0 );
-      trx.operations.clear();
-      trx.signatures.clear();
-
-      const account_object& acct = db.get_account( name );
-
-      return acct;
-   }
-   FC_CAPTURE_AND_RETHROW( (name)(registrar) )
-}
-
-const account_object& database_fixture::business_create(
-   const string& name,
-   const string& registrar,
-   const string& governance_account,
-   const private_key_type& registrar_key,
-   const share_type& fee,
-   const public_key_type& key,
-   const public_key_type& post_key,
-   const string& details,
-   const string& url,
-   const string& json
-   )
-{
-   try
-   {
-      account_create_operation op;
-
-      op.signatory = registrar;
-      op.registrar = registrar;
-      op.new_account_name = name;
-      op.referrer = registrar;
-      op.proxy = governance_account;
-      op.governance_account = governance_account;
-      op.recovery_account = governance_account;
-      op.details = details;
-      op.url = url;
-      op.json = json;
-      op.json_private = json;
-      op.owner_auth = authority( 1, key, 1 );
-      op.active_auth = authority( 1, key, 1 );
-      op.posting_auth = authority( 1, post_key, 1 );
-      op.secure_public_key = string( key );
-      op.connection_public_key = string( key );
-      op.friend_public_key = string( key );
-      op.companion_public_key = string( key );
-      op.fee = asset( fee, SYMBOL_COIN );
-      op.delegation = asset( 0, SYMBOL_COIN );
-      //op.business_type = PUBLIC_BUSINESS;
-      //op.officer_vote_threshold = 10 * BLOCKCHAIN_PRECISION;
-      
-      trx.operations.push_back( op );
-      
-      trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      trx.sign( registrar_key, db.get_chain_id() );
-      trx.validate();
-      db.push_transaction( trx, 0 );
-      trx.operations.clear();
-      trx.signatures.clear();
-
-      const account_object& acct = db.get_account( name );
-
-      return acct;
-   }
-   FC_CAPTURE_AND_RETHROW( (name)(registrar) )
+   return account_create( name, key, key, key );
 }
 
 const community_object& database_fixture::community_create(
@@ -560,21 +453,6 @@ void database_fixture::fund_stake(
    FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
 }
 
-void database_fixture::fund_stake(
-   const string& account_name,
-   const asset& amount
-   )
-{
-   try
-   {
-      db_plugin->debug_update( [=]( database& db)
-      {
-         db.adjust_reward_balance( account_name, amount );
-      }, default_skip );
-   }
-   FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
-}
-
 void database_fixture::fund_savings(
    const string& account_name,
    const asset& amount
@@ -603,27 +481,27 @@ void database_fixture::proxy( const string& account, const string& proxy )
    } FC_CAPTURE_AND_RETHROW( (account)(proxy) )
 }
 
-const asset& database_fixture::get_liquid_balance( const string& account_name, const string& symbol )const
+asset database_fixture::get_liquid_balance( const string& account_name, const string& symbol )const
 {
   return db.get_liquid_balance( account_name, symbol );
 }
 
-const asset& database_fixture::get_staked_balance( const string& account_name, const string& symbol )const
+asset database_fixture::get_staked_balance( const string& account_name, const string& symbol )const
 {
   return db.get_staked_balance( account_name, symbol );
 }
 
-const asset& database_fixture::get_savings_balance( const string& account_name, const string& symbol )const
+asset database_fixture::get_savings_balance( const string& account_name, const string& symbol )const
 {
   return db.get_savings_balance( account_name, symbol );
 }
 
-const asset& database_fixture::get_reward_balance( const string& account_name, const string& symbol )const
+asset database_fixture::get_reward_balance( const string& account_name, const string& symbol )const
 {
   return db.get_reward_balance( account_name, symbol );
 }
 
-const time_point& database_fixture::now()const
+time_point database_fixture::now()const
 {
   return db.head_block_time();
 }

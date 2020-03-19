@@ -55,7 +55,7 @@ namespace node { namespace protocol {
          FC_ASSERT( space_pos > dot_pos );
          
          string symbol = s.substr( space_pos + 1 );
-         is_valid_symbol( symbol );
+         FC_ASSERT( is_valid_symbol( symbol ) );
          size_t symbol_size = symbol.size();
          FC_ASSERT( symbol_size <= MAX_ASSET_SYMBOL_LENGTH );
          result.symbol = symbol;
@@ -73,7 +73,7 @@ namespace node { namespace protocol {
          FC_ASSERT( b.base.amount.value > 0 );
          share_type result = (a.amount.value * b.quote.amount.value + b.base.amount.value - 1)/b.base.amount.value;
          FC_ASSERT( result <= share_type::max());
-         is_valid_symbol( b.quote.symbol );
+         FC_ASSERT( is_valid_symbol( b.quote.symbol ) );
          return asset( result, b.quote.symbol );
       }
       else if( a.symbol == b.quote.symbol )
@@ -81,7 +81,7 @@ namespace node { namespace protocol {
          FC_ASSERT( b.quote.amount.value > 0 );
          share_type result = (a.amount.value * b.base.amount.value + b.quote.amount.value - 1)/b.quote.amount.value;
          FC_ASSERT( result <= share_type::max());
-         is_valid_symbol( b.base.symbol );
+         FC_ASSERT( is_valid_symbol( b.base.symbol ) );
          return asset( result, b.base.symbol );
       }
       FC_THROW_EXCEPTION( fc::assert_exception, "invalid asset::multiply_and_round_up(price)", ("asset",a)("price",b) );
@@ -141,17 +141,17 @@ namespace node { namespace protocol {
       if( negative_found )
          satoshis *= -1;
 
-      is_valid_symbol( symbol );
+      FC_ASSERT( is_valid_symbol( symbol ) );
 
       return asset(satoshis, symbol);
    } FC_CAPTURE_AND_RETHROW( (amount_string) ) }
 
    bool operator == ( const price& a, const price& b )
    {
-      is_valid_symbol( a.base.symbol );
-      is_valid_symbol( b.base.symbol );
-      is_valid_symbol( a.quote.symbol );
-      is_valid_symbol( b.quote.symbol );
+      FC_ASSERT( is_valid_symbol( a.base.symbol ) );
+      FC_ASSERT( is_valid_symbol( b.base.symbol ) );
+      FC_ASSERT( is_valid_symbol( a.quote.symbol ) );
+      FC_ASSERT( is_valid_symbol( b.quote.symbol ) );
 
       if( std::tie( a.base.symbol, a.quote.symbol ) != std::tie( b.base.symbol, b.quote.symbol ) )
             return false;
@@ -164,10 +164,10 @@ namespace node { namespace protocol {
 
    bool operator < ( const price& a, const price& b )
    {
-      is_valid_symbol( a.base.symbol );
-      is_valid_symbol( b.base.symbol );
-      is_valid_symbol( a.quote.symbol );
-      is_valid_symbol( b.quote.symbol );
+      FC_ASSERT( is_valid_symbol( a.base.symbol ) );
+      FC_ASSERT( is_valid_symbol( b.base.symbol ) );
+      FC_ASSERT( is_valid_symbol( a.quote.symbol ) );
+      FC_ASSERT( is_valid_symbol( b.quote.symbol ) );
 
       if( a.base.symbol < b.base.symbol ) return true;
       if( a.base.symbol > b.base.symbol ) return false;
@@ -202,9 +202,9 @@ namespace node { namespace protocol {
 
    asset operator * ( const asset& a, const price& b )
    {
-      is_valid_symbol( a.symbol );
-      is_valid_symbol( b.base.symbol );
-      is_valid_symbol( b.quote.symbol );
+      FC_ASSERT( is_valid_symbol( a.symbol ) );
+      FC_ASSERT( is_valid_symbol( b.base.symbol ) );
+      FC_ASSERT( is_valid_symbol( b.quote.symbol ) );
       if( a.symbol == b.base.symbol )
       {
          FC_ASSERT( b.base.amount.value > 0 );
@@ -222,8 +222,8 @@ namespace node { namespace protocol {
 
    price operator / ( const asset& base, const asset& quote )
    { try {
-      is_valid_symbol( base.symbol );
-      is_valid_symbol( quote.symbol );
+      FC_ASSERT( is_valid_symbol( base.symbol ) );
+      FC_ASSERT( is_valid_symbol( quote.symbol ) );
       FC_ASSERT( base.symbol != quote.symbol );
       return price{ base, quote };
    } FC_CAPTURE_AND_RETHROW( (base)(quote) ) }
@@ -235,8 +235,8 @@ namespace node { namespace protocol {
 
    void price::validate() const
    { try {
-      is_valid_symbol( base.symbol );
-      is_valid_symbol( quote.symbol );
+      FC_ASSERT( is_valid_symbol( base.symbol ) );
+      FC_ASSERT( is_valid_symbol( quote.symbol ) );
       FC_ASSERT( base.amount.value > 0,
          "Price is invalid, base is less than 0.");
       FC_ASSERT( quote.amount.value > 0,

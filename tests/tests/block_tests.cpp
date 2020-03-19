@@ -1,19 +1,15 @@
-//#ifdef IS_TEST_NET
 #include <boost/test/unit_test.hpp>
-
 #include <node/protocol/exceptions.hpp>
-
 #include <node/chain/database.hpp>
-#include <node/chain/node_objects.hpp>
 #include <node/chain/history_object.hpp>
-
 #include <node/account_history/account_history_plugin.hpp>
-
 #include <graphene/utilities/tempdir.hpp>
-
 #include <fc/crypto/digest.hpp>
-
 #include "../common/database_fixture.hpp"
+
+#include <cmath>
+#include <iostream>
+#include <stdexcept>
 
 using namespace node;
 using namespace node::chain;
@@ -224,8 +220,9 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
       cop.signatory = GENESIS_ACCOUNT_BASE_NAME;
       cop.new_account_name = "alice";
       cop.registrar = GENESIS_ACCOUNT_BASE_NAME;
-      cop.owner = authority(1, init_account_pub_key, 1);
-      cop.active = cop.owner;
+      cop.owner_auth = authority(1, init_account_pub_key, 1);
+      cop.active_auth = cop.owner;
+
       trx.operations.push_back(cop);
       trx.set_expiration( db1.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       trx.sign( init_account_priv_key, db1.get_chain_id() );
@@ -291,8 +288,8 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
       cop.signatory = GENESIS_ACCOUNT_BASE_NAME;
       cop.new_account_name = "alice";
       cop.registrar = GENESIS_ACCOUNT_BASE_NAME;
-      cop.owner = authority(1, init_account_pub_key, 1);
-      cop.active = cop.owner;
+      cop.owner_auth = authority(1, init_account_pub_key, 1);
+      cop.active_auth = cop.owner_auth;
 
       trx.operations.push_back(cop);
       trx.set_expiration( db1.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
@@ -357,8 +354,8 @@ BOOST_AUTO_TEST_CASE( tapos )
       cop.signatory = GENESIS_ACCOUNT_BASE_NAME;
       cop.registrar = GENESIS_ACCOUNT_BASE_NAME;
       cop.new_account_name = "alice";
-      cop.owner = authority(1, init_account_pub_key, 1);
-      cop.active = cop.owner;
+      cop.owner_auth = authority(1, init_account_pub_key, 1);
+      cop.active_auth = cop.owner_auth;
       trx.operations.push_back(cop);
       trx.set_expiration( db1.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       trx.sign( init_account_priv_key, db1.get_chain_id() );

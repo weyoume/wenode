@@ -127,11 +127,11 @@ void account_by_key_plugin_impl::clear_cache()
 
 void account_by_key_plugin_impl::cache_auths( const account_authority_object& a )
 {
-   for( const auto& item : a.owner.key_auths )
+   for( const auto& item : a.owner_auth.key_auths )
       cached_keys.insert( item.first );
-   for( const auto& item : a.active.key_auths )
+   for( const auto& item : a.active_auth.key_auths )
       cached_keys.insert( item.first );
-   for( const auto& item : a.posting.key_auths )
+   for( const auto& item : a.posting_auth.key_auths )
       cached_keys.insert( item.first );
 }
 
@@ -141,11 +141,11 @@ void account_by_key_plugin_impl::update_key_lookup( const account_authority_obje
    flat_set< public_key_type > new_keys;
 
    // Construct the set of keys in the account's authority
-   for( const auto& item : a.owner.key_auths )
+   for( const auto& item : a.owner_auth.key_auths )
       new_keys.insert( item.first );
-   for( const auto& item : a.active.key_auths )
+   for( const auto& item : a.active_auth.key_auths )
       new_keys.insert( item.first );
-   for( const auto& item : a.posting.key_auths )
+   for( const auto& item : a.posting_auth.key_auths )
       new_keys.insert( item.first );
 
    // For each key that needs a lookup

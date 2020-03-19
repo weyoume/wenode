@@ -402,7 +402,7 @@ namespace node { namespace chain {
 
          price                   call_price;                  ///< Collateral / Debt
 
-         optional< uint16_t >    target_collateral_ratio;     ///< maximum CR to maintain when selling collateral on margin call
+         optional< uint16_t >    target_collateral_ratio;     ///< Maximum CR to maintain when selling collateral on margin call
 
          account_name_type       interface;                   ///< The interface account that created the order
 
@@ -434,6 +434,28 @@ namespace node { namespace chain {
 
          /**
           *  Calculate maximum quantity of debt to cover to satisfy @ref target_collateral_ratio.
+          * 
+          * 
+            target_CR = max( target_CR, MCR )
+            target_CR = new_collateral / ( new_debt / feed_price )
+                     = ( collateral - max_amount_to_sell ) * feed_price
+                        / ( debt - amount_to_get )
+                     = ( collateral - max_amount_to_sell ) * feed_price
+                        / ( debt - round_down(max_amount_to_sell * match_price ) )
+                     = ( collateral - max_amount_to_sell ) * feed_price
+                        / ( debt - (max_amount_to_sell * match_price - x) )
+            Note: x is the fraction, 0 <= x < 1
+            =>
+            max_amount_to_sell = ( (debt + x) * target_CR - collateral * feed_price )
+                                 / (target_CR * match_price - feed_price)
+                              = ( (debt + x) * tCR / DENOM - collateral * fp_debt_amt / fp_coll_amt )
+                                 / ( (tCR / DENOM) * (mp_debt_amt / mp_coll_amt) - fp_debt_amt / fp_coll_amt )
+                              = ( (debt + x) * tCR * fp_coll_amt * mp_coll_amt - collateral * fp_debt_amt * DENOM * mp_coll_amt)
+                                 / ( tCR * mp_debt_amt * fp_coll_amt - fp_debt_amt * DENOM * mp_coll_amt )
+            max_debt_to_cover = max_amount_to_sell * match_price
+                              = max_amount_to_sell * mp_debt_amt / mp_coll_amt
+                              = ( (debt + x) * tCR * fp_coll_amt * mp_debt_amt - collateral * fp_debt_amt * DENOM * mp_debt_amt)
+                              / (tCR * mp_debt_amt * fp_coll_amt - fp_debt_amt * DENOM * mp_coll_amt)
           *
           *  @param match_price the matching price if this call order is margin called
           *  @param feed_price median settlement price of debt asset
@@ -446,7 +468,263 @@ namespace node { namespace chain {
             price feed_price,
             const uint16_t maintenance_collateral_ratio,
             const optional<price>& maintenance_collateralization = optional<price>()
-         )const;
+         )const 
+         { try {
+         
+            if( feed_price.base.symbol != call_price.base.symbol )
+            {
+               feed_price = ~feed_price;      // feed_price is in collateral / debt format
+            }
+               
+            FC_ASSERT( feed_price.base.symbol == call_price.base.symbol &&
+               feed_price.quote.symbol == call_price.quote.symbol, 
+               "Feed and call price must be the same asset pairing." );
+
+            FC_ASSERT( maintenance_collateralization->base.symbol == call_price.base.symbol && 
+               maintenance_collateralization->quote.symbol == call_price.quote.symbol );
+            
+            if( collateralization() > *maintenance_collateralization )
+            {
+               return 0;
+            }
+               
+            if( !target_collateral_ratio.valid() ) // target cr is not set
+            {
+               return debt.amount;
+            }
+               
+            uint16_t tcr = std::max( *target_collateral_ratio, maintenance_collateral_ratio );    // use mcr if target cr is too small
+
+            price target_collateralization = feed_price * ratio_type( tcr, COLLATERAL_RATIO_DENOM );
+
+            if( match_price.base.symbol != call_price.base.symbol )
+            {
+               match_price = ~match_price;       // match_price is in collateral / debt format
+            }
+
+            FC_ASSERT( match_price.base.symbol == call_price.base.symbol
+                     && match_price.quote.symbol == call_price.quote.symbol );
+
+            int256_t mp_debt_amt = match_price.quote.amount.value;
+            int256_t mp_coll_amt = match_price.base.amount.value;
+            int256_t fp_debt_amt = feed_price.quote.amount.value;
+            int256_t fp_coll_amt = feed_price.base.amount.value;
+            int256_t numerator = fp_coll_amt * mp_debt_amt * debt.amount.value * tcr - fp_debt_amt * mp_debt_amt * collateral.amount.value * COLLATERAL_RATIO_DENOM;
+
+            if( numerator < 0 ) 
+            {
+               return 0;
+            }
+
+            int256_t denominator = fp_coll_amt * mp_debt_amt * tcr - fp_debt_amt * mp_coll_amt * COLLATERAL_RATIO_DENOM;
+            if( denominator <= 0 )
+            {
+               return debt.amount;     // black swan
+            } 
+
+            int256_t to_cover_i256 = ( numerator / denominator );
+            if( to_cover_i256 >= debt.amount.value )
+            { 
+               return debt.amount;
+            }
+
+            share_type to_cover_amt = static_cast< int64_t >( to_cover_i256 );
+            asset to_pay = asset( to_cover_amt, debt_type() ) * match_price;
+            asset to_cover = to_pay * match_price;
+            to_pay = to_cover.multiply_and_round_up( match_price );
+
+            if( to_cover.amount >= debt.amount || to_pay.amount >= collateral.amount )
+            {
+               return debt.amount;
+            }
+
+            FC_ASSERT( to_pay.amount < collateral.amount && to_cover.amount < debt.amount );
+            price new_collateralization = ( collateral - to_pay ) / ( debt - to_cover );
+
+            if( new_collateralization > target_collateralization )
+            {
+               return to_cover.amount;
+            }
+
+            // to_cover is too small due to rounding. deal with the fraction
+
+            numerator += fp_coll_amt * mp_debt_amt * tcr; // plus the fraction
+            to_cover_i256 = ( numerator / denominator ) + 1;
+
+            if( to_cover_i256 >= debt.amount.value )
+            {
+               to_cover_i256 = debt.amount.value;
+            }
+
+            to_cover_amt = static_cast< int64_t >( to_cover_i256 );
+
+            asset max_to_pay = ( ( to_cover_amt == debt.amount.value ) ? collateral : asset( to_cover_amt, debt_type() ).multiply_and_round_up( match_price ) );
+            if( max_to_pay.amount > collateral.amount )
+            { 
+               max_to_pay.amount = collateral.amount; 
+            }
+
+            asset max_to_cover = ( ( max_to_pay.amount == collateral.amount ) ? debt : ( max_to_pay * match_price ) );
+
+            if( max_to_cover.amount >= debt.amount )
+            {
+               max_to_pay.amount = collateral.amount;
+               max_to_cover.amount = debt.amount;
+            }
+
+            if( max_to_pay <= to_pay || max_to_cover <= to_cover ) // strange data. should skip binary search and go on, but doesn't help much
+            { 
+               return debt.amount; 
+            }
+
+            FC_ASSERT( max_to_pay > to_pay && max_to_cover > to_cover );
+
+            asset min_to_pay = to_pay;
+            asset min_to_cover = to_cover;
+
+            // try with binary search to find a good value
+            // note: actually binary search can not always provide perfect result here,
+            //       due to rounding, collateral ratio is not always increasing while to_pay or to_cover is increasing
+            bool max_is_ok = false;
+            while( true )
+            {
+               // get the mean
+               if( match_price.base.amount < match_price.quote.amount ) // step of collateral is smaller
+               {
+                  to_pay.amount = ( min_to_pay.amount + max_to_pay.amount + 1 ) / 2; // should not overflow. round up here
+                  if( to_pay.amount == max_to_pay.amount )
+                     to_cover.amount = max_to_cover.amount;
+                  else
+                  {
+                     to_cover = to_pay * match_price;
+                     if( to_cover.amount >= max_to_cover.amount ) // can be true when max_is_ok is false
+                     {
+                        to_pay.amount = max_to_pay.amount;
+                        to_cover.amount = max_to_cover.amount;
+                     }
+                     else
+                     {
+                        to_pay = to_cover.multiply_and_round_up( match_price ); // stabilization, no change or become smaller
+                        FC_ASSERT( to_pay.amount < max_to_pay.amount );
+                     }
+                  }
+               }
+               else // step of debt is smaller or equal
+               {
+                  to_cover.amount = ( min_to_cover.amount + max_to_cover.amount ) / 2; // should not overflow. round down here
+                  if( to_cover.amount == max_to_cover.amount )
+                     to_pay.amount = max_to_pay.amount;
+                  else
+                  {
+                     to_pay = to_cover.multiply_and_round_up( match_price );
+                     if( to_pay.amount >= max_to_pay.amount ) // can be true when max_is_ok is false
+                     {
+                        to_pay.amount = max_to_pay.amount;
+                        to_cover.amount = max_to_cover.amount;
+                     }
+                     else
+                     {
+                        to_cover = to_pay * match_price; // stabilization, to_cover should have increased
+                        if( to_cover.amount >= max_to_cover.amount ) // to be safe
+                        {
+                           to_pay.amount = max_to_pay.amount;
+                           to_cover.amount = max_to_cover.amount;
+                        }
+                     }
+                  }
+               }
+
+               // check again to see if we've moved away from the minimums, if not, use the maximums directly
+               if( to_pay.amount <= min_to_pay.amount || 
+                  to_cover.amount <= min_to_cover.amount || 
+                  to_pay.amount > max_to_pay.amount || 
+                  to_cover.amount > max_to_cover.amount )
+               {
+                  to_pay.amount = max_to_pay.amount;
+                  to_cover.amount = max_to_cover.amount;
+               }
+
+               // check the mean
+               if( to_pay.amount == max_to_pay.amount && ( max_is_ok || to_pay.amount == collateral.amount ) )
+               {
+                  return to_cover.amount;
+               }
+
+               FC_ASSERT( to_pay.amount < collateral.amount && to_cover.amount < debt.amount );
+
+               price new_collateralization = ( collateral - to_pay ) / ( debt - to_cover );
+
+               // Check whether the result is good
+               if( new_collateralization > target_collateralization )
+               {
+                  if( to_pay.amount == max_to_pay.amount )
+                  {
+                     return to_cover.amount;
+                  }  
+                  max_to_pay.amount = to_pay.amount;
+                  max_to_cover.amount = to_cover.amount;
+                  max_is_ok = true;
+               }
+               else           // not good
+               {
+                  if( to_pay.amount == max_to_pay.amount )
+                  {
+                     break;
+                  }
+                  min_to_pay.amount = to_pay.amount;
+                  min_to_cover.amount = to_cover.amount;
+               }
+            }
+
+            // be here, max_to_cover is too small due to rounding. search forward
+            for( uint64_t d1 = 0, d2 = 1, d3 = 1; ; d1 = d2, d2 = d3, d3 = d1 + d2 ) // 1,1,2,3,5,8,...
+            {
+               if( match_price.base.amount > match_price.quote.amount ) // step of debt is smaller
+               {
+                  to_pay.amount += d2;
+                  if( to_pay.amount >= collateral.amount )
+                  {
+                     return debt.amount;
+                  }
+                  to_cover = to_pay * match_price;
+                  if( to_cover.amount >= debt.amount )
+                  {
+                     return debt.amount;
+                  }
+                  to_pay = to_cover.multiply_and_round_up( match_price ); // stabilization
+                  if( to_pay.amount >= collateral.amount )
+                  {
+                     return debt.amount;
+                  }
+               }
+               else // step of collateral is smaller or equal
+               {
+                  to_cover.amount += d2;
+                  if( to_cover.amount >= debt.amount )
+                  {
+                     return debt.amount;
+                  }
+                  to_pay = to_cover.multiply_and_round_up( match_price );
+                  if( to_pay.amount >= collateral.amount )
+                  {
+                     return debt.amount;
+                  }
+                  to_cover = to_pay * match_price; // stabilization
+                  if( to_cover.amount >= debt.amount )
+                  {
+                     return debt.amount;
+                  }
+               }
+
+               FC_ASSERT( to_pay.amount < collateral.amount && to_cover.amount < debt.amount );
+               price new_collateralization = ( collateral - to_pay ) / ( debt - to_cover );
+
+               if( new_collateralization > target_collateralization )
+               {
+                  return to_cover.amount;
+               }
+            }
+      } FC_CAPTURE_AND_RETHROW() }  
    };
 
 
@@ -1099,51 +1377,51 @@ namespace node { namespace chain {
 
          id_type                 id;
 
-         asset_symbol_type       symbol;  
+         asset_symbol_type       symbol;                                                    ///< Currency symbol of the asset that the reward fund issues.
 
-         asset                   content_reward_balance;
+         asset                   content_reward_balance;                                    ///< Balance awaiting distribution to content creators.
 
-         asset                   validation_reward_balance;
+         asset                   validation_reward_balance;                                 ///< Balance distributed to block validating producers. 
 
-         asset                   txn_stake_reward_balance;
+         asset                   txn_stake_reward_balance;                                  ///< Balance distributed to block producers based on the stake weighted transactions in each block.
 
-         asset                   work_reward_balance;
+         asset                   work_reward_balance;                                       ///< Balance distributed to each proof of work block producer. 
 
-         asset                   producer_activity_reward_balance;
+         asset                   producer_activity_reward_balance;                          ///< Balance distributed to producers that receive activity reward votes.
 
-         asset                   supernode_reward_balance;
+         asset                   supernode_reward_balance;                                  ///< Balance distributed to supernodes, based on stake weighted comment views.
 
-         asset                   power_reward_balance;
+         asset                   power_reward_balance;                                      ///< Balance distributed to staked units of the currency.
 
-         asset                   community_fund_balance;
+         asset                   community_fund_balance;                                    ///< Balance distributed to community proposal funds on the currency. 
 
-         asset                   development_reward_balance;
+         asset                   development_reward_balance;                                ///< Balance distributed to elected developers. 
 
-         asset                   marketing_reward_balance;
+         asset                   marketing_reward_balance;                                  ///< Balance distributed to elected marketers. 
 
-         asset                   advocacy_reward_balance;
+         asset                   advocacy_reward_balance;                                   ///< Balance distributed to elected advocates. 
 
-         asset                   activity_reward_balance;
+         asset                   activity_reward_balance;                                   ///< Balance distributed to content creators that are active each day. 
 
-         asset                   premium_partners_fund_balance;      ///< Receives income from memberships, distributed to premium creators. 
+         asset                   premium_partners_fund_balance;                             ///< Receives income from memberships, distributed to premium creators. 
 
-         asset                   total_pending_reward_balance;
+         asset                   total_pending_reward_balance;                              ///< Total of all reward balances. 
 
-         uint128_t               recent_content_claims = 0;
+         uint128_t               recent_content_claims = 0;                                 ///< Recently claimed content reward balance shares.
 
-         uint128_t               recent_activity_claims = 0;
+         uint128_t               recent_activity_claims = 0;                                ///< Recently claimed activity reward balance shares.
 
-         uint128_t               content_constant = CONTENT_CONSTANT;
+         uint128_t               content_constant = CONTENT_CONSTANT;                       ///< Contstant added to content claim shares.
 
-         fc::microseconds        content_reward_decay_rate = CONTENT_REWARD_DECAY_RATE;
+         fc::microseconds        content_reward_decay_rate = CONTENT_REWARD_DECAY_RATE;     ///< Time taken to distribute all content rewards.
 
-         fc::microseconds        content_reward_interval = CONTENT_REWARD_INTERVAL;
+         fc::microseconds        content_reward_interval = CONTENT_REWARD_INTERVAL;         ///< Time between each individual distribution of content rewards. 
 
-         curve_id                author_reward_curve = convergent_semi_quadratic;
+         curve_id                author_reward_curve = convergent_semi_quadratic;           ///< Type of reward curve used for author content reward calculation. 
 
-         curve_id                curation_reward_curve = convergent_semi_quadratic;
+         curve_id                curation_reward_curve = convergent_semi_quadratic;         ///< Type of reward curve used for curation content reward calculation.
 
-         time_point              last_updated;
+         time_point              last_updated;                                              ///< Time that the reward fund was last updated. 
 
          void                    adjust_content_reward_balance( const asset& delta )
          { try {

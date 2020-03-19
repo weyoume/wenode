@@ -1,4 +1,3 @@
-
 #include <node/producer/producer_plugin.hpp>
 #include <node/producer/producer_objects.hpp>
 #include <node/producer/producer_operations.hpp>
@@ -36,7 +35,7 @@ using std::vector;
 using protocol::signed_transaction;
 using chain::account_object;
 
-void new_chain_banner( const node::chain::database& db )
+void new_chain_banner( std::map<public_key_type, fc::ecc::private_key> _private_keys )
 {
   std::cerr << "\n"
       "********************************\n"
@@ -63,13 +62,14 @@ void new_chain_banner( const node::chain::database& db )
       "********************************\n"
       "*   ------- KEYPAIRS -------   *\n"
       "*   ------------------------   *\n";
-			for (auto const& [key, val] : _private_keys){
-				std::cerr << "*   -------- PUB ---------   *\n" 
-				"*   " << key << "   *\n"
-				"*   ------ PRIVATE -------  *\n" 
-				"*   " << val << "   *\n";
-			}
-    std:cerr <<	"*   ------------------------   *\n"
+      for( auto& key : _private_keys )
+      {
+         std::cerr << "*   -------- PUB ---------   *\n" 
+         "*   " << string( key.first ) << "   *\n"
+         "*   ------ PRIVATE -------  *\n" 
+         "*   " << key.second.get_secret().str() << "   *\n";
+      }
+      std::cerr <<	"*   ------------------------   *\n"
       "*                              *\n"
       "********************************\n"
       "\n"
@@ -162,21 +162,21 @@ namespace detail
       keys.push_back( fc::ecc::private_key::regenerate( posting_secret ).get_public_key() );
 
       // Check keys against public keys in authorites
-      for( auto& key_weight_pair : auth.owner.key_auths )
+      for( auto& key_weight_pair : auth.owner_auth.key_auths )
       {
          for( auto& key : keys )
             ASSERT( key_weight_pair.first != key, chain::plugin_exception,
                "Detected private owner key in memo field. You should change your owner keys." );
       }
 
-      for( auto& key_weight_pair : auth.active.key_auths )
+      for( auto& key_weight_pair : auth.active_auth.key_auths )
       {
          for( auto& key : keys )
             ASSERT( key_weight_pair.first != key, chain::plugin_exception,
                "Detected private active key in memo field. You should change your active keys." );
       }
 
-      for( auto& key_weight_pair : auth.posting.key_auths )
+      for( auto& key_weight_pair : auth.posting_auth.key_auths )
       {
          for( auto& key : keys )
             ASSERT( key_weight_pair.first != key, chain::plugin_exception,
@@ -318,11 +318,13 @@ namespace detail
 
       if( BOOST_UNLIKELY( reserve_ratio_ptr == nullptr ) )
       {
-         db.create< reserve_ratio_object >([&]( reserve_ratio_object &r ) 
+         db.create< reserve_ratio_object >([&]( reserve_ratio_object &r )
          {
             r.average_block_size = 0;
             r.current_reserve_ratio = MAX_RESERVE_RATIO * RESERVE_RATIO_PRECISION;
-            r.max_virtual_bandwidth = ( uint128_t( MAX_BLOCK_SIZE * MAX_RESERVE_RATIO ) * BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW.count() ) / uint128_t( BLOCK_INTERVAL.count() );
+            r.max_virtual_bandwidth = 
+               ( uint128_t( MAX_BLOCK_SIZE ) * uint128_t( MAX_RESERVE_RATIO ) * uint128_t( BANDWIDTH_PRECISION.value ) * uint128_t( BANDWIDTH_AVERAGE_WINDOW.to_seconds() ) ) / 
+               uint128_t( BLOCK_INTERVAL.to_seconds() );
          });
       }
       else
@@ -381,7 +383,7 @@ namespace detail
                }
 
                r.max_virtual_bandwidth = ( uint128_t( max_block_size ) * uint128_t( r.current_reserve_ratio )
-                                         * uint128_t( BANDWIDTH_PRECISION * BANDWIDTH_AVERAGE_WINDOW.count() ) )
+                                         * uint128_t( BANDWIDTH_PRECISION.value * BANDWIDTH_AVERAGE_WINDOW.count() ) )
                                          / ( BLOCK_INTERVAL.count() * RESERVE_RATIO_PRECISION );
             }
          });
@@ -411,7 +413,7 @@ namespace detail
          }
 
          share_type new_bandwidth;
-         share_type trx_bandwidth = trx_size * BANDWIDTH_PRECISION;
+         share_type trx_bandwidth = share_type( trx_size ) * BANDWIDTH_PRECISION;
          fc::microseconds delta_time = _db.head_block_time() - band->last_bandwidth_update;
 
          if( delta_time > BANDWIDTH_AVERAGE_WINDOW )
@@ -556,7 +558,7 @@ void producer_plugin::plugin_startup()
       {
          if( d.head_block_num() == 0 )
          {
-            new_chain_banner(d);
+            new_chain_banner( _private_keys );
          }
          _production_skip_flags |= node::chain::database::skip_undo_history_check;
       }

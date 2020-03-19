@@ -373,15 +373,12 @@ All make targets:
 		graphene_net
 		node_account_by_key
 		node_account_history
-		node_account_statistics
 		node_auth_util
 		node_block_info
 		node_blockchain_statistics
 		node_debug_node
 		node_delayed_node
-		node_follow
 		node_market_history
-		node_private_message
 		node_raw_block
 		node_tags
 		node_producer

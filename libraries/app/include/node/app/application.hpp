@@ -97,7 +97,7 @@ namespace node { namespace app {
           */
          fc::api_ptr create_api_by_name( const api_context& ctx );
 
-         void get_max_block_age( int32_t& result );
+         void get_max_block_age( uint64_t& result );
 
          void connect_to_write_node();
 

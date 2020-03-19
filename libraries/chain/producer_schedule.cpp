@@ -664,12 +664,12 @@ void update_producer_schedule( database& db )
       // Add top voting_producers to producer authority for producer fed bitassets
       db.modify( producer_auth, [&]( account_authority_object& a )
       {
-         a.active.clear();
-         a.active.weight_threshold = 1;
+         a.active_auth.clear();
+         a.active_auth.weight_threshold = 1;
 
          for( account_name_type wit : top_voting_producer_set )
          {
-            a.active.add_authority( wit, 1 );  
+            a.active_auth.add_authority( wit, 1 );  
          }
       });
 

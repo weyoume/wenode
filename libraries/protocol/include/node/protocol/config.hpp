@@ -163,7 +163,7 @@
 
 #define FREE_TRANSACTIONS_WITH_NEW_ACCOUNT   100
 #define BANDWIDTH_AVERAGE_WINDOW             fc::days(7)                // 1 week averaging window for the calculation of bandwidth reserve ratio
-#define BANDWIDTH_PRECISION                  uint128_t(1000000)         // 1 million decimal places for bandwidth units
+#define BANDWIDTH_PRECISION                  share_type(1000000)         // 1 million decimal places for bandwidth units
 #define MAX_BODY_SIZE                        (1024 * 1024 * 128 )  // 128 mb of body text limit
 #define MAX_COMMENT_DEPTH                    0xffff // 64k
 #define SOFT_MAX_COMMENT_DEPTH               0xff // 255

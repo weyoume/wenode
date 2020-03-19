@@ -13,10 +13,10 @@ if( STATIC_BUILD )
    # I don't know why node_app is required twice in the following line, I just know the linker breaks if it isn't.
    target_link_libraries( cliwallet PRIVATE
                           "-static-libstdc++ -static-libgcc -lreadline"
-                          node_app graphene_net node_chain node_protocol graphene_utilities node_wallet node_private_message node_app node_follow fc ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS} )
+                          node_app graphene_net node_chain node_protocol graphene_utilities node_wallet node_app fc ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS} )
 else( STATIC_BUILD )
    target_link_libraries( cliwallet PRIVATE
-                          node_app graphene_net node_chain node_protocol graphene_utilities node_wallet node_private_message node_app node_follow fc ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS} )
+                          node_app graphene_net node_chain node_protocol graphene_utilities node_wallet node_app fc ${CMAKE_DL_LIBS} ${PLATFORM_SPECIFIC_LIBS} )
 endif( STATIC_BUILD )
 
 if(MSVC)

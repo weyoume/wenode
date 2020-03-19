@@ -51,11 +51,11 @@ struct comment_reward_context
    uint128_t           content_constant;               ///< Constant added to reward value for reward curve calculation.
 };
 
-void fill_comment_reward_context_local_state( comment_reward_context& ctx, const comment_object& comment );
+void                    fill_comment_reward_context_local_state( comment_reward_context& ctx, const comment_object& comment );
 
-share_type get_comment_reward( const comment_reward_context& ctx );
+asset                   get_comment_reward( const comment_reward_context& ctx );
 
-inline uint128_t get_content_constant_s()
+inline uint128_t        get_content_constant_s()
 {
    return CONTENT_CONSTANT;
 }
@@ -69,7 +69,7 @@ uint128_t evaluate_reward_curve(
 
 inline bool is_comment_payout_dust( const price& p, share_type reward_payout )
 {
-   return asset_to_USD( p, asset( reward_payout, SYMBOL_COIN ) ) < MIN_PAYOUT_USD;
+   return util::asset_to_USD( p, asset( reward_payout, SYMBOL_COIN ) ) < MIN_PAYOUT_USD;
 }
 
 } } } // node::chain::util

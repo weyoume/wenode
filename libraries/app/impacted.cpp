@@ -157,12 +157,37 @@ struct get_impacted_account_visitor
 
    void operator()( const author_reward_operation& op )
    {
-      _impacted.insert( op.author );
+      _impacted.insert( op.post_author );
    }
 
-   void operator()( const curation_reward_operation& op )
+   void operator()( const vote_reward_operation& op )
    {
-      _impacted.insert( op.curator );
+      _impacted.insert( op.voter );
+   }
+
+   void operator()( const view_reward_operation& op )
+   {
+      _impacted.insert( op.viewer );
+   }
+
+   void operator()( const share_reward_operation& op )
+   {
+      _impacted.insert( op.sharer );
+   }
+
+   void operator()( const comment_reward_operation& op )
+   {
+      _impacted.insert( op.comment_author );
+   }
+
+   void operator()( const moderation_reward_operation& op )
+   {
+      _impacted.insert( op.moderator );
+   }
+
+   void operator()( const supernode_reward_operation& op )
+   {
+      _impacted.insert( op.supernode );
    }
 
    void operator()( const interest_operation& op )

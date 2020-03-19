@@ -54,8 +54,9 @@ struct operation_creator_visitor
 
    account_name_type       creator;
 
-   operation_creator_visitor( account_name_type a ) :
-   creator(a) {}
+   operation_creator_visitor( 
+      account_name_type a ) :
+      creator(a) {}
 
    template< typename T > 
    void operator()( const T& v )const 

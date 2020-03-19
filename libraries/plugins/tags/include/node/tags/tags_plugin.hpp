@@ -2,7 +2,6 @@
 
 #include <node/app/plugin.hpp>
 #include <node/chain/database.hpp>
-#include <node/chain/comment_object.hpp>
 
 #include <boost/multi_index/composite_key.hpp>
 
@@ -463,7 +462,7 @@ typedef multi_index_container<
                member< tag_object, share_type, &tag_object::net_reward >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
-            composite_key_compare< std::less< community_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< uint128_t >, std::less< tag_id_type > >
+            composite_key_compare< std::less< community_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< share_type >, std::less< tag_id_type > >
       >,
       ordered_unique< tag< by_parent_net_votes >,
             composite_key< tag_object,
@@ -612,7 +611,7 @@ typedef multi_index_container<
                member< tag_object, share_type, &tag_object::net_reward >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
-            composite_key_compare< std::less< community_name_type >, std::less<tag_name_type>, std::less< bool >,std::greater< share_type >, std::less< tag_id_type > >
+            composite_key_compare< std::less< community_name_type >, std::less<tag_name_type>, std::less< bool >, std::greater< share_type >, std::less< tag_id_type > >
       >
    >,
    allocator< tag_object >
@@ -1295,21 +1294,21 @@ class tag_stats_object : public object< tag_stats_object_type, tag_stats_object 
 
       tag_stats_object() {}
 
-      id_type           id;
+      id_type             id;
 
-      tag_name_type     tag;                 ///< Name of the tag being measured.
+      tag_name_type       tag;                 ///< Name of the tag being measured.
 
-      asset             total_payout = asset( 0, SYMBOL_USD );    ///< USD valud of all earned content rewards for all posts using the tag.
+      asset               total_payout = asset( 0, SYMBOL_USD );    ///< USD valud of all earned content rewards for all posts using the tag.
 
-      uint32_t          post_count = 0;      ///< Number of posts using the tag.
+      uint32_t            post_count = 0;      ///< Number of posts using the tag.
 
-      uint32_t          children = 0;        ///< The amount of comments on root posts for all posts using the tag.
+      uint32_t            children = 0;        ///< The amount of comments on root posts for all posts using the tag.
 
-      int32_t           net_votes = 0;       ///< The amount of upvotes, minus downvotes for all posts using the tag.
+      int32_t             net_votes = 0;       ///< The amount of upvotes, minus downvotes for all posts using the tag.
 
-      int32_t           view_count = 0;      ///< The amount of views for all posts using the tag.
+      int32_t             view_count = 0;      ///< The amount of views for all posts using the tag.
 
-      int32_t           share_count = 0;     ///< The amount of shares for all posts using the tag.
+      int32_t             share_count = 0;     ///< The amount of shares for all posts using the tag.
 
       share_type          net_reward = 0;      ///< Net reward is the sum of all vote, view, share and comment power, with the reward curve formula applied. 
 
@@ -1692,21 +1691,21 @@ class peer_stats_object : public object< peer_stats_object_type, peer_stats_obje
 
       peer_stats_object() {}
 
-      id_type           id;
+      id_type                id;
 
-      account_name_type   voter;
+      account_name_type      voter;
 
-      account_name_type   peer;
+      account_name_type      peer;
 
-      int32_t           direct_positive_votes = 0;
+      int32_t                direct_positive_votes = 0;
 
-      int32_t           direct_votes = 1;
+      int32_t                direct_votes = 1;
 
-      int32_t           indirect_positive_votes = 0;
+      int32_t                indirect_positive_votes = 0;
 
-      int32_t           indirect_votes = 1;
+      int32_t                indirect_votes = 1;
 
-      float             rank = 0;
+      float                  rank = 0;
 
       void update_rank()
       {
@@ -1774,7 +1773,7 @@ class author_tag_stats_object : public object< author_tag_stats_object_type, aut
 
       id_type             id;
 
-      account_name_type     author;
+      account_name_type   author;
 
       tag_name_type       tag;
 
@@ -1911,6 +1910,8 @@ FC_REFLECT( node::tags::tag_object,
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_index );
+
+/**
 CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_quality_sort_index );
 CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_votes_sort_index );
 CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_views_sort_index );
@@ -1922,6 +1923,7 @@ CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_discussion_sor
 CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_prominent_sort_index );
 CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_conversation_sort_index );
 CHAINBASE_SET_INDEX_TYPE( node::tags::tag_object, node::tags::tag_discourse_sort_index );
+*/
 
 FC_REFLECT( node::tags::tag_stats_object,
          (id)
@@ -2021,5 +2023,5 @@ CHAINBASE_SET_INDEX_TYPE( node::tags::author_tag_stats_object, node::tags::autho
 
 FC_REFLECT( node::tags::comment_metadata,
          (tags)
-         (community)
+         (communities)
          );

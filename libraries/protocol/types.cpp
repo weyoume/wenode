@@ -8,13 +8,14 @@
 
 namespace node { namespace protocol {
 
-   public_key_type::public_key_type():key_data(){};
+   public_key_type::public_key_type() : 
+      key_data() {};
 
-   public_key_type::public_key_type( const fc::ecc::public_key_data& data )
-      :key_data( data ) {};
+   public_key_type::public_key_type( const fc::ecc::public_key_data& data ) : 
+      key_data( data ) {};
 
-   public_key_type::public_key_type( const fc::ecc::public_key& pubkey )
-      :key_data( pubkey ) {};
+   public_key_type::public_key_type( const fc::ecc::public_key& pubkey ) : 
+      key_data( pubkey ) {};
 
    public_key_type::public_key_type( const std::string& base58str )
    {
@@ -176,6 +177,12 @@ namespace node { namespace protocol {
 
    // Encrypted Keypair Type
 
+   encrypted_keypair_type::encrypted_keypair_type() : 
+      secure_key(), public_key(), encrypted_private_key() {};
+
+   encrypted_keypair_type::encrypted_keypair_type( const public_key_type& s, const public_key_type& p, const std::string& e ) :
+      secure_key( s ), public_key( p ), encrypted_private_key( e ) {};
+
    bool operator == ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 )
    {
       return std::tie( p1.secure_key, p1.public_key, p1.encrypted_private_key ) == std::tie( p2.secure_key, p2.public_key, p2.encrypted_private_key );
@@ -207,6 +214,12 @@ namespace node { namespace protocol {
    }
 
    // Date Type
+
+   date_type::date_type() : 
+      day(), month(), year() {};
+
+   date_type::date_type( uint16_t d, uint16_t m, uint16_t y ) : 
+      day(d), month(m), year(y) {};
 
    /**
     * time_point constructor of date_type

@@ -1,4 +1,5 @@
 #pragma once
+
 #include <node/protocol/types.hpp>
 #include <node/protocol/config.hpp>
 
@@ -8,6 +9,7 @@ namespace node { namespace protocol {
    struct price;
    struct price_feed;
    struct option_strike;
+   struct asset_unit;
 
    /**
     * Valid symbols can contain [A-Z0-9], and '.'
@@ -15,7 +17,7 @@ namespace node { namespace protocol {
     * They must end with [A, Z] before HF_620 or [A-Z0-9] after it
     * They can contain a maximum of five '.'
     */
-   bool is_valid_symbol( const string& symbol )
+   inline bool is_valid_symbol( const string& symbol )
    {
       static const std::locale& loc = std::locale::classic();
       if( symbol.size() < MIN_ASSET_SYMBOL_LENGTH )
@@ -63,8 +65,13 @@ namespace node { namespace protocol {
     */
    struct asset
    {
-      asset( share_type amount = 0, asset_symbol_type symbol = SYMBOL_COIN, int16_t precision = BLOCKCHAIN_PRECISION_DIGITS ) : 
-      amount(amount),symbol(symbol),precision(precision){}
+      asset( 
+         share_type amount = 0,
+         asset_symbol_type symbol = SYMBOL_COIN,
+         int16_t precision = BLOCKCHAIN_PRECISION_DIGITS ) : 
+         amount(amount),
+         symbol(symbol),
+         precision(precision){}
 
       share_type           amount;         ///< The amount of asset being represented, using safe int64_t / share_type
 
@@ -84,25 +91,6 @@ namespace node { namespace protocol {
       }
 
       asset amount_from_string( string amount_string )const;     ///< Convert a string amount to an asset object with this asset's type
-
-      string amount_to_string( share_type amount )const;          ///< Convert an asset to a textual representation
-      
-      string amount_to_string( const asset& amount )const           ///< Convert an asset to a textual representation
-      { 
-         FC_ASSERT( amount.symbol == symbol ); 
-         return amount_to_string( amount.amount ); 
-      }
-
-      string amount_to_pretty_string(share_type amount)const       ///< Convert an asset to a textual representation with symbol
-      { 
-         return amount_to_string( amount ) + " " + symbol; 
-      }
-
-      string amount_to_pretty_string(const asset &amount)const     ///< Convert an asset to a textual representation with symbol
-      { 
-         FC_ASSERT( amount.symbol == symbol ); 
-         return amount_to_pretty_string( amount.amount ); 
-      }
 
       asset multiply_and_round_up( const price& b )const;
 
@@ -323,11 +311,15 @@ namespace node { namespace protocol {
    /**
     * Dividing units in an asset distribution process.
     * For every unit of asset contributed, the proceeds are divided
-    * according to the input fund units
+    * according to the input fund units.
     */
    struct asset_unit
    {
-      asset_unit( account_name_type name, uint16_t units );
+      asset_unit( 
+         account_name_type name = account_name_type(), 
+         uint16_t units = 0 ) : 
+         name(name),
+         units(units){}
 
       account_name_type      name;
 
@@ -335,6 +327,8 @@ namespace node { namespace protocol {
    };
    
 } } // node::protocol
+
+#define GRAPHENE_PRICE_FEED_FIELDS (settlement_price)(maintenance_collateral_ratio)(maximum_short_squeeze_ratio)
 
 FC_REFLECT( node::protocol::asset,
          (amount)

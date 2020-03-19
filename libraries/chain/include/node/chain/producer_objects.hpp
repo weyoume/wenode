@@ -85,7 +85,7 @@ namespace node { namespace chain {
 
          time_point                   created;                               ///< The time the producer was created.
 
-         uint32_t                     last_commit_height = 0;                ///< Block height that has been most recently committed by the producer
+         uint64_t                     last_commit_height = 0;                ///< Block height that has been most recently committed by the producer
 
          block_id_type                last_commit_id = block_id_type();      ///< Block ID of the height that was most recently committed by the producer. 
 
@@ -181,7 +181,7 @@ namespace node { namespace chain {
 
          uint128_t                                         current_mining_virtual_time;             ///< Tracks the time used for block producer additional selection.
 
-         uint32_t                                          next_shuffle_block_num = 1;              ///< The block of the next reshuffling of producers.
+         uint64_t                                          next_shuffle_block_num = 1;              ///< The block of the next reshuffling of producers.
 
          fc::array< account_name_type, TOTAL_PRODUCERS >   current_shuffled_producers;              ///< Currently active block producers to be includes in the next production round.
 
@@ -273,7 +273,7 @@ namespace node { namespace chain {
 
          block_id_type                    block_id;             ///< Block ID commited to for the height.
 
-         uint32_t                         block_height;         ///< Height of the block being validated.
+         uint64_t                         block_height;         ///< Height of the block being validated.
 
          time_point                       created;              ///< Time that the validation was created.
 
@@ -306,7 +306,7 @@ namespace node { namespace chain {
 
          account_name_type                producer;
 
-         uint32_t                         block_height;
+         uint64_t                         block_height;
 
          signed_transaction               first_trx;
 
@@ -461,16 +461,16 @@ namespace node { namespace chain {
          ordered_unique< tag<by_producer_height>,
             composite_key< block_validation_object,
                member<block_validation_object, account_name_type, &block_validation_object::producer >,
-               member<block_validation_object, uint32_t, &block_validation_object::block_height >
+               member<block_validation_object, uint64_t, &block_validation_object::block_height >
             >
          >,
          ordered_unique< tag<by_height_stake>,
             composite_key< block_validation_object,
-               member<block_validation_object, uint32_t, &block_validation_object::block_height >,
+               member<block_validation_object, uint64_t, &block_validation_object::block_height >,
                member<block_validation_object, asset, &block_validation_object::commitment_stake >
             >,
             composite_key_compare< 
-               std::less< uint32_t >, 
+               std::less< uint64_t >, 
                std::greater< asset > 
             >
          >,
@@ -513,13 +513,13 @@ namespace node { namespace chain {
          ordered_unique< tag<by_reporter_height>,
             composite_key< commit_violation_object,
                member<commit_violation_object, account_name_type, &commit_violation_object::reporter >,
-               member<commit_violation_object, uint32_t, &commit_violation_object::block_height >
+               member<commit_violation_object, uint64_t, &commit_violation_object::block_height >
             >
          >,
          ordered_unique< tag<by_producer_height>,
             composite_key< commit_violation_object,
                member<commit_violation_object, account_name_type, &commit_violation_object::producer >,
-               member<commit_violation_object, uint32_t, &commit_violation_object::block_height >
+               member<commit_violation_object, uint64_t, &commit_violation_object::block_height >
             >
          >,
          ordered_unique< tag<by_recent_created>,

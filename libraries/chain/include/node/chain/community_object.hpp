@@ -793,6 +793,12 @@ namespace node { namespace chain {
                member< community_moderator_vote_object, community_moderator_vote_id_type, &community_moderator_vote_object::id >
             >
          >,
+         ordered_unique< tag< by_account >,
+            composite_key< community_moderator_vote_object,
+               member< community_moderator_vote_object, account_name_type, &community_moderator_vote_object::account >,
+               member< community_moderator_vote_object, community_moderator_vote_id_type, &community_moderator_vote_object::id >
+            >
+         >,
          ordered_unique< tag< by_account_community_rank >,
             composite_key< community_moderator_vote_object,
                member< community_moderator_vote_object, account_name_type, &community_moderator_vote_object::account >,

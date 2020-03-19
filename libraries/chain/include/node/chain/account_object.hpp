@@ -106,7 +106,7 @@ namespace node { namespace chain {
 
          share_type                       recent_activity_claims = 0;            ///< Value of activity rewards claimed in last 30 days / BLOCKCHAIN_PRECISION
 
-         uint16_t                         producer_vote_count = 0;                ///< Number of producers voted for.
+         uint16_t                         producer_vote_count = 0;               ///< Number of producers voted for.
 
          uint16_t                         officer_vote_count = 0;                ///< Number of network officers that the account has voted for.
 
@@ -398,15 +398,17 @@ namespace node { namespace chain {
 
          account_name_type                               account;                    ///< Username of the business account, lowercase letters only.
 
+         account_name_type                               governance_account;         ///< Name of the governance account that the business account is registered with.
+
          business_structure_type                         business_type;              ///< Type of business account, controls authorizations for transactions of different types.
 
          public_key_type                                 business_public_key;        ///< Public key of the business account for internal message encryption.
 
          executive_officer_set                           executive_board;            ///< Set of highest voted executive accounts for each role.
 
-         flat_map< account_name_type, pair< executive_role_type, share_type > >  executive_votes;   ///< Set of all executive names.  
+         flat_map< account_name_type, pair< executive_role_type, share_type > >  executive_votes;   ///< Set of all executive names.
 
-         flat_set< account_name_type  >                  executives;                 ///< Set of all executive names.   
+         flat_set< account_name_type  >                  executives;                 ///< Set of all executive names.
 
          flat_map< account_name_type, share_type >       officer_votes;              ///< Set of all officers in the business, and their supporting voting power.
 
@@ -423,6 +425,10 @@ namespace node { namespace chain {
          flat_map< asset_symbol_type, uint16_t >         equity_revenue_shares;      ///< Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
 
          flat_map< asset_symbol_type, uint16_t >         credit_revenue_shares;      ///< Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
+
+         time_point                                      created;                    ///< Time of verification.
+
+         time_point                                      last_updated;               ///< Time that the verifcation was last updated. 
 
          bool is_authorized_request( const account_name_type& account, const account_permission_object& obj )const      ///< Determines Permission to request to join.
          {
@@ -1002,7 +1008,7 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          account_authority_object( Constructor&& c, allocator< Allocator > a )
-            : owner( a ), active( a ), posting( a )
+            : owner_auth( a ), active_auth( a ), posting_auth( a )
          {
             c( *this );
          }
@@ -1011,11 +1017,11 @@ namespace node { namespace chain {
 
          account_name_type        account;            ///< Name of the account
 
-         shared_authority         owner;              ///< used for backup control, can set all other keys
+         shared_authority         owner_auth;         ///< used for backup control, can set all other keys
 
-         shared_authority         active;             ///< used for all monetary operations, can set active or posting
+         shared_authority         active_auth;        ///< used for all monetary operations, can set active or posting
 
-         shared_authority         posting;            ///< used for voting and posting
+         shared_authority         posting_auth;       ///< used for voting and posting
 
          time_point               last_owner_update;  ///< Time that the owner key was last updated.
    };
@@ -2380,9 +2386,9 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::account_balance_object, node::chain::acco
 FC_REFLECT( node::chain::account_authority_object,
          (id)
          (account)
-         (owner)
-         (active)
-         (posting)
+         (owner_auth)
+         (active_auth)
+         (posting_auth)
          (last_owner_update)
          );
 

@@ -39,9 +39,11 @@ using fc::flat_map;
 
 struct reward_fund_context
 {
-   uint128_t   recent_content_claims = 0;
-   asset       content_reward_balance = asset( 0, SYMBOL_COIN );
-   share_type  reward_distributed = 0;
+   uint128_t       recent_content_claims;
+
+   asset           content_reward_balance;
+
+   asset           reward_distributed;
 };
 
 /**
@@ -85,14 +87,14 @@ flat_map< _KEY_TYPE, _VALUE_TYPE > map_merge( flat_map<_KEY_TYPE,_VALUE_TYPE> ma
  * Distributes rewards from a comment to the voters of that comment, according
  * to their vote weight.
  */
-share_type database::pay_voters( const comment_object& c, const share_type& max_rewards )
+asset database::pay_voters( const comment_object& c, const asset& max_rewards )
 { try {
    uint128_t total_weight( c.total_vote_weight );
-   share_type unclaimed_rewards = max_rewards;
+   asset unclaimed_rewards = max_rewards;
 
    if( !c.allow_curation_rewards )
    {
-      return 0;
+      return asset( 0, max_rewards.symbol );
    }
    else if( c.total_vote_weight > 0 )
    {
@@ -102,19 +104,15 @@ share_type database::pay_voters( const comment_object& c, const share_type& max_
       while( vote_itr != vote_idx.end() && vote_itr->comment == c.id )
       {
          uint128_t weight( vote_itr->weight );
-         auto claim = ( ( max_rewards.value * weight ) / total_weight ).to_uint64();
-         if( claim > 0 )
-         {
-            unclaimed_rewards -= claim;
-            const account_object& voter = get_account( vote_itr->voter );
-            asset reward = asset( claim, SYMBOL_COIN );
-            adjust_reward_balance( voter.name, reward );
-            push_virtual_operation( curation_reward_operation( voter.name, reward, c.author, to_string( c.permlink ) ) );
+         uint128_t reward_amount = ( max_rewards.amount.value * weight ) / total_weight;
+         asset reward = asset( int64_t( reward_amount.to_uint64() ), max_rewards.symbol );
 
-            modify( voter, [&]( account_object& a )
-            {
-               a.curation_rewards += claim;
-            });
+         if( reward.amount > 0 )
+         {
+            unclaimed_rewards -= reward;
+            const account_object& voter = get_account( vote_itr->voter );
+            adjust_reward_balance( voter.name, reward );
+            push_virtual_operation( vote_reward_operation( voter.name, c.author, to_string( c.permlink ), reward ) );
          }
          ++vote_itr;
       }
@@ -127,14 +125,14 @@ share_type database::pay_voters( const comment_object& c, const share_type& max_
  * Distributes rewards from a comment to the viewers of that comment, according
  * to their view weight.
  */
-share_type database::pay_viewers( const comment_object& c, const share_type& max_rewards )
+asset database::pay_viewers( const comment_object& c, const asset& max_rewards )
 { try {
    uint128_t total_weight( c.total_view_weight );
-   share_type unclaimed_rewards = max_rewards;
+   asset unclaimed_rewards = max_rewards;
 
    if( !c.allow_curation_rewards )
    {
-      return 0;
+      return asset( 0, max_rewards.symbol );
    }
    else if( c.total_view_weight > 0 )
    {
@@ -143,19 +141,15 @@ share_type database::pay_viewers( const comment_object& c, const share_type& max
       while( view_itr != view_idx.end() && view_itr->comment == c.id )
       {
          uint128_t weight( view_itr->weight );
-         auto claim = ( ( max_rewards.value * weight ) / total_weight ).to_uint64();
-         if( claim > 0 )
-         {
-            unclaimed_rewards -= claim;
-            const account_object& viewer = get_account(view_itr->viewer);
-            asset reward = asset( claim, SYMBOL_COIN );
-            adjust_reward_balance( viewer.name, reward );
-            push_virtual_operation( curation_reward_operation( viewer.name, reward, c.author, to_string( c.permlink ) ) );
+         uint128_t reward_amount = ( max_rewards.amount.value * weight ) / total_weight;
+         asset reward = asset( int64_t( reward_amount.to_uint64() ), max_rewards.symbol );
 
-            modify( viewer, [&]( account_object& a )
-            {
-               a.curation_rewards += claim;
-            });
+         if( reward.amount > 0 )
+         {
+            unclaimed_rewards -= reward;
+            const account_object& viewer = get_account( view_itr->viewer );
+            adjust_reward_balance( viewer.name, reward );
+            push_virtual_operation( view_reward_operation( viewer.name, c.author, to_string( c.permlink ), reward ) );
          }
          ++view_itr;
       }
@@ -168,14 +162,14 @@ share_type database::pay_viewers( const comment_object& c, const share_type& max
  * Distributes rewards from a comment to the sharers of that comment, according
  * to their share weight.
  */
-share_type database::pay_sharers( const comment_object& c, const share_type& max_rewards )
+asset database::pay_sharers( const comment_object& c, const asset& max_rewards )
 { try {
    uint128_t total_weight( c.total_share_weight );
-   share_type unclaimed_rewards = max_rewards;
+   asset unclaimed_rewards = max_rewards;
 
    if( !c.allow_curation_rewards )
    {
-      return 0;
+      return asset( 0, max_rewards.symbol );
    }
    else if( c.total_share_weight > 0 )
    {
@@ -184,19 +178,15 @@ share_type database::pay_sharers( const comment_object& c, const share_type& max
       while( share_itr != share_idx.end() && share_itr->comment == c.id )
       {
          uint128_t weight( share_itr->weight );
-         auto claim = ( ( max_rewards.value * weight ) / total_weight ).to_uint64();
-         if( claim > 0 )
-         {
-            unclaimed_rewards -= claim;
-            const account_object& sharer = get_account( share_itr->sharer );
-            asset reward = asset( claim, SYMBOL_COIN );
-            adjust_reward_balance( sharer.name, reward );
-            push_virtual_operation( curation_reward_operation( sharer.name, reward, c.author, to_string( c.permlink ) ) );
+         uint128_t reward_amount = ( max_rewards.amount.value * weight ) / total_weight;
+         asset reward = asset( int64_t( reward_amount.to_uint64() ), max_rewards.symbol );
 
-            modify( sharer, [&]( account_object& a )
-            {
-               a.curation_rewards += claim;
-            });
+         if( reward.amount > 0 )
+         {
+            unclaimed_rewards -= reward;
+            const account_object& sharer = get_account( share_itr->sharer );
+            adjust_reward_balance( sharer.name, reward );
+            push_virtual_operation( share_reward_operation( sharer.name, c.author, to_string( c.permlink ), reward ) );
          }
          ++share_itr;
       }
@@ -210,14 +200,14 @@ share_type database::pay_sharers( const comment_object& c, const share_type& max
  * Distributes rewards from a root post to the authors of comments on it,
  * according to their comment weight.
  */
-share_type database::pay_commenters( const comment_object& c, const share_type& max_rewards )
+asset database::pay_commenters( const comment_object& c, const asset& max_rewards )
 { try {
    uint128_t total_weight( c.total_comment_weight );
-   share_type unclaimed_rewards = max_rewards;
+   asset unclaimed_rewards = max_rewards;
 
    if( !c.allow_curation_rewards )
    {
-      return 0;
+      return asset( 0, max_rewards.symbol );
    }
    else if( c.total_comment_weight > 0 )
    {
@@ -226,19 +216,15 @@ share_type database::pay_commenters( const comment_object& c, const share_type& 
       while( comment_itr != comment_idx.end() && comment_itr->root_comment == c.id )
       {
          uint128_t weight( comment_itr->weight );
-         auto claim = ( ( max_rewards.value * weight ) / total_weight ).to_uint64();
-         if( claim > 0 )
-         {
-            unclaimed_rewards -= claim;
-            const account_object& commenter = get_account( comment_itr->author );
-            asset reward = asset( claim, SYMBOL_COIN );
-            adjust_reward_balance( commenter.name, reward );
-            push_virtual_operation( curation_reward_operation( commenter.name, reward, c.author, to_string( c.permlink ) ) );
+         uint128_t reward_amount = ( max_rewards.amount.value * weight ) / total_weight;
+         asset reward = asset( int64_t( reward_amount.to_uint64() ), max_rewards.symbol );
+         const comment_object& comment_obj = *comment_itr;
 
-            modify( commenter, [&]( account_object& a )
-            {
-               a.curation_rewards += claim;
-            });
+         if( reward.amount > 0 )
+         {
+            unclaimed_rewards -= reward;
+            adjust_reward_balance( comment_obj.author, reward );
+            push_virtual_operation( comment_reward_operation( comment_obj.author, to_string( comment_obj.permlink ), c.author, to_string( c.permlink ), reward ) );
          }
          ++comment_itr;
       }
@@ -251,14 +237,14 @@ share_type database::pay_commenters( const comment_object& c, const share_type& 
  * Distributes rewards from a comment to the supernodes that provided the files
  * for the viewers of that comment, according to their view weight.
  */
-share_type database::pay_storage( const comment_object& c, const share_type& max_rewards )
+asset database::pay_storage( const comment_object& c, const asset& max_rewards )
 { try {
    uint128_t total_weight( c.total_view_weight );
-   share_type unclaimed_rewards = max_rewards;
+   asset unclaimed_rewards = max_rewards;
 
    if( !c.allow_curation_rewards )
    {
-      return 0;
+      return asset( 0, max_rewards.symbol );
    }
    else if( c.total_view_weight > 0 )
    {
@@ -267,19 +253,15 @@ share_type database::pay_storage( const comment_object& c, const share_type& max
       while( view_itr != view_idx.end() && view_itr->comment == c.id )
       {
          uint128_t weight( view_itr->weight );
-         auto claim = ( ( max_rewards.value * weight ) / total_weight ).to_uint64();
-         if( claim > 0 )
-         {
-            unclaimed_rewards -= claim;
-            const account_object& viewer = get_account( view_itr->viewer );
-            const supernode_object& supernode = get_supernode( view_itr->supernode );
-            asset reward = asset( claim, SYMBOL_COIN );
-            adjust_reward_balance( supernode.account, reward );
+         uint128_t reward_amount = ( max_rewards.amount.value * weight ) / total_weight;
+         asset reward = asset( int64_t( reward_amount.to_uint64() ), max_rewards.symbol );
 
-            modify( viewer, [&]( account_object& a )
-            {
-               a.curation_rewards += claim;
-            });
+         if( reward.amount > 0 )
+         {
+            unclaimed_rewards -= reward;
+            const supernode_object& supernode = get_supernode( view_itr->supernode );
+            adjust_reward_balance( supernode.account, reward );
+            push_virtual_operation( supernode_reward_operation( supernode.account, c.author, to_string( c.permlink ), reward ) );
          }
          ++view_itr;
       }
@@ -292,39 +274,35 @@ share_type database::pay_storage( const comment_object& c, const share_type& max
  * Distributes rewards from a comment to the moderators of the community it was
  * posted to, according to their voting power.
  */
-share_type database::pay_moderators( const comment_object& c, const share_type& max_rewards )
+asset database::pay_moderators( const comment_object& c, const asset& max_rewards )
 { try {
    const community_member_object& community_member = get_community_member( c.community );
    uint128_t total_weight( community_member.total_mod_weight.value );
-   share_type unclaimed_rewards = max_rewards;
+   asset unclaimed_rewards = max_rewards;
 
    if( !c.allow_curation_rewards )
    {
-      return 0;
+      return asset( 0, max_rewards.symbol );
    }
    else if( c.total_view_weight > 0 )
    {
       for( auto mod : community_member.mod_weight )
       {
          uint128_t weight( mod.second.value );
-         auto claim = ( ( max_rewards.value * weight ) / total_weight ).to_uint64();
-         if( claim > 0 )
-         {
-            unclaimed_rewards -= claim;
-            const account_object& moderator = get_account( mod.first );
-            asset reward = asset( claim, SYMBOL_COIN );
-            adjust_reward_balance( moderator.name, reward );
+         uint128_t reward_amount = ( max_rewards.amount.value * weight ) / total_weight;
+         asset reward = asset( int64_t( reward_amount.to_uint64() ), max_rewards.symbol );
 
-            modify( moderator, [&]( account_object& a )
-            {
-               a.moderation_rewards += claim;
-            });
+         if( reward.amount > 0 )
+         {
+            unclaimed_rewards -= reward;
+            const account_object& moderator = get_account( mod.first );
+            adjust_reward_balance( moderator.name, reward );
+            push_virtual_operation( moderation_reward_operation( moderator.name, c.author, to_string( c.permlink ), reward ) );
          }
       }
    }
    return unclaimed_rewards;
 } FC_CAPTURE_AND_RETHROW() }
-
 
 
 /**
@@ -333,138 +311,86 @@ share_type database::pay_moderators( const comment_object& c, const share_type& 
  * splits rewards between the author and the voters, viewers, 
  * sharers, supernodes, and moderators.
  */
-share_type database::distribute_comment_reward( util::comment_reward_context& ctx, const comment_object& comment )
+asset database::distribute_comment_reward( util::comment_reward_context& ctx, const comment_object& c )
 { try {
-   share_type claimed_reward = 0;
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = props.time;
+   asset claimed_reward = asset( 0, c.reward_currency );
+   time_point now = head_block_time();
 
-   if( comment.net_reward > 0 )
+   if( c.net_reward > 0 )
    {
-      util::fill_comment_reward_context_local_state( ctx, comment );
+      util::fill_comment_reward_context_local_state( ctx, c );
+      asset reward_tokens = util::get_comment_reward( ctx );
 
-      share_type reward_tokens = util::get_comment_reward( ctx );
-
-      if( reward_tokens > 0 )
+      if( reward_tokens.amount > 0 )
       {
-         share_type voter_tokens =  ( reward_tokens * comment.vote_reward_percent ) / PERCENT_100;
-         share_type viewer_tokens = ( reward_tokens * comment.view_reward_percent ) / PERCENT_100;
-         share_type sharer_tokens = ( reward_tokens * comment.share_reward_percent ) / PERCENT_100;
-         share_type commenter_tokens = ( reward_tokens * comment.comment_reward_percent ) / PERCENT_100;
-         share_type storage_tokens = ( reward_tokens * comment.storage_reward_percent ) / PERCENT_100;
-         share_type moderator_tokens = ( reward_tokens * comment.moderator_reward_percent ) / PERCENT_100;
-         share_type total_curation_tokens = voter_tokens + viewer_tokens + sharer_tokens + commenter_tokens + storage_tokens + moderator_tokens;
-         share_type author_tokens = reward_tokens - total_curation_tokens;
+         asset voter_tokens =  ( reward_tokens * c.vote_reward_percent ) / PERCENT_100;
+         asset viewer_tokens = ( reward_tokens * c.view_reward_percent ) / PERCENT_100;
+         asset sharer_tokens = ( reward_tokens * c.share_reward_percent ) / PERCENT_100;
+         asset commenter_tokens = ( reward_tokens * c.comment_reward_percent ) / PERCENT_100;
+         asset storage_tokens = ( reward_tokens * c.storage_reward_percent ) / PERCENT_100;
+         asset moderator_tokens = ( reward_tokens * c.moderator_reward_percent ) / PERCENT_100;
+         asset total_curation_tokens = voter_tokens + viewer_tokens + sharer_tokens + commenter_tokens + storage_tokens + moderator_tokens;
+         asset author_tokens = reward_tokens - total_curation_tokens;
 
-         author_tokens += pay_voters( comment, voter_tokens );
-         author_tokens += pay_viewers( comment, viewer_tokens );
-         author_tokens += pay_sharers( comment, sharer_tokens );
-         author_tokens += pay_commenters( comment, commenter_tokens );
-         author_tokens += pay_storage( comment, storage_tokens );
-         author_tokens += pay_moderators( comment, moderator_tokens );
+         author_tokens += pay_voters( c, voter_tokens );
+         author_tokens += pay_viewers( c, viewer_tokens );
+         author_tokens += pay_sharers( c, sharer_tokens );
+         author_tokens += pay_commenters( c, commenter_tokens );
+         author_tokens += pay_storage( c, storage_tokens );
+         author_tokens += pay_moderators( c, moderator_tokens );
 
-         share_type total_beneficiary = 0;
+         asset total_beneficiary = asset( 0, c.reward_currency );
          claimed_reward = author_tokens + total_curation_tokens;
 
-         for( auto& b : comment.beneficiaries )
+         for( auto b : c.beneficiaries )
          {
-            share_type benefactor_tokens = ( author_tokens * b.weight ) / PERCENT_100;
-            asset reward_created = asset( benefactor_tokens, SYMBOL_COIN);
+            asset benefactor_tokens = ( author_tokens * b.weight ) / PERCENT_100;
+            asset reward_created = benefactor_tokens;
             adjust_reward_balance( b.account, reward_created );
-            push_virtual_operation( comment_benefactor_reward_operation( b.account, comment.author, to_string( comment.permlink ), reward_created ) );
+            push_virtual_operation( 
+               comment_benefactor_reward_operation( b.account, c.author, to_string( c.permlink ), reward_created ) );
             total_beneficiary += benefactor_tokens;
          }
 
          author_tokens -= total_beneficiary;
+         asset author_reward = author_tokens;
+         adjust_reward_balance( c.author, author_reward );
 
-         const account_object& author = get_account( comment.author );
-         asset author_reward = asset( author_tokens, SYMBOL_COIN );
-         adjust_reward_balance( author, author_reward );
+         asset claimed_reward_usd = asset_to_USD( claimed_reward );
+         asset total_curation_usd = asset_to_USD( total_curation_tokens );
+         asset total_beneficiary_usd = asset_to_USD( total_beneficiary );
 
-         adjust_total_payout( 
-            comment, 
-            asset_to_USD( asset( claimed_reward, SYMBOL_COIN ) ),
-            asset_to_USD( asset( total_curation_tokens, SYMBOL_COIN ) ),
-            asset_to_USD( asset( total_beneficiary, SYMBOL_COIN ) )
-         );
+         adjust_total_payout( c, claimed_reward_usd, total_curation_usd, total_beneficiary_usd );
 
-         push_virtual_operation( 
-            author_reward_operation( 
-               comment.author,
-               to_string( comment.permlink ),
-               author_reward
-            ) 
-         );
+         push_virtual_operation( content_reward_operation( c.author, to_string( c.permlink ), claimed_reward_usd ) );
+         push_virtual_operation( author_reward_operation( c.author, to_string( c.permlink ), author_reward ) );
 
-         push_virtual_operation( 
-            comment_reward_operation( 
-               comment.author,
-               to_string( comment.permlink ),
-               asset_to_USD( asset( claimed_reward, SYMBOL_COIN )
-               )
-            )
-         );
-
-         modify( comment, [&]( comment_object& c )
+         modify( c, [&]( comment_object& com )
          {
-            c.content_rewards += asset( claimed_reward, SYMBOL_COIN );
+            com.content_rewards += claimed_reward;
          });
-
-         modify( get_account( comment.author ), [&]( account_object& a )
-         {
-            a.posting_rewards += author_tokens;
-         });
-
-         const community_object* community_ptr = find_community( comment.community );
-
-         if( community_ptr != nullptr )
-         {
-            modify( *community_ptr, [&]( community_object& b )
-            {
-               b.total_content_rewards += asset( claimed_reward, SYMBOL_COIN );
-            });
-         }
       }
    }
 
-   modify( comment, [&]( comment_object& c )
+   modify( c, [&]( comment_object& com )
    {
-      if( c.cashouts_received < ( ctx.decay_rate.to_seconds() / ctx.reward_interval.to_seconds() ) )
+      if( com.cashouts_received < ( ctx.decay_rate.to_seconds() / ctx.reward_interval.to_seconds() ) )
       {
-         if( c.net_reward > 0 )   // A payout is only made for positive reward.
+         if( com.net_reward > 0 )   // A payout is only made for positive reward.
          {
-            c.cashouts_received++;
-            c.last_payout = now;
+            com.cashouts_received++;
+            com.last_payout = now;
          }
-         c.cashout_time += ctx.reward_interval;     // Bump reward interval to next time
+         com.cashout_time += ctx.reward_interval;     // Bump reward interval to next time
       }
       else
       {
-         c.cashout_time = fc::time_point::maximum();
+         com.cashout_time = fc::time_point::maximum();
       }
    });
 
-   push_virtual_operation( comment_payout_update_operation( comment.author, to_string( comment.permlink ) ) );
-   const auto& vote_idx = get_index< comment_vote_index >().indices().get< by_comment_voter >();
-   auto vote_itr = vote_idx.lower_bound( comment.id );
-   while( vote_itr != vote_idx.end() && vote_itr->comment == comment.id )
-   {
-      const comment_vote_object& cur_vote = *vote_itr;
-      ++vote_itr;
-      if( calculate_discussion_payout_time( comment ) != fc::time_point::maximum() )
-      {
-         modify( cur_vote, [&]( comment_vote_object& cvo )
-         {
-            cvo.num_changes = -1;
-         });
-      }
-      else
-      {
-#ifdef CLEAR_VOTES  // Removes comment vote objects from memory that are no longer required for consensus if flag is enabled.
-         remove( cur_vote );
-#endif
-      }
-   }
+   push_virtual_operation( comment_payout_update_operation( c.author, to_string( c.permlink ) ) );    // Update comment metrics data
+   
    return claimed_reward;
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -473,7 +399,7 @@ util::comment_reward_context database::get_comment_reward_context( const reward_
 {
    util::comment_reward_context ctx;
 
-   ctx.current_COIN_USD_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).day_median_price;
+   ctx.current_COIN_USD_price = get_liquidity_pool( reward_fund.symbol, SYMBOL_USD ).day_median_price;
    ctx.decay_rate = reward_fund.content_reward_decay_rate;
    ctx.reward_interval = reward_fund.content_reward_interval;
    ctx.reward_curve = reward_fund.author_reward_curve;
@@ -489,10 +415,8 @@ util::comment_reward_context database::get_comment_reward_context( const reward_
 void database::process_comment_cashout()
 {
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   
    time_point now = props.time;
-
-   vector< share_type > reward_distributed;
+   vector< asset > reward_distributed;
 
    const auto& fund_idx = get_index< reward_fund_index >().indices().get< by_symbol >();
    auto fund_itr = fund_idx.begin();
@@ -516,8 +440,8 @@ void database::process_comment_cashout()
       rf_ctx.recent_content_claims = reward_fund.recent_content_claims;
       rf_ctx.content_reward_balance = reward_fund.content_reward_balance;
 
-      const auto& comment_idx = get_index< comment_index >().indices().get< by_cashout_time >();
-      auto comment_itr = comment_idx.begin();
+      const auto& comment_idx = get_index< comment_index >().indices().get< by_currency_cashout_time >();
+      auto comment_itr = comment_idx.lower_bound( reward_fund.symbol );
       
       while( comment_itr != comment_idx.end() && 
          comment_itr->cashout_time <= now && 
@@ -526,33 +450,32 @@ void database::process_comment_cashout()
          if( comment_itr->net_reward > 0 )
          {
             uint128_t net_reward = uint128_t( comment_itr->net_reward.value );
-
-            rf_ctx.recent_content_claims += util::evaluate_reward_curve(
-               net_reward,
-               comment_itr->cashouts_received,
-               ctx.reward_curve,
-               ctx.decay_rate,
-               ctx.content_constant 
-            );
+            uint128_t reward_curve = util::evaluate_reward_curve( 
+               net_reward, comment_itr->cashouts_received, ctx.reward_curve, ctx.decay_rate, ctx.content_constant );
+            rf_ctx.recent_content_claims += reward_curve;
          }
          ++comment_itr;
       }
 
-      comment_itr = comment_idx.begin();
+      comment_itr = comment_idx.lower_bound( reward_fund.symbol );
 
       ctx.recent_content_claims = rf_ctx.recent_content_claims;
       ctx.total_reward_fund = rf_ctx.content_reward_balance;
 
-      while( comment_itr != comment_idx.end() && comment_itr->cashout_time <= now )
+      // Allocates reward balances to accounts from the comment reward context
+
+      while( comment_itr != comment_idx.end() && 
+         comment_itr->cashout_time <= now &&
+         comment_itr->reward_currency == reward_fund.symbol )
       {
-         rf_ctx.reward_distributed += distribute_comment_reward( ctx, *comment_itr );    // Allocates reward balances to accounts from the comment reward context
+         rf_ctx.reward_distributed += distribute_comment_reward( ctx, *comment_itr );
          ++comment_itr;
       }
 
       modify( reward_fund, [&]( reward_fund_object& rfo )
       {
          rfo.recent_content_claims = rf_ctx.recent_content_claims;
-         rfo.content_reward_balance -= rf_ctx.reward_distributed;
+         rfo.content_reward_balance.amount -= rf_ctx.reward_distributed;
       });
 
       ++fund_itr;
@@ -571,7 +494,7 @@ void database::update_comment_metrics()
    if( (head_block_num() % METRIC_INTERVAL_BLOCKS) != 0 )
       return;
 
-   auto now = head_block_time();
+   time_point now = head_block_time();
    const comment_metrics_object& comment_metrics = get_comment_metrics();
    
    // Initialize comment metrics

@@ -71,10 +71,10 @@ namespace node { namespace app {
 
          void broadcast_block( const signed_block& block );
 
-         void set_max_block_age( int64_t max_block_age );
+         void set_max_block_age( uint64_t max_block_age );
 
          // implementation detail, not reflected
-         bool check_max_block_age( int64_t max_block_age );
+         bool check_max_block_age( uint64_t max_block_age );
 
          /**
           * @brief Not reflected, thus not accessible to API clients.
@@ -95,7 +95,7 @@ namespace node { namespace app {
          map<transaction_id_type,confirmation_callback>     _callbacks;
          map<time_point, vector<transaction_id_type> >  _callbacks_expirations;
 
-         int64_t                                        _max_block_age = -1;
+         uint64_t                                        _max_block_age = -1;
 
          application&                                   _app;
    };

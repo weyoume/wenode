@@ -1,18 +1,16 @@
-
-
 #include <boost/test/unit_test.hpp>
-
 #include <node/chain/database.hpp>
 #include <node/protocol/protocol.hpp>
-
 #include <node/protocol/node_operations.hpp>
-
 #include <fc/crypto/digest.hpp>
 #include <fc/crypto/hex.hpp>
 #include "../common/database_fixture.hpp"
 
 #include <algorithm>
 #include <random>
+#include <cmath>
+#include <iostream>
+#include <stdexcept>
 
 using namespace node;
 using namespace node::chain;

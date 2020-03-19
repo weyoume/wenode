@@ -1,13 +1,10 @@
-//#ifdef IS_TEST_NET
-
 #include <boost/test/unit_test.hpp>
-#include <node/chain/node_objects.hpp>
 #include <node/protocol/exceptions.hpp>
 #include <node/chain/database.hpp>
 #include <node/chain/database_exceptions.hpp>
 #include <node/chain/util/reward.hpp>
 #include <fc/crypto/digest.hpp>
-#include <tests/common/database_fixture.hpp>
+#include "../common/database_fixture.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -260,9 +257,9 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       account_create.url = "www.url.com";
       account_create.json = "{\"json\":\"valid\"}";
       account_create.json_private = "{\"json\":\"valid\"}";
-      account_create.owner = authority( 1, candice_private_owner_key.get_public_key(), 1 );
-      account_create.active = authority( 1, candice_private_active_key.get_public_key(), 1 );
-      account_create.posting = authority( 1, candice_private_posting_key.get_public_key(), 1 );
+      account_create.owner_auth = authority( 1, candice_private_owner_key.get_public_key(), 1 );
+      account_create.active_auth = authority( 1, candice_private_active_key.get_public_key(), 1 );
+      account_create.posting_auth = authority( 1, candice_private_posting_key.get_public_key(), 1 );
       account_create.secure_public_key = string( public_key_type( candice_private_posting_key.get_public_key() ) );
       account_create.connection_public_key = string( public_key_type( candice_private_posting_key.get_public_key() ) );
       account_create.friend_public_key = string( public_key_type( candice_private_posting_key.get_public_key() ) );
@@ -390,9 +387,9 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       account_create.url = "www.url.com";
       account_create.json = "{\"json\":\"valid\"}";
       account_create.json_private = "{\"json\":\"valid\"}";
-      account_create.owner = authority( 1, dan_private_owner_key.get_public_key(), 1 );
-      account_create.active = authority( 1, dan_private_active_key.get_public_key(), 1 );
-      account_create.posting = authority( 1, dan_private_posting_key.get_public_key(), 1 );
+      account_create.owner_auth = authority( 1, dan_private_owner_key.get_public_key(), 1 );
+      account_create.active_auth = authority( 1, dan_private_active_key.get_public_key(), 1 );
+      account_create.posting_auth = authority( 1, dan_private_posting_key.get_public_key(), 1 );
       account_create.secure_public_key = string( public_key_type( dan_private_posting_key.get_public_key() ) );
       account_create.connection_public_key = string( public_key_type( dan_private_posting_key.get_public_key() ) );
       account_create.friend_public_key = string( public_key_type( dan_private_posting_key.get_public_key() ) );

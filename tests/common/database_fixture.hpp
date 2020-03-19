@@ -118,7 +118,7 @@ extern fc::time_point TESTING_GENESIS_TIMESTAMP;
 
 #define ACTOR(name) \
    PREP_ACTOR(name) \
-   const auto& name = account_create( BOOST_PP_STRINGIZE(name), name ## _public_owner_key, name ## _public_posting_key); \
+   const auto& name = account_create( BOOST_PP_STRINGIZE(name), name ## _public_owner_key, name ## _public_active_key, name ## _public_posting_key ); \
    account_id_type name ## _id = name.id; (void)name ## _id;
 
 #define GET_ACTOR(name) \
@@ -185,8 +185,9 @@ struct database_fixture {
       const string& governance_account,
       const private_key_type& registrar_key,
       const share_type& fee,
-      const public_key_type& key,
-      const public_key_type& post_key,
+      const public_key_type& owner_key,
+      const public_key_type& active_key,
+      const public_key_type& posting_key,
       const string& details,
       const string& url,
       const string& json
@@ -194,39 +195,14 @@ struct database_fixture {
 
    const account_object& account_create(
       const string& name,
-      const public_key_type& key,
-      const public_key_type& post_key
+      const public_key_type& owner_key,
+      const public_key_type& active_key,
+      const public_key_type& posting_key
    );
 
    const account_object& account_create(
       const string& name,
       const public_key_type& key
-   );
-
-   const account_object& profile_create(
-      const string& name,
-      const string& registrar,
-      const string& governance_account,
-      const private_key_type& registrar_key,
-      const share_type& fee,
-      const public_key_type& key,
-      const public_key_type& post_key,
-      const string& details,
-      const string& url,
-      const string& json
-   );
-
-   const account_object& business_create(
-      const string& name,
-      const string& registrar,
-      const string& governance_account,
-      const private_key_type& registrar_key,
-      const share_type& fee,
-      const public_key_type& key,
-      const public_key_type& post_key,
-      const string& details,
-      const string& url,
-      const string& json
    );
 
    const community_object& community_create(
@@ -277,15 +253,15 @@ struct database_fixture {
    
    void proxy( const string& account, const string& proxy );
 
-   const asset& get_liquid_balance( const string& account_name, const string& symbol )const;
+   asset get_liquid_balance( const string& account_name, const string& symbol )const;
 
-   const asset& get_staked_balance( const string& account_name, const string& symbol )const;
+   asset get_staked_balance( const string& account_name, const string& symbol )const;
 
-   const asset& get_savings_balance( const string& account_name, const string& symbol )const;
+   asset get_savings_balance( const string& account_name, const string& symbol )const;
 
-   const asset& get_reward_balance( const string& account_name, const string& symbol )const;
+   asset get_reward_balance( const string& account_name, const string& symbol )const;
 
-   const time_point& now()const;
+   time_point now()const;
 
    void sign( signed_transaction& trx, const fc::ecc::private_key& key );
 

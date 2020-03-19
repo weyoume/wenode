@@ -90,8 +90,6 @@ namespace node { namespace chain {
 
          time_point                      last_updated;              ///< Time that the asset details were last updated.
 
-         static bool is_valid_symbol( const string& symbol );       ///< True if symbol is a valid ticker symbol; false otherwise.
-
          bool is_market_issued()const                               ///< True if this is a market-issued asset; false otherwise. Market issued assets cannot be issued by the asset issuer.
          { 
             switch( asset_type )
@@ -481,17 +479,17 @@ namespace node { namespace chain {
             return share_type( volume.to_uint64());
          }
 
-         bool                                          has_settlement()const    ///< True if there has been a black swan
+         bool                      has_settlement()const    ///< True if there has been a black swan
          { 
             return !settlement_price.is_null();    
          }   
 
-         time_point                                    feed_expiration_time()const    ///< The time when current_feed would expire
+         time_point                feed_expiration_time()const    ///< The time when current_feed would expire
          {
             return current_feed_publication_time + feed_lifetime;   
          }
 
-         bool                                          feed_is_expired(time_point current_time)const
+         bool                      feed_is_expired(time_point current_time)const
          { 
             return feed_expiration_time() <= current_time; 
          }
@@ -503,7 +501,59 @@ namespace node { namespace chain {
           * current_maintenance_collateralization member variables.
           * @param current_time the current time to use in the calculations
           */
-         void update_median_feeds( time_point current_time );
+         void                       update_median_feeds( time_point current_time )
+         {
+            current_feed_publication_time = current_time;
+            vector<std::reference_wrapper<const price_feed>> current_feeds;
+
+            // find feeds that were alive at current_time
+            for( const pair<account_name_type, pair<time_point,price_feed>>& f : feeds )
+            {
+               if( (current_time - f.second.first).to_seconds() < feed_lifetime.to_seconds() &&
+                  f.second.first != time_point() )
+               {
+                  current_feeds.emplace_back(f.second.second);
+                  current_feed_publication_time = std::min(current_feed_publication_time, f.second.first);
+               }
+            }
+
+            // If there are no valid feeds, or the number available is less than the minimum to calculate a median...
+            if( current_feeds.size() < minimum_feeds )
+            {
+               //... don't calculate a median, and set a null feed
+               current_feed_publication_time = current_time;
+               current_feed = price_feed();
+               current_maintenance_collateralization = price();
+
+               return;
+            }
+            if( current_feeds.size() == 1 )
+            {
+               current_feed = current_feeds.front();
+               // Note: perhaps can defer updating current_maintenance_collateralization for better performance
+               current_maintenance_collateralization = current_feed.maintenance_collateralization();
+               return;
+            }
+
+            // *** Begin Median Calculations ***
+            price_feed median_feed;
+            const auto median_itr = current_feeds.begin() + current_feeds.size() / 2;
+            
+         #define CALCULATE_MEDIAN_VALUE(r, data, field_name) \
+            std::nth_element( current_feeds.begin(), median_itr, current_feeds.end(), \
+                              [](const price_feed& a, const price_feed& b) { \
+               return a.field_name < b.field_name; \
+            }); \
+            median_feed.field_name = median_itr->get().field_name;
+
+            BOOST_PP_SEQ_FOR_EACH( CALCULATE_MEDIAN_VALUE, ~, GRAPHENE_PRICE_FEED_FIELDS )
+         #undef CALCULATE_MEDIAN_VALUE
+            // *** End Median Calculations ***
+
+            current_feed = median_feed;
+            // Note: perhaps can defer updating current_maintenance_collateralization for better performance
+            current_maintenance_collateralization = current_feed.maintenance_collateralization();
+         }
    };
 
 

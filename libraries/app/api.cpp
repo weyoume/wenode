@@ -114,7 +114,7 @@ namespace node { namespace app {
        _applied_block_connection = connect_signal( _app.chain_database()->applied_block, *this, &network_broadcast_api::on_applied_block );
     }
 
-    bool network_broadcast_api::check_max_block_age( int32_t max_block_age )
+    bool network_broadcast_api::check_max_block_age( uint64_t max_block_age )
     {
        return _app.chain_database()->with_read_lock( [&]()
        {
@@ -129,7 +129,7 @@ namespace node { namespace app {
        });
     }
 
-    void network_broadcast_api::set_max_block_age( int32_t max_block_age )
+    void network_broadcast_api::set_max_block_age( uint64_t max_block_age )
     {
        _max_block_age = max_block_age;
     }

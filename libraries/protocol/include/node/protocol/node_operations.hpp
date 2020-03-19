@@ -256,7 +256,9 @@ namespace node { namespace protocol {
     * Contains a heirarchial structure of members, officers, and 
     * executives that can be used for managing an enterprise of multiple
     * accounts, and giving individuals delegated control over account
-    * transaction signatory authority. Able to issue additonal assets
+    * transaction signatory authority. 
+    * 
+    * Able to issue additonal assets
     * that distribute portions of incoming revenue.
     * Options for control structures that offer different 
     * authority dynamics, from most permissive to most restrictive.
@@ -266,6 +268,10 @@ namespace node { namespace protocol {
       account_name_type           signatory;
 
       account_name_type           account;                  ///< Name of the account to update.
+
+      account_name_type           governance_account;       ///< Name of the governance account that the business account is registered with.
+
+      account_name_type           init_ceo_account;         ///< Name of the account that should become the initial Chief Executive Officer.
 
       business_structure_type     business_type;            ///< The type of business account being created.
 
@@ -1341,7 +1347,9 @@ namespace node { namespace protocol {
 
       flat_map< account_name_type, uint16_t >           beneficiaries;       ///< Set of account names and percentages of budget value. Should not include the null account.
 
-      vector< pair < string, uint16_t > >               milestones;          ///< Ordered vector of release milestone descriptions and percentages of budget value.
+      vector< uint16_t >                                milestone_shares;    ///< Ordered vector of release milestone descriptions.
+
+      vector< string >                                  milestone_details;   ///< Ordered vector of release milestone percentages of budget value.
 
       optional< asset_symbol_type >                     investment;          ///< Symbol of the asset to be purchased with the funding if the proposal is investment type. 
 
@@ -2257,7 +2265,7 @@ namespace node { namespace protocol {
 
       string                           inventory_id;          ///< Inventory uuidv4 offering to bid on.
 
-      asset                            bid_price;             ///< Price offered per metric.
+      asset                            bid_price;             ///< Price offered per metric. Value must be in coin asset. 
 
       uint32_t                         requested;             ///< Maximum total metrics requested.
 
@@ -3428,9 +3436,6 @@ namespace node { namespace protocol {
    //==========================//
    //==== Asset Operations ====//
    //==========================//
-
-
-   bool is_valid_symbol( const string& symbol );
 
 
    /**
@@ -4689,7 +4694,8 @@ FC_REFLECT( node::protocol::create_community_enterprise_operation,
          (enterprise_id)
          (proposal_type)
          (beneficiaries)
-         (milestones)
+         (milestone_shares)
+         (milestone_details)
          (investment)
          (details)
          (url)

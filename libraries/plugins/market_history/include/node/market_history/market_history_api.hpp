@@ -74,8 +74,6 @@ struct candle_stick
    asset           sell_volume;
 };
 
-
-
 class market_history_api
 {
    public:
@@ -149,9 +147,9 @@ class market_history_api
 } } // node::market_history
 
 FC_REFLECT( node::market_history::market_ticker,
-         (latest)
-         (lowest_ask)
+         (last_price)
          (highest_bid)
+         (lowest_ask)
          (hour_percent_change)
          (day_percent_change)
          (week_percent_change)
@@ -182,6 +180,17 @@ FC_REFLECT( node::market_history::market_trade,
          (date)
          (current_pays)
          (open_pays)
+         );
+
+FC_REFLECT( node::market_history::candle_stick,
+         (open_time)
+         (period)
+         (high)
+         (low)
+         (open)
+         (close)
+         (buy_volume)
+         (sell_volume)
          );
 
 FC_API( node::market_history::market_history_api,

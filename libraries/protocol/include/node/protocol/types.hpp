@@ -1,4 +1,5 @@
 #pragma once
+
 #include <node/protocol/config.hpp>
 #include <node/protocol/fixed_string.hpp>
 
@@ -32,6 +33,7 @@ namespace node {
 
    using                                    fc::uint128_t;
    typedef boost::multiprecision::int128_t  int128_t;
+   typedef boost::multiprecision::int256_t  int256_t;
    typedef boost::multiprecision::uint256_t u256;
    typedef boost::multiprecision::uint512_t u512;
 
@@ -104,7 +106,7 @@ namespace node {
          CLOSED_PRIVATE_COMMUNITY       ///< Members can read and interact. Moderators can post. Cannot share posts or request to join. Admins can invite and accept.
       };
 
-      vector< string > community_privacy_values = 
+      const static vector< string > community_privacy_values = 
       {
          "open_public",
          "general_public",
@@ -126,7 +128,7 @@ namespace node {
          PRIVATE_BUSINESS   ///< CEO selects Executives, Executives can sign transactions, and invite members. Only members may hold equity assets.
       };
 
-      vector< string > business_structure_values = 
+      const static vector< string > business_structure_values = 
       {
          "open",
          "public",
@@ -144,7 +146,7 @@ namespace node {
          TOP_MEMBERSHIP        ///< Enterprise membership, enables governance account and interface account and pro application suite.
       };
 
-      vector< string > membership_tier_values =
+      const static vector< string > membership_tier_values =
       {
          "none",
          "standard",
@@ -162,7 +164,7 @@ namespace node {
          ADVOCACY      ///< Advocates the network to business partners, investors, and supports businesses using the protocol.  
       };
 
-      vector< string > network_officer_role_values =
+      const static vector< string > network_officer_role_values =
       {
          "development",
          "marketing",
@@ -186,7 +188,7 @@ namespace node {
          CHIEF_ADVOCACY_OFFICER      ///< Coordinates advocacy efforts and teams.
       };
 
-      vector< string > executive_role_values =
+      const static vector< string > executive_role_values =
       {
          "executive",
          "operating",
@@ -210,7 +212,7 @@ namespace node {
          INVESTMENT    ///< Funds are used to purchase a business account"s equity or credit asset, to be held by the community account.
       };
 
-      vector< string > proposal_distribution_values =
+      const static vector< string > proposal_distribution_values =
       {
          "funding",
          "competition",
@@ -229,7 +231,7 @@ namespace node {
          SECRET_AUCTION_SALE       ///< Product is for sale at the price of the second highest bidder to the highest bidder. Bids are secret using commit and reveal process. 
       };
 
-      vector< string > product_sale_values =
+      const static vector< string > product_sale_values =
       {
          "fixed_price",
          "wholesale_price",
@@ -256,7 +258,7 @@ namespace node {
          UNIQUE_ASSET            ///< Asset with a supply of one, contains metadata relating to the ownership of a unique non-fungible asset.
       };
 
-      vector< string > asset_property_values =
+      const static vector< string > asset_property_values =
       {
          "currency",
          "standard",
@@ -285,7 +287,7 @@ namespace node {
          ASSET_FORMAT          ///< An asset, objective is asset symbol.
       };
 
-      vector< string > ad_format_values =
+      const static vector< string > ad_format_values =
       {
          "standard",
          "premium",
@@ -314,7 +316,7 @@ namespace node {
          LIST_POST         ///< A post containing a list of at least 2 other posts, a title, and up to 1000 characters of description text
       };
 
-      vector< string > post_format_values =
+      const static vector< string > post_format_values =
       {
          "text",
          "image",
@@ -342,7 +344,7 @@ namespace node {
          PREMIUM_METRIC    ///< premium content purchases transaction ids required for delivery.
       };
 
-      vector< string > ad_metric_values =
+      const static vector< string > ad_metric_values =
       {
          "view",
          "vote",
@@ -364,7 +366,7 @@ namespace node {
          SECURE        ///< Fully Private setting, only the author can read.
       };
 
-      vector< string > connection_tier_values =
+      const static vector< string > connection_tier_values =
       {
          "public",
          "connection",
@@ -387,7 +389,7 @@ namespace node {
          TAG_FEED           ///< Feed from followed tags.
       };
 
-      vector< string > feed_reach_values =
+      const static vector< string > feed_reach_values =
       { 
          "none",
          "follow",
@@ -409,7 +411,7 @@ namespace node {
          TAG_BLOG           ///< Blog within a tag, includes all posts that use the tag, plus shared with the tag.
       };
 
-      vector< string > blog_reach_values =
+      const static vector< string > blog_reach_values =
       { 
          "account",
          "community",
@@ -428,7 +430,7 @@ namespace node {
          ELITE_TIME
       };
 
-      vector< string > sort_time_values = 
+      const static vector< string > sort_time_values = 
       {
          "active",
          "rapid",
@@ -455,7 +457,7 @@ namespace node {
          DISCOURSE_SORT
       };
 
-      vector< string > sort_option_values =
+      const static vector< string > sort_option_values =
       {
          "votes",
          "views",
@@ -483,7 +485,7 @@ namespace node {
          LAST_YEAR
       };
 
-      vector< string > post_time_values =
+      const static vector< string > post_time_values =
       {
          "all",
          "hour",
