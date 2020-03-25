@@ -21,6 +21,7 @@ namespace node { namespace chain {
          body(a), 
          ipfs( a.get_segment_manager() ), 
          magnet( a.get_segment_manager() ), 
+         url(a), 
          tags( a.get_segment_manager() ), 
          language(a), 
          parent_permlink(a), 
@@ -44,6 +45,8 @@ namespace node { namespace chain {
          shared_vector< shared_string >    ipfs;                                ///< String containing a display image or video file as an IPFS file hash.
 
          shared_vector< shared_string >    magnet;                              ///< String containing a bittorrent magnet link to a file swarm.
+
+         shared_string                     url;                                 ///< String containing a URL for the post to link to.
 
          post_format_type                  post_type;                           ///< The type of post that is being created, image, text, article, video etc. 
 
@@ -1148,6 +1151,7 @@ FC_REFLECT( node::chain::comment_object,
          (body)
          (ipfs)
          (magnet)
+         (url)
          (post_type)
          (public_key)
          (reach)

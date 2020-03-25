@@ -446,10 +446,10 @@ BOOST_AUTO_TEST_CASE( comment_payout_test )
       util::comment_reward_context ctx = db.get_comment_reward_context( rf );
 
       util::fill_comment_reward_context_local_state( ctx, alice_comment );
-      asset alice_reward = util::get_comment_reward( ctx );
+      asset alice_reward = db.get_comment_reward( ctx );
 
       util::fill_comment_reward_context_local_state( ctx, bob_comment );
-      asset bob_reward = util::get_comment_reward( ctx );
+      asset bob_reward = db.get_comment_reward( ctx );
 
       BOOST_REQUIRE( rf.content_reward_balance == reward - alice_reward );
 
@@ -461,10 +461,10 @@ BOOST_AUTO_TEST_CASE( comment_payout_test )
       ctx = db.get_comment_reward_context( rf );
 
       util::fill_comment_reward_context_local_state( ctx, alice_comment );
-      alice_reward = util::get_comment_reward( ctx );
+      alice_reward = db.get_comment_reward( ctx );
 
       util::fill_comment_reward_context_local_state( ctx, bob_comment );
-      bob_reward = util::get_comment_reward( ctx );
+      bob_reward = db.get_comment_reward( ctx );
 
       BOOST_REQUIRE( rf.content_reward_balance == reward - bob_reward );
 
@@ -529,10 +529,10 @@ BOOST_AUTO_TEST_CASE( comment_payout_test )
       ctx = db.get_comment_reward_context( rf );
 
       util::fill_comment_reward_context_local_state( ctx, candice_comment );
-      asset candice_reward = util::get_comment_reward( ctx );
+      asset candice_reward = db.get_comment_reward( ctx );
 
       util::fill_comment_reward_context_local_state( ctx, dan_comment );
-      asset dan_reward = util::get_comment_reward( ctx );
+      asset dan_reward = db.get_comment_reward( ctx );
    
       BOOST_REQUIRE( rf.content_reward_balance == reward - candice_reward - dan_reward );
 

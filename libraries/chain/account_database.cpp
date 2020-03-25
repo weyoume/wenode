@@ -103,7 +103,7 @@ void database::process_membership_updates()
          {
             modify( member, [&]( account_object& a )
             {
-               a.membership = NONE;
+               a.membership = membership_tier_type::NONE;
                a.membership_expiration = fc::time_point::maximum();
                a.recurring_membership = 0;
                a.membership_interface = NULL_ACCOUNT;
@@ -114,7 +114,7 @@ void database::process_membership_updates()
       {
          modify( member, [&]( account_object& a )
          {
-            a.membership = NONE;
+            a.membership = membership_tier_type::NONE;
             a.membership_expiration = fc::time_point::maximum();
             a.recurring_membership = 0;
             a.membership_interface = NULL_ACCOUNT;

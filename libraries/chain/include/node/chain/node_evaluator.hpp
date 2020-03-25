@@ -12,9 +12,9 @@ using namespace node::protocol;
 
 DEFINE_EVALUATOR( account_create )
 DEFINE_EVALUATOR( account_update )
-DEFINE_EVALUATOR( account_business )
 DEFINE_EVALUATOR( account_profile )
 DEFINE_EVALUATOR( account_verification )
+DEFINE_EVALUATOR( account_business )
 DEFINE_EVALUATOR( account_membership )
 DEFINE_EVALUATOR( account_vote_executive )
 DEFINE_EVALUATOR( account_vote_officer )

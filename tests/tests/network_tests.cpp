@@ -121,7 +121,7 @@ BOOST_AUTO_TEST_CASE( update_network_officer_operation_test )
 
       membership.signatory = "alice";
       membership.account = "alice";
-      membership.membership_type = membership_tier_type::STANDARD_MEMBERSHIP;
+      membership.membership_type = "standard";
       membership.months = 1;
       membership.interface = INIT_ACCOUNT;
       membership.validate();
@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE( update_network_officer_operation_test )
 
       officer.signatory = "alice";
       officer.account = "alice";
-      officer.officer_type = network_officer_role_type::DEVELOPMENT;
+      officer.officer_type = "development";
       officer.details = "details";
       officer.url = "www.url.com";
       officer.json = "{\"json\":\"valid\"}";
@@ -566,9 +566,9 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
 
       business_create.signatory = "execboard";
       business_create.account = "execboard";
-      business_create.business_type = business_structure_type::PUBLIC_BUSINESS;
+      business_create.business_type = "public";
       business_create.officer_vote_threshold = BLOCKCHAIN_PRECISION;
-      business_create.business_public_key = alice_public_posting_key;
+      business_create.business_public_key = string( alice_public_posting_key );
       business_create.governance_account = INIT_ACCOUNT;
       business_create.init_ceo_account = "alice";
       business_create.validate();
@@ -589,7 +589,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
 
       member.signatory = "alice";
       member.account = "alice";
-      member.membership_type = membership_tier_type::TOP_MEMBERSHIP;
+      member.membership_type = "top";
       member.months = 1;
       member.interface = INIT_ACCOUNT;
       member.validate();
@@ -645,7 +645,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
 
       officer.signatory = "bob";
       officer.account = "bob";
-      officer.officer_type = network_officer_role_type::DEVELOPMENT;
+      officer.officer_type = "development";
       officer.details = "details";
       officer.url = "www.url.com";
       officer.json = "{\"json\":\"valid\"}";
@@ -661,7 +661,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
 
       officer.signatory = "candice";
       officer.account = "candice";
-      officer.officer_type = network_officer_role_type::MARKETING;
+      officer.officer_type = "marketing";
 
       tx.operations.push_back( officer );
       tx.sign( candice_private_owner_key, db.get_chain_id() );
@@ -672,7 +672,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
 
       officer.signatory = "dan";
       officer.account = "dan";
-      officer.officer_type = network_officer_role_type::ADVOCACY;
+      officer.officer_type = "advocacy";
 
       tx.operations.push_back( officer );
       tx.sign( dan_private_owner_key, db.get_chain_id() );
@@ -723,7 +723,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       exec_vote.account = "alice";
       exec_vote.executive_account = "bob";
       exec_vote.business_account = "execboard";
-      exec_vote.role = CHIEF_DEVELOPMENT_OFFICER;
+      exec_vote.role = "development";
       exec_vote.vote_rank = 1;
 
       tx.operations.push_back( exec_vote );
@@ -734,7 +734,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       tx.signatures.clear();
 
       exec_vote.executive_account = "candice";
-      exec_vote.role = CHIEF_MARKETING_OFFICER;
+      exec_vote.role = "marketing";
       exec_vote.vote_rank = 1;
 
       tx.operations.push_back( exec_vote );
@@ -745,7 +745,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       tx.signatures.clear();
 
       exec_vote.executive_account = "dan";
-      exec_vote.role = CHIEF_ADVOCACY_OFFICER;
+      exec_vote.role = "advocacy";
       exec_vote.vote_rank = 1;
 
       tx.operations.push_back( exec_vote );
@@ -1432,7 +1432,7 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
 
       member.signatory = "govaccount";
       member.account = "govaccount";
-      member.membership_type = membership_tier_type::TOP_MEMBERSHIP;
+      member.membership_type = "top";
       member.months = 1;
       member.interface = INIT_ACCOUNT;
       member.validate();
@@ -1777,7 +1777,7 @@ BOOST_AUTO_TEST_CASE( update_interface_operation_test )
 
       member.signatory = "alice";
       member.account = "alice";
-      member.membership_type = membership_tier_type::TOP_MEMBERSHIP;
+      member.membership_type = "top";
       member.months = 1;
       member.validate();
 
@@ -1886,7 +1886,7 @@ BOOST_AUTO_TEST_CASE( update_mediator_operation_test )
 
       member.signatory = "alice";
       member.account = "alice";
-      member.membership_type = membership_tier_type::TOP_MEMBERSHIP;
+      member.membership_type = "top";
       member.months = 1;
       member.validate();
 
@@ -2041,7 +2041,7 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
       create.signatory = "alice";
       create.creator = "alice";
       create.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
-      create.proposal_type = proposal_distribution_type::FUNDING;
+      create.proposal_type = "funding";
       create.beneficiaries[ "alice" ] = PERCENT_100;
       create.milestone_details.push_back( "Begin proposal" );
       create.milestone_shares.push_back( 50*PERCENT_1 );

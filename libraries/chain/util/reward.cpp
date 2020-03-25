@@ -42,38 +42,6 @@ void fill_comment_reward_context_local_state( comment_reward_context& ctx, const
    ctx.max_reward = comment.max_accepted_payout;
 }
 
-asset get_comment_reward( const comment_reward_context& ctx )
-{ try {
-   FC_ASSERT( ctx.reward > 0 );
-   FC_ASSERT( ctx.recent_content_claims > 0 );
-
-   u256 rf(ctx.total_reward_fund.amount.value);
-   u256 total_claims = to256( ctx.recent_content_claims );
-
-   u256 claim = to256( evaluate_reward_curve( 
-      ctx.reward.value, 
-      ctx.cashouts_received, 
-      ctx.reward_curve, 
-      ctx.decay_rate, 
-      ctx.content_constant ) );
-
-   u256 payout_u256 = ( rf * claim ) / total_claims;
-
-   FC_ASSERT( payout_u256 <= u256( std::numeric_limits<int64_t>::max() ) );
-   share_type payout = static_cast< int64_t >( payout_u256 );
-
-   if( is_comment_payout_dust( ctx.current_COIN_USD_price, payout ) )
-   {
-      payout = 0;
-   }
-
-   asset max_reward = util::USD_to_asset( ctx.current_COIN_USD_price, ctx.max_reward );
-
-   payout = std::min( payout, share_type( max_reward.amount.value ) );
-
-   return asset( payout, ctx.total_reward_fund.symbol );
-} FC_CAPTURE_AND_RETHROW( (ctx) ) }
-
 
 /**
  * Determines the value of the comment's reward curve value, based on its

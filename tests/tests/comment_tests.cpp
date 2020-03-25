@@ -56,6 +56,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
       comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
       comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+      comment.url = "www.url.com";
       comment.community = INIT_COMMUNITY;
       comment.tags.push_back( "test" );
       comment.interface = INIT_ACCOUNT;
@@ -68,13 +69,14 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       comment_options options;
 
-      options.post_type = post_format_type::ARTICLE_POST;
-      options.reach = feed_reach_type::TAG_FEED;
+      options.post_type = "article";
+      options.reach = "tag";
       options.rating = 1;
       comment.options = options;
       comment.validate();
 
       signed_transaction tx;
+
       tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( comment );
    
@@ -378,8 +380,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_object& candice_comment = db.get_comment( "candice", string( "dolor" ) );
-
       BOOST_REQUIRE( candice_comment.author == comment.author );
       BOOST_REQUIRE( to_string( candice_comment.permlink ) == comment.permlink );
       BOOST_REQUIRE( candice_comment.parent_author == comment.parent_author );
@@ -425,8 +425,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure posting again within time limit" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: more than 100% weight on a single route" );
-
-      comment_options options;
 
       options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "bob" ), PERCENT_100 + 1 ) );
 
@@ -612,9 +610,9 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       BOOST_REQUIRE( candice_comment.cashouts_received == 1 );
 
-      asset alice_reward = db.get_reward_balance( "alice", SYMBOL_COIN );
-      asset bob_reward = db.get_reward_balance( "bob", SYMBOL_COIN );
-      asset candice_reward = db.get_reward_balance( "candice", SYMBOL_COIN );
+      alice_reward = db.get_reward_balance( "alice", SYMBOL_COIN );
+      bob_reward = db.get_reward_balance( "bob", SYMBOL_COIN );
+      candice_reward = db.get_reward_balance( "candice", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_reward.amount > 0 );
       BOOST_REQUIRE( bob_reward.amount > 0 );
@@ -640,8 +638,6 @@ BOOST_AUTO_TEST_CASE( message_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when no connection" );
 
-      const median_chain_property_object& median_props = db.get_median_chain_properties();
-
       ACTORS( (alice)(bob)(candice)(dan) );
 
       fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
@@ -665,6 +661,7 @@ BOOST_AUTO_TEST_CASE( message_operation_test )
       message.recipient = "bob";
       message.message = "Hello";
       message.uuid = "6a91e502-1e53-4531-a97a-379ac8a495ff";
+      message.validate();
 
       tx.operations.push_back( message );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
@@ -680,9 +677,10 @@ BOOST_AUTO_TEST_CASE( message_operation_test )
       request.signatory = "alice";
       request.account = "alice";
       request.requested_account = "bob";
-      request.connection_type = connection_tier_type::CONNECTION;
+      request.connection_type = "connection";
       request.message = "Hello";
       request.requested = true;
+      request.validate();
 
       tx.operations.push_back( request );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
@@ -696,10 +694,11 @@ BOOST_AUTO_TEST_CASE( message_operation_test )
       accept.signatory = "bob";
       accept.account = "bob";
       accept.requesting_account = "alice";
-      accept.connection_type = connection_tier_type::CONNECTION;
+      accept.connection_type = "connection";
       accept.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
       accept.encrypted_key = "#supersecretencryptedkeygoeshere";
       accept.connected = true;
+      accept.validate();
 
       tx.operations.push_back( accept );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
@@ -711,10 +710,11 @@ BOOST_AUTO_TEST_CASE( message_operation_test )
       accept.signatory = "alice";
       accept.account = "alice";
       accept.requesting_account = "bob";
-      accept.connection_type = connection_tier_type::CONNECTION;
+      accept.connection_type = "connection";
       accept.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
       accept.encrypted_key = "#supersecretencryptedkeygoeshere";
       accept.connected = true;
+      accept.validate();
 
       tx.operations.push_back( accept );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
@@ -728,10 +728,10 @@ BOOST_AUTO_TEST_CASE( message_operation_test )
       db.push_transaction( tx, 0 ); 
 
       const auto& message_idx = db.get_index< message_index >().indices().get< by_sender_uuid >();
-      auto message_itr = message_idx.find( std::make_tuple( "alice", "6a91e502-1e53-4531-a97a-379ac8a495ff" ) );
+      auto message_itr = message_idx.find( std::make_tuple( "alice", string( "6a91e502-1e53-4531-a97a-379ac8a495ff" ) ) );
 
       BOOST_REQUIRE( message_itr != message_idx.end() );
-      BOOST_REQUIRE( message_itr->message == message.message );
+      BOOST_REQUIRE( to_string( message_itr->message ) == message.message );
       BOOST_REQUIRE( message_itr->created == now() );
       
       validate_database();
@@ -781,6 +781,7 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
       comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
       comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
       comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+      comment.url = "www.url.com";
       comment.community = INIT_COMMUNITY;
       comment.tags.push_back( "test" );
       comment.interface = INIT_ACCOUNT;
@@ -793,8 +794,8 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
 
       comment_options options;
 
-      options.post_type = post_format_type::ARTICLE_POST;
-      options.reach = feed_reach_type::TAG_FEED;
+      options.post_type = "article";
+      options.reach = "tag";
       options.rating = 1;
       comment.options = options;
       comment.validate();
@@ -912,7 +913,7 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto candice_vote_itr = vote_idx.find( std::make_tuple( alice_comment.id, "candice" ) );
+      candice_vote_itr = vote_idx.find( std::make_tuple( alice_comment.id, "candice" ) );
 
       BOOST_REQUIRE( candice_vote_itr->last_updated == now() );
       BOOST_REQUIRE( candice_vote_itr->vote_percent == vote.weight );
@@ -935,7 +936,7 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
 
       db.push_transaction( tx, 0 );
 
-      auto candice_vote_itr = vote_idx.find( std::make_tuple( alice_comment.id, "candice" ) );
+      candice_vote_itr = vote_idx.find( std::make_tuple( alice_comment.id, "candice" ) );
 
       BOOST_REQUIRE( candice_vote_itr->last_updated == now() );
       BOOST_REQUIRE( candice_vote_itr->vote_percent == vote.weight );
@@ -988,6 +989,7 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
       comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
       comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
       comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+      comment.url = "www.url.com";
       comment.community = INIT_COMMUNITY;
       comment.tags.push_back( "test" );
       comment.interface = INIT_ACCOUNT;
@@ -1000,8 +1002,8 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
 
       comment_options options;
 
-      options.post_type = post_format_type::ARTICLE_POST;
-      options.reach = feed_reach_type::TAG_FEED;
+      options.post_type = "article";
+      options.reach = "tag";
       options.rating = 1;
       comment.options = options;
       comment.validate();
@@ -1076,7 +1078,7 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto bob_view_itr = view_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
+      bob_view_itr = view_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
 
       BOOST_REQUIRE( bob_view_itr == view_idx.end() );
       
@@ -1127,6 +1129,7 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
       comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
       comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
       comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+      comment.url = "www.url.com";
       comment.community = INIT_COMMUNITY;
       comment.tags.push_back( "test" );
       comment.interface = INIT_ACCOUNT;
@@ -1139,8 +1142,8 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
 
       comment_options options;
 
-      options.post_type = post_format_type::ARTICLE_POST;
-      options.reach = feed_reach_type::TAG_FEED;
+      options.post_type = "article";
+      options.reach = "tag";
       options.rating = 1;
       comment.options = options;
       comment.validate();
@@ -1159,7 +1162,7 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
       share.sharer = "bob";
       share.author = "alice";
       share.permlink = "supercalafragilisticexpealadocious";    // Permlink does not exist
-      share.reach = feed_reach_type::FOLLOW_FEED;
+      share.reach = "follow";
       share.interface = INIT_ACCOUNT;
 
       tx.operations.push_back( share );
@@ -1214,7 +1217,7 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto bob_share_itr = share_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
+      bob_share_itr = share_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
 
       BOOST_REQUIRE( bob_share_itr == share_idx.end() );
       
@@ -1235,8 +1238,6 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       BOOST_TEST_MESSAGE( "├── Passed: MODERATION TAG OPERATION" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when moderating a non-existent comment" );
-
-      const median_chain_property_object& median_props = db.get_median_chain_properties();
 
       ACTORS( (alice)(bob)(candice)(dan) );
 
@@ -1263,6 +1264,7 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
       comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
       comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+      comment.url = "www.url.com";
       comment.community = INIT_COMMUNITY;
       comment.tags.push_back( "test" );
       comment.interface = INIT_ACCOUNT;
@@ -1275,8 +1277,8 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
 
       comment_options options;
 
-      options.post_type = post_format_type::ARTICLE_POST;
-      options.reach = feed_reach_type::TAG_FEED;
+      options.post_type = "article";
+      options.reach = "tag";
       options.rating = 1;
       comment.options = options;
       comment.validate();
@@ -1334,7 +1336,7 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
 
       mem.signatory = "bob";
       mem.account = "bob";
-      mem.membership_type = membership_tier_type::TOP_MEMBERSHIP;
+      mem.membership_type = "top";
       mem.months = 1;
       mem.interface = INIT_ACCOUNT;
       mem.validate();
@@ -1380,7 +1382,7 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       auto tag_itr = tag_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
 
       BOOST_REQUIRE( tag_itr != tag_idx.end() );
-      BOOST_REQUIRE( tag_itr->details == tag.details );
+      BOOST_REQUIRE( to_string( tag_itr->details ) == tag.details );
       BOOST_REQUIRE( tag_itr->tags[0] == tag.tags[0] );
       BOOST_REQUIRE( tag_itr->filter == tag.filter );
       BOOST_REQUIRE( tag_itr->created == now() );
@@ -1402,7 +1404,7 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto tag_itr = tag_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
+      tag_itr = tag_idx.find( std::make_tuple( alice_comment.id, "bob" ) );
 
       BOOST_REQUIRE( tag_itr == tag_idx.end() );
       
@@ -1414,6 +1416,5 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
    }
    FC_LOG_AND_RETHROW()
 }
-
 
 BOOST_AUTO_TEST_SUITE_END()

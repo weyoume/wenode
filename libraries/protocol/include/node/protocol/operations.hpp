@@ -16,9 +16,9 @@ namespace node { namespace protocol {
 
             account_create_operation,
             account_update_operation,
-            account_business_operation,
             account_profile_operation,
             account_verification_operation,
+            account_business_operation,
             account_membership_operation,
             account_vote_executive_operation,
             account_vote_officer_operation,

@@ -2605,19 +2605,7 @@ annotated_signed_transaction      wallet_api::account_membership(
 
    op.signatory = signatory;
    op.account = account;
-
-   membership_tier_type mem_tier = membership_tier_type::STANDARD_MEMBERSHIP;
-
-   for( size_t i = 0; i < membership_tier_values.size(); i++ )
-   {
-      if( membership_type == membership_tier_values[ i ] )
-      {
-         mem_tier = membership_tier_type( i );
-         break;
-      }
-   }
-
-   op.membership_type = mem_tier;
+   op.membership_type = membership_type;
    op.months = months;
    op.interface = interface;
    op.recurring = recurring;
@@ -2649,19 +2637,7 @@ annotated_signed_transaction      wallet_api::account_vote_executive(
    op.account = account;
    op.business_account = business_account;
    op.executive_account = executive_account;
-
-   executive_role_type exec_role = executive_role_type::CHIEF_EXECUTIVE_OFFICER;
-
-   for( size_t i = 0; i < executive_role_values.size(); i++ )
-   {
-      if( executive_account == executive_role_values[ i ] )
-      {
-         exec_role = executive_role_type( i );
-         break;
-      }
-   }
-
-   op.role = exec_role;
+   op.role = role;
    op.vote_rank = vote_rank;
    op.approved = approved;
   
@@ -3073,19 +3049,7 @@ annotated_signed_transaction      wallet_api::connection_request(
    op.signatory = signatory;
    op.account = account;
    op.requested_account = requested_account;
-
-   connection_tier_type connection_tier = connection_tier_type::CONNECTION;
-
-   for( size_t i = 0; i < connection_tier_values.size(); i++ )
-   {
-      if( connection_type == connection_tier_values[ i ] )
-      {
-         connection_tier = connection_tier_type( i );
-         break;
-      }
-   }
-
-   op.connection_type = connection_tier;
+   op.connection_type = connection_type;
    op.message = message;
    op.requested = requested;
 
@@ -3115,19 +3079,7 @@ annotated_signed_transaction      wallet_api::connection_accept(
    op.account = account;
    op.requesting_account = requesting_account;
    op.connection_id = connection_id;
-
-   connection_tier_type connection_tier = connection_tier_type::CONNECTION;
-
-   for( size_t i = 0; i < connection_tier_values.size(); i++ )
-   {
-      if( connection_type == connection_tier_values[ i ] )
-      {
-         connection_tier = connection_tier_type( i );
-         break;
-      }
-   }
-
-   op.connection_type = connection_tier;
+   op.connection_type = connection_type;
    op.encrypted_key = encrypted_key;
    op.connected = connected;
 
@@ -3246,19 +3198,7 @@ annotated_signed_transaction      wallet_api::update_network_officer(
 
    op.signatory = signatory;
    op.account = account;
-
-   network_officer_role_type role_type = network_officer_role_type::DEVELOPMENT;
-
-   for( size_t i = 0; i < network_officer_role_values.size(); i++ )
-   {
-      if( officer_type == network_officer_role_values[ i ] )
-      {
-         role_type = network_officer_role_type( i );
-         break;
-      }
-   }
-
-   op.officer_type = role_type;
+   op.officer_type = officer_type;
    op.details = details;
    op.url = url;
    op.json = json;
@@ -3529,19 +3469,7 @@ annotated_signed_transaction      wallet_api::create_community_enterprise(
    op.signatory = signatory;
    op.creator = creator;
    op.enterprise_id = enterprise_id;
-
-   proposal_distribution_type prop_type = proposal_distribution_type::FUNDING;
-
-   for( size_t i = 0; i < proposal_distribution_values.size(); i++ )
-   {
-      if( proposal_type == proposal_distribution_values[ i ] )
-      {
-         prop_type = proposal_distribution_type( i );
-         break;
-      }
-   }
-
-   op.proposal_type = prop_type;
+   op.proposal_type = proposal_type;
 
    for( auto b : beneficiaries )
    {
@@ -3639,6 +3567,7 @@ annotated_signed_transaction      wallet_api::comment(
    string body,
    vector< string > ipfs,
    vector< string > magnet,
+   string url,
    string language,
    string community,
    string public_key,
@@ -3675,6 +3604,7 @@ annotated_signed_transaction      wallet_api::comment(
 
    op.ipfs = ipfs;
    op.magnet = magnet;
+   op.url = url;
    op.language = language;
    op.community = community;
    op.public_key = public_key;
@@ -3818,19 +3748,7 @@ annotated_signed_transaction      wallet_api::share(
    op.sharer = sharer;
    op.author = author;
    op.permlink = permlink;
-
-   feed_reach_type reach_type = feed_reach_type::FOLLOW_FEED;
-
-   for( size_t i = 0; i < feed_reach_values.size(); i++ )
-   {
-      if( reach == feed_reach_values[ i ] )
-      {
-         reach_type = feed_reach_type( i );
-         break;
-      }
-   }
-
-   op.reach = reach_type;
+   op.reach = reach;
    op.interface = interface;
    op.community = community;
    op.tag = tag;
@@ -3895,9 +3813,9 @@ annotated_signed_transaction      wallet_api::moderation_tag(
 
 
 
-      //============================//
+      //================================//
       // === Community Transactions === //
-      //============================//
+      //================================//
 
 
 
@@ -3920,19 +3838,7 @@ annotated_signed_transaction      wallet_api::community_create(
    op.signatory = signatory;
    op.founder = founder;
    op.name = name;
-
-   community_privacy_type privacy_type = community_privacy_type::OPEN_PUBLIC_COMMUNITY;
-
-   for( size_t i = 0; i < community_privacy_values.size(); i++ )
-   {
-      if( community_privacy == community_privacy_values[ i ] )
-      {
-         privacy_type = community_privacy_type( i );
-         break;
-      }
-   }
-
-   op.community_privacy = privacy_type;
+   op.community_privacy = community_privacy;
    op.community_public_key = community_public_key;
    op.json = json;
    op.json_private = json_private;
@@ -4302,19 +4208,7 @@ annotated_signed_transaction      wallet_api::ad_creative(
    op.creative_id = creative_id;
    op.creative = creative;
    op.json = json;
-
-   ad_format_type ad_format = ad_format_type::STANDARD_FORMAT;
-
-   for( size_t i = 0; i < ad_format_values.size(); i++ )
-   {
-      if( format_type == ad_format_values[ i ] )
-      {
-         ad_format = ad_format_type( i );
-         break;
-      }
-   }
-
-   op.format_type = ad_format;
+   op.format_type = format_type;
    op.active = active;
 
    signed_transaction tx;
@@ -4395,19 +4289,7 @@ annotated_signed_transaction      wallet_api::ad_inventory(
    op.provider = provider;
    op.inventory_id = inventory_id;
    op.audience_id = audience_id;
-   
-   ad_metric_type ad_metric = ad_metric_type::VIEW_METRIC;
-
-   for( size_t i = 0; i < ad_metric_values.size(); i++ )
-   {
-      if( metric == ad_metric_values[ i ] )
-      {
-         ad_metric = ad_metric_type( i );
-         break;
-      }
-   }
-
-   op.metric = ad_metric;
+   op.metric = metric;
    op.json = json;
    op.active = active;
 
@@ -5423,19 +5305,7 @@ annotated_signed_transaction      wallet_api::asset_create(
    op.signatory = signatory;
    op.issuer = issuer;
    op.symbol = symbol;
-
-   asset_property_type asset_property = asset_property_type::STANDARD_ASSET;
-
-   for( size_t i = 0; i < asset_property_values.size(); i++ )
-   {
-      if( asset_type == asset_property_values[ i ] )
-      {
-         asset_property = asset_property_type( i );
-         break;
-      }
-   }
-   
-   op.asset_type = asset_property;
+   op.asset_type = asset_type;
    op.coin_liquidity = coin_liquidity;
    op.usd_liquidity = usd_liquidity;
    op.credit_liquidity = credit_liquidity;

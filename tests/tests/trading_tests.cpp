@@ -2,7 +2,7 @@
 #include <node/protocol/exceptions.hpp>
 #include <node/chain/database.hpp>
 #include <node/chain/database_exceptions.hpp>
-#include <node/chain/util/reward.hpp
+#include <node/chain/util/reward.hpp>
 #include <fc/crypto/digest.hpp>
 #include "../common/database_fixture.hpp"
 
@@ -32,8 +32,6 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
       BOOST_TEST_MESSAGE( "├── Testing: LIMIT ORDER" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: creation of limit order" );
-
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
 
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
@@ -80,7 +78,7 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const limit_order_object& alice_order = db.get_limit_order( "alice", "db35cabd-2aee-41b1-84ab-7372c4b6f8e5" );
+      const limit_order_object& alice_order = db.get_limit_order( "alice", string( "db35cabd-2aee-41b1-84ab-7372c4b6f8e5" ) );
 
       BOOST_REQUIRE( alice_order.seller == limit.owner );
       BOOST_REQUIRE( alice_order.for_sale == limit.amount_to_sell.amount );
@@ -164,7 +162,7 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const limit_order_object& bob_order = db.get_limit_order( "bob", "10f11157-9460-4505-b346-28e5b9ed77ed" );
+      const limit_order_object& bob_order = db.get_limit_order( "bob", string( "10f11157-9460-4505-b346-28e5b9ed77ed" ) );
 
       BOOST_REQUIRE( bob_order.seller == limit.owner );
       BOOST_REQUIRE( bob_order.sell_price == limit.exchange_rate );
@@ -174,7 +172,7 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
       BOOST_REQUIRE( bob_order.amount_to_receive() == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       const auto& limit_idx = db.get_index< limit_order_index >().indices().get< by_account >();
-      auto limit_itr = limit_idx.find( std::make_tuple( "alice", "db35cabd-2aee-41b1-84ab-7372c4b6f8e5" ) );
+      auto limit_itr = limit_idx.find( std::make_tuple( "alice", string( "db35cabd-2aee-41b1-84ab-7372c4b6f8e5" ) ) );
 
       BOOST_REQUIRE( limit_itr == limit_idx.end() );
       
@@ -201,8 +199,7 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const auto& limit_idx = db.get_index< limit_order_index >().indices().get< by_account >();
-      auto limit_itr = limit_idx.find( std::make_tuple( "candice", "ad3cf087-bf74-41d8-9ff5-6e302fff2446" ) );
+      limit_itr = limit_idx.find( std::make_tuple( "candice", string( "ad3cf087-bf74-41d8-9ff5-6e302fff2446" ) ) );
 
       BOOST_REQUIRE( limit_itr == limit_idx.end() );
 
@@ -224,8 +221,6 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
       BOOST_TEST_MESSAGE( "├── Testing: MARGIN ORDER" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Creation sequence of margin order" );
-
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
 
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
@@ -383,7 +378,7 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const margin_order_object& alice_order = db.get_margin_order( "alice", "db35cabd-2aee-41b1-84ab-7372c4b6f8e5" );
+      const margin_order_object& alice_order = db.get_margin_order( "alice", string( "db35cabd-2aee-41b1-84ab-7372c4b6f8e5" ) );
 
       BOOST_REQUIRE( alice_order.owner == margin.owner );
       BOOST_REQUIRE( alice_order.collateral == margin.collateral );
@@ -463,7 +458,7 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const margin_order_object& bob_order = db.get_margin_order( "bob", "10f11157-9460-4505-b346-28e5b9ed77ed" );
+      const margin_order_object& bob_order = db.get_margin_order( "bob", string( "10f11157-9460-4505-b346-28e5b9ed77ed" ) );
 
       BOOST_REQUIRE( bob_order.owner == margin.owner );
       BOOST_REQUIRE( bob_order.collateral == margin.collateral );
@@ -480,8 +475,6 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
       BOOST_REQUIRE( bob_order.created == now() );
       BOOST_REQUIRE( !bob_order.filled() );
 
-      const margin_order_object& alice_order = db.get_margin_order( "alice", "db35cabd-2aee-41b1-84ab-7372c4b6f8e5" );
-
       BOOST_REQUIRE( alice_order.debt == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       BOOST_REQUIRE( alice_order.debt_balance.amount == 0 );
       BOOST_REQUIRE( alice_order.collateral == margin.collateral );
@@ -496,9 +489,6 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
       const credit_collateral_object& bob_collateral = db.get_collateral( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( bob_collateral.collateral == asset( 40000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
-      const credit_collateral_object& alice_collateral = db.get_collateral( "alice", SYMBOL_COIN );
-
       BOOST_REQUIRE( alice_collateral.collateral == asset( 40000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       
       validate_database();
@@ -518,8 +508,6 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
       tx.operations.push_back( margin );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
-
-      const margin_order_object& alice_order = db.get_margin_order( "alice", "db35cabd-2aee-41b1-84ab-7372c4b6f8e5" );
 
       BOOST_REQUIRE( alice_order.debt == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       BOOST_REQUIRE( alice_order.debt_balance.amount == 0 );
@@ -549,7 +537,7 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const margin_order_object& candice_order = db.get_margin_order( "candice", "60790f19-2046-4b7e-98ef-bab36153a945" );
+      const margin_order_object& candice_order = db.get_margin_order( "candice", string( "60790f19-2046-4b7e-98ef-bab36153a945" ) );
 
       BOOST_REQUIRE( candice_order.debt == asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       BOOST_REQUIRE( candice_order.position == candice_order.debt * candice_order.sell_price );
@@ -559,11 +547,11 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
       BOOST_REQUIRE( candice_order.filled() );   // Filled from liquidity pool 
 
       const auto& margin_idx = db.get_index< margin_order_index >().indices().get< by_account >();
-      auto margin_itr = margin_idx.find( std::make_tuple( "alice", "db35cabd-2aee-41b1-84ab-7372c4b6f8e5" ) );
+      auto margin_itr = margin_idx.find( std::make_tuple( "alice", string( "db35cabd-2aee-41b1-84ab-7372c4b6f8e5" ) ) );
 
       BOOST_REQUIRE( margin_itr == margin_idx.end() );
 
-      auto margin_itr = margin_idx.find( std::make_tuple( "bob", "10f11157-9460-4505-b346-28e5b9ed77ed" ) );
+      margin_itr = margin_idx.find( std::make_tuple( "bob", string( "10f11157-9460-4505-b346-28e5b9ed77ed" ) ) );
 
       BOOST_REQUIRE( margin_itr == margin_idx.end() );
 
@@ -585,7 +573,7 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto margin_itr = margin_idx.find( std::make_tuple( "candice", "60790f19-2046-4b7e-98ef-bab36153a945" ) );
+      margin_itr = margin_idx.find( std::make_tuple( "candice", string( "60790f19-2046-4b7e-98ef-bab36153a945" ) ) );
 
       BOOST_REQUIRE( margin_itr == margin_idx.end() );
       
@@ -607,8 +595,6 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
       BOOST_TEST_MESSAGE( "├── Testing: CALL ORDER" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: creation of call order" );
-
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
 
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
@@ -716,8 +702,6 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      const call_order_object& alice_order = db.get_call_order( "alice", SYMBOL_USD );
 
       BOOST_REQUIRE( alice_order.borrower == call.owner );
       BOOST_REQUIRE( alice_order.collateral == call.collateral );
@@ -836,7 +820,7 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const limit_order_object& bob_order = db.get_limit_order( "bob", "94b21fb9-5053-4a4d-ba96-b78d312dc054" );
+      const limit_order_object& bob_order = db.get_limit_order( "bob", string( "94b21fb9-5053-4a4d-ba96-b78d312dc054" ) );
 
       BOOST_REQUIRE( bob_order.seller == limit.owner );
       BOOST_REQUIRE( bob_order.sell_price == limit.exchange_rate );
@@ -905,8 +889,6 @@ BOOST_AUTO_TEST_CASE( bid_collateral_operation_test )
       BOOST_TEST_MESSAGE( "├── Testing: BID COLLATERAL" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: creation of collateral bid after black swan event" );
-
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
 
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
@@ -1211,8 +1193,6 @@ BOOST_AUTO_TEST_CASE( bid_collateral_operation_test )
       tx.operations.push_back( feed );
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( !bitasset.current_feed.settlement_price.is_valid() );  // Requires price feed before revival
 
       generate_block();
 

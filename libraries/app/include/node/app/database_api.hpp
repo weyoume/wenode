@@ -480,7 +480,6 @@ class database_api
       void                                on_api_startup();
 
    private:
-      void set_url( discussion& d )const;
       discussion get_discussion( comment_id_type id, uint32_t truncate_body )const;
 
       static bool filter_default( const comment_api_obj& c ) { return false; }

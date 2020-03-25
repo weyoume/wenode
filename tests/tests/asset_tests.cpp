@@ -33,8 +33,6 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Create standard asset" );
 
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
-
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme) );
 
       fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -94,7 +92,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.signatory = "alice";
       asset_create.issuer = "alice";
       asset_create.symbol = "ALICECOIN";
-      asset_create.asset_type = asset_property_type::STANDARD_ASSET;
+      asset_create.asset_type = "standard";
       asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "ALICECOIN" );
@@ -156,15 +154,13 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const asset_object& alice_asset = db.get_asset( "ALICECOIN" );
-
       BOOST_REQUIRE( alice_asset.issuer == asset_create.issuer );
       BOOST_REQUIRE( alice_asset.symbol == asset_create.symbol );
       BOOST_REQUIRE( alice_asset.asset_type == asset_create.asset_type );
-      BOOST_REQUIRE( alice_asset.options.display_symbol == asset_update.new_options.display_symbol );
-      BOOST_REQUIRE( alice_asset.options.details == asset_update.new_options.details );
-      BOOST_REQUIRE( alice_asset.options.json == asset_update.new_options.json );
-      BOOST_REQUIRE( alice_asset.options.url == asset_update.new_options.url );
+      BOOST_REQUIRE( to_string( alice_asset.display_symbol ) == asset_update.new_options.display_symbol );
+      BOOST_REQUIRE( to_string( alice_asset.details ) == asset_update.new_options.details );
+      BOOST_REQUIRE( to_string( alice_asset.json ) == asset_update.new_options.json );
+      BOOST_REQUIRE( to_string( alice_asset.url ) == asset_update.new_options.url );
       BOOST_REQUIRE( alice_asset.last_updated == now() );
 
       validate_database();
@@ -176,7 +172,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.signatory = "bob";
       asset_create.issuer = "bob";
       asset_create.symbol = "BOBCOIN";
-      asset_create.asset_type = CURRENCY_ASSET;
+      asset_create.asset_type = "currency";
       asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "BOBCOIN" );
@@ -218,8 +214,6 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       BOOST_TEST_MESSAGE( "│   ├── Passed: Create currency asset" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when attempting to update currency asset" );
-
-      asset_update_operation asset_update;
 
       asset_update.signatory = "bob";
       asset_update.issuer = "bob";
@@ -274,12 +268,10 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const account_object& tropico = db.get_account( "tropico" );
-
       asset_create.signatory = "tropico";
       asset_create.issuer = "tropico";
       asset_create.symbol = "TROPICO";
-      asset_create.asset_type = asset_property_type::EQUITY_ASSET;
+      asset_create.asset_type = "equity";
       asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "TROPICO" );
@@ -307,7 +299,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       const asset_equity_data_object& candice_equity = db.get_equity_data( "TROPICO" );
 
       BOOST_REQUIRE( candice_equity.business_account == asset_create.issuer );
-      BOOST_REQUIRE( candice_equity.dividend_pool.amount == 0 );
+      BOOST_REQUIRE( candice_equity.dividend_pool[ SYMBOL_COIN ].amount == 0 );
 
       const asset_credit_pool_object& candice_credit_pool = db.get_credit_pool( "TROPICO", false );
 
@@ -338,8 +330,6 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_update.new_options.liquid_dividend_percent = 20 * PERCENT_1;
       asset_update.new_options.savings_dividend_percent = 20 * PERCENT_1;
       asset_update.new_options.staked_dividend_percent = 60 * PERCENT_1;
-
-      
       asset_update.validate();
 
       tx.operations.push_back( asset_update );
@@ -349,31 +339,25 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const asset_object& candice_asset = db.get_asset( "TROPICO" );
-
       BOOST_REQUIRE( candice_asset.issuer == asset_create.issuer );
       BOOST_REQUIRE( candice_asset.symbol == asset_create.symbol );
       BOOST_REQUIRE( candice_asset.asset_type == asset_create.asset_type );
-      BOOST_REQUIRE( candice_asset.options.display_symbol == asset_update.new_options.display_symbol );
-      BOOST_REQUIRE( candice_asset.options.details == asset_update.new_options.details );
-      BOOST_REQUIRE( candice_asset.options.json == asset_update.new_options.json );
-      BOOST_REQUIRE( candice_asset.options.url == asset_update.new_options.url );
+      BOOST_REQUIRE( to_string( candice_asset.display_symbol ) == asset_update.new_options.display_symbol );
+      BOOST_REQUIRE( to_string( candice_asset.details ) == asset_update.new_options.details );
+      BOOST_REQUIRE( to_string( candice_asset.json ) == asset_update.new_options.json );
+      BOOST_REQUIRE( to_string( candice_asset.url ) == asset_update.new_options.url );
       BOOST_REQUIRE( candice_asset.last_updated == now() );
 
-      const asset_equity_data_object& candice_equity = db.get_equity_data( "TROPICO" );
-
-      BOOST_REQUIRE( candice_equity.options.dividend_share_percent == asset_update.new_options.dividend_share_percent );
-      BOOST_REQUIRE( candice_equity.options.liquid_dividend_percent == asset_update.new_options.liquid_dividend_percent );
-      BOOST_REQUIRE( candice_equity.options.savings_dividend_percent == asset_update.new_options.savings_dividend_percent );
-      BOOST_REQUIRE( candice_equity.options.staked_dividend_percent == asset_update.new_options.staked_dividend_percent );
+      BOOST_REQUIRE( candice_equity.dividend_share_percent == asset_update.new_options.dividend_share_percent );
+      BOOST_REQUIRE( candice_equity.liquid_dividend_percent == asset_update.new_options.liquid_dividend_percent );
+      BOOST_REQUIRE( candice_equity.savings_dividend_percent == asset_update.new_options.savings_dividend_percent );
+      BOOST_REQUIRE( candice_equity.staked_dividend_percent == asset_update.new_options.staked_dividend_percent );
 
       validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Update equity asset" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Create credit asset" );
-
-      account_create_operation account_create;
 
       account_create.signatory = "dan";
       account_create.registrar = "dan";
@@ -404,12 +388,10 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const account_object& blocktwo = db.get_account( "blocktwo" );
-
       asset_create.signatory = "blocktwo";
       asset_create.issuer = "blocktwo";
       asset_create.symbol = "BLOCKTWO";
-      asset_create.asset_type = asset_property_type::CREDIT_ASSET;
+      asset_create.asset_type = "credit";
       asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "BLOCKTWO" );
@@ -465,7 +447,6 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_update.new_options.details = "New Details";
       asset_update.new_options.json = "{\"json\":\"supervalid\"}";
       asset_update.new_options.url = "www.newurl.com";
-
       asset_update.new_options.buyback_share_percent = 10 * PERCENT_1;
       asset_update.new_options.liquid_fixed_interest_rate = 2 * PERCENT_1;
       asset_update.new_options.liquid_variable_interest_rate = 3 * PERCENT_1;
@@ -474,8 +455,6 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_update.new_options.savings_fixed_interest_rate = 2 * PERCENT_1;
       asset_update.new_options.savings_variable_interest_rate = 3 * PERCENT_1;
       asset_update.new_options.var_interest_range = 30 * PERCENT_1;
-
-   
       asset_update.validate();
 
       tx.operations.push_back( asset_update );
@@ -485,27 +464,23 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const asset_object& dan_asset = db.get_asset( "BLOCKTWO" );
-
       BOOST_REQUIRE( dan_asset.issuer == asset_create.issuer );
       BOOST_REQUIRE( dan_asset.symbol == asset_create.symbol );
       BOOST_REQUIRE( dan_asset.asset_type == asset_create.asset_type );
-      BOOST_REQUIRE( dan_asset.options.display_symbol == asset_update.new_options.display_symbol );
-      BOOST_REQUIRE( dan_asset.options.details == asset_update.new_options.details );
-      BOOST_REQUIRE( dan_asset.options.json == asset_update.new_options.json );
-      BOOST_REQUIRE( dan_asset.options.url == asset_update.new_options.url );
+      BOOST_REQUIRE( to_string( dan_asset.display_symbol ) == asset_update.new_options.display_symbol );
+      BOOST_REQUIRE( to_string( dan_asset.details ) == asset_update.new_options.details );
+      BOOST_REQUIRE( to_string( dan_asset.json ) == asset_update.new_options.json );
+      BOOST_REQUIRE( to_string( dan_asset.url ) == asset_update.new_options.url );
       BOOST_REQUIRE( dan_asset.last_updated == now() );
 
-      const asset_credit_data_object& dan_credit = db.get_credit_data( "BLOCKTWO" );
-
-      BOOST_REQUIRE( dan_credit.options.buyback_share_percent == asset_update.new_options.buyback_share_percent );
-      BOOST_REQUIRE( dan_credit.options.liquid_fixed_interest_rate == asset_update.new_options.liquid_fixed_interest_rate );
-      BOOST_REQUIRE( dan_credit.options.liquid_variable_interest_rate == asset_update.new_options.liquid_variable_interest_rate );
-      BOOST_REQUIRE( dan_credit.options.staked_fixed_interest_rate == asset_update.new_options.staked_fixed_interest_rate );
-      BOOST_REQUIRE( dan_credit.options.staked_variable_interest_rate == asset_update.new_options.staked_variable_interest_rate );
-      BOOST_REQUIRE( dan_credit.options.savings_fixed_interest_rate == asset_update.new_options.savings_fixed_interest_rate );
-      BOOST_REQUIRE( dan_credit.options.savings_variable_interest_rate == asset_update.new_options.savings_variable_interest_rate );
-      BOOST_REQUIRE( dan_credit.options.var_interest_range == asset_update.new_options.var_interest_range );
+      BOOST_REQUIRE( dan_credit.buyback_share_percent == asset_update.new_options.buyback_share_percent );
+      BOOST_REQUIRE( dan_credit.liquid_fixed_interest_rate == asset_update.new_options.liquid_fixed_interest_rate );
+      BOOST_REQUIRE( dan_credit.liquid_variable_interest_rate == asset_update.new_options.liquid_variable_interest_rate );
+      BOOST_REQUIRE( dan_credit.staked_fixed_interest_rate == asset_update.new_options.staked_fixed_interest_rate );
+      BOOST_REQUIRE( dan_credit.staked_variable_interest_rate == asset_update.new_options.staked_variable_interest_rate );
+      BOOST_REQUIRE( dan_credit.savings_fixed_interest_rate == asset_update.new_options.savings_fixed_interest_rate );
+      BOOST_REQUIRE( dan_credit.savings_variable_interest_rate == asset_update.new_options.savings_variable_interest_rate );
+      BOOST_REQUIRE( dan_credit.var_interest_range == asset_update.new_options.var_interest_range );
 
       validate_database();
 
@@ -516,7 +491,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.signatory = "elon";
       asset_create.issuer = "elon";
       asset_create.symbol = "TSLA";
-      asset_create.asset_type = asset_property_type::BITASSET_ASSET;
+      asset_create.asset_type = "bitasset";
       asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "TSLA" );
@@ -585,18 +560,14 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const asset_object& elon_asset = db.get_asset( "TSLA" );
-
       BOOST_REQUIRE( elon_asset.issuer == asset_create.issuer );
       BOOST_REQUIRE( elon_asset.symbol == asset_create.symbol );
       BOOST_REQUIRE( elon_asset.asset_type == asset_create.asset_type );
-      BOOST_REQUIRE( elon_asset.options.display_symbol == asset_update.new_options.display_symbol );
-      BOOST_REQUIRE( elon_asset.options.details == asset_update.new_options.details );
-      BOOST_REQUIRE( elon_asset.options.json == asset_update.new_options.json );
-      BOOST_REQUIRE( elon_asset.options.url == asset_update.new_options.url );
+      BOOST_REQUIRE( to_string( elon_asset.display_symbol ) == asset_update.new_options.display_symbol );
+      BOOST_REQUIRE( to_string( elon_asset.details ) == asset_update.new_options.details );
+      BOOST_REQUIRE( to_string( elon_asset.json ) == asset_update.new_options.json );
+      BOOST_REQUIRE( to_string( elon_asset.url ) == asset_update.new_options.url );
       BOOST_REQUIRE( elon_asset.last_updated == now() );
-
-      const asset_bitasset_data_object& elon_bitasset = db.get_bitasset_data( "TSLA" );
 
       BOOST_REQUIRE( elon_bitasset.backing_asset == asset_update.new_options.backing_asset );
       BOOST_REQUIRE( elon_bitasset.feed_lifetime == asset_update.new_options.feed_lifetime );
@@ -627,11 +598,11 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      asset liquid = db.get_liquid_balance( "alice", "ALICECOIN" );
+      asset alice_liquid = db.get_liquid_balance( "alice", "ALICECOIN" );
 
       const asset_dynamic_data_object& alice_dyn_data = db.get_dynamic_data( "ALICECOIN" );
 
-      BOOST_REQUIRE( liquid == asset_issue.asset_to_issue );
+      BOOST_REQUIRE( alice_liquid == asset_issue.asset_to_issue );
       BOOST_REQUIRE( alice_dyn_data.total_supply == asset_issue.asset_to_issue.amount );
       BOOST_REQUIRE( alice_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount );
 
@@ -655,11 +626,11 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      asset liquid = db.get_liquid_balance( "candice", "TROPICO" );
+      asset candice_liquid = db.get_liquid_balance( "candice", "TROPICO" );
 
       const asset_dynamic_data_object& candice_dyn_data = db.get_dynamic_data( "TROPICO" );
 
-      BOOST_REQUIRE( liquid == asset_issue.asset_to_issue );
+      BOOST_REQUIRE( candice_liquid == asset_issue.asset_to_issue );
       BOOST_REQUIRE( candice_dyn_data.total_supply == asset_issue.asset_to_issue.amount );
       BOOST_REQUIRE( candice_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount );
 
@@ -683,11 +654,11 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      asset liquid = db.get_liquid_balance( "dan", "BLOCKTWO" );
+      asset dan_liquid = db.get_liquid_balance( "dan", "BLOCKTWO" );
 
       const asset_dynamic_data_object& dan_dyn_data = db.get_dynamic_data( "BLOCKTWO" );
 
-      BOOST_REQUIRE( liquid == asset_issue.asset_to_issue );
+      BOOST_REQUIRE( dan_liquid == asset_issue.asset_to_issue );
       BOOST_REQUIRE( dan_dyn_data.total_supply == asset_issue.asset_to_issue.amount );
       BOOST_REQUIRE( dan_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount );
 
@@ -711,11 +682,9 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      asset liquid = db.get_liquid_balance( "alice", "ALICECOIN" );
+      alice_liquid = db.get_liquid_balance( "alice", "ALICECOIN" );
 
-      const asset_dynamic_data_object& alice_dyn_data = db.get_dynamic_data( "ALICECOIN" );
-
-      BOOST_REQUIRE( liquid == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
+      BOOST_REQUIRE( alice_liquid == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
       BOOST_REQUIRE( alice_dyn_data.total_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
       BOOST_REQUIRE( alice_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
 
@@ -736,11 +705,9 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      asset liquid = db.get_liquid_balance( "candice", "TROPICO" );
+      candice_liquid = db.get_liquid_balance( "candice", "TROPICO" );
 
-      const asset_dynamic_data_object& candice_dyn_data = db.get_dynamic_data( "TROPICO" );
-
-      BOOST_REQUIRE( liquid == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
+      BOOST_REQUIRE( candice_liquid == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
       BOOST_REQUIRE( candice_dyn_data.total_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
       BOOST_REQUIRE( candice_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
 
@@ -761,11 +728,9 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      asset liquid = db.get_liquid_balance( "dan", "BLOCKTWO" );
+      dan_liquid = db.get_liquid_balance( "dan", "BLOCKTWO" );
 
-      const asset_dynamic_data_object& dan_dyn_data = db.get_dynamic_data( "BLOCKTWO" );
-
-      BOOST_REQUIRE( liquid == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
+      BOOST_REQUIRE( dan_liquid == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
       BOOST_REQUIRE( dan_dyn_data.total_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
       BOOST_REQUIRE( dan_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
 
@@ -790,9 +755,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const asset_object& alicecoin_asset = db.get_asset( "ALICECOIN" );
-
-      BOOST_REQUIRE( alicecoin_asset.issuer == asset_update_issuer.new_issuer );
+      BOOST_REQUIRE( alice_asset.issuer == asset_update_issuer.new_issuer );
 
       validate_database();
 
@@ -813,11 +776,9 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      asset liquid = db.get_liquid_balance( "bob", "ALICECOIN" );
+      asset bob_liquid = db.get_liquid_balance( "bob", "ALICECOIN" );
 
-      const asset_dynamic_data_object& alice_dyn_data = db.get_dynamic_data( "ALICECOIN" );
-
-      BOOST_REQUIRE( liquid == asset_issue.asset_to_issue );
+      BOOST_REQUIRE( bob_liquid == asset_issue.asset_to_issue );
 
       validate_database();
 
@@ -844,11 +805,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const asset_object& elon_asset = db.get_asset( "TSLA" );
-
       BOOST_REQUIRE( elon_asset.last_updated == now() );
-
-      const asset_bitasset_data_object& elon_bitasset = db.get_bitasset_data( "TSLA" );
 
       for( auto f : update_feed.new_feed_producers )
       {
@@ -893,8 +850,6 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.operations.push_back( feed );
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
-
-      const asset_bitasset_data_object& elon_bitasset = db.get_bitasset_data( "TSLA" );
 
       BOOST_REQUIRE( elon_bitasset.current_feed == feed.feed );
 
@@ -1028,10 +983,8 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const asset_bitasset_data_object& elon_bitasset = db.get_bitasset_data( "TSLA" );
-
       BOOST_REQUIRE( elon_bitasset.has_settlement() );
-      BOOST_REQUIRE( elon_bitasset.settlement_fund.amount > 0 );
+      BOOST_REQUIRE( elon_bitasset.settlement_fund.value > 0 );
 
       validate_database();
 

@@ -174,6 +174,7 @@ enum object_type
    // Marketplace Objects
 
    product_object_type,
+   purchase_order_object_type,
    escrow_object_type,
 
    // Trading Objects
@@ -320,6 +321,7 @@ class asset_delegation_expiration_object;
 // Marketplace Objects
 
 class product_object;
+class purchase_order_object;
 class escrow_object;
 
 // Trading Objects
@@ -465,6 +467,7 @@ typedef oid< asset_delegation_expiration_object     > asset_delegation_expiratio
 // Marketplace Objects
 
 typedef oid< product_object                         > product_id_type;
+typedef oid< purchase_order_object                  > purchase_order_id_type;
 typedef oid< escrow_object                          > escrow_id_type;
 
 // Trading Objects
@@ -681,6 +684,7 @@ FC_REFLECT_ENUM( node::chain::object_type,
          // Marketplace Objects
 
          (product_object_type)
+         (purchase_order_object_type)
          (escrow_object_type)
 
          // Trading Objects

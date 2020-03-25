@@ -1,4 +1,4 @@
-
+#include <node/protocol/types.hpp>
 #include <node/protocol/protocol.hpp>
 #include <node/chain/node_objects.hpp>
 #include <fc/smart_ref_impl.hpp>
@@ -9,6 +9,26 @@ using namespace node::protocol;
 
 using std::string;
 using std::map;
+
+using node::protocol::community_privacy_type;
+using node::protocol::business_structure_type;
+using node::protocol::membership_tier_type;
+using node::protocol::network_officer_role_type;
+using node::protocol::executive_role_type;
+using node::protocol::proposal_distribution_type;
+using node::protocol::product_sale_type;
+using node::protocol::asset_property_type;
+using node::protocol::ad_format_type;
+using node::protocol::post_format_type;
+using node::protocol::ad_metric_type;
+using node::protocol::connection_tier_type;
+using node::protocol::feed_reach_type;
+using node::protocol::blog_reach_type;
+using node::protocol::sort_time_type;
+using node::protocol::sort_option_type;
+using node::protocol::post_time_type;
+using node::protocol::asset_issuer_permission_flags;
+using node::protocol::community_permission_flags;
 
 namespace detail_ns {
 
@@ -44,8 +64,6 @@ string remove_namespace( string str )
       str.replace( pos, 2, "_" );
    return str;
 }
-
-
 
 
 template<typename T>
@@ -84,13 +102,36 @@ template<typename T> struct js_name< std::vector<T> >     { static std::string n
 template<typename T> struct js_name< fc::safe<T> > { static std::string name(){ return js_name<T>::name(); } };
 
 
-template<> struct js_name< std::vector<char> > { static std::string name(){ return "bytes()";     } };
+template<> struct js_name< std::vector<char> > { static std::string name(){ return "bytes()";    } };
 template<> struct js_name<fc::uint160>         { static std::string name(){ return "bytes 20";   } };
 template<> struct js_name<fc::sha224>          { static std::string name(){ return "bytes 28";   } };
 template<> struct js_name<fc::sha256>          { static std::string name(){ return "bytes 32";   } };
 template<> struct js_name<fc::unsigned_int>    { static std::string name(){ return "varuint32";  } };
 template<> struct js_name<fc::signed_int>      { static std::string name(){ return "varint32";   } };
 template<> struct js_name<fc::time_point >     { static std::string name(){ return "time_point"; } };
+
+/**
+ * 
+template<> struct js_name< community_privacy_type >            { static std::string name(){ return "community_privacy"; } };
+template<> struct js_name< business_structure_type >           { static std::string name(){ return "business_structure"; } };
+template<> struct js_name< membership_tier_type >              { static std::string name(){ return "membership_tier"; } };
+template<> struct js_name< network_officer_role_type >         { static std::string name(){ return "network_officer_role"; } };
+template<> struct js_name< executive_role_type >               { static std::string name(){ return "executive_role_type"; } };
+template<> struct js_name< proposal_distribution_type >        { static std::string name(){ return "proposal_distribution"; } };
+template<> struct js_name< product_sale_type >                 { static std::string name(){ return "product_sale"; } };
+template<> struct js_name< asset_property_type >               { static std::string name(){ return "asset_property"; } };
+template<> struct js_name< ad_format_type >                    { static std::string name(){ return "ad_format"; } };
+template<> struct js_name< post_format_type >                  { static std::string name(){ return "post_format"; } };
+template<> struct js_name< ad_metric_type >                    { static std::string name(){ return "ad_metric"; } };
+template<> struct js_name< connection_tier_type >              { static std::string name(){ return "connection_tier"; } };
+template<> struct js_name< feed_reach_type >                   { static std::string name(){ return "feed_reach"; } };
+template<> struct js_name< blog_reach_type >                   { static std::string name(){ return "blog_reach"; } };
+template<> struct js_name< sort_time_type >                    { static std::string name(){ return "sort_time"; } };
+template<> struct js_name< sort_option_type >                  { static std::string name(){ return "sort_option"; } };
+template<> struct js_name< post_time_type >                    { static std::string name(){ return "post_time"; } };
+template<> struct js_name< asset_issuer_permission_flags >     { static std::string name(){ return "asset_issuer_permission"; } };
+template<> struct js_name< community_permission_flags >        { static std::string name(){ return "community_permission"; } };
+*/
 
 template<typename O>
 struct js_name<chainbase::oid<O> >
@@ -112,8 +153,8 @@ struct js_name< fc::flat_map<K,V> > { static std::string name(){ return "map (" 
 
 template<typename... T> struct js_sv_name;
 
-template<typename A> struct js_sv_name<A>
-{ static std::string name(){ return  "\n    " + js_name<A>::name(); } };
+template<typename A> 
+struct js_sv_name<A>{ static std::string name(){ return  "\n    " + js_name<A>::name(); } };
 
 template<typename A, typename... T>
 struct js_sv_name<A,T...> { static std::string name(){ return  "\n    " + js_name<A>::name() +"    " + js_sv_name<T...>::name(); } };
@@ -128,6 +169,7 @@ struct js_name< fc::static_variant<T...> >
       else return name;
    }
 };
+
 template<>
 struct js_name< fc::static_variant<> >
 {
@@ -139,11 +181,8 @@ struct js_name< fc::static_variant<> >
    }
 };
 
-
-
-template<typename T, bool reflected = fc::reflector<T>::is_defined::value>
+template<typename T, bool reflected = fc::reflector<T>::is_defined::value >
 struct serializer;
-
 
 struct register_type_visitor
 {
@@ -290,6 +329,333 @@ struct serializer< fc::static_variant<>, false >
    }
 };
 
+/**
+
+template<> 
+struct serializer< community_privacy_type, false > 
+{ 
+   static void init()
+   {
+      static bool init = false;
+      if( !init )
+      {
+         init = true;
+         register_serializer( js_name< community_privacy_type >::name(), [=](){ generate(); } );
+      }
+   }
+
+   static void generate()
+   {
+      std::cout << js_name< community_privacy_type >::name() << " \n\n";
+   }
+};
+
+template<> 
+struct serializer< business_structure_type, false >
+{ 
+   static void init()
+   {
+      static bool init = false;
+      if( !init )
+      {
+         init = true;
+         register_serializer( js_name< business_structure_type >::name(), [=](){ generate(); } );
+      }
+   }
+
+   static void generate()
+   {
+      std::cout << js_name< business_structure_type >::name() << " \n\n";
+   }
+};
+
+template<> 
+struct serializer< membership_tier_type, false >
+{ 
+   static void init()
+   {
+      static bool init = false;
+      if( !init )
+      {
+         init = true;
+         register_serializer( js_name< membership_tier_type >::name(), [=](){ generate(); } );
+      }
+   }
+
+   static void generate()
+   {
+      std::cout << js_name< membership_tier_type >::name() << " \n\n";
+   }
+};
+
+template<> 
+struct serializer< network_officer_role_type, false >
+{ 
+   static void init()
+   {
+      static bool init = false;
+      if( !init )
+      {
+         init = true;
+         register_serializer( js_name< network_officer_role_type >::name(), [=](){ generate(); } );
+      }
+   }
+
+   static void generate()
+   {
+      std::cout << js_name< network_officer_role_type >::name() << " \n\n";
+   }
+};
+
+template<> 
+struct serializer< executive_role_type, false >
+{ 
+   static void init()
+   {
+      static bool init = false;
+      if( !init )
+      {
+         init = true;
+         register_serializer( js_name< executive_role_type >::name(), [=](){ generate(); } );
+      }
+   }
+
+   static void generate()
+   {
+      std::cout << js_name< executive_role_type >::name() << " \n\n";
+   }
+};
+
+template<> 
+struct serializer< proposal_distribution_type, false >
+{ 
+   static void init()
+   {
+      static bool init = false;
+      if( !init )
+      {
+         init = true;
+         register_serializer( js_name< proposal_distribution_type >::name(), [=](){ generate(); } );
+      }
+   }
+
+   static void generate()
+   {
+      std::cout << js_name< proposal_distribution_type >::name() << " \n\n";
+   }
+};
+
+template<> 
+struct serializer< product_sale_type, false >
+{ 
+   static void init()
+   {
+      static bool init = false;
+      if( !init )
+      {
+         init = true;
+         register_serializer( js_name< product_sale_type >::name(), [=](){ generate(); } );
+      }
+   }
+
+   static void generate()
+   {
+      std::cout << js_name< product_sale_type >::name() << " \n\n";
+   }
+};
+
+template<> 
+struct serializer< asset_property_type, false >
+{ 
+   static void init()
+   {
+      static bool init = false;
+      if( !init )
+      {
+         init = true;
+         register_serializer( js_name< asset_property_type >::name(), [=](){ generate(); } );
+      }
+   }
+
+   static void generate()
+   {
+      std::cout << js_name< asset_property_type >::name() << " \n\n";
+   }
+};
+
+template<> 
+struct serializer< ad_format_type, false >
+{ 
+   static void init()
+   {
+      static bool init = false;
+      if( !init )
+      {
+         init = true;
+         register_serializer( js_name< ad_format_type >::name(), [=](){ generate(); } );
+      }
+   }
+
+   static void generate()
+   {
+      std::cout << js_name< ad_format_type >::name() << " \n\n";
+   }
+};
+
+template<> 
+struct serializer< connection_tier_type, false >
+{ 
+   static void init()
+   {
+      static bool init = false;
+      if( !init )
+      {
+         init = true;
+         register_serializer( js_name< connection_tier_type >::name(), [=](){ generate(); } );
+      }
+   }
+
+   static void generate()
+   {
+      std::cout << js_name< connection_tier_type >::name() << " \n\n";
+   }
+};
+
+template<> 
+struct serializer< feed_reach_type, false >
+{ 
+   static void init()
+   {
+      static bool init = false;
+      if( !init )
+      {
+         init = true;
+         register_serializer( js_name< feed_reach_type >::name(), [=](){ generate(); } );
+      }
+   }
+
+   static void generate()
+   {
+      std::cout << js_name< feed_reach_type >::name() << " \n\n";
+   }
+};
+
+template<> 
+struct serializer< blog_reach_type, false >
+{ 
+   static void init()
+   {
+      static bool init = false;
+      if( !init )
+      {
+         init = true;
+         register_serializer( js_name< blog_reach_type >::name(), [=](){ generate(); } );
+      }
+   }
+
+   static void generate()
+   {
+      std::cout << js_name< blog_reach_type >::name() << " \n\n";
+   }
+};
+
+template<> 
+struct serializer< sort_time_type, false >
+{ 
+   static void init()
+   {
+      static bool init = false;
+      if( !init )
+      {
+         init = true;
+         register_serializer( js_name< sort_time_type >::name(), [=](){ generate(); } );
+      }
+   }
+
+   static void generate()
+   {
+      std::cout << js_name< sort_time_type >::name() << " \n\n";
+   }
+};
+
+template<> 
+struct serializer< sort_option_type, false  >
+{ 
+   static void init()
+   {
+      static bool init = false;
+      if( !init )
+      {
+         init = true;
+         register_serializer( js_name< sort_option_type >::name(), [=](){ generate(); } );
+      }
+   }
+
+   static void generate()
+   {
+      std::cout << js_name< sort_option_type >::name() << " \n\n";
+   }
+};
+
+template<> 
+struct serializer< post_time_type, false >
+{ 
+   static void init()
+   {
+      static bool init = false;
+      if( !init )
+      {
+         init = true;
+         register_serializer( js_name< post_time_type >::name(), [=](){ generate(); } );
+      }
+   }
+
+   static void generate()
+   {
+      std::cout << js_name< post_time_type >::name() << " \n\n";
+   }
+};
+
+template<> 
+struct serializer< asset_issuer_permission_flags, false >
+{ 
+   static void init()
+   {
+      static bool init = false;
+      if( !init )
+      {
+         init = true;
+         register_serializer( js_name< asset_issuer_permission_flags >::name(), [=](){ generate(); } );
+      }
+   }
+
+   static void generate()
+   {
+      std::cout << js_name< asset_issuer_permission_flags >::name() << " \n\n";
+   }
+};
+
+template<> 
+struct serializer< community_permission_flags, false >
+{ 
+   static void init()
+   {
+      static bool init = false;
+      if( !init )
+      {
+         init = true;
+         register_serializer( js_name< community_permission_flags >::name(), [=](){ generate(); } );
+      }
+   }
+
+   static void generate()
+   {
+      std::cout << js_name< community_permission_flags >::name() << " \n\n";
+   }
+};
+
+*/
+
 
 class register_member_visitor
 {
@@ -333,28 +699,34 @@ struct serializer
 
 int main( int argc, char** argv )
 {
-   try {
-    operation op;
+   try 
+   {
+      operation op;
 
-    std::cout << "ChainTypes.operations=\n";
-    for( int i = 0; i < op.count(); ++i )
-    {
-       op.set_which(i);
-       op.visit( detail_ns::serialize_type_visitor(i) );
-    }
-    std::cout << "\n";
+      std::cout << "ChainTypes.operations=\n";
+      for( int i = 0; i < op.count(); ++i )
+      {
+         op.set_which(i);
+         op.visit( detail_ns::serialize_type_visitor(i) );
+      }
+      std::cout << "\n";
 
-    detail_ns::js_name<operation>::name("operation");
-    detail_ns::js_name<future_extensions>::name("future_extensions");
-    detail_ns::serializer<signed_block>::init();
-    detail_ns::serializer<block_header>::init();
-    detail_ns::serializer<signed_block_header>::init();
-    detail_ns::serializer<operation>::init();
-    detail_ns::serializer<transaction>::init();
-    detail_ns::serializer<signed_transaction>::init();
-    for( const auto& gen : detail_ns::serializers )
-       gen();
-
-  } catch ( const fc::exception& e ){ edump((e.to_detail_string())); }
+      detail_ns::js_name<operation>::name("operation");
+      detail_ns::js_name<future_extensions>::name("future_extensions");
+      detail_ns::serializer<signed_block>::init();
+      detail_ns::serializer<block_header>::init();
+      detail_ns::serializer<signed_block_header>::init();
+      detail_ns::serializer<operation>::init();
+      detail_ns::serializer<transaction>::init();
+      detail_ns::serializer<signed_transaction>::init();
+      for( const auto& gen : detail_ns::serializers )
+      {
+         gen();
+      }
+   } 
+   catch ( const fc::exception& e )
+   { 
+     edump((e.to_detail_string())); 
+   }
    return 0;
 }

@@ -267,6 +267,8 @@ namespace node { namespace protocol {
 
    /**
     * Contains the strike price and expiration date of an option asset.
+    * 
+    * 
     */
    struct option_strike
    {
@@ -285,11 +287,7 @@ namespace node { namespace protocol {
          return strike_price.is_null() || expiration_date.is_null();
       };
 
-      void validate()const
-      { 
-         strike_price.validate();
-         expiration_date.validate();
-      };
+      void validate()const;
 
       double to_real()const
       { 
@@ -297,6 +295,10 @@ namespace node { namespace protocol {
       }
 
       string to_string()const;
+
+      asset_symbol_type call_option_symbol()const;
+
+      asset_symbol_type put_option_symbol()const;
 
       time_point expiration()const;
    };

@@ -2340,7 +2340,8 @@ asset database::network_credit_acquisition( const asset& amount, bool execute )
    asset credit_acquired;
 
    const asset_object& asset_obj = get_asset( amount.symbol );
-   FC_ASSERT( asset_obj.asset_type != asset_property_type::CREDIT_POOL_ASSET && asset_obj.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET, 
+   FC_ASSERT( asset_obj.asset_type != asset_property_type::CREDIT_POOL_ASSET && 
+      asset_obj.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET, 
       "Cannot acquire assets that do not facilitate liquidity pools." );
 
    if( amount.symbol != SYMBOL_CREDIT )
@@ -2659,6 +2660,21 @@ void database::close_margin_order( const margin_order_object& order )
       c.borrowed_balance -= to_repay;
    });
 
+   remove(order);
+}
+
+void database::close_auction_order( const auction_order_object& order )
+{
+   asset refunded = order.amount_for_sale();
+   adjust_liquid_balance( order.owner, refunded );
+   remove(order);
+}
+
+
+void database::close_option_order( const option_order_object& order )
+{
+   asset refunded = order.amount_for_sale();
+   adjust_liquid_balance( order.owner, refunded );
    remove(order);
 }
 

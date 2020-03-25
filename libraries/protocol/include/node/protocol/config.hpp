@@ -271,6 +271,7 @@
 #define MIN_PERMLINK_LENGTH                    0
 #define MAX_PERMLINK_LENGTH                    2048
 #define MAX_STRING_LENGTH                      2048
+#define MAX_TEXT_POST_LENGTH                   300
 #define MAX_SIG_CHECK_DEPTH                    2
 #define MAX_GOV_ACCOUNTS                       5
 #define MAX_EXEC_VOTES                         10

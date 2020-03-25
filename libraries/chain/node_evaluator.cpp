@@ -72,6 +72,13 @@ struct strcmp_equal
 };
 
 
+
+//============================//
+// === Account Evaluators === //
+//============================//
+
+
+
 void account_create_evaluator::do_apply( const account_create_operation& o )
 { try {
    const account_name_type& signed_for = o.registrar;
@@ -199,7 +206,7 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       from_string( a.url, o.url );
       from_string( a.image, o.image );
 
-      a.membership = NONE;
+      a.membership = membership_tier_type::NONE;
 
       a.secure_public_key = public_key_type( o.secure_public_key );
       a.connection_public_key = public_key_type( o.connection_public_key );
@@ -309,17 +316,6 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
-/**
- * // Profile account validation
-   
-      FC_ASSERT( o.governance_account.size() && o.governance_account == registrar.name,
-         "Profile accounts must be registered by its nominated governance account." );
-      FC_ASSERT( governance_approved,
-         "Governance Accounts must be approved by a threshold of subscriptions before creating profile accounts." );
- * 
- * 
- */
-
 
 void account_update_evaluator::do_apply( const account_update_operation& o )
 { try {
@@ -423,6 +419,126 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
+void account_profile_evaluator::do_apply( const account_profile_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_chief( o.signatory ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   time_point now = _db.head_block_time();
+   const account_object& gov_account = _db.get_account( o.governance_account );
+   FC_ASSERT( gov_account.active, 
+      "Governance Account: ${s} must be active.",("s", o.governance_account) );
+
+   const auto& profile_idx = _db.get_index< account_profile_index >().indices().get< by_account >();
+   auto profile_itr = profile_idx.find( o.account );
+
+   if( profile_itr == profile_idx.end() )    // New profile 
+   {
+      _db.create< account_profile_object >( [&]( account_profile_object& apo )
+      {
+         apo.account = o.account;
+         apo.governance_account = o.governance_account;
+         apo.profile_public_key = public_key_type( o.profile_public_key );
+         from_string( apo.first_name, o.first_name );
+         from_string( apo.last_name, o.last_name );
+         from_string( apo.gender, o.gender );
+         from_string( apo.date_of_birth, o.date_of_birth );
+         from_string( apo.email, o.email );
+         from_string( apo.phone, o.phone );
+         from_string( apo.nationality, o.nationality );
+         from_string( apo.address, o.address );
+         apo.last_updated = now;
+         apo.created = now;
+      });
+   }
+   else
+   {
+      const account_profile_object& profile = *profile_itr;
+
+      _db.modify( profile, [&]( account_profile_object& apo )
+      {
+         apo.governance_account = o.governance_account;
+         apo.profile_public_key = public_key_type( o.profile_public_key );
+         from_string( apo.first_name, o.first_name );
+         from_string( apo.last_name, o.last_name );
+         from_string( apo.gender, o.gender );
+         from_string( apo.date_of_birth, o.date_of_birth );
+         from_string( apo.email, o.email );
+         from_string( apo.phone, o.phone );
+         from_string( apo.nationality, o.nationality );
+         from_string( apo.address, o.address );
+         apo.last_updated = now;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+/**
+ * TODO: Check image signature against profile public key 
+ */
+void account_verification_evaluator::do_apply( const account_verification_operation& o )
+{ try {
+   const account_name_type& signed_for = o.verifier_account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_chief( o.signatory ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   time_point now = _db.head_block_time();
+   const account_object& verified_account = _db.get_account( o.verified_account );
+   FC_ASSERT( verified_account.active, 
+      "Account: ${s} must be active.",("s", o.verified_account) );
+
+   const account_profile_object& profile = _db.get_account_profile( o.verified_account );
+
+   const auto& verification_idx = _db.get_index< account_verification_index >().indices().get< by_verifier_verified >();
+   auto verification_itr = verification_idx.find( boost::make_tuple( o.verifier_account, o.verified_account ) );
+
+   if( verification_itr == verification_idx.end() )
+   {
+      _db.create< account_verification_object >( [&]( account_verification_object& avo )
+      {
+         avo.verifier_account = o.verifier_account;
+         avo.verified_account = o.verified_account;
+         avo.verified_profile_public_key = profile.profile_public_key;
+         from_string( avo.shared_image, o.shared_image );
+         avo.image_signature = o.image_signature;
+         avo.last_updated = now;
+         avo.created = now;
+      });
+   }
+   else
+   {
+      const account_verification_object& verification = *verification_itr;
+
+      _db.modify( verification, [&]( account_verification_object& avo )
+      {
+         avo.verified_profile_public_key = profile.profile_public_key;
+         from_string( avo.shared_image, o.shared_image );
+         avo.image_signature = o.image_signature;
+         avo.last_updated = now;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
 
 void account_business_evaluator::do_apply( const account_business_operation& o )
 { try {
@@ -445,19 +561,27 @@ void account_business_evaluator::do_apply( const account_business_operation& o )
    FC_ASSERT( gov_account.active, 
       "Governance Account: ${s} must be active.",("s", o.governance_account) );
 
-   const auto& gov_idx = _db.get_index< governance_subscription_index >().indices().get< by_account_governance >();
-   auto gov_itr = gov_idx.find( boost::make_tuple( o.account, o.governance_account ) );
+   business_structure_type business_structure = business_structure_type::PUBLIC_BUSINESS;
+
+   for( size_t i = 0; i < business_structure_values.size(); i++ )
+   {
+      if( o.business_type == business_structure_values[ i ] )
+      {
+         business_structure = business_structure_type( i );
+         break;
+      }
+   }
 
    const auto& business_idx = _db.get_index< account_business_index >().indices().get< by_account >();
    auto business_itr = business_idx.find( o.account );
 
-   if( business_itr != business_idx.end() )
+   if( business_itr == business_idx.end() )    // New business 
    {
-      _db.create< account_business_object >( [&]( account_business_object& abo )
+      const account_business_object& business = _db.create< account_business_object >( [&]( account_business_object& abo )
       {
          abo.account = o.account;
          abo.governance_account = o.governance_account;
-         abo.business_type = o.business_type;
+         abo.business_type = business_structure;
          abo.business_public_key = public_key_type( o.business_public_key );
          abo.executive_board.CHIEF_EXECUTIVE_OFFICER = o.init_ceo_account;
          abo.officer_vote_threshold = o.officer_vote_threshold;
@@ -479,6 +603,8 @@ void account_business_evaluator::do_apply( const account_business_operation& o )
          aevo.executive_account = o.init_ceo_account;
          aevo.role = executive_role_type::CHIEF_EXECUTIVE_OFFICER;
       });
+
+      _db.update_business_account( business );
    }
    else
    {
@@ -529,7 +655,18 @@ void account_membership_evaluator::do_apply( const account_membership_operation&
    asset liquid = _db.get_liquid_balance( o.account, SYMBOL_COIN );
    asset monthly_fee = asset( 0, SYMBOL_USD );
 
-   switch( o.membership_type )
+   membership_tier_type mem_tier = membership_tier_type::STANDARD_MEMBERSHIP;
+
+   for( size_t i = 0; i < membership_tier_values.size(); i++ )
+   {
+      if( o.membership_type == membership_tier_values[ i ] )
+      {
+         mem_tier = membership_tier_type( i );
+         break;
+      }
+   }
+
+   switch( mem_tier )
    {
       case membership_tier_type::NONE:
       {
@@ -610,7 +747,7 @@ void account_membership_evaluator::do_apply( const account_membership_operation&
 
    _db.modify( account, [&]( account_object& a )
    {
-      a.membership = o.membership_type;
+      a.membership = mem_tier;
       a.membership_expiration = now + fc::days( 30 * o.months );
       if( o.interface.size() )
       {
@@ -667,11 +804,22 @@ void account_vote_executive_evaluator::do_apply( const account_vote_executive_op
          "Account: ${a} must be an officer of business: ${b} before being voted as Executive.",
          ("a", o.executive_account)("b", o.business_account) );
    }
+
+   executive_role_type exec_role = executive_role_type::CHIEF_EXECUTIVE_OFFICER;
+
+   for( size_t i = 0; i < executive_role_values.size(); i++ )
+   {
+      if( o.role == executive_role_values[ i ] )
+      {
+         exec_role = executive_role_type( i );
+         break;
+      }
+   }
    
    const auto& rank_idx = _db.get_index< account_executive_vote_index >().indices().get< by_account_business_role_rank >();
    const auto& executive_idx = _db.get_index< account_executive_vote_index >().indices().get< by_account_business_role_executive >();
-   auto rank_itr = rank_idx.find( boost::make_tuple( voter.name, o.business_account, o.role, o.vote_rank ) ); 
-   auto executive_itr = executive_idx.find( boost::make_tuple( voter.name, o.business_account, o.role, o.executive_account ) );
+   auto rank_itr = rank_idx.find( boost::make_tuple( voter.name, o.business_account, exec_role, o.vote_rank ) ); 
+   auto executive_itr = executive_idx.find( boost::make_tuple( voter.name, o.business_account, exec_role, o.executive_account ) );
 
    if( o.approved ) // Adding or modifying vote
    {
@@ -682,7 +830,7 @@ void account_vote_executive_evaluator::do_apply( const account_vote_executive_op
             v.account = voter.name;
             v.vote_rank = o.vote_rank;
             v.executive_account = o.executive_account;
-            v.role = o.role;
+            v.role = exec_role;
          });
          
          _db.update_account_executive_votes( voter, o.business_account );
@@ -700,7 +848,7 @@ void account_vote_executive_evaluator::do_apply( const account_vote_executive_op
             _db.remove( *executive_itr );
          }
 
-         _db.update_account_executive_votes( voter, o.business_account, executive, o.role, o.vote_rank );
+         _db.update_account_executive_votes( voter, o.business_account, executive, exec_role, o.vote_rank );
       }
    }
    else  // Removing existing vote
@@ -834,8 +982,6 @@ void account_member_request_evaluator::do_apply( const account_member_request_op
       "Account: ${s} must be active to accept member requests.",("s", o.business_account) );
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
 
-   FC_ASSERT( bus_acc.business_type != PRIVATE_BUSINESS,
-      "Account: ${a} cannot request to join a Private Business: ${b} Membership is by invitation only.", ("a", o.account)("b", o.business_account));
    FC_ASSERT( !bus_acc.is_member( account.name ), 
       "Account: ${a} is already a member of the business: ${b}.", ("a", o.account)("b", o.business_account)); 
    FC_ASSERT( bus_acc.is_authorized_request( account.name, _db.get_account_permissions( o.business_account ) ), 
@@ -1678,6 +1824,17 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
       account_a_name = req_account.name;
    }
 
+   connection_tier_type connection_tier = connection_tier_type::CONNECTION;
+
+   for( size_t i = 0; i < connection_tier_values.size(); i++ )
+   {
+      if( o.connection_type == connection_tier_values[ i ] )
+      {
+         connection_tier = connection_tier_type( i );
+         break;
+      }
+   }
+
    const auto& con_idx = _db.get_index< connection_index >().indices().get< by_accounts >();
    auto con_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::CONNECTION ) );
 
@@ -1687,14 +1844,14 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
          "Request doesn't exist, user must select to request connection with the account." );
       if( con_itr == con_idx.end() )      // No existing connection object.
       { 
-         FC_ASSERT( o.connection_type == connection_tier_type::CONNECTION,
+         FC_ASSERT( connection_tier == connection_tier_type::CONNECTION,
             "First connection request must be of standard Connection type before elevation to higher levels." );
 
          _db.create< connection_request_object >( [&]( connection_request_object& cro )
          {
             cro.account = account.name;
             cro.requested_account = req_account.name;
-            cro.connection_type = o.connection_type;
+            cro.connection_type = connection_tier;
             from_string( cro.message, o.message );
             cro.expiration = now + CONNECTION_REQUEST_DURATION;
          });
@@ -1706,17 +1863,17 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
          auto friend_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::FRIEND ) );
          auto comp_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::COMPANION ) );
 
-         FC_ASSERT( o.connection_type != connection_tier_type::CONNECTION,
+         FC_ASSERT( connection_tier != connection_tier_type::CONNECTION,
             "Connection of this type already exists, should request a type increase." );
 
-         if( o.connection_type == connection_tier_type::FRIEND )
+         if( connection_tier == connection_tier_type::FRIEND )
          {
             FC_ASSERT( friend_itr == con_idx.end(),
                "Friend level connection already exists." );
             FC_ASSERT( now > ( connection_obj.created + CONNECTION_REQUEST_DURATION ),
                "Friend Connection must wait one week from first connection." );
          }
-         else if( o.connection_type == connection_tier_type::COMPANION )
+         else if( connection_tier == connection_tier_type::COMPANION )
          {
             FC_ASSERT( friend_itr != con_idx.end(),
                "Companion connection must follow a friend connection." );
@@ -1730,7 +1887,7 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
          {
             cro.requested_account = req_account.name;
             cro.account = account.name;
-            cro.connection_type = o.connection_type;
+            cro.connection_type = connection_tier;
             from_string( cro.message, o.message );
             cro.expiration = now + CONNECTION_REQUEST_DURATION;
          });
@@ -1767,7 +1924,18 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
    time_point now = _db.head_block_time();
    public_key_type public_key;
 
-   switch( o.connection_type )
+   connection_tier_type connection_tier = connection_tier_type::CONNECTION;
+
+   for( size_t i = 0; i < connection_tier_values.size(); i++ )
+   {
+       if( o.connection_type == connection_tier_values[ i ] )
+        {
+            connection_tier = connection_tier_type( i );
+            break;
+        }
+   }
+
+   switch( connection_tier )
    {
       case connection_tier_type::CONNECTION:
       {
@@ -1806,7 +1974,7 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
    }
 
    const auto& con_idx = _db.get_index< connection_index >().indices().get< by_accounts >();
-   auto con_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, o.connection_type ) );
+   auto con_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier ) );
 
    const auto& req_idx = _db.get_index< connection_request_index >().indices().get< by_account_req >();
    auto req_itr = req_idx.find( boost::make_tuple( o.requesting_account, o.account ) );
@@ -1821,7 +1989,7 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
       FC_ASSERT( req_itr != req_idx.end(),
          "Connection Request doesn't exist to accept." );
       const connection_request_object& request = *req_itr;
-      FC_ASSERT( o.connection_type == request.connection_type,
+      FC_ASSERT( connection_tier == request.connection_type,
          "Connection request must be of the same level as acceptance" );
 
       _db.create< connection_object >( [&]( connection_object& co )
@@ -1838,7 +2006,7 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
             co.encrypted_key_b = encrypted_keypair_type( req_account.secure_public_key, public_key, o.encrypted_key );
          }
 
-         co.connection_type = o.connection_type;
+         co.connection_type = connection_tier;
          from_string( co.connection_id, o.connection_id );
          co.last_message_time_a = now;
          co.last_message_time_b = now;
@@ -1848,15 +2016,15 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
 
       _db.modify( a_following_set, [&]( account_following_object& afo )
       {
-         if( o.connection_type == connection_tier_type::CONNECTION )
+         if( connection_tier == connection_tier_type::CONNECTION )
          {
             afo.connections.insert( account_b_name );
          }
-         else if( o.connection_type == connection_tier_type::FRIEND )
+         else if( connection_tier == connection_tier_type::FRIEND )
          {
             afo.friends.insert( account_b_name );
          }
-         else if( o.connection_type == connection_tier_type::COMPANION )
+         else if( connection_tier == connection_tier_type::COMPANION )
          {
             afo.companions.insert( account_b_name );
          }
@@ -1865,15 +2033,15 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
 
       _db.modify( b_following_set, [&]( account_following_object& afo )
       {
-         if( o.connection_type == connection_tier_type::CONNECTION )
+         if( connection_tier == connection_tier_type::CONNECTION )
          {
             afo.connections.insert( account_a_name );
          }
-         else if( o.connection_type == connection_tier_type::FRIEND )
+         else if( connection_tier == connection_tier_type::FRIEND )
          {
             afo.friends.insert( account_a_name );
          }
-         else if( o.connection_type == connection_tier_type::COMPANION )
+         else if( connection_tier == connection_tier_type::COMPANION )
          {
             afo.companions.insert( account_a_name );
          }
@@ -1904,15 +2072,15 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
       {
          _db.modify( a_following_set, [&]( account_following_object& afo )
          {
-            if( o.connection_type == connection_tier_type::CONNECTION )
+            if( connection_tier == connection_tier_type::CONNECTION )
             {
                afo.connections.erase( account_b_name );
             }
-            else if( o.connection_type == connection_tier_type::FRIEND )
+            else if( connection_tier == connection_tier_type::FRIEND )
             {
                afo.friends.erase( account_b_name );
             }
-            else if( o.connection_type == connection_tier_type::COMPANION )
+            else if( connection_tier == connection_tier_type::COMPANION )
             {
                afo.companions.erase( account_b_name );
             }
@@ -1921,15 +2089,15 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
 
          _db.modify( b_following_set, [&]( account_following_object& afo )
          {
-            if( o.connection_type == connection_tier_type::CONNECTION )
+            if( connection_tier == connection_tier_type::CONNECTION )
             {
                afo.connections.erase( account_a_name );
             }
-            else if( o.connection_type == connection_tier_type::FRIEND )
+            else if( connection_tier == connection_tier_type::FRIEND )
             {
                afo.friends.erase( account_a_name );
             }
-            else if( o.connection_type == connection_tier_type::COMPANION )
+            else if( connection_tier == connection_tier_type::COMPANION )
             {
                afo.companions.erase( account_a_name );
             }
@@ -1991,7 +2159,7 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
             afo.last_updated = now;
          });
 
-         if( follower.membership == NONE )     // Check for the presence of an ad bid on this follow.
+         if( follower.membership == membership_tier_type::NONE )     // Check for the presence of an ad bid on this follow.
          {
             const auto& bid_idx = _db.get_index< ad_bid_index >().indices().get< by_provider_metric_author_objective_price >();
             auto bid_itr = bid_idx.lower_bound( std::make_tuple( o.interface, ad_metric_type::FOLLOW_METRIC, o.following, o.following ) );
@@ -2307,16 +2475,27 @@ void update_network_officer_evaluator::do_apply( const update_network_officer_op
    time_point now = _db.head_block_time();
    const account_object& account = _db.get_account( o.account );
 
-   FC_ASSERT( account.membership != NONE,
+   FC_ASSERT( account.membership != membership_tier_type::NONE,
       "Account must be a member to create a network officer." );
 
    const network_officer_object* net_off_ptr = _db.find_network_officer( o.account );
+
+   network_officer_role_type role_type = network_officer_role_type::DEVELOPMENT;
+
+   for( size_t i = 0; i < network_officer_role_values.size(); i++ )
+   {
+      if( o.officer_type == network_officer_role_values[ i ] )
+      {
+         role_type = network_officer_role_type( i );
+         break;
+      }
+   }
 
    if( net_off_ptr != nullptr )        // updating existing network officer
    { 
       _db.modify( *net_off_ptr, [&]( network_officer_object& noo )
       {
-         noo.officer_type = o.officer_type;       // Selects development, marketing or advocacy
+         noo.officer_type = role_type;       // Selects development, marketing or advocacy
          if( o.url.size() )
          {
             from_string( noo.url, o.url );
@@ -2337,7 +2516,7 @@ void update_network_officer_evaluator::do_apply( const update_network_officer_op
       _db.create< network_officer_object >( [&]( network_officer_object& noo )
       {
          noo.account = o.account;
-         noo.officer_type = o.officer_type;    // Selects development, marketing or advocacy
+         noo.officer_type = role_type;    // Selects development, marketing or advocacy
          if( o.url.size() )
          {
             from_string( noo.url, o.url );
@@ -3031,7 +3210,7 @@ void update_interface_evaluator::do_apply( const update_interface_operation& o )
    const account_object& account = _db.get_account( o.account );
    time_point now = _db.head_block_time();
 
-   FC_ASSERT( account.membership != NONE,
+   FC_ASSERT( account.membership != membership_tier_type::NONE,
       "Account must be a member to create an Interface.");
 
    const interface_object* int_ptr = _db.find_interface( o.account );
@@ -3101,7 +3280,7 @@ void update_mediator_evaluator::do_apply( const update_mediator_operation& o )
    time_point now = _db.head_block_time();
    asset liquid = _db.get_liquid_balance( o.account, SYMBOL_COIN );
 
-   FC_ASSERT( account.membership != NONE, 
+   FC_ASSERT( account.membership != membership_tier_type::NONE, 
       "Account must be a member to act as a mediator." );
    
    const mediator_object* med_ptr = _db.find_mediator( o.account );
@@ -3199,25 +3378,47 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
    {
       milestone_sum += milestone;
    }
+
    FC_ASSERT( milestone_sum == PERCENT_100, 
       "Milestone Sum must equal 100 percent." );
+
+   proposal_distribution_type prop_type = proposal_distribution_type::FUNDING;
+
+   for( size_t i = 0; i < proposal_distribution_values.size(); i++ )
+   {
+      if( o.proposal_type == proposal_distribution_values[ i ] )
+      {
+         prop_type = proposal_distribution_type( i );
+         break;
+      }
+   }
    
-   if( o.proposal_type == proposal_distribution_type::FUNDING )
+   if( prop_type == proposal_distribution_type::FUNDING )
    {
       uint16_t beneficiary_sum = 0;
       for( auto beneficiary : o.beneficiaries )
       {
          beneficiary_sum += beneficiary.second;
       }
+
       FC_ASSERT( beneficiary_sum == PERCENT_100, 
          "Beneficiary Sum must equal 100 percent." );
+      FC_ASSERT( o.beneficiaries.size() >= 1 && o.beneficiaries.size() <= 100, 
+         "Funding Proposal must have between 1 and 100 beneficiaries." );
    }
-   else if( o.proposal_type == proposal_distribution_type::INVESTMENT )
+   else if( prop_type == proposal_distribution_type::INVESTMENT )
    {
       asset_symbol_type inv_asset = *o.investment;
       const asset_object& asset_obj = _db.get_asset( inv_asset );
+
       FC_ASSERT( !asset_obj.is_market_issued(),
          "Investment Asset cannot be market issued." );
+      FC_ASSERT( o.beneficiaries.size() == 0, 
+         "Investment Proposal should not specify account beneficiaries." );
+      FC_ASSERT( o.investment.valid(), 
+         "Investment proposal should specify an asset to invest in." );
+      FC_ASSERT( is_valid_symbol( *o.investment ), 
+         "Invalid investment symbol." );
    }
 
    const community_enterprise_object* ent_ptr = _db.find_community_enterprise( o.creator, o.enterprise_id );
@@ -3238,7 +3439,7 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
          FC_ASSERT( milestone_sum == PERCENT_100, 
             "Milestone Sum must equal 100 percent." );
 
-         if( o.proposal_type == proposal_distribution_type::COMPETITION )
+         if( prop_type == proposal_distribution_type::COMPETITION )
          {
             FC_ASSERT( o.beneficiaries.size() == 0, 
                "Competition Proposal must not specifiy winner beneficiaries before starting new proposal." );
@@ -3261,7 +3462,7 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
          ceo.active = o.active;
          if( ceo.approved_milestones == -1 )     // Proposal not yet accepted, able to modify. 
          {
-            ceo.proposal_type = o.proposal_type;
+            ceo.proposal_type = prop_type;
             ceo.beneficiaries = o.beneficiaries;
             ceo.begin = o.begin;
             ceo.duration = o.duration;
@@ -3288,7 +3489,7 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
       FC_ASSERT( o.begin  > ( now + fc::days(7) ), 
          "Begin time must be at least 7 days in the future." );
       
-      if( o.proposal_type == proposal_distribution_type::COMPETITION )
+      if( prop_type == proposal_distribution_type::COMPETITION )
       {
          FC_ASSERT( o.beneficiaries.size() == 0, 
             "Competition Proposal must not specifiy winner beneficiaries before starting new proposal." );
@@ -3314,7 +3515,7 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
       {
          ceo.creator = o.creator;
          from_string( ceo.enterprise_id, o.enterprise_id );
-         ceo.proposal_type = o.proposal_type;
+         ceo.proposal_type = prop_type;
          ceo.beneficiaries = o.beneficiaries;
          ceo.begin = o.begin;
          ceo.end = o.begin + fc::days( o.duration );
@@ -3538,6 +3739,28 @@ void comment_evaluator::do_apply( const comment_operation& o )
       FC_ASSERT( interface.active, 
          "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
    }
+
+   feed_reach_type reach_type = feed_reach_type::FOLLOW_FEED;
+
+   for( size_t i = 0; i < feed_reach_values.size(); i++ )
+   {
+      if( options.reach == feed_reach_values[ i ] )
+      {
+         reach_type = feed_reach_type( i );
+         break;
+      }
+   }
+
+   post_format_type format_type = post_format_type::TEXT_POST;
+
+   for( size_t i = 0; i < post_format_values.size(); i++ )
+   {
+      if( options.post_type == post_format_values[ i ] )
+      {
+         format_type = post_format_type( i );
+         break;
+      }
+   }
    
    const community_object* community_ptr = nullptr;
 
@@ -3548,7 +3771,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
       FC_ASSERT( community_ptr != nullptr, 
          "Community Name: ${b} not found.", ("b", o.community ));
       const community_object& community = *community_ptr;
-      feed_reach_type community_feed_type = COMMUNITY_FEED;
+      feed_reach_type community_feed_type = feed_reach_type::COMMUNITY_FEED;
       const community_member_object& community_member = _db.get_community_member( community.name );
 
       if( o.parent_author == ROOT_POST_PARENT )
@@ -3579,7 +3802,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          {
             FC_ASSERT( public_key_type( o.public_key ) == community.community_public_key, 
                "Posts in Private and Exclusive Communities must be encrypted with the community public key.");
-            FC_ASSERT( options.reach == community_feed_type, 
+            FC_ASSERT( reach_type == community_feed_type, 
                "Posts in Private and Exclusive Communities should have reach limited to only community level subscribers.");
          }
          break;
@@ -3591,7 +3814,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
       }
    }
 
-   switch( options.reach )
+   switch( reach_type )
    {
       case feed_reach_type::TAG_FEED:
       case feed_reach_type::FOLLOW_FEED:
@@ -3632,6 +3855,78 @@ void comment_evaluator::do_apply( const comment_operation& o )
       default:
       {
          FC_ASSERT( false, "Invalid Post Reach Type." );
+      }
+   }
+
+   switch( format_type )
+   {
+      case post_format_type::TEXT_POST:
+      {
+         FC_ASSERT( o.body.size() <= MAX_TEXT_POST_LENGTH,
+            "Comment rejected: Body size is too large for text post, maximum of 300 characters." );
+         FC_ASSERT( o.title.size() == 0,
+            "Comment rejected: Should not include title in text post." );
+      }
+      break;
+      case post_format_type::IMAGE_POST:
+      {
+         FC_ASSERT( o.ipfs.size() >= 1,
+            "Comment rejected: Image post must contain at least one IPFS referenced image file." );
+      }
+      break;
+      case post_format_type::VIDEO_POST:
+      {
+         FC_ASSERT( o.magnet.size() >= 1 || o.ipfs.size() >= 1,
+            "Comment rejected: Video post must contain at least one IPFS or magnet referenced video file." );
+         FC_ASSERT( o.title.size() >=1,
+            "Comment rejected: Should include title in video post." );
+      }
+      break;
+      case post_format_type::LINK_POST:
+      {
+         FC_ASSERT( o.url.size() >=1,
+            "Comment rejected: Link post must contain at least a valid url link." );
+         FC_ASSERT( o.title.size() >=1,
+            "Comment rejected: Should include title in link post." );
+      }
+      break;
+      case post_format_type::ARTICLE_POST:
+      {
+         FC_ASSERT( o.body.size() >=1,
+            "Comment rejected: Article post must include body." );
+         FC_ASSERT( o.title.size() >=1,
+            "Comment rejected: Article post must include title." );
+      }
+      break;
+      case post_format_type::AUDIO_POST:
+      {
+         FC_ASSERT( o.ipfs.size() >= 1,
+            "Comment rejected: Audio post must contain at least one IPFS referenced audio file." );
+         FC_ASSERT( o.title.size() >= 1,
+            "Comment rejected: Audio post must contain title." );
+      }
+      break;
+      case post_format_type::FILE_POST:
+      {
+         FC_ASSERT( o.magnet.size() >= 1 || o.ipfs.size() >= 1,
+            "Comment rejected: File post must contain at least one IPFS or Magnet referenced file." );
+         FC_ASSERT( o.title.size() >= 1,
+            "Comment rejected: File post must contain title." );
+      }
+      break;
+      case post_format_type::POLL_POST:
+      case post_format_type::LIVESTREAM_POST:
+      case post_format_type::PRODUCT_POST:
+      case post_format_type::LIST_POST:
+      {
+         /**
+          *  TODO: Formatting of advanced post types. 
+          */
+      }
+      break;
+      default:
+      {
+         FC_ASSERT( false, "Comment rejected: Invalid post type." );
       }
    }
 
@@ -3771,8 +4066,8 @@ void comment_evaluator::do_apply( const comment_operation& o )
          com.author = o.author;
          com.rating = options.rating;
          com.community = o.community;
-         com.reach = options.reach;
-         com.post_type = options.post_type;
+         com.reach = reach_type;
+         com.post_type = format_type;
          com.author_reputation = auth.author_reputation;
          com.comment_price = o.comment_price;
          com.premium_price = o.premium_price;
@@ -3808,6 +4103,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          from_string( com.permlink, o.permlink );
          from_string( com.body, o.body );
          from_string( com.json, o.json );
+         from_string( com.url, o.url );
 
          com.reward_currency = options.reward_currency;
          com.max_accepted_payout = options.max_accepted_payout;
@@ -3929,7 +4225,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
             com.active = now;
             com.rating = options.rating;
             com.community = o.community;
-            com.reach = options.reach;
+            com.reach = reach_type;
             com.reward_currency = options.reward_currency;
             com.max_accepted_payout = options.max_accepted_payout;
             com.percent_liquid = options.percent_liquid;
@@ -3958,6 +4254,10 @@ void comment_evaluator::do_apply( const comment_operation& o )
             if( o.json.size() && fc::is_utf8( o.json ) )
             {
                from_string( com.json, o.json );  
+            }
+            if( o.url.size() && fc::is_utf8( o.url ) )
+            {
+               from_string( com.url, o.url );  
             }
             com.ipfs.reserve( o.ipfs.size() );
             for( size_t i = 0; i < o.ipfs.size(); i++ )
@@ -4011,8 +4311,9 @@ void comment_evaluator::do_apply( const comment_operation& o )
             com.active = fc::time_point::min();
             com.rating = 1;
             com.community = community_name_type();
-            com.reach = NO_FEED;
-            from_string( com.json, "" );  
+            com.reach = feed_reach_type::NO_FEED;
+            from_string( com.json, "" );
+            from_string( com.url, "" );
             com.ipfs.clear();
             com.magnet.clear();
             from_string( com.language, "" );
@@ -4322,7 +4623,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
          });
       }
 
-      if( voter.membership == NONE )     // Check for the presence of an ad bid on this vote.
+      if( voter.membership == membership_tier_type::NONE )     // Check for the presence of an ad bid on this vote.
       {
          const auto& bid_idx = _db.get_index< ad_bid_index >().indices().get< by_provider_metric_author_objective_price >();
          auto bid_itr = bid_idx.lower_bound( std::make_tuple( o.interface, ad_metric_type::VOTE_METRIC, comment.author, comment.permlink ) );
@@ -4642,7 +4943,7 @@ void view_evaluator::do_apply( const view_operation& o )
          }
       });
 
-      if( viewer.membership == NONE )     // Check for the presence of an ad bid on this view.
+      if( viewer.membership == membership_tier_type::NONE )     // Check for the presence of an ad bid on this view.
       {
          const auto& bid_idx = _db.get_index< ad_bid_index >().indices().get< by_provider_metric_author_objective_price >();
          auto bid_itr = bid_idx.lower_bound( std::make_tuple( o.interface, ad_metric_type::VIEW_METRIC, comment.author, comment.permlink ) );
@@ -4715,7 +5016,7 @@ void share_evaluator::do_apply( const share_operation& o )
    const account_object& sharer = _db.get_account( o.sharer );
    FC_ASSERT( sharer.can_vote,  
       "sharer has declined their voting rights." );
-   const community_object* community_ptr = nullptr; 
+   const community_object* community_ptr = nullptr;
    if( comment.community.size() )
    {
       community_ptr = _db.find_community( comment.community );      
@@ -4853,9 +5154,20 @@ void share_evaluator::do_apply( const share_operation& o )
             cs.max_weight = 0;
          }
       });
+
+      feed_reach_type reach_type = feed_reach_type::FOLLOW_FEED;
+
+      for( size_t i = 0; i < feed_reach_values.size(); i++ )
+      {
+         if( o.reach == feed_reach_values[ i ] )
+         {
+            reach_type = feed_reach_type( i );
+            break;
+         }
+      }
       
       // Create blog and feed objects for sharer account's followers and connections. 
-      _db.share_comment_to_feeds( sharer.name, o.reach, comment );
+      _db.share_comment_to_feeds( sharer.name, reach_type, comment );
 
       if( o.community.valid() )
       {
@@ -4872,7 +5184,7 @@ void share_evaluator::do_apply( const share_operation& o )
          _db.share_comment_to_tag( sharer.name, *o.tag, comment );
       }
 
-      if( sharer.membership == NONE )     // Check for the presence of an ad bid on this share.
+      if( sharer.membership == membership_tier_type::NONE )     // Check for the presence of an ad bid on this share.
       {
          const auto& bid_idx = _db.get_index< ad_bid_index >().indices().get< by_provider_metric_author_objective_price >();
          auto bid_itr = bid_idx.lower_bound( std::make_tuple( o.interface, ad_metric_type::SHARE_METRIC, comment.author, comment.permlink ) );
@@ -5086,11 +5398,22 @@ void community_create_evaluator::do_apply( const community_create_operation& o )
    FC_ASSERT( community_ptr == nullptr,
       "Community with the name: ${n} already exists.", ("n", o.name) );
 
+   community_privacy_type privacy_type = community_privacy_type::OPEN_PUBLIC_COMMUNITY;
+
+   for( size_t i = 0; i < community_privacy_values.size(); i++ )
+   {
+      if( o.community_privacy == community_privacy_values[ i ] )
+      {
+         privacy_type = community_privacy_type( i );
+         break;
+      }
+   }
+
    _db.create< community_object >( [&]( community_object& bo )
    {
       bo.name = o.name;
       bo.founder = founder.name;
-      bo.community_privacy = o.community_privacy;
+      bo.community_privacy = privacy_type;
       from_string( bo.json, o.json );
       from_string( bo.json_private, o.json_private );
       from_string( bo.details, o.details );
@@ -5480,8 +5803,6 @@ void community_join_request_evaluator::do_apply( const community_join_request_op
    const community_object& community = _db.get_community( o.community );
    FC_ASSERT( community.active,
       "Community: ${s} must be active for join requests.",("s", o.community) );
-   FC_ASSERT( community.community_privacy != EXCLUSIVE_PRIVATE_COMMUNITY,
-      "Account: ${a} cannot request to join an Exclusive community: ${b} Membership is by invitation only.", ("a", o.account)("b", o.community));
    const community_member_object& community_member = _db.get_community_member( o.community );
    FC_ASSERT( !community_member.is_member( account.name ),
       "Account: ${a} is already a member of the community: ${b}.", ("a", o.account)("b", o.community));
@@ -5890,6 +6211,165 @@ void community_subscribe_evaluator::do_apply( const community_subscribe_operatio
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
+void community_event_evaluator::do_apply( const community_event_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   const community_object& community = _db.get_community( o.community );
+
+   FC_ASSERT( community.active, 
+      "Community: ${s} must be active to subscribe.",("s", o.community) );
+
+   const community_member_object& community_member = _db.get_community_member( o.community );
+
+   FC_ASSERT( community_member.is_administrator( o.account ),
+      "Only administrators of the community can create and update events within it." );
+
+   flat_set< account_name_type > inv;
+
+   for( account_name_type name : o.invited )
+   {
+      FC_ASSERT( community_member.is_member( name ),
+         "Only members of the community can be invited to events within it." );
+      inv.insert( name );
+   }
+   
+   time_point now = _db.head_block_time();
+
+   const auto& event_idx = _db.get_index< community_event_index >().indices().get< by_community_event_name >();
+   auto event_itr = event_idx.find( boost::make_tuple( o.community, o.event_name ) );
+
+   if( event_itr == event_idx.end() )
+   {
+      _db.create< community_event_object >( [&]( community_event_object& ceo )
+      {
+         ceo.account = o.account;
+         ceo.community = o.community;
+         from_string( ceo.event_name, o.event_name );
+         from_string( ceo.location, o.location );
+         from_string( ceo.details, o.details );
+         from_string( ceo.url, o.url );
+         from_string( ceo.json, o.json );
+         ceo.invited = inv;
+         ceo.event_start_time = o.event_start_time;
+         ceo.event_end_time = o.event_end_time;
+         ceo.last_updated = now;
+         ceo.created = now;
+      });
+   }
+   else
+   {
+      const community_event_object& event = *event_itr;
+
+      _db.modify( event, [&]( community_event_object& ceo )
+      {
+         from_string( ceo.location, o.location );
+         from_string( ceo.details, o.details );
+         from_string( ceo.url, o.url );
+         from_string( ceo.json, o.json );
+         ceo.event_start_time = o.event_start_time;
+         ceo.event_end_time = o.event_end_time;
+         ceo.last_updated = now;
+         ceo.invited = inv;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
+void community_event_attend_evaluator::do_apply( const community_event_attend_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   const community_event_object& event = _db.get_community_event( o.community, o.event_name );
+   const community_object& community = _db.get_community( o.community );
+
+   FC_ASSERT( community.active, 
+      "Community: ${s} must be active to attend event.",("s", o.community) );
+
+   const community_member_object& community_member = _db.get_community_member( o.community );
+   
+   FC_ASSERT( community_member.is_authorized_interact( o.account ),
+      "Account: ${a} cannot interact with events within the community ${c}.",("a", o.account)("c", o.community) );
+   
+   time_point now = _db.head_block_time();
+
+   if( o.not_attending )
+   {
+      _db.modify( event, [&]( community_event_object& ceo )
+      {
+         ceo.not_attending.insert( o.account );
+         ceo.last_updated = now;
+      });
+   }
+   else
+   {
+      _db.modify( event, [&]( community_event_object& ceo )
+      {
+         ceo.not_attending.erase( o.account );
+         ceo.last_updated = now;
+      });
+   }
+
+   if( o.attending )
+   {
+      _db.modify( event, [&]( community_event_object& ceo )
+      {
+         ceo.attending.insert( o.account );
+         ceo.last_updated = now;
+      });
+   }
+   else
+   {
+      _db.modify( event, [&]( community_event_object& ceo )
+      {
+         ceo.attending.erase( o.account );
+         ceo.last_updated = now;
+      });
+   }
+
+   if( o.interested )
+   {
+      _db.modify( event, [&]( community_event_object& ceo )
+      {
+         ceo.interested.insert( o.account );
+         ceo.last_updated = now;
+      });
+   }
+   else
+   {
+      _db.modify( event, [&]( community_event_object& ceo )
+      {
+         ceo.interested.erase( o.account );
+         ceo.last_updated = now;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
 //================================//
 // === Advertising Evaluators === //
 //================================//
@@ -5920,7 +6400,18 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
    const auto& creative_idx = _db.get_index< ad_creative_index >().indices().get< by_creative_id >();
    auto creative_itr = creative_idx.find( boost::make_tuple( o.account, o.creative_id ) );
 
-   switch( o.format_type )
+   ad_format_type ad_format = ad_format_type::STANDARD_FORMAT;
+
+   for( size_t i = 0; i < ad_format_values.size(); i++ )
+   {
+      if( o.format_type == ad_format_values[ i ] )
+      {
+         ad_format = ad_format_type( i );
+         break;
+      }
+   }
+
+   switch( ad_format )
    {
       case ad_format_type::STANDARD_FORMAT:
       {
@@ -5933,7 +6424,7 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
             "Creative comment must be public." );
          FC_ASSERT( creative_obj.premium_price.amount == 0,
             "Creative comment must not be a premium post." );
-         FC_ASSERT( creative_obj.post_type != PRODUCT_POST,
+         FC_ASSERT( creative_obj.post_type != post_format_type::PRODUCT_POST,
             "Creative comment must not be a product post" );
       }
       break;
@@ -5948,7 +6439,7 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
             "Creative comment must be public." );
          FC_ASSERT( creative_obj.premium_price.amount != 0,
             "Creative comment must be a premium post." );
-         FC_ASSERT( creative_obj.post_type != PRODUCT_POST,
+         FC_ASSERT( creative_obj.post_type != post_format_type::PRODUCT_POST,
             "Creative comment must not be a product post" );
       }
       break;
@@ -5963,7 +6454,7 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
             "Creative comment must be public." );
          FC_ASSERT( creative_obj.premium_price.amount == 0,
             "Creative comment must not be a premium post." );
-         FC_ASSERT( creative_obj.post_type == PRODUCT_POST,
+         FC_ASSERT( creative_obj.post_type == post_format_type::PRODUCT_POST,
             "Creative comment must be a product post" );
       }
       break;
@@ -6006,7 +6497,7 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
       {
          aco.account = o.account;
          aco.author = o.author;
-         aco.format_type = o.format_type;
+         aco.format_type = ad_format;
          from_string( aco.creative_id, o.creative_id );
          from_string( aco.objective, o.objective );
          from_string( aco.creative, o.creative );
@@ -6020,7 +6511,7 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
    {
       _db.modify( *creative_itr, [&]( ad_creative_object& aco )
       {
-         aco.format_type = o.format_type;
+         aco.format_type = ad_format;
          from_string( aco.objective, o.objective );
          from_string( aco.creative, o.creative );
          from_string( aco.json, o.json );
@@ -6150,6 +6641,17 @@ void ad_inventory_evaluator::do_apply( const ad_inventory_operation& o )
    const auto& inventory_idx = _db.get_index< ad_inventory_index >().indices().get< by_inventory_id >();
    auto inventory_itr = inventory_idx.find( boost::make_tuple( o.provider, o.inventory_id ) );
 
+   ad_metric_type ad_metric = ad_metric_type::VIEW_METRIC;
+
+   for( size_t i = 0; i < ad_metric_values.size(); i++ )
+   {
+      if( o.metric == ad_metric_values[ i ] )
+      {
+         ad_metric = ad_metric_type( i );
+         break;
+      }
+   }
+
    if( inventory_itr == inventory_idx.end() )    // Ad inventory does not exist
    {
       _db.create< ad_inventory_object >( [&]( ad_inventory_object& aio )
@@ -6157,7 +6659,7 @@ void ad_inventory_evaluator::do_apply( const ad_inventory_operation& o )
          aio.provider = o.provider;
          from_string( aio.inventory_id, o.inventory_id );
          from_string( aio.json, o.json );
-         aio.metric = o.metric;
+         aio.metric = ad_metric;
          from_string( aio.audience_id, o.audience_id );
          aio.min_price = o.min_price;
          aio.inventory = o.inventory;
@@ -6219,7 +6721,7 @@ void ad_audience_evaluator::do_apply( const ad_audience_operation& o )
    for( auto a : o.audience )   // Ensure all audience member accounts exist
    {
       const account_object& acc = _db.get_account( a );
-      if( acc.active && acc.membership == NONE )
+      if( acc.active && acc.membership == membership_tier_type::NONE )
       {
          audience_set.insert( a );
       }
@@ -6473,6 +6975,504 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
       }  
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
+
+
+
+//===============================//
+// === Graph Data Evaluators === //
+//===============================//
+
+
+
+void graph_node_evaluator::do_apply( const graph_node_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   flat_set< string > attribute_set;
+
+   for( graph_node_name_type property : o.node_types )
+   {
+      const graph_node_property_object& node_property = _db.get_graph_node_property( property );
+
+      for( auto att : node_property.attributes )
+      {
+         attribute_set.insert( to_string( att ) );
+      }
+   }
+
+   for( auto att : attribute_set )
+   {
+      FC_ASSERT( std::find( o.attributes.begin(), o.attributes.end(), att ) != o.attributes.end(),
+         "Nodes must have an attribute value for ${a}.", ("a", att ) );
+   }
+
+   if( o.interface.size() )
+   {
+      const account_object& interface_acc = _db.get_account( o.interface );
+      FC_ASSERT( interface_acc.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+      const interface_object& interface = _db.get_interface( o.interface );
+      FC_ASSERT( interface.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+   }
+   
+   time_point now = _db.head_block_time();
+
+   const auto& node_idx = _db.get_index< graph_node_index >().indices().get< by_account_id >();
+   auto node_itr = node_idx.find( boost::make_tuple( o.account, o.node_id ) );
+
+   if( node_itr == node_idx.end() )
+   {
+      _db.create< graph_node_object >( [&]( graph_node_object& gno )
+      {
+         gno.account = o.account;
+         for( auto nt : o.node_types )
+         {
+            gno.node_types.push_back( nt );
+         }
+         from_string( gno.node_id, o.node_id );
+         from_string( gno.name, o.name );
+         from_string( gno.details, o.details );
+
+         gno.attributes.reserve( o.attributes.size() );
+         for( size_t i = 0; i < o.attributes.size(); i++ )
+         {
+            from_string( gno.attributes[ i ], o.attributes[ i ] );
+         }
+
+         gno.attribute_values.reserve( o.attribute_values.size() );
+         for( size_t i = 0; i < o.attribute_values.size(); i++ )
+         {
+            from_string( gno.attribute_values[ i ], o.attribute_values[ i ] );
+         }
+
+         from_string( gno.json, o.json );
+         from_string( gno.json_private, o.json_private );
+         gno.node_public_key = public_key_type( o.node_public_key );
+
+         if( o.interface.size() )
+         {
+            gno.interface = o.interface;
+         }
+         
+         gno.last_updated = now;
+         gno.created = now;
+      });
+   }
+   else
+   {
+      const graph_node_object& node = *node_itr;
+
+      _db.modify( node, [&]( graph_node_object& gno )
+      {
+         for( auto nt : o.node_types )
+         {
+            gno.node_types.push_back( nt );
+         }
+         from_string( gno.name, o.name );
+         from_string( gno.details, o.details );
+
+         gno.attributes.reserve( o.attributes.size() );
+         for( size_t i = 0; i < o.attributes.size(); i++ )
+         {
+            from_string( gno.attributes[ i ], o.attributes[ i ] );
+         }
+
+         gno.attribute_values.reserve( o.attribute_values.size() );
+         for( size_t i = 0; i < o.attribute_values.size(); i++ )
+         {
+            from_string( gno.attribute_values[ i ], o.attribute_values[ i ] );
+         }
+
+         from_string( gno.json, o.json );
+         from_string( gno.json_private, o.json_private );
+         gno.node_public_key = public_key_type( o.node_public_key );
+         gno.last_updated = now;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
+void graph_edge_evaluator::do_apply( const graph_edge_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   const graph_node_object& from_node = _db.get_graph_node( o.from_node_account, o.from_node_id );
+   const graph_node_object& to_node = _db.get_graph_node( o.to_node_account, o.to_node_id );
+
+   flat_set< string > attribute_set;
+
+   for( graph_edge_name_type property : o.edge_types )
+   {
+      const graph_edge_property_object& edge_property = _db.get_graph_edge_property( property );
+
+      for( auto att : edge_property.attributes )
+      {
+         attribute_set.insert( to_string( att ) );
+      }
+
+      for( graph_node_name_type node_type : from_node.node_types )
+      {
+         FC_ASSERT( std::find( edge_property.from_node_types.begin(), edge_property.from_node_types.end(), node_type ) != edge_property.from_node_types.end(),
+            "From Node type not found in available node types in edge property ${a}.", ("a", node_type ) );
+      }
+
+      for( graph_node_name_type node_type : to_node.node_types )
+      {
+         FC_ASSERT( std::find( edge_property.to_node_types.begin(), edge_property.to_node_types.end(), node_type ) != edge_property.to_node_types.end(),
+            "To Node type not found in available node types in edge property ${a}.", ("a", node_type ) );
+      }
+   }
+
+   for( auto att : attribute_set )
+   {
+      FC_ASSERT( std::find( o.attributes.begin(), o.attributes.end(), att ) != o.attributes.end(),
+         "Edges must have an attribute value for ${a}.", ("a", att ) );
+   }
+
+   if( o.interface.size() )
+   {
+      const account_object& interface_acc = _db.get_account( o.interface );
+      FC_ASSERT( interface_acc.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+      const interface_object& interface = _db.get_interface( o.interface );
+      FC_ASSERT( interface.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+   }
+   
+   time_point now = _db.head_block_time();
+
+   const auto& edge_idx = _db.get_index< graph_edge_index >().indices().get< by_account_id >();
+   auto edge_itr = edge_idx.find( boost::make_tuple( o.account, o.edge_id ) );
+
+   if( edge_itr == edge_idx.end() )
+   {
+      _db.create< graph_edge_object >( [&]( graph_edge_object& geo )
+      {
+         geo.account = o.account;
+         for( auto et : o.edge_types )
+         {
+            geo.edge_types.push_back( et );
+         }
+         from_string( geo.edge_id, o.edge_id );
+         geo.from_node = from_node.id;
+         geo.to_node = to_node.id;
+
+         from_string( geo.name, o.name );
+         from_string( geo.details, o.details );
+
+         geo.attributes.reserve( o.attributes.size() );
+         for( size_t i = 0; i < o.attributes.size(); i++ )
+         {
+            from_string( geo.attributes[ i ], o.attributes[ i ] );
+         }
+
+         geo.attribute_values.reserve( o.attribute_values.size() );
+         for( size_t i = 0; i < o.attribute_values.size(); i++ )
+         {
+            from_string( geo.attribute_values[ i ], o.attribute_values[ i ] );
+         }
+
+         from_string( geo.json, o.json );
+         from_string( geo.json_private, o.json_private );
+         geo.edge_public_key = public_key_type( o.edge_public_key );
+
+         if( o.interface.size() )
+         {
+            geo.interface = o.interface;
+         }
+         
+         geo.last_updated = now;
+         geo.created = now;
+      });
+   }
+   else
+   {
+      const graph_edge_object& edge = *edge_itr;
+
+      _db.modify( edge, [&]( graph_edge_object& geo )
+      {
+         for( auto et : o.edge_types )
+         {
+            geo.edge_types.push_back( et );
+         }
+         from_string( geo.edge_id, o.edge_id );
+         geo.from_node = from_node.id;
+         geo.to_node = to_node.id;
+
+         from_string( geo.name, o.name );
+         from_string( geo.details, o.details );
+
+         geo.attributes.reserve( o.attributes.size() );
+         for( size_t i = 0; i < o.attributes.size(); i++ )
+         {
+            from_string( geo.attributes[ i ], o.attributes[ i ] );
+         }
+
+         geo.attribute_values.reserve( o.attribute_values.size() );
+         for( size_t i = 0; i < o.attribute_values.size(); i++ )
+         {
+            from_string( geo.attribute_values[ i ], o.attribute_values[ i ] );
+         }
+
+         from_string( geo.json, o.json );
+         from_string( geo.json_private, o.json_private );
+         geo.edge_public_key = public_key_type( o.edge_public_key );
+
+         if( o.interface.size() )
+         {
+            geo.interface = o.interface;
+         }
+         
+         geo.last_updated = now;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
+void graph_node_property_evaluator::do_apply( const graph_node_property_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   if( o.interface.size() )
+   {
+      const account_object& interface_acc = _db.get_account( o.interface );
+      FC_ASSERT( interface_acc.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+      const interface_object& interface = _db.get_interface( o.interface );
+      FC_ASSERT( interface.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+   }
+
+   connection_tier_type graph_privacy = connection_tier_type::PUBLIC;
+
+   for( size_t i = 0; i < connection_tier_values.size(); i++ )
+   {
+      if( o.graph_privacy == connection_tier_values[ i ] )
+      {
+         graph_privacy = connection_tier_type( i );
+         break;
+      }
+   }
+
+   connection_tier_type edge_permission = connection_tier_type::PUBLIC;
+
+   for( size_t i = 0; i < connection_tier_values.size(); i++ )
+   {
+      if( o.edge_permission == connection_tier_values[ i ] )
+      {
+         edge_permission = connection_tier_type( i );
+         break;
+      }
+   }
+   
+   time_point now = _db.head_block_time();
+
+   const auto& graph_node_property_idx = _db.get_index< graph_node_property_index >().indices().get< by_node_type >();
+   auto graph_node_property_itr = graph_node_property_idx.find( o.node_type );
+
+   if( graph_node_property_itr == graph_node_property_idx.end() )
+   {
+      _db.create< graph_node_property_object >( [&]( graph_node_property_object& gnpo )
+      {
+         gnpo.account = o.account;
+         gnpo.node_type = o.node_type;
+         gnpo.graph_privacy = graph_privacy;
+         gnpo.edge_permission = edge_permission;
+         
+         from_string( gnpo.details, o.details );
+         from_string( gnpo.url, o.url );
+         from_string( gnpo.json, o.json );
+
+         gnpo.attributes.reserve( o.attributes.size() );
+         for( size_t i = 0; i < o.attributes.size(); i++ )
+         {
+            from_string( gnpo.attributes[ i ], o.attributes[ i ] );
+         }
+         
+         if( o.interface.size() )
+         {
+            gnpo.interface = o.interface;
+         }
+         
+         gnpo.last_updated = now;
+         gnpo.created = now;
+      });
+   }
+   else
+   {
+      const graph_node_property_object& node = *graph_node_property_itr;
+
+      _db.modify( node, [&]( graph_node_property_object& gnpo )
+      {
+         gnpo.node_type = o.node_type;
+         gnpo.graph_privacy = graph_privacy;
+         gnpo.edge_permission = edge_permission;
+         
+         from_string( gnpo.details, o.details );
+         from_string( gnpo.url, o.url );
+         from_string( gnpo.json, o.json );
+
+         gnpo.attributes.reserve( o.attributes.size() );
+         for( size_t i = 0; i < o.attributes.size(); i++ )
+         {
+            from_string( gnpo.attributes[ i ], o.attributes[ i ] );
+         }
+         
+         if( o.interface.size() )
+         {
+            gnpo.interface = o.interface;
+         }
+         
+         gnpo.last_updated = now;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
+void graph_edge_property_evaluator::do_apply( const graph_edge_property_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   for( graph_node_name_type property : o.from_node_types )
+   {
+      _db.get_graph_node_property( property );
+   }
+
+   for( graph_node_name_type property : o.to_node_types )
+   {
+      _db.get_graph_node_property( property );
+   }
+
+   if( o.interface.size() )
+   {
+      const account_object& interface_acc = _db.get_account( o.interface );
+      FC_ASSERT( interface_acc.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+      const interface_object& interface = _db.get_interface( o.interface );
+      FC_ASSERT( interface.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+   }
+
+   connection_tier_type graph_privacy = connection_tier_type::PUBLIC;
+
+   for( size_t i = 0; i < connection_tier_values.size(); i++ )
+   {
+      if( o.graph_privacy == connection_tier_values[ i ] )
+      {
+         graph_privacy = connection_tier_type( i );
+         break;
+      }
+   }
+   
+   time_point now = _db.head_block_time();
+
+   const auto& graph_edge_property_idx = _db.get_index< graph_edge_property_index >().indices().get< by_edge_type >();
+   auto graph_edge_property_itr = graph_edge_property_idx.find( o.edge_type );
+
+   if( graph_edge_property_itr == graph_edge_property_idx.end() )
+   {
+      _db.create< graph_edge_property_object >( [&]( graph_edge_property_object& gepo )
+      {
+         gepo.account = o.account;
+         gepo.edge_type = o.edge_type;
+         gepo.graph_privacy = graph_privacy;
+         
+         from_string( gepo.details, o.details );
+         from_string( gepo.url, o.url );
+         from_string( gepo.json, o.json );
+
+         gepo.attributes.reserve( o.attributes.size() );
+         for( size_t i = 0; i < o.attributes.size(); i++ )
+         {
+            from_string( gepo.attributes[ i ], o.attributes[ i ] );
+         }
+         
+         if( o.interface.size() )
+         {
+            gepo.interface = o.interface;
+         }
+         
+         gepo.last_updated = now;
+         gepo.created = now;
+      });
+   }
+   else
+   {
+      const graph_edge_property_object& edge = *graph_edge_property_itr;
+
+      _db.modify( edge, [&]( graph_edge_property_object& gepo )
+      {
+         gepo.edge_type = o.edge_type;
+         gepo.graph_privacy = graph_privacy;
+         
+         from_string( gepo.details, o.details );
+         from_string( gepo.url, o.url );
+         from_string( gepo.json, o.json );
+
+         gepo.attributes.reserve( o.attributes.size() );
+         for( size_t i = 0; i < o.attributes.size(); i++ )
+         {
+            from_string( gepo.attributes[ i ], o.attributes[ i ] );
+         }
+         
+         if( o.interface.size() )
+         {
+            gepo.interface = o.interface;
+         }
+         
+         gepo.last_updated = now;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 
@@ -7457,6 +8457,305 @@ void delegate_asset_evaluator::do_apply( const delegate_asset_operation& o )
 //================================//
 
 
+void product_update_evaluator::do_apply( const product_update_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   time_point now = _db.head_block_time();
+
+   product_sale_type product_sale = product_sale_type::FIXED_PRICE_SALE;
+
+   for( size_t i = 0; i < product_sale_values.size(); i++ )
+   {
+      if( o.sale_type == product_sale_values[ i ] )
+      {
+         product_sale = product_sale_type( i );
+         break;
+      }
+   }
+
+   const auto& product_idx = _db.get_index< product_index >().indices().get< by_product_id >();
+   auto product_itr = product_idx.find( std::make_tuple( o.account, o.product_id ) );
+
+   if( product_itr == product_idx.end() )
+   {
+      _db.create< product_object >([&]( product_object& p )
+      {
+         p.account = o.account;
+         from_string( p.product_id, o.product_id );
+         from_string( p.name, o.name );
+         p.sale_type = product_sale;
+         from_string( p.url, o.url );
+         from_string( p.json, o.json );
+
+         p.product_variants.reserve( o.product_variants.size() );
+         for( size_t i = 0; i < o.product_variants.size(); i++ )
+         {
+            from_string( p.product_variants[ i ], o.product_variants[ i ] );
+         }
+
+         p.product_details.reserve( o.product_details.size() );
+         for( size_t i = 0; i < o.product_details.size(); i++ )
+         {
+            from_string( p.product_details[ i ], o.product_details[ i ] );
+         }
+
+         p.product_images.reserve( o.product_images.size() );
+         for( size_t i = 0; i < o.product_images.size(); i++ )
+         {
+            from_string( p.product_images[ i ], o.product_images[ i ] );
+         }
+
+         for( auto pr : o.product_prices )
+         {
+            p.product_prices.push_back( pr );
+         }
+
+         for( auto sa : o.stock_available )
+         {
+            p.stock_available.push_back( sa );
+         }
+
+         p.delivery_variants.reserve( o.delivery_variants.size() );
+         for( size_t i = 0; i < o.delivery_variants.size(); i++ )
+         {
+            from_string( p.delivery_variants[ i ], o.delivery_variants[ i ] );
+         }
+
+         p.delivery_details.reserve( o.delivery_details.size() );
+         for( size_t i = 0; i < o.delivery_details.size(); i++ )
+         {
+            from_string( p.delivery_details[ i ], o.delivery_details[ i ] );
+         }
+
+         for( auto dp : o.delivery_prices )
+         {
+            p.delivery_prices.push_back( dp );
+         }
+         
+         p.created = now;
+         p.last_updated = now;
+      });
+   }
+   else
+   {
+      const product_object& product = *product_itr;
+
+      _db.modify( product, [&]( product_object& p )
+      {
+         from_string( p.name, o.name );
+         p.sale_type = product_sale;
+         from_string( p.url, o.url );
+         from_string( p.json, o.json );
+
+         p.product_variants.reserve( o.product_variants.size() );
+         for( size_t i = 0; i < o.product_variants.size(); i++ )
+         {
+            from_string( p.product_variants[ i ], o.product_variants[ i ] );
+         }
+
+         p.product_details.reserve( o.product_details.size() );
+         for( size_t i = 0; i < o.product_details.size(); i++ )
+         {
+            from_string( p.product_details[ i ], o.product_details[ i ] );
+         }
+
+         p.product_images.reserve( o.product_images.size() );
+         for( size_t i = 0; i < o.product_images.size(); i++ )
+         {
+            from_string( p.product_images[ i ], o.product_images[ i ] );
+         }
+
+         for( auto pr : o.product_prices )
+         {
+            p.product_prices.push_back( pr );
+         }
+
+         for( auto sa : o.stock_available )
+         {
+            p.stock_available.push_back( sa );
+         }
+
+         p.delivery_variants.reserve( o.delivery_variants.size() );
+         for( size_t i = 0; i < o.delivery_variants.size(); i++ )
+         {
+            from_string( p.delivery_variants[ i ], o.delivery_variants[ i ] );
+         }
+
+         p.delivery_details.reserve( o.delivery_details.size() );
+         for( size_t i = 0; i < o.delivery_details.size(); i++ )
+         {
+            from_string( p.delivery_details[ i ], o.delivery_details[ i ] );
+         }
+
+         for( auto dp : o.delivery_prices )
+         {
+            p.delivery_prices.push_back( dp );
+         }
+         p.last_updated = now;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
+void product_purchase_evaluator::do_apply( const product_purchase_operation& o )
+{ try {
+   const account_name_type& signed_for = o.buyer;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   time_point now = _db.head_block_time();
+
+   const product_object& product = _db.get_product( o.seller, o.product_id );
+
+   asset payment = asset( 0, product.product_prices[0].symbol );
+
+   flat_map< string, asset > price_map;
+
+   for( size_t i = 0; i < product.product_variants.size(); i++ )
+   {
+      price_map[ to_string( product.product_variants[ i ] ) ] = product.product_prices[ i ];
+   }
+
+   flat_map< string, asset > delivery_map;
+
+   for( size_t i = 0; i < product.delivery_variants.size(); i++ )
+   {
+      delivery_map[ to_string( product.delivery_variants[ i ] ) ] = product.delivery_prices[ i ];
+   }
+
+   for( size_t i = 0; i < o.order_variants.size(); i++ )
+   {
+      payment += price_map[ o.order_variants[ i ] ] * o.order_size[ i ];
+   }
+
+   payment += delivery_map[ o.delivery_variant ];
+
+   const auto& escrow_idx = _db.get_index< escrow_index >().indices().get< by_from_id >();
+   auto escrow_itr = escrow_idx.find( std::make_tuple( o.buyer, o.order_id ) );
+
+   const auto& purchase_order_idx = _db.get_index< purchase_order_index >().indices().get< by_order_id >();
+   auto purchase_order_itr = purchase_order_idx.find( std::make_tuple( o.buyer, o.order_id ) );
+
+   if( escrow_itr == escrow_idx.end() && purchase_order_itr == purchase_order_idx.end() )
+   {
+      _db.create< purchase_order_object >([&]( purchase_order_object& p )
+      {
+         p.buyer = o.buyer;
+         from_string( p.order_id, o.order_id );
+         p.seller = o.seller;
+         from_string( p.product_id, o.product_id );
+         p.order_variants.reserve( o.order_variants.size() );
+         for( size_t i = 0; i < o.order_variants.size(); i++ )
+         {
+            from_string( p.order_variants[ i ], o.order_variants[ i ] );
+         }
+         for( auto os : o.order_size )
+         {
+            p.order_size.push_back( os );
+         }
+         p.order_value = payment;
+         from_string( p.memo, o.memo );
+         from_string( p.json, o.json );
+         from_string( p.shipping_address, o.shipping_address );
+         from_string( p.delivery_variant, o.delivery_variant );
+         from_string( p.delivery_details, o.delivery_details );
+         p.created = now;
+         p.last_updated = now;
+         p.completed = false;
+      });
+
+      _db.create< escrow_object >([&]( escrow_object& esc )
+      {
+         esc.from = o.buyer;
+         esc.to = o.seller;
+         esc.from_mediator = account_name_type();
+         esc.to_mediator = account_name_type();
+         esc.payment = payment;
+         esc.balance = asset( 0, payment.symbol );
+         from_string( esc.escrow_id, o.order_id );     // Order ID used for escrow ID
+         from_string( esc.memo, o.memo );
+         from_string( esc.json, o.json );
+         esc.acceptance_time = o.acceptance_time;
+         esc.escrow_expiration = o.escrow_expiration;
+         esc.dispute_release_time = time_point::maximum();
+         esc.approvals[ o.buyer ] = false;
+         esc.approvals[ o.seller ] = false;
+         esc.created = now;
+         esc.last_updated = now;
+      });
+   }
+   else if( escrow_itr != escrow_idx.end() && purchase_order_itr != purchase_order_idx.end() )
+   {
+      const escrow_object& escrow = *escrow_itr;
+      const purchase_order_object& order = *purchase_order_itr;
+
+      for( auto a : escrow.approvals )
+      {
+         FC_ASSERT( a.second == false, 
+            "Cannot edit product purchase escrow after approvals have been made." );
+      }
+
+      FC_ASSERT( order.completed == false, 
+         "Cannot edit purchase after completion." );
+
+      _db.modify( order, [&]( purchase_order_object& p )
+      {
+         p.order_variants.reserve( o.order_variants.size() );
+         for( size_t i = 0; i < o.order_variants.size(); i++ )
+         {
+            from_string( p.order_variants[ i ], o.order_variants[ i ] );
+         }
+         for( auto os : o.order_size )
+         {
+            p.order_size.push_back( os );
+         }
+         p.order_value = payment;
+         from_string( p.memo, o.memo );
+         from_string( p.json, o.json );
+         from_string( p.shipping_address, o.shipping_address );
+         from_string( p.delivery_variant, o.delivery_variant );
+         from_string( p.delivery_details, o.delivery_details );
+         p.last_updated = now;
+         p.completed = o.completed;
+      });
+
+      _db.modify( escrow, [&]( escrow_object& esc )
+      {
+         esc.payment = payment;
+         from_string( esc.memo, o.memo );
+         from_string( esc.json, o.json );
+         esc.acceptance_time = o.acceptance_time;
+         esc.escrow_expiration = o.escrow_expiration;
+         esc.last_updated = now;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
+
 void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
@@ -7495,11 +8794,10 @@ void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
    const auto& escrow_idx = _db.get_index< escrow_index >().indices().get< by_from_id >();
    auto escrow_itr = escrow_idx.find( std::make_tuple( o.from, o.escrow_id ) );
 
-   if( escrow_itr == escrow_idx.end() )    // Marketplace transfer does not exist, creating new one.
+   if( escrow_itr == escrow_idx.end() )
    {
       _db.create< escrow_object >([&]( escrow_object& esc )
       {
-         from_string( esc.escrow_id, o.escrow_id );
          esc.from = o.from;
          esc.to = o.to;
          esc.from_mediator = account_name_type();
@@ -7508,6 +8806,9 @@ void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
          esc.escrow_expiration = o.escrow_expiration;
          esc.payment = o.amount;
          esc.balance = asset( 0, o.amount.symbol );
+         from_string( esc.escrow_id, o.escrow_id );
+         from_string( esc.memo, o.memo );
+         from_string( esc.json, o.json );
          esc.dispute_release_time = time_point::maximum();
          esc.approvals[ o.from ] = false;
          esc.approvals[ o.to ] = false;
@@ -7515,7 +8816,7 @@ void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
          esc.last_updated = now;
       });
    }
-   else     // Existing escrow being edited. 
+   else
    {
       const escrow_object& escrow = *escrow_itr;
 
@@ -7530,6 +8831,8 @@ void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
          esc.acceptance_time = o.acceptance_time;
          esc.escrow_expiration = o.escrow_expiration;
          esc.payment = o.amount;
+         from_string( esc.memo, o.memo );
+         from_string( esc.json, o.json );
          esc.last_updated = now;
       });
    }
@@ -7754,8 +9057,7 @@ void limit_order_evaluator::do_apply( const limit_order_operation& o )
 
    time_point now = _db.head_block_time();
    asset liquid = _db.get_liquid_balance( o.owner, o.amount_to_sell.symbol );
-   FC_ASSERT( liquid >= o.amount_to_sell,
-      "Account does not have sufficient funds for limit order." );
+   
    FC_ASSERT( o.expiration > now,
       "Limit order has to expire after head block time." );
 
@@ -7774,6 +9076,11 @@ void limit_order_evaluator::do_apply( const limit_order_operation& o )
 
    if( limit_itr == limit_idx.end() )    // Limit order does not already exist
    {
+      FC_ASSERT( o.opened,
+         "Limit order cannot be closed: No Limit order found with the specified ID." );
+      FC_ASSERT( liquid >= o.amount_to_sell,
+         "Account does not have sufficient funds for limit order." );
+
       _db.adjust_liquid_balance( o.owner, -o.amount_to_sell );
 
       const limit_order_object& order = _db.create< limit_order_object >( [&]( limit_order_object& obj )
@@ -7805,13 +9112,16 @@ void limit_order_evaluator::do_apply( const limit_order_operation& o )
 
       if( o.opened )
       {
-         asset delta = o.amount_to_sell - asset( order.for_sale, order.sell_price.base.symbol );
+         asset delta = asset( order.for_sale, order.sell_price.base.symbol ) - o.amount_to_sell;
 
-         _db.adjust_liquid_balance( o.owner, -delta );
+         FC_ASSERT( liquid >= -delta,
+            "Account does not have sufficient funds for limit order." );
+
+         _db.adjust_liquid_balance( o.owner, delta );
 
          _db.modify( order, [&]( limit_order_object& obj )
          {
-            obj.for_sale += delta.amount;
+            obj.for_sale = o.amount_to_sell.amount;
             obj.sell_price = o.exchange_rate;
             obj.expiration = o.expiration;
             obj.last_updated = now;
@@ -7922,10 +9232,13 @@ void margin_order_evaluator::do_apply( const margin_order_operation& o )
 
    if( margin_itr == margin_idx.end() )    // margin order does not already exist
    {
+      FC_ASSERT( o.opened,
+         "Margin order cannot be closed: No Margin order found with the specified ID." );
       FC_ASSERT( collateral.collateral.amount >= o.collateral.amount, 
          "Insufficient collateral balance in this asset to vest the amount requested in the loan. Please increase collateral.");
       FC_ASSERT( pool.base_balance.amount >= o.amount_to_borrow.amount,
          "Insufficient Available assets to borrow from credit pool. Please lower debt." );
+      
 
       _db.modify( collateral, [&]( credit_collateral_object& cco )
       {
@@ -8087,6 +9400,97 @@ void margin_order_evaluator::do_apply( const margin_order_operation& o )
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
+/**
+ * TODO: Daily auction order matching DB method
+ */
+void auction_order_evaluator::do_apply( const auction_order_operation& o )
+{ try {
+   const account_name_type& signed_for = o.owner;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   time_point now = _db.head_block_time();
+
+   FC_ASSERT( o.expiration > now,
+      "Auction order has to expire after head block time." );
+
+   if( o.interface.size() )
+   {
+      const account_object& interface_acc = _db.get_account( o.interface );
+      FC_ASSERT( interface_acc.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+      const interface_object& interface = _db.get_interface( o.interface );
+      FC_ASSERT( interface.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+   }
+
+   asset liquid = _db.get_liquid_balance( o.owner, o.amount_to_sell.symbol );
+   const auto& auction_idx = _db.get_index< auction_order_index >().indices().get< by_account >();
+   auto auction_itr = auction_idx.find( std::make_tuple( o.owner, o.order_id ) );
+
+   if( auction_itr == auction_idx.end() )
+   {
+      FC_ASSERT( o.opened,
+         "Auction order cannot be closed: No Auction order found with the specified ID." );
+      FC_ASSERT( liquid >= o.amount_to_sell,
+         "Account does not have sufficient funds for Auction order." );
+
+      _db.adjust_liquid_balance( o.owner, -o.amount_to_sell );
+
+      _db.create< auction_order_object >( [&]( auction_order_object& aoo )
+      {
+         aoo.owner = o.owner;
+         from_string( aoo.order_id, o.order_id );
+         aoo.amount_to_sell = o.amount_to_sell;
+         aoo.min_exchange_rate = o.min_exchange_rate;
+         if( o.interface.size() )
+         {
+            aoo.interface = o.interface;
+         }
+         aoo.expiration = o.expiration;
+         aoo.created = now;
+         aoo.last_updated = now;
+      });
+   }
+   else
+   {
+      const auction_order_object& order = *auction_itr;
+
+      if( o.opened )
+      {
+         asset delta = order.amount_to_sell - o.amount_to_sell;
+
+         FC_ASSERT( liquid >= -delta,
+            "Account does not have sufficient funds for Auction order." );
+
+         _db.adjust_liquid_balance( o.owner, delta );
+
+         _db.modify( order, [&]( auction_order_object& aoo )
+         {
+            aoo.amount_to_sell = o.amount_to_sell;
+            aoo.min_exchange_rate = o.min_exchange_rate;
+            aoo.expiration = o.expiration;
+            aoo.last_updated = now;
+         });
+      }
+      else
+      {
+         _db.close_auction_order( order );
+      }
+   }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
 void call_order_evaluator::do_apply( const call_order_operation& o )
 { try {
    const account_name_type& signed_for = o.owner;
@@ -8117,20 +9521,27 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
    FC_ASSERT( !debt_bitasset_data.current_feed.settlement_price.is_null(),
       "Cannot borrow asset with no price feed." );
 
-   const call_order_object* call_obj_ptr = _db.find_call_order( o.owner, o.debt.symbol );
+   const auto& call_idx = _db.get_index< call_order_index >().indices().get< by_account >();
+   auto call_itr = call_idx.find( std::make_tuple( o.owner, o.debt.symbol ) );
+
    optional< price > old_collateralization;
    optional< share_type > old_debt;
 
-   if( call_obj_ptr == nullptr )    // creating new debt position
+   asset liquid_collateral = _db.get_liquid_balance( o.owner, o.collateral.symbol );
+   asset liquid_debt = _db.get_liquid_balance( o.owner, o.debt.symbol );
+
+   if( call_itr == call_idx.end() )    // creating new debt position
    {
       FC_ASSERT( debt_dynamic_data.total_supply + o.debt.amount <= debt_asset.max_supply,
-         "Borrowing this quantity would exceed the assets Maximum supply." );
+         "Borrowing this quantity would exceed the asset's Maximum supply." );
       FC_ASSERT( debt_dynamic_data.total_supply + o.debt.amount >= 0,
-         "This transaction would bring current supply below zero.");
+         "This transaction would bring current supply below zero." );
+      FC_ASSERT( liquid_collateral >= o.collateral,
+         "Account does not have sufficient liquid collateral asset funds for Call order." );
 
-      _db.adjust_liquid_balance( o.owner, o.debt );
       _db.adjust_liquid_balance( o.owner, -o.collateral );
-
+      _db.adjust_liquid_balance( o.owner, o.debt );
+      
       _db.create< call_order_object >( [&]( call_order_object& coo )
       {
          coo.borrower = o.owner;
@@ -8144,12 +9555,19 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
    }
    else        // updating existing debt position
    {
-      const call_order_object& call_object = *call_obj_ptr;
+      const call_order_object& call_object = *call_itr;
+
       asset delta_collateral = o.collateral - call_object.collateral;
       asset delta_debt = o.debt - call_object.debt;
-      _db.adjust_liquid_balance( o.owner, delta_debt );
+
+      FC_ASSERT( liquid_collateral >= delta_collateral,
+         "Account does not have sufficient liquid collateral asset funds for Call order." );
+      FC_ASSERT( liquid_debt >= -delta_debt,
+         "Account does not have sufficient liquid debt asset funds for Call order." );
+
       _db.adjust_liquid_balance( o.owner, -delta_collateral );
-   
+      _db.adjust_liquid_balance( o.owner, delta_debt );
+      
       if( o.debt.amount != 0 )
       {
          FC_ASSERT( o.collateral.amount > 0 && o.debt.amount > 0,
@@ -8176,13 +9594,13 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
 
    if( _db.check_call_orders( debt_asset, false, false ) )      // Don't allow black swan, not for new limit order
    {
-      call_obj_ptr = _db.find_call_order( o.owner, o.debt.symbol );
+      const call_order_object* call_obj_ptr = _db.find_call_order( o.owner, o.debt.symbol );
       FC_ASSERT( !call_obj_ptr,
          "Updating call order would trigger a margin call that cannot be fully filled" );
    }
    else
    {
-      call_obj_ptr = _db.find_call_order( o.owner, o.debt.symbol );  // No black swan event has occurred
+      const call_order_object* call_obj_ptr = _db.find_call_order( o.owner, o.debt.symbol );  // No black swan event has occurred
       FC_ASSERT( call_obj_ptr != nullptr,
          "No margin call was executed and yet the call object was deleted" );
 
@@ -8198,6 +9616,125 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
          ("old_collateralization", *old_collateralization)
          ("new_collateralization", call_object.collateralization() )
          );
+   }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
+/**
+ * TODO: Option asset expiration DB method + strike price management + exercise evaluator
+ */
+void option_order_evaluator::do_apply( const option_order_operation& o )
+{ try {
+   const account_name_type& signed_for = o.owner;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   time_point now = _db.head_block_time();
+
+   FC_ASSERT( o.strike_price.expiration() > now,
+      "Option order has to expire after head block time." );
+
+   if( o.interface.size() )
+   {
+      const account_object& interface_acc = _db.get_account( o.interface );
+      FC_ASSERT( interface_acc.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+      const interface_object& interface = _db.get_interface( o.interface );
+      FC_ASSERT( interface.active, 
+         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+   }
+
+   const auto& option_idx = _db.get_index< option_order_index >().indices().get< by_account >();
+   auto option_itr = option_idx.find( std::make_tuple( o.owner, o.order_id ) );
+
+   const asset_option_pool_object& option_pool = _db.get_option_pool( o.strike_price.strike_price.base.symbol, o.strike_price.strike_price.quote.symbol );
+
+   asset_symbol_type option_symbol;
+   bool valid_strike = false;
+
+   if( std::find( option_pool.call_strikes.begin(), option_pool.call_strikes.end(), o.strike_price ) != option_pool.call_strikes.end() )
+   {
+      option_symbol = o.strike_price.call_option_symbol();
+      valid_strike = true;
+   }
+   else if( std::find( option_pool.put_strikes.begin(), option_pool.put_strikes.end(), o.strike_price ) != option_pool.put_strikes.end() )
+   {
+      option_symbol = o.strike_price.put_option_symbol();
+      valid_strike = true;
+   }
+
+   FC_ASSERT( valid_strike,
+      "Option pool chain sheet does not support the specified option stike ${s}.", ("s", o.strike_price.to_string() ) );
+
+   asset option_position = asset( o.underlying_amount.amount / 100, option_symbol );
+
+   asset liquid_underlying = _db.get_liquid_balance( o.owner, o.underlying_amount.symbol );
+   asset liquid_position = _db.get_liquid_balance( o.owner, option_symbol );
+
+   if( option_itr == option_idx.end() )
+   {
+      FC_ASSERT( o.opened,
+         "Option order cannot be closed: No Option order found with the specified ID." );
+      FC_ASSERT( liquid_underlying >= o.underlying_amount,
+         "Account does not have sufficient liquid underlying asset funds for Option order." );
+
+      _db.adjust_liquid_balance( o.owner, -o.underlying_amount );
+      _db.adjust_liquid_balance( o.owner, option_position );
+
+      _db.create< option_order_object >( [&]( option_order_object& ooo )
+      {
+         ooo.owner = o.owner;
+         from_string( ooo.order_id, o.order_id );
+         ooo.underlying_amount = o.underlying_amount;
+         ooo.option_position = option_position;
+         ooo.strike_price = o.strike_price;
+         if( o.interface.size() )
+         {
+            ooo.interface = o.interface;
+         }
+         ooo.created = now;
+         ooo.last_updated = now;
+      });
+   }
+   else
+   {
+      const option_order_object& order = *option_itr;
+
+      asset delta_underlying = o.underlying_amount - order.underlying_amount;
+      asset delta_position = option_position - order.option_position;
+
+      FC_ASSERT( liquid_underlying >= delta_underlying,
+         "Account does not have sufficient liquid underlying asset funds for Option order." );
+      FC_ASSERT( liquid_position >= -delta_position,
+         "Account does not have sufficient liquid option asset funds for Option order." );
+
+      _db.adjust_liquid_balance( o.owner, -delta_underlying );
+      _db.adjust_liquid_balance( o.owner, delta_position );
+
+      if( o.underlying_amount.amount != 0 )
+      {
+         _db.modify( order, [&]( option_order_object& ooo )
+         {
+            ooo.underlying_amount = o.underlying_amount;
+            ooo.option_position = option_position;
+            ooo.strike_price = o.strike_price;
+            ooo.last_updated = now;
+         });
+      }
+      else
+      {
+         _db.remove( order );
+      }
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -8991,7 +10528,18 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          ("s",o.symbol)("p",prefix)("i", o.issuer) );
    }
 
-   switch( o.asset_type )  // Asset specific requirements
+   asset_property_type asset_property = asset_property_type::STANDARD_ASSET;
+
+   for( size_t i = 0; i < asset_property_values.size(); i++ )
+   {
+      if( o.asset_type == asset_property_values[ i ] )
+      {
+         asset_property = asset_property_type( i );
+         break;
+      }
+   }
+
+   switch( asset_property )  // Asset specific requirements
    {
       case asset_property_type::STANDARD_ASSET:
       {
@@ -9160,10 +10708,34 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             "Unique assets must have a maximum supply of exactly one unit." );
       }
       break;
+      case asset_property_type::LIQUIDITY_POOL_ASSET:
+      {
+         FC_ASSERT( false,
+            "Cannot directly create a new liquidity pool asset. Please create a liquidity pool between two existing assets." );
+      }
+      break;
+      case asset_property_type::CREDIT_POOL_ASSET:
+      {
+         FC_ASSERT( false, 
+            "Cannot directly create a new credit pool asset. Credit pool assets are created in addition to every asset." );
+      }
+      break;
+      case asset_property_type::OPTION_ASSET:
+      {
+         FC_ASSERT( false,
+            "Cannot directly create a new option asset. Option assets are issued from an Options market." );
+      }
+      break;
+      case asset_property_type::PREDICTION_ASSET:
+      {
+         FC_ASSERT( false, 
+            "Cannot directly create a new prediction asset. Prediction assets are issued from a Prediction market." );
+      }
+      break;
       default:
       {
          FC_ASSERT( false,
-            "Cannot create new asset of market issued type." );
+            "Invalid Asset Type." );
       }
       break;
    }
@@ -9173,7 +10745,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
    _db.create< asset_object >( [&]( asset_object& a )      
    {
       a.symbol = o.symbol;
-      a.asset_type = o.asset_type;
+      a.asset_type = asset_property;
       a.issuer = o.issuer;
       from_string( a.display_symbol, o.options.display_symbol );
       from_string( a.details, o.options.details );
@@ -9510,7 +11082,7 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
    }
 
    // If we are now disabling force settlements, cancel all open force settlement orders
-   if( ( o.new_options.flags & disable_force_settle ) && asset_obj.enable_force_settle() )
+   if( ( o.new_options.flags & int( asset_issuer_permission_flags::disable_force_settle ) ) && asset_obj.enable_force_settle() )
    {
       const auto& idx = _db.get_index< force_settlement_index >().indices().get< by_expiration >();
       // Re-initialize itr every loop as objects are being removed each time.
@@ -10502,8 +12074,8 @@ void producer_violation_evaluator::do_apply( const producer_violation_operation&
    const producer_schedule_object& pso = _db.get_producer_schedule();
    const chain_id_type& chain_id = CHAIN_ID;
 
-   signed_transaction first_trx = fc::raw::unpack< signed_transaction >(o.first_trx);
-   signed_transaction second_trx = fc::raw::unpack< signed_transaction >(o.second_trx);
+   signed_transaction first_trx = fc::raw::unpack< signed_transaction >( o.first_trx );
+   signed_transaction second_trx = fc::raw::unpack< signed_transaction >( o.second_trx );
    first_trx.validate();
    second_trx.validate();
    FC_ASSERT( first_trx.operations.size(), 

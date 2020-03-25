@@ -53,8 +53,6 @@ struct comment_reward_context
 
 void                    fill_comment_reward_context_local_state( comment_reward_context& ctx, const comment_object& comment );
 
-asset                   get_comment_reward( const comment_reward_context& ctx );
-
 inline uint128_t        get_content_constant_s()
 {
    return CONTENT_CONSTANT;
@@ -67,10 +65,7 @@ uint128_t evaluate_reward_curve(
    const fc::microseconds decay_rate,
    const uint128_t& content_constant );
 
-inline bool is_comment_payout_dust( const price& p, share_type reward_payout )
-{
-   return util::asset_to_USD( p, asset( reward_payout, SYMBOL_COIN ) ) < MIN_PAYOUT_USD;
-}
+
 
 } } } // node::chain::util
 

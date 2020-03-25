@@ -434,9 +434,65 @@ namespace node { namespace protocol {
 
    // Option Strike
 
+   void option_strike::validate()const
+   {
+      strike_price.validate();
+      expiration_date.validate();
+
+      FC_ASSERT( strike_price.base.amount.value == BLOCKCHAIN_PRECISION.value || strike_price.quote.amount.value == BLOCKCHAIN_PRECISION.value ,
+         "Option Strike price must specify an asset with a price unit of 1." );
+         
+   }
+
    string option_strike::to_string()const
    {
       return strike_price.quote.symbol + "-" + fc::to_string( strike_price.to_real() ) + "-" + strike_price.base.symbol + "-" + expiration_date.to_string();
+   }
+
+   /**
+    * OPT.TYPE.QUOTE_SYMBOL.STRIKE_PRICE.BASE_SYMBOL.EXP_DAY.EXP_MONTH.EXP_YEAR
+    */
+   asset_symbol_type option_strike::call_option_symbol()const
+   {
+      string result;
+      result += OPTION_ASSET_PREFIX;
+      result += "CALL.";
+      result += strike_price.quote.symbol;
+      result += ".";
+      result += fc::to_string( strike_price.to_real() );
+      result += ".";
+      result += strike_price.base.symbol;
+      result += ".";
+      result += fc::to_string( expiration_date.day );
+      result += ".";
+      result += fc::to_string( expiration_date.month );
+      result += ".";
+      result += fc::to_string( expiration_date.year );
+
+      return asset_symbol_type( result );
+   }
+
+   /**
+    * OPT.TYPE.QUOTE_SYMBOL.STRIKE_PRICE.BASE_SYMBOL.EXP_DAY.EXP_MONTH.EXP_YEAR
+    */
+   asset_symbol_type option_strike::put_option_symbol()const
+   {
+      string result;
+      result += OPTION_ASSET_PREFIX;
+      result += "PUT.";
+      result += strike_price.quote.symbol;
+      result += ".";
+      result += fc::to_string( strike_price.to_real() );
+      result += ".";
+      result += strike_price.base.symbol;
+      result += ".";
+      result += fc::to_string( expiration_date.day );
+      result += ".";
+      result += fc::to_string( expiration_date.month );
+      result += ".";
+      result += fc::to_string( expiration_date.year );
+
+      return asset_symbol_type( result );
    }
 
    time_point option_strike::expiration()const

@@ -22,7 +22,6 @@ BOOST_AUTO_TEST_SUITE(block_tests)
 BOOST_AUTO_TEST_CASE( generate_empty_blocks )
 {
    try {
-      time_point now = TESTING_GENESIS_TIMESTAMP;
       fc::temp_directory data_dir( graphene::utilities::temp_directory_path() );
       signed_block b;
 
@@ -86,7 +85,7 @@ BOOST_AUTO_TEST_CASE( undo_block )
          database db;
          db._log_hardforks = false;
          db.open( data_dir.path(), data_dir.path(), TEST_SHARED_MEM_SIZE, chainbase::database::read_write, INIT_PUBLIC_KEY );
-         fc::time_point now( TESTING_GENESIS_TIMESTAMP );
+         time_point now = TESTING_GENESIS_TIMESTAMP;
          std::vector< time_point > time_stack;
 
          auto init_account_priv_key  = fc::ecc::private_key::regenerate(fc::sha256::hash(string("init_key")) );
@@ -220,10 +219,10 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
       cop.signatory = GENESIS_ACCOUNT_BASE_NAME;
       cop.new_account_name = "alice";
       cop.registrar = GENESIS_ACCOUNT_BASE_NAME;
-      cop.owner_auth = authority(1, init_account_pub_key, 1);
-      cop.active_auth = cop.owner;
+      cop.owner_auth = authority( 1, init_account_pub_key, 1 );
+      cop.active_auth = cop.owner_auth;
 
-      trx.operations.push_back(cop);
+      trx.operations.push_back( cop );
       trx.set_expiration( db1.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       trx.sign( init_account_priv_key, db1.get_chain_id() );
 

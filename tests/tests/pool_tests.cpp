@@ -33,8 +33,6 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Creation of a new liquidity pool" );
 
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
-
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
       fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -64,7 +62,7 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
       asset_create.signatory = "alice";
       asset_create.issuer = "alice";
       asset_create.symbol = "ALICECOIN";
-      asset_create.asset_type = asset_property_type::STANDARD_ASSET;
+      asset_create.asset_type = "standard";
       asset_create.coin_liquidity = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 100 * BLOCKCHAIN_PRECISION, "ALICECOIN" );
@@ -85,7 +83,7 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
       asset_create.signatory = "bob";
       asset_create.issuer = "bob";
       asset_create.symbol = "BOBCOIN";
-      asset_create.asset_type = asset_property_type::STANDARD_ASSET;
+      asset_create.asset_type = "standard";
       asset_create.coin_liquidity = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 100 * BLOCKCHAIN_PRECISION, "BOBCOIN" );
@@ -376,8 +374,6 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Create credit collateral position" );
 
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
-
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
       fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -530,13 +526,13 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const credit_collateral_object& col_obj = db.get_collateral( "alice", SYMBOL_COIN );
+      const credit_collateral_object& alice_collateral = db.get_collateral( "alice", SYMBOL_COIN );
 
-      BOOST_REQUIRE( col_obj.owner == collateral.account );
-      BOOST_REQUIRE( col_obj.symbol == collateral.amount.symbol );
-      BOOST_REQUIRE( col_obj.collateral == collateral.amount );
-      BOOST_REQUIRE( col_obj.created == now() );
-      BOOST_REQUIRE( col_obj.last_updated == now() );
+      BOOST_REQUIRE( alice_collateral.owner == collateral.account );
+      BOOST_REQUIRE( alice_collateral.symbol == collateral.amount.symbol );
+      BOOST_REQUIRE( alice_collateral.collateral == collateral.amount );
+      BOOST_REQUIRE( alice_collateral.created == now() );
+      BOOST_REQUIRE( alice_collateral.last_updated == now() );
 
       validate_database();
 
@@ -568,7 +564,7 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const auto& col_idx = db.get_index< credit_collateral_index >().indices().get< by_owner >();
+      const auto& col_idx = db.get_index< credit_collateral_index >().indices().get< by_owner_symbol >();
       auto col_itr = col_idx.find( std::make_tuple( "alice", SYMBOL_COIN ) );
 
       BOOST_REQUIRE( col_itr == col_idx.end() );
@@ -588,8 +584,7 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const auto& col_idx = db.get_index< credit_collateral_index >().indices().get< by_owner >();
-      auto col_itr = col_idx.find( std::make_tuple( "alice", SYMBOL_COIN ) );
+      col_itr = col_idx.find( std::make_tuple( "alice", SYMBOL_COIN ) );
 
       BOOST_REQUIRE( col_itr == col_idx.end() );
 
@@ -612,12 +607,12 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const asset_credit_pool_object& pool = db.get_credit_pool( SYMBOL_USD, false );
+      const asset_credit_pool_object& usd_credit_pool = db.get_credit_pool( SYMBOL_USD, false );
 
-      BOOST_REQUIRE( pool.base_symbol == lend.amount.symbol );
-      BOOST_REQUIRE( pool.base_balance == lend.amount );
-      BOOST_REQUIRE( pool.borrowed_balance.amount == 0 );
-      asset_symbol_type usd_credit_symbol = pool.credit_symbol;
+      BOOST_REQUIRE( usd_credit_pool.base_symbol == lend.amount.symbol );
+      BOOST_REQUIRE( usd_credit_pool.base_balance == lend.amount );
+      BOOST_REQUIRE( usd_credit_pool.borrowed_balance.amount == 0 );
+      asset_symbol_type usd_credit_symbol = usd_credit_pool.credit_symbol;
    
       tx.operations.clear();
       tx.signatures.clear();
@@ -698,20 +693,16 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const asset_credit_pool_object& pool = db.get_credit_pool( SYMBOL_USD, false );
+      BOOST_REQUIRE( usd_credit_pool.base_balance == lend.amount - borrow.amount );
+      BOOST_REQUIRE( usd_credit_pool.borrowed_balance == borrow.amount );
 
-      BOOST_REQUIRE( pool.base_balance == lend.amount - borrow.amount );
-      BOOST_REQUIRE( pool.borrowed_balance == borrow.amount );
+      const credit_loan_object& alice_loan = db.get_loan( "alice", string( "7d8f6c1a-0409-416f-9e07-f60c46381a92" ) );
 
-      const credit_loan_object& loan = db.get_loan( "alice", "7d8f6c1a-0409-416f-9e07-f60c46381a92" );
+      BOOST_REQUIRE( alice_loan.debt == borrow.amount );
+      BOOST_REQUIRE( alice_loan.collateral == borrow.collateral );
 
-      BOOST_REQUIRE( loan.debt == borrow.amount );
-      BOOST_REQUIRE( loan.collateral == borrow.collateral );
-
-      const credit_collateral_object& col_obj = db.get_collateral( "alice", SYMBOL_COIN );
-
-      BOOST_REQUIRE( col_obj.collateral == collateral.amount - borrow.collateral );
-      BOOST_REQUIRE( col_obj.last_updated == now() );
+      BOOST_REQUIRE( alice_collateral.collateral == collateral.amount - borrow.collateral );
+      BOOST_REQUIRE( alice_collateral.last_updated == now() );
 
       validate_database();
 
@@ -728,20 +719,14 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const asset_credit_pool_object& pool = db.get_credit_pool( SYMBOL_USD, false );
+      BOOST_REQUIRE( usd_credit_pool.base_balance == lend.amount - borrow.amount );
+      BOOST_REQUIRE( usd_credit_pool.borrowed_balance == borrow.amount );
 
-      BOOST_REQUIRE( pool.base_balance == lend.amount - borrow.amount );
-      BOOST_REQUIRE( pool.borrowed_balance == borrow.amount );
+      BOOST_REQUIRE( alice_loan.debt == borrow.amount );
+      BOOST_REQUIRE( alice_loan.collateral == borrow.collateral );
 
-      const credit_loan_object& loan = db.get_loan( "alice", "7d8f6c1a-0409-416f-9e07-f60c46381a92" );
-
-      BOOST_REQUIRE( loan.debt == borrow.amount );
-      BOOST_REQUIRE( loan.collateral == borrow.collateral );
-
-      const credit_collateral_object& col_obj = db.get_collateral( "alice", SYMBOL_COIN );
-
-      BOOST_REQUIRE( col_obj.collateral == collateral.amount - borrow.collateral );
-      BOOST_REQUIRE( col_obj.last_updated == now() );
+      BOOST_REQUIRE( alice_collateral.collateral == collateral.amount - borrow.collateral );
+      BOOST_REQUIRE( alice_collateral.last_updated == now() );
 
       validate_database();
 
@@ -794,12 +779,10 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const asset_credit_pool_object& pool = db.get_credit_pool( SYMBOL_USD, false );
-
-      BOOST_REQUIRE( pool.base_symbol == lend.amount.symbol );
-      BOOST_REQUIRE( pool.credit_symbol == withdraw.amount.symbol );
-      BOOST_REQUIRE( pool.base_balance == lend.amount - borrow.amount - withdraw.amount );
-      BOOST_REQUIRE( pool.borrowed_balance == borrow.amount );
+      BOOST_REQUIRE( usd_credit_pool.base_symbol == lend.amount.symbol );
+      BOOST_REQUIRE( usd_credit_pool.credit_symbol == withdraw.amount.symbol );
+      BOOST_REQUIRE( usd_credit_pool.base_balance == lend.amount - borrow.amount - withdraw.amount );
+      BOOST_REQUIRE( usd_credit_pool.borrowed_balance == borrow.amount );
    
       tx.operations.clear();
       tx.signatures.clear();
@@ -861,19 +844,15 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const asset_credit_pool_object& pool = db.get_credit_pool( SYMBOL_USD, false );
-
-      BOOST_REQUIRE( pool.borrowed_balance.amount == 0 );
+      BOOST_REQUIRE( usd_credit_pool.borrowed_balance.amount == 0 );
 
       const auto& loan_idx = db.get_index< credit_loan_index >().indices().get< by_loan_id >();
-      auto loan_itr = loan_idx.find( std::make_tuple( "alice", "7d8f6c1a-0409-416f-9e07-f60c46381a92" ) );
+      auto loan_itr = loan_idx.find( std::make_tuple( "alice", string( "7d8f6c1a-0409-416f-9e07-f60c46381a92" ) ) );
 
       BOOST_REQUIRE( loan_itr == loan_idx.end() );
 
-      const credit_collateral_object& col_obj = db.get_collateral( "alice", SYMBOL_COIN );
-
-      BOOST_REQUIRE( col_obj.collateral == collateral.amount );
-      BOOST_REQUIRE( col_obj.last_updated == now() );
+      BOOST_REQUIRE( alice_collateral.collateral == collateral.amount );
+      BOOST_REQUIRE( alice_collateral.last_updated == now() );
       BOOST_REQUIRE( alice.loan_default_balance.amount == 0  );
 
       validate_database();
@@ -893,19 +872,15 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const asset_credit_pool_object& pool = db.get_credit_pool( SYMBOL_USD, false );
+      BOOST_REQUIRE( usd_credit_pool.borrowed_balance.amount == 0 );
 
-      BOOST_REQUIRE( pool.borrowed_balance.amount == 0 );
+      const credit_loan_object& alice_loan2 = db.get_loan( "alice", string( "ab853d22-e03d-46f5-9437-93f5fb4ea7df" ) );
 
-      const credit_loan_object& loan = db.get_loan( "alice", "ab853d22-e03d-46f5-9437-93f5fb4ea7df" );
+      BOOST_REQUIRE( alice_loan2.debt == borrow.amount );
+      BOOST_REQUIRE( alice_loan2.collateral == borrow.collateral );
 
-      BOOST_REQUIRE( loan.debt == borrow.amount );
-      BOOST_REQUIRE( loan.collateral == borrow.collateral );
-
-      const credit_collateral_object& col_obj = db.get_collateral( "alice", SYMBOL_COIN );
-
-      BOOST_REQUIRE( col_obj.collateral == collateral.amount );
-      BOOST_REQUIRE( col_obj.last_updated == now() );
+      BOOST_REQUIRE( alice_collateral.collateral == collateral.amount );
+      BOOST_REQUIRE( alice_collateral.last_updated == now() );
 
       feed.signatory = "alice";
       feed.publisher = "alice";
@@ -940,8 +915,7 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       generate_block();     // Price halved, loan is insolvent, and is liquidated and network credit is issued to repurchase usd
 
-      const auto& loan_idx = db.get_index< credit_loan_index >().indices().get< by_loan_id >();
-      auto loan_itr = loan_idx.find( std::make_tuple( "alice", "ab853d22-e03d-46f5-9437-93f5fb4ea7df" ) );
+      loan_itr = loan_idx.find( std::make_tuple( "alice", string( "ab853d22-e03d-46f5-9437-93f5fb4ea7df" ) ) );
 
       BOOST_REQUIRE( loan_itr == loan_idx.end() );
       BOOST_REQUIRE( alice.loan_default_balance.amount > 0  );
@@ -990,8 +964,6 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       
       tx.operations.clear();
       tx.signatures.clear();
-
-      
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Success when loan default is repaid" );
 

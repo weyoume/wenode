@@ -127,17 +127,18 @@ struct median_chain_property_api_obj
 
 struct comment_api_obj
 {
-   comment_api_obj( const chain::comment_object& o ):
+   comment_api_obj( const chain::comment_object& o ) :
       id( o.id ),
       author( o.author ),
       permlink( to_string( o.permlink ) ),
       title( to_string( o.title ) ),
-      post_type( post_format_values[ o.post_type ]),
+      post_type( post_format_values[ int( o.post_type ) ]),
       public_key( o.public_key ),
       encrypted( o.is_encrypted() ),
-      reach( feed_reach_values[ o.reach ] ),
+      reach( feed_reach_values[ int( o.reach ) ] ),
       community( o.community ),
       body( to_string( o.body ) ),
+      url( to_string( o.url ) ),
       interface( o.interface ),
       rating( o.rating ),
       language( to_string( o.language ) ),
@@ -231,6 +232,7 @@ struct comment_api_obj
    string                         body;                         ///< String containing text for display when the post is opened.
    vector< string >               ipfs;                         ///< String containing a display image or video file as an IPFS file hash.
    vector< string >               magnet;                       ///< String containing a bittorrent magnet link to a file swarm.
+   string                         url;                          ///< String containing a URL for the post to link to.
    account_name_type              interface;                    ///< Name of the interface account that was used to broadcast the transaction and view the post.
    uint16_t                       rating;                       ///< User nominated rating as to the maturity of the content, and display sensitivity. 
    string                         language;                     ///< String containing a two letter language code that the post is broadcast in.
@@ -297,7 +299,7 @@ struct blog_api_obj
       community( o.community ),
       tag( o.tag ),
       comment( o.comment ),
-      blog_type( blog_reach_values[ o.blog_type ] ),
+      blog_type( blog_reach_values[ int( o.blog_type ) ] ),
       first_shared_by( o.first_shared_by ),
       shares( o.shares ),
       blog_time( o.blog_time )
@@ -329,7 +331,7 @@ struct feed_api_obj
       id( o.id ),
       account( o.account ),
       comment( o.comment ),
-      feed_type( feed_reach_values[ o.feed_type ] ),
+      feed_type( feed_reach_values[ int( o.feed_type ) ] ),
       first_shared_by( o.first_shared_by ),
       shares( o.shares ),
       feed_time( o.feed_time )
@@ -378,7 +380,7 @@ struct account_api_obj
       json( to_string( a.json ) ),
       json_private( to_string( a.json_private ) ),
       url( to_string( a.url ) ),
-      membership( membership_tier_values[ a.membership ] ),
+      membership( membership_tier_values[ int( a.membership ) ] ),
       secure_public_key( a.secure_public_key ),
       connection_public_key( a.connection_public_key ),
       friend_public_key( a.friend_public_key ),
@@ -552,7 +554,7 @@ struct account_concise_api_obj
       json( to_string( a.json ) ),
       json_private( to_string( a.json_private ) ),
       url( to_string( a.url ) ),
-      membership( membership_tier_values[ a.membership ] ),
+      membership( membership_tier_values[ int( a.membership ) ] ),
       secure_public_key( a.secure_public_key ),
       connection_public_key( a.connection_public_key ),
       friend_public_key( a.friend_public_key ),
@@ -638,14 +640,14 @@ struct account_business_api_obj
    account_business_api_obj( const chain::account_business_object& a ):
       id( a.id ),
       account( a.account ),
-      business_type( business_structure_values[ a.business_type ] ),
+      business_type( business_structure_values[ int( a.business_type ) ] ),
       business_public_key( a.business_public_key ),
       executive_board( a.executive_board ),
       officer_vote_threshold( a.officer_vote_threshold.value )
       {
          for( auto name : a.executive_votes )
          {
-            executive_votes.push_back( std::make_pair( name.first, std::make_pair( executive_role_values[ name.second.first ] , name.second.second.value ) ) );
+            executive_votes.push_back( std::make_pair( name.first, std::make_pair( executive_role_values[ int( name.second.first ) ] , name.second.second.value ) ) );
          }
          for( auto name : a.executives )
          {
@@ -849,7 +851,7 @@ struct connection_api_obj
       encrypted_key_a( c.encrypted_key_a ),
       account_b( c.account_b ),
       encrypted_key_b( c.encrypted_key_b ),
-      connection_type( connection_tier_values[ c.connection_type ] ),
+      connection_type( connection_tier_values[ int( c.connection_type ) ] ),
       connection_id( to_string( c.connection_id ) ),
       connection_strength( c.connection_strength ),
       consecutive_days( c.consecutive_days ),
@@ -882,7 +884,7 @@ struct connection_request_api_obj
       id( c.id ),
       account( c.account ),
       requested_account( c.requested_account ),
-      connection_type( connection_tier_values[ c.connection_type ] ),
+      connection_type( connection_tier_values[ int( c.connection_type ) ] ),
       message( to_string( c.message ) ),
       expiration( c.expiration ){}
 
@@ -1177,7 +1179,7 @@ struct community_api_obj
       id( b.id ),
       name( b.name ),
       founder( b.founder ),
-      community_privacy( community_privacy_values[ b.community_privacy ] ),
+      community_privacy( community_privacy_values[ int( b.community_privacy ) ] ),
       community_public_key( b.community_public_key ),
       json( to_string( b.json ) ),
       json_private( to_string( b.json_private ) ),
@@ -1280,10 +1282,10 @@ struct moderation_tag_api_obj
 
 struct asset_api_obj
 {
-   asset_api_obj( const chain::asset_object& a ):
+   asset_api_obj( const chain::asset_object& a ) :
       id( a.id ),
       symbol( a.symbol ),
-      asset_type( asset_property_values[ a.asset_type ] ),
+      asset_type( asset_property_values[ int( a.asset_type ) ] ),
       issuer( a.issuer ),
       created( a.created ),
       display_symbol( to_string( a.display_symbol ) ),
@@ -1831,7 +1833,7 @@ struct network_officer_api_obj
       account( o.account ),
       active( o.active ),
       officer_approved( o.officer_approved ),
-      officer_type( network_officer_role_values[ o.officer_type ] ),
+      officer_type( network_officer_role_values[ int( o.officer_type ) ] ),
       details( to_string( o.details ) ),
       url( to_string( o.url ) ),
       json( to_string( o.json ) ),
@@ -2041,7 +2043,7 @@ struct community_enterprise_api_obj
       creator( o.creator ),
       enterprise_id( to_string( o.enterprise_id ) ),
       active( o.active ),
-      proposal_type( proposal_distribution_values[ o.proposal_type ] ),
+      proposal_type( proposal_distribution_values[ int( o.proposal_type ) ] ),
       approved_milestones( o.approved_milestones ),
       claimed_milestones( o.claimed_milestones ),
       investment( *o.investment ),
@@ -2127,7 +2129,7 @@ struct ad_creative_api_obj
       id( o.id ),
       account( o.account ),
       creative_id( to_string( o.creative_id ) ),
-      format_type( ad_format_values[ o.format_type ] ),
+      format_type( ad_format_values[ int( o.format_type ) ] ),
       author( o.author ),
       objective( to_string( o.objective ) ),
       creative( to_string( o.creative ) ),
@@ -2198,7 +2200,7 @@ struct ad_inventory_api_obj
       id( o.id ),
       provider( o.provider ),
       inventory_id( to_string( o.inventory_id ) ),
-      metric( ad_metric_values[ o.metric ] ),
+      metric( ad_metric_values[ int( o.metric ) ] ),
       audience_id( to_string( o.audience_id ) ),
       min_price( o.min_price ),
       inventory( o.inventory ),
@@ -2271,8 +2273,8 @@ struct ad_bid_api_obj
       provider( o.provider ),
       inventory_id( to_string( o.inventory_id ) ),
       bid_price( o.bid_price ),
-      format( ad_format_values[ o.format ] ),
-      metric( ad_metric_values[ o.metric ] ),
+      format( ad_format_values[ int( o.format ) ] ),
+      metric( ad_metric_values[ int( o.metric ) ] ),
       objective( to_string( o.objective ) ),
       requested( o.requested ),
       remaining( o.remaining ),
@@ -2463,6 +2465,7 @@ FC_REFLECT( node::app::comment_api_obj,
          (body)
          (ipfs)
          (magnet)
+         (url)
          (interface)
          (rating)
          (language)

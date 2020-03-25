@@ -129,31 +129,6 @@ namespace node { namespace protocol {
       validate_public_key( companion_public_key );
    }
 
-   void account_business_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( account );
-
-      switch( business_type )
-      {
-         case business_structure_type::OPEN_BUSINESS:
-         case business_structure_type::PUBLIC_BUSINESS:
-         case business_structure_type::PRIVATE_BUSINESS:
-         {
-            break;
-         }
-         default:
-         {
-            FC_ASSERT( false, "Business Type is invalid." );
-         }
-      }
-      
-      FC_ASSERT( officer_vote_threshold > 0, 
-         "Officer vote threshold must be greater than 0.");
-
-      validate_public_key( business_public_key );
-   }
-
    void account_profile_operation::validate() const
    {
       validate_account_name( signatory );
@@ -216,26 +191,34 @@ namespace node { namespace protocol {
          "Image rejected: IPFS string should be 46 characters long and begin with 'Qm'." );
    }
 
+   void account_business_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( governance_account );
+      validate_account_name( init_ceo_account );
+
+      FC_ASSERT( business_type.size() < MAX_URL_LENGTH,
+         "Business Type is invalid." );
+      FC_ASSERT( fc::is_utf8( business_type ),
+         "Business Type is invalid." );
+      
+      FC_ASSERT( officer_vote_threshold > 0, 
+         "Officer vote threshold must be greater than 0.");
+
+      validate_public_key( business_public_key );
+   }
+
    void account_membership_operation::validate() const
    {
       validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( interface );
-      switch( membership_type )
-      {
-         case membership_tier_type::NONE:
-         case membership_tier_type::STANDARD_MEMBERSHIP:
-         case membership_tier_type::MID_MEMBERSHIP:
-         case membership_tier_type::TOP_MEMBERSHIP:
-         {
-            break;
-         }
-         default:
-         {
-            FC_ASSERT( false, "Membership Type is invalid." );
-         }
-      }
 
+      FC_ASSERT( membership_type.size() < MAX_URL_LENGTH,
+         "Membership Type is invalid." );
+      FC_ASSERT( fc::is_utf8( membership_type ),
+         "Membership Type is invalid." );
       FC_ASSERT( account != TEMP_ACCOUNT, 
          "Cannot create membership for temp account." );
       FC_ASSERT( months >= 1 && months <= 120, 
@@ -248,26 +231,11 @@ namespace node { namespace protocol {
       validate_account_name( account );
       validate_account_name( business_account );
       validate_account_name( executive_account );
-      switch( role )
-      {
-         case executive_role_type::CHIEF_EXECUTIVE_OFFICER:
-         case executive_role_type::CHIEF_OPERATING_OFFICER:
-         case executive_role_type::CHIEF_FINANCIAL_OFFICER:
-         case executive_role_type::CHIEF_DEVELOPMENT_OFFICER:
-         case executive_role_type::CHIEF_TECHNOLOGY_OFFICER:
-         case executive_role_type::CHIEF_SECURITY_OFFICER:
-         case executive_role_type::CHIEF_GOVERNANCE_OFFICER:
-         case executive_role_type::CHIEF_MARKETING_OFFICER:
-         case executive_role_type::CHIEF_DESIGN_OFFICER:
-         case executive_role_type::CHIEF_ADVOCACY_OFFICER:
-         break;
-         
-         default:
-         {
-            FC_ASSERT( false, "Invalid executive officer role" );
-         }
-         break;
-      }
+
+      FC_ASSERT( role.size() < MAX_URL_LENGTH,
+         "Role Type is invalid." );
+      FC_ASSERT( fc::is_utf8( role ),
+         "Role Type is invalid." );
    }
 
    void account_vote_officer_operation::validate() const
@@ -435,19 +403,10 @@ namespace node { namespace protocol {
       validate_account_name( account );
       validate_account_name( requested_account );
 
-      switch( connection_type )
-      {
-         case connection_tier_type::CONNECTION:
-         case connection_tier_type::FRIEND:
-         case connection_tier_type::COMPANION:
-         {
-            break;
-         }
-         default:
-         {
-            FC_ASSERT( false, "Connection Type is invalid." );
-         }
-      }
+      FC_ASSERT( connection_type.size() < MAX_URL_LENGTH,
+         "Connection Type is invalid." );
+      FC_ASSERT( fc::is_utf8( connection_type ),
+         "Connection Type is invalid." );
 
       FC_ASSERT( account != requested_account, 
          "Account cannot connect with itself." );
@@ -466,19 +425,10 @@ namespace node { namespace protocol {
          "Connection ID is too long." );
       validate_uuidv4( connection_id );
 
-      switch( connection_type )
-      {
-         case connection_tier_type::CONNECTION:
-         case connection_tier_type::FRIEND:
-         case connection_tier_type::COMPANION:
-         {
-            break;
-         }
-         default:
-         {
-            FC_ASSERT( false, "Connection Type is invalid." );
-         }
-      }
+      FC_ASSERT( connection_type.size() < MAX_URL_LENGTH,
+         "Connection Type is invalid." );
+      FC_ASSERT( fc::is_utf8( connection_type ),
+         "Connection Type is invalid." );
 
       FC_ASSERT( encrypted_key.size() <= MAX_STRING_LENGTH,
          "Encrypted Key is too long." );
@@ -520,20 +470,11 @@ namespace node { namespace protocol {
    {
       validate_account_name( signatory );
       validate_account_name( account );
-      switch( officer_type )
-      {
-         case network_officer_role_type::DEVELOPMENT:
-         case network_officer_role_type::MARKETING:
-         case network_officer_role_type::ADVOCACY:
-         {
-            break;
-         }
-         default:
-         {
-            FC_ASSERT( false, "Officer Type is invalid." );
-         }
-      }
 
+      FC_ASSERT( officer_type.size() < MAX_URL_LENGTH,
+         "Officer Type is invalid." );
+      FC_ASSERT( fc::is_utf8( officer_type ),
+         "Officer Type is invalid." );
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
          "Details are too long." );
       FC_ASSERT( fc::is_utf8( details ), 
@@ -794,34 +735,10 @@ namespace node { namespace protocol {
       FC_ASSERT( begin > GENESIS_TIME,
          "Begin time must be after genesis time." );
 
-      switch( proposal_type )
-      {
-         case proposal_distribution_type::FUNDING:
-         {
-            FC_ASSERT( beneficiaries.size() >= 1 && beneficiaries.size() <= 100, 
-            "Funding Proposal must have between 1 and 100 beneficiaries." );
-         }
-         break;
-         case proposal_distribution_type::COMPETITION:
-         {
-
-         }
-         break;
-         case proposal_distribution_type::INVESTMENT:
-         {
-            FC_ASSERT( beneficiaries.size() == 0, 
-               "Investment Proposal should not specify account beneficiaries." );
-            FC_ASSERT( investment.valid(), 
-               "Investment proposal should specify an asset to invest in." );
-            FC_ASSERT( is_valid_symbol( *investment ), 
-               "Invalid investment symbol." );
-         }
-         break;
-         default:
-         {
-            FC_ASSERT( false, "Invalid proposal type." );
-         }
-      }
+      FC_ASSERT( proposal_type.size() < MAX_URL_LENGTH,
+         "Proposal Type is invalid." );
+      FC_ASSERT( fc::is_utf8( proposal_type ),
+         "Proposal Type is invalid." );
 
       for( auto name : beneficiaries )
       {
@@ -906,47 +823,14 @@ namespace node { namespace protocol {
          "Cannot accept less than 0 payout" );
       FC_ASSERT( rating >= 1 && rating <= 10, 
          "Post Rating level should be between 1 and 10" );
-
-      switch( post_type )
-      {
-         case post_format_type::TEXT_POST:
-         case post_format_type::IMAGE_POST:
-         case post_format_type::VIDEO_POST:
-         case post_format_type::LINK_POST:
-         case post_format_type::ARTICLE_POST:
-         case post_format_type::AUDIO_POST:
-         case post_format_type::FILE_POST:
-         case post_format_type::POLL_POST:
-         case post_format_type::LIVESTREAM_POST:
-         case post_format_type::PRODUCT_POST:
-         case post_format_type::LIST_POST:
-         {
-            break;
-         }
-         default:
-         {
-            FC_ASSERT( false, "Comment rejected: Invalid post type." );
-         }
-      }
-
-      switch( reach )
-      {
-         case feed_reach_type::NO_FEED:
-         case feed_reach_type::FOLLOW_FEED:
-         case feed_reach_type::MUTUAL_FEED:
-         case feed_reach_type::CONNECTION_FEED:
-         case feed_reach_type::FRIEND_FEED:
-         case feed_reach_type::COMPANION_FEED:
-         case feed_reach_type::COMMUNITY_FEED:
-         case feed_reach_type::TAG_FEED:
-         {
-            break;
-         }
-         default:
-         {
-            FC_ASSERT( false, "Comment rejected: Invalid feed type." );
-         }
-      }
+      FC_ASSERT( post_type.size() < MAX_URL_LENGTH,
+         "Post Type is invalid." );
+      FC_ASSERT( fc::is_utf8( post_type ),
+         "Post Type is invalid." );
+      FC_ASSERT( reach.size() < MAX_URL_LENGTH,
+         "Post Type is invalid." );
+      FC_ASSERT( fc::is_utf8( reach ),
+         "Post Type is invalid." );
 
       uint32_t sum = 0;
 
@@ -984,14 +868,14 @@ namespace node { namespace protocol {
 
       FC_ASSERT( fc::is_utf8( body ),
          "Body not formatted in UTF8" );
-      FC_ASSERT( body.size() + json.size() + title.size() + ipfs.size() + magnet.size(),
+      FC_ASSERT( body.size() + json.size() + title.size() + ipfs.size() + magnet.size() + url.size(),
          "Cannot update comment because it does not contain content." );
       FC_ASSERT( body.size() < MAX_BODY_SIZE,
          "Comment rejected: Body size is too large." );
       FC_ASSERT( title.size() < MAX_STRING_LENGTH,
          "Comment rejected: Title size is too large." );
       FC_ASSERT( language.size() == 2,
-         "Comment rejected: Title size is too large." );
+         "Comment rejected: Language should be two characters using ISO 639-1." );
 
       for( string item : ipfs )
       {
@@ -999,16 +883,25 @@ namespace node { namespace protocol {
             "Comment rejected: IPFS string should be 46 characters long and begin with 'Qm'." );
       }
 
-      for( auto item : magnet )
+      for( string item : magnet )
       {
          FC_ASSERT( item.size() < MAX_BODY_SIZE,
             "Comment rejected: Magnet size is too large." );
       }
 
+      FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL is too long." );
+      FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
+      if( url.size() > 0 )
+      {
+         validate_url( url );
+      }
+
       for( auto item : tags )
       {
          FC_ASSERT( item.size() < MAX_BODY_SIZE,
-            "Comment rejected: Magnet size is too large." );
+            "Comment rejected: Tags size is too large." );
       }
       
       FC_ASSERT( json.size() < MAX_BODY_SIZE, 
@@ -1127,24 +1020,10 @@ namespace node { namespace protocol {
       validate_account_name( founder );
       validate_community_name( name );
 
-      switch( community_privacy )
-      {
-         case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
-         case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
-         case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
-         case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
-         case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
-         case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
-         case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
-         case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
-         {
-            break;
-         }
-         default:
-         {
-            FC_ASSERT( false, "Invalid community privacy." );
-         }
-      }
+      FC_ASSERT( community_privacy.size() < MAX_URL_LENGTH,
+         "Community privacy Type is invalid." );
+      FC_ASSERT( fc::is_utf8( community_privacy ),
+         "Community privacy Type is invalid." );
 
       if( json.size() > 0 )
       {
@@ -1372,6 +1251,9 @@ namespace node { namespace protocol {
          "Event Name is too long." );
       FC_ASSERT( fc::is_utf8( event_name ),
          "Event Name is not formatted in UTF8." );
+
+      FC_ASSERT( !( attending && not_attending ),
+         "Cannot select to both attend and not attend the same event." );
    }
 
 
@@ -1387,23 +1269,10 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( author );
 
-      switch( format_type )
-      {
-         case ad_format_type::STANDARD_FORMAT:
-         case ad_format_type::PREMIUM_FORMAT:
-         case ad_format_type::PRODUCT_FORMAT:
-         case ad_format_type::LINK_FORMAT:
-         case ad_format_type::COMMUNITY_FORMAT:
-         case ad_format_type::ACCOUNT_FORMAT:
-         case ad_format_type::ASSET_FORMAT:
-         {
-            break;
-         }
-         default:
-         {
-            FC_ASSERT( false, "Invalid ad format type." );
-         }
-      }
+      FC_ASSERT( format_type.size() < MAX_URL_LENGTH,
+         "Format Type is invalid." );
+      FC_ASSERT( fc::is_utf8( format_type ),
+         "Format Type is invalid." );
 
       FC_ASSERT( creative_id.size(),
          "Creative has no creative ID." );
@@ -1483,7 +1352,7 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( provider );
       FC_ASSERT( inventory_id.size() > 0,
-         "Inventory has no inventory ID." );
+         "Inventory ID is required." );
       FC_ASSERT( fc::is_utf8( inventory_id ),
          "inventory ID must be UTF-8" );
       FC_ASSERT( min_price.amount > 0,
@@ -1495,24 +1364,12 @@ namespace node { namespace protocol {
       FC_ASSERT( inventory > 0,
          "Inventory must be greater than zero." );
       validate_uuidv4( inventory_id );
-   
-      switch( metric )
-      {
-         case ad_metric_type::VIEW_METRIC:
-         case ad_metric_type::VOTE_METRIC:
-         case ad_metric_type::SHARE_METRIC:
-         case ad_metric_type::FOLLOW_METRIC:
-         case ad_metric_type::PURCHASE_METRIC:
-         case ad_metric_type::PREMIUM_METRIC:
-         {
-            break;
-         }
-         default:
-         {
-            FC_ASSERT( false, "Invalid metric type.");
-         }
-      }
-      
+
+      FC_ASSERT( metric.size() < MAX_URL_LENGTH,
+         "Metric Type is invalid." );
+      FC_ASSERT( fc::is_utf8( metric ),
+         "Metric Type is invalid." );
+
       if( json.size() > 0 )
       {
          FC_ASSERT( fc::is_utf8( json ),
@@ -1755,37 +1612,15 @@ namespace node { namespace protocol {
       validate_account_name( interface );
       validate_account_name( node_type );
 
-      switch( graph_privacy )
-      {
-         case connection_tier_type::PUBLIC:
-         case connection_tier_type::CONNECTION:
-         case connection_tier_type::FRIEND:
-         case connection_tier_type::COMPANION:
-         case connection_tier_type::SECURE:
-         {
-            break;
-         }
-         default:
-         {
-            FC_ASSERT( false, "Connection Type is invalid." );
-         }
-      }
+      FC_ASSERT( graph_privacy.size() < MAX_URL_LENGTH,
+         "Graph Privacy Type is invalid." );
+      FC_ASSERT( fc::is_utf8( graph_privacy ),
+         "Graph Privacy Type is invalid." );
 
-      switch( edge_permission )
-      {
-         case connection_tier_type::PUBLIC:
-         case connection_tier_type::CONNECTION:
-         case connection_tier_type::FRIEND:
-         case connection_tier_type::COMPANION:
-         case connection_tier_type::SECURE:
-         {
-            break;
-         }
-         default:
-         {
-            FC_ASSERT( false, "Connection Type is invalid." );
-         }
-      }
+      FC_ASSERT( edge_permission.size() < MAX_URL_LENGTH,
+         "Edge Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( edge_permission ),
+         "Edge Permission Type is invalid." );
 
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
          "Details are too long." );
@@ -1813,21 +1648,10 @@ namespace node { namespace protocol {
       validate_account_name( interface );
       validate_account_name( edge_type );
 
-      switch( graph_privacy )
-      {
-         case connection_tier_type::PUBLIC:
-         case connection_tier_type::CONNECTION:
-         case connection_tier_type::FRIEND:
-         case connection_tier_type::COMPANION:
-         case connection_tier_type::SECURE:
-         {
-            break;
-         }
-         default:
-         {
-            FC_ASSERT( false, "Connection Type is invalid." );
-         }
-      }
+      FC_ASSERT( graph_privacy.size() < MAX_URL_LENGTH,
+         "Graph Privacy Type is invalid." );
+      FC_ASSERT( fc::is_utf8( graph_privacy ),
+         "Graph Privacy Type is invalid." );
 
       for( auto a : from_node_types )
       {
@@ -2061,7 +1885,7 @@ namespace node { namespace protocol {
       FC_ASSERT( request_id.size() < MAX_STRING_LENGTH,
          "Request ID is too long." );
       FC_ASSERT( request_id.size() > 0,
-         "Request ID is too long." );
+         "Request ID is required." );
       FC_ASSERT( fc::is_utf8( request_id ), 
          "Request ID is not UTF8" );
       validate_uuidv4( request_id );
@@ -2099,27 +1923,27 @@ namespace node { namespace protocol {
    {
       validate_account_name( signatory );
       validate_account_name( account );
+
+      FC_ASSERT( product_id.size() < MAX_STRING_LENGTH,
+         "Product ID is too long." );
+      FC_ASSERT( product_id.size() > 0,
+         "Product ID is required." );
+      FC_ASSERT( fc::is_utf8( product_id ), 
+         "Product ID is not UTF8" );
+
+      validate_uuidv4( product_id );
       
-      FC_ASSERT( product_name.size() < MAX_STRING_LENGTH,
+      FC_ASSERT( name.size() < MAX_STRING_LENGTH,
          "Product name is too long" );
-      FC_ASSERT( fc::is_utf8( product_name ),
+      FC_ASSERT( name.size() > 0,
+         "Product name is required." );
+      FC_ASSERT( fc::is_utf8( name ),
          "Product Name is not UTF8" );
 
-      switch( sale_type )
-      {
-         case product_sale_type::FIXED_PRICE_SALE:
-         case product_sale_type::WHOLESALE_PRICE_SALE:
-         case product_sale_type::OPEN_AUCTION_SALE:
-         case product_sale_type::REVERSE_AUCTION_SALE:
-         case product_sale_type::SECRET_AUCTION_SALE:
-         {
-            break;
-         }
-         default:
-         {
-            FC_ASSERT( false, "Connection Type is invalid." );
-         }
-      }
+      FC_ASSERT( sale_type.size() < MAX_URL_LENGTH,
+         "Sale Type is invalid." );
+      FC_ASSERT( fc::is_utf8( sale_type ),
+         "Sale Type is invalid." );
 
       for( auto a : product_variants )
       {
@@ -2129,72 +1953,64 @@ namespace node { namespace protocol {
             "Product variant is not UTF8" );
       }
 
-      for( auto a : details )
+      for( auto a : product_details )
       {
-         FC_ASSERT( a.first.size() < MAX_STRING_LENGTH,
-            "Product variant is too long" );
-         FC_ASSERT( fc::is_utf8( a.first ),
-            "Product variant is not UTF8" );
-         FC_ASSERT( a.second.size() < MAX_STRING_LENGTH,
+         FC_ASSERT( a.size() < MAX_STRING_LENGTH,
             "Product details is too long" );
-         FC_ASSERT( fc::is_utf8( a.second ),
+         FC_ASSERT( fc::is_utf8( a ),
             "Product details is not UTF8" );
       }
 
-      for( auto a : images )
+      for( auto a : product_images )
       {
-         FC_ASSERT( a.first.size() < MAX_STRING_LENGTH,
-            "Product variant is too long" );
-         FC_ASSERT( fc::is_utf8( a.first ),
-            "Product variant is not UTF8" );
-         FC_ASSERT( a.second.size() < MAX_STRING_LENGTH,
+         FC_ASSERT( a.size() < MAX_STRING_LENGTH,
             "Image is too long" );
-         FC_ASSERT( fc::is_utf8( a.second ),
+         FC_ASSERT( fc::is_utf8( a ),
             "Image is not UTF8" );
-         FC_ASSERT( a.second.size() == 46 && a.second[0] == 'Q' && a.second[1] == 'm',
+         FC_ASSERT( a.size() == 46 && a[0] == 'Q' && a[1] == 'm',
             "Image IPFS string should be 46 characters long and begin with 'Qm'." );
       }
 
       for( auto a : product_prices )
       {
-         FC_ASSERT( a.first.size() < MAX_STRING_LENGTH,
-            "Product variant is too long" );
-         FC_ASSERT( fc::is_utf8( a.first ),
-            "Product variant is not UTF8" );
-         FC_ASSERT( is_valid_symbol( a.second.symbol ),
+         FC_ASSERT( is_valid_symbol( a.symbol ),
             "Product Price symbol is not valid symbol" );
-         FC_ASSERT( a.second.amount >= 0,
+         FC_ASSERT( a.amount >= 0,
             "Product Price must be positive amount" );
       }
 
       for( auto a : stock_available )
       {
-         FC_ASSERT( a.first.size() < MAX_STRING_LENGTH,
-            "Product variant is too long" );
-         FC_ASSERT( fc::is_utf8( a.first ),
-            "Product variant is not UTF8" );
-         FC_ASSERT( a.second >= 0,
-            "Stock available must be positive amount" );
+         FC_ASSERT( a >= 0,
+            "Stock available must be greater than or equal to 0." );
       }
-
-      for( auto a : json )
+   
+      if( json.size() )
       {
-         FC_ASSERT( a.first.size() < MAX_STRING_LENGTH,
-            "Product variant is too long" );
-         FC_ASSERT( fc::is_utf8( a.first ),
-            "Product variant is not UTF8" );
-         FC_ASSERT( fc::is_utf8( a.second ),
+         FC_ASSERT( fc::is_utf8( json ),
             "JSON Metadata not formatted in UTF8" );
-         FC_ASSERT( fc::json::is_valid( a.second ),
+         FC_ASSERT( fc::json::is_valid( json ),
             "JSON Metadata not valid JSON" );
       }
 
-      FC_ASSERT( url.size() < MAX_URL_LENGTH,
+      if( url.size() > 0 )
+      {
+         validate_url( url );
+         FC_ASSERT( url.size() < MAX_URL_LENGTH,
          "URL is too long" );
-      FC_ASSERT( fc::is_utf8( product_name ),
-         "URL is not UTF8" );
-
+         FC_ASSERT( fc::is_utf8( url ),
+            "URL is not UTF8" );
+      }
+      
       for( auto a : delivery_variants )
+      {
+         FC_ASSERT( a.size() < MAX_STRING_LENGTH,
+            "Delivery variant is too long" );
+         FC_ASSERT( fc::is_utf8( a ),
+            "Delivery variant is not UTF8" );
+      }
+
+      for( auto a : delivery_details )
       {
          FC_ASSERT( a.size() < MAX_STRING_LENGTH,
             "Delivery variant is too long" );
@@ -2204,14 +2020,10 @@ namespace node { namespace protocol {
 
       for( auto a : delivery_prices )
       {
-         FC_ASSERT( a.first.size() < MAX_STRING_LENGTH,
-            "Product variant is too long" );
-         FC_ASSERT( fc::is_utf8( a.first ),
-            "Product variant is not UTF8" );
-         FC_ASSERT( is_valid_symbol( a.second.symbol ),
-            "Delivery Price symbol is not valid symbol" );
-         FC_ASSERT( a.second.amount >= 0,
-            "Delivery Price must be positive amount" );
+         FC_ASSERT( is_valid_symbol( a.symbol ),
+            "Delivery Price symbol is not valid symbol." );
+         FC_ASSERT( a.amount >= 0,
+            "Delivery Price must be greater than or equal to 0" );
       }
    }
 
@@ -2219,40 +2031,37 @@ namespace node { namespace protocol {
    void product_purchase_operation::validate()const
    {
       validate_account_name( signatory );
-      validate_account_name( account );
-      
-      FC_ASSERT( product_name.size() < MAX_STRING_LENGTH,
-         "Product name is too long" );
-      FC_ASSERT( fc::is_utf8( product_name ),
-         "Product Name is not UTF8" );
+      validate_account_name( seller );
+      validate_account_name( buyer );
+
+      FC_ASSERT( order_id.size() < MAX_STRING_LENGTH,
+         "Order ID is too long." );
+      FC_ASSERT( order_id.size() > 0,
+         "Order ID is required." );
+      FC_ASSERT( fc::is_utf8( order_id ), 
+         "Order ID is not UTF8" );
+
+      validate_uuidv4( order_id );
+
+      FC_ASSERT( product_id.size() < MAX_STRING_LENGTH,
+         "Product ID is too long." );
+      FC_ASSERT( product_id.size() > 0,
+         "Product ID is required." );
+      FC_ASSERT( fc::is_utf8( product_id ), 
+         "Product ID is not UTF8" );
+
+      validate_uuidv4( product_id );
 
       for( auto a : order_size )
       {
-         FC_ASSERT( a.first.size() < MAX_STRING_LENGTH,
-            "Product variant is too long" );
-         FC_ASSERT( fc::is_utf8( a.first ),
-            "Product variant is not UTF8" );
-         FC_ASSERT( a.second >= 0,
+         FC_ASSERT( a >= 0,
             "Order Size must be positive amount" );
       }
-
-      FC_ASSERT( is_valid_symbol( total_payable.symbol ),
-         "Product Price symbol is not valid symbol" );
-      FC_ASSERT( total_payable.amount >= 0,
-         "Product Price must be positive amount" );
 
       FC_ASSERT( shipping_address.size() < MAX_STRING_LENGTH,
          "Shipping Address is too long" );
       FC_ASSERT( fc::is_utf8( shipping_address ),
          "Shipping Address is not UTF8" );
-
-      FC_ASSERT( escrow_id.size() < MAX_STRING_LENGTH,
-         "Escrow ID is too long." );
-      FC_ASSERT( escrow_id.size() > 0,
-         "Escrow ID is required." );
-      FC_ASSERT( fc::is_utf8( escrow_id ), 
-         "Escrow ID is not UTF8" );
-      validate_uuidv4( escrow_id );
 
       FC_ASSERT( acceptance_time > GENESIS_TIME,
          "Acceptance time must be after genesis time." );
@@ -2504,10 +2313,10 @@ namespace node { namespace protocol {
       validate_account_name( owner );
       validate_account_name( interface );
 
-      FC_ASSERT( amount_to_issue.symbol == strike_price.strike_price.base.symbol,
+      FC_ASSERT( underlying_amount.symbol == strike_price.strike_price.base.symbol,
          "Sell asset must be the base of the strike price" );
       strike_price.validate();
-      FC_ASSERT( ( amount_to_issue * strike_price.strike_price ).amount > 0,
+      FC_ASSERT( ( underlying_amount * strike_price.strike_price ).amount > 0,
          "Amount to issue cannot round to 0 when traded" );
       FC_ASSERT( order_id.size() < MAX_STRING_LENGTH,
          "Order ID is too long." );
@@ -2699,11 +2508,11 @@ namespace node { namespace protocol {
       // There must be no high bits in permissions whose meaning is not known.
       FC_ASSERT( !( issuer_permissions & ~ASSET_ISSUER_PERMISSION_MASK ) );
       // The global_settle flag may never be set (this is a permission only)
-      FC_ASSERT( !( flags & global_settle ) );
+      FC_ASSERT( !( flags & int( asset_issuer_permission_flags::global_settle ) ) );
 
       if( !whitelist_authorities.empty() || !blacklist_authorities.empty() )
       {
-         FC_ASSERT( flags & balance_whitelist );
+         FC_ASSERT( flags & int( asset_issuer_permission_flags::balance_whitelist ) );
       }
          
       for( auto item : whitelist_markets )
@@ -2747,50 +2556,12 @@ namespace node { namespace protocol {
       FC_ASSERT( usd_liquidity.amount >= 10 * BLOCKCHAIN_PRECISION, 
          "Asset must have at least 10 USD asset of initial liquidity." );
 
-      switch( asset_type )
-      {
-         case asset_property_type::STANDARD_ASSET:
-         case asset_property_type::CURRENCY_ASSET:
-         case asset_property_type::EQUITY_ASSET:
-         case asset_property_type::CREDIT_ASSET:
-         case asset_property_type::BITASSET_ASSET:
-         case asset_property_type::GATEWAY_ASSET:
-         case asset_property_type::UNIQUE_ASSET:
-         {
-            break;
-         }
-         case asset_property_type::LIQUIDITY_POOL_ASSET:
-         {
-            FC_ASSERT( false,
-               "Cannot directly create a new liquidity pool asset. Please create a liquidity pool between two existing assets." );
-         }
-         break;
-         case asset_property_type::CREDIT_POOL_ASSET:
-         {
-            FC_ASSERT( false, 
-               "Cannot directly create a new credit pool asset. Credit pool assets are created in addition to every asset." );
-         }
-         break;
-         case asset_property_type::OPTION_ASSET:
-         {
-            FC_ASSERT( false,
-               "Cannot directly create a new option asset. Option assets are issued from an Options market." );
-         }
-         break;
-         case asset_property_type::PREDICTION_ASSET:
-         {
-            FC_ASSERT( false, 
-               "Cannot directly create a new prediction asset. Prediction assets are issued from a Prediction market." );
-         }
-         break;
-         default:
-         {
-            FC_ASSERT( false, "Invalid asset type." );
-         }
-      }
-      
-      options.validate();
+      FC_ASSERT( asset_type.size() < MAX_URL_LENGTH,
+         "Asset Type is invalid." );
+      FC_ASSERT( fc::is_utf8( asset_type ),
+         "Asset Type is invalid." );
 
+      options.validate();
    }
 
    void asset_update_operation::validate()const

@@ -45,7 +45,7 @@ clean_database_fixture::clean_database_fixture()
    auto ahplugin = app.register_plugin< node::account_history::account_history_plugin >();
    db_plugin = app.register_plugin< node::plugin::debug_node::debug_node_plugin >();
    auto producer_plugin = app.register_plugin< node::producer::producer_plugin >();
-   init_account_pub_key = init_account_priv_key.get_public_key();
+   init_account_pub_key = database_fixture::init_account_priv_key.get_public_key();
 
    boost::program_options::variables_map options;
 
@@ -100,7 +100,7 @@ void clean_database_fixture::resize_shared_mem( uint64_t size )
       if( arg == "--show-test-names" )
          std::cout << "running test " << boost::unit_test::framework::current_test_case().p_name << std::endl;
    }
-   init_account_pub_key = init_account_priv_key.get_public_key();
+   init_account_pub_key = database_fixture::init_account_priv_key.get_public_key();
 
    db.open( data_dir->path(), data_dir->path(), size, chainbase::database::read_write, init_account_pub_key );
 
@@ -169,7 +169,18 @@ void database_fixture::open_database()
    }
 }
 
-void database_fixture::generate_block(uint32_t skip, const fc::ecc::private_key& key, int miss_blocks)
+void database_fixture::generate_block()
+{
+   db_plugin->debug_generate_blocks( graphene::utilities::key_to_wif( init_account_priv_key ), 1, 0, 0 );
+}
+
+void database_fixture::generate_block( uint32_t skip )
+{
+   skip |= default_skip;
+   db_plugin->debug_generate_blocks( graphene::utilities::key_to_wif( init_account_priv_key ), 1, skip, 0 );
+}
+
+void database_fixture::generate_block( uint32_t skip, fc::ecc::private_key key, int miss_blocks )
 {
    skip |= default_skip;
    db_plugin->debug_generate_blocks( graphene::utilities::key_to_wif( key ), 1, skip, miss_blocks );
@@ -292,7 +303,7 @@ const community_object& database_fixture::community_create(
       op.signatory = founder;
       op.founder = founder;
       op.name = name;
-      op.community_privacy = OPEN_PUBLIC_COMMUNITY;
+      op.community_privacy = "open_public";
       op.community_public_key = string( community_key );
       op.json = json;
       op.json_private = json;
@@ -319,7 +330,7 @@ const asset_object& database_fixture::asset_create(
    const string& symbol,
    const string& issuer,
    const private_key_type& issuer_key,
-   const asset_property_type& asset_type,
+   const string& asset_type,
    const string& details,
    const string& url,
    const string& json,
@@ -402,13 +413,14 @@ const comment_object& database_fixture::comment_create(
       op.title = "test";
       op.body = "test";
       op.community = INIT_COMMUNITY;
-      op.options.post_type = post_format_type::TEXT_POST;
+      op.options.post_type = "text";
       op.language = "en";
-      op.options.reach = feed_reach_type::TAG_FEED;
+      op.options.reach = "tag";
       op.interface = INIT_ACCOUNT;
       op.options.rating = 1;
       op.tags.push_back( "test" );
       op.json = "{\"json\":\"valid\"}";
+      op.url = "www.url.com";
 
       trx.operations.push_back( op );
       trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );

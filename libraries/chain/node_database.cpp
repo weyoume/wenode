@@ -256,7 +256,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< account_business_object >( [&]( account_business_object& abo )
    {
       abo.account = INIT_ACCOUNT;
-      abo.business_type = PUBLIC_BUSINESS;
+      abo.business_type = business_structure_type::PUBLIC_BUSINESS;
       abo.executive_board.CHIEF_EXECUTIVE_OFFICER = INIT_CEO;
       abo.officer_vote_threshold = 1000 * BLOCKCHAIN_PRECISION;
    });
@@ -289,7 +289,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< network_officer_object >( [&]( network_officer_object& noo )
    {
       noo.account = INIT_CEO;
-      noo.officer_type = DEVELOPMENT;
+      noo.officer_type = network_officer_role_type::DEVELOPMENT;
       from_string( noo.url, INIT_URL );
       from_string( noo.details, INIT_DETAILS );
       noo.officer_approved = true;
@@ -332,7 +332,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       bo.name = INIT_COMMUNITY;
       bo.founder = INIT_ACCOUNT;
-      bo.community_privacy = OPEN_PUBLIC_COMMUNITY;
+      bo.community_privacy = community_privacy_type::OPEN_PUBLIC_COMMUNITY;
       bo.community_public_key = get_key( INIT_COMMUNITY, "community", "communitypassword" );
       bo.created = now;
       bo.last_community_update = now;
@@ -551,7 +551,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.issuer = NULL_ACCOUNT;
       a.asset_type = asset_property_type::BITASSET_ASSET;
       a.max_supply = MAX_ASSET_SUPPLY;
-      a.flags = producer_fed_asset;
+      a.flags = int( asset_issuer_permission_flags::producer_fed_asset );
       a.issuer_permissions = 0;
       a.unstake_intervals = 4;
       a.stake_intervals = 0;
@@ -1356,6 +1356,16 @@ const account_object* database::find_account( const account_name_type& name )con
    return find< account_object, by_name >( name );
 }
 
+const account_profile_object& database::get_account_profile( const account_name_type& name )const
+{ try {
+	return get< account_profile_object, by_account >( name );
+} FC_CAPTURE_AND_RETHROW( (name) ) }
+
+const account_profile_object* database::find_account_profile( const account_name_type& name )const
+{
+   return find< account_profile_object, by_account >( name );
+}
+
 const account_following_object& database::get_account_following( const account_name_type& account )const
 { try {
 	return get< account_following_object, by_account >( account );
@@ -1656,6 +1666,26 @@ const community_member_key_object* database::find_community_member_key( const ac
    return find< community_member_key_object, by_member_community >( boost::make_tuple( member, community) );
 }
 
+const community_event_object& database::get_community_event( const community_name_type& community, const shared_string& event_name )const
+{ try {
+	return get< community_event_object, by_community_event_name >( boost::make_tuple( community, event_name ) );
+} FC_CAPTURE_AND_RETHROW( (community)(event_name) ) }
+
+const community_event_object* database::find_community_event( const community_name_type& community, const shared_string& event_name )const
+{
+   return find< community_event_object, by_community_event_name >( boost::make_tuple( community, event_name ) );
+}
+
+const community_event_object& database::get_community_event( const community_name_type& community, const string& event_name )const
+{ try {
+	return get< community_event_object, by_community_event_name >( boost::make_tuple( community, event_name ) );
+} FC_CAPTURE_AND_RETHROW( (community)(event_name) ) }
+
+const community_event_object* database::find_community_event( const community_name_type& community, const string& event_name )const
+{
+   return find< community_event_object, by_community_event_name >( boost::make_tuple( community, event_name ) );
+}
+
 const comment_object& database::get_comment( const account_name_type& author, const shared_string& permlink )const
 { try {
    return get< comment_object, by_permlink >( boost::make_tuple( author, permlink ) );
@@ -1806,6 +1836,66 @@ const ad_bid_object* database::find_ad_bid( const account_name_type& account, co
    return find< ad_bid_object, by_bid_id >( boost::make_tuple( account, bid_id ) );
 }
 
+const graph_node_object& database::get_graph_node( const account_name_type& account, const shared_string& node_id )const
+{ try {
+   return get< graph_node_object, by_account_id >( boost::make_tuple( account, node_id ) );
+} FC_CAPTURE_AND_RETHROW( (account)(node_id) ) }
+
+const graph_node_object* database::find_graph_node( const account_name_type& account, const shared_string& node_id )const
+{
+   return find< graph_node_object, by_account_id >( boost::make_tuple( account, node_id ) );
+}
+
+const graph_node_object& database::get_graph_node( const account_name_type& account, const string& node_id )const
+{ try {
+   return get< graph_node_object, by_account_id >( boost::make_tuple( account, node_id ) );
+} FC_CAPTURE_AND_RETHROW( (account)(node_id) ) }
+
+const graph_node_object* database::find_graph_node( const account_name_type& account, const string& node_id )const
+{
+   return find< graph_node_object, by_account_id >( boost::make_tuple( account, node_id ) );
+}
+
+const graph_edge_object& database::get_graph_edge( const account_name_type& account, const shared_string& edge_id )const
+{ try {
+   return get< graph_edge_object, by_account_id >( boost::make_tuple( account, edge_id ) );
+} FC_CAPTURE_AND_RETHROW( (account)(edge_id) ) }
+
+const graph_edge_object* database::find_graph_edge( const account_name_type& account, const shared_string& edge_id )const
+{
+   return find< graph_edge_object, by_account_id >( boost::make_tuple( account, edge_id ) );
+}
+
+const graph_edge_object& database::get_graph_edge( const account_name_type& account, const string& edge_id )const
+{ try {
+   return get< graph_edge_object, by_account_id >( boost::make_tuple( account, edge_id ) );
+} FC_CAPTURE_AND_RETHROW( (account)(edge_id) ) }
+
+const graph_edge_object* database::find_graph_edge( const account_name_type& account, const string& edge_id )const
+{
+   return find< graph_edge_object, by_account_id >( boost::make_tuple( account, edge_id ) );
+}
+
+const graph_node_property_object& database::get_graph_node_property( const graph_node_name_type& node_type )const
+{ try {
+   return get< graph_node_property_object, by_node_type >( node_type );
+} FC_CAPTURE_AND_RETHROW( (node_type) ) }
+
+const graph_node_property_object* database::find_graph_node_property( const graph_node_name_type& node_type )const
+{
+   return find< graph_node_property_object, by_node_type >( node_type );
+}
+
+const graph_edge_property_object& database::get_graph_edge_property( const graph_edge_name_type& edge_type )const
+{ try {
+   return get< graph_edge_property_object, by_edge_type >( edge_type );
+} FC_CAPTURE_AND_RETHROW( (edge_type) ) }
+
+const graph_edge_property_object* database::find_graph_edge_property( const graph_edge_name_type& edge_type )const
+{
+   return find< graph_edge_property_object, by_edge_type >( edge_type );
+}
+
 const asset_liquidity_pool_object& database::get_liquidity_pool( const asset_symbol_type& symbol_a, const asset_symbol_type& symbol_b )const
 { try {
    return get< asset_liquidity_pool_object, by_asset_pair >( boost::make_tuple( symbol_a, symbol_b ) );
@@ -1878,6 +1968,66 @@ const credit_loan_object& database::get_loan( const account_name_type& owner, co
 const credit_loan_object* database::find_loan( const account_name_type& owner, const string& loan_id )const
 {
    return find< credit_loan_object, by_loan_id >( boost::make_tuple( owner, loan_id ) );
+}
+
+const asset_option_pool_object& database::get_option_pool( const asset_symbol_type& base_symbol, const asset_symbol_type& quote_symbol )const
+{ try {
+   return get< asset_option_pool_object, by_asset_pair >( boost::make_tuple( base_symbol, quote_symbol ) );
+} FC_CAPTURE_AND_RETHROW( (base_symbol)(quote_symbol) ) }
+
+const asset_option_pool_object* database::find_option_pool( const asset_symbol_type& base_symbol, const asset_symbol_type& quote_symbol )const
+{
+   return find< asset_option_pool_object, by_asset_pair >( boost::make_tuple( base_symbol, quote_symbol ) );
+}
+
+const asset_option_pool_object& database::get_option_pool( const asset_symbol_type& symbol )const
+{ try {
+   return get< asset_option_pool_object, by_asset_pair >( boost::make_tuple( SYMBOL_COIN, symbol ) );
+} FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+const asset_option_pool_object* database::find_option_pool( const asset_symbol_type& symbol )const
+{
+   return find< asset_option_pool_object, by_asset_pair >( boost::make_tuple( SYMBOL_COIN, symbol ) );
+}
+
+const product_object& database::get_product( const account_name_type& name, const shared_string& product_id )const
+{ try {
+   return get< product_object, by_product_id >( boost::make_tuple( name, product_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(product_id) ) }
+
+const product_object* database::find_product( const account_name_type& name, const shared_string& product_id )const
+{
+   return find< product_object, by_product_id >( boost::make_tuple( name, product_id ) );
+}
+
+const product_object& database::get_product( const account_name_type& name, const string& product_id )const
+{ try {
+   return get< product_object, by_product_id >( boost::make_tuple( name, product_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(product_id) ) }
+
+const product_object* database::find_product( const account_name_type& name, const string& product_id )const
+{
+   return find< product_object, by_product_id >( boost::make_tuple( name, product_id ) );
+}
+
+const purchase_order_object& database::get_purchase_order( const account_name_type& name, const shared_string& order_id )const
+{ try {
+   return get< purchase_order_object, by_order_id >( boost::make_tuple( name, order_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(order_id) ) }
+
+const purchase_order_object* database::find_purchase_order( const account_name_type& name, const shared_string& order_id )const
+{
+   return find< purchase_order_object, by_order_id >( boost::make_tuple( name, order_id ) );
+}
+
+const purchase_order_object& database::get_purchase_order( const account_name_type& name, const string& order_id )const
+{ try {
+   return get< purchase_order_object, by_order_id >( boost::make_tuple( name, order_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(order_id) ) }
+
+const purchase_order_object* database::find_purchase_order( const account_name_type& name, const string& order_id )const
+{
+   return find< purchase_order_object, by_order_id >( boost::make_tuple( name, order_id ) );
 }
 
 const escrow_object& database::get_escrow( const account_name_type& name, const shared_string& escrow_id )const
@@ -2105,29 +2255,125 @@ const comment_metrics_object& database::get_comment_metrics() const
    return get< comment_metrics_object>();
 } FC_CAPTURE_AND_RETHROW() }
 
-asset database::asset_to_USD( const asset& a ) const
+asset database::asset_to_USD( const price& p, const asset& a ) const
 {
-   if( a.symbol != SYMBOL_COIN )
-   {
-      price rate = get_liquidity_pool( SYMBOL_COIN, a.symbol ).current_price();
+   FC_ASSERT( a.symbol != SYMBOL_USD );
+   asset_symbol_type quote_symbol = p.quote.symbol;
+   asset_symbol_type base_symbol = p.base.symbol;
+   FC_ASSERT( base_symbol == SYMBOL_USD || quote_symbol == SYMBOL_USD );
+   asset value_usd = asset( 0, SYMBOL_USD);
 
-      return util::asset_to_USD( get_usd_price(), a * rate );
+   if( p.is_null() )
+   {
+      return value_usd;
    }
    else
    {
-      return util::asset_to_USD( get_usd_price(), a );
+      value_usd = a * p;
+      return value_usd;
    }
 }
 
-asset database::USD_to_asset( const asset& a) const
+
+asset database::asset_to_USD( const asset& a ) const
 {
-   return util::USD_to_asset( get_usd_price(), a );
+   price usd_price = get_usd_price();
+   asset coin_value = a;
+   asset usd_value = asset( 0, SYMBOL_USD );
+   
+   if( a.symbol != SYMBOL_COIN )
+   {
+      price coin_price = get_liquidity_pool( SYMBOL_COIN, a.symbol ).current_price();
+      usd_value = asset_to_USD( usd_price, coin_value * coin_price );
+   }
+   else
+   {
+      usd_value = asset_to_USD( usd_price, coin_value );
+   }
+   return usd_value;
 }
+
+
+asset database::USD_to_asset( const price& p, const asset& a ) const
+{
+   FC_ASSERT( a.symbol == SYMBOL_USD );
+   asset_symbol_type quote_symbol = p.quote.symbol;
+   asset_symbol_type base_symbol = p.base.symbol;
+   FC_ASSERT( base_symbol == SYMBOL_USD || quote_symbol == SYMBOL_USD );
+
+   asset usd_value = a;
+   asset coin_value = asset( 0, SYMBOL_USD );
+   price coin_price = p;
+
+   if( p.is_null() ) 
+   {
+      if( base_symbol == SYMBOL_USD ) 
+      {
+         coin_value = asset( 0, quote_symbol );
+      } 
+      else if( quote_symbol == SYMBOL_USD ) 
+      {
+         coin_value = asset( 0, base_symbol );
+      }
+   }
+   else
+   {
+      coin_value = usd_value * coin_price;
+   }
+   
+   return coin_value;
+}
+
+
+asset database::USD_to_asset( const asset& a ) const
+{
+   price usd_price = get_usd_price();
+   return USD_to_asset( usd_price, a );
+}
+
+/**
+ * Returns the asset value of the comment reward
+ * from a specified comment reward context.
+ */
+asset database::get_comment_reward( const util::comment_reward_context& ctx ) const
+{ try {
+   FC_ASSERT( ctx.reward.value > 0 );
+   FC_ASSERT( ctx.recent_content_claims > 0 );
+
+   u256 rf(ctx.total_reward_fund.amount.value);
+   u256 total_claims = util::to256( ctx.recent_content_claims );
+
+   u256 claim = util::to256( util::evaluate_reward_curve( 
+      ctx.reward.value, 
+      ctx.cashouts_received, 
+      ctx.reward_curve, 
+      ctx.decay_rate, 
+      ctx.content_constant ) );
+
+   u256 payout_u256 = ( rf * claim ) / total_claims;
+
+   FC_ASSERT( payout_u256 <= u256( std::numeric_limits<int64_t>::max() ) );
+   share_type payout = static_cast< int64_t >( payout_u256 );
+   asset reward_value = asset( payout, ctx.total_reward_fund.symbol );
+
+   if( reward_value * ctx.current_COIN_USD_price < MIN_PAYOUT_USD )
+   {
+      payout = 0;
+   }
+
+   asset max_reward_coin = ctx.max_reward * ctx.current_COIN_USD_price;
+   payout = std::min( payout, share_type( max_reward_coin.amount.value ) );
+   reward_value = asset( payout, ctx.total_reward_fund.symbol );
+
+   return reward_value;
+} FC_CAPTURE_AND_RETHROW( (ctx) ) }
+
 
 const hardfork_property_object& database::get_hardfork_property_object()const
 { try {
    return get< hardfork_property_object >();
 } FC_CAPTURE_AND_RETHROW() }
+
 
 const time_point database::calculate_discussion_payout_time( const comment_object& comment )const
 {
@@ -3020,7 +3266,7 @@ void database::process_bitassets()
       {
          abdo.force_settled_volume = 0; // Reset all BitAsset force settlement volumes to zero
 
-         if ( ( flags & ( producer_fed_asset ) ) &&
+         if ( ( flags & int( asset_issuer_permission_flags::producer_fed_asset ) ) &&
               feed_lifetime < head_epoch_seconds )            // if smartcoin && check overflow
          {
             fc::time_point calculated = now - feed_lifetime;
@@ -4405,6 +4651,9 @@ void database::initialize_evaluators()
 
    _my->_evaluator_registry.register_evaluator< account_create_evaluator                 >();
    _my->_evaluator_registry.register_evaluator< account_update_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< account_profile_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< account_verification_evaluator           >();
+   _my->_evaluator_registry.register_evaluator< account_business_evaluator               >();
    _my->_evaluator_registry.register_evaluator< account_membership_evaluator             >();
    _my->_evaluator_registry.register_evaluator< account_vote_executive_evaluator         >();
    _my->_evaluator_registry.register_evaluator< account_vote_officer_evaluator           >();
@@ -4414,7 +4663,7 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< account_accept_invite_evaluator          >();
    _my->_evaluator_registry.register_evaluator< account_remove_member_evaluator          >();
    _my->_evaluator_registry.register_evaluator< account_update_list_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< account_producer_vote_evaluator           >();
+   _my->_evaluator_registry.register_evaluator< account_producer_vote_evaluator          >();
    _my->_evaluator_registry.register_evaluator< account_update_proxy_evaluator           >();
    _my->_evaluator_registry.register_evaluator< request_account_recovery_evaluator       >();
    _my->_evaluator_registry.register_evaluator< recover_account_evaluator                >();
@@ -4467,6 +4716,8 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< community_remove_member_evaluator            >();
    _my->_evaluator_registry.register_evaluator< community_blacklist_evaluator                >();
    _my->_evaluator_registry.register_evaluator< community_subscribe_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< community_event_evaluator                    >();
+   _my->_evaluator_registry.register_evaluator< community_event_attend_evaluator             >();
 
    // Advertising Evaluators
 
@@ -4475,6 +4726,13 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< ad_inventory_evaluator                   >();
    _my->_evaluator_registry.register_evaluator< ad_audience_evaluator                    >();
    _my->_evaluator_registry.register_evaluator< ad_bid_evaluator                         >();
+
+   // Graph Data Evaluators
+
+   _my->_evaluator_registry.register_evaluator< graph_node_evaluator                    >();
+   _my->_evaluator_registry.register_evaluator< graph_edge_evaluator                    >();
+   _my->_evaluator_registry.register_evaluator< graph_node_property_evaluator           >();
+   _my->_evaluator_registry.register_evaluator< graph_edge_property_evaluator           >();
 
    // Transfer Evaluators
 
@@ -4497,6 +4755,8 @@ void database::initialize_evaluators()
    
    // Marketplace Evaluators
    
+   _my->_evaluator_registry.register_evaluator< product_update_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< product_purchase_evaluator               >();
    _my->_evaluator_registry.register_evaluator< escrow_transfer_evaluator                >();
    _my->_evaluator_registry.register_evaluator< escrow_approve_evaluator                 >();
    _my->_evaluator_registry.register_evaluator< escrow_dispute_evaluator                 >();
@@ -4506,7 +4766,9 @@ void database::initialize_evaluators()
 
    _my->_evaluator_registry.register_evaluator< limit_order_evaluator                    >();
    _my->_evaluator_registry.register_evaluator< margin_order_evaluator                   >();
+   _my->_evaluator_registry.register_evaluator< auction_order_evaluator                  >();
    _my->_evaluator_registry.register_evaluator< call_order_evaluator                     >();
+   _my->_evaluator_registry.register_evaluator< option_order_evaluator                   >();
    _my->_evaluator_registry.register_evaluator< bid_collateral_evaluator                 >();
 
    // Pool Evaluators
@@ -4534,7 +4796,7 @@ void database::initialize_evaluators()
    
    // Block Producer Evaluators
 
-   _my->_evaluator_registry.register_evaluator< producer_update_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< producer_update_evaluator                >();
    _my->_evaluator_registry.register_evaluator< proof_of_work_evaluator                  >();
    _my->_evaluator_registry.register_evaluator< verify_block_evaluator                   >();
    _my->_evaluator_registry.register_evaluator< commit_block_evaluator                   >();
@@ -4567,6 +4829,7 @@ void database::initialize_indexes()
    // Global Indexes
 
    add_core_index< dynamic_global_property_index           >(*this);
+   add_core_index< median_chain_property_index             >(*this);
    add_core_index< transaction_index                       >(*this);
    add_core_index< operation_index                         >(*this);
    add_core_index< reward_fund_index                       >(*this);
@@ -4576,6 +4839,8 @@ void database::initialize_indexes()
    // Account Indexes
 
    add_core_index< account_index                           >(*this);
+   add_core_index< account_profile_index                   >(*this);
+   add_core_index< account_verification_index              >(*this);
    add_core_index< account_business_index                  >(*this);
    add_core_index< account_executive_vote_index            >(*this);
    add_core_index< account_officer_vote_index              >(*this);
@@ -4623,12 +4888,13 @@ void database::initialize_indexes()
 
    // Community Indexes
 
-   add_core_index< community_index                             >(*this);
-   add_core_index< community_member_index                      >(*this);
-   add_core_index< community_member_key_index                  >(*this);
-   add_core_index< community_moderator_vote_index              >(*this);
-   add_core_index< community_join_request_index                >(*this);
-   add_core_index< community_join_invite_index                 >(*this);
+   add_core_index< community_index                         >(*this);
+   add_core_index< community_member_index                  >(*this);
+   add_core_index< community_member_key_index              >(*this);
+   add_core_index< community_moderator_vote_index          >(*this);
+   add_core_index< community_join_request_index            >(*this);
+   add_core_index< community_join_invite_index             >(*this);
+   add_core_index< community_event_index                   >(*this);
 
    // Advertising Indexes
 
@@ -4637,6 +4903,14 @@ void database::initialize_indexes()
    add_core_index< ad_inventory_index                      >(*this);
    add_core_index< ad_audience_index                       >(*this);
    add_core_index< ad_bid_index                            >(*this);
+
+   // Graph Data Indexes
+
+   add_core_index< graph_node_index                        >(*this);
+   add_core_index< graph_edge_index                        >(*this);
+   add_core_index< graph_node_property_index               >(*this);
+   add_core_index< graph_edge_property_index               >(*this);
+
 
    // Transfer Indexes
 
@@ -4653,13 +4927,17 @@ void database::initialize_indexes()
 
    // Marketplace Indexes
 
+   add_core_index< product_index                           >(*this);
+   add_core_index< purchase_order_index                    >(*this);
    add_core_index< escrow_index                            >(*this);
 
    // Trading Indexes
 
    add_core_index< limit_order_index                       >(*this);
    add_core_index< margin_order_index                      >(*this);
+   add_core_index< auction_order_index                     >(*this);
    add_core_index< call_order_index                        >(*this);
+   add_core_index< option_order_index                      >(*this);
    add_core_index< force_settlement_index                  >(*this);
    add_core_index< collateral_bid_index                    >(*this);
 
@@ -4667,11 +4945,16 @@ void database::initialize_indexes()
 
    add_core_index< asset_index                             >(*this);
    add_core_index< asset_dynamic_data_index                >(*this);
+   add_core_index< asset_currency_data_index               >(*this);
    add_core_index< asset_bitasset_data_index               >(*this);
    add_core_index< asset_equity_data_index                 >(*this);
    add_core_index< asset_credit_data_index                 >(*this);
+   add_core_index< asset_unique_data_index                 >(*this);
    add_core_index< asset_liquidity_pool_index              >(*this);
    add_core_index< asset_credit_pool_index                 >(*this);
+   add_core_index< asset_option_pool_index                 >(*this);
+   add_core_index< asset_prediction_pool_index             >(*this);
+   add_core_index< asset_distribution_index                >(*this);
 
    // Credit Indexes
 
@@ -4680,9 +4963,9 @@ void database::initialize_indexes()
 
    // Block Producer Objects 
 
-   add_core_index< producer_index                           >(*this);
-   add_core_index< producer_schedule_index                  >(*this);
-   add_core_index< producer_vote_index                      >(*this);
+   add_core_index< producer_index                          >(*this);
+   add_core_index< producer_schedule_index                 >(*this);
+   add_core_index< producer_vote_index                     >(*this);
    add_core_index< block_validation_index                  >(*this);
    add_core_index< commit_violation_index                  >(*this);
 

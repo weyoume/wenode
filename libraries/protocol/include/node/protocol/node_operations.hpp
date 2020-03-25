@@ -251,41 +251,6 @@ namespace node { namespace protocol {
 
 
    /**
-    * Creates or Updates the business structure of an account.
-    * 
-    * Contains a heirarchial structure of members, officers, and 
-    * executives that can be used for managing an enterprise of multiple
-    * accounts, and giving individuals delegated control over account
-    * transaction signatory authority. 
-    * 
-    * Able to issue additonal assets
-    * that distribute portions of incoming revenue.
-    * Options for control structures that offer different 
-    * authority dynamics, from most permissive to most restrictive.
-    */
-   struct account_business_operation : public base_operation
-   {
-      account_name_type           signatory;
-
-      account_name_type           account;                  ///< Name of the account to update.
-
-      account_name_type           governance_account;       ///< Name of the governance account that the business account is registered with.
-
-      account_name_type           init_ceo_account;         ///< Name of the account that should become the initial Chief Executive Officer.
-
-      business_structure_type     business_type;            ///< The type of business account being created.
-
-      share_type                  officer_vote_threshold;   ///< The voting power required to be an active officer.
-
-      string                      business_public_key;      ///< The public key used for encrypted business content.
-
-      void validate()const;
-      void get_required_owner_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
-      void get_creator_name( account_name_type a )const{ a = account; }
-   };
-
-
-   /**
     * Creates or updates an Account's Profile Identity Data.
     * 
     * The operation is completed by a governance account 
@@ -304,10 +269,10 @@ namespace node { namespace protocol {
    {
       account_name_type       signatory;
 
-      account_name_type       governance_account;     ///< Governance account administrating and attesting to the accuracy the profile data.
-
       account_name_type       account;                ///< Name of the Account with the profile.
 
+      account_name_type       governance_account;     ///< Governance account administrating and attesting to the accuracy the profile data.
+      
       string                  profile_public_key;     ///< Public key of the profile data for encryption and decryption.
 
       string                  first_name;             ///< First name of the user.
@@ -328,7 +293,7 @@ namespace node { namespace protocol {
 
       void validate()const;
       void get_required_owner_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
-      void get_creator_name( account_name_type a )const{ a = governance_account; }
+      void get_creator_name( account_name_type a )const{ a = account; }
    };
 
 
@@ -359,6 +324,42 @@ namespace node { namespace protocol {
       void validate()const;
       void get_required_owner_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
       void get_creator_name( account_name_type a )const{ a = verifier_account; }
+   };
+
+
+
+   /**
+    * Creates or Updates the business structure of an account.
+    * 
+    * Contains a heirarchial structure of members, officers, and 
+    * executives that can be used for managing an enterprise of multiple
+    * accounts, and giving individuals delegated control over account
+    * transaction signatory authority. 
+    * 
+    * Able to issue additonal assets
+    * that distribute portions of incoming revenue.
+    * Options for control structures that offer different 
+    * authority dynamics, from most permissive to most restrictive.
+    */
+   struct account_business_operation : public base_operation
+   {
+      account_name_type           signatory;
+
+      account_name_type           account;                  ///< Name of the account to update.   
+
+      account_name_type           governance_account;       ///< Name of the governance account that the business account is registered with.
+
+      account_name_type           init_ceo_account;         ///< Name of the account that should become the initial Chief Executive Officer.
+
+      string                      business_type;            ///< The type of business account being created.
+
+      share_type                  officer_vote_threshold;   ///< The voting power required to be an active officer.
+
+      string                      business_public_key;      ///< The public key used for encrypted business content.
+
+      void validate()const;
+      void get_required_owner_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
+      void get_creator_name( account_name_type a )const{ a = account; }
    };
 
 
@@ -403,7 +404,7 @@ namespace node { namespace protocol {
 
       account_name_type      account;              ///< The name of the account to activate membership on.
 
-      membership_tier_type   membership_type;      ///< The level of membership to activate on the account.
+      string                 membership_type;      ///< The level of membership to activate on the account.
 
       uint16_t               months;               ///< Number of months to purchase membership for.
 
@@ -430,7 +431,7 @@ namespace node { namespace protocol {
 
       account_name_type            executive_account;     ///< Name of executive being voted for.
 
-      executive_role_type          role;                  ///< Role of the executive.
+      string                       role;                  ///< Role of the executive.
 
       uint16_t                     vote_rank;             ///< Rank of voting preference
 
@@ -863,7 +864,7 @@ namespace node { namespace protocol {
 
       account_name_type             requested_account;              ///< Account that is being requested to connect.
 
-      connection_tier_type          connection_type;                ///< Type of connection level.
+      string                        connection_type;                ///< Type of connection level.
 
       string                        message;                        ///< Message attached to the request, encrypted with recipient's secure public key.
 
@@ -895,7 +896,7 @@ namespace node { namespace protocol {
 
       string                        connection_id;         ///< uuidv4 for the connection, for local storage of decryption key.
 
-      connection_tier_type          connection_type;       ///< Type of connection level.
+      string                        connection_type;       ///< Type of connection level.
 
       string                        encrypted_key;         ///< The private connection key of the user, encrypted with the public secure key of the requesting account.
 
@@ -1012,7 +1013,7 @@ namespace node { namespace protocol {
 
       account_name_type             account;           ///< Name of the member's account.
 
-      network_officer_role_type     officer_type;      ///< The type of network officer that the account serves as. 
+      string                        officer_type;      ///< The type of network officer that the account serves as. 
 
       string                        details;           ///< Information about the network officer and their work.
 
@@ -1343,7 +1344,7 @@ namespace node { namespace protocol {
 
       string                                            enterprise_id;       ///< uuidv4 referring to the proposal. 
 
-      proposal_distribution_type                        proposal_type;       ///< The type of proposal, determines release schedule
+      string                                            proposal_type;       ///< The type of proposal, determines release schedule
 
       flat_map< account_name_type, uint16_t >           beneficiaries;       ///< Set of account names and percentages of budget value. Should not include the null account.
 
@@ -1464,29 +1465,29 @@ namespace node { namespace protocol {
     */
    struct comment_options
    {
-      post_format_type                      post_type = post_format_type::TEXT_POST;          ///< Type of post being created, text, image, article, video, audio, file, etc.
+      string                                post_type = post_format_values[0];  ///< Type of post being created, text, image, article, video, audio, file, etc.
 
-      feed_reach_type                       reach = feed_reach_type::TAG_FEED;               ///< The extent to which the post will be distributed to account's followers and connections feeds.
+      string                                reach = feed_reach_values[7];       ///< The extent to which the post will be distributed to account's followers and connections feeds.
 
-      uint16_t                              rating = 1;                     ///< User nominated rating as to the maturity of the content, and display sensitivity.
+      uint16_t                              rating = 1;                         ///< User nominated rating as to the maturity of the content, and display sensitivity.
 
-      asset_symbol_type                     reward_currency = SYMBOL_COIN;  ///< The reward currency that the post will earn. 
+      asset_symbol_type                     reward_currency = SYMBOL_COIN;      ///< The reward currency that the post will earn.
 
       asset                                 max_accepted_payout = MAX_ACCEPTED_PAYOUT;   ///< USD value of the maximum payout this post will receive.
       
-      uint16_t                              percent_liquid = PERCENT_100;   ///< Percentage of reward to keep liquid, remaining received as a staked balance.
+      uint16_t                              percent_liquid = PERCENT_100;       ///< Percentage of reward to keep liquid, remaining received as a staked balance.
 
-      bool                                  allow_replies = true;           ///< Allows a post to receive comment replies.
+      bool                                  allow_replies = true;               ///< Allows a post to receive comment replies.
       
-      bool                                  allow_votes = true;             ///< Allows a post to receive votes.
+      bool                                  allow_votes = true;                 ///< Allows a post to receive votes.
 
-      bool                                  allow_views = true;             ///< Allows a post to receive views.
+      bool                                  allow_views = true;                 ///< Allows a post to receive views.
 
-      bool                                  allow_shares = true;            ///< Allows a post to receive shares.
+      bool                                  allow_shares = true;                ///< Allows a post to receive shares.
       
-      bool                                  allow_curation_rewards = true;  ///< allows voters, viewers, sharers, and commenters to receive curation rewards.
+      bool                                  allow_curation_rewards = true;      ///< allows voters, viewers, sharers, and commenters to receive curation rewards.
 
-      vector< beneficiary_route_type >      beneficiaries;                  ///< Vector of accounts that will receive an allocation of content rewards from the post.
+      vector< beneficiary_route_type >      beneficiaries;                      ///< Vector of accounts that will receive an allocation of content rewards from the post.
 
       void validate()const;
    };
@@ -1531,6 +1532,8 @@ namespace node { namespace protocol {
       vector< string >            ipfs;            ///< Vector of Strings containing IPFS file hashes: images, videos, files.
 
       vector< string >            magnet;          ///< Vector of Strings containing bittorrent magnet links to torrent file swarms: videos, files.
+
+      string                      url;             ///< String containing a URL for the post to link to.
 
       string                      language;        ///< String containing the two letter ISO language code of the native language of the author.
 
@@ -1655,11 +1658,11 @@ namespace node { namespace protocol {
 
       string                       permlink;         ///< Permlink to the post being shared.
 
-      feed_reach_type              reach;            ///< Audience reach selection for share.
+      string                       reach;            ///< Audience reach selection for share.
 
       account_name_type            interface;        ///< Name of the interface account that was used to broadcast the transaction and share the post.
 
-      optional< community_name_type >  community;            ///< Optionally share the post with a new community.
+      optional< community_name_type >  community;    ///< Optionally share the post with a new community.
 
       optional< tag_name_type >    tag;              ///< Optionally share the post with a new tag.
 
@@ -1738,7 +1741,7 @@ namespace node { namespace protocol {
 
       community_name_type         name;                  ///< Name of the community.
 
-      community_privacy_type      community_privacy;     ///< Type of community Privacy to us, determines access permissions and encryption
+      string                      community_privacy;     ///< Type of community Privacy to us, determines access permissions and encryption
 
       string                      community_public_key;  ///< Key used for encrypting and decrypting posts. Private key shared with accepted members.
 
@@ -2068,11 +2071,13 @@ namespace node { namespace protocol {
 
       community_name_type            community;              ///< Community being invited to join.
 
-      string                         event_name;             ///< The Name of the event. Unique within each community. 
+      string                         event_name;             ///< The Name of the event. Unique within each community.
+
+      string                         location;               ///< Address of the location of the event.
 
       string                         details;                ///< Event details describing the purpose of the event.
 
-      string                         location;               ///< Address location of the event.
+      string                         url;                    ///< Link containining additional event information.
 
       string                         json;                   ///< Additional Event JSON data.
 
@@ -2101,7 +2106,11 @@ namespace node { namespace protocol {
 
       string                         event_name;             ///< The Name of the event.
 
-      bool                           attending = true;       ///< True toattend the event, false for not attending.
+      bool                           interested = true;      ///< True to set interested in the event, and receive notifications about it, false to remove interedt status.
+
+      bool                           attending = true;       ///< True to attend the event, false to remove attending status.
+
+      bool                           not_attending = false;  ///< True to state not attending the event, false to remove not attending status.
 
       void validate()const;
       void get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -2134,7 +2143,7 @@ namespace node { namespace protocol {
 
       string                 json;              ///< JSON string of creative metadata for display.
 
-      ad_format_type         format_type;       ///< The type of formatting used for the advertisment, determines the interpretation of the creative.
+      string                 format_type;       ///< The type of formatting used for the advertisment, determines the interpretation of the creative.
 
       bool                   active = true;     ///< True if the creative is enabled for active display, false to deactivate.
 
@@ -2193,7 +2202,7 @@ namespace node { namespace protocol {
 
       string                             audience_id;    ///< uuidv4 referring to audience object containing usernames of desired accounts in interface's audience.
 
-      ad_metric_type                     metric;         ///< Type of expense metric used.
+      string                             metric;         ///< Type of expense metric used.
 
       asset                              min_price;      ///< Minimum bidding price per metric.
 
@@ -2309,6 +2318,10 @@ namespace node { namespace protocol {
 
       string                             details;                ///< Describes the additional details of the node.
 
+      vector< string >                   attributes;             ///< The Attributes of the node.
+
+      vector< string >                   attribute_values;       ///< The Attribute values of the node.
+
       string                             json;                   ///< Public plaintext JSON node attribute information.
 
       string                             json_private;           ///< Private encrypted ciphertext JSON node attribute information.
@@ -2348,6 +2361,10 @@ namespace node { namespace protocol {
 
       string                             details;              ///< Describes the edge.
 
+      vector< string >                   attributes;           ///< The Attributes of the edge.
+
+      vector< string >                   attribute_values;     ///< The Attribute values of the edge.
+
       string                             json;                 ///< Public plaintext JSON edge attribute information.
 
       string                             json_private;         ///< Private encrypted ciphertext JSON edge attribute information.
@@ -2373,9 +2390,9 @@ namespace node { namespace protocol {
 
       graph_node_name_type               node_type;                   ///< Name of the type of node being specified.
 
-      connection_tier_type               graph_privacy;               ///< Encryption level of the node attribute data.
+      string                             graph_privacy;               ///< Encryption level of the node attribute data.
 
-      connection_tier_type               edge_permission;             ///< The Level of connection required to create an edge to or from this node type. 
+      string                             edge_permission;             ///< The Level of connection required to create an edge to or from this node type. 
 
       string                             details;                     ///< Describes the additional details of the node.
 
@@ -2404,7 +2421,7 @@ namespace node { namespace protocol {
 
       graph_edge_name_type               edge_type;                   ///< Name of the type of edge being specified.
 
-      connection_tier_type               graph_privacy;               ///< Encryption level of the edge attribute data.
+      string                             graph_privacy;               ///< Encryption level of the edge attribute data.
 
       vector< graph_node_name_type >     from_node_types;             ///< Types of node that the edge can connect from. Empty for all types. 
 
@@ -2774,29 +2791,33 @@ namespace node { namespace protocol {
    {
       account_name_type              signatory;
 
-      account_name_type              account;             ///< The Seller of the product.
+      account_name_type              account;                ///< The Seller of the product.
 
-      string                         product_name;        ///< The name of the product. Unique for each account.
+      string                         product_id;             ///< uuidv4 referring to the product.
 
-      flat_set< string >             product_variants;    ///< The collection of product variants. Each map must have a key for each variant.
+      string                         name;                   ///< The descriptive name of the product.
 
-      product_sale_type              sale_type;           ///< The type of sale to be used for the product.
+      string                         sale_type;              ///< The type of sale to be used for the product.
 
-      flat_map< string, string >     details;             ///< The Description details of each variant of the product.
+      string                         url;                    ///< Reference URL of the product or seller.
 
-      flat_map< string, string >     images;              ///< IPFS references to images of each product variant.
+      string                         json;                   ///< JSON metadata attributes of the product.
 
-      flat_map< string, asset >      product_prices;      ///< The price (or min auction price) for each variant of the product.
+      vector< string >               product_variants;       ///< The collection of product variants. Each map must have a key for each variant.
 
-      flat_map< string, uint32_t >   stock_available;     ///< The available stock of each variant of the product.
+      vector< string >               product_details;        ///< The Description details of each variant of the product.
 
-      flat_map< string, string >     json;                ///< JSON metadata attributes of each product variant.
+      vector< string >               product_images;         ///< IPFS references to images of each product variant.
 
-      string                         url;                 ///< Reference URL of the product or seller.
+      vector< asset >                product_prices;         ///< The price (or min auction price) for each variant of the product.
 
-      flat_set< string >             delivery_variants;   ///< The types of product delivery available to purchasers.
+      vector< uint32_t >             stock_available;        ///< The available stock of each variant of the product.
 
-      flat_map< string, asset >      delivery_prices;     ///< The price for each variant of delivery.
+      vector< string >               delivery_variants;      ///< The types of product delivery available to purchasers.
+
+      vector< string >               delivery_details;       ///< The details of product delivery variants.
+
+      vector< asset >                delivery_prices;        ///< The price for each variant of delivery.
 
       void get_required_active_authorities( flat_set< account_name_type >& a ) const { a.insert( signatory ); }
       void get_creator_name( account_name_type a )const{ a = account; }
@@ -2814,30 +2835,36 @@ namespace node { namespace protocol {
    {
       account_name_type              signatory;
 
-      account_name_type              account;             ///< The Buyer of the product.
+      account_name_type              buyer;               ///< The Buyer of the product.
+
+      string                         order_id;            ///< uuidv4 referring to the purchase order.
 
       account_name_type              seller;              ///< The Seller of the product.
 
-      string                         product_name;        ///< The name of the product. Unique for each account.
+      string                         product_id;          ///< uuidv4 refrring to the product.
 
-      flat_map< string, uint32_t >   order_size;          ///< The number of each product variant ordered.
+      vector< string >               order_variants;      ///< Variants of product ordered in the purchase.
 
-      asset                          total_payable;       ///< The total amount to be paid for the purchase.
-
-      string                         shipping_address;    ///< The shipping address requested, encrypted with the secure key of the seller.
-
-      string                         escrow_id;           ///< uuidv4 referring to the underlying escrow transaction.
-
-      time_point                     acceptance_time;     ///< Time that the escrow proposal must be approved before.
-
-      time_point                     escrow_expiration;   ///< Time after which balance can be claimed by FROM or TO freely.
+      vector< uint32_t >             order_size;          ///< The number of each product variant ordered.
 
       string                         memo;                ///< The memo for the transaction, encryption on the memo is advised.
 
       string                         json;                ///< Additonal JSON object attribute details.
 
+      string                         shipping_address;    ///< The shipping address requested, encrypted with the secure key of the seller.
+
+      string                         delivery_variant;    ///< The type of product delivery selected.
+
+      string                         delivery_details;    ///< The Description details of the delivery.
+
+      time_point                     acceptance_time;     ///< Time that the escrow proposal must be approved before.
+
+      time_point                     escrow_expiration;   ///< Time after which balance can be claimed by FROM or TO freely.
+
+      bool                           completed = false;   ///< False when order is pending, true when completed. 
+
       void get_required_active_authorities( flat_set< account_name_type >& a ) const { a.insert( signatory ); }
-      void get_creator_name( account_name_type a )const{ a = account; }
+      void get_creator_name( account_name_type a )const{ a = buyer; }
       void validate() const;
    };
 
@@ -3155,7 +3182,7 @@ namespace node { namespace protocol {
 
    /**
     * Creates a new option order that issues new option assets that can be sold for premium.
-    * 
+    * /
     * Option orders create covered option contract assets.
     * Option contract assets cover 100 units of the underlying asset, 
     * and allow the holder to exercise the option to execute a trade 
@@ -3204,7 +3231,7 @@ namespace node { namespace protocol {
 
       string                   order_id;              ///< uuidv4 of the order for reference.
 
-      asset                    amount_to_issue;       ///< Amount of assets to issue covered options contract assets against. Must be a multiple of 100 units.
+      asset                    underlying_amount;     ///< Amount of assets to issue covered options contract assets against. Must be a multiple of 100 units.
 
       option_strike            strike_price;          ///< The asset pair strike price at which the options can be exercised at any time before expiration.
 
@@ -3351,7 +3378,7 @@ namespace node { namespace protocol {
    /**
     * Adds an asset to an account's credit collateral position of that asset.
     * 
-    * Collateral pools are used to borrow funds in credit borrow orders, and margin orders.
+    * Collateral pools are used to borrow funds in credit borrow orders, margin orders, and option orders.
     */
    struct credit_pool_collateral_operation : public base_operation
    {
@@ -3600,7 +3627,7 @@ namespace node { namespace protocol {
       
       asset_symbol_type               symbol;                  ///< The ticker symbol of this asset.
 
-      asset_property_type             asset_type;              ///< The type of the asset. Determines asset characteristics and features.
+      string                          asset_type;              ///< The type of the asset. Determines asset characteristics and features.
 
       asset                           coin_liquidity;          ///< Amount of COIN asset to inject into the Coin liquidity pool.  
 
@@ -4373,18 +4400,10 @@ FC_REFLECT( node::protocol::account_update_operation,
          (active)
          );
 
-FC_REFLECT( node::protocol::account_business_operation,
-         (signatory)
-         (account)
-         (business_type)
-         (officer_vote_threshold)
-         (business_public_key)
-         );
-
 FC_REFLECT( node::protocol::account_profile_operation,
          (signatory)
-         (governance_account)
          (account)
+         (governance_account)
          (profile_public_key)
          (first_name)
          (last_name)
@@ -4402,6 +4421,16 @@ FC_REFLECT( node::protocol::account_verification_operation,
          (verified_account)
          (shared_image)
          (image_signature)
+         );
+
+FC_REFLECT( node::protocol::account_business_operation,
+         (signatory)
+         (account)
+         (governance_account)
+         (init_ceo_account)
+         (business_type)
+         (officer_vote_threshold)
+         (business_public_key)
          );
 
 FC_REFLECT( node::protocol::account_membership_operation,
@@ -4753,6 +4782,7 @@ FC_REFLECT( node::protocol::comment_operation,
          (body)
          (ipfs)
          (magnet)
+         (url)
          (language)
          (community)
          (public_key)
@@ -4953,8 +4983,9 @@ FC_REFLECT( node::protocol::community_event_operation,
          (account)
          (community)
          (event_name)
-         (details)
          (location)
+         (details)
+         (url)
          (json)
          (invited)
          (event_start_time)
@@ -4967,6 +4998,7 @@ FC_REFLECT( node::protocol::community_event_attend_operation,
          (community)
          (event_name)
          (attending)
+         (not_attending)
          );
 
 
@@ -5055,6 +5087,8 @@ FC_REFLECT( node::protocol::graph_node_operation,
          (node_id)
          (name)
          (details)
+         (attributes)
+         (attribute_values)
          (json)
          (json_private)
          (node_public_key)
@@ -5072,6 +5106,8 @@ FC_REFLECT( node::protocol::graph_edge_operation,
          (to_node_id)
          (name)
          (details)
+         (attributes)
+         (attribute_values)
          (json)
          (json_private)
          (edge_public_key)
@@ -5248,32 +5284,37 @@ FC_REFLECT( node::protocol::delegate_asset_operation,
 FC_REFLECT( node::protocol::product_update_operation, 
          (signatory)
          (account)
-         (product_name)
-         (product_variants)
+         (product_id)
+         (name)
          (sale_type)
-         (details)
-         (images)
+         (url)
+         (json)
+         (product_variants)
+         (product_details)
+         (product_images)
          (product_prices)
          (stock_available)
-         (json)
-         (url)
          (delivery_variants)
+         (delivery_details)
          (delivery_prices)
          );
 
 FC_REFLECT( node::protocol::product_purchase_operation, 
          (signatory)
-         (account)
+         (buyer)
+         (product_id)
          (seller)
-         (product_name)
+         (product_id)
+         (order_variants)
          (order_size)
-         (total_payable)
-         (shipping_address)
-         (escrow_id)
-         (acceptance_time)
-         (escrow_expiration)
          (memo)
          (json)
+         (shipping_address)
+         (delivery_variant)
+         (delivery_details)
+         (acceptance_time)
+         (escrow_expiration)
+         (completed)
          );
 
 FC_REFLECT( node::protocol::escrow_transfer_operation, 
@@ -5375,7 +5416,7 @@ FC_REFLECT( node::protocol::option_order_operation,
          (signatory)
          (owner)
          (order_id)
-         (amount_to_issue)
+         (underlying_amount)
          (strike_price)
          (interface)
          (opened)

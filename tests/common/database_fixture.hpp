@@ -109,9 +109,9 @@ extern fc::time_point TESTING_GENESIS_TIMESTAMP;
 #define INVOKE(test) ((struct test*)this)->test_method(); trx.clear()
 
 #define PREP_ACTOR(name) \
-   fc::ecc::private_key name ## _private_owner_key = generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "ownerpassword" );     \
-   fc::ecc::private_key name ## _private_active_key = generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "activepassword" );   \
-   fc::ecc::private_key name ## _private_posting_key = generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "postingpassword" ); \
+   fc::ecc::private_key name ## _private_owner_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "ownerpassword" );     \
+   fc::ecc::private_key name ## _private_active_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "activepassword" );   \
+   fc::ecc::private_key name ## _private_posting_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "postingpassword" ); \
    public_key_type name ## _public_owner_key = name ## _private_owner_key.get_public_key();      \
    public_key_type name ## _public_active_key = name ## _private_active_key.get_public_key();    \
    public_key_type name ## _public_posting_key = name ## _private_posting_key.get_public_key(); 
@@ -122,7 +122,7 @@ extern fc::time_point TESTING_GENESIS_TIMESTAMP;
    account_id_type name ## _id = name.id; (void)name ## _id;
 
 #define GET_ACTOR(name) \
-   fc::ecc::private_key name ## _private_key = generate_private_key(BOOST_PP_STRINGIZE(name)); \
+   fc::ecc::private_key name ## _private_key = protocol::generate_private_key(BOOST_PP_STRINGIZE(name)); \
    const account_object& name = get_account(BOOST_PP_STRINGIZE(name)); \
    account_id_type name ## _id = name.id; \
    (void)name ##_id
@@ -138,18 +138,30 @@ namespace node { namespace chain {
 
 using namespace node::protocol;
 
+/**
+ * The reason we use an app is to exercise the indexes of built-in plugins.
+ */
 struct database_fixture {
-   // the reason we use an app is to exercise the indexes of built-in plugins
-   node::app::application app;
-   chain::database &db;
-   signed_transaction trx;
-   public_key_type committee_key;
-   account_id_type committee_account;
-   fc::ecc::private_key private_key = fc::ecc::private_key::generate();
-   fc::ecc::private_key init_account_priv_key = fc::ecc::private_key::regenerate( fc::sha256::hash( string( "init_key" ) ) );
-   string debug_key = graphene::utilities::key_to_wif( init_account_priv_key );
-   public_key_type init_account_pub_key = init_account_priv_key.get_public_key();
-   uint32_t default_skip = 0 | database::skip_undo_history_check | database::skip_authority_check;
+
+   node::app::application       app;
+
+   chain::database              &db;
+
+   signed_transaction           trx;
+
+   public_key_type              committee_key;
+
+   account_id_type              committee_account;
+
+   fc::ecc::private_key         private_key = fc::ecc::private_key::generate();
+
+   fc::ecc::private_key         init_account_priv_key = fc::ecc::private_key::regenerate( fc::sha256::hash( string( "init_key" ) ) );
+
+   string                       debug_key = graphene::utilities::key_to_wif( init_account_priv_key );
+
+   public_key_type              init_account_pub_key = init_account_priv_key.get_public_key();
+
+   uint32_t                     default_skip = 0 | database::skip_undo_history_check | database::skip_authority_check;
 
    std::shared_ptr< node::plugin::debug_node::debug_node_plugin > db_plugin;
 
@@ -160,12 +172,15 @@ struct database_fixture {
    database_fixture(): app(), db( *app.chain_database() ) {}
    ~database_fixture() {}
 
-   static fc::ecc::private_key generate_private_key( string seed = "init_key" );
    string generate_anon_acct_name();
+
    void open_database();
-   void generate_block(uint32_t skip = 0,
-      const fc::ecc::private_key& key = generate_private_key("init_key"),
-      int miss_blocks = 0);
+
+   void generate_block();
+
+   void generate_block( uint32_t skip );
+   
+   void generate_block( uint32_t skip, fc::ecc::private_key key, int miss_blocks );
 
    /**
     * @brief Generates block_count blocks
@@ -220,7 +235,7 @@ struct database_fixture {
       const string& symbol,
       const string& issuer,
       const private_key_type& issuer_key,
-      const asset_property_type& asset_type,
+      const string& asset_type,
       const string& details,
       const string& url,
       const string& json,

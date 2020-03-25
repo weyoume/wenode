@@ -80,77 +80,77 @@ namespace node { namespace chain {
 
          bool require_member_whitelist()const                                   ///< True if members must be whitelisted by founder
          { 
-            return ( flags & community_permission_flags::member_whitelist );
+            return ( flags & int( community_permission_flags::member_whitelist ) );
          }
 
          bool require_profile()const                                            ///< True if members must be have profile data
          { 
-            return ( flags & community_permission_flags::require_profile );
+            return ( flags & int( community_permission_flags::require_profile ) );
          }
 
          bool require_verified()const                                           ///< True if new members must be have verification from an existing member
          { 
-            return ( flags & community_permission_flags::require_verified );
+            return ( flags & int( community_permission_flags::require_verified ) );
          }
 
          bool enable_messages()const                                            ///< True if Image Posts are enabled
          { 
-            return !( flags & community_permission_flags::disable_messages );
+            return !( flags & int( community_permission_flags::disable_messages ) );
          }
 
          bool enable_text_posts()const                                            ///< True if text posts are enabled
          { 
-            return !( flags & community_permission_flags::disable_text_posts );
+            return !( flags & int( community_permission_flags::disable_text_posts ) );
          }
 
          bool enable_image_posts()const                                            ///< True if image posts are enabled
          { 
-            return !( flags & community_permission_flags::disable_image_posts );
+            return !( flags & int( community_permission_flags::disable_image_posts ) );
          }
 
          bool enable_video_posts()const                                            ///< True if video posts are enabled
          { 
-            return !( flags & community_permission_flags::disable_video_posts );
+            return !( flags & int( community_permission_flags::disable_video_posts ) );
          }
 
          bool enable_link_posts()const                                            ///< True if link posts are enabled
          { 
-            return !( flags & community_permission_flags::disable_link_posts );
+            return !( flags & int( community_permission_flags::disable_link_posts ) );
          }
 
          bool enable_article_posts()const                                            ///< True if article posts are enabled
          { 
-            return !( flags & community_permission_flags::disable_article_posts );
+            return !( flags & int( community_permission_flags::disable_article_posts ) );
          }
 
          bool enable_audio_posts()const                                            ///< True if audio posts are enabled
          { 
-            return !( flags & community_permission_flags::disable_audio_posts );
+            return !( flags & int( community_permission_flags::disable_audio_posts ) );
          }
 
          bool enable_file_posts()const                                            ///< True if file posts are enabled
          { 
-            return !( flags & community_permission_flags::disable_file_posts );
+            return !( flags & int( community_permission_flags::disable_file_posts ) );
          }
 
          bool enable_poll_posts()const                                            ///< True if poll posts are enabled
          { 
-            return !( flags & community_permission_flags::disable_poll_posts );
+            return !( flags & int( community_permission_flags::disable_poll_posts ) );
          }
 
          bool enable_livestream_posts()const                                            ///< True if livestream posts are enabled
          { 
-            return !( flags & community_permission_flags::disable_livestream_posts );
+            return !( flags & int( community_permission_flags::disable_livestream_posts ) );
          }
 
          bool enable_product_posts()const                                            ///< True if product posts are enabled
          { 
-            return !( flags & community_permission_flags::disable_product_posts );
+            return !( flags & int( community_permission_flags::disable_product_posts ) );
          }
 
          bool enable_list_posts()const                                            ///< True if list posts are enabled
          { 
-            return !( flags & community_permission_flags::disable_list_posts );
+            return !( flags & int( community_permission_flags::disable_list_posts ) );
          }
    };
 
@@ -673,6 +673,8 @@ namespace node { namespace chain {
 
          flat_set< account_name_type >  invited;                ///< Members that are invited to the event, all members if empty.
 
+         flat_set< account_name_type >  interested;             ///< Members that are interested in the event.
+
          flat_set< account_name_type >  attending;              ///< Members that have confirmed that they will be attending the event.
 
          flat_set< account_name_type >  not_attending;          ///< Members that have confirmed that they will not be attending the event.
@@ -680,6 +682,8 @@ namespace node { namespace chain {
          time_point                     event_start_time;       ///< Time that the Event will begin.
 
          time_point                     event_end_time;         ///< Time that the event will end.
+
+         time_point                     last_updated;           ///< Time that the event was last updated.
 
          time_point                     created;                ///< Time that the event was created.
    };
@@ -897,6 +901,38 @@ namespace node { namespace chain {
       >,
       allocator< community_join_invite_object >
    > community_join_invite_index;
+   
+
+   struct by_start_time;
+   struct by_end_time;
+   struct by_last_updated;
+   struct by_community_event_name;
+
+
+   typedef multi_index_container<
+      community_event_object,
+      indexed_by<
+         ordered_unique< tag< by_id >,
+            member< community_event_object, community_event_id_type, &community_event_object::id > >,
+         ordered_non_unique< tag< by_start_time >,
+            member< community_event_object, time_point, &community_event_object::event_start_time > >,
+         ordered_non_unique< tag< by_end_time >,
+            member< community_event_object, time_point, &community_event_object::event_end_time > >,
+         ordered_non_unique< tag< by_last_updated >,
+            member< community_event_object, time_point, &community_event_object::last_updated > >,
+         ordered_unique< tag< by_community_event_name >,
+            composite_key< community_event_object,
+               member< community_event_object, community_name_type, &community_event_object::community >,
+               member< community_event_object, shared_string, &community_event_object::event_name >
+            >,
+            composite_key_compare< 
+               std::less< community_name_type >,
+               strcmp_less
+            >
+         > 
+      >,
+      allocator< community_event_object >
+   > community_event_index;
 
 } } // node::chain
 
@@ -982,4 +1018,27 @@ FC_REFLECT( node::chain::community_member_key_object,
          (encrypted_community_key)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::chain::community_member_key_object, node::chain::community_member_key_index );
+CHAINBASE_SET_INDEX_TYPE( node::chain::community_member_key_object, node::chain::community_member_key_index );       
+
+FC_REFLECT( node::chain::community_event_object,
+         (id)
+         (account)
+         (community)
+         (event_name)
+         (location)
+         (details)
+         (url)
+         (json)
+         (invited)
+         (interested)
+         (attending)
+         (not_attending)
+         (event_start_time)
+         (event_end_time)
+         (created)
+         (last_updated)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::community_event_object, node::chain::community_event_index );
+
+         

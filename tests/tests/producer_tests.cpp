@@ -33,8 +33,6 @@ BOOST_AUTO_TEST_CASE( producer_update_operation_tests )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Create new Producer" );
 
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
-
       ACTORS( (alice) );
 
       fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -121,8 +119,6 @@ BOOST_AUTO_TEST_CASE( producer_update_operation_tests )
       producer_update.latitude = -38.840935;
       producer_update.longitude = 145.946457;
 
-      chain_properties chain_props;
-
       chain_props.maximum_block_size = MAX_TRANSACTION_SIZE * 20000;
       chain_props.credit_min_interest = 2 * PERCENT_1;
       chain_props.credit_variable_interest = 7 * PERCENT_1;
@@ -137,8 +133,6 @@ BOOST_AUTO_TEST_CASE( producer_update_operation_tests )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      const producer_object& alice_producer = db.get_producer( "alice" );
 
       alice_producer.props.validate();
 
@@ -196,8 +190,6 @@ BOOST_AUTO_TEST_CASE( proof_of_work_operation_test )
       BOOST_TEST_MESSAGE( "├── Testing: PROOF OF WORK" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Create proof of work" );
-
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
 
       ACTORS( (alice) );
 
@@ -267,8 +259,6 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
       BOOST_TEST_MESSAGE( "├── Testing: VERIFY BLOCK OPERATION SEQUENCE" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Verify block" );
-
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
 
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
@@ -467,8 +457,6 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      const block_validation_object& validation = db.get_block_validation( "alice", commit.block_height );
 
       BOOST_REQUIRE( validation.producer == commit.producer );
       BOOST_REQUIRE( validation.block_id == commit.block_id );

@@ -319,7 +319,7 @@ asset database::distribute_comment_reward( util::comment_reward_context& ctx, co
    if( c.net_reward > 0 )
    {
       util::fill_comment_reward_context_local_state( ctx, c );
-      asset reward_tokens = util::get_comment_reward( ctx );
+      asset reward_tokens = get_comment_reward( ctx );
 
       if( reward_tokens.amount > 0 )
       {
@@ -475,7 +475,7 @@ void database::process_comment_cashout()
       modify( reward_fund, [&]( reward_fund_object& rfo )
       {
          rfo.recent_content_claims = rf_ctx.recent_content_claims;
-         rfo.content_reward_balance.amount -= rf_ctx.reward_distributed;
+         rfo.content_reward_balance -= rf_ctx.reward_distributed;
       });
 
       ++fund_itr;

@@ -2414,6 +2414,7 @@ class wallet_api
        * @param body String containing text for display when the post is opened.
        * @param ipfs Vector of Strings containing IPFS file hashes: images, videos, files.
        * @param magnet Vector of Strings containing bittorrent magnet links to torrent file swarms: videos, files.
+       * @param url String URL HTTPS link for the post to direct to.
        * @param language String containing the two letter ISO language code of the native language of the author.
        * @param community The name of the community to which the post is uploaded to.
        * @param public_key The public key used to encrypt the post, holders of the private key may decrypt.
@@ -2436,6 +2437,7 @@ class wallet_api
          string body,
          vector< string > ipfs,
          vector< string > magnet,
+         string url,
          string language,
          string community,
          string public_key,

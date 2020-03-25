@@ -15,6 +15,8 @@ using namespace node::chain;
 using namespace node::protocol;
 using std::string;
 
+
+
 BOOST_FIXTURE_TEST_SUITE( community_operation_tests, clean_database_fixture );
 
 
@@ -33,8 +35,6 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful community creation" );
 
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
-
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
       fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
@@ -52,8 +52,6 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      const auto& community_idx = db.get_index< community_index >().indices().get< by_name >();
-
       signed_transaction tx;
 
       community_create_operation create;
@@ -61,7 +59,7 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.signatory = "alice";
       create.founder = "alice";
       create.name = "aliceopencommunity";
-      create.community_privacy = OPEN_PUBLIC_COMMUNITY;
+      create.community_privacy = "open_public";
       create.community_public_key = string( alice_public_posting_key );
       create.json = "{\"json\":\"valid\"}";
       create.json_private = "{\"json\":\"valid\"}";
@@ -74,11 +72,12 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto community_itr = community_idx.find( "aliceopencommunity" );
-      BOOST_REQUIRE( community_itr->founder == create.founder );
-      BOOST_REQUIRE( community_itr->name == create.name );
-      BOOST_REQUIRE( community_itr->community_privacy == create.community_privacy );
-      BOOST_REQUIRE( community_itr->created == now() );
+      const community_object& alice_community = db.get_community( "aliceopencommunity" );
+
+      BOOST_REQUIRE( alice_community.founder == create.founder );
+      BOOST_REQUIRE( alice_community.name == create.name );
+      BOOST_REQUIRE( alice_community.community_privacy == community_privacy_type::OPEN_PUBLIC_COMMUNITY );
+      BOOST_REQUIRE( alice_community.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -86,7 +85,7 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.signatory = "bob";
       create.founder = "bob";
       create.name = "bobpubliccommunity";
-      create.community_privacy = community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY;
+      create.community_privacy = "exclusive_public";
       create.community_public_key = string( bob_public_posting_key );
       
       create.validate();
@@ -95,11 +94,12 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto community_itr = community_idx.find( "bobpubliccommunity" );
-      BOOST_REQUIRE( community_itr->founder == create.founder );
-      BOOST_REQUIRE( community_itr->name == create.name );
-      BOOST_REQUIRE( community_itr->community_privacy == create.community_privacy );
-      BOOST_REQUIRE( community_itr->created == now() );
+      const community_object& bob_community = db.get_community( "bobpubliccommunity" );
+
+      BOOST_REQUIRE( bob_community.founder == create.founder );
+      BOOST_REQUIRE( bob_community.name == create.name );
+      BOOST_REQUIRE( bob_community.community_privacy == community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY );
+      BOOST_REQUIRE( bob_community.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.signatory = "candice";
       create.founder = "candice";
       create.name = "candiceprivatecommunity";
-      create.community_privacy = OPEN_PRIVATE_COMMUNITY;
+      create.community_privacy = "open_private";
       create.community_public_key = string( candice_public_posting_key );
       
       create.validate();
@@ -116,11 +116,12 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto community_itr = community_idx.find( "candiceprivatecommunity" );
-      BOOST_REQUIRE( community_itr->founder == create.founder );
-      BOOST_REQUIRE( community_itr->name == create.name );
-      BOOST_REQUIRE( community_itr->community_privacy == create.community_privacy );
-      BOOST_REQUIRE( community_itr->created == now() );
+      const community_object& candice_community = db.get_community( "candiceprivatecommunity" );
+
+      BOOST_REQUIRE( candice_community.founder == create.founder );
+      BOOST_REQUIRE( candice_community.name == create.name );
+      BOOST_REQUIRE( candice_community.community_privacy == community_privacy_type::OPEN_PRIVATE_COMMUNITY );
+      BOOST_REQUIRE( candice_community.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -128,7 +129,7 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.signatory = "dan";
       create.founder = "dan";
       create.name = "danexclusivecommunity";
-      create.community_privacy = EXCLUSIVE_PRIVATE_COMMUNITY;
+      create.community_privacy = "exclusive_private";
       create.community_public_key = string( dan_public_posting_key );
       
       create.validate();
@@ -137,11 +138,12 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto community_itr = community_idx.find( "danexclusivecommunity" );
-      BOOST_REQUIRE( community_itr->founder == create.founder );
-      BOOST_REQUIRE( community_itr->name == create.name );
-      BOOST_REQUIRE( community_itr->community_privacy == create.community_privacy );
-      BOOST_REQUIRE( community_itr->created == now() );
+      const community_object& dan_community = db.get_community( "danexclusivecommunity" );
+
+      BOOST_REQUIRE( dan_community.founder == create.founder );
+      BOOST_REQUIRE( dan_community.name == create.name );
+      BOOST_REQUIRE( dan_community.community_privacy == community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY );
+      BOOST_REQUIRE( dan_community.created == now() );
 
       validate_database();
 
@@ -216,8 +218,6 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: founder community update sequence" );
 
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
-
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
       fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
@@ -235,8 +235,6 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      const auto& community_idx = db.get_index< community_index >().indices().get< by_name >();
-
       signed_transaction tx;
 
       community_create_operation create;
@@ -244,7 +242,7 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       create.signatory = "alice";
       create.founder = "alice";
       create.name = "aliceopencommunity";
-      create.community_privacy = OPEN_PUBLIC_COMMUNITY;
+      create.community_privacy = "open_public";
       create.community_public_key = string( alice_public_posting_key );
       create.json = "{\"json\":\"valid\"}";
       create.json_private = "{\"json\":\"valid\"}";
@@ -263,7 +261,7 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       create.signatory = "bob";
       create.founder = "bob";
       create.name = "bobpubliccommunity";
-      create.community_privacy = community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY;
+      create.community_privacy = "exclusive_public";
       create.community_public_key = string( bob_public_posting_key );
       
       create.validate();
@@ -278,7 +276,7 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       create.signatory = "candice";
       create.founder = "candice";
       create.name = "candiceprivatecommunity";
-      create.community_privacy = OPEN_PRIVATE_COMMUNITY;
+      create.community_privacy = "open_private";
       create.community_public_key = string( candice_public_posting_key );
       
       create.validate();
@@ -293,7 +291,7 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       create.signatory = "dan";
       create.founder = "dan";
       create.name = "danexclusivecommunity";
-      create.community_privacy = EXCLUSIVE_PRIVATE_COMMUNITY;
+      create.community_privacy = "exclusive_private";
       create.community_public_key = string( dan_public_posting_key );
       
       create.validate();
@@ -314,6 +312,7 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
       comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
       comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+      comment.url = "www.url.com";
       comment.community = "aliceopencommunity";
       comment.tags.push_back( "test" );
       comment.interface = INIT_ACCOUNT;
@@ -326,8 +325,8 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
 
       comment_options options;
 
-      options.post_type = post_format_type::ARTICLE_POST;
-      options.reach = feed_reach_type::TAG_FEED;
+      options.post_type = "article";
+      options.reach = "tag";
       options.rating = 1;
       comment.options = options;
       comment.validate();
@@ -392,12 +391,13 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto community_itr = community_idx.find( "aliceopencommunity" );
-      BOOST_REQUIRE( community_itr->founder == update.account );
-      BOOST_REQUIRE( community_itr->name == update.community );
-      BOOST_REQUIRE( community_itr->details == update.details );
-      BOOST_REQUIRE( community_itr->url == update.url );
-      BOOST_REQUIRE( community_itr->created == now() );
+      const community_object& alice_community = db.get_community( "aliceopencommunity" );
+
+      BOOST_REQUIRE( alice_community.founder == update.account );
+      BOOST_REQUIRE( alice_community.name == update.community );
+      BOOST_REQUIRE( to_string( alice_community.details ) == update.details );
+      BOOST_REQUIRE( to_string( alice_community.url ) == update.url );
+      BOOST_REQUIRE( alice_community.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -413,12 +413,13 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto community_itr = community_idx.find( "bobpubliccommunity" );
-      BOOST_REQUIRE( community_itr->founder == update.account );
-      BOOST_REQUIRE( community_itr->name == update.community );
-      BOOST_REQUIRE( community_itr->details == update.details );
-      BOOST_REQUIRE( community_itr->url == update.url );
-      BOOST_REQUIRE( community_itr->created == now() );
+      const community_object& bob_community = db.get_community( "bobpubliccommunity" );
+
+      BOOST_REQUIRE( bob_community.founder == update.account );
+      BOOST_REQUIRE( bob_community.name == update.community );
+      BOOST_REQUIRE( to_string( bob_community.details ) == update.details );
+      BOOST_REQUIRE( to_string( bob_community.url ) == update.url );
+      BOOST_REQUIRE( bob_community.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -434,12 +435,13 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto community_itr = community_idx.find( "candiceprivatecommunity" );
-      BOOST_REQUIRE( community_itr->founder == update.account );
-      BOOST_REQUIRE( community_itr->name == update.community );
-      BOOST_REQUIRE( community_itr->details == update.details );
-      BOOST_REQUIRE( community_itr->url == update.url );
-      BOOST_REQUIRE( community_itr->created == now() );
+      const community_object& candice_community = db.get_community( "candiceprivatecommunity" );
+
+      BOOST_REQUIRE( candice_community.founder == update.account );
+      BOOST_REQUIRE( candice_community.name == update.community );
+      BOOST_REQUIRE( to_string( candice_community.details ) == update.details );
+      BOOST_REQUIRE( to_string( candice_community.url ) == update.url );
+      BOOST_REQUIRE( candice_community.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -455,12 +457,13 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto community_itr = community_idx.find( "danexclusivecommunity" );
-      BOOST_REQUIRE( community_itr->founder == update.account );
-      BOOST_REQUIRE( community_itr->name == update.community );
-      BOOST_REQUIRE( community_itr->details == update.details );
-      BOOST_REQUIRE( community_itr->url == update.url );
-      BOOST_REQUIRE( community_itr->created == now() );
+      const community_object& dan_community = db.get_community( "danexclusivecommunity" );
+
+      BOOST_REQUIRE( dan_community.founder == update.account );
+      BOOST_REQUIRE( dan_community.name == update.community );
+      BOOST_REQUIRE( to_string( dan_community.details ) == update.details );
+      BOOST_REQUIRE( to_string( dan_community.url ) == update.url );
+      BOOST_REQUIRE( dan_community.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -499,12 +502,11 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
 
       db.push_transaction( tx, 0 );
 
-      auto community_itr = community_idx.find( "danexclusivecommunity" );
-      BOOST_REQUIRE( community_itr->founder == update.account );
-      BOOST_REQUIRE( community_itr->name == update.community );
-      BOOST_REQUIRE( community_itr->details == update.details );
-      BOOST_REQUIRE( community_itr->url == update.url );
-      BOOST_REQUIRE( community_itr->created == now() );
+      BOOST_REQUIRE( dan_community.founder == update.account );
+      BOOST_REQUIRE( dan_community.name == update.community );
+      BOOST_REQUIRE( to_string( dan_community.details ) == update.details );
+      BOOST_REQUIRE( to_string( dan_community.url ) == update.url );
+      BOOST_REQUIRE( dan_community.created == now() );
 
       validate_database();
 
@@ -541,8 +543,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       BOOST_TEST_MESSAGE( "├── Passed: COMMUNITY MANAGEMENT OPERATION SEQUENCE" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: founder invite members" );
-
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
 
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme)(kathryn)(leonie)(margot)(natalie) );
 
@@ -595,7 +595,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       create.signatory = "alice";
       create.founder = "alice";
       create.name = "aliceopencommunity";
-      create.community_privacy = OPEN_PUBLIC_COMMUNITY;
+      create.community_privacy = "open_public";
       create.community_public_key = string( alice_public_posting_key );
       create.json = "{\"json\":\"valid\"}";
       create.json_private = "{\"json\":\"valid\"}";
@@ -610,9 +610,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       const community_object& alice_community = db.get_community( "aliceopencommunity" );
       const community_member_object& alice_community_member = db.get_community_member( "aliceopencommunity" );
+
       BOOST_REQUIRE( alice_community.founder == create.founder );
-      BOOST_REQUIRE( alice_community.community_privacy == create.community_privacy );
-      BOOST_REQUIRE( alice_community.community_public_key == create.community_public_key );
+      BOOST_REQUIRE( alice_community.community_privacy == community_privacy_type::OPEN_PUBLIC_COMMUNITY );
+      BOOST_REQUIRE( alice_community.community_public_key == public_key_type( create.community_public_key ) );
 
       BOOST_REQUIRE( alice_community_member.founder == create.founder );
       BOOST_REQUIRE( alice_community_member.is_administrator( create.founder ) );
@@ -626,7 +627,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       create.signatory = "bob";
       create.founder = "bob";
       create.name = "bobpubliccommunity";
-      create.community_privacy = community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY;
+      create.community_privacy = "exclusive_public";
       create.community_public_key = string( bob_public_posting_key );
 
       tx.operations.push_back( create );
@@ -635,9 +636,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       const community_object& bob_community = db.get_community( "bobpubliccommunity" );
       const community_member_object& bob_community_member = db.get_community_member( "bobpubliccommunity" );
+
       BOOST_REQUIRE( bob_community.founder == create.founder );
-      BOOST_REQUIRE( bob_community.community_privacy == create.community_privacy );
-      BOOST_REQUIRE( bob_community.community_public_key == create.community_public_key );
+      BOOST_REQUIRE( bob_community.community_privacy == community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY );
+      BOOST_REQUIRE( bob_community.community_public_key == public_key_type( create.community_public_key ) );
 
       BOOST_REQUIRE( bob_community_member.founder == create.founder );
       BOOST_REQUIRE( bob_community_member.is_administrator( create.founder ) );
@@ -651,7 +653,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       create.signatory = "candice";
       create.founder = "candice";
       create.name = "candiceprivatecommunity";
-      create.community_privacy = OPEN_PRIVATE_COMMUNITY;
+      create.community_privacy = "open_private";
       create.community_public_key = string( candice_public_posting_key );
 
       tx.operations.push_back( create );
@@ -660,9 +662,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       const community_object& candice_community = db.get_community( "candiceprivatecommunity" );
       const community_member_object& candice_community_member = db.get_community_member( "candiceprivatecommunity" );
+
       BOOST_REQUIRE( candice_community.founder == create.founder );
-      BOOST_REQUIRE( candice_community.community_privacy == create.community_privacy );
-      BOOST_REQUIRE( candice_community.community_public_key == create.community_public_key );
+      BOOST_REQUIRE( candice_community.community_privacy == community_privacy_type::OPEN_PRIVATE_COMMUNITY );
+      BOOST_REQUIRE( candice_community.community_public_key == public_key_type( create.community_public_key ) );
 
       BOOST_REQUIRE( candice_community_member.founder == create.founder );
       BOOST_REQUIRE( candice_community_member.is_administrator( create.founder ) );
@@ -676,7 +679,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       create.signatory = "dan";
       create.founder = "dan";
       create.name = "danexclusivecommunity";
-      create.community_privacy = EXCLUSIVE_PRIVATE_COMMUNITY;
+      create.community_privacy = "exclusive_private";
       create.community_public_key = string( dan_public_posting_key );
 
       tx.operations.push_back( create );
@@ -686,8 +689,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       const community_object& dan_community = db.get_community( "danexclusivecommunity" );
       const community_member_object& dan_community_member = db.get_community_member( "danexclusivecommunity" );
       BOOST_REQUIRE( dan_community.founder == create.founder );
-      BOOST_REQUIRE( dan_community.community_privacy == create.community_privacy );
-      BOOST_REQUIRE( dan_community.community_public_key == create.community_public_key );
+      BOOST_REQUIRE( dan_community.community_privacy == community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY );
+      BOOST_REQUIRE( dan_community.community_public_key == public_key_type( create.community_public_key ) );
 
       BOOST_REQUIRE( dan_community_member.founder == create.founder );
       BOOST_REQUIRE( dan_community_member.is_administrator( create.founder ) );
@@ -723,6 +726,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       const auto& invite_idx = db.get_index< community_join_invite_index >().indices().get< by_member_community >();
 
       auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "aliceopencommunity" ) );
+
       BOOST_REQUIRE( invite_itr != invite_idx.end() );
       BOOST_REQUIRE( invite_itr->account == invite.account );
       BOOST_REQUIRE( invite_itr->member == invite.member );
@@ -741,7 +745,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "bobpubliccommunity" ) );
+      invite_itr = invite_idx.find( boost::make_tuple( "elon", "bobpubliccommunity" ) );
       BOOST_REQUIRE( invite_itr != invite_idx.end() );
       BOOST_REQUIRE( invite_itr->account == invite.account );
       BOOST_REQUIRE( invite_itr->member == invite.member );
@@ -760,7 +764,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "candiceprivatecommunity" ) );
+      invite_itr = invite_idx.find( boost::make_tuple( "elon", "candiceprivatecommunity" ) );
       BOOST_REQUIRE( invite_itr != invite_idx.end() );
       BOOST_REQUIRE( invite_itr->account == invite.account );
       BOOST_REQUIRE( invite_itr->member == invite.member );
@@ -779,7 +783,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( dan_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "danexclusivecommunity" ) );
+      invite_itr = invite_idx.find( boost::make_tuple( "elon", "danexclusivecommunity" ) );
       BOOST_REQUIRE( invite_itr != invite_idx.end() );
       BOOST_REQUIRE( invite_itr->account == invite.account );
       BOOST_REQUIRE( invite_itr->member == invite.member );
@@ -799,7 +803,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( dan_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto invite_itr = invite_idx.find( boost::make_tuple( "fred", "danexclusivecommunity" ) );
+      invite_itr = invite_idx.find( boost::make_tuple( "fred", "danexclusivecommunity" ) );
       BOOST_REQUIRE( invite_itr != invite_idx.end() );
       BOOST_REQUIRE( invite_itr->account == invite.account );
       BOOST_REQUIRE( invite_itr->member == invite.member );
@@ -885,6 +889,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       const auto& request_idx = db.get_index< community_join_request_index >().indices().get< by_account_community >();
 
       auto request_itr = request_idx.find( boost::make_tuple( "fred", "aliceopencommunity" ) );
+
       BOOST_REQUIRE( request_itr != request_idx.end() );
       BOOST_REQUIRE( request_itr->account == request.account );
       BOOST_REQUIRE( request_itr->community == request.community );
@@ -899,7 +904,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto request_itr = request_idx.find( boost::make_tuple( "fred", "bobpubliccommunity" ) );
+      request_itr = request_idx.find( boost::make_tuple( "fred", "bobpubliccommunity" ) );
+
       BOOST_REQUIRE( request_itr != request_idx.end() );
       BOOST_REQUIRE( request_itr->account == request.account );
       BOOST_REQUIRE( request_itr->community == request.community );
@@ -914,7 +920,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto request_itr = request_idx.find( boost::make_tuple( "fred", "candiceprivatecommunity" ) );
+      request_itr = request_idx.find( boost::make_tuple( "fred", "candiceprivatecommunity" ) );
+
       BOOST_REQUIRE( request_itr != request_idx.end() );
       BOOST_REQUIRE( request_itr->account == request.account );
       BOOST_REQUIRE( request_itr->community == request.community );
@@ -929,7 +936,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( dan_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // No join requests for exclusive community
 
-      auto request_itr = request_idx.find( boost::make_tuple( "fred", "danexclusivecommunity" ) );
+      request_itr = request_idx.find( boost::make_tuple( "fred", "danexclusivecommunity" ) );
+
       BOOST_REQUIRE( request_itr == request_idx.end() );
 
       tx.operations.clear();
@@ -954,8 +962,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       db.push_transaction( tx, 0 );
 
       const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
+
       BOOST_REQUIRE( community_member_a.is_member( "elon" ) );
-      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "aliceopencommunity" ) );
+      invite_itr = invite_idx.find( boost::make_tuple( "elon", "aliceopencommunity" ) );
       BOOST_REQUIRE( invite_itr == invite_idx.end() );
 
       tx.operations.clear();
@@ -968,8 +977,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       db.push_transaction( tx, 0 );
 
       const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
+
       BOOST_REQUIRE( community_member_b.is_member( "elon" ) );
-      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "bobpubliccommunity" ) );
+      invite_itr = invite_idx.find( boost::make_tuple( "elon", "bobpubliccommunity" ) );
       BOOST_REQUIRE( invite_itr == invite_idx.end() );
 
       tx.operations.clear();
@@ -982,8 +992,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       db.push_transaction( tx, 0 );
 
       const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
+
       BOOST_REQUIRE( community_member_c.is_member( "elon" ) );
-      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "candiceprivatecommunity" ) );
+      invite_itr = invite_idx.find( boost::make_tuple( "elon", "candiceprivatecommunity" ) );
       BOOST_REQUIRE( invite_itr == invite_idx.end() );
 
       tx.operations.clear();
@@ -996,8 +1007,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       db.push_transaction( tx, 0 );
 
       const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
+
       BOOST_REQUIRE( community_member_d.is_member( "elon" ) );
-      auto invite_itr = invite_idx.find( boost::make_tuple( "elon", "danexclusivecommunity" ) );
+      invite_itr = invite_idx.find( boost::make_tuple( "elon", "danexclusivecommunity" ) );
       BOOST_REQUIRE( invite_itr == invite_idx.end() );
 
       tx.operations.clear();
@@ -1010,9 +1022,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( fred_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
       BOOST_REQUIRE( community_member_d.is_member( "fred" ) );
-      auto invite_itr = invite_idx.find( boost::make_tuple( "fred", "danexclusivecommunity" ) );
+      invite_itr = invite_idx.find( boost::make_tuple( "fred", "danexclusivecommunity" ) );
       BOOST_REQUIRE( invite_itr == invite_idx.end() );
 
       tx.operations.clear();
@@ -1038,9 +1049,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
       BOOST_REQUIRE( community_member_a.is_member( "fred" ) );
-      auto request_itr = request_idx.find( boost::make_tuple( "fred", "aliceopencommunity" ) );
+      request_itr = request_idx.find( boost::make_tuple( "fred", "aliceopencommunity" ) );
       BOOST_REQUIRE( request_itr == request_idx.end() );
 
       tx.operations.clear();
@@ -1055,9 +1065,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
       BOOST_REQUIRE( community_member_b.is_member( "fred" ) );
-      auto request_itr = request_idx.find( boost::make_tuple( "fred", "bobpubliccommunity" ) );
+      request_itr = request_idx.find( boost::make_tuple( "fred", "bobpubliccommunity" ) );
       BOOST_REQUIRE( request_itr == request_idx.end() );
 
       tx.operations.clear();
@@ -1072,9 +1081,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
       BOOST_REQUIRE( community_member_c.is_member( "fred" ) );
-      auto request_itr = request_idx.find( boost::make_tuple( "fred", "candiceprivatecommunity" ) );
+      request_itr = request_idx.find( boost::make_tuple( "fred", "candiceprivatecommunity" ) );
       BOOST_REQUIRE( request_itr == request_idx.end() );
 
       tx.operations.clear();
@@ -1098,7 +1106,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto invite_itr = invite_idx.find( boost::make_tuple( "george", "aliceopencommunity" ) );
+      invite_itr = invite_idx.find( boost::make_tuple( "george", "aliceopencommunity" ) );
       BOOST_REQUIRE( invite_itr != invite_idx.end() );
       BOOST_REQUIRE( invite_itr->account == invite.account );
       BOOST_REQUIRE( invite_itr->member == invite.member );
@@ -1116,7 +1124,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto invite_itr = invite_idx.find( boost::make_tuple( "haz", "bobpubliccommunity" ) );
+      invite_itr = invite_idx.find( boost::make_tuple( "haz", "bobpubliccommunity" ) );
       BOOST_REQUIRE( invite_itr != invite_idx.end() );
       BOOST_REQUIRE( invite_itr->account == invite.account );
       BOOST_REQUIRE( invite_itr->member == invite.member );
@@ -1154,62 +1162,58 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: founder add moderator" );
 
-      community_add_mod_operation mod;
+      community_add_mod_operation add_mod;
 
-      mod.signatory = "alice";
-      mod.account = "alice";
-      mod.community = "aliceopencommunity";
-      mod.moderator = "elon";
-      mod.added = true;
-      mod.validate();
+      add_mod.signatory = "alice";
+      add_mod.account = "alice";
+      add_mod.community = "aliceopencommunity";
+      add_mod.moderator = "elon";
+      add_mod.added = true;
+      add_mod.validate();
 
-      tx.operations.push_back( mod );
+      tx.operations.push_back( add_mod );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
       BOOST_REQUIRE( community_member_a.is_moderator( "elon" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      mod.signatory = "bob";
-      mod.account = "bob";
-      mod.community = "bobpubliccommunity";
+      add_mod.signatory = "bob";
+      add_mod.account = "bob";
+      add_mod.community = "bobpubliccommunity";
 
-      tx.operations.push_back( mod );
+      tx.operations.push_back( add_mod );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
       BOOST_REQUIRE( community_member_b.is_moderator( "elon" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      mod.signatory = "candice";
-      mod.account = "candice";
-      mod.community = "candiceprivatecommunity";
+      add_mod.signatory = "candice";
+      add_mod.account = "candice";
+      add_mod.community = "candiceprivatecommunity";
 
-      tx.operations.push_back( mod );
+      tx.operations.push_back( add_mod );
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
       BOOST_REQUIRE( community_member_c.is_moderator( "elon" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      mod.signatory = "dan";
-      mod.account = "dan";
-      mod.community = "danexclusivecommunity";
+      add_mod.signatory = "dan";
+      add_mod.account = "dan";
+      add_mod.community = "danexclusivecommunity";
 
-      tx.operations.push_back( mod );
+      tx.operations.push_back( add_mod );
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
       BOOST_REQUIRE( community_member_d.is_moderator( "elon" ) );
 
       tx.operations.clear();
@@ -1235,7 +1239,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
       flat_map< account_name_type, share_type > m = community_member_a.mod_weight;
       BOOST_REQUIRE( m[ elon.name ] > 0 );
 
@@ -1250,7 +1253,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
       m = community_member_b.mod_weight;
       BOOST_REQUIRE( m[ elon.name ] > 0 );
 
@@ -1265,7 +1267,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
       m = community_member_c.mod_weight;
       BOOST_REQUIRE( m[ elon.name ] > 0 );
 
@@ -1280,7 +1281,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( dan_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
       m = community_member_d.mod_weight;
       BOOST_REQUIRE( m[ elon.name ] > 0 );
 
@@ -1327,7 +1327,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto invite_itr = invite_idx.find( boost::make_tuple( "isabelle", "candiceprivatecommunity" ) );
+      invite_itr = invite_idx.find( boost::make_tuple( "isabelle", "candiceprivatecommunity" ) );
+
       BOOST_REQUIRE( invite_itr != invite_idx.end() );
       BOOST_REQUIRE( invite_itr->account == invite.account );
       BOOST_REQUIRE( invite_itr->member == invite.member );
@@ -1367,7 +1368,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
       BOOST_REQUIRE( community_member_a.is_administrator( "elon" ) );
 
       tx.operations.clear();
@@ -1381,7 +1381,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
       BOOST_REQUIRE( community_member_b.is_administrator( "elon" ) );
 
       tx.operations.clear();
@@ -1395,7 +1394,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
       BOOST_REQUIRE( community_member_c.is_administrator( "elon" ) );
 
       tx.operations.clear();
@@ -1409,7 +1407,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
       BOOST_REQUIRE( community_member_d.is_administrator( "elon" ) );
 
       tx.operations.clear();
@@ -1466,7 +1463,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto invite_itr = invite_idx.find( boost::make_tuple( "jayme", "danexclusivecommunity" ) );
+      invite_itr = invite_idx.find( boost::make_tuple( "jayme", "danexclusivecommunity" ) );
+
       BOOST_REQUIRE( invite_itr != invite_idx.end() );
       BOOST_REQUIRE( invite_itr->account == invite.account );
       BOOST_REQUIRE( invite_itr->member == invite.member );
@@ -1480,7 +1478,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: handling moderator sending invites and failure when repeated invite" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: comment creation handling before becoming members" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: comment creation handling for members and non-members" );
 
       comment_operation comment;
 
@@ -1491,6 +1489,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
       comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
       comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+      comment.url = "www.url.com";
       comment.community = "aliceopencommunity";
       comment.tags.push_back( "test" );
       comment.interface = INIT_ACCOUNT;
@@ -1503,8 +1502,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       comment_options options;
 
-      options.post_type = post_format_type::ARTICLE_POST;
-      options.reach = feed_reach_type::TAG_FEED;
+      options.post_type = "article";
+      options.reach = "tag";
       options.rating = 1;
       comment.options = options;
       comment.validate();
@@ -1513,9 +1512,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( george_private_posting_key, db.get_chain_id() );       // Non-members can create posts in open community
       db.push_transaction( tx, 0 );
 
-      const comment_object& com = db.get_comment( "george", string( "lorem" ) );
-      BOOST_REQUIRE( com.author == "george" );
-      BOOST_REQUIRE( com.community == "aliceopencommunity" );
+      const comment_object& george_comment = db.get_comment( "george", string( "lorem" ) );
+
+      BOOST_REQUIRE( george_comment.author == "george" );
+      BOOST_REQUIRE( george_comment.community == "aliceopencommunity" );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -1563,6 +1563,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       const comment_object& alice_comment = db.get_comment( "alice", string( "lorem" ) );
 
+      BOOST_REQUIRE( alice_comment.community == comment.community );
+
       tx.operations.clear();
       tx.signatures.clear();
 
@@ -1575,6 +1577,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       db.push_transaction( tx, 0 );
 
       const comment_object& bob_comment = db.get_comment( "bob", string( "lorem" ) );
+
+      BOOST_REQUIRE( bob_comment.community == comment.community );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -1589,6 +1593,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       const comment_object& candice_comment = db.get_comment( "candice", string( "lorem" ) );
 
+      BOOST_REQUIRE( candice_comment.community == comment.community );
+      BOOST_REQUIRE( candice_comment.is_encrypted() );
+
       tx.operations.clear();
       tx.signatures.clear();
 
@@ -1602,12 +1609,15 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       const comment_object& dan_comment = db.get_comment( "dan", string( "lorem" ) );
 
+      BOOST_REQUIRE( dan_comment.community == comment.community );
+      BOOST_REQUIRE( dan_comment.is_encrypted() );
+
       tx.operations.clear();
       tx.signatures.clear();
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: comment creation handling before becoming members" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: comment creation handling for members and non-members" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: comment vote handling before becoming members" );
 
@@ -1625,9 +1635,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( george_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_vote_object& george_vote = db.get_comment_vote( "george", alice_comment.id );
-      BOOST_REQUIRE( george_vote.voter == vote.voter );
-      BOOST_REQUIRE( george_vote.comment == alice_comment.id );
+      const comment_vote_object& george_alice_vote = db.get_comment_vote( "george", alice_comment.id );
+
+      BOOST_REQUIRE( george_alice_vote.voter == vote.voter );
+      BOOST_REQUIRE( george_alice_vote.comment == alice_comment.id );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -1640,9 +1651,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( haz_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_vote_object& haz_vote = db.get_comment_vote( "haz", bob_comment.id );
-      BOOST_REQUIRE( haz_vote.voter == vote.voter );
-      BOOST_REQUIRE( haz_vote.comment == bob_comment.id );
+      const comment_vote_object& haz_bob_vote = db.get_comment_vote( "haz", bob_comment.id );
+
+      BOOST_REQUIRE( haz_bob_vote.voter == vote.voter );
+      BOOST_REQUIRE( haz_bob_vote.comment == bob_comment.id );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -1691,6 +1703,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       db.push_transaction( tx, 0 );
 
       const comment_view_object& george_view = db.get_comment_view( "george", alice_comment.id );
+
       BOOST_REQUIRE( george_view.viewer == view.viewer );
       BOOST_REQUIRE( george_view.comment == alice_comment.id );
       BOOST_REQUIRE( george_view.supernode == view.supernode );
@@ -1709,6 +1722,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       db.push_transaction( tx, 0 );
 
       const comment_view_object& haz_view = db.get_comment_view( "haz", bob_comment.id );
+
       BOOST_REQUIRE( haz_view.viewer == view.viewer );
       BOOST_REQUIRE( haz_view.comment == bob_comment.id );
       BOOST_REQUIRE( haz_view.supernode == view.supernode );
@@ -1752,7 +1766,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       share.sharer = "george";
       share.author = "alice";
       share.permlink = "lorem";
-      share.reach = feed_reach_type::FOLLOW_FEED;
+      share.reach = "follow";
       share.interface = INIT_ACCOUNT;
       share.shared = true;
       share.validate();
@@ -1778,11 +1792,12 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( haz_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_share_object& haz_share = db.get_comment_share( "haz", bob_comment.id );
-      BOOST_REQUIRE( haz_share.sharer == share.sharer );
-      BOOST_REQUIRE( haz_share.comment == bob_comment.id );
-      BOOST_REQUIRE( haz_share.interface == share.interface );
-      BOOST_REQUIRE( haz_share.created == now() );
+      const comment_share_object& haz_bob_share = db.get_comment_share( "haz", bob_comment.id );
+
+      BOOST_REQUIRE( haz_bob_share.sharer == share.sharer );
+      BOOST_REQUIRE( haz_bob_share.comment == bob_comment.id );
+      BOOST_REQUIRE( haz_bob_share.interface == share.interface );
+      BOOST_REQUIRE( haz_bob_share.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -1865,8 +1880,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       generate_blocks( now() + MIN_ROOT_COMMENT_INTERVAL );
 
-      comment_operation comment;
-
       comment.signatory = "george";
       comment.author = "george";
       comment.community = "aliceopencommunity";
@@ -1876,9 +1889,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( george_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_object& george_comment = db.get_comment( "george", string( "ipsum" ) );
-      BOOST_REQUIRE( george_comment.author == "george" );
-      BOOST_REQUIRE( george_comment.community == "aliceopencommunity" );
+      const comment_object& george_comment2 = db.get_comment( "george", string( "ipsum" ) );
+
+      BOOST_REQUIRE( george_comment2.author == "george" );
+      BOOST_REQUIRE( george_comment2.community == "aliceopencommunity" );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -1892,6 +1906,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       db.push_transaction( tx, 0 );
 
       const comment_object& haz_comment = db.get_comment( "haz", string( "ipsum" ) );
+
       BOOST_REQUIRE( haz_comment.author == "haz" );
       BOOST_REQUIRE( haz_comment.community == "bobpubliccommunity" );
 
@@ -1907,6 +1922,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       db.push_transaction( tx, 0 );
 
       const comment_object& isabelle_comment = db.get_comment( "isabelle", string( "ipsum" ) );
+
       BOOST_REQUIRE( isabelle_comment.author == "isabelle" );
       BOOST_REQUIRE( isabelle_comment.community == "candiceprivatecommunity" );
 
@@ -1922,6 +1938,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       db.push_transaction( tx, 0 );
 
       const comment_object& jayme_comment = db.get_comment( "jayme", string( "ipsum" ) );
+
       BOOST_REQUIRE( jayme_comment.author == "jayme" );
       BOOST_REQUIRE( jayme_comment.community == "danexclusivecommunity" );
 
@@ -1943,9 +1960,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( george_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_vote_object& george_vote = db.get_comment_vote( "george", george_comment.id );
+      const comment_vote_object& george_vote = db.get_comment_vote( "george", george_comment2.id );
+
       BOOST_REQUIRE( george_vote.voter == vote.voter );
-      BOOST_REQUIRE( george_vote.comment == george_comment.id );
+      BOOST_REQUIRE( george_vote.comment == george_comment2.id );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -1959,6 +1977,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       db.push_transaction( tx, 0 );
 
       const comment_vote_object& haz_vote = db.get_comment_vote( "haz", haz_comment.id );
+
       BOOST_REQUIRE( haz_vote.voter == vote.voter );
       BOOST_REQUIRE( haz_vote.comment == haz_comment.id );
 
@@ -1974,6 +1993,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       db.push_transaction( tx, 0 );
 
       const comment_vote_object& isabelle_vote = db.get_comment_vote( "isabelle", isabelle_comment.id );
+
       BOOST_REQUIRE( isabelle_vote.voter == vote.voter );
       BOOST_REQUIRE( isabelle_vote.comment == isabelle_comment.id );
 
@@ -1989,6 +2009,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       db.push_transaction( tx, 0 );
 
       const comment_vote_object& jayme_vote = db.get_comment_vote( "jayme", jayme_comment.id );
+
       BOOST_REQUIRE( jayme_vote.voter == vote.voter );
       BOOST_REQUIRE( jayme_vote.comment == jayme_comment.id );
 
@@ -2010,12 +2031,13 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( george_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_view_object& george_view = db.get_comment_view( "george", george_comment.id );
-      BOOST_REQUIRE( george_view.viewer == view.viewer );
-      BOOST_REQUIRE( george_view.comment == george_comment.id );
-      BOOST_REQUIRE( george_view.supernode == view.supernode );
-      BOOST_REQUIRE( george_view.interface == view.interface );
-      BOOST_REQUIRE( george_view.created == now() );
+      const comment_view_object& george_george_view = db.get_comment_view( "george", george_comment2.id );
+
+      BOOST_REQUIRE( george_george_view.viewer == view.viewer );
+      BOOST_REQUIRE( george_george_view.comment == george_comment2.id );
+      BOOST_REQUIRE( george_george_view.supernode == view.supernode );
+      BOOST_REQUIRE( george_george_view.interface == view.interface );
+      BOOST_REQUIRE( george_george_view.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2028,12 +2050,13 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( haz_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_view_object& haz_view = db.get_comment_view( "haz", haz_comment.id );
-      BOOST_REQUIRE( haz_view.viewer == view.viewer );
-      BOOST_REQUIRE( haz_view.comment == haz_comment.id );
-      BOOST_REQUIRE( haz_view.supernode == view.supernode );
-      BOOST_REQUIRE( haz_view.interface == view.interface );
-      BOOST_REQUIRE( haz_view.created == now() );
+      const comment_view_object& haz_haz_view = db.get_comment_view( "haz", haz_comment.id );
+
+      BOOST_REQUIRE( haz_haz_view.viewer == view.viewer );
+      BOOST_REQUIRE( haz_haz_view.comment == haz_comment.id );
+      BOOST_REQUIRE( haz_haz_view.supernode == view.supernode );
+      BOOST_REQUIRE( haz_haz_view.interface == view.interface );
+      BOOST_REQUIRE( haz_haz_view.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2046,12 +2069,13 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( isabelle_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_view_object& isabelle_view = db.get_comment_view( "isabelle", isabelle_comment.id );
-      BOOST_REQUIRE( isabelle_view.viewer == view.viewer );
-      BOOST_REQUIRE( isabelle_view.comment == isabelle_comment.id );
-      BOOST_REQUIRE( isabelle_view.supernode == view.supernode );
-      BOOST_REQUIRE( isabelle_view.interface == view.interface );
-      BOOST_REQUIRE( isabelle_view.created == now() );
+      const comment_view_object& isabelle_isabelle_view = db.get_comment_view( "isabelle", isabelle_comment.id );
+
+      BOOST_REQUIRE( isabelle_isabelle_view.viewer == view.viewer );
+      BOOST_REQUIRE( isabelle_isabelle_view.comment == isabelle_comment.id );
+      BOOST_REQUIRE( isabelle_isabelle_view.supernode == view.supernode );
+      BOOST_REQUIRE( isabelle_isabelle_view.interface == view.interface );
+      BOOST_REQUIRE( isabelle_isabelle_view.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2064,12 +2088,13 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( jayme_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_view_object& jayme_view = db.get_comment_view( "jayme", jayme_comment.id );
-      BOOST_REQUIRE( jayme_view.viewer == view.viewer );
-      BOOST_REQUIRE( jayme_view.comment == jayme_comment.id );
-      BOOST_REQUIRE( jayme_view.supernode == view.supernode );
-      BOOST_REQUIRE( jayme_view.interface == view.interface );
-      BOOST_REQUIRE( jayme_view.created == now() );
+      const comment_view_object& jayme_jayme_view = db.get_comment_view( "jayme", jayme_comment.id );
+
+      BOOST_REQUIRE( jayme_jayme_view.viewer == view.viewer );
+      BOOST_REQUIRE( jayme_jayme_view.comment == jayme_comment.id );
+      BOOST_REQUIRE( jayme_jayme_view.supernode == view.supernode );
+      BOOST_REQUIRE( jayme_jayme_view.interface == view.interface );
+      BOOST_REQUIRE( jayme_jayme_view.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2080,8 +2105,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: comment share handling by members" );
 
-      share_operation share;
-
       share.signatory = "george";
       share.sharer = "george";
       share.author = "george";
@@ -2091,11 +2114,12 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( george_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_share_object& george_share = db.get_comment_share( "george", george_comment.id );
-      BOOST_REQUIRE( george_share.sharer == share.sharer );
-      BOOST_REQUIRE( george_share.comment == george_comment.id );
-      BOOST_REQUIRE( george_share.interface == share.interface );
-      BOOST_REQUIRE( george_share.created == now() );
+      const comment_share_object& george_george_share = db.get_comment_share( "george", george_comment.id );
+
+      BOOST_REQUIRE( george_george_share.sharer == share.sharer );
+      BOOST_REQUIRE( george_george_share.comment == george_comment.id );
+      BOOST_REQUIRE( george_george_share.interface == share.interface );
+      BOOST_REQUIRE( george_george_share.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2108,11 +2132,12 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( haz_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_share_object& haz_share = db.get_comment_share( "haz", haz_comment.id );
-      BOOST_REQUIRE( haz_share.sharer == share.sharer );
-      BOOST_REQUIRE( haz_share.comment == haz_comment.id );
-      BOOST_REQUIRE( haz_share.interface == share.interface );
-      BOOST_REQUIRE( haz_share.created == now() );
+      const comment_share_object& haz_haz_share = db.get_comment_share( "haz", haz_comment.id );
+
+      BOOST_REQUIRE( haz_haz_share.sharer == share.sharer );
+      BOOST_REQUIRE( haz_haz_share.comment == haz_comment.id );
+      BOOST_REQUIRE( haz_haz_share.interface == share.interface );
+      BOOST_REQUIRE( haz_haz_share.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2125,11 +2150,12 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( isabelle_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_share_object& isabelle_share = db.get_comment_share( "isabelle", isabelle_comment.id );
-      BOOST_REQUIRE( isabelle_share.sharer == share.sharer );
-      BOOST_REQUIRE( isabelle_share.comment == isabelle_comment.id );
-      BOOST_REQUIRE( isabelle_share.interface == share.interface );
-      BOOST_REQUIRE( isabelle_share.created == now() );
+      const comment_share_object& isabelle_isabelle_share = db.get_comment_share( "isabelle", isabelle_comment.id );
+
+      BOOST_REQUIRE( isabelle_isabelle_share.sharer == share.sharer );
+      BOOST_REQUIRE( isabelle_isabelle_share.comment == isabelle_comment.id );
+      BOOST_REQUIRE( isabelle_isabelle_share.interface == share.interface );
+      BOOST_REQUIRE( isabelle_isabelle_share.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2142,11 +2168,12 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( jayme_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_share_object& george_share = db.get_comment_share( "george", george_comment.id );
-      BOOST_REQUIRE( george_share.sharer == share.sharer );
-      BOOST_REQUIRE( george_share.comment == george_comment.id );
-      BOOST_REQUIRE( george_share.interface == share.interface );
-      BOOST_REQUIRE( george_share.created == now() );
+      const comment_share_object& jayme_jayme_share = db.get_comment_share( "jayme", jayme_comment.id );
+
+      BOOST_REQUIRE( jayme_jayme_share.sharer == share.sharer );
+      BOOST_REQUIRE( jayme_jayme_share.comment == jayme_comment.id );
+      BOOST_REQUIRE( jayme_jayme_share.interface == share.interface );
+      BOOST_REQUIRE( jayme_jayme_share.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2171,15 +2198,16 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tag.applied = true;
       tag.validate();
 
-      tx.operations.push_back( mod );
+      tx.operations.push_back( tag );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       const auto& tag_idx = db.get_index< moderation_tag_index >().indices().get< by_comment_moderator >();
 
-      auto tag_itr = tag_idx.find( std::make_tuple( george_comment.id, "elon" ) );
+      auto tag_itr = tag_idx.find( std::make_tuple( george_comment2.id, "elon" ) );
+
       BOOST_REQUIRE( tag_itr != tag_idx.end() );
-      BOOST_REQUIRE( tag_itr->details == tag.details );
+      BOOST_REQUIRE( to_string( tag_itr->details ) == tag.details );
       BOOST_REQUIRE( tag_itr->tags[0] == tag.tags[0] );
       BOOST_REQUIRE( tag_itr->filter == tag.filter );
       BOOST_REQUIRE( tag_itr->created == now() );
@@ -2189,13 +2217,14 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       tag.author = "haz";
 
-      tx.operations.push_back( mod );
+      tx.operations.push_back( tag );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto tag_itr = tag_idx.find( std::make_tuple( haz_comment.id, "elon" ) );
+      tag_itr = tag_idx.find( std::make_tuple( haz_comment.id, "elon" ) );
+
       BOOST_REQUIRE( tag_itr != tag_idx.end() );
-      BOOST_REQUIRE( tag_itr->details == tag.details );
+      BOOST_REQUIRE( to_string( tag_itr->details ) == tag.details );
       BOOST_REQUIRE( tag_itr->tags[0] == tag.tags[0] );
       BOOST_REQUIRE( tag_itr->filter == tag.filter );
       BOOST_REQUIRE( tag_itr->created == now() );
@@ -2205,13 +2234,14 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       tag.author = "isabelle";
 
-      tx.operations.push_back( mod );
+      tx.operations.push_back( tag );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto tag_itr = tag_idx.find( std::make_tuple( isabelle_comment.id, "elon" ) );
+      tag_itr = tag_idx.find( std::make_tuple( isabelle_comment.id, "elon" ) );
+
       BOOST_REQUIRE( tag_itr != tag_idx.end() );
-      BOOST_REQUIRE( tag_itr->details == tag.details );
+      BOOST_REQUIRE( to_string( tag_itr->details ) == tag.details );
       BOOST_REQUIRE( tag_itr->tags[0] == tag.tags[0] );
       BOOST_REQUIRE( tag_itr->filter == tag.filter );
       BOOST_REQUIRE( tag_itr->created == now() );
@@ -2221,13 +2251,14 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       tag.author = "jayme";
 
-      tx.operations.push_back( mod );
+      tx.operations.push_back( tag );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto tag_itr = tag_idx.find( std::make_tuple( jayme_comment.id, "elon" ) );
+      tag_itr = tag_idx.find( std::make_tuple( jayme_comment.id, "elon" ) );
+
       BOOST_REQUIRE( tag_itr != tag_idx.end() );
-      BOOST_REQUIRE( tag_itr->details == tag.details );
+      BOOST_REQUIRE( to_string( tag_itr->details ) == tag.details );
       BOOST_REQUIRE( tag_itr->tags[0] == tag.tags[0] );
       BOOST_REQUIRE( tag_itr->filter == tag.filter );
       BOOST_REQUIRE( tag_itr->created == now() );
@@ -2241,56 +2272,50 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: administrator add moderator" );
 
-      community_add_mod_operation mod;
+      add_mod.signatory = "elon";
+      add_mod.account = "elon";
+      add_mod.community = "aliceopencommunity";
+      add_mod.moderator = "fred";
+      add_mod.added = true;
+      add_mod.validate();
 
-      mod.signatory = "elon";
-      mod.account = "elon";
-      mod.community = "aliceopencommunity";
-      mod.moderator = "fred";
-      mod.added = true;
-      mod.validate();
-
-      tx.operations.push_back( mod );
+      tx.operations.push_back( add_mod );
       tx.sign( elon_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
       BOOST_REQUIRE( community_member_a.is_moderator( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      mod.community = "bobpubliccommunity";
+      add_mod.community = "bobpubliccommunity";
 
-      tx.operations.push_back( mod );
+      tx.operations.push_back( add_mod );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
       BOOST_REQUIRE( community_member_b.is_moderator( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      mod.community = "candiceprivatecommunity";
+      add_mod.community = "candiceprivatecommunity";
 
-      tx.operations.push_back( mod );
+      tx.operations.push_back( add_mod );
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
       BOOST_REQUIRE( community_member_c.is_moderator( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      mod.community = "danexclusivecommunity";
+      add_mod.community = "danexclusivecommunity";
 
-      tx.operations.push_back( mod );
+      tx.operations.push_back( add_mod );
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
       BOOST_REQUIRE( community_member_d.is_moderator( "elon" ) );
 
       tx.operations.clear();
@@ -2320,11 +2345,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_object& alice_community = db.get_community( "aliceopencommunity" );
       BOOST_REQUIRE( alice_community.founder == update.account );
       BOOST_REQUIRE( alice_community.name == update.community );
-      BOOST_REQUIRE( alice_community.details == update.details );
-      BOOST_REQUIRE( alice_community.url == update.url );
+      BOOST_REQUIRE( to_string( alice_community.details ) == update.details );
+      BOOST_REQUIRE( to_string( alice_community.url ) == update.url );
       BOOST_REQUIRE( alice_community.created == now() );
 
       tx.operations.clear();
@@ -2339,11 +2363,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_object& bob_community = db.get_community( "bobpubliccommunity" );
       BOOST_REQUIRE( bob_community.founder == update.account );
       BOOST_REQUIRE( bob_community.name == update.community );
-      BOOST_REQUIRE( bob_community.details == update.details );
-      BOOST_REQUIRE( bob_community.url == update.url );
+      BOOST_REQUIRE( to_string( bob_community.details ) == update.details );
+      BOOST_REQUIRE( to_string( bob_community.url ) == update.url );
       BOOST_REQUIRE( bob_community.created == now() );
 
       tx.operations.clear();
@@ -2358,11 +2381,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_object& candice_community = db.get_community( "candiceprivatecommunity" );
       BOOST_REQUIRE( candice_community.founder == update.account );
       BOOST_REQUIRE( candice_community.name == update.community );
-      BOOST_REQUIRE( candice_community.details == update.details );
-      BOOST_REQUIRE( candice_community.url == update.url );
+      BOOST_REQUIRE( to_string( candice_community.details ) == update.details );
+      BOOST_REQUIRE( to_string( candice_community.url ) == update.url );
       BOOST_REQUIRE( candice_community.created == now() );
 
       tx.operations.clear();
@@ -2377,11 +2399,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_object& dan_community = db.get_community( "danexclusivecommunity" );
       BOOST_REQUIRE( dan_community.founder == update.account );
       BOOST_REQUIRE( dan_community.name == update.community );
-      BOOST_REQUIRE( dan_community.details == update.details );
-      BOOST_REQUIRE( dan_community.url == update.url );
+      BOOST_REQUIRE( to_string( dan_community.details ) == update.details );
+      BOOST_REQUIRE( to_string( dan_community.url ) == update.url );
       BOOST_REQUIRE( dan_community.created == now() );
 
       tx.operations.clear();
@@ -2393,67 +2414,61 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: founder remove moderator" );
 
-      community_add_mod_operation mod;
+      add_mod.signatory = "alice";
+      add_mod.account = "alice";
+      add_mod.community = "aliceopencommunity";
+      add_mod.moderator = "fred";
+      add_mod.added = false;
+      add_mod.validate();
 
-      mod.signatory = "alice";
-      mod.account = "alice";
-      mod.community = "aliceopencommunity";
-      mod.moderator = "fred";
-      mod.added = false;
-      mod.validate();
-
-      tx.operations.push_back( mod );
+      tx.operations.push_back( add_mod );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
       BOOST_REQUIRE( community_member_a.is_member( "fred" ) );
       BOOST_REQUIRE( !community_member_a.is_moderator( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      mod.signatory = "bob";
-      mod.account = "bob";
-      mod.community = "bobpubliccommunity";
+      add_mod.signatory = "bob";
+      add_mod.account = "bob";
+      add_mod.community = "bobpubliccommunity";
 
-      tx.operations.push_back( mod );
+      tx.operations.push_back( add_mod );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
-      BOOST_REQUIRE( community_member_a.is_member( "fred" ) );
-      BOOST_REQUIRE( !community_member_a.is_moderator( "fred" ) );
+      BOOST_REQUIRE( community_member_b.is_member( "fred" ) );
+      BOOST_REQUIRE( !community_member_b.is_moderator( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      mod.signatory = "candice";
-      mod.account = "candice";
-      mod.community = "candiceprivatecommunity";
+      add_mod.signatory = "candice";
+      add_mod.account = "candice";
+      add_mod.community = "candiceprivatecommunity";
 
-      tx.operations.push_back( mod );
+      tx.operations.push_back( add_mod );
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
-      BOOST_REQUIRE( community_member_a.is_member( "fred" ) );
-      BOOST_REQUIRE( !community_member_a.is_moderator( "fred" ) );
+      BOOST_REQUIRE( community_member_c.is_member( "fred" ) );
+      BOOST_REQUIRE( !community_member_c.is_moderator( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      mod.signatory = "dan";
-      mod.account = "dan";
-      mod.community = "danexclusivecommunity";
+      add_mod.signatory = "dan";
+      add_mod.account = "dan";
+      add_mod.community = "danexclusivecommunity";
 
-      tx.operations.push_back( mod );
+      tx.operations.push_back( add_mod );
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
-      BOOST_REQUIRE( community_member_a.is_member( "fred" ) );
-      BOOST_REQUIRE( !community_member_a.is_moderator( "fred" ) );
+      BOOST_REQUIRE( community_member_d.is_member( "fred" ) );
+      BOOST_REQUIRE( !community_member_d.is_moderator( "fred" ) );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2476,7 +2491,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
       BOOST_REQUIRE( !community_member_a.is_member( "fred" ) );
 
       tx.operations.clear();
@@ -2490,7 +2504,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
       BOOST_REQUIRE( !community_member_b.is_member( "fred" ) );
 
       tx.operations.clear();
@@ -2504,7 +2517,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
       BOOST_REQUIRE( !community_member_c.is_member( "fred" ) );
 
       tx.operations.clear();
@@ -2518,7 +2530,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( dan_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
       BOOST_REQUIRE( !community_member_d.is_member( "fred" ) );
 
       tx.operations.clear();
@@ -2544,7 +2555,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
       BOOST_REQUIRE( community_member_a.is_subscriber( "elon" ) );
 
       tx.operations.clear();
@@ -2556,7 +2566,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
       BOOST_REQUIRE( community_member_b.is_subscriber( "elon" ) );
 
       tx.operations.clear();
@@ -2568,7 +2577,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
       BOOST_REQUIRE( community_member_c.is_subscriber( "elon" ) );
 
       tx.operations.clear();
@@ -2580,7 +2588,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
       BOOST_REQUIRE( community_member_d.is_subscriber( "elon" ) );
 
       tx.operations.clear();
@@ -2604,7 +2611,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
       BOOST_REQUIRE( community_member_a.is_blacklisted( "fred" ) );
 
       tx.operations.clear();
@@ -2618,7 +2624,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
       BOOST_REQUIRE( community_member_b.is_blacklisted( "fred" ) );
 
       tx.operations.clear();
@@ -2632,7 +2637,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
       BOOST_REQUIRE( community_member_c.is_blacklisted( "fred" ) );
 
       tx.operations.clear();
@@ -2646,7 +2650,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
       BOOST_REQUIRE( community_member_d.is_blacklisted( "fred" ) );
 
       tx.operations.clear();
@@ -2670,7 +2673,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_a = db.get_community_member( "aliceopencommunity" );
       BOOST_REQUIRE( community_member_a.founder == "elon" );
 
       tx.operations.clear();
@@ -2684,7 +2686,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_b = db.get_community_member( "bobpubliccommunity" );
       BOOST_REQUIRE( community_member_b.founder == "elon" );
 
       tx.operations.clear();
@@ -2698,7 +2699,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( candice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_c = db.get_community_member( "candiceprivatecommunity" );
       BOOST_REQUIRE( community_member_c.founder == "elon" );
 
       tx.operations.clear();
@@ -2712,7 +2712,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( dan_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const community_member_object& community_member_d = db.get_community_member( "danexclusivecommunity" );
       BOOST_REQUIRE( community_member_d.founder == "elon" );
 
       tx.operations.clear();

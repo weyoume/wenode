@@ -94,7 +94,7 @@ namespace node {
       /**
        * Privacy levels of communities, used for determining encryption levels, and access controls for community administration.
        */
-      enum community_privacy_type
+      enum class community_privacy_type : int
       {
          OPEN_PUBLIC_COMMUNITY,         ///< All Users can read, interact, post, and request to join. Accounts cannot be blacklisted.
          GENERAL_PUBLIC_COMMUNITY,      ///< All Users can read, interact, post, and request to join.
@@ -121,7 +121,7 @@ namespace node {
       /**
        * Business account types, used for determining access controls for signatories of business account transactions and equity assets.
        */
-      enum business_structure_type
+      enum class business_structure_type : int
       {
          OPEN_BUSINESS,     ///< All equity holders can become members and vote for officers and executives, all officers can sign transactions.
          PUBLIC_BUSINESS,   ///< Executives select officers, officers can invite and accept members. All Equity holders can request membership. Members vote for executives.
@@ -138,7 +138,7 @@ namespace node {
       /** 
        * Types of membership available, each offers additional features, and improves the user experience for more advanced users.
        */
-      enum membership_tier_type 
+      enum class membership_tier_type : int 
       {
          NONE,                 ///< Account does not have membership, free user
          STANDARD_MEMBERSHIP,  ///< Regular membership, removes advertising and offers voting benefits.
@@ -157,7 +157,7 @@ namespace node {
       /**
        * Types of network officers, each receive reward distributions from the network upon voter approval.
        */
-      enum network_officer_role_type 
+      enum class network_officer_role_type : int 
       {
          DEVELOPMENT,  ///< Creates and maintains core network software and applications.
          MARKETING,    ///< Markets the network to the public, creates awareness and adoption campaigns.
@@ -174,7 +174,7 @@ namespace node {
       /** 
        * Types of network officers, each receive reward distributions from the network upon voter approval.
        */
-      enum executive_role_type
+      enum class executive_role_type : int
       {
          CHIEF_EXECUTIVE_OFFICER,    ///< Overall leader of Executive team.
          CHIEF_OPERATING_OFFICER,    ///< Manages communications and coordination of team.
@@ -205,7 +205,7 @@ namespace node {
       /**
        * Types of network officers, each receive reward distributions from the network upon voter approval.
        */
-      enum proposal_distribution_type
+      enum class proposal_distribution_type : int
       {
          FUNDING,      ///< Funds are distributed to beneficiarires based on milestone based projects completed.
          COMPETITION,  ///< Funds are distributed to the winners of a competitons with predefined terms and objectives. 
@@ -222,7 +222,7 @@ namespace node {
       /**
        * Types of Product sale varying the price of the item being sold.
        */
-      enum product_sale_type
+      enum class product_sale_type : int
       {
          FIXED_PRICE_SALE,         ///< Product is for sale at a fixed price.
          WHOLESALE_PRICE_SALE,     ///< Product is for sale at decreasing prices when bulk quantity thesholds are purchased.
@@ -243,7 +243,7 @@ namespace node {
       /**
        * Types of Asset, each is used for specific functions and operation types, and has different properties.
        */
-      enum asset_property_type
+      enum class asset_property_type : int
       {
          CURRENCY_ASSET,         ///< Cryptocurrency that is issued by the network, starts from zero supply, issuing account is the null account, cannot be issued by any accounts. 
          STANDARD_ASSET,         ///< Regular asset, can be transferred and staked, saved, and delegated.
@@ -276,7 +276,7 @@ namespace node {
       /**
        * Type of advertising format, determines how creative is formatted in interfaces.
        */
-      enum ad_format_type
+      enum class ad_format_type : int
       {
          STANDARD_FORMAT,      ///< A regular post, objective is permlink.
          PREMIUM_FORMAT,       ///< A premium post, objective is permlink.
@@ -301,7 +301,7 @@ namespace node {
       /**
        * Type of Post, each loaded and displayed accordingly on interfaces.
        */
-      enum post_format_type 
+      enum class post_format_type : int 
       {
          TEXT_POST,        ///< A post containing a maxmium of 300 characters of text.
          IMAGE_POST,       ///< A post containing an IPFS media file of an image, and up to 1000 characters of description text
@@ -334,7 +334,7 @@ namespace node {
       /**
        * Types of expense metrics for advertising transactions.
        */
-      enum ad_metric_type 
+      enum class ad_metric_type : int 
       {
          VIEW_METRIC,      ///< View transaction required for delivery.
          VOTE_METRIC,      ///< vote transaction required for delivery.
@@ -357,7 +357,7 @@ namespace node {
       /**
        * Types of connections between accounts, each offers a higher level of security for private information exchanges.
        */ 
-      enum connection_tier_type
+      enum class connection_tier_type : int
       {
          PUBLIC,       ///< No privacy setting, post is public.
          CONNECTION,   ///< Standard connection level, enables private messaging and viewing private posts.
@@ -377,7 +377,7 @@ namespace node {
       /**
        * Types of feeds for subscribing to the posts of different sets of users.
        */
-      enum feed_reach_type 
+      enum class feed_reach_type : int
       { 
          NO_FEED,           ///< Posts that should not be distributed to any feeds.
          FOLLOW_FEED,       ///< Feed from accounts that are followed.
@@ -404,7 +404,7 @@ namespace node {
       /**
        * Types of blogs for tracking what has been created or shared with an account, community, or tag. 
        */
-      enum blog_reach_type 
+      enum class blog_reach_type : int
       { 
          ACCOUNT_BLOG,      ///< Blog within an account, includes authored posts and shared posts
          COMMUNITY_BLOG,    ///< Blog within a community, includes all posts within the community, plus shared with the community.
@@ -421,7 +421,7 @@ namespace node {
       /**
        * Time weighting options for sorting discusions by index.
        */
-      enum sort_time_type
+      enum class sort_time_type : int
       {
          ACTIVE_TIME,
          RAPID_TIME,
@@ -442,7 +442,7 @@ namespace node {
       /**
        * Variety of options for sorting discussions by index according to Votes, Views, Shares, and Comments.
        */
-      enum sort_option_type
+      enum class sort_option_type : int
       {
          VOTES_SORT,
          VIEWS_SORT,
@@ -475,7 +475,7 @@ namespace node {
       /**
        * Time lengths that can be used for filtering posts in discussion API calls.
        */
-      enum post_time_type
+      enum class post_time_type : int
       {
          ALL_TIME,
          LAST_HOUR,
@@ -495,7 +495,7 @@ namespace node {
          "year"
       };
 
-      enum asset_issuer_permission_flags 
+      enum class asset_issuer_permission_flags : int
       {
          balance_whitelist           = 1,       ///< Accounts must be whitelisted in order to send, receive or hold the asset.
          trade_whitelist             = 2,       ///< Accounts must be whitelisted to trade the asset.
@@ -518,26 +518,26 @@ namespace node {
       };
 
       const static uint32_t ASSET_ISSUER_PERMISSION_MASK =
-         balance_whitelist
-         | trade_whitelist
-         | maker_restricted
-         | issuer_accept_requests
-         | transfer_restricted
-         | disable_requests
-         | disable_recurring
-         | disable_credit
-         | disable_liquid
-         | disable_options
-         | disable_escrow
-         | disable_force_settle
-         | disable_confidential
-         | disable_auction
-         | producer_fed_asset
-         | global_settle
-         | governance_oversight
-         | immutable_properties;
+         int( asset_issuer_permission_flags::balance_whitelist )
+         | int( asset_issuer_permission_flags::trade_whitelist )
+         | int( asset_issuer_permission_flags::maker_restricted )
+         | int( asset_issuer_permission_flags::issuer_accept_requests )
+         | int( asset_issuer_permission_flags::transfer_restricted )
+         | int( asset_issuer_permission_flags::disable_requests )
+         | int( asset_issuer_permission_flags::disable_recurring )
+         | int( asset_issuer_permission_flags::disable_credit )
+         | int( asset_issuer_permission_flags::disable_liquid )
+         | int( asset_issuer_permission_flags::disable_options )
+         | int( asset_issuer_permission_flags::disable_escrow )
+         | int( asset_issuer_permission_flags::disable_force_settle )
+         | int( asset_issuer_permission_flags::disable_confidential )
+         | int( asset_issuer_permission_flags::disable_auction )
+         | int( asset_issuer_permission_flags::producer_fed_asset )
+         | int( asset_issuer_permission_flags::global_settle )
+         | int( asset_issuer_permission_flags::governance_oversight )
+         | int( asset_issuer_permission_flags::immutable_properties );
 
-      enum community_permission_flags 
+      enum class community_permission_flags : int
       {
          member_whitelist            = 1,       ///< Accounts must be whitelisted by the founder to request membership or be invited.
          require_profile             = 2,       ///< Accounts must have a valid profile data to request membership or be invited. 
@@ -557,21 +557,21 @@ namespace node {
       };
 
       const static uint32_t COMMUNITY_PERMISSION_MASK =
-         member_whitelist
-         | require_profile
-         | require_verified
-         | disable_messages
-         | disable_text_posts
-         | disable_image_posts
-         | disable_video_posts
-         | disable_link_posts
-         | disable_article_posts
-         | disable_audio_posts
-         | disable_file_posts
-         | disable_poll_posts
-         | disable_livestream_posts
-         | disable_product_posts
-         | disable_list_posts;
+         int( community_permission_flags::member_whitelist )
+         | int( community_permission_flags::require_profile )
+         | int( community_permission_flags::require_verified )
+         | int( community_permission_flags::disable_messages )
+         | int( community_permission_flags::disable_text_posts )
+         | int( community_permission_flags::disable_image_posts )
+         | int( community_permission_flags::disable_video_posts )
+         | int( community_permission_flags::disable_link_posts )
+         | int( community_permission_flags::disable_article_posts )
+         | int( community_permission_flags::disable_audio_posts )
+         | int( community_permission_flags::disable_file_posts )
+         | int( community_permission_flags::disable_poll_posts )
+         | int( community_permission_flags::disable_livestream_posts )
+         | int( community_permission_flags::disable_product_posts )
+         | int( community_permission_flags::disable_list_posts );
 
       struct public_key_type
       {

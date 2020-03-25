@@ -65,9 +65,8 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       signed_transaction tx;
       private_key_type priv_key = generate_private_key( "aliceownercorrecthorsebatterystaple" );
       asset init_starting_balance = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      const account_object& init = db.get_account( INIT_ACCOUNT );
+      
       fund( INIT_ACCOUNT, init_starting_balance );
-      const dynamic_global_property_object& props = db.get_dynamic_global_properties();
 
       create.signatory = INIT_ACCOUNT;
       create.registrar = INIT_ACCOUNT;
@@ -96,31 +95,31 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       tx.validate();
       db.push_transaction( tx, 0 );
 
-      const account_object& acct = db.get_account( "alice" );
-      const account_authority_object& acct_auth = db.get< account_authority_object, by_account >( "alice" );
-      const account_following_object& acct_follow = db.get_account_following( "alice" );
+      const account_object& alice_acc = db.get_account( "alice" );
+      const account_authority_object& alice_acc_auth = db.get< account_authority_object, by_account >( "alice" );
+      const account_following_object& alice_acc_follow = db.get_account_following( "alice" );
 
-      BOOST_REQUIRE( acct.registrar == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.name == "alice" );
-      BOOST_REQUIRE( acct_follow.account == "alice" );
-      BOOST_REQUIRE( acct.referrer == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.proxy == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.recovery_account == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.reset_account == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.created == now() );
-      BOOST_REQUIRE( acct_auth.owner_auth == authority( 1, priv_key.get_public_key(), 1 ) );
-      BOOST_REQUIRE( acct_auth.active_auth == authority( 2, priv_key.get_public_key(), 2 ) );
-      BOOST_REQUIRE( acct_auth.posting_auth == authority( 1, priv_key.get_public_key(), 1 ) );
-      BOOST_REQUIRE( acct.secure_public_key == priv_key.get_public_key() );
-      BOOST_REQUIRE( acct.connection_public_key == priv_key.get_public_key() );
-      BOOST_REQUIRE( acct.friend_public_key == priv_key.get_public_key() );
-      BOOST_REQUIRE( acct.companion_public_key == priv_key.get_public_key() );
-      BOOST_REQUIRE( acct.id._id == acct_auth.id._id );
-      BOOST_REQUIRE( acct.id._id == acct_follow.id._id );
+      BOOST_REQUIRE( alice_acc.registrar == INIT_ACCOUNT );
+      BOOST_REQUIRE( alice_acc.name == "alice" );
+      BOOST_REQUIRE( alice_acc_follow.account == "alice" );
+      BOOST_REQUIRE( alice_acc.referrer == INIT_ACCOUNT );
+      BOOST_REQUIRE( alice_acc.proxy == INIT_ACCOUNT );
+      BOOST_REQUIRE( alice_acc.recovery_account == INIT_ACCOUNT );
+      BOOST_REQUIRE( alice_acc.reset_account == INIT_ACCOUNT );
+      BOOST_REQUIRE( alice_acc.created == now() );
+      BOOST_REQUIRE( alice_acc_auth.owner_auth == authority( 1, priv_key.get_public_key(), 1 ) );
+      BOOST_REQUIRE( alice_acc_auth.active_auth == authority( 2, priv_key.get_public_key(), 2 ) );
+      BOOST_REQUIRE( alice_acc_auth.posting_auth == authority( 1, priv_key.get_public_key(), 1 ) );
+      BOOST_REQUIRE( alice_acc.secure_public_key == priv_key.get_public_key() );
+      BOOST_REQUIRE( alice_acc.connection_public_key == priv_key.get_public_key() );
+      BOOST_REQUIRE( alice_acc.friend_public_key == priv_key.get_public_key() );
+      BOOST_REQUIRE( alice_acc.companion_public_key == priv_key.get_public_key() );
+      BOOST_REQUIRE( alice_acc.id._id == alice_acc_auth.id._id );
+      BOOST_REQUIRE( alice_acc.id._id == alice_acc_follow.id._id );
       
       BOOST_REQUIRE( db.get_staked_balance( "alice", SYMBOL_COIN ) == create.fee );
 
-      const asset& init_liquid = db.get_liquid_balance( INIT_ACCOUNT, SYMBOL_COIN );
+      asset init_liquid = db.get_liquid_balance( INIT_ACCOUNT, SYMBOL_COIN );
       
       BOOST_REQUIRE( ( init_starting_balance - create.fee ) == init_liquid );
 
@@ -138,27 +137,27 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       tx.sign( init_account_priv_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const account_object& acct = db.get_account( "bob" );
-      const account_authority_object& acct_auth = db.get< account_authority_object, by_account >( "bob" );
-      const account_following_object& acct_follow = db.get_account_following( "bob" );
+      const account_object& bob_acc = db.get_account( "bob" );
+      const account_authority_object& bob_acc_auth = db.get< account_authority_object, by_account >( "bob" );
+      const account_following_object& bob_acc_follow = db.get_account_following( "bob" );
 
-      BOOST_REQUIRE( acct.registrar == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.name == "bob" );
-      BOOST_REQUIRE( acct_follow.account == "bob" );
-      BOOST_REQUIRE( acct.referrer == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.proxy == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.recovery_account == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.reset_account == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.created == now() );
-      BOOST_REQUIRE( acct_auth.owner_auth == authority( 1, priv_key.get_public_key(), 1 ) );
-      BOOST_REQUIRE( acct_auth.active_auth == authority( 2, priv_key.get_public_key(), 2 ) );
-      BOOST_REQUIRE( acct_auth.posting_auth == authority( 1, priv_key.get_public_key(), 1 ) );
-      BOOST_REQUIRE( acct.secure_public_key == public_key_type( priv_key.get_public_key() ) );
-      BOOST_REQUIRE( acct.connection_public_key == public_key_type( priv_key.get_public_key() ));
-      BOOST_REQUIRE( acct.friend_public_key == public_key_type( priv_key.get_public_key() ) );
-      BOOST_REQUIRE( acct.companion_public_key == public_key_type( priv_key.get_public_key() ) );
-      BOOST_REQUIRE( acct.id._id == acct_auth.id._id );
-      BOOST_REQUIRE( acct.id._id == acct_follow.id._id );
+      BOOST_REQUIRE( bob_acc.registrar == INIT_ACCOUNT );
+      BOOST_REQUIRE( bob_acc.name == "bob" );
+      BOOST_REQUIRE( bob_acc_follow.account == "bob" );
+      BOOST_REQUIRE( bob_acc.referrer == INIT_ACCOUNT );
+      BOOST_REQUIRE( bob_acc.proxy == INIT_ACCOUNT );
+      BOOST_REQUIRE( bob_acc.recovery_account == INIT_ACCOUNT );
+      BOOST_REQUIRE( bob_acc.reset_account == INIT_ACCOUNT );
+      BOOST_REQUIRE( bob_acc.created == now() );
+      BOOST_REQUIRE( bob_acc_auth.owner_auth == authority( 1, priv_key.get_public_key(), 1 ) );
+      BOOST_REQUIRE( bob_acc_auth.active_auth == authority( 2, priv_key.get_public_key(), 2 ) );
+      BOOST_REQUIRE( bob_acc_auth.posting_auth == authority( 1, priv_key.get_public_key(), 1 ) );
+      BOOST_REQUIRE( bob_acc.secure_public_key == public_key_type( priv_key.get_public_key() ) );
+      BOOST_REQUIRE( bob_acc.connection_public_key == public_key_type( priv_key.get_public_key() ));
+      BOOST_REQUIRE( bob_acc.friend_public_key == public_key_type( priv_key.get_public_key() ) );
+      BOOST_REQUIRE( bob_acc.companion_public_key == public_key_type( priv_key.get_public_key() ) );
+      BOOST_REQUIRE( bob_acc.id._id == bob_acc_auth.id._id );
+      BOOST_REQUIRE( bob_acc.id._id == bob_acc_follow.id._id );
 
       BOOST_REQUIRE( db.get_staked_balance( "bob", SYMBOL_COIN ) == create.fee );
 
@@ -172,13 +171,12 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
 
       business_create.signatory = "ionstudios";
       business_create.account = "ionstudios";
-      business_create.business_type = business_structure_type::PUBLIC_BUSINESS;
+      business_create.business_type = "public";
       business_create.officer_vote_threshold = BLOCKCHAIN_PRECISION * 1000;
-      business_create.business_public_key = priv_key.get_public_key();
+      business_create.business_public_key = string( public_key_type( priv_key.get_public_key() ) );
       business_create.governance_account = INIT_ACCOUNT;
       business_create.init_ceo_account = "alice";
       business_create.validate();
-
 
       tx.signatures.clear();
       tx.operations.clear();
@@ -187,32 +185,32 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       tx.sign( init_account_priv_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const account_object& acct = db.get_account( "ionstudios" );
-      const account_business_object& acct_bus = db.get_account_business( "ionstudios" );
-      const account_authority_object& acct_auth = db.get< account_authority_object, by_account >( "ionstudios" );
-      const account_following_object& acct_follow = db.get_account_following( "ionstudios" );
+      const account_object& ionstudios_acc = db.get_account( "ionstudios" );
+      const account_business_object& ionstudios_acc_bus = db.get_account_business( "ionstudios" );
+      const account_authority_object& ionstudios_acc_auth = db.get< account_authority_object, by_account >( "ionstudios" );
+      const account_following_object& ionstudios_acc_follow = db.get_account_following( "ionstudios" );
 
-      BOOST_REQUIRE( acct.registrar == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.name == "ionstudios" );
-      BOOST_REQUIRE( acct_follow.account == "ionstudios" );
-      BOOST_REQUIRE( acct_bus.account == "ionstudios" );
-      BOOST_REQUIRE( acct_bus.executive_board.CHIEF_EXECUTIVE_OFFICER == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.referrer == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.proxy == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.recovery_account == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.reset_account == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.created == now() );
-      BOOST_REQUIRE( acct_auth.owner_auth == authority( 1, priv_key.get_public_key(), 1 ) );
-      BOOST_REQUIRE( acct_auth.active_auth == authority( 2, priv_key.get_public_key(), 2 ) );
-      BOOST_REQUIRE( acct_auth.posting_auth == authority( 1, priv_key.get_public_key(), 1 ) );
-      BOOST_REQUIRE( acct.secure_public_key == public_key_type( priv_key.get_public_key() ) );
-      BOOST_REQUIRE( acct.connection_public_key == public_key_type( priv_key.get_public_key() ) );
-      BOOST_REQUIRE( acct.friend_public_key == public_key_type( priv_key.get_public_key() ) );
-      BOOST_REQUIRE( acct.companion_public_key == public_key_type( priv_key.get_public_key() ) );
+      BOOST_REQUIRE( ionstudios_acc.registrar == INIT_ACCOUNT );
+      BOOST_REQUIRE( ionstudios_acc.name == "ionstudios" );
+      BOOST_REQUIRE( ionstudios_acc_follow.account == "ionstudios" );
+      BOOST_REQUIRE( ionstudios_acc_bus.account == "ionstudios" );
+      BOOST_REQUIRE( ionstudios_acc_bus.executive_board.CHIEF_EXECUTIVE_OFFICER == INIT_ACCOUNT );
+      BOOST_REQUIRE( ionstudios_acc.referrer == INIT_ACCOUNT );
+      BOOST_REQUIRE( ionstudios_acc.proxy == INIT_ACCOUNT );
+      BOOST_REQUIRE( ionstudios_acc.recovery_account == INIT_ACCOUNT );
+      BOOST_REQUIRE( ionstudios_acc.reset_account == INIT_ACCOUNT );
+      BOOST_REQUIRE( ionstudios_acc.created == now() );
+      BOOST_REQUIRE( ionstudios_acc_auth.owner_auth == authority( 1, priv_key.get_public_key(), 1 ) );
+      BOOST_REQUIRE( ionstudios_acc_auth.active_auth == authority( 2, priv_key.get_public_key(), 2 ) );
+      BOOST_REQUIRE( ionstudios_acc_auth.posting_auth == authority( 1, priv_key.get_public_key(), 1 ) );
+      BOOST_REQUIRE( ionstudios_acc.secure_public_key == public_key_type( priv_key.get_public_key() ) );
+      BOOST_REQUIRE( ionstudios_acc.connection_public_key == public_key_type( priv_key.get_public_key() ) );
+      BOOST_REQUIRE( ionstudios_acc.friend_public_key == public_key_type( priv_key.get_public_key() ) );
+      BOOST_REQUIRE( ionstudios_acc.companion_public_key == public_key_type( priv_key.get_public_key() ) );
 
-      BOOST_REQUIRE( acct.id._id == acct_auth.id._id );
-      BOOST_REQUIRE( acct.id._id == acct_follow.id._id );
-      BOOST_REQUIRE( acct.id._id == acct_bus.id._id );
+      BOOST_REQUIRE( ionstudios_acc.id._id == ionstudios_acc_auth.id._id );
+      BOOST_REQUIRE( ionstudios_acc.id._id == ionstudios_acc_follow.id._id );
+      BOOST_REQUIRE( ionstudios_acc.id._id == ionstudios_acc_bus.id._id );
 
       BOOST_REQUIRE( db.get_staked_balance( "ionstudios", SYMBOL_COIN ) == create.fee );
 
@@ -231,7 +229,7 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       tx.signatures.clear();
       tx.operations.clear();
 
-      create.fee = asset( init_liquid + asset( 1 , SYMBOL_COIN ), SYMBOL_COIN );    // Fee slightly greater than liquid balance.
+      create.fee = init_liquid + asset( 1 , SYMBOL_COIN );    // Fee slightly greater than liquid balance.
 
       create.new_account_name = "bob";
       tx.operations.push_back( create );
@@ -440,13 +438,13 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const account_object& acct = db.get_account( "alice" );
-      const account_authority_object& acct_auth = db.get< account_authority_object, by_account >( "alice" );
+      const account_object& alice_acc = db.get_account( "alice" );
+      const account_authority_object& alice_acc_auth = db.get< account_authority_object, by_account >( "alice" );
 
-      BOOST_REQUIRE( acct.name == "alice" );
-      BOOST_REQUIRE( acct_auth.owner_auth == authority( 1, new_private_key.get_public_key(), 1 ) );
-      BOOST_REQUIRE( acct_auth.active_auth == authority( 2, new_private_key.get_public_key(), 2 ) );
-      BOOST_REQUIRE( acct.secure_public_key == public_key_type( new_private_key.get_public_key() ) );
+      BOOST_REQUIRE( alice_acc.name == "alice" );
+      BOOST_REQUIRE( alice_acc_auth.owner_auth == authority( 1, new_private_key.get_public_key(), 1 ) );
+      BOOST_REQUIRE( alice_acc_auth.active_auth == authority( 2, new_private_key.get_public_key(), 2 ) );
+      BOOST_REQUIRE( alice_acc.secure_public_key == public_key_type( new_private_key.get_public_key() ) );
       validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: normal account update" );
@@ -499,7 +497,7 @@ BOOST_AUTO_TEST_CASE( account_membership_operation_test )
       account_membership_operation membership;
       membership.signatory = "alice";
       membership.account = "alice";
-      membership.membership_type = membership_tier_type::STANDARD_MEMBERSHIP;
+      membership.membership_type = "standard";
       membership.months = 1;
       membership.interface = INIT_ACCOUNT;
 
@@ -511,13 +509,13 @@ BOOST_AUTO_TEST_CASE( account_membership_operation_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const account_object& acct = db.get_account( "alice" );
+      const account_object& alice_acc = db.get_account( "alice" );
 
-      BOOST_REQUIRE( acct.name == "alice" );
-      BOOST_REQUIRE( acct.membership == membership_tier_type::STANDARD_MEMBERSHIP );
-      BOOST_REQUIRE( acct.membership_interface == INIT_ACCOUNT );
-      BOOST_REQUIRE( acct.recurring_membership == 1 );
-      BOOST_REQUIRE( acct.membership_expiration == now() + fc::days(30) );
+      BOOST_REQUIRE( alice_acc.name == "alice" );
+      BOOST_REQUIRE( alice_acc.membership == membership_tier_type::STANDARD_MEMBERSHIP );
+      BOOST_REQUIRE( alice_acc.membership_interface == INIT_ACCOUNT );
+      BOOST_REQUIRE( alice_acc.recurring_membership == 1 );
+      BOOST_REQUIRE( alice_acc.membership_expiration == now() + fc::days(30) );
 
       validate_database();
 
@@ -565,7 +563,7 @@ BOOST_AUTO_TEST_CASE( account_vote_executive_operation_test )
       vote.account = "alice";
       vote.business_account = INIT_ACCOUNT;
       vote.executive_account = INIT_CEO;
-      vote.role = executive_role_type::CHIEF_EXECUTIVE_OFFICER;
+      vote.role = "executive";
       vote.validate();
 
       signed_transaction tx;
@@ -574,13 +572,13 @@ BOOST_AUTO_TEST_CASE( account_vote_executive_operation_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const account_executive_vote_object& vote = db.get_account_executive_vote( "alice", INIT_ACCOUNT, INIT_CEO );
+      const account_executive_vote_object& exec_vote = db.get_account_executive_vote( "alice", INIT_ACCOUNT, INIT_CEO );
 
-      BOOST_REQUIRE( vote.account == "alice" );
-      BOOST_REQUIRE( vote.business_account == INIT_ACCOUNT );
-      BOOST_REQUIRE( vote.executive_account ==  INIT_CEO );
-      BOOST_REQUIRE( vote.vote_rank == 1 );
-      BOOST_REQUIRE( vote.role == executive_role_type::CHIEF_EXECUTIVE_OFFICER );
+      BOOST_REQUIRE( exec_vote.account == "alice" );
+      BOOST_REQUIRE( exec_vote.business_account == INIT_ACCOUNT );
+      BOOST_REQUIRE( exec_vote.executive_account ==  INIT_CEO );
+      BOOST_REQUIRE( exec_vote.vote_rank == 1 );
+      BOOST_REQUIRE( exec_vote.role == executive_role_type::CHIEF_EXECUTIVE_OFFICER );
 
       validate_database();
 
@@ -659,12 +657,12 @@ BOOST_AUTO_TEST_CASE( account_vote_officer_operation_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const account_officer_vote_object& vote = db.get_account_officer_vote( "alice", INIT_ACCOUNT, INIT_CEO );
+      const account_officer_vote_object& off_vote = db.get_account_officer_vote( "alice", INIT_ACCOUNT, INIT_CEO );
 
-      BOOST_REQUIRE( vote.account == "alice" );
-      BOOST_REQUIRE( vote.business_account == INIT_ACCOUNT );
-      BOOST_REQUIRE( vote.officer_account ==  INIT_CEO );
-      BOOST_REQUIRE( vote.vote_rank == 1 );
+      BOOST_REQUIRE( off_vote.account == "alice" );
+      BOOST_REQUIRE( off_vote.business_account == INIT_ACCOUNT );
+      BOOST_REQUIRE( off_vote.officer_account ==  INIT_CEO );
+      BOOST_REQUIRE( off_vote.vote_rank == 1 );
 
       validate_database();
 
@@ -738,12 +736,12 @@ BOOST_AUTO_TEST_CASE( account_member_request_operation_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const account_member_request_object& req = db.get_account_member_request( "alice", INIT_ACCOUNT );
+      const account_member_request_object& alice_request = db.get_account_member_request( "alice", INIT_ACCOUNT );
 
-      BOOST_REQUIRE( req.account == "alice" );
-      BOOST_REQUIRE( req.business_account == INIT_ACCOUNT );
-      BOOST_REQUIRE( req.message == "Hello" );
-      BOOST_REQUIRE( req.expiration == now() + CONNECTION_REQUEST_DURATION );
+      BOOST_REQUIRE( alice_request.account == "alice" );
+      BOOST_REQUIRE( alice_request.business_account == INIT_ACCOUNT );
+      BOOST_REQUIRE( alice_request.message == "Hello" );
+      BOOST_REQUIRE( alice_request.expiration == now() + CONNECTION_REQUEST_DURATION );
 
       validate_database();
 
@@ -775,8 +773,9 @@ BOOST_AUTO_TEST_CASE( account_member_request_operation_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const account_member_request_object* req = db.find_account_member_request( "alice", INIT_ACCOUNT );
-      BOOST_REQUIRE( req == nullptr );
+      const account_member_request_object* alice_request_ptr = db.find_account_member_request( "alice", INIT_ACCOUNT );
+
+      BOOST_REQUIRE( alice_request_ptr == nullptr );
 
       validate_database();
    
@@ -805,29 +804,30 @@ BOOST_AUTO_TEST_CASE( account_member_invite_operation_test )
       invite.member = "bob";
       invite.message = "Hello";
       invite.encrypted_business_key = string( alice_public_owner_key );
+      invite.validate();
 
       const account_business_object& bus_acc = db.get_account_business( INIT_ACCOUNT );
 
       db.modify( bus_acc, [&]( account_business_object& b )
       {
-         b.officers[ "alice" ] = BLOCKCHAIN_PRECISION * 1000000;    // Add alice to officers
+         b.officer_votes[ "alice" ] = BLOCKCHAIN_PRECISION * 1000000;
+         b.officers.insert( "alice" );
       });
 
-      invite.validate();
-
       signed_transaction tx;
+
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( invite );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const account_member_invite_object& inv = db.get_account_member_invite( "bob", INIT_ACCOUNT );
+      const account_member_invite_object& bob_invite = db.get_account_member_invite( "bob", INIT_ACCOUNT );
 
-      BOOST_REQUIRE( inv.account == "alice" );
-      BOOST_REQUIRE( inv.business_account == INIT_ACCOUNT );
-      BOOST_REQUIRE( inv.member == "bob" );
-      BOOST_REQUIRE( inv.message == "Hello" );
-      BOOST_REQUIRE( inv.expiration == now() + CONNECTION_REQUEST_DURATION );
+      BOOST_REQUIRE( bob_invite.account == "alice" );
+      BOOST_REQUIRE( bob_invite.business_account == INIT_ACCOUNT );
+      BOOST_REQUIRE( bob_invite.member == "bob" );
+      BOOST_REQUIRE( bob_invite.message == "Hello" );
+      BOOST_REQUIRE( bob_invite.expiration == now() + CONNECTION_REQUEST_DURATION );
 
       validate_database();
 
@@ -859,8 +859,8 @@ BOOST_AUTO_TEST_CASE( account_member_invite_operation_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const account_member_invite_object* req = db.find_account_member_invite( "alice", INIT_ACCOUNT );
-      BOOST_REQUIRE( req == nullptr );
+      const account_member_invite_object* bob_invite_ptr = db.find_account_member_invite( "bob", INIT_ACCOUNT );
+      BOOST_REQUIRE( bob_invite_ptr == nullptr );
 
       validate_database();
    
@@ -885,7 +885,8 @@ BOOST_AUTO_TEST_CASE( account_accept_request_operation_test )
 
       db.modify( bus_acc, [&]( account_business_object& b )
       {
-         b.officers[ "alice" ] = BLOCKCHAIN_PRECISION * 1000000;    // Add alice to officers
+         b.officer_votes[ "alice" ] = BLOCKCHAIN_PRECISION * 1000000;
+         b.officers.insert( "alice" );
       });
 
       account_member_request_operation request;
@@ -897,6 +898,7 @@ BOOST_AUTO_TEST_CASE( account_accept_request_operation_test )
       request.validate();
 
       signed_transaction tx;
+
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( request );
       tx.sign( bob_private_active_key, db.get_chain_id() );
@@ -918,8 +920,6 @@ BOOST_AUTO_TEST_CASE( account_accept_request_operation_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const account_business_object& bus_acc = db.get_account_business( INIT_ACCOUNT );
-
       BOOST_REQUIRE( bus_acc.is_member( "bob" ) );
       
       validate_database();
@@ -931,23 +931,18 @@ BOOST_AUTO_TEST_CASE( account_accept_request_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      account_member_request_operation request;
-
       request.signatory = "candice";
       request.account = "candice";
       request.business_account = INIT_ACCOUNT;
       request.message = "Hello";
       request.validate();
 
-      signed_transaction tx;
       tx.operations.push_back( request );
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      account_accept_request_operation accept;
 
       accept.signatory = "dan";     // dan is not an officer, and cannot accept requests
       accept.account = "dan";
@@ -984,7 +979,8 @@ BOOST_AUTO_TEST_CASE( account_accept_invite_operation_test )
 
       db.modify( bus_acc, [&]( account_business_object& b )
       {
-         b.officers[ "alice" ] = BLOCKCHAIN_PRECISION * 1000000;    // Add alice to officers
+         b.officer_votes[ "alice" ] = BLOCKCHAIN_PRECISION * 1000000;
+         b.officers.insert( "alice" );
       });
 
       account_member_invite_operation invite;
@@ -1007,6 +1003,7 @@ BOOST_AUTO_TEST_CASE( account_accept_invite_operation_test )
       tx.signatures.clear();
 
       account_accept_invite_operation accept;
+
       accept.signatory = "bob";
       accept.account = "bob";
       accept.business_account = INIT_ACCOUNT;
@@ -1015,8 +1012,6 @@ BOOST_AUTO_TEST_CASE( account_accept_invite_operation_test )
       tx.operations.push_back( accept );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
-
-      const account_business_object& bus_acc = db.get_account_business( INIT_ACCOUNT );
 
       BOOST_REQUIRE( bus_acc.is_member( "bob" ) );
 
@@ -1029,15 +1024,12 @@ BOOST_AUTO_TEST_CASE( account_accept_invite_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      account_accept_invite_operation invite;
+      accept.signatory = "dan";   // dan has not been invited
+      accept.account = "dan";
+      accept.business_account = INIT_ACCOUNT;
+      accept.validate();
 
-      invite.signatory = "dan";   // dan has not been invited
-      invite.account = "dan";
-      invite.business_account = INIT_ACCOUNT;
-
-      invite.validate();
-
-      tx.operations.push_back( invite );
+      tx.operations.push_back( accept );
       tx.sign( dan_private_active_key, db.get_chain_id() );
 
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -1065,7 +1057,8 @@ BOOST_AUTO_TEST_CASE( account_remove_member_operation_test )
 
       db.modify( bus_acc, [&]( account_business_object& b )
       {
-         b.officers[ "alice" ] = BLOCKCHAIN_PRECISION * 1000000;    // Add alice to officers
+         b.officer_votes[ "alice" ] = BLOCKCHAIN_PRECISION * 1000000;
+         b.officers.insert( "alice" );
          b.members.insert( "bob" );      // Add bob to members
       });
 
@@ -1085,8 +1078,6 @@ BOOST_AUTO_TEST_CASE( account_remove_member_operation_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const account_business_object& bus_acc = db.get_account_business( INIT_ACCOUNT );
-
       BOOST_REQUIRE( !bus_acc.is_member( "bob" ) );    // Bob has been removed
 
       validate_database();
@@ -1104,8 +1095,6 @@ BOOST_AUTO_TEST_CASE( account_remove_member_operation_test )
       });
 
       BOOST_REQUIRE( bus_acc.is_member( "bob" ) );
-
-      account_remove_member_operation remove;
 
       remove.signatory = "bob";    // Bob is not an officer and cannot remove alice
       remove.account = "bob";
@@ -1138,6 +1127,7 @@ BOOST_AUTO_TEST_CASE( account_update_list_operation_test )
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
       account_update_list_operation list;
+
       list.signatory = "alice";
       list.account = "alice";
       list.listed_account = "bob";
@@ -1147,6 +1137,7 @@ BOOST_AUTO_TEST_CASE( account_update_list_operation_test )
       list.validate();
 
       signed_transaction tx;
+
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( list );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -1171,8 +1162,6 @@ BOOST_AUTO_TEST_CASE( account_update_list_operation_test )
       tx.operations.push_back( list );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
-
-      const account_permission_object& acc_perm = db.get_account_permissions( "alice" );
 
       BOOST_REQUIRE( acc_perm.blacklisted_accounts.find( "bob" ) == acc_perm.blacklisted_accounts.end() );    // Bob has been removed from blacklist
 
@@ -1218,27 +1207,32 @@ BOOST_AUTO_TEST_CASE( account_producer_vote_operation_test )
          candice_producer_key.get_public_key()
       );
 
+      const producer_object& producer_a = db.get_producer( "alice" );
+      const producer_object& producer_c = db.get_producer( "candice" );
+
       account_producer_vote_operation vote;
+
       vote.signatory = "bob";
       vote.account = "bob";
       vote.producer = "alice";
       vote.vote_rank = 1;
       vote.approved = true;
+      vote.validate();
 
       signed_transaction tx;
+
       tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( vote );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const producer_vote_object& vote = db.get_producer_vote( "bob", "alice" );
-      const account_object& acc = db.get_account( "bob" ); 
-      const producer_object& producer = db.get_producer( "alice" );
-      BOOST_REQUIRE( vote.account == "bob" );
-      BOOST_REQUIRE( vote.producer == "alice" );
-      BOOST_REQUIRE( vote.vote_rank == 1 );
-      BOOST_REQUIRE( acc.producer_vote_count == 1 );
-      BOOST_REQUIRE( producer.vote_count == 1 );
+      const producer_vote_object& prod_vote = db.get_producer_vote( "bob", "alice" );
+
+      BOOST_REQUIRE( prod_vote.account == "bob" );
+      BOOST_REQUIRE( prod_vote.producer == "alice" );
+      BOOST_REQUIRE( prod_vote.vote_rank == 1 );
+      BOOST_REQUIRE( bob.producer_vote_count == 1 );
+      BOOST_REQUIRE( producer_a.vote_count == 1 );
 
       validate_database();
 
@@ -1254,16 +1248,14 @@ BOOST_AUTO_TEST_CASE( account_producer_vote_operation_test )
 
       const producer_vote_object& vote_a = db.get_producer_vote( "bob", "alice" );
       const producer_vote_object& vote_c = db.get_producer_vote( "bob", "candice" );
-      const account_object& acc = db.get_account( "bob" ); 
-      const producer_object& producer_a = db.get_producer( "alice" );
-      const producer_object& producer_c = db.get_producer( "candice" );
+      
       BOOST_REQUIRE( vote_a.account == "bob" );
       BOOST_REQUIRE( vote_a.producer == "alice" );
       BOOST_REQUIRE( vote_a.vote_rank == 2 );
       BOOST_REQUIRE( vote_c.account == "bob" );
       BOOST_REQUIRE( vote_c.producer == "candice" );
       BOOST_REQUIRE( vote_c.vote_rank == 1 );
-      BOOST_REQUIRE( acc.producer_vote_count == 2 );
+      BOOST_REQUIRE( bob.producer_vote_count == 2 );
       BOOST_REQUIRE( producer_a.vote_count == 1 );
       BOOST_REQUIRE( producer_c.vote_count == 1 );
 
@@ -1282,12 +1274,10 @@ BOOST_AUTO_TEST_CASE( account_producer_vote_operation_test )
 
       db.push_transaction( tx, 0 );
 
-      const producer_vote_object* vote_ptr = db.find_producer_vote( "bob", "candice" );
-      const account_object& acc = db.get_account( "bob" );
-      const producer_object& producer = db.get_producer( "candice" );
-      BOOST_REQUIRE( vote_ptr == nullptr );
-      BOOST_REQUIRE( acc.producer_vote_count == 1 );
-      BOOST_REQUIRE( producer.vote_count == 0 );
+      const producer_vote_object* bob_candice_vote_ptr = db.find_producer_vote( "bob", "candice" );
+      BOOST_REQUIRE( bob_candice_vote_ptr == nullptr );
+      BOOST_REQUIRE( bob.producer_vote_count == 1 );
+      BOOST_REQUIRE( producer_c.vote_count == 0 );
 
       validate_database();
 
@@ -1304,12 +1294,10 @@ BOOST_AUTO_TEST_CASE( account_producer_vote_operation_test )
 
       db.push_transaction( tx, 0 );
 
-      const producer_vote_object* vote_ptr = db.find_producer_vote( "bob", "alice" );
-      const account_object& acc = db.get_account( "bob" );
-      const producer_object& producer = db.get_producer( "alice" );
-      BOOST_REQUIRE( vote_ptr == nullptr );
-      BOOST_REQUIRE( acc.producer_vote_count == 0 );
-      BOOST_REQUIRE( producer.vote_count == 0 );
+      const producer_vote_object* bob_alice_vote_ptr = db.find_producer_vote( "bob", "alice" );
+      BOOST_REQUIRE( bob_alice_vote_ptr == nullptr );
+      BOOST_REQUIRE( bob.producer_vote_count == 0 );
+      BOOST_REQUIRE( producer_a.vote_count == 0 );
 
       validate_database();
 
@@ -1385,6 +1373,7 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
       proxy.proxy = "alice";
 
       signed_transaction tx;
+
       tx.operations.push_back( proxy );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
@@ -1458,7 +1447,7 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: adding a grandchild proxy" );
 
-      // alice \
+      // alice
       // bob->  sam->dan
 
       tx.operations.clear();
@@ -1554,7 +1543,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      shared_authority bob_auth = db.get< account_authority_object, by_account >( "bob" );
+      const account_authority_object& bob_auth = db.get< account_authority_object, by_account >( "bob" );
       BOOST_REQUIRE( bob_auth.owner_auth == acc_create.owner_auth );
 
       // Changing bob's owner authority
@@ -1586,6 +1575,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.signatures.clear();
 
       request_account_recovery_operation request;
+
       request.signatory = "alice";
       request.recovery_account = "alice";
       request.account_to_recover = "bob";
@@ -1603,6 +1593,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.signatures.clear();
 
       recover_account_operation recover;
+      
       recover.signatory = "bob";
       recover.account_to_recover = "bob";
       recover.new_owner_authority = request.new_owner_authority;
@@ -1917,7 +1908,7 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      shared_authority bob_auth = db.get< account_authority_object, by_account >( "bob" );
+      const account_authority_object& bob_auth = db.get< account_authority_object, by_account >( "bob" );
       BOOST_REQUIRE( bob_auth.owner_auth == acc_create.owner_auth );
 
       generate_blocks( now() + ( fc::days( bob.reset_account_delay_days ) - BLOCK_INTERVAL ) );
@@ -2145,11 +2136,10 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
 
       comment_options options;
 
-      options.post_type = post_format_type::ARTICLE_POST;
-      options.reach = feed_reach_type::TAG_FEED;
+      options.post_type = "article";
+      options.reach = "tag";
       options.rating = 1;
 
-      comment_options options;
       comment.options = options;
 
       vote_operation vote;
@@ -2174,7 +2164,7 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       const auto& comment_vote_idx = db.get_index< comment_vote_index >().indices().get< by_voter_comment >();
       const auto& producer_vote_idx = db.get_index< producer_vote_index >().indices().get< by_producer_account >();
 
-      auto comment_itr = comment_idx.find( boost::make_tuple( "alice", "test" ) );
+      auto comment_itr = comment_idx.find( boost::make_tuple( "alice", string( "test" ) ) );
       auto comment_vote_itr = comment_vote_idx.find( boost::make_tuple( "alice", comment_itr->id ) );
       auto producer_vote_itr = producer_vote_idx.find( boost::make_tuple( "alice", "alice" ) );
 
@@ -2192,10 +2182,10 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       BOOST_REQUIRE( !db.get_account( "alice" ).can_vote );   // Alice can no longer vote
       validate_database();
 
-      auto req_itr = req_idx.find( "alice" );
+      req_itr = req_idx.find( "alice" );
       BOOST_REQUIRE( req_itr == req_idx.end() );   // Request no longer exists
 
-      auto producer_vote_itr = producer_vote_idx.find( boost::make_tuple( "alice", "alice" ) );
+      producer_vote_itr = producer_vote_idx.find( boost::make_tuple( "alice", "alice" ) );
       BOOST_REQUIRE( producer_vote_itr == producer_vote_idx.end() );   // Vote has been removed
 
       tx.operations.clear();
@@ -2245,7 +2235,7 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       request.signatory = "alice";
       request.account = "alice";
       request.requested_account = "bob";
-      request.connection_type = connection_tier_type::CONNECTION;
+      request.connection_type = "connection";
       request.message = "Hello";
       request.requested = true;
 
@@ -2280,7 +2270,7 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       accept.signatory = "bob";
       accept.account = "bob";
       accept.requesting_account = "alice";
-      accept.connection_type = connection_tier_type::CONNECTION;
+      accept.connection_type = "connection";
       accept.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
       accept.encrypted_key = "#supersecretencryptedkeygoeshere";
       accept.connected = true;
@@ -2289,8 +2279,8 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
-      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", connection_tier_type::CONNECTION ) );
+      req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
+      con_itr = con_idx.find( boost::make_tuple( "alice", "bob", connection_tier_type::CONNECTION ) );
 
       BOOST_REQUIRE( req_itr == req_idx.end() );    // Request is now removed
       BOOST_REQUIRE( con_itr->account_a == "alice" );
@@ -2315,8 +2305,8 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
-      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", connection_tier_type::CONNECTION ) );
+      req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
+      con_itr = con_idx.find( boost::make_tuple( "alice", "bob", connection_tier_type::CONNECTION ) );
 
       BOOST_REQUIRE( req_itr == req_idx.end() );    // Request is now removed
       BOOST_REQUIRE( con_itr->account_a == "alice" );
@@ -2344,7 +2334,7 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
 
       generate_blocks( now() + CONNECTION_REQUEST_DURATION - BLOCK_INTERVAL, true );
 
-      request.connection_type = connection_tier_type::FRIEND;
+      request.connection_type = "friend";
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2366,8 +2356,8 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
-      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", connection_tier_type::FRIEND ) );
+      req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
+      con_itr = con_idx.find( boost::make_tuple( "alice", "bob", connection_tier_type::FRIEND ) );
 
       BOOST_REQUIRE( req_itr != req_idx.end() );
       BOOST_REQUIRE( req_itr->account == "alice" );
@@ -2386,7 +2376,7 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       accept.signatory = "bob";
       accept.account = "bob";
       accept.requesting_account = "alice";
-      accept.connection_type = connection_tier_type::FRIEND;
+      accept.connection_type = "friend";
       accept.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
       accept.encrypted_key = "#supersecretencryptedkeygoeshere";
       accept.connected = true;
@@ -2395,8 +2385,8 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
-      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", connection_tier_type::FRIEND ) );
+      req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
+      con_itr = con_idx.find( boost::make_tuple( "alice", "bob", connection_tier_type::FRIEND ) );
 
       BOOST_REQUIRE( req_itr == req_idx.end() );
       BOOST_REQUIRE( con_itr->account_a == "alice" );
@@ -2416,14 +2406,14 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       accept.signatory = "alice";
       accept.account = "alice";
       accept.requesting_account = "bob";
-      accept.connection_type = connection_tier_type::FRIEND;
+      accept.connection_type = "friend";
 
       tx.operations.push_back( accept );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      auto req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
-      auto con_itr = con_idx.find( boost::make_tuple( "alice", "bob", connection_tier_type::FRIEND ) );
+      req_itr = req_idx.find( boost::make_tuple( "alice", "bob" ) );
+      con_itr = con_idx.find( boost::make_tuple( "alice", "bob", connection_tier_type::FRIEND ) );
 
       BOOST_REQUIRE( req_itr == req_idx.end() );
       BOOST_REQUIRE( con_itr->account_a == "alice" );
@@ -2560,9 +2550,6 @@ BOOST_AUTO_TEST_CASE( account_follow_operation_test )
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const account_following_object& following_a = db.get_account_following( account_name_type( "alice" ) );
-      const account_following_object& following_b = db.get_account_following( account_name_type( "bob" ) );
-
       BOOST_REQUIRE( following_a.is_filtered( account_name_type( "bob" ) ) );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: filtering" );
@@ -2627,9 +2614,6 @@ BOOST_AUTO_TEST_CASE( tag_follow_operation_test )
       tx.operations.push_back( follow );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
-
-      const account_following_object& following_a = db.get_account_following( "alice" );
-      const tag_following_object& following_t = db.get_tag_following( "test" );
       
       BOOST_REQUIRE( !following_a.is_followed_tag( tag_name_type( "test" ) ) );
       BOOST_REQUIRE( !following_t.is_follower( account_name_type( "alice" ) ) );
@@ -2695,7 +2679,7 @@ BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
       fund( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       producer_create( "kathryn", kathryn_private_owner_key, kathryn_public_owner_key );
 
-      const comment_object& alice_post = comment_create( "alice", alice_private_posting_key, "alicetestpost" );
+      comment_create( "alice", alice_private_posting_key, "alicetestpost" );
       const comment_object& bob_post = comment_create( "bob", bob_private_posting_key, "bobtestpost" );
       const comment_object& candice_post = comment_create( "candice", candice_private_posting_key, "candicetestpost" );
 
@@ -2949,7 +2933,7 @@ BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
       const reward_fund_object& rfo = db.get_reward_fund( SYMBOL_COIN );
       
       BOOST_REQUIRE( alice.last_activity_reward == now() );
-      BOOST_REQUIRE( rfo.recent_activity_claims == BLOCKCHAIN_PRECISION );
+      BOOST_REQUIRE( rfo.recent_activity_claims == uint128_t( BLOCKCHAIN_PRECISION.value ) );
       
       BOOST_TEST_MESSAGE( "│   ├── Passed: normal activity reward claim process" );
 

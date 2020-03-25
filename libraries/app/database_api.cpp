@@ -352,8 +352,6 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       bool                                            _disable_get_block = false;
 
-      void set_url( discussion& d )const;
-
       discussion                                      get_discussion( comment_id_type id, uint32_t truncate_body )const;
 
       static bool filter_default( const comment_api_obj& c ) { return false; }
@@ -414,14 +412,6 @@ u256 to256( const fc::uint128& t )
    return results;
 }
 
-void database_api::set_url( discussion& d )const
-{
-   const comment_api_obj root( my->_db.get< comment_object, by_id >( d.root_comment ) );
-   d.url = "/" + root.category + "/@" + root.author + "/" + root.permlink;
-   d.root_title = root.title;
-   if( root.id != d.id )
-      d.url += "#@" + d.author + "/" + d.permlink;
-}
 
 
    //=================//
@@ -800,14 +790,14 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
          auto officer_vote_itr = officer_vote_idx.lower_bound( name );
          while( officer_vote_itr != officer_vote_idx.end() && officer_vote_itr->account == name )
          {
-            results.back().network.network_officer_votes[ network_officer_role_values[ officer_vote_itr->officer_type ] ][ officer_vote_itr->network_officer ] = officer_vote_itr->vote_rank;
+            results.back().network.network_officer_votes[ network_officer_role_values[ int( officer_vote_itr->officer_type ) ] ][ officer_vote_itr->network_officer ] = officer_vote_itr->vote_rank;
             ++officer_vote_itr;
          }
 
          auto account_exec_itr = account_exec_idx.lower_bound( name );
          while( account_exec_itr != account_exec_idx.end() && account_exec_itr->account == name )
          {
-            results.back().network.account_executive_votes[ account_exec_itr->business_account ][ executive_role_values[ account_exec_itr->role ] ] = std::make_pair( account_exec_itr->executive_account, account_exec_itr->vote_rank );
+            results.back().network.account_executive_votes[ account_exec_itr->business_account ][ executive_role_values[ int( account_exec_itr->role ) ] ] = std::make_pair( account_exec_itr->executive_account, account_exec_itr->vote_rank );
             ++account_exec_itr;
          }
 
@@ -4262,7 +4252,14 @@ discussion database_api::get_discussion( comment_id_type id, uint32_t truncate_b
 discussion database_api_impl::get_discussion( comment_id_type id, uint32_t truncate_body )const
 {
    discussion d = _db.get( id );
-   set_url( d );
+
+   const comment_api_obj root( _db.get< comment_object, by_id >( d.root_comment ) );
+   d.url = "/" + root.community + "/@" + root.author + "/" + root.permlink;
+   d.root_title = root.title;
+   if( root.id != d.id )
+   {
+      d.url += "#@" + d.author + "/" + d.permlink;
+   }
    
    d.active_votes = get_active_votes( d.author, d.permlink );
    d.active_views = get_active_views( d.author, d.permlink );
@@ -4383,39 +4380,39 @@ vector< discussion > database_api_impl::get_discussions(
             time_point created = tidx_itr->created;
             bool old_post = false;
 
-            if( query.post_include_time == post_time_values[ post_time_type::ALL_TIME ] )
+            if( query.post_include_time == post_time_values[ int( post_time_type::ALL_TIME ) ] )
             {
                old_post = false;
             }
-            else if( query.post_include_time == post_time_values[ post_time_type::LAST_HOUR ] )
+            else if( query.post_include_time == post_time_values[ int( post_time_type::LAST_HOUR ) ] )
             {
                if( created + fc::hours(1) > now )
                {
                   old_post = true;
                }
             }
-            else if( query.post_include_time == post_time_values[ post_time_type::LAST_DAY ] )
+            else if( query.post_include_time == post_time_values[ int( post_time_type::LAST_DAY ) ] )
             {
                if( created + fc::days(1) > now ) 
                {
                   old_post = true;
                }
             }
-            else if( query.post_include_time == post_time_values[ post_time_type::LAST_WEEK ] )
+            else if( query.post_include_time == post_time_values[ int( post_time_type::LAST_WEEK ) ] )
             {
                if( created + fc::days(7) > now ) 
                {
                   old_post = true;
                }
             }
-            else if( query.post_include_time == post_time_values[ post_time_type::LAST_MONTH ] )
+            else if( query.post_include_time == post_time_values[ int( post_time_type::LAST_MONTH ) ] )
             {
                if( created + fc::days(30) > now ) 
                {
                   old_post = true;
                }
             }
-            else if( query.post_include_time == post_time_values[ post_time_type::LAST_YEAR ] )
+            else if( query.post_include_time == post_time_values[ int( post_time_type::LAST_YEAR ) ] )
             {
                if( created + fc::days(365) > now ) 
                {
@@ -5268,39 +5265,39 @@ vector< discussion > database_api_impl::get_discussions_by_feed( const discussio
          time_point created = tag_itr->created;
          bool old_post = false;
 
-         if( query.post_include_time == post_time_values[ post_time_type::ALL_TIME ] )
+         if( query.post_include_time == post_time_values[ int( post_time_type::ALL_TIME ) ] )
          {
             old_post = false;
          }
-         else if( query.post_include_time == post_time_values[ post_time_type::LAST_HOUR ] )
+         else if( query.post_include_time == post_time_values[ int( post_time_type::LAST_HOUR ) ] )
          {
             if( created + fc::hours(1) > now )
             {
                old_post = true;
             }
          }
-         else if( query.post_include_time == post_time_values[ post_time_type::LAST_DAY ] )
+         else if( query.post_include_time == post_time_values[ int( post_time_type::LAST_DAY ) ] )
          {
             if( created + fc::days(1) > now ) 
             {
                old_post = true;
             }
          }
-         else if( query.post_include_time == post_time_values[ post_time_type::LAST_WEEK ] )
+         else if( query.post_include_time == post_time_values[ int( post_time_type::LAST_WEEK ) ] )
          {
             if( created + fc::days(7) > now ) 
             {
                old_post = true;
             }
          }
-         else if( query.post_include_time == post_time_values[ post_time_type::LAST_MONTH ] )
+         else if( query.post_include_time == post_time_values[ int( post_time_type::LAST_MONTH ) ] )
          {
             if( created + fc::days(30) > now ) 
             {
                old_post = true;
             }
          }
-         else if( query.post_include_time == post_time_values[ post_time_type::LAST_YEAR ] )
+         else if( query.post_include_time == post_time_values[ int( post_time_type::LAST_YEAR ) ] )
          {
             if( created + fc::days(365) > now ) 
             {
@@ -5617,15 +5614,15 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
 
    while( results.size() < query.limit && blog_itr != blog_idx.end() )
    { 
-      if( account.size() && blog_itr->account != account && query.blog_type == blog_reach_values[ blog_reach_type::ACCOUNT_BLOG ] )
+      if( account.size() && blog_itr->account != account && query.blog_type == blog_reach_values[ int( blog_reach_type::ACCOUNT_BLOG ) ] )
       {
          break;
       }
-      if( community.size() && blog_itr->community != community && query.blog_type == blog_reach_values[ blog_reach_type::COMMUNITY_BLOG ] )
+      if( community.size() && blog_itr->community != community && query.blog_type == blog_reach_values[ int( blog_reach_type::COMMUNITY_BLOG ) ] )
       {
          break;
       }
-      if( tag.size() && blog_itr->tag != tag && query.blog_type == blog_reach_values[ blog_reach_type::TAG_BLOG ] )
+      if( tag.size() && blog_itr->tag != tag && query.blog_type == blog_reach_values[ int( blog_reach_type::TAG_BLOG ) ] )
       {
          break;
       }
@@ -5638,39 +5635,39 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
          time_point created = tag_itr->created;
          bool old_post = false;
 
-         if( query.post_include_time == post_time_values[ post_time_type::ALL_TIME ] )
+         if( query.post_include_time == post_time_values[ int( post_time_type::ALL_TIME ) ] )
          {
             old_post = false;
          }
-         else if( query.post_include_time == post_time_values[ post_time_type::LAST_HOUR ] )
+         else if( query.post_include_time == post_time_values[ int( post_time_type::LAST_HOUR ) ] )
          {
             if( created + fc::hours(1) > now )
             {
                old_post = true;
             }
          }
-         else if( query.post_include_time == post_time_values[ post_time_type::LAST_DAY ] )
+         else if( query.post_include_time == post_time_values[ int( post_time_type::LAST_DAY ) ] )
          {
             if( created + fc::days(1) > now ) 
             {
                old_post = true;
             }
          }
-         else if( query.post_include_time == post_time_values[ post_time_type::LAST_WEEK ] )
+         else if( query.post_include_time == post_time_values[ int( post_time_type::LAST_WEEK ) ] )
          {
             if( created + fc::days(7) > now ) 
             {
                old_post = true;
             }
          }
-         else if( query.post_include_time == post_time_values[ post_time_type::LAST_MONTH ] )
+         else if( query.post_include_time == post_time_values[ int( post_time_type::LAST_MONTH ) ] )
          {
             if( created + fc::days(30) > now ) 
             {
                old_post = true;
             }
          }
-         else if( query.post_include_time == post_time_values[ post_time_type::LAST_YEAR ] )
+         else if( query.post_include_time == post_time_values[ int( post_time_type::LAST_YEAR ) ] )
          {
             if( created + fc::days(365) > now ) 
             {
@@ -6364,36 +6361,34 @@ void database_api::recursively_fetch_content( state& _state, discussion& root, s
 {
    return my->_db.with_read_lock( [&]()
    {
-      try
+      return my->recursively_fetch_content( _state, root, referenced_accounts );
+   });
+}
+
+void database_api_impl::recursively_fetch_content( state& _state, discussion& root, set< string >& referenced_accounts )const
+{
+   try
+   {
+      if( root.author.size() )
       {
-         if( root.author.size() )
-         {
-            referenced_accounts.insert( root.author );
-         }
-         
-         vector< discussion > replies = get_content_replies( root.author, root.permlink );
+         referenced_accounts.insert( root.author );
+      }
+      
+      vector< discussion > replies = get_content_replies( root.author, root.permlink );
 
-         for( auto& r : replies )
-         {
-            try
-            {
-               recursively_fetch_content( _state, r, referenced_accounts );
-               root.replies.push_back( r.author + "/" + r.permlink );
-               _state.content[ r.author + "/" + r.permlink ] = std::move(r);
+      for( auto& r : replies )
+      {
+         recursively_fetch_content( _state, r, referenced_accounts );
+         root.replies.push_back( r.author + "/" + r.permlink );
+         _state.content[ r.author + "/" + r.permlink ] = std::move(r);
 
-               if( r.author.size() )
-               {
-                  referenced_accounts.insert( r.author );
-               }
-            }
-            catch ( const fc::exception& e )
-            {
-               edump((e.to_detail_string()));
-            }
+         if( r.author.size() )
+         {
+            referenced_accounts.insert( r.author );
          }
       }
-      FC_CAPTURE_AND_RETHROW( (root.author)(root.permlink) )
-   });
+   }
+   FC_CAPTURE_AND_RETHROW( (root.author)(root.permlink) )
 }
 
 state database_api::get_state( string path )const
@@ -6497,7 +6492,7 @@ state database_api_impl::get_state( string path )const
       {
          discussion_query q;
          q.account = acnt;
-         q.blog_type = blog_reach_type::ACCOUNT_BLOG;
+         q.blog_type = blog_reach_values[ int( blog_reach_type::ACCOUNT_BLOG ) ];
          vector< discussion > blog_posts = get_discussions_by_blog( q );
          _state.blogs[ acnt ] = vector< string >();
 
@@ -6512,7 +6507,7 @@ state database_api_impl::get_state( string path )const
       {
          discussion_query q;
          q.account = acnt;
-         q.feed_type = feed_reach_type::FOLLOW_FEED;
+         q.feed_type = feed_reach_values[ int( feed_reach_type::FOLLOW_FEED ) ];
          vector< discussion > feed_posts = get_discussions_by_feed( q );
          _state.blogs[ acnt ] = vector< string >();
 

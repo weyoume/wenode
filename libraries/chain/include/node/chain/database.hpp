@@ -156,7 +156,7 @@ namespace node { namespace chain {
          optional<signed_block>                 fetch_block_by_id( const block_id_type& id )const;
          optional<signed_block>                 fetch_block_by_number( uint64_t num )const;
          const signed_transaction               get_recent_transaction( const transaction_id_type& trx_id )const;
-         std::vector<block_id_type>             get_block_ids_on_fork(block_id_type head_of_fork) const;
+         std::vector<block_id_type>             get_block_ids_on_fork( block_id_type head_of_fork ) const;
 
          chain_id_type                          get_chain_id()const;
          const dynamic_global_property_object&  get_dynamic_global_properties()const;
@@ -168,8 +168,11 @@ namespace node { namespace chain {
          const price&                           get_usd_price()const;
          const comment_metrics_object&          get_comment_metrics() const;
 
-         asset                                  asset_to_USD( const asset& a) const;
-         asset                                  USD_to_asset( const asset& a) const;
+         asset                                  asset_to_USD( const price& p, const asset& a ) const;
+         asset                                  asset_to_USD( const asset& a ) const;
+         asset                                  USD_to_asset( const price& p, const asset& a ) const;
+         asset                                  USD_to_asset( const asset& a ) const;
+         asset                                  get_comment_reward( const util::comment_reward_context& ctx ) const;
          
          const node_property_object&            get_node_properties()const;
 
@@ -203,6 +206,9 @@ namespace node { namespace chain {
          const account_object& get_account(  const account_name_type& name )const;
          const account_object* find_account( const account_name_type& name )const;
 
+         const account_profile_object& get_account_profile( const account_name_type& name )const;
+         const account_profile_object* find_account_profile( const account_name_type& name )const;
+         
          const account_following_object& get_account_following( const account_name_type& account )const;
          const account_following_object* find_account_following( const account_name_type& account )const;
 
@@ -293,6 +299,12 @@ namespace node { namespace chain {
          const community_member_key_object& get_community_member_key( const account_name_type& member, const community_name_type& community )const;
          const community_member_key_object* find_community_member_key( const account_name_type& member, const community_name_type& community )const;
 
+         const community_event_object& get_community_event( const community_name_type& community, const shared_string& event_name )const;
+         const community_event_object* find_community_event( const community_name_type& community, const shared_string& event_name )const;
+         
+         const community_event_object& get_community_event( const community_name_type& community, const string& event_name )const;
+         const community_event_object* find_community_event( const community_name_type& community, const string& event_name )const;
+         
          const comment_object& get_comment(  const account_name_type& author, const shared_string& permlink )const;
          const comment_object* find_comment( const account_name_type& author, const shared_string& permlink )const;
 
@@ -338,6 +350,24 @@ namespace node { namespace chain {
          const ad_bid_object& get_ad_bid( const account_name_type& account, const string& bid_id )const;
          const ad_bid_object* find_ad_bid( const account_name_type& account, const string& bid_id )const;
 
+         const graph_node_object& get_graph_node( const account_name_type& account, const shared_string& node_id )const;
+         const graph_node_object* find_graph_node( const account_name_type& account, const shared_string& node_id )const;
+
+         const graph_node_object& get_graph_node( const account_name_type& account, const string& node_id )const;
+         const graph_node_object* find_graph_node( const account_name_type& account, const string& node_id )const;
+
+         const graph_edge_object& get_graph_edge( const account_name_type& account, const shared_string& edge_id )const;
+         const graph_edge_object* find_graph_edge( const account_name_type& account, const shared_string& edge_id )const;
+
+         const graph_edge_object& get_graph_edge( const account_name_type& account, const string& edge_id )const;
+         const graph_edge_object* find_graph_edge( const account_name_type& account, const string& edge_id )const;
+
+         const graph_node_property_object& get_graph_node_property( const graph_node_name_type& node_type )const;
+         const graph_node_property_object* find_graph_node_property( const graph_node_name_type& node_type )const;
+
+         const graph_edge_property_object& get_graph_edge_property( const graph_edge_name_type& edge_type )const;
+         const graph_edge_property_object* find_graph_edge_property( const graph_edge_name_type& edge_type )const;
+
          const asset_liquidity_pool_object& get_liquidity_pool( const asset_symbol_type& symbol_a, const asset_symbol_type& symbol_b )const;
          const asset_liquidity_pool_object* find_liquidity_pool( const asset_symbol_type& symbol_a, const asset_symbol_type& symbol_b )const;
 
@@ -347,14 +377,32 @@ namespace node { namespace chain {
          const asset_credit_pool_object& get_credit_pool( const asset_symbol_type& symbol, bool credit_asset )const;
          const asset_credit_pool_object* find_credit_pool( const asset_symbol_type& symbol, bool credit_asset )const;
 
-         const credit_collateral_object& get_collateral( const account_name_type& owner, const asset_symbol_type& symbol  )const;
+         const credit_collateral_object& get_collateral( const account_name_type& owner, const asset_symbol_type& symbol )const;
          const credit_collateral_object* find_collateral( const account_name_type& owner, const asset_symbol_type& symbol )const;
 
-         const credit_loan_object& get_loan( const account_name_type& owner, const shared_string& loan_id  )const;
+         const credit_loan_object& get_loan( const account_name_type& owner, const shared_string& loan_id )const;
          const credit_loan_object* find_loan( const account_name_type& owner, const shared_string& loan_id )const;
 
-         const credit_loan_object& get_loan( const account_name_type& owner, const string& loan_id  )const;
+         const credit_loan_object& get_loan( const account_name_type& owner, const string& loan_id )const;
          const credit_loan_object* find_loan( const account_name_type& owner, const string& loan_id )const;
+
+         const asset_option_pool_object& get_option_pool( const asset_symbol_type& base_symbol, const asset_symbol_type& quote_symbol )const;
+         const asset_option_pool_object* find_option_pool( const asset_symbol_type& base_symbol, const asset_symbol_type& quote_symbol )const;
+
+         const asset_option_pool_object& get_option_pool( const asset_symbol_type& symbol )const;
+         const asset_option_pool_object* find_option_pool( const asset_symbol_type& symbol )const;
+
+         const product_object& get_product( const account_name_type& name, const shared_string& product_id )const;
+         const product_object* find_product( const account_name_type& name, const shared_string& product_id )const;
+
+         const product_object& get_product( const account_name_type& name, const string& product_id )const;
+         const product_object* find_product( const account_name_type& name, const string& product_id )const;
+
+         const purchase_order_object& get_purchase_order( const account_name_type& name, const shared_string& order_id )const;
+         const purchase_order_object* find_purchase_order( const account_name_type& name, const shared_string& order_id )const;
+
+         const purchase_order_object& get_purchase_order( const account_name_type& name, const string& order_id )const;
+         const purchase_order_object* find_purchase_order( const account_name_type& name, const string& order_id )const;
 
          const escrow_object& get_escrow( const account_name_type& name, const shared_string& escrow_id )const;
          const escrow_object* find_escrow( const account_name_type& name, const shared_string& escrow_id )const;
@@ -954,6 +1002,10 @@ namespace node { namespace chain {
          bool maybe_cull_small_order( const limit_order_object& order );
          
          void close_margin_order( const margin_order_object& order );
+
+         void close_auction_order( const auction_order_object& order );
+
+         void close_option_order( const option_order_object& order );
 
          bool maybe_cull_small_order( const margin_order_object& order );
 

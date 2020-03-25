@@ -1,3 +1,4 @@
+/**
 #include <boost/test/unit_test.hpp>
 #include <node/chain/database.hpp>
 #include <node/protocol/exceptions.hpp>
@@ -32,15 +33,18 @@ BOOST_AUTO_TEST_CASE( serialization_raw_test )
       transfer.to = "bob";
       transfer.amount = asset( 1000, SYMBOL_COIN );
       transfer.memo = "Hello";
+      transfer.validate();
 
       signed_transaction tx;
 
       tx.operations.push_back( transfer );
-      auto packed = fc::raw::pack( tx );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
 
-      signed_transaction unpacked = fc::raw::unpack< signed_transaction >( packed );
-      unpacked.validate();
-      BOOST_CHECK( tx.digest() == unpacked.digest() );
+      vector< char > packed_tx = fc::raw::pack( tx );
+
+      auto unpacked_tx = fc::raw::unpack< signed_transaction >( packed_tx );
+
+      BOOST_CHECK( tx.digest() == unpacked_tx.digest() );
    } 
    FC_LOG_AND_RETHROW()
 }
@@ -61,7 +65,7 @@ BOOST_AUTO_TEST_CASE( serialization_json_test )
       transfer.memo = "Hello";
 
       fc::variant test( transfer.amount );
-      auto tmp = test.as< asset >();
+      asset tmp = test.as< asset >();
       BOOST_REQUIRE( tmp == transfer.amount );
 
       signed_transaction tx;
@@ -75,6 +79,7 @@ BOOST_AUTO_TEST_CASE( serialization_json_test )
    } 
    FC_LOG_AND_RETHROW()
 }
+
 
 BOOST_AUTO_TEST_CASE( asset_test )
 {
@@ -272,3 +277,4 @@ BOOST_AUTO_TEST_CASE( min_block_size )
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+**/

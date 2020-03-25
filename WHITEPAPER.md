@@ -1300,6 +1300,8 @@ Posts contain content data fields:
 
 - Magnet: An Array of BitTorrent Magnet links to file sharing swarms for peer to peer download.
 
+- URL: A URL HTTPS link for the post to direct to.
+
 - JSON: A string of a JSON object, containing expandable interface specific information about the post.
 
 Posts can be made by users privately. These private posts have limited visibility, are made to user’s profile pages or private groups or events. Private posts contain links to encrypted IPFS files, and cannot be viewed by users that do not have the decryption key passed in the connection process. Private posts encrypt the on-chain reference to the files, so that the title and comments can only be read by users with the decryption key. Private posts are typically viewed in feeds by accounts that are connected to the posting account. 

@@ -165,7 +165,14 @@ namespace node { namespace chain {
       public:
          template<typename Constructor, typename Allocator>
          account_profile_object( Constructor&& c, allocator< Allocator > a ) :
-         first_name(a), last_name(a), gender(a), date_of_birth(a), email(a), phone(a), nationality(a), address(a)
+         first_name(a), 
+         last_name(a), 
+         gender(a), 
+         date_of_birth(a), 
+         email(a), 
+         phone(a), 
+         nationality(a), 
+         address(a)
          {
             c(*this);
          };
@@ -193,6 +200,10 @@ namespace node { namespace chain {
          shared_string           nationality;         ///< Country of user's residence.
 
          shared_string           address;             ///< Place of residence of the user. Format: 123 Main Street, Suburb, 1234, STATE.
+
+         time_point              created;             ///< Time that the profile was created.
+
+         time_point              last_updated;        ///< Time that the profile was last updated.
    };
 
 
@@ -263,7 +274,7 @@ namespace node { namespace chain {
  
          bool is_authorized_transfer( const account_name_type& name, const asset_object& asset_obj )const          ///< Determines if an asset is authorized for transfer with an accounts permissions object. 
          {
-            bool fast_check = !( asset_obj.flags & asset_issuer_permission_flags::balance_whitelist );
+            bool fast_check = !( asset_obj.flags & int( asset_issuer_permission_flags::balance_whitelist ) );
             fast_check &= !( whitelisted_assets.size() );
             fast_check &= !( blacklisted_assets.size() );
             fast_check &= !( whitelisted_accounts.size() );
@@ -346,6 +357,7 @@ namespace node { namespace chain {
             return true;
          };
    };
+
 
    /**
     * Manages the membership, officers, and executive team of a business account, 
@@ -1645,11 +1657,52 @@ namespace node { namespace chain {
             composite_key_compare< 
                std::less< account_name_type >, 
                std::less< time_point >, 
-               std::less< owner_authority_history_id_type > >
+               std::less< owner_authority_history_id_type > 
+            >
          >
       >,
       allocator< owner_authority_history_object >
    > owner_authority_history_index;
+
+
+   typedef multi_index_container<
+      account_profile_object,
+      indexed_by<
+         ordered_unique< tag< by_id >,
+            member< account_profile_object, account_profile_id_type, &account_profile_object::id > 
+         >,
+         ordered_unique< tag< by_account >,
+            member< account_profile_object, account_name_type, &account_profile_object::account > 
+         >
+      >,
+      allocator< account_profile_object >
+   > account_profile_index;
+
+   struct by_verifier_verified;
+   struct by_verified_verifier;
+
+
+   typedef multi_index_container<
+      account_verification_object,
+      indexed_by<
+         ordered_unique< tag< by_id >,
+            member< account_verification_object, account_verification_id_type, &account_verification_object::id > 
+         >,
+         ordered_unique< tag< by_verified_verifier >,
+            composite_key< account_verification_object,
+               member< account_verification_object, account_name_type, &account_verification_object::verified_account >,
+               member< account_verification_object, account_name_type, &account_verification_object::verifier_account >
+            >
+         >,
+         ordered_unique< tag< by_verifier_verified >,
+            composite_key< account_verification_object,
+               member< account_verification_object, account_name_type, &account_verification_object::verifier_account >,
+               member< account_verification_object, account_name_type, &account_verification_object::verified_account >
+            >
+         >
+      >,
+      allocator< account_verification_object >
+   > account_verification_index;
 
 
    typedef multi_index_container <
@@ -2278,13 +2331,48 @@ FC_REFLECT( node::chain::account_object,
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::account_object, node::chain::account_index );
 
+FC_REFLECT( node::chain::account_profile_object,
+         (id)
+         (account)
+         (governance_account)
+         (profile_public_key)
+         (first_name)
+         (last_name)
+         (gender)
+         (date_of_birth)
+         (email)
+         (phone)
+         (nationality)
+         (address)
+         (created)
+         (last_updated)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_profile_object, node::chain::account_profile_index );
+
+FC_REFLECT( node::chain::account_verification_object,
+         (id)
+         (verifier_account)
+         (verified_account)
+         (verified_profile_public_key)
+         (shared_image)
+         (image_signature)
+         (created)
+         (last_updated)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_verification_object, node::chain::account_verification_index );
+
 FC_REFLECT( node::chain::account_business_object,
          (id)
          (account)
+         (governance_account)
          (business_type)
          (business_public_key)
          (executive_board)
+         (executive_votes)
          (executives)
+         (officer_votes)
          (officers)
          (members)
          (officer_vote_threshold)
@@ -2292,6 +2380,8 @@ FC_REFLECT( node::chain::account_business_object,
          (credit_assets)
          (equity_revenue_shares)
          (credit_revenue_shares)
+         (created)
+         (last_updated)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::account_business_object, node::chain::account_business_index );

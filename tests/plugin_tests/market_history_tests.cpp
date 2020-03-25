@@ -1,12 +1,13 @@
 #include <boost/test/unit_test.hpp>
 #include <node/chain/database.hpp>
-#include <node/protocol/node_operations.hpp>
 #include <node/market_history/market_history_plugin.hpp>
 #include "../common/database_fixture.hpp"
 
+using namespace node;
 using namespace node::chain;
 using namespace node::protocol;
 using namespace node::market_history;
+using node::protocol::generate_private_key;
 
 BOOST_FIXTURE_TEST_SUITE( market_history_tests, clean_database_fixture )
 

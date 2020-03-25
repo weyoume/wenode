@@ -20,36 +20,47 @@ namespace node { namespace chain {
       public:
          template<typename Constructor, typename Allocator>
          graph_node_object( Constructor&& c, allocator< Allocator > a ) :
-         node_id(a), name(a), details(a), json(a), json_private(a)
+         node_types( a.get_segment_manager() ),
+         node_id(a), 
+         name(a), 
+         details(a), 
+         attributes( a.get_segment_manager() ), 
+         attribute_values( a.get_segment_manager() ), 
+         json(a), 
+         json_private(a)
          {
             c(*this);
          };
 
-         id_type                            id;           
+         id_type                                 id;           
 
-         account_name_type                  account;                     ///< Name of the account that created the node.
+         account_name_type                       account;                     ///< Name of the account that created the node.
 
-         vector< graph_node_name_type >     node_types;                  ///< Set of Types of node being created, determines the required attributes.
+         shared_vector< graph_node_name_type >   node_types;                  ///< Set of Types of node being created, determines the required attributes.
 
-         shared_string                      node_id;                     ///< uuidv4 identifying the node. Unique for each account.
+         shared_string                           node_id;                     ///< uuidv4 identifying the node. Unique for each account.
 
-         shared_string                      name;                        ///< Name of the node.
+         shared_string                           name;                        ///< Name of the node.
 
-         shared_string                      details;                     ///< Describes the additional details of the node.
+         shared_string                           details;                     ///< Describes the additional details of the node.
 
-         shared_string                      json;                        ///< Public plaintext JSON node attribute information.
+         shared_vector< shared_string >          attributes;                  ///< List of attributes types for this node.
 
-         shared_string                      json_private;                ///< Private encrypted ciphertext JSON node attribute information.
+         shared_vector< shared_string >          attribute_values;            ///< List of attribute values for this node.
 
-         public_key_type                    node_public_key;             ///< Key used for encrypting and decrypting private node JSON data.
+         shared_string                           json;                        ///< Public plaintext JSON node attribute information.
 
-         account_name_type                  interface;                   ///< Name of the application that facilitated the creation of the node.
+         shared_string                           json_private;                ///< Private encrypted ciphertext JSON node attribute information.
 
-         time_point                         created;                     ///< Time the node was created.
+         public_key_type                         node_public_key;             ///< Key used for encrypting and decrypting private node JSON data and attribute values.
 
-         time_point                         last_updated;                ///< Time that the node was last updated by its creator.
+         account_name_type                       interface;                   ///< Name of the application that facilitated the creation of the node.
 
-         graph_node_name_type               primary_node_type()const     ///< Primary node type of this node. 
+         time_point                              created;                     ///< Time the node was created.
+
+         time_point                              last_updated;                ///< Time that the node was last updated by its creator.
+
+         graph_node_name_type                    primary_node_type()const     ///< Primary node type of this node. 
          {
             return node_types[0];
          };
@@ -67,40 +78,51 @@ namespace node { namespace chain {
       public:
          template<typename Constructor, typename Allocator>
          graph_edge_object( Constructor&& c, allocator< Allocator > a ) :
-         edge_id(a), name(a), details(a), json(a), json_private(a)
+         edge_types( a.get_segment_manager() ),
+         edge_id(a), 
+         name(a), 
+         details(a), 
+         attributes( a.get_segment_manager() ), 
+         attribute_values( a.get_segment_manager() ), 
+         json(a), 
+         json_private(a)
          {
             c(*this);
          };
 
-         id_type                            id;           
+         id_type                                  id;           
 
-         account_name_type                  account;                     ///< Name of the account that created the edge.
+         account_name_type                        account;                     ///< Name of the account that created the edge.
 
-         vector< graph_edge_name_type >     edge_types;                  ///< Types of the edge being created.
+         shared_vector< graph_edge_name_type >    edge_types;                  ///< Types of the edge being created.
 
-         shared_string                      edge_id;                     ///< uuidv4 identifying the edge.
+         shared_string                            edge_id;                     ///< uuidv4 identifying the edge.
 
-         graph_node_id_type                 from_node;                   ///< The Base connecting node.
+         graph_node_id_type                       from_node;                   ///< The Base connecting node.
 
-         graph_node_id_type                 to_node;                     ///< The Node being connected to.
+         graph_node_id_type                       to_node;                     ///< The Node being connected to.
 
-         shared_string                      name;                        ///< Name of the edge.
+         shared_string                            name;                        ///< Name of the edge.
 
-         shared_string                      details;                     ///< Describes the edge.
+         shared_string                            details;                     ///< Describes the edge.
 
-         shared_string                      json;                        ///< Public plaintext JSON edge attribute information.
+         shared_vector< shared_string >           attributes;                  ///< List of attributes types for this edge.
+ 
+         shared_vector< shared_string >           attribute_values;            ///< List of attribute values for this edge.
 
-         shared_string                      json_private;                ///< Private encrypted ciphertext JSON edge attribute information.
+         shared_string                            json;                        ///< Public plaintext JSON edge attribute information.
 
-         public_key_type                    edge_public_key;             ///< Key used for encrypting and decrypting private edge JSON data.
+         shared_string                            json_private;                ///< Private encrypted ciphertext JSON edge attribute information.
 
-         account_name_type                  interface;                   ///< Name of the application that facilitated the creation of the edge.
+         public_key_type                          edge_public_key;             ///< Key used for encrypting and decrypting private edge JSON data.
 
-         time_point                         created;                     ///< Time the edge was created.
+         account_name_type                        interface;                   ///< Name of the application that facilitated the creation of the edge.
 
-         time_point                         last_updated;                ///< Time that the edge was last updated by its creator.
+         time_point                               created;                     ///< Time the edge was created.
 
-         graph_edge_name_type               primary_edge_type()const     ///< Primary edge type of this edge. 
+         time_point                               last_updated;                ///< Time that the edge was last updated by its creator.
+
+         graph_edge_name_type                     primary_edge_type()const     ///< Primary edge type of this edge. 
          {
             return edge_types[0];
          };
@@ -117,7 +139,10 @@ namespace node { namespace chain {
       public:
          template<typename Constructor, typename Allocator>
          graph_node_property_object( Constructor&& c, allocator< Allocator > a ) :
-         details(a), url(a), json(a), attributes(a)
+         details(a), 
+         url(a), 
+         json(a), 
+         attributes( a.get_segment_manager() )
          {
             c(*this);
          };
@@ -138,7 +163,7 @@ namespace node { namespace chain {
 
          shared_string                      json;                        ///< Public plaintext JSON metadata information.
 
-         vector< shared_string >            attributes;                  ///< List of attributes that each node is required to have.
+         shared_vector< shared_string >     attributes;                  ///< List of attributes that each node is required to have.
 
          account_name_type                  interface;                   ///< Name of the application that facilitated the creation of the node type.
 
@@ -158,36 +183,41 @@ namespace node { namespace chain {
       public:
          template<typename Constructor, typename Allocator>
          graph_edge_property_object( Constructor&& c, allocator< Allocator > a ) :
-         details(a), url(a), json(a), attributes(a)
+         from_node_types( a.get_segment_manager() ),
+         to_node_types( a.get_segment_manager() ),
+         details(a), 
+         url(a), 
+         json(a), 
+         attributes( a.get_segment_manager() )
          {
             c(*this);
          };
 
-         id_type                            id;           
+         id_type                                   id;           
 
-         account_name_type                  account;                     ///< Name of the account that created the edge type.
+         account_name_type                         account;                     ///< Name of the account that created the edge type.
 
-         graph_edge_name_type               edge_type;                   ///< Name of the type of edge being specified.
+         graph_edge_name_type                      edge_type;                   ///< Name of the type of edge being specified.
 
-         connection_tier_type               graph_privacy;               ///< Encryption level of the edge attribute data.
+         connection_tier_type                      graph_privacy;               ///< Encryption level of the edge attribute data.
 
-         vector< graph_node_name_type >     from_node_types;             ///< Types of node that the edge can connect from. Empty for all types. 
+         shared_vector< graph_node_name_type >     from_node_types;             ///< Types of node that the edge can connect from. Empty for all types. 
 
-         vector< graph_node_name_type >     to_node_types;               ///< Types of node that the edge can connect to. Empty for all types.
+         shared_vector< graph_node_name_type >     to_node_types;               ///< Types of node that the edge can connect to. Empty for all types.
 
-         shared_string                      details;                     ///< Describes the additional details of the node.
+         shared_string                             details;                     ///< Describes the additional details of the node.
 
-         shared_string                      url;                         ///< Reference URL link for more details.
+         shared_string                             url;                         ///< Reference URL link for more details.
 
-         shared_string                      json;                        ///< Public plaintext JSON metadata information.
+         shared_string                             json;                        ///< Public plaintext JSON metadata information.
 
-         vector< shared_string >            attributes;                  ///< List of attributes that each edge is required to have.
+         shared_vector< shared_string >            attributes;                  ///< List of attributes that each edge is required to have.
 
-         account_name_type                  interface;                   ///< Name of the application that facilitated the creation of the edge type.
+         account_name_type                         interface;                   ///< Name of the application that facilitated the creation of the edge type.
 
-         time_point                         created;                     ///< Time the edge type was created.
+         time_point                                created;                     ///< Time the edge type was created.
 
-         time_point                         last_updated;                ///< Time that the edge type was last updated by its creator.
+         time_point                                last_updated;                ///< Time that the edge type was last updated by its creator.
    };
 
    struct by_account_id;
@@ -413,6 +443,8 @@ FC_REFLECT( node::chain::graph_node_object,
          (node_id)
          (name)
          (details)
+         (attributes)
+         (attribute_values)
          (json)
          (json_private)
          (node_public_key)
@@ -432,6 +464,8 @@ FC_REFLECT( node::chain::graph_edge_object,
          (to_node)
          (name)
          (details)
+         (attributes)
+         (attribute_values)
          (json)
          (json_private)
          (edge_public_key)

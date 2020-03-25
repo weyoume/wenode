@@ -111,100 +111,100 @@ namespace node { namespace chain {
 
          bool require_balance_whitelist()const   ///< true if Holders must be whitelisted
          { 
-            return ( flags & asset_issuer_permission_flags::balance_whitelist );
+            return ( flags & int( asset_issuer_permission_flags::balance_whitelist ) );
          }
 
          bool require_trade_whitelist()const     ///< true if Traders must be whitelisted
          { 
-            return ( flags & asset_issuer_permission_flags::trade_whitelist );
+            return ( flags & int( asset_issuer_permission_flags::trade_whitelist ) );
          }
 
          bool is_maker_restricted()const        ///< true if only the asset issuer can create new trade orders into the orderbook
          { 
-            return ( flags & asset_issuer_permission_flags::maker_restricted );
+            return ( flags & int( asset_issuer_permission_flags::maker_restricted ) );
          }
 
          bool issuer_accept_requests()const      ///< true if the asset issuer can accept transfer requests from any holders
          { 
-            return ( flags & asset_issuer_permission_flags::issuer_accept_requests );
+            return ( flags & int( asset_issuer_permission_flags::issuer_accept_requests ) );
          }
 
          bool is_transfer_restricted()const     ///< true if this asset may only be transferred to/from the issuer or market orders
          { 
-            return ( flags & asset_issuer_permission_flags::transfer_restricted );
+            return ( flags & int( asset_issuer_permission_flags::transfer_restricted ) );
          }
 
          bool can_request_transfer()const       ///< true if the asset can use transfer requests
          { 
-            return !( flags & asset_issuer_permission_flags::disable_requests );
+            return !( flags & int( asset_issuer_permission_flags::disable_requests ) );
          }
 
          bool can_recurring_transfer()const      ///< true if the asset can use recurring transfers
          { 
-            return !( flags & asset_issuer_permission_flags::disable_recurring );
+            return !( flags & int( asset_issuer_permission_flags::disable_recurring ) );
          }
 
          bool enable_credit()const              ///< true if the asset can use credit pools, margin orders, and credit loans
          { 
-            return !( flags & asset_issuer_permission_flags::disable_credit );
+            return !( flags & int( asset_issuer_permission_flags::disable_credit ) );
          }
 
          bool enable_liquid()const              ///< true if the asset can be included in liquidity pools and use liquidity pool orders
          { 
-            return !( flags & asset_issuer_permission_flags::disable_liquid );
+            return !( flags & int( asset_issuer_permission_flags::disable_liquid ) );
          }
 
          bool enable_options()const              ///< true if the asset can be included in option pools and generate option asset derivatives
          { 
-            return !( flags & asset_issuer_permission_flags::disable_options );
+            return !( flags & int( asset_issuer_permission_flags::disable_options ) );
          }
 
          bool enable_escrow()const              ///< true if the asset can be used in escrow transfers and marketplace purchases
          { 
-            return !( flags & asset_issuer_permission_flags::disable_escrow );
+            return !( flags & int( asset_issuer_permission_flags::disable_escrow ) );
          }
 
          bool enable_force_settle()const        ///< true if users may request force-settlement of the market-issued asset
          { 
-            return !( flags & asset_issuer_permission_flags::disable_force_settle );
+            return !( flags & int( asset_issuer_permission_flags::disable_force_settle ) );
          }
 
          bool enable_confidential()const        ///< true if the asset supports confidential transfers
          { 
-            return !( flags & asset_issuer_permission_flags::disable_confidential );
+            return !( flags & int( asset_issuer_permission_flags::disable_confidential ) );
          }
 
          bool enable_auction()const            ///< true if the asset supports auction orders
          { 
-            return !( flags & asset_issuer_permission_flags::disable_auction );
+            return !( flags & int( asset_issuer_permission_flags::disable_auction ) );
          }
 
          bool is_producer_fed()const            ///< true if the top elected producers may produce price feeds for the market issued asset
          { 
-            return ( flags & asset_issuer_permission_flags::producer_fed_asset );
+            return ( flags & int( asset_issuer_permission_flags::producer_fed_asset ) );
          }
 
          bool can_global_settle()const         ///< true if the issuer of this market-issued asset may globally settle the asset
          { 
-            return ( flags & asset_issuer_permission_flags::global_settle );
+            return ( flags & int( asset_issuer_permission_flags::global_settle ) );
          }
 
          bool require_governance()const         ///< true if the governance account of the issuer must approve asset issuance and changes
          { 
-            return ( flags & asset_issuer_permission_flags::governance_oversight );
+            return ( flags & int( asset_issuer_permission_flags::governance_oversight ) );
          }
 
          bool immutable_properties()const       ///< true if the asset cannot be modified after creation
          { 
-            return ( flags & asset_issuer_permission_flags::immutable_properties );
+            return ( flags & int( asset_issuer_permission_flags::immutable_properties ) );
          }
          
          void validate()const                    ///< UIAs may not have force settlement, or global settlements
          {
             if( !is_market_issued() )
             {
-               FC_ASSERT(!(flags & asset_issuer_permission_flags::disable_force_settle || flags & asset_issuer_permission_flags::global_settle));
-               FC_ASSERT(!(issuer_permissions & asset_issuer_permission_flags::disable_force_settle || issuer_permissions & asset_issuer_permission_flags::global_settle));
+               FC_ASSERT(!(flags & int( asset_issuer_permission_flags::disable_force_settle )  || flags & int( asset_issuer_permission_flags::global_settle ) ) );
+               FC_ASSERT(!(issuer_permissions & int( asset_issuer_permission_flags::disable_force_settle ) || issuer_permissions & int( asset_issuer_permission_flags::global_settle ) ) );
             }
          }
    };
@@ -965,6 +965,8 @@ namespace node { namespace chain {
     * and each expiration adds a new month in the year ahead.
     * Strike prices are determined by rounding to the nearest significant figure
     * and incrementing by 5% intervals up and down the price book.
+    * 
+    * TODO: Methods for getting strikes and symbols
     */
    class asset_option_pool_object : public object< asset_option_pool_object_type, asset_option_pool_object >
    {
@@ -972,7 +974,9 @@ namespace node { namespace chain {
 
       public:
          template< typename Constructor, typename Allocator >
-         asset_option_pool_object( Constructor&& c, allocator< Allocator > a )
+         asset_option_pool_object( Constructor&& c, allocator< Allocator > a ) : 
+         call_strikes( a.get_segment_manager() ), 
+         put_strikes( a.get_segment_manager() )
          {
             c( *this );
          }
@@ -985,11 +989,23 @@ namespace node { namespace chain {
 
          asset_symbol_type                  quote_symbol;      ///< Ticker symbol of the quote asset of the trading pair.
 
-         vector< option_strike >            call_strikes;      ///< Available strike price and expirations of call options to buy the quote asset.
+         shared_vector< option_strike >     call_strikes;      ///< Available strike price and expirations of call options to buy the quote asset.
 
-         vector< option_strike >            put_strikes;       ///< Available strike price and expirations of put options to sell the quote asset.
+         shared_vector< option_strike >     put_strikes;       ///< Available strike price and expirations of put options to sell the quote asset.
 
          flat_map< option_strike, asset >   open_interest;     ///< Outstanding supply of options at each strike price and expiration.
+
+         vector< option_strike >            get_call_strikes( price current_price, time_point now ) const
+         {
+            vector< option_strike > result;
+            return result;
+         }
+
+         vector< option_strike >            get_put_strikes( price current_price, time_point now ) const
+         {
+            vector< option_strike > result;
+            return result;
+         }
    };
 
 
@@ -1251,6 +1267,12 @@ namespace node { namespace chain {
       asset_option_pool_object,
       indexed_by<
          ordered_unique< tag<by_id>, member< asset_option_pool_object, asset_option_pool_id_type, &asset_option_pool_object::id > >,
+         ordered_unique< tag< by_asset_pair >,
+            composite_key< asset_option_pool_object,
+               member< asset_option_pool_object, asset_symbol_type, &asset_option_pool_object::base_symbol >,
+               member< asset_option_pool_object, asset_symbol_type, &asset_option_pool_object::quote_symbol > 
+            >
+         >,
          ordered_unique< tag<by_base_symbol>,
             composite_key< asset_option_pool_object,
                member< asset_option_pool_object, asset_symbol_type, &asset_option_pool_object::base_symbol >,
