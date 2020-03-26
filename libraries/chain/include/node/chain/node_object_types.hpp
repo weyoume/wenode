@@ -22,6 +22,7 @@ using chainbase::object;
 using chainbase::oid;
 using chainbase::allocator;
 using chainbase::strcmp_less;
+using chainbase::strcmp_equal;
 using chainbase::shared_vector;
 
 using node::protocol::chain_id_type;

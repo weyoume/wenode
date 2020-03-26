@@ -256,15 +256,11 @@ struct database_fixture {
 
    void fund( const string& account_name, const asset& amount );
 
-   void transfer( const string& from, const string& to, const asset& amount );
-
    void fund_stake( const string& from, const asset& amount );
 
    void fund_reward( const string& from, const asset& amount );
 
    void fund_savings( const string& from, const asset& amount );
-
-   void stake( const string& from, const asset& amount );
    
    void proxy( const string& account, const string& proxy );
 

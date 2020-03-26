@@ -110,7 +110,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
 
       BOOST_REQUIRE( to_string( alice_creative.objective ) == creative.objective );
       BOOST_REQUIRE( to_string( alice_creative.creative ) == creative.creative );
-      BOOST_REQUIRE( alice_creative.format_type == creative.format_type );
+      BOOST_REQUIRE( alice_creative.format_type == ad_format_type::STANDARD_FORMAT );
       BOOST_REQUIRE( alice_creative.last_updated == now() );
       BOOST_REQUIRE( alice_creative.created == now() );
 
@@ -251,7 +251,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       const ad_inventory_object& bob_inventory = db.get_ad_inventory( "bob", inventory.inventory_id );
 
       BOOST_REQUIRE( bob_inventory.min_price == inventory.min_price );
-      BOOST_REQUIRE( bob_inventory.metric == inventory.metric );
+      BOOST_REQUIRE( bob_inventory.metric == ad_metric_type::VIEW_METRIC );
       BOOST_REQUIRE( bob_inventory.inventory == inventory.inventory );
       BOOST_REQUIRE( bob_inventory.remaining == inventory.inventory );
       BOOST_REQUIRE( bob_inventory.last_updated == now() );

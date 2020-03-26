@@ -480,6 +480,21 @@ void database_fixture::fund_savings(
    FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
 }
 
+void database_fixture::fund_reward(
+   const string& account_name,
+   const asset& amount
+   )
+{
+   try
+   {
+      db_plugin->debug_update( [=]( database& db)
+      {
+         db.adjust_reward_balance( account_name, amount );
+      }, default_skip );
+   }
+   FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
+}
+
 void database_fixture::proxy( const string& account, const string& proxy )
 {
    try

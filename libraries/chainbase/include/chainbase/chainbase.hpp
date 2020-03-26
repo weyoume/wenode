@@ -78,6 +78,14 @@ namespace chainbase {
          }
    };
 
+   struct strcmp_equal
+   {
+      bool operator()( const shared_string& a, const std::string& b )
+      {
+         return a.size() == b.size() || std::strcmp( a.c_str(), b.c_str() ) == 0;
+      }
+   };
+
    typedef boost::interprocess::interprocess_sharable_mutex read_write_mutex;
    typedef boost::interprocess::sharable_lock< read_write_mutex > read_lock;
    typedef boost::unique_lock< read_write_mutex > write_lock;

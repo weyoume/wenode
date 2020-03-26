@@ -17,7 +17,6 @@ set_source_files_properties( "${CMAKE_CURRENT_BINARY_DIR}/include/node/chain/har
 ## SORT .cpp by most likely to change / break compile
 add_library( node_chain
 
-             # As database takes the longest to compile, start it first
              node_database.cpp
              account_database.cpp
              asset_database.cpp
@@ -27,7 +26,20 @@ add_library( node_chain
              fork_database.cpp
              producer_schedule.cpp
 
-             node_evaluator.cpp
+             account_evaluator.cpp
+             network_evaluator.cpp
+             comment_evaluator.cpp
+             community_evaluator.cpp
+             ad_evaluator.cpp
+             graph_evaluator.cpp
+             transfer_evaluator.cpp
+             balance_evaluator.cpp
+             marketplace_evaluator.cpp
+             trading_evaluator.cpp
+             pool_evaluator.cpp
+             asset_evaluator.cpp
+             producer_evaluator.cpp
+             custom_evaluator.cpp
 
              node_objects.cpp
              shared_authority.cpp

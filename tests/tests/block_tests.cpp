@@ -402,7 +402,7 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, clean_database_fixture )
 
       BOOST_TEST_MESSAGE( "Create transaction" );
 
-      transfer( GENESIS_ACCOUNT_BASE_NAME, "alice", asset( 1000000, SYMBOL_COIN ) );
+      fund( "alice", asset( 1000000, SYMBOL_COIN ) );
 
       transfer_operation op;
 
@@ -513,37 +513,48 @@ BOOST_FIXTURE_TEST_CASE( pop_block_twice, clean_database_fixture )
 {
    try
    {
+      ACTORS( (alice)(bob) );
+
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
       uint32_t skip_flags = (
            database::skip_producer_signature
          | database::skip_transaction_signatures
          | database::skip_authority_check
          );
 
-      // Sam is the creator of accounts
-      auto init_account_priv_key  = fc::ecc::private_key::regenerate(fc::sha256::hash(string("init_key")) );
-      private_key_type sam_key = generate_private_key( "sam" );
-      account_object sam_account_object = account_create( "sam", sam_key.get_public_key() );
-
-      //Get a sane head block time
       generate_block( skip_flags );
 
-      transaction tx;
-      signed_transaction ptx;
+      signed_transaction trx;
 
-      db.get_account( GENESIS_ACCOUNT_BASE_NAME );
-      // transfer from account to Sam account
-      transfer( GENESIS_ACCOUNT_BASE_NAME, "sam", asset( 100000, SYMBOL_COIN ) );
+      transfer_operation t;
+
+      t.signatory = "alice";
+      t.from = "alice";
+      t.to = "bob";
+      t.amount = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      t.memo = "memo";
+      t.validate();
+      
+      trx.operations.push_back(t);
+      trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      trx.sign( alice_private_active_key, db.get_chain_id() );
+      trx.validate();
+
+      db.push_transaction(trx, ~0 );
 
       generate_block(skip_flags);
 
-      account_create( "alice", generate_private_key( "alice" ).get_public_key() );
+      account_create( "candice", alice_public_owner_key );
       generate_block(skip_flags);
-      account_create( "bob", generate_private_key( "bob" ).get_public_key() );
+      account_create( "dave", alice_public_owner_key );
       generate_block(skip_flags);
 
       db.pop_block();
       db.pop_block();
-   } catch(const fc::exception& e) {
+   } 
+   catch(const fc::exception& e) 
+   {
       edump( (e.to_detail_string()) );
       throw;
    }

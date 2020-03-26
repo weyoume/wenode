@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       BOOST_REQUIRE( alice_asset.issuer == asset_create.issuer );
       BOOST_REQUIRE( alice_asset.symbol == asset_create.symbol );
-      BOOST_REQUIRE( alice_asset.asset_type == asset_create.asset_type );
+      BOOST_REQUIRE( alice_asset.asset_type == asset_property_type::STANDARD_ASSET );
       BOOST_REQUIRE( alice_asset.created == now() );
       BOOST_REQUIRE( alice_asset.last_updated == now() );
 
@@ -156,7 +156,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       BOOST_REQUIRE( alice_asset.issuer == asset_create.issuer );
       BOOST_REQUIRE( alice_asset.symbol == asset_create.symbol );
-      BOOST_REQUIRE( alice_asset.asset_type == asset_create.asset_type );
+      BOOST_REQUIRE( alice_asset.asset_type == asset_property_type::STANDARD_ASSET );
       BOOST_REQUIRE( to_string( alice_asset.display_symbol ) == asset_update.new_options.display_symbol );
       BOOST_REQUIRE( to_string( alice_asset.details ) == asset_update.new_options.details );
       BOOST_REQUIRE( to_string( alice_asset.json ) == asset_update.new_options.json );
@@ -193,7 +193,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       BOOST_REQUIRE( bob_asset.issuer == NULL_ACCOUNT );
       BOOST_REQUIRE( bob_asset.symbol == asset_create.symbol );
-      BOOST_REQUIRE( bob_asset.asset_type == asset_create.asset_type );
+      BOOST_REQUIRE( bob_asset.asset_type == asset_property_type::CURRENCY_ASSET );
       BOOST_REQUIRE( bob_asset.created == now() );
       BOOST_REQUIRE( bob_asset.last_updated == now() );
 
@@ -292,14 +292,13 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       BOOST_REQUIRE( candice_asset.issuer == asset_create.issuer );
       BOOST_REQUIRE( candice_asset.symbol == asset_create.symbol );
-      BOOST_REQUIRE( candice_asset.asset_type == asset_create.asset_type );
+      BOOST_REQUIRE( candice_asset.asset_type == asset_property_type::EQUITY_ASSET );
       BOOST_REQUIRE( candice_asset.created == now() );
       BOOST_REQUIRE( candice_asset.last_updated == now() );
 
       const asset_equity_data_object& candice_equity = db.get_equity_data( "TROPICO" );
 
       BOOST_REQUIRE( candice_equity.business_account == asset_create.issuer );
-      BOOST_REQUIRE( candice_equity.dividend_pool[ SYMBOL_COIN ].amount == 0 );
 
       const asset_credit_pool_object& candice_credit_pool = db.get_credit_pool( "TROPICO", false );
 
@@ -341,7 +340,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       BOOST_REQUIRE( candice_asset.issuer == asset_create.issuer );
       BOOST_REQUIRE( candice_asset.symbol == asset_create.symbol );
-      BOOST_REQUIRE( candice_asset.asset_type == asset_create.asset_type );
+      BOOST_REQUIRE( candice_asset.asset_type == asset_property_type::EQUITY_ASSET );
       BOOST_REQUIRE( to_string( candice_asset.display_symbol ) == asset_update.new_options.display_symbol );
       BOOST_REQUIRE( to_string( candice_asset.details ) == asset_update.new_options.details );
       BOOST_REQUIRE( to_string( candice_asset.json ) == asset_update.new_options.json );
@@ -412,7 +411,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       BOOST_REQUIRE( dan_asset.issuer == asset_create.issuer );
       BOOST_REQUIRE( dan_asset.symbol == asset_create.symbol );
-      BOOST_REQUIRE( dan_asset.asset_type == asset_create.asset_type );
+      BOOST_REQUIRE( dan_asset.asset_type == asset_property_type::CREDIT_ASSET );
       BOOST_REQUIRE( dan_asset.created == now() );
       BOOST_REQUIRE( dan_asset.last_updated == now() );
 
@@ -466,7 +465,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       BOOST_REQUIRE( dan_asset.issuer == asset_create.issuer );
       BOOST_REQUIRE( dan_asset.symbol == asset_create.symbol );
-      BOOST_REQUIRE( dan_asset.asset_type == asset_create.asset_type );
+      BOOST_REQUIRE( dan_asset.asset_type == asset_property_type::CREDIT_ASSET );
       BOOST_REQUIRE( to_string( dan_asset.display_symbol ) == asset_update.new_options.display_symbol );
       BOOST_REQUIRE( to_string( dan_asset.details ) == asset_update.new_options.details );
       BOOST_REQUIRE( to_string( dan_asset.json ) == asset_update.new_options.json );
@@ -512,7 +511,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       BOOST_REQUIRE( elon_asset.issuer == asset_create.issuer );
       BOOST_REQUIRE( elon_asset.symbol == asset_create.symbol );
-      BOOST_REQUIRE( elon_asset.asset_type == asset_create.asset_type );
+      BOOST_REQUIRE( elon_asset.asset_type == asset_property_type::BITASSET_ASSET );
       BOOST_REQUIRE( elon_asset.created == now() );
       BOOST_REQUIRE( elon_asset.last_updated == now() );
 
@@ -562,7 +561,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       BOOST_REQUIRE( elon_asset.issuer == asset_create.issuer );
       BOOST_REQUIRE( elon_asset.symbol == asset_create.symbol );
-      BOOST_REQUIRE( elon_asset.asset_type == asset_create.asset_type );
+      BOOST_REQUIRE( elon_asset.asset_type == asset_property_type::BITASSET_ASSET );
       BOOST_REQUIRE( to_string( elon_asset.display_symbol ) == asset_update.new_options.display_symbol );
       BOOST_REQUIRE( to_string( elon_asset.details ) == asset_update.new_options.details );
       BOOST_REQUIRE( to_string( elon_asset.json ) == asset_update.new_options.json );

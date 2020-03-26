@@ -45,11 +45,25 @@ namespace node { namespace protocol {
 
    inline void validate_permlink( const string& permlink )
    {
-      FC_ASSERT( permlink.size() < MAX_PERMLINK_LENGTH,
-         "permlink is too long" );
-      FC_ASSERT( fc::is_utf8( permlink ),
-         "permlink not formatted in UTF8" );
-   };
+      FC_ASSERT( permlink.size() > MIN_PERMLINK_LENGTH && 
+         permlink.size() < MAX_PERMLINK_LENGTH, 
+         "Permlink is not a valid size." );
+
+      for( auto c : permlink )
+      {
+         switch( c )
+         {
+            case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': case 'h': case 'i':
+            case 'j': case 'k': case 'l': case 'm': case 'n': case 'o': case 'p': case 'q': case 'r':
+            case 's': case 't': case 'u': case 'v': case 'w': case 'x': case 'y': case 'z': case '0':
+            case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
+            case '-':
+               break;
+            default:
+               FC_ASSERT( false, "Invalid permlink character: ${s}", ("s", std::string() + c ) );
+         }
+      }
+   }
 
    inline void validate_url( const string& url )
    {
