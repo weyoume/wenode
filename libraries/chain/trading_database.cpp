@@ -44,8 +44,8 @@ bool database::apply_order( const limit_order_object& new_order_object )
    asset_symbol_type recv_asset_symbol = new_order_object.receive_asset();
 
    // We only need to check if the new order will match with others if it is at the front of the book
-   const auto& limit_price_idx = get_index< limit_order_index >().indices().get< by_price >();
-   const auto& margin_price_idx = get_index< margin_order_index >().indices().get< by_price >();
+   const auto& limit_price_idx = get_index< limit_order_index >().indices().get< by_high_price >();
+   const auto& margin_price_idx = get_index< margin_order_index >().indices().get< by_high_price >();
 
    bool match_limit = false;
    bool match_margin = false;
@@ -248,8 +248,8 @@ bool database::apply_order( const margin_order_object& new_order_object )
    asset_symbol_type recv_asset_symbol = new_order_object.receive_asset();
 
    // We only need to check if the new order will match with others if it is at the front of the book
-   const auto& limit_price_idx = get_index< limit_order_index >().indices().get< by_price >();
-   const auto& margin_price_idx = get_index< margin_order_index>().indices().get< by_price >();
+   const auto& limit_price_idx = get_index< limit_order_index >().indices().get< by_high_price >();
+   const auto& margin_price_idx = get_index< margin_order_index>().indices().get< by_high_price >();
 
    bool match_limit = false;
    bool match_margin = false;
@@ -938,7 +938,7 @@ int database::match( const margin_order_object& bid, const call_order_object& as
    return result;
 }
 
-asset database::match( const call_order_object& call, const force_settlement_object& settle, const price& match_price, asset max_settlement, const price& fill_price )
+asset database::match( const call_order_object& call, const asset_settlement_object& settle, const price& match_price, asset max_settlement, const price& fill_price )
 { try {
    FC_ASSERT(call.debt_type() == settle.balance.symbol );
    FC_ASSERT(call.debt.amount > 0 && call.collateral.amount > 0 && settle.balance.amount > 0);
@@ -1000,7 +1000,7 @@ asset database::match( const call_order_object& call, const force_settlement_obj
     *  object.
     */
 
-   fill_call_order( call, call_pays, call_receives, fill_price, true, settle.interface, false );                  // call order is maker
+   fill_call_order( call, call_pays, call_receives, fill_price, true, settle.interface, false );           // call order is maker
    fill_settle_order( settle, settle_pays, settle_receives, fill_price, false, call.interface );           // force settlement order is taker
 
    if( cull_settle_order )
@@ -1117,6 +1117,70 @@ bool database::fill_margin_order( const margin_order_object& order, const asset&
    }
 } FC_CAPTURE_AND_RETHROW( (order)(pays)(receives) ) }
 
+
+/**
+ * Executes an option exercise order against an outstanding option underlying balance.
+ */
+bool database::fill_option_order( const option_order_object& order, const asset& pays, const asset& receives, const asset& opt, const price& fill_price )
+{ try {
+   FC_ASSERT( pays.symbol != receives.symbol,
+      "Pays symbol and Receives symbol must not be the same." );
+   FC_ASSERT( order.strike_price.strike_price == fill_price,
+      "Fill price is not the same price found in option order." );
+   FC_ASSERT( opt.amount % BLOCKCHAIN_PRECISION == 0, 
+      "Option orders can only be filled in units of 1." );
+   
+   time_point now = head_block_time();
+   bool filled = false;
+
+   if( receives < order.underlying_amount && opt < order.option_position )
+   {
+      modify( order, [&]( option_order_object& ooo )
+      {
+         ooo.underlying_amount -= receives;
+         ooo.option_position -= opt;
+         ooo.last_updated = now;
+      });
+
+      filled = false;
+   } 
+   else 
+   {
+      filled = true;
+   }
+
+   adjust_liquid_balance( order.owner, pays );
+   adjust_pending_supply( -receives );
+
+   if( filled )
+   {
+      remove( order );
+   }
+
+   return filled;
+
+} FC_CAPTURE_AND_RETHROW( (order)(pays)(receives) ) }
+
+
+/**
+ * Fills a an auction order against the daily single price closing auction.
+ */
+bool database::fill_auction_order( const auction_order_object& order, const asset& pays, const asset& receives,
+   const price& fill_price )
+{ try {
+   FC_ASSERT( order.amount_for_sale().symbol == pays.symbol );
+   FC_ASSERT( ( pays * order.limit_close_price ).amount >= receives.amount );
+   FC_ASSERT( pays.symbol != receives.symbol );
+
+   adjust_pending_supply( -pays );
+   adjust_liquid_balance( order.owner, receives );
+
+   remove( order );
+   return true;
+   
+} FC_CAPTURE_AND_RETHROW( (order)(pays)(receives) ) }
+
+
 /**
  * Fills a call order that is below maintenance collateral ratio
  * against another order.
@@ -1180,7 +1244,7 @@ bool database::fill_call_order( const call_order_object& order, const asset& pay
 /**
  * Executes a force settlement order filling from it being matched against a call order.
  */
-bool database::fill_settle_order( const force_settlement_object& settle, const asset& pays, const asset& receives, 
+bool database::fill_settle_order( const asset_settlement_object& settle, const asset& pays, const asset& receives, 
    const price& fill_price, const bool is_maker, const account_name_type& match_interface )
 { try {
    FC_ASSERT( pays.symbol != receives.symbol );
@@ -1195,7 +1259,7 @@ bool database::fill_settle_order( const force_settlement_object& settle, const a
 
    if( pays < settle.balance )
    {
-      modify(settle, [&]( force_settlement_object& s )
+      modify(settle, [&]( asset_settlement_object& s )
       {
          s.balance -= pays;
          s.last_updated = now;
@@ -1210,7 +1274,7 @@ bool database::fill_settle_order( const force_settlement_object& settle, const a
 
    asset delta = receives - fees_paid;
    adjust_liquid_balance( settle.owner, delta);
-   adjust_pending_supply( -delta);
+   adjust_pending_supply( -delta );
 
    if(filled)
    {
@@ -1220,6 +1284,7 @@ bool database::fill_settle_order( const force_settlement_object& settle, const a
    return filled;
 
 } FC_CAPTURE_AND_RETHROW( (settle)(pays)(receives)(fill_price)(is_maker) ) }
+
 
 /**
  * Adds an asset into a liquidity pool
@@ -2211,7 +2276,7 @@ bool database::credit_check( const asset& debt, const asset& collateral, const a
  * 5 - Ensure that no assets accumulate margin debt in excess of the total available Coin liquidity for the debt.
  * 6 - Ensure sufficient liquidity for Coin in the credit asset liquidity pool.
  * 
- * @todo Enable margin positons in liquidity and credit pool assets by checking 
+ * @todo Enable margin positions in liquidity and credit pool assets by checking 
  * liquidity of underlying assets after redemptions.
  * 
  * @todo Enhance checks to prevent an arbitrary asset from being issued,
@@ -2298,6 +2363,287 @@ bool database::margin_check( const asset& debt, const asset& position, const ass
 
 
 /**
+ * Updates the state of all margin orders.
+ * 
+ * Compounds interest on all margin orders, checks collateralization
+ * ratios for all orders, and liquidates them if they are under collateralized.
+ * Places orders into the book into liquidation mode 
+ * if they reach their specified limit stop or take profit price.
+ */
+void database::process_margin_updates()
+{ try {
+   const median_chain_property_object& median_props = get_median_chain_properties();
+   time_point now = head_block_time();
+   const auto& margin_idx = get_index< margin_order_index >().indices().get< by_debt_collateral_position >();
+   auto margin_itr = margin_idx.begin();
+
+   while( margin_itr != margin_idx.end() )
+   {
+      const asset_object& debt_asset = get_asset( margin_itr->debt_asset() );
+      const asset_credit_pool_object& credit_pool = get_credit_pool( margin_itr->debt_asset(), false );
+      uint16_t fixed = median_props.credit_min_interest;
+      uint16_t variable = median_props.credit_variable_interest;
+      share_type interest_rate = credit_pool.interest_rate( fixed, variable );
+      asset total_interest = asset( 0, debt_asset.symbol );
+
+      while( margin_itr != margin_idx.end() && 
+         margin_itr->debt_asset() == debt_asset.symbol )
+      {
+         const asset_object& collateral_asset = get_asset( margin_itr->collateral_asset() );
+
+         asset_symbol_type symbol_a;
+         asset_symbol_type symbol_b;
+         if( debt_asset.id < collateral_asset.id )
+         {
+            symbol_a = debt_asset.symbol;
+            symbol_b = collateral_asset.symbol;
+         }
+         else
+         {
+            symbol_b = debt_asset.symbol;
+            symbol_a = collateral_asset.symbol;
+         }
+
+         const asset_liquidity_pool_object& col_debt_pool = get_liquidity_pool( symbol_a, symbol_b );
+         price col_debt_price = col_debt_pool.base_hour_median_price( debt_asset.symbol );
+
+         while( margin_itr != margin_idx.end() &&
+            margin_itr->debt_asset() == debt_asset.symbol &&
+            margin_itr->collateral_asset() == collateral_asset.symbol )
+         {
+            const asset_object& position_asset = get_asset( margin_itr->position_asset() );
+
+            asset_symbol_type symbol_a;
+            asset_symbol_type symbol_b;
+            if( debt_asset.id < position_asset.id )
+            {
+               symbol_a = debt_asset.symbol;
+               symbol_b = position_asset.symbol;
+            }
+            else
+            {
+               symbol_b = debt_asset.symbol;
+               symbol_a = position_asset.symbol;
+            }
+
+            const asset_liquidity_pool_object& pos_debt_pool = get_liquidity_pool( symbol_a, symbol_b );
+            price pos_debt_price = pos_debt_pool.base_hour_median_price( debt_asset.symbol );
+            
+            while( margin_itr != margin_idx.end() &&
+               margin_itr->debt_asset() == debt_asset.symbol &&
+               margin_itr->collateral_asset() == collateral_asset.symbol &&
+               margin_itr->position_asset() == position_asset.symbol )
+            {
+               const margin_order_object& margin = *margin_itr;
+               asset collateral_debt_value;
+
+               if( margin.collateral_asset() != margin.debt_asset() )
+               {
+                  collateral_debt_value = margin.collateral * col_debt_price;
+               }
+               else
+               {
+                  collateral_debt_value = margin.collateral;
+               }
+
+               asset position_debt_value = margin.position_balance * pos_debt_price;
+               asset equity = margin.debt_balance + position_debt_value + collateral_debt_value;
+               asset unrealized_value = margin.debt_balance + position_debt_value - margin.debt;
+               share_type collateralization = ( ( equity - margin.debt ).amount * share_type( PERCENT_100 ) ) / margin.debt.amount;
+               
+               asset interest = ( margin.debt * interest_rate * ( now - margin.last_interest_time ).count() ) / ( fc::days(365).count() * PERCENT_100 );
+
+               if( interest.amount > INTEREST_MIN_AMOUNT )      // Ensure interest is above dust to prevent lossy rounding
+               {
+                  total_interest += interest;
+               }
+               
+               modify( margin, [&]( margin_order_object& m )
+               {
+                  if( interest.amount > INTEREST_MIN_AMOUNT )
+                  {
+                     m.debt += interest;      // Increment interest onto margin loan
+                     m.interest += interest;
+                     m.last_interest_time = now;
+                     m.last_interest_rate = interest_rate;
+                  }
+
+                  m.collateralization = collateralization;
+                  m.unrealized_value = unrealized_value;
+               });
+
+               if( margin.collateralization < median_props.margin_liquidation_ratio ||
+                  pos_debt_price <= margin.stop_loss_price ||
+                  pos_debt_price >= margin.take_profit_price )
+               {
+                  close_margin_order( margin );       // If margin value falls below collateralization threshold, or stop prices are reached
+               }
+               else if( pos_debt_price <= margin.limit_stop_loss_price && !margin.liquidating )
+               {
+                  modify( margin, [&]( margin_order_object& m )
+                  {
+                     m.liquidating = true;
+                     m.last_updated = now;
+                     m.sell_price = ~m.limit_stop_loss_price;   // If price falls below limit stop loss, reverse order and sell at limit price
+                  });
+                  apply_order( margin );
+               }
+               else if( pos_debt_price >= margin.limit_take_profit_price && !margin.liquidating )
+               {
+                  modify( margin, [&]( margin_order_object& m )
+                  {
+                     m.liquidating = true;
+                     m.last_updated = now;
+                     m.sell_price = ~m.limit_take_profit_price;  // If price rises above take profit, reverse order and sell at limit price
+                  });
+                  apply_order( margin );
+               }
+
+               ++margin_itr;
+
+            }     // Same Position, Collateral, and Debt
+         }        // Same Collateral and Debt
+      }           // Same Debt
+
+      modify( credit_pool, [&]( asset_credit_pool_object& c )
+      {
+         c.last_interest_rate = interest_rate;
+         c.borrowed_balance += total_interest;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+
+
+/**
+ * Matches all auction orders each day at the same price.
+ * 
+ * Auction orders are cleared at the price which 
+ * creates the greatest executable volume. 
+ * 
+ * Finds the imbalance between cumulative supply and demand at every 
+ * price point at each order and selects the price
+ * which creates the lowest imbalance.
+ * The order at which the imbalance becomes negative
+ * is the last order to be included in the auction.
+ */
+void database::process_auction_orders()
+{ try {
+   if( ( head_block_num() % AUCTION_INTERVAL_BLOCKS ) != 0 )    // Runs once per day
+      return;
+
+   const auto& market_idx = get_index< auction_order_index >().indices().get< by_market >();
+   const auto& high_price_idx = get_index< auction_order_index >().indices().get< by_high_price >();
+   const auto& low_price_idx = get_index< auction_order_index >().indices().get< by_low_price >();
+
+   pair< asset_symbol_type, asset_symbol_type > market;
+
+   auto market_itr = market_idx.begin();
+
+   while( market_itr != market_idx.end() )
+   {
+      const auction_order_object& auction = *market_itr;
+      market = auction.get_market();
+
+      price min_price = auction.limit_close_price.min();
+      price max_price = auction.limit_close_price.max();
+
+      asset buy_supply = asset( 0, min_price.base.symbol );
+      asset sell_supply = asset( 0, min_price.quote.symbol );
+
+      auto buy_begin = high_price_idx.lower_bound( max_price );
+      auto buy_end = high_price_idx.upper_bound( min_price );
+
+      auto sell_begin = low_price_idx.lower_bound( ~min_price );
+      auto sell_end = low_price_idx.upper_bound( ~max_price );
+
+      auto buy_itr = buy_begin;
+      auto sell_itr = sell_begin;
+
+      price sell_price = price( sell_supply, buy_supply );
+      price buy_price = price( buy_supply, sell_supply );
+      bool inverted = false;
+
+      while( buy_itr != buy_end && 
+         sell_itr != sell_end && 
+         buy_itr->get_market() == market && 
+         sell_itr->get_market() == market &&
+         !inverted )
+      {
+         if( buy_price.to_real() < sell_price.to_real() )
+         {
+            inverted = true;    // Find the point where prices converge at equal supply and demand volume.
+         }
+         else if( buy_supply.amount < ( sell_supply * sell_price ).amount )   // If buy is lower, add to buy side, or sell side if sell is lower.
+         {
+            buy_supply += buy_itr->amount_for_sale();
+            buy_price = buy_itr->limit_close_price;          // Buy price from high to low
+            ++buy_itr;
+         }
+         else
+         {
+            sell_supply += sell_itr->amount_for_sale();
+            sell_price = ~( sell_itr->limit_close_price );   // Sell price from low to high
+            ++sell_itr;
+         }
+      }
+
+      if( inverted )
+      {
+         price clearing_price = buy_supply / sell_supply;
+         asset buy_remaining = buy_supply;
+         asset sell_remaining = sell_supply;
+         asset pays;
+         asset receives;
+
+         buy_itr = buy_begin;
+         
+         while( buy_itr != buy_end && 
+            buy_itr->limit_close_price >= clearing_price &&
+            sell_remaining.amount > 0 )
+         {
+            const auction_order_object& order = *buy_itr;
+            pays = order.amount_for_sale();
+            receives = pays * clearing_price;
+
+            if( receives.amount > sell_remaining.amount )
+            {
+               receives = sell_remaining;
+            }
+            
+            ++buy_itr;
+            
+            fill_auction_order( order, pays, receives, clearing_price );
+            sell_remaining -= receives;
+         }
+
+         sell_itr = sell_begin;
+
+         while( sell_itr != sell_end &&
+            sell_itr->limit_close_price <= clearing_price &&
+            buy_remaining.amount > 0 )
+         {
+            const auction_order_object& order = *sell_itr;
+            pays = order.amount_for_sale();
+            receives = pays * clearing_price;
+
+            if( receives.amount > buy_remaining.amount )
+            {
+               receives = buy_remaining;
+            }
+
+            ++sell_itr;
+            
+            fill_auction_order( order, pays, receives, clearing_price );
+            buy_remaining -= receives;
+         }
+      }
+      market_itr = market_idx.upper_bound( market );
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
  * Deleverages a loan that has gone under its collateralization
  * requirements, by selling the collateral to the liquidity arrays.
  */
@@ -2366,8 +2712,10 @@ asset database::network_credit_acquisition( const asset& amount, bool execute )
 } FC_CAPTURE_AND_RETHROW() }
 
 
-// Look for expired transactions in the deduplication list, and remove them.
-// Transactions must have expired by at least two forking windows in order to be removed.
+/**
+ *  Look for expired transactions in the deduplication list, and remove them.
+ * Transactions must have expired by at least two forking windows in order to be removed.
+ */
 void database::clear_expired_transactions()
 {
    auto& transaction_idx = get_index< transaction_index >();
@@ -2377,6 +2725,109 @@ void database::clear_expired_transactions()
       remove( *dedupe_index.begin() );
    }
 }
+
+
+/**
+ * Activates an option asset by trading the quote asset for the
+ * underlying asset at the sprecifed strike price.
+ */
+bool database::exercise_option( const asset& option, const account_object& account )
+{ try {
+   FC_ASSERT( option.amount % BLOCKCHAIN_PRECISION == 0, 
+      "Option assets can only be exercised in units of 1." );
+   
+   option_strike strike = option_strike::from_string( option.symbol );
+   time_point now = head_block_time();
+
+   FC_ASSERT( strike.expiration() >= now, 
+      "Option assets can only be exercised before their expiration date." );
+
+   const asset_option_pool_object& pool = get_option_pool( strike.strike_price.base.symbol, strike.strike_price.quote.symbol );
+
+   FC_ASSERT( std::find( pool.call_strikes.begin(), pool.call_strikes.end(), strike ) != pool.call_strikes.end() ||
+      std::find( pool.put_strikes.begin(), pool.put_strikes.end(), strike ) != pool.put_strikes.end(),
+      "Option pool chain sheet does not support the specified option stike ${s}.", ("s", strike.option_symbol() ) );
+
+   const auto& option_index = get_index< option_order_index >().indices().get< by_symbol >();
+
+   auto option_itr = option_index.lower_bound( option.symbol );
+   auto option_end = option_index.upper_bound( option.symbol );
+   
+   asset rec_total;
+   asset pays_total;
+
+   if( strike.call )    // Call Option pays base asset and receives quote asset.
+   {
+      rec_total = asset( option.amount * strike.multiple, strike.strike_price.quote.symbol );
+      pays_total = rec_total * strike.strike_price;
+   }
+   else                 // Put Option pays quote asset and receives base asset.
+   {
+      pays_total = asset( option.amount * strike.multiple, strike.strike_price.quote.symbol );
+      rec_total = pays_total * strike.strike_price;
+   }
+
+   asset opt_remaining = option;
+   asset rec_remaining = rec_total;
+   asset pays_remaining = pays_total;
+   
+   asset rec = asset( 0, rec_total.symbol );
+   asset pays = asset( 0, pays_total.symbol );
+   asset opt = asset( 0, option.symbol );
+
+   asset received = asset( 0, rec_total.symbol );
+   asset paid = asset( 0, pays_total.symbol );
+   asset exercised = asset( 0, option.symbol );
+
+   bool finished = false;
+
+   while( option_itr != option_end && !finished )
+   {
+      rec = option_itr->amount_for_sale();
+      pays = option_itr->amount_to_receive();
+      opt = option_itr->option_position;
+
+      if( strike.call )    // One call option per 100 received assets.
+      {
+         opt = rec / strike.multiple;
+      }
+      else                 // One put option per 100 paid assets.
+      {
+         opt = pays / strike.multiple;
+      }
+
+      if( opt >= opt_remaining || rec >= rec_remaining || pays >= pays_remaining )
+      {
+         opt = opt_remaining;
+         rec = rec_remaining;
+         pays = pays_remaining;
+      }
+
+      const option_order_object& order = *option_itr;
+      ++option_itr;
+      fill_option_order( order, pays, rec, opt, strike.strike_price );
+
+      received += rec;
+      rec_remaining -= rec;
+      paid += pays;
+      pays_remaining -= pays;
+      exercised += opt;
+      opt_remaining -= opt;
+
+      if( rec_remaining.amount == 0 && pays_remaining.amount == 0 && opt_remaining.amount == 0 )
+      {
+         finished = true;
+      }
+   }
+
+   adjust_liquid_balance( account.name, -exercised );
+   adjust_liquid_balance( account.name, -paid );
+   adjust_liquid_balance( account.name, received );
+   
+   return finished;
+   
+} FC_CAPTURE_AND_RETHROW() }
+
 
 /**
  * All margin positions are force closed at the swan price.
@@ -2398,9 +2849,10 @@ void database::globally_settle_asset( const asset_object& mia, const price& sett
    const asset_dynamic_data_object& mia_dyn = get_dynamic_data( mia.symbol );
    auto original_mia_supply = mia_dyn.total_supply;
 
-   const auto& call_price_index = get_index< call_order_index >().indices().get< by_price >();
+   const auto& call_price_index = get_index< call_order_index >().indices().get< by_high_price >();
 
-   // cancel all call orders and accumulate it into collateral_gathered
+   // Cancel all call orders and accumulate it into collateral_gathered.
+
    auto call_itr = call_price_index.lower_bound( price::min( bitasset.backing_asset, mia.symbol ) );
    auto call_end = call_price_index.upper_bound( price::max( bitasset.backing_asset, mia.symbol ) );
    asset pays;
@@ -2443,7 +2895,7 @@ void database::revive_bitasset( const asset_object& bitasset )
 
    if( bdd.total_supply > 0 )    // Create + execute a "bid" with 0 additional collateral
    {
-      const collateral_bid_object& pseudo_bid = create< collateral_bid_object >([&]( collateral_bid_object& bid )
+      const asset_collateral_bid_object& pseudo_bid = create< asset_collateral_bid_object >([&]( asset_collateral_bid_object& bid )
       {
          bid.bidder = bitasset.issuer;
          bid.collateral = asset( 0, bad.backing_asset );
@@ -2469,12 +2921,12 @@ void database::cancel_bids_and_revive_mpa( const asset_object& bitasset, const a
    FC_ASSERT( bad.has_settlement(),
       "Asset must have a settlement price before it can be revived." );
    
-   const auto& bid_idx = get_index< collateral_bid_index >().indices().get< by_price >();
+   const auto& bid_idx = get_index< asset_collateral_bid_index >().indices().get< by_price >();
    auto bid_itr = bid_idx.lower_bound( boost::make_tuple( bitasset.symbol, price::max( bad.backing_asset, bitasset.symbol ) ) );
 
    while( bid_itr != bid_idx.end() && bid_itr->inv_swan_price().quote.symbol == bitasset.symbol )
    {
-      const collateral_bid_object& bid = *bid_itr;
+      const asset_collateral_bid_object& bid = *bid_itr;
       ++bid_itr;
       cancel_bid( bid, true );    // cancel remaining bids
    }
@@ -2487,13 +2939,13 @@ void database::cancel_bids_and_revive_mpa( const asset_object& bitasset, const a
 } FC_CAPTURE_AND_RETHROW( ( bitasset ) ) }
 
 
-void database::cancel_bid( const collateral_bid_object& bid, bool create_virtual_op )
+void database::cancel_bid( const asset_collateral_bid_object& bid, bool create_virtual_op )
 {
    adjust_liquid_balance( bid.bidder, bid.collateral );
 
    if( create_virtual_op )
    {
-      bid_collateral_operation vop;
+      asset_collateral_bid_operation vop;
       vop.bidder = bid.bidder;
       vop.collateral = bid.collateral;
       vop.debt = asset( 0, bid.debt.symbol );
@@ -2507,7 +2959,7 @@ void database::cancel_bid( const collateral_bid_object& bid, bool create_virtual
  * with the requested debt and collateral values, plus collateral dispursed from
  * the settlement fund of the bitasset.
  */
-void database::execute_bid( const collateral_bid_object& bid, share_type debt, 
+void database::execute_bid( const asset_collateral_bid_object& bid, share_type debt, 
    share_type collateral_from_fund, const price_feed& current_feed )
 {
    create< call_order_object >( [&]( call_order_object& call )
@@ -2531,17 +2983,9 @@ void database::execute_bid( const collateral_bid_object& bid, share_type debt,
 }
 
 
-void database::cancel_settle_order( const force_settlement_object& order, bool create_virtual_op )
+void database::cancel_settle_order( const asset_settlement_object& order, bool create_virtual_op )
 {
    adjust_liquid_balance( order.owner, order.balance );
-
-   if( create_virtual_op )
-   {
-      asset_settle_cancel_operation vop;
-      vop.account = order.owner;
-      vop.amount = order.balance;
-      push_virtual_operation( vop );
-   }
    remove( order );
 }
 
@@ -2660,14 +3104,14 @@ void database::close_margin_order( const margin_order_object& order )
       c.borrowed_balance -= to_repay;
    });
 
-   remove(order);
+   remove( order );
 }
 
 void database::close_auction_order( const auction_order_object& order )
 {
    asset refunded = order.amount_for_sale();
    adjust_liquid_balance( order.owner, refunded );
-   remove(order);
+   remove( order );
 }
 
 
@@ -2675,7 +3119,7 @@ void database::close_option_order( const option_order_object& order )
 {
    asset refunded = order.amount_for_sale();
    adjust_liquid_balance( order.owner, refunded );
-   remove(order);
+   remove( order );
 }
 
 /**
@@ -2731,7 +3175,7 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
    }
 
    auto limit_index = get_index < limit_order_index >();
-   const auto& limit_price_index = limit_index.indices().get< by_price >();
+   const auto& limit_price_index = limit_index.indices().get< by_high_price >();
 
    auto max_price = price::max( mia.symbol, bitasset.backing_asset );      // looking for limit orders selling the most USD for the least CORE
    auto min_price = bitasset.current_feed.max_short_squeeze_price();       // stop when limit orders are selling too little USD for too much CORE
@@ -2871,7 +3315,7 @@ bool database::check_for_blackswan( const asset_object& mia, bool enable_black_s
    highest = bitasset.current_feed.max_short_squeeze_price();
 
    const auto& limit_index = get_index< limit_order_index >();
-   const auto& limit_price_index = limit_index.indices().get< by_price >();
+   const auto& limit_price_index = limit_index.indices().get< by_high_price >();
 
    // looking for limit orders selling the most USD for the least CORE
    price highest_possible_bid = price::max( mia.symbol, bitasset.backing_asset );

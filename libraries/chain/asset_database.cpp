@@ -41,6 +41,7 @@ void database::process_asset_staking()
 {
    const auto& unstake_idx = get_index< account_balance_index >().indices().get< by_next_unstake_time >();
    const auto& stake_idx = get_index< account_balance_index >().indices().get< by_next_stake_time >();
+   const auto& vesting_idx = get_index< account_vesting_balance_index >().indices().get< by_vesting_time >();
    const auto& didx = get_index< unstake_asset_route_index >().indices().get< by_withdraw_route >();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = props.time;
@@ -118,14 +119,14 @@ void database::process_asset_staking()
 
    while( stake_itr != stake_idx.end() && stake_itr->next_stake_time <= now )
    {
-      const account_balance_object& from_account_balance = *stake_itr; 
+      const account_balance_object& from_account_balance = *stake_itr;
       ++stake_itr;
 
       share_type to_stake;
 
       if ( from_account_balance.to_stake - from_account_balance.total_staked < from_account_balance.stake_rate )
       {
-         to_stake = std::min( from_account_balance.staked_balance, from_account_balance.to_stake % from_account_balance.stake_rate);
+         to_stake = std::min( from_account_balance.staked_balance, from_account_balance.to_stake % from_account_balance.stake_rate );
       }
       else
       {
@@ -167,6 +168,19 @@ void database::process_asset_staking()
             abo.next_stake_time += STAKE_WITHDRAW_INTERVAL;
          }
       });
+   }
+
+   auto vesting_itr = vesting_idx.begin();
+
+   while( vesting_itr != vesting_idx.end() && 
+      vesting_itr->vesting_time <= now )
+   {
+      const account_vesting_balance_object& vesting_balance = *vesting_itr;
+      ++vesting_itr;
+
+      adjust_liquid_balance( vesting_balance.owner, vesting_balance.get_vesting_balance() );
+      adjust_pending_supply( -vesting_balance.get_vesting_balance() );
+      remove( vesting_balance );
    }
 }
 
@@ -397,6 +411,7 @@ void database::process_credit_buybacks()
    }
 } FC_CAPTURE_AND_RETHROW() }
 
+
 /**
  * Pays accrued interest to all balance holders of credit assets,
  * according to the fixed and variable components of the asset's
@@ -492,6 +507,7 @@ void database::process_credit_interest()
    }
 } FC_CAPTURE_AND_RETHROW() }
 
+
 /**
 void database::update_median_feed() 
 { try {
@@ -540,6 +556,599 @@ void database::update_median_feed()
    }
 } FC_CAPTURE_AND_RETHROW() }
 */
+
+
+
+
+/**
+ * Expires all outstanding option orders, balances 
+ * and resets option pool strike prices.
+ * Adds in a new month of option assets by shifting 
+ * the option strike forward by one year.
+ */
+void database::process_option_assets()
+{ try {
+   if( (head_block_num() % OPTION_INTERVAL_BLOCKS ) != 0 )
+   { 
+      return; 
+   }
+
+   time_point now = head_block_time();
+   const auto& option_order_idx = get_index< option_order_index >().indices().get< by_expiration >();
+   auto option_order_itr = option_order_idx.begin();
+
+   asset_symbol_type option_symbol;
+   option_strike strike;
+   price current_price;
+
+   while( option_order_itr != option_order_idx.end() &&
+      now >= option_order_itr->expiration() )
+   {
+      option_symbol = option_order_itr->debt_type();
+      strike = option_strike::from_string( option_symbol );
+      const asset_option_pool_object& option_pool = get_option_pool( strike.strike_price.base.symbol, strike.strike_price.quote.symbol );
+      const asset_liquidity_pool_object& liquidity_pool = get_liquidity_pool( strike.strike_price.base.symbol, strike.strike_price.quote.symbol );
+      current_price = liquidity_pool.base_day_median_price( strike.strike_price.base.symbol );
+      flat_set< asset_symbol_type > new_strikes;
+      const asset_object& base_asset = get_asset( strike.strike_price.base.symbol );
+      const asset_object& quote_asset = get_asset( strike.strike_price.quote.symbol );
+
+      modify( option_pool, [&]( asset_option_pool_object& aopo )
+      {
+         aopo.expire_strike_prices( strike.expiration_date );
+         date_type new_date = date_type( 1, strike.expiration_date.month, strike.expiration_date.year + 1 );
+         new_strikes = aopo.add_strike_prices( current_price, new_date );
+      });
+
+      for( asset_symbol_type s : new_strikes )     // Create the new asset objects for the option.
+      {
+         create< asset_object >( [&]( asset_object& a )
+         {
+            option_strike strike = option_strike::from_string(s);
+
+            a.symbol = s;
+            a.asset_type = asset_property_type::OPTION_ASSET;
+            a.issuer = NULL_ACCOUNT;
+            from_string( a.display_symbol, strike.display_symbol() );
+
+            from_string( 
+               a.details, 
+               strike.details( 
+                  to_string( quote_asset.display_symbol ), 
+                  to_string( quote_asset.details ), 
+                  to_string( base_asset.display_symbol ), 
+                  to_string( base_asset.details ) ) );
+            
+            from_string( a.json, "" );
+            from_string( a.url, "" );
+            a.max_supply = MAX_ASSET_SUPPLY;
+            a.stake_intervals = 0;
+            a.unstake_intervals = 0;
+            a.market_fee_percent = 0;
+            a.market_fee_share_percent = 0;
+            a.issuer_permissions = 0;
+            a.flags = 0;
+            a.created = now;
+            a.last_updated = now;
+         });
+
+         create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+         {
+            a.issuer = NULL_ACCOUNT;
+            a.symbol = s;
+         });
+      }
+
+      clear_asset_balances( option_symbol );      // Clear all balances and order positions of the option.
+
+      option_order_itr = option_order_idx.begin();    // Reset to front of index by expiration time
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
+ * Check for and close all prediction pools which have reached their resolution time.
+ */
+void database::process_prediction_assets()
+{ try {
+   time_point now = head_block_time();
+   const auto& prediction_pool_idx = get_index< asset_prediction_pool_index >().indices().get< by_resolution_time >();
+   auto prediction_pool_itr = prediction_pool_idx.begin();
+   
+   while( prediction_pool_itr != prediction_pool_idx.end() &&
+      now >= prediction_pool_itr->resolution_time )
+   {
+      const asset_prediction_pool_object& prediction_pool = *prediction_pool_itr;
+      ++prediction_pool_itr;
+
+      close_prediction_pool( prediction_pool );
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
+ * Resolves a prediction pool.
+ * 
+ * - Finds the winning outcome according ot quadratic voting for resolutions.
+ * - Pays the holders of the successful outcome asset.
+ * - Pays the voters of the successful outcome.
+ * - Wipes the blances of all holders of all outcome assets and prediciton assets.
+ */
+void database::close_prediction_pool( const asset_prediction_pool_object& pool )
+{ try {
+   const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol >();
+   const auto& resolution_idx = get_index< asset_prediction_pool_resolution_index >().indices().get< by_outcome_symbol >();
+   auto balance_itr = balance_idx.begin();
+   auto resolution_itr = resolution_idx.lower_bound( pool.prediction_symbol );
+   asset_symbol_type top_outcome;
+   share_type top_outcome_votes = 0;
+   share_type top_outcome_shares = 0;
+   flat_map< asset_symbol_type, share_type > resolution_votes;
+   flat_map< asset_symbol_type, share_type > resolution_shares;
+
+   for( asset_symbol_type s : pool.outcome_assets )
+   {
+      resolution_votes[ s ] = 0;
+      resolution_shares[ s ] = 0;
+   }
+
+   // Determine the top outcome by accumulating resolution votes.
+
+   while( resolution_itr != resolution_idx.end() &&
+      resolution_itr->prediction_symbol == pool.prediction_symbol )
+   {
+      const asset_prediction_pool_resolution_object& resolution = *resolution_itr;
+      resolution_votes[ resolution.resolution_outcome ] += resolution.resolution_votes();
+      resolution_shares[ resolution.resolution_outcome ] += resolution.amount.amount;
+
+      if( resolution_votes[ resolution.resolution_outcome ] > top_outcome_votes )
+      {
+         top_outcome_votes = resolution_votes[ resolution.resolution_outcome ];
+         top_outcome_shares = resolution_shares[ resolution.resolution_outcome ];
+         top_outcome = resolution.resolution_outcome;
+      }
+      ++resolution_itr;
+   }
+
+   asset prediction_bond_remaining = pool.prediction_bond_pool;
+   asset collateral_remaining = pool.collateral_pool;
+   resolution_itr = resolution_idx.lower_bound( boost::make_tuple( pool.prediction_symbol, top_outcome ) );
+   asset pool_split;
+
+   // Distribute funds from the prediction bond pool to the resolvers of the top outcome.
+
+   while( resolution_itr != resolution_idx.end() &&
+      resolution_itr->prediction_symbol == pool.prediction_symbol &&
+      resolution_itr->resolution_outcome == top_outcome &&
+      prediction_bond_remaining.amount > 0 )
+   {
+      const asset_prediction_pool_resolution_object& resolution = *resolution_itr;
+      pool_split = asset( ( ( resolution.amount.amount * pool.prediction_bond_pool.amount ) / top_outcome_shares ), pool.collateral_symbol );
+      
+      if( pool_split > prediction_bond_remaining )
+      {
+         pool_split = prediction_bond_remaining;
+      }
+
+      adjust_liquid_balance( resolution.account, pool_split );
+      prediction_bond_remaining -= pool_split;
+      ++resolution_itr;
+   }
+
+   balance_itr = balance_idx.lower_bound( top_outcome );
+
+   // Distribute funds from the collateral pool to the holders of the succesful outcome asset.
+
+   while( balance_itr != balance_idx.end() &&
+      balance_itr->symbol == top_outcome &&
+      collateral_remaining.amount > 0 )
+   {
+      const account_balance_object& balance = *balance_itr;
+
+      pool_split = asset( balance.total_balance, pool.collateral_symbol );
+      
+      if( pool_split > collateral_remaining )
+      {
+         pool_split = collateral_remaining;
+      }
+
+      adjust_liquid_balance( balance.owner, pool_split );
+      collateral_remaining -= pool_split;
+      ++balance_itr;
+   }
+
+   // Clear all ballances and orders in the prediction pool base asset and outcome assets.
+
+   clear_asset_balances( pool.prediction_symbol );    
+
+   for( asset_symbol_type a : pool.outcome_assets )
+   {
+      clear_asset_balances( a );
+   }
+   
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
+ * Clear all balance and supply values, and open orders for a temporary asset.
+ */
+void database::clear_asset_balances( const asset_symbol_type& symbol )
+{ try {
+   const asset_object& asset_obj = get_asset( symbol );
+
+   FC_ASSERT( asset_obj.is_temp_asset(),
+      "Cannot clear asset balances of a non-temporary Asset." );
+
+   const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol >();
+   const auto& limit_idx = get_index< limit_order_index >().indices().get< by_symbol >();
+   const auto& auction_idx = get_index< auction_order_index >().indices().get< by_symbol >();
+   const auto& option_idx = get_index< option_order_index >().indices().get< by_symbol >();
+   const auto& dyn_data_idx = get_index< asset_dynamic_data_index >().indices().get< by_symbol >();
+
+   auto balance_itr = balance_idx.lower_bound( symbol );
+   
+   while( balance_itr != balance_idx.end() &&
+   balance_itr->symbol == symbol )
+   {
+      const account_balance_object& balance = *balance_itr;
+      ++balance_itr;
+      remove( balance );
+   }
+
+   auto limit_itr = limit_idx.lower_bound( symbol );
+
+   while( limit_itr != limit_idx.end() &&
+   limit_itr->sell_asset() == symbol )
+   {
+      const limit_order_object& limit = *limit_itr;
+      ++limit_itr;
+      remove( limit );
+   }
+
+   auto auction_itr = auction_idx.lower_bound( symbol );
+
+   while( auction_itr != auction_idx.end() &&
+   auction_itr->sell_asset() == symbol )
+   {
+      const auction_order_object& auction = *auction_itr;
+      ++auction_itr;
+      remove( auction );
+   }
+
+   auto option_itr = option_idx.lower_bound( symbol );
+
+   while( option_itr != option_idx.end() &&
+      option_itr->debt_type() == symbol )
+   {
+      const option_order_object& order = *option_itr;
+      ++option_itr;
+      close_option_order( order );
+   }
+
+   auto dyn_data_itr = dyn_data_idx.lower_bound( symbol );
+
+   while( dyn_data_itr != dyn_data_idx.end() &&
+      dyn_data_itr->symbol == symbol )
+   {
+      const asset_dynamic_data_object& dyn_data = *dyn_data_itr;
+      ++dyn_data_itr;
+
+      modify( dyn_data, [&]( asset_dynamic_data_object& addo )
+      {
+         addo.clear_supply();
+      });
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
+ * Distributes funds from access list to ownership asset holders.
+ */
+void database::process_unique_assets()
+{ try {
+   if( (head_block_num() % UNIQUE_INTERVAL_BLOCKS ) != 0 )    // Runs once per day
+      return;
+
+   const auto& unique_idx = get_index< asset_unique_data_index >().indices().get< by_access_price >();
+   const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol_stake >();
+   auto unique_itr = unique_idx.begin();
+
+   while( unique_itr != unique_idx.end() && 
+      unique_itr->access_price_amount() > 0 )
+   {
+      const asset_unique_data_object& unique = *unique_itr;
+      ++unique_itr;
+
+      asset revenue_pool = asset( 0, unique.access_price.symbol );
+      flat_set< account_name_type > access_list = unique.access_list;
+
+      for( account_name_type a : access_list )     // Charge Daily access price.
+      {
+         asset liquid = get_liquid_balance( a, unique.access_price.symbol );
+
+         if( liquid >= unique.access_price )
+         {
+            adjust_liquid_balance( a, -unique.access_price );
+            revenue_pool += unique.access_price;
+         }
+         else
+         {
+            modify( unique, [&]( asset_unique_data_object& e )
+            {
+               e.access_list.erase( a );
+            });
+         }
+      }
+
+      auto balance_itr = balance_idx.lower_bound( unique.ownership_asset );
+      flat_map < account_name_type, share_type > unique_map;
+      share_type total_unique_shares = 0;
+      
+      asset distributed = asset( 0, unique.access_price.symbol );
+
+      while( balance_itr != balance_idx.end() &&
+         balance_itr->symbol == unique.ownership_asset &&
+         balance_itr->staked_balance > 0 )
+      {
+         const account_balance_object& balance = *balance_itr;
+         ++balance_itr;
+         total_unique_shares += balance.staked_balance;
+         unique_map[ balance_itr->owner ] = balance.staked_balance;
+      }
+      
+      // Pay access fees to each ownership asset stakeholder proportionally.
+
+      for( auto b : unique_map )
+      {
+         asset unique_reward = ( revenue_pool * b.second ) / total_unique_shares; 
+         adjust_reward_balance( b.first, unique_reward );
+         distributed += unique_reward;
+      }
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
+ * Processes all asset distribution rounds.
+ * 
+ * - Checks for asset distributions that have reached thier next round time.
+ * - Checks if they have reached thier soft cap input amount.
+ * - Splits all incoming distribution balances to the component accounts of the input asset unit
+ * - Issues new assets to the component accounts of the output distribution asset unit.
+ * - Increments the counter of the intervals paid or missed.
+ * - Closes distributions that have been fully completed.
+ */
+void database::process_asset_distribution()
+{ try {
+   if( (head_block_num() % DISTRIBUTION_INTERVAL_BLOCKS ) != 0 )
+   { 
+      return; 
+   }
+
+   time_point now = head_block_time();
+
+   const auto& distribution_idx = get_index< asset_distribution_index >().indices().get< by_next_round_time >();
+   const auto& balance_idx = get_index< asset_distribution_balance_index >().indices().get< by_symbol >();
+   auto distribution_itr = distribution_idx.begin();
+   auto balance_itr = balance_idx.begin();
+
+   while( distribution_itr != distribution_idx.end() &&
+      now >= distribution_itr->next_round_time )
+   {
+      const asset_distribution_object& distribution = *distribution_itr;
+      ++distribution_itr;
+
+      asset total_input = asset( 0, distribution.fund_asset );
+      share_type total_input_units = 0;
+      share_type max_output_units = distribution.max_output_distribution_units();
+      share_type input_unit_amount = distribution.input_unit_amount();
+      
+      balance_itr = balance_idx.lower_bound( distribution.distribution_asset );
+
+      while( balance_itr != balance_idx.end() &&
+         distribution.distribution_asset == balance_itr->distribution_asset )
+      {
+         const asset_distribution_balance_object& balance = *balance_itr;
+         ++balance_itr;
+         total_input_units += ( balance.amount.amount / input_unit_amount );
+         total_input += balance.amount;
+      }
+
+      bool distributed = false;
+
+      if( total_input_units >= distribution.min_input_fund_units )     // Passed the minimum to distribute
+      {
+         flat_set< asset_unit > input_fund_unit = distribution.input_fund_unit;
+         flat_set< asset_unit > output_distribution_unit = distribution.output_distribution_unit;
+         share_type unit_ratio = max_output_units / total_input_units;
+
+         if( unit_ratio > distribution.max_unit_ratio )
+         {
+            unit_ratio = distribution.max_unit_ratio;
+         }
+         else if( unit_ratio < distribution.min_unit_ratio )
+         {
+            unit_ratio = distribution.min_unit_ratio;
+         }
+
+         share_type input_units = 0;
+         share_type output_units = 0;
+
+         balance_itr = balance_idx.lower_bound( distribution.distribution_asset );
+
+         while( balance_itr != balance_idx.end() &&
+            distribution.distribution_asset == balance_itr->distribution_asset )
+         {
+            const asset_distribution_balance_object& balance = *balance_itr;
+            ++balance_itr;
+
+            input_units = balance.amount.amount / input_unit_amount;
+            output_units = input_units * unit_ratio;
+            account_name_type input_account;
+            account_name_type output_account;
+            account_balance_type balance_type = account_balance_type::LIQUID_BALANCE;
+
+            for( asset_unit u : input_fund_unit )   // Pay incoming assets to the input asset unit accounts
+            {
+               input_account = u.name;
+
+               balance_type = account_balance_type::LIQUID_BALANCE;
+
+               for( size_t i = 0; i < account_balance_values.size(); i++ )
+               {
+                  if( u.balance_type == account_balance_values[ i ] )
+                  {
+                     balance_type = account_balance_type( i );
+                     break;
+                  }
+               }
+
+               if( u.name == ASSET_UNIT_SENDER )
+               {
+                  input_account = balance.sender;
+               }
+
+               switch( balance_type )
+               {
+                  case account_balance_type::LIQUID_BALANCE:
+                  {
+                     adjust_liquid_balance( input_account, asset( input_units * u.units, distribution.fund_asset ) );
+                  }
+                  break;
+                  case account_balance_type::STAKED_BALANCE:
+                  {
+                     adjust_staked_balance( input_account, asset( input_units * u.units, distribution.fund_asset ) );
+                  }
+                  break;
+                  case account_balance_type::REWARD_BALANCE:
+                  {
+                     adjust_reward_balance( input_account, asset( input_units * u.units, distribution.fund_asset ) );
+                  }
+                  break;
+                  case account_balance_type::SAVINGS_BALANCE:
+                  {
+                     adjust_savings_balance( input_account, asset( input_units * u.units, distribution.fund_asset ) );
+                  }
+                  break;
+                  case account_balance_type::VESTING_BALANCE:
+                  {
+                     create< account_vesting_balance_object >( [&]( account_vesting_balance_object& avbo )
+                     {
+                        avbo.owner = input_account;
+                        avbo.symbol = distribution.fund_asset;
+                        avbo.vesting_balance = input_units * u.units;
+                        avbo.vesting_time = u.vesting_time;
+                     });
+                  }
+                  break;
+                  default:
+                  {
+                     break;
+                  }
+               }
+            }
+
+            for( asset_unit u : output_distribution_unit )     // Pay newly distirbuted assets to the asset output unit accounts
+            {
+              output_account = u.name;
+
+               if( u.name == ASSET_UNIT_SENDER )
+               {
+                  output_account = balance.sender;
+               }
+
+               balance_type = account_balance_type::LIQUID_BALANCE;
+
+               for( size_t i = 0; i < account_balance_values.size(); i++ )
+               {
+                  if( u.balance_type == account_balance_values[ i ] )
+                  {
+                     balance_type = account_balance_type( i );
+                     break;
+                  }
+               }
+
+               switch( balance_type )
+               {
+                  case account_balance_type::LIQUID_BALANCE:
+                  {
+                     adjust_liquid_balance( output_account, asset( output_units * u.units, distribution.distribution_asset ) );
+                  }
+                  break;
+                  case account_balance_type::STAKED_BALANCE:
+                  {
+                     adjust_staked_balance( output_account, asset( output_units * u.units, distribution.distribution_asset ) );
+                  }
+                  break;
+                  case account_balance_type::REWARD_BALANCE:
+                  {
+                     adjust_reward_balance( output_account, asset( output_units * u.units, distribution.distribution_asset ) );
+                  }
+                  break;
+                  case account_balance_type::SAVINGS_BALANCE:
+                  {
+                     adjust_savings_balance( output_account, asset( output_units * u.units, distribution.distribution_asset ) );
+                  }
+                  break;
+                  case account_balance_type::VESTING_BALANCE:
+                  {
+                     create< account_vesting_balance_object >( [&]( account_vesting_balance_object& avbo )
+                     {
+                        avbo.owner = output_account;
+                        avbo.symbol = distribution.distribution_asset;
+                        avbo.vesting_balance = output_units * u.units;
+                        avbo.vesting_time = u.vesting_time;
+                     });
+                     adjust_pending_supply( asset( input_units * u.units, distribution.fund_asset ) );
+                  }
+                  break;
+                  default:
+                  {
+                     break;
+                  }
+               }
+            }
+
+            remove( balance );
+         }
+
+         distributed = true;
+      }
+
+      modify( distribution, [&]( asset_distribution_object& ado )
+      {
+         if( distributed )
+         {
+            ado.intervals_paid++;    // Increment days paid if the round was sucessfully distirbuted
+         }
+         else
+         {
+            ado.intervals_missed++;
+         }
+         ado.next_round_time += fc::days( ado.distribution_interval_days );
+      });
+
+      // If the distribution has reached its final round, or missed its final max missed amount, refund all existing balances.
+
+      if( distribution.intervals_paid == distribution.distribution_rounds &&
+         distribution.intervals_missed == distribution.max_intervals_missed )
+      {
+         balance_itr = balance_idx.lower_bound( distribution.distribution_asset );
+
+         while( balance_itr != balance_idx.end() &&
+            distribution.distribution_asset == balance_itr->distribution_asset )
+         {
+            const asset_distribution_balance_object& balance = *balance_itr;
+            ++balance_itr;
+            adjust_liquid_balance( balance.sender, balance.amount );
+            remove( balance );
+         }
+
+         remove( distribution );
+      }
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
 
 /**
  * Decrement an active asset delegation upon the expiration of
@@ -1345,7 +1954,7 @@ void database::process_bids( const asset_bitasset_data_object& bad )
    const asset_object& to_revive = get_asset( bad.symbol ); 
    const asset_dynamic_data_object& bdd = get_dynamic_data( bad.symbol );
 
-   const auto& bid_idx = get_index< collateral_bid_index >().indices().get< by_price >();
+   const auto& bid_idx = get_index< asset_collateral_bid_index >().indices().get< by_price >();
    const auto start = bid_idx.lower_bound( boost::make_tuple( bad.symbol, price::max( bad.backing_asset, bad.symbol ) ) );
 
    share_type covered = 0;
@@ -1358,7 +1967,7 @@ void database::process_bids( const asset_bitasset_data_object& bad )
       bid_itr != bid_idx.end() && 
       bid_itr->debt.symbol == bad.symbol )
    {
-      const collateral_bid_object& bid = *bid_itr;
+      const asset_collateral_bid_object& bid = *bid_itr;
 
       asset debt_in_bid = bid.debt;
 
@@ -1393,7 +2002,7 @@ void database::process_bids( const asset_bitasset_data_object& bad )
       asset remaining_fund = bad.settlement_fund;
       for( bid_itr = start; bid_itr != end; )
       {
-         const collateral_bid_object& bid = *bid_itr;
+         const asset_collateral_bid_object& bid = *bid_itr;
          ++bid_itr;
          asset debt_in_bid = bid.debt;
          if( debt_in_bid.amount > bdd.total_supply )

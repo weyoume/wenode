@@ -506,4 +506,81 @@ void transfer_recurring_accept_evaluator::do_apply( const transfer_recurring_acc
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
+void transfer_confidential_evaluator::do_apply( const transfer_confidential_operation& o )
+{ try {
+   const asset_object& asset_obj = _db.get_asset( o.transfer_asset );
+   time_point now = _db.head_block_time();
+   asset total_input = asset( 0, asset_obj.symbol );
+   asset total_output = asset( 0, asset_obj.symbol );
+
+   for( size_t i = 0; i < o.input_accounts.size(); i++ )
+   {
+      account_name_type a = o.input_accounts[ i ];
+      asset amount = o.input_account_amounts[ i ];
+
+      const account_object& from_account = _db.get_account( a );
+      FC_ASSERT( from_account.active,
+         "Account: ${s} must be active to receive transfer.",("s", a) );
+      const account_permission_object& from_account_permissions = _db.get_account_permissions( a );
+      FC_ASSERT( from_account_permissions.is_authorized_transfer( a, asset_obj ),
+         "Transfer is not authorized, due to sender account's asset permisssions." );
+      asset from_liquid = _db.get_liquid_balance( a, asset_obj.symbol );
+      FC_ASSERT( from_liquid >= amount,
+         "Account does not have sufficient liquid balance for confidential transfer." );
+      _db.adjust_liquid_balance( a, -amount );
+      total_input += amount;
+   }
+
+   for( size_t i = 0; i < o.input_balances.size(); i++ )
+   {
+      digest_type hash = o.input_balances[ i ];
+      signature_type sig = o.input_balance_signatures[ i ];
+      public_key_type pubkey = fc::ecc::public_key( sig, hash, true );
+      const confidential_balance_object& balance = _db.get_confidential_balance( hash );
+      FC_ASSERT( pubkey == balance.spend_key,
+         "Signature is not valid to spend the balance." );
+      total_input += balance.amount;
+      _db.remove( balance );
+   }
+
+   for( size_t i = 0; i < o.output_accounts.size(); i++ )
+   {
+      account_name_type a = o.output_accounts[ i ];
+      asset amount = o.output_account_amounts[ i ];
+      const account_object& to_account = _db.get_account( a );
+      FC_ASSERT( to_account.active,
+         "Account: ${s} must be active to receive transfer.",("s", a) );
+      const account_permission_object& to_account_permissions = _db.get_account_permissions( a );
+      FC_ASSERT( to_account_permissions.is_authorized_transfer( a, asset_obj ),
+         "Transfer is not authorized, due to recipient account's asset permisssions." );
+      _db.adjust_liquid_balance( a, amount );
+      total_output += amount;
+   }
+
+   for( size_t i = 0; i < o.output_public_keys.size(); i++ )
+   {
+      public_key_type key = public_key_type( o.output_public_keys[ i ] );
+      asset amount = o.output_public_key_amounts[ i ];
+      total_output += amount;
+      uint16_t index = i;
+      transaction_id_type txid = _db.get_current_transaction_id();
+      uint16_t op_in_trx = _db.get_current_op_in_trx();
+
+      _db.create< confidential_balance_object >( [&]( confidential_balance_object& cbo )
+      {
+         cbo.prev = txid;
+         cbo.op_in_trx = op_in_trx;
+         cbo.index = index;
+         cbo.spend_key = key;
+         cbo.amount = amount;
+         cbo.created = now;
+      });
+   }
+
+   FC_ASSERT( total_input == total_output,
+      "Confidential Transfer must spend an amount equal to input amount." );
+   
+} FC_CAPTURE_AND_RETHROW( ( o )) }
+
+
 } } // node::chain

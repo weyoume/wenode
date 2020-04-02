@@ -266,21 +266,26 @@ namespace node { namespace protocol {
 
 
    /**
-    * Contains the strike price and expiration date of an option asset.
-    * 
-    * 
+    * Contains the strike price, call/put directionality and expiration date of an option asset.
     */
    struct option_strike
    {
       option_strike( 
          price strike_price = price(), 
+         bool call = true,
+         share_type multiple = OPTION_ASSET_MULTIPLE,
          date_type expiration_date = date_type() ) : 
          strike_price(strike_price), 
+         call(call),
          expiration_date(expiration_date){}
 
-      price         strike_price;         ///< Price that the option can be exercised at.
+      price              strike_price;         ///< Price that the option can be exercised at.
 
-      date_type     expiration_date;      ///< Date at which the option will expire.
+      bool               call;                 ///< True for call option, false for put option.
+
+      share_type         multiple;             ///< Amount of underlying asset the option corresponds to.
+
+      date_type          expiration_date;      ///< Date at which the option will expire.
 
       bool is_null()const 
       { 
@@ -296,9 +301,13 @@ namespace node { namespace protocol {
 
       string to_string()const;
 
-      asset_symbol_type call_option_symbol()const;
+      string details( string quote_display, string quote_details, string base_display, string base_details )const;
 
-      asset_symbol_type put_option_symbol()const;
+      string display_symbol()const;
+
+      asset_symbol_type option_symbol()const;
+
+      static option_strike from_string( const string& from );
 
       time_point expiration()const;
    };
@@ -314,19 +323,36 @@ namespace node { namespace protocol {
     * Dividing units in an asset distribution process.
     * For every unit of asset contributed, the proceeds are divided
     * according to the input fund units.
+    * 
+    * Use the name "sender" to specify the sender of the funds balance.
     */
    struct asset_unit
    {
       asset_unit( 
          account_name_type name = account_name_type(), 
-         uint16_t units = 0 ) : 
+         uint16_t units = 0,
+         string balance_type = account_balance_values[ 0 ],
+         time_point vesting_time = GENESIS_TIME ) : 
          name(name),
-         units(units){}
+         units(units),
+         balance_type(balance_type),
+         vesting_time(vesting_time){}
 
-      account_name_type      name;
+      account_name_type          name = ASSET_UNIT_SENDER;
 
-      uint16_t               units;
+      share_type                 units = BLOCKCHAIN_PRECISION;
+
+      string                     balance_type = account_balance_values[ 0 ];
+
+      time_point                 vesting_time = GENESIS_TIME;
    };
+
+   bool  operator <  ( const asset_unit& a, const asset_unit& b );
+   bool  operator <= ( const asset_unit& a, const asset_unit& b );
+   bool  operator >  ( const asset_unit& a, const asset_unit& b );
+   bool  operator >= ( const asset_unit& a, const asset_unit& b );
+   bool  operator == ( const asset_unit& a, const asset_unit& b );
+   bool  operator != ( const asset_unit& a, const asset_unit& b );
    
 } } // node::protocol
 
@@ -351,10 +377,14 @@ FC_REFLECT( node::protocol::price_feed,
 
 FC_REFLECT( node::protocol::option_strike,
          (strike_price)
+         (call)
+         (multiple)
          (expiration_date)
          );
 
 FC_REFLECT( node::protocol::asset_unit,
          (name)
          (units)
+         (balance_type)
+         (vesting_time)
          );

@@ -7,8 +7,7 @@
 namespace node { namespace protocol {
 
    /** 
-    * NOTE: do not change the order of any operations prior to the virtual operations
-    * or it will trigger a hardfork.
+    * NOTE: Adjusting the order of any operations prior to the virtual operations will trigger a hardfork.
     */
    typedef static_variant<
 
@@ -107,6 +106,7 @@ namespace node { namespace protocol {
             transfer_recurring_operation,
             transfer_recurring_request_operation,
             transfer_recurring_accept_operation,
+            transfer_confidential_operation,
 
             // Balance Operations
 
@@ -134,8 +134,7 @@ namespace node { namespace protocol {
             auction_order_operation,
             call_order_operation,
             option_order_operation,
-            bid_collateral_operation,
-
+            
             // Pool Operations
 
             liquidity_pool_create_operation,
@@ -146,6 +145,10 @@ namespace node { namespace protocol {
             credit_pool_borrow_operation,
             credit_pool_lend_operation,
             credit_pool_withdraw_operation,
+            option_pool_create_operation,
+            prediction_pool_create_operation,
+            prediction_pool_exchange_operation,
+            prediction_pool_resolve_operation,
 
             // Asset Operations
 
@@ -154,10 +157,14 @@ namespace node { namespace protocol {
             asset_issue_operation,
             asset_reserve_operation,
             asset_update_issuer_operation,
+            asset_distribution_operation,
+            asset_distribution_fund_operation,
+            asset_option_exercise_operation,
             asset_update_feed_producers_operation,
             asset_publish_feed_operation,
             asset_settle_operation,
             asset_global_settle_operation,
+            asset_collateral_bid_operation,
             
             // Block producer operations
 
@@ -184,25 +191,15 @@ namespace node { namespace protocol {
             moderation_reward_operation,
             comment_payout_update_operation,
             comment_benefactor_reward_operation,
-
             interest_operation,
             fill_order_operation,
             execute_bid_operation,
-            asset_settle_cancel_operation,
             shutdown_producer_operation,
             fill_transfer_from_savings_operation,
             hardfork_operation,
             return_asset_delegation_operation,
             producer_reward_operation
          > operation;
-
-   /*void operation_get_required_authorities( const operation& op,
-                                            flat_set<string>& active,
-                                            flat_set<string>& owner,
-                                            flat_set<string>& posting,
-                                            vector<authority>&  other );
-
-   void operation_validate( const operation& op );*/
 
    bool is_market_operation( const operation& op );
 

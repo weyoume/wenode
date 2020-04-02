@@ -414,12 +414,14 @@ namespace node { namespace chain {
 
          asset                                       total_budget()const                              ///< Returns the total amount of funding requested by the proposal.
          {
-            return duration * daily_budget;
+            asset result = asset( daily_budget.amount * share_type( duration ), daily_budget.symbol );
+            return result;
          }
 
          asset                                       remaining_budget()const                          ///< Returns the total amount of funding remaining for payment.
          {
-            return ( duration - days_paid ) * daily_budget;
+            asset result = asset( daily_budget.amount * share_type( duration - days_paid ), daily_budget.symbol );
+            return result;
          }
 
          bool                                        is_beneficiary( const account_name_type& beneficiary )         ///< Finds if a given account name is in the beneficiarys set.
@@ -434,7 +436,7 @@ namespace node { namespace chain {
             }
          }
 
-         void                                        adjust_pending_budget(const asset& delta)
+         void                                        adjust_pending_budget( const asset& delta )
          {
             assert(delta.symbol == SYMBOL_COIN);
             pending_budget += delta;

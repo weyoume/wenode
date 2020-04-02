@@ -338,23 +338,6 @@ namespace node { namespace protocol {
    };
 
 
-   struct asset_settle_cancel_operation : public virtual_operation
-   {
-      asset_settle_cancel_operation(){}
-      asset_settle_cancel_operation(
-         account_name_type a,
-         asset am ):
-         account(a),
-         amount(am){}   
-
-      account_name_type             account;        // Account requesting the force settlement. This account pays the fee
-      
-      asset                         amount;         // Amount of asset to force settle. This must be a market-issued asset 
-
-      void get_creator_name( account_name_type a )const{ a = account; }
-   };
-
-
    struct fill_transfer_from_savings_operation : public virtual_operation
    {
       fill_transfer_from_savings_operation() {}
@@ -538,11 +521,6 @@ FC_REFLECT( node::protocol::fill_order_operation,
          (open_pays)
          (symbol_a)
          (symbol_b)
-         );
-
-FC_REFLECT( node::protocol::asset_settle_cancel_operation,
-         (account)
-         (amount)
          );
 
 FC_REFLECT( node::protocol::fill_transfer_from_savings_operation,

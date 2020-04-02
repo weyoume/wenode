@@ -32,6 +32,7 @@ namespace node { namespace chain {
 // The following Asset Evaluators are inspired by the framework of the Bitshares core codebase with much appreciation.
 // https://bitshares.org
 // https://github.com/bitshares/bitshares-core
+// https://readthedocs.org/projects/howbitsharesworks/downloads/pdf/master/
 
 /**
  * ASSET TYPES
@@ -284,7 +285,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             
          FC_ASSERT( o.options.feed_lifetime > MIN_FEED_LIFETIME,
             "Feed lifetime must be greater than network minimum." );
-         FC_ASSERT( o.options.force_settlement_delay > MIN_SETTLEMENT_DELAY,
+         FC_ASSERT( o.options.asset_settlement_delay > MIN_SETTLEMENT_DELAY,
             "Force Settlement delay must be greater than network minimum." );
 
          _db.create< asset_bitasset_data_object >( [&]( asset_bitasset_data_object& a )
@@ -293,9 +294,9 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             a.backing_asset = o.options.backing_asset;
             a.feed_lifetime = o.options.feed_lifetime;
             a.minimum_feeds = o.options.minimum_feeds;
-            a.force_settlement_delay = o.options.force_settlement_delay;
-            a.force_settlement_offset_percent = o.options.force_settlement_offset_percent;
-            a.maximum_force_settlement_volume = o.options.maximum_force_settlement_volume;
+            a.asset_settlement_delay = o.options.asset_settlement_delay;
+            a.asset_settlement_offset_percent = o.options.asset_settlement_offset_percent;
+            a.maximum_asset_settlement_volume = o.options.maximum_asset_settlement_volume;
          });
       }
       break;
@@ -346,7 +347,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
    
    // Create the new asset object.
 
-   _db.create< asset_object >( [&]( asset_object& a )      
+   _db.create< asset_object >( [&]( asset_object& a )
    {
       a.symbol = o.symbol;
       a.asset_type = asset_property;
@@ -355,6 +356,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       from_string( a.details, o.options.details );
       from_string( a.json, o.options.json );
       from_string( a.url, o.options.url );
+      a.max_supply = o.options.max_supply;
       a.stake_intervals = o.options.stake_intervals;
       a.unstake_intervals = o.options.unstake_intervals;
       a.market_fee_percent = o.options.market_fee_percent;
@@ -386,6 +388,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       from_string( a.details, o.options.details );
       from_string( a.json, o.options.json );
       from_string( a.url, o.options.url );
+      a.max_supply = o.options.max_supply;
       a.stake_intervals = o.options.stake_intervals;
       a.unstake_intervals = o.options.unstake_intervals;
       a.market_fee_percent = o.options.market_fee_percent;
@@ -437,6 +440,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       from_string( a.details, o.options.details );
       from_string( a.json, o.options.json );
       from_string( a.url, o.options.url );
+      a.max_supply = o.options.max_supply;
       a.stake_intervals = o.options.stake_intervals;
       a.unstake_intervals = o.options.unstake_intervals;
       a.market_fee_percent = o.options.market_fee_percent;
@@ -488,6 +492,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       from_string( a.details, o.options.details );
       from_string( a.json, o.options.json );
       from_string( a.url, o.options.url );
+      a.max_supply = o.options.max_supply;
       a.stake_intervals = o.options.stake_intervals;
       a.unstake_intervals = o.options.unstake_intervals;
       a.market_fee_percent = o.options.market_fee_percent;
@@ -604,9 +609,9 @@ bool update_bitasset_object_options( const asset_update_operation& o, database& 
    bdo.backing_asset = o.new_options.backing_asset;
    bdo.feed_lifetime = o.new_options.feed_lifetime;
    bdo.minimum_feeds = o.new_options.minimum_feeds;
-   bdo.force_settlement_delay = o.new_options.force_settlement_delay;
-   bdo.force_settlement_offset_percent = o.new_options.force_settlement_offset_percent;
-   bdo.maximum_force_settlement_volume = o.new_options.maximum_force_settlement_volume;
+   bdo.asset_settlement_delay = o.new_options.asset_settlement_delay;
+   bdo.asset_settlement_offset_percent = o.new_options.asset_settlement_offset_percent;
+   bdo.maximum_asset_settlement_volume = o.new_options.maximum_asset_settlement_volume;
 
    if( backing_asset_changed )        // Reset price feeds if modifying backing asset
    {
@@ -688,7 +693,7 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
    // If we are now disabling force settlements, cancel all open force settlement orders
    if( ( o.new_options.flags & int( asset_issuer_permission_flags::disable_force_settle ) ) && asset_obj.enable_force_settle() )
    {
-      const auto& idx = _db.get_index< force_settlement_index >().indices().get< by_expiration >();
+      const auto& idx = _db.get_index< asset_settlement_index >().indices().get< by_expiration >();
       // Re-initialize itr every loop as objects are being removed each time.
       for( auto itr = idx.lower_bound( o.asset_to_update );
          itr != idx.end() && itr->settlement_asset_symbol() == o.asset_to_update;
@@ -1016,6 +1021,231 @@ void asset_update_issuer_evaluator::do_apply( const asset_update_issuer_operatio
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
+void asset_distribution_evaluator::do_apply( const asset_distribution_operation& o )
+{ try {
+   const account_name_type& signed_for = o.issuer;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   const asset_object& distribution_asset = _db.get_asset( o.distribution_asset );
+   const asset_object& fund_asset = _db.get_asset( o.fund_asset );
+   time_point now = _db.head_block_time();
+
+   FC_ASSERT( o.issuer == distribution_asset.issuer,
+      "Asset Distribution can only be created by the asset issuer." );
+   FC_ASSERT( fund_asset.symbol == o.fund_asset,
+      "Fund Asset is not valid." );
+   
+   auto& distribution_idx =_db.get_index< asset_distribution_index >().indices().get< by_symbol >();
+   auto distribution_itr = distribution_idx.find( o.distribution_asset );
+
+   if( distribution_itr == distribution_idx.end() )
+   {
+      FC_ASSERT( o.begin_time >= ( now + fc::days(30) ),
+         "Asset Distribution begin time must be at least 30 days in the future." );
+
+      _db.create< asset_distribution_object >( [&]( asset_distribution_object& ado )
+      {
+         ado.issuer = o.issuer;
+         ado.distribution_asset = o.distribution_asset;
+         ado.fund_asset = o.fund_asset;
+         from_string( ado.details, o.details );
+         from_string( ado.url, o.url );
+         from_string( ado.json, o.json );
+         ado.distribution_rounds = o.distribution_rounds;
+         ado.distribution_interval_days = o.distribution_interval_days;
+         ado.max_intervals_missed = o.max_intervals_missed;
+         ado.intervals_paid = 0;
+         ado.intervals_missed = 0;
+         
+         for( asset_unit a : o.input_fund_unit )
+         {
+            ado.input_fund_unit.insert( a );
+         }
+         for( asset_unit a : o.output_distribution_unit )
+         {
+            ado.output_distribution_unit.insert( a );
+         }
+
+         ado.min_input_fund_units = o.min_input_fund_units;
+         ado.max_input_fund_units = o.max_input_fund_units;
+         ado.min_unit_ratio = o.min_unit_ratio;
+         ado.max_unit_ratio = o.max_unit_ratio;
+         ado.min_input_balance_units = o.min_input_balance_units;
+         ado.max_input_balance_units = o.max_input_balance_units;
+         ado.begin_time = o.begin_time;
+         ado.next_round_time = ado.begin_time + fc::days( ado.distribution_interval_days );
+         ado.created = now;
+         ado.last_updated = now;
+      });
+   }
+   else
+   {
+      const asset_distribution_object& distribution = *distribution_itr;
+
+      FC_ASSERT( distribution.begin_time >= now,
+         "Asset Distribution properties cannot be changed after it has begun." );
+      FC_ASSERT( o.begin_time >= distribution.begin_time,
+         "Asset Distribution begin time cannot be brought forward." );
+
+      _db.modify( distribution, [&]( asset_distribution_object& ado )
+      {
+         from_string( ado.details, o.details );
+         from_string( ado.url, o.url );
+         from_string( ado.json, o.json );
+         ado.distribution_rounds = o.distribution_rounds;
+         ado.distribution_interval_days = o.distribution_interval_days;
+         ado.max_intervals_missed = o.max_intervals_missed;
+
+         for( asset_unit a : o.input_fund_unit )
+         {
+            ado.input_fund_unit.insert( a );
+         }
+         for( asset_unit a : o.output_distribution_unit )
+         {
+            ado.output_distribution_unit.insert( a );
+         }
+
+         ado.min_input_fund_units = o.min_input_fund_units;
+         ado.max_input_fund_units = o.max_input_fund_units;
+         ado.min_unit_ratio = o.min_unit_ratio;
+         ado.max_unit_ratio = o.max_unit_ratio;
+         ado.min_input_balance_units = o.min_input_balance_units;
+         ado.max_input_balance_units = o.max_input_balance_units;
+         ado.begin_time = o.begin_time;
+         ado.next_round_time = ado.begin_time + fc::days( ado.distribution_interval_days );
+         ado.last_updated = now;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
+void asset_distribution_fund_evaluator::do_apply( const asset_distribution_fund_operation& o )
+{ try {
+   const account_name_type& signed_for = o.sender;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   const asset_distribution_object& distribution = _db.get_asset_distribution( o.distribution_asset );
+
+   time_point now = _db.head_block_time();
+
+   share_type input_units = o.amount.amount / distribution.input_unit_amount();
+
+   FC_ASSERT( o.amount.symbol == distribution.fund_asset,
+      "Asset Distribution accepts funding asset ${s}.", ("s", distribution.fund_asset) );
+   FC_ASSERT( o.amount.amount % distribution.input_unit_amount() == 0,
+      "Asset Distribution funding amount must be a multiple of the input asset unit: ${a} % ${u} == 0.", 
+      ("a", o.amount.amount )("u", distribution.input_unit_amount()) );
+   FC_ASSERT( input_units >= distribution.min_input_balance_units,
+      "Asset Distribution funding amount must be at least the minimum number of input asset units: ${a} >= ${u}.", 
+      ("a", input_units )("u", distribution.min_input_balance_units) );
+   FC_ASSERT( input_units <= distribution.max_input_balance_units,
+      "Asset Distribution funding amount must be at most the maximum number of input asset units: ${a} <= ${u}.", 
+      ("a", input_units )("u", distribution.max_input_balance_units) );
+
+   asset liquid = _db.get_liquid_balance( o.sender, o.amount.symbol );
+   
+   auto& distribution_balance_idx =_db.get_index< asset_distribution_balance_index >().indices().get< by_account >();
+   auto distribution_balance_itr = distribution_balance_idx.find( boost::make_tuple( o.sender, o.distribution_asset ) );
+
+   if( distribution_balance_itr == distribution_balance_idx.end() )
+   {
+      FC_ASSERT( liquid >= o.amount,
+         "Sender has insufficient liquid balance to create distribution balance." );
+
+      _db.adjust_liquid_balance( o.sender, -o.amount );
+      _db.adjust_pending_supply( o.amount );
+
+      _db.create< asset_distribution_balance_object >( [&]( asset_distribution_balance_object& a )
+      {
+         a.sender = o.sender;
+         a.distribution_asset = o.distribution_asset;
+         a.amount = o.amount;
+         a.created = now;
+         a.last_updated = now;
+      });
+   }
+   else
+   {
+      const asset_distribution_balance_object& balance = *distribution_balance_itr;
+
+      asset delta = o.amount - balance.amount;
+
+      FC_ASSERT( liquid >= delta,
+         "Sender has insufficient liquid balance to create distribution balance." );
+
+      _db.adjust_liquid_balance( o.sender, -delta );
+      _db.adjust_pending_supply( delta );
+
+      if( o.amount.amount.value != 0 )
+      {
+         _db.modify( balance, [&]( asset_distribution_balance_object& a )
+         {
+            a.amount = o.amount;
+            a.last_updated = now;
+         });
+      }
+      else
+      {
+         _db.remove( balance );
+      }
+   }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
+void asset_option_exercise_evaluator::do_apply( const asset_option_exercise_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   const asset_object& option_asset = _db.get_asset( o.amount.symbol );
+   
+   FC_ASSERT( option_asset.asset_type == asset_property_type::OPTION_ASSET, 
+      "Can only exercise option type assets: ${s} is not an option.",("s", o.amount.symbol ) );
+
+   const account_object& account = _db.get_account( o.account );
+   asset liquid = _db.get_liquid_balance( o.account, option_asset.symbol );
+
+   FC_ASSERT( liquid >= o.amount,
+      "Account has insufficient liquid balance of option asset to exercise specified amount." );
+
+   _db.exercise_option( o.amount, account );
+
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
 void asset_update_feed_producers_evaluator::do_apply( const asset_update_feed_producers_operation& o )
 { try {
    const account_name_type& signed_for = o.issuer;
@@ -1222,10 +1452,10 @@ void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
    }
    else    // Not globally settled, creating force settlement. 
    {
-      const auto& settle_idx = _db.get_index< force_settlement_index >().indices().get< by_account_asset >();
+      const auto& settle_idx = _db.get_index< asset_settlement_index >().indices().get< by_account_asset >();
       auto settle_itr = settle_idx.find( boost::make_tuple( o.account, o.amount.symbol ) );
 
-      time_point settlement_time = now + bitasset.force_settlement_delay;
+      time_point settlement_time = now + bitasset.asset_settlement_delay;
 
       if( settle_itr == settle_idx.end() )
       {
@@ -1234,7 +1464,7 @@ void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
 
          _db.adjust_liquid_balance( o.account, -o.amount );
 
-         _db.create< force_settlement_object >([&]( force_settlement_object& fso ) 
+         _db.create< asset_settlement_object >([&]( asset_settlement_object& fso ) 
          {
             fso.owner = o.account;
             fso.balance = o.amount;
@@ -1246,7 +1476,7 @@ void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
       }
       else
       {
-         const force_settlement_object& settle = *settle_itr;
+         const asset_settlement_object& settle = *settle_itr;
          asset delta = o.amount - settle.balance;
          _db.adjust_liquid_balance( o.account, -delta );
 
@@ -1256,7 +1486,7 @@ void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
          }
          else
          {
-            _db.modify( settle, [&]( force_settlement_object& fso )
+            _db.modify( settle, [&]( asset_settlement_object& fso )
             {
                fso.balance = o.amount;
                fso.settlement_date = settlement_time;
@@ -1317,6 +1547,85 @@ void asset_global_settle_evaluator::do_apply( const asset_global_settle_operatio
       "Cannot force settle at supplied price: Least collateralized short lacks sufficient collateral to settle. Please lower the price");
 
    _db.globally_settle_asset( asset_to_settle, o.settle_price );
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
+void asset_collateral_bid_evaluator::do_apply( const asset_collateral_bid_operation& o )
+{ try {
+   const account_name_type& signed_for = o.bidder;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   const asset_object& debt_asset = _db.get_asset( o.debt.symbol );
+   const asset_bitasset_data_object& bitasset_data = _db.get_bitasset_data( debt_asset.symbol );
+   const asset& liquid = _db.get_liquid_balance( o.bidder, bitasset_data.backing_asset );
+
+   time_point now = _db.head_block_time();
+
+   FC_ASSERT( debt_asset.is_market_issued(),
+      "Unable to cover ${sym} as it is not a collateralized asset.", ("sym", debt_asset.symbol) );
+   FC_ASSERT( bitasset_data.has_settlement(),
+      "Asset being bidded on must have a settlement price.");
+   FC_ASSERT( o.collateral.symbol == bitasset_data.backing_asset,
+      "Additional collateral must be the same asset as backing asset.");
+
+   if( o.collateral.amount > 0 )
+   {
+      FC_ASSERT( liquid >= o.collateral,
+         "Cannot bid ${c} collateral when payer only has ${b}", ("c", o.collateral.amount)("b", liquid ) );
+   }
+
+   const auto& bid_idx = _db.get_index< asset_collateral_bid_index >().indices().get< by_account >();
+   const auto& bid_itr = bid_idx.find( boost::make_tuple( o.bidder, o.debt.symbol ) );
+
+   if( bid_itr == bid_idx.end() )    // No bid exists
+   {
+      FC_ASSERT( o.debt.amount > 0,
+         "No collateral bid found." );
+      
+      _db.adjust_liquid_balance( o.bidder, -o.collateral );
+
+      _db.create< asset_collateral_bid_object >([&]( asset_collateral_bid_object& b )
+      {
+         b.bidder = o.bidder;
+         b.collateral = o.collateral;
+         b.debt = o.debt;
+         b.last_updated = now;
+         b.created = now;
+      });
+   }
+   else
+   {
+      const asset_collateral_bid_object& bid = *bid_itr;
+
+      asset delta_collateral = o.collateral - bid.collateral;
+
+      _db.adjust_liquid_balance( o.bidder, -delta_collateral );
+
+      if( o.debt.amount > 0 )     // Editing bid
+      {
+         _db.modify( bid, [&]( asset_collateral_bid_object& b )
+         {
+            b.collateral = o.collateral;
+            b.debt = o.debt;
+            b.last_updated = now;
+         });
+      }
+      else     // Removing bid
+      {
+         _db.cancel_bid( bid, false );
+      }
+   }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 

@@ -2774,7 +2774,7 @@ market_limit_orders database_api_impl::get_limit_orders( string buy_symbol, stri
 
    market_limit_orders results;
 
-   const auto& limit_price_idx = _db.get_index< limit_order_index >().indices().get< by_price >();
+   const auto& limit_price_idx = _db.get_index< limit_order_index >().indices().get< by_high_price >();
 
    auto max_sell = price::max( asset_symbol_type( sell_symbol ), asset_symbol_type( buy_symbol ) );
    auto max_buy = price::max( asset_symbol_type( buy_symbol ), asset_symbol_type( sell_symbol ) );
@@ -2816,7 +2816,7 @@ market_margin_orders database_api_impl::get_margin_orders( string buy_symbol, st
 
    market_margin_orders results;
 
-   const auto& margin_price_idx = _db.get_index< margin_order_index >().indices().get< by_price >();
+   const auto& margin_price_idx = _db.get_index< margin_order_index >().indices().get< by_high_price >();
 
    auto max_sell = price::max( asset_symbol_type( sell_symbol ), asset_symbol_type( buy_symbol ) );
    auto max_buy = price::max( asset_symbol_type( buy_symbol ), asset_symbol_type( sell_symbol ) );

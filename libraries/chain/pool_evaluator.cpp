@@ -48,9 +48,9 @@ void liquidity_pool_create_evaluator::do_apply( const liquidity_pool_create_oper
    const asset_object& first_asset = _db.get_asset( o.first_amount.symbol );
    const asset_object& second_asset = _db.get_asset( o.second_amount.symbol );
 
-   FC_ASSERT( first_asset.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET &&
-      second_asset.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET,
-      "Cannot make a liquidity pool asset with a liquidity pool asset as a component." );
+   FC_ASSERT( first_asset.is_credit_enabled() &&
+      second_asset.is_credit_enabled(),
+      "Cannot make a liquidity pool asset with specifed asset pair." );
 
    asset amount_a;
    asset amount_b;
@@ -65,6 +65,16 @@ void liquidity_pool_create_evaluator::do_apply( const liquidity_pool_create_oper
       amount_b = o.first_amount;
       amount_a = o.second_amount;
    }
+
+   asset liquid_a = _db.get_liquid_balance( o.account, amount_a.symbol );
+   asset liquid_b = _db.get_liquid_balance( o.account, amount_b.symbol );
+
+   FC_ASSERT( liquid_a.amount >= amount_a.amount && 
+      liquid_b.amount >= amount_b.amount, 
+      "Insufficient Liquid Balance to create liquidity pool with initial asset amounts." );
+
+   _db.adjust_liquid_balance( o.account, -amount_a );
+   _db.adjust_liquid_balance( o.account, -amount_b );
 
    asset_symbol_type liquidity_asset_symbol = LIQUIDITY_ASSET_PREFIX+string( amount_a.symbol )+"."+string( amount_b.symbol );
 
@@ -85,15 +95,7 @@ void liquidity_pool_create_evaluator::do_apply( const liquidity_pool_create_oper
    _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a ) 
    {
       a.symbol = liquidity_asset_symbol;
-      a.total_supply = 0;
-      a.liquid_supply = 0;
-      a.staked_supply = 0;
-      a.reward_supply = 0;
-      a.savings_supply = 0;
-      a.delegated_supply = 0;
-      a.receiving_supply = 0;
-      a.pending_supply = 0;
-      a.confidential_supply = 0;
+      a.issuer = o.account;
    });
       
    _db.create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& alpo )
@@ -430,10 +432,10 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
 
    FC_ASSERT( o.collateral.amount >= min_collateral.amount,
       "Collateral is insufficient to support a loan of this size." );
-   FC_ASSERT( debt_asset.asset_type != asset_property_type::CREDIT_POOL_ASSET && debt_asset.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET, 
-      "Cannot borrow assets issued by liquidity or credit pools." );
-   FC_ASSERT( collateral_asset.asset_type != asset_property_type::CREDIT_POOL_ASSET && collateral_asset.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET, 
-      "Cannot collateralize assets issued by liquidity or credit pools." );
+   FC_ASSERT( debt_asset.is_credit_enabled(),
+      "Cannot borrow debt asset: ${s}.", ("s", debt_asset.symbol) );
+   FC_ASSERT( collateral_asset.is_credit_enabled(), 
+      "Cannot collateralize asset: ${s}.", ("s", collateral_asset.symbol) );
 
    const auto& loan_idx = _db.get_index< credit_loan_index >().indices().get< by_loan_id >();
    auto loan_itr = loan_idx.find( boost::make_tuple( account.name, o.loan_id ) ); 
@@ -585,10 +587,8 @@ void credit_pool_lend_evaluator::do_apply( const credit_pool_lend_operation& o )
    const account_object& account = _db.get_account( o.account );
    const asset_object& asset_obj = _db.get_asset( o.amount.symbol );
 
-   FC_ASSERT( asset_obj.asset_type != asset_property_type::CREDIT_POOL_ASSET,
-      "Cannot lend a Credit pool asset, please use withdraw operation to access underlying reserves." );
-   FC_ASSERT( asset_obj.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET,
-      "Cannot lend a Liquidity pool asset, please use withdraw operation to access underlying reserves." );
+   FC_ASSERT( asset_obj.is_credit_enabled(),
+      "Cannot lend asset: ${s}.", ("s", asset_obj.symbol) );
 
    const asset_credit_pool_object& credit_pool = _db.get_credit_pool( asset_obj.symbol, false );
 
@@ -623,6 +623,431 @@ void credit_pool_withdraw_evaluator::do_apply( const credit_pool_withdraw_operat
 
    _db.credit_withdraw( o.amount, account, credit_pool );
 
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
+void option_pool_create_evaluator::do_apply( const option_pool_create_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   const asset_object& first_asset = _db.get_asset( o.first_asset );
+   const asset_object& second_asset = _db.get_asset( o.second_asset );
+
+   time_point now = _db.head_block_time();
+   date_type today = date_type( now );
+
+   FC_ASSERT( first_asset.is_credit_enabled() &&
+      second_asset.is_credit_enabled(),
+      "Cannot make an option pool using this asset pair." );
+
+   asset_symbol_type base_symbol;
+   asset_symbol_type quote_symbol;
+
+   if( first_asset.id < second_asset.id )
+   {
+      base_symbol = o.first_asset;
+      quote_symbol = o.second_asset;
+   }
+   else
+   {
+      quote_symbol = o.first_asset;
+      base_symbol = o.second_asset;
+   }
+
+   const asset_object& base_asset = _db.get_asset( base_symbol );
+   const asset_object& quote_asset = _db.get_asset( quote_symbol );
+
+   const auto& pool_idx = _db.get_index< asset_option_pool_index >().indices().get< by_asset_pair >();
+   auto pool_itr = pool_idx.find( boost::make_tuple( base_symbol, quote_symbol ) );
+
+   FC_ASSERT( pool_itr == pool_idx.end(), 
+      "Asset option pool pair already exists for this asset pair. Use the Option Order operation to issue option assets." );
+
+   const asset_liquidity_pool_object& liquidity_pool = _db.get_liquidity_pool( base_symbol, quote_symbol );
+   price current_price = liquidity_pool.base_day_median_price( base_symbol );
+   flat_set< asset_symbol_type > new_strikes;
+   flat_set< date_type > new_dates;
+   date_type next_date = today;
+
+   for( int i = 0; i < 12; i++ )      // compile the next 12 months of expiration dates
+   {
+      if( next_date.month != 12 )
+      {
+         next_date = date_type( 1, next_date.month + 1, next_date.year );
+      }
+      else
+      {
+         next_date = date_type( 1, 1, next_date.year + 1 );
+      }
+      new_dates.insert( next_date );
+   }
+   
+   _db.create< asset_option_pool_object >( [&]( asset_option_pool_object& aopo )
+   {   
+      aopo.issuer = o.account;
+      aopo.base_symbol = base_symbol;
+      aopo.quote_symbol = quote_symbol;
+      new_strikes = aopo.add_strike_prices( current_price, new_dates );
+   });
+
+   for( asset_symbol_type s : new_strikes )     // Create the new asset objects for the option.
+   {
+      _db.create< asset_object >( [&]( asset_object& a )
+      {
+         option_strike strike = option_strike::from_string(s);
+
+         a.symbol = s;
+         a.asset_type = asset_property_type::OPTION_ASSET;
+         a.issuer = NULL_ACCOUNT;
+         from_string( a.display_symbol, strike.display_symbol() );
+
+         from_string( 
+            a.details, 
+            strike.details( 
+               to_string( quote_asset.display_symbol ), 
+               to_string( quote_asset.details ), 
+               to_string( base_asset.display_symbol ), 
+               to_string( base_asset.details ) ) );
+         
+         from_string( a.json, "" );
+         from_string( a.url, "" );
+         a.max_supply = MAX_ASSET_SUPPLY;
+         a.stake_intervals = 0;
+         a.unstake_intervals = 0;
+         a.market_fee_percent = 0;
+         a.market_fee_share_percent = 0;
+         a.issuer_permissions = 0;
+         a.flags = 0;
+         a.created = now;
+         a.last_updated = now;
+      });
+
+      _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+      {
+         a.issuer = NULL_ACCOUNT;
+         a.symbol = s;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
+void prediction_pool_create_evaluator::do_apply( const prediction_pool_create_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   const asset_object& collateral_asset = _db.get_asset( o.collateral_symbol );
+   time_point now = _db.head_block_time();
+   
+   FC_ASSERT( collateral_asset.is_credit_enabled(), 
+      "Cannot make a prediction pool using the collateral asset: ${s}.",("s",o.collateral_symbol) );
+
+   const auto& pool_idx = _db.get_index< asset_prediction_pool_index >().indices().get< by_prediction_symbol >();
+   auto pool_itr = pool_idx.find( o.prediction_symbol );
+
+   FC_ASSERT( pool_itr == pool_idx.end(), 
+      "As pool pair already exists for this asset pair. Use the Option Order operation to issue option assets." );
+   
+   _db.create< asset_object >( [&]( asset_object& a )
+   {
+      a.symbol = o.prediction_symbol;
+      a.asset_type = asset_property_type::PREDICTION_ASSET;
+      a.issuer = o.account;
+      from_string( a.display_symbol, o.display_symbol );
+      from_string( a.details, o.details );
+      from_string( a.json, o.json );
+      from_string( a.url, o.url );
+      a.max_supply = MAX_ASSET_SUPPLY;
+      a.stake_intervals = 0;
+      a.unstake_intervals = 0;
+      a.market_fee_percent = 0;
+      a.market_fee_share_percent = 0;
+      a.issuer_permissions = 0;
+      a.flags = 0;
+      a.created = now;
+      a.last_updated = now;
+   });
+
+   _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+   {
+      a.issuer = o.account;
+      a.symbol = o.prediction_symbol;
+   });
+
+   _db.adjust_liquid_balance( o.account, -o.prediction_bond );
+   _db.adjust_liquid_balance( o.account, asset( o.prediction_bond.amount, o.prediction_symbol ) );
+   _db.adjust_pending_supply( o.prediction_bond );
+
+   _db.create< asset_prediction_pool_object >( [&]( asset_prediction_pool_object& appo )
+   {   
+      appo.issuer = o.account;
+      appo.prediction_symbol = o.prediction_symbol;
+      appo.collateral_symbol = o.collateral_symbol;
+      appo.collateral_pool = asset( 0, o.collateral_symbol );
+
+      appo.outcome_assets.reserve( o.outcome_assets.size() );
+      appo.outcome_details.reserve( o.outcome_details.size() );
+
+      for( size_t i = 0; i < o.outcome_assets.size(); i++ )
+      {
+         appo.outcome_assets.push_back( o.outcome_assets[ i ] );
+         from_string( appo.outcome_details[ i ], o.outcome_details[ i ] );
+      }
+
+      from_string( appo.json, o.json );
+      from_string( appo.url, o.url );
+      from_string( appo.details, o.details );
+      appo.outcome_time = o.outcome_time;
+      appo.resolution_time = o.outcome_time + fc::days(7);
+      appo.prediction_bond_pool = o.prediction_bond;
+   });
+
+   for( size_t i = 0; i < o.outcome_assets.size(); i++ )
+   {
+      asset_symbol_type s = o.outcome_assets[i];
+      string d = o.outcome_details[i];
+
+      _db.create< asset_object >( [&]( asset_object& a )
+      {
+         a.symbol = s;
+         a.asset_type = asset_property_type::OPTION_ASSET;
+         a.issuer = o.account;
+         from_string( a.display_symbol, o.display_symbol );
+         from_string( a.details, d );
+         from_string( a.json, o.json );
+         from_string( a.url, o.url );
+         a.max_supply = MAX_ASSET_SUPPLY;
+         a.stake_intervals = 0;
+         a.unstake_intervals = 0;
+         a.market_fee_percent = 0;
+         a.market_fee_share_percent = 0;
+         a.issuer_permissions = 0;
+         a.flags = 0;
+         a.created = now;
+         a.last_updated = now;
+      });
+
+      _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+      {
+         a.issuer = o.account;
+         a.symbol = s;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
+void prediction_pool_exchange_evaluator::do_apply( const prediction_pool_exchange_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   const account_object& account = _db.get_account( o.account );
+   const asset_object& prediction_asset = _db.get_asset( o.prediction_asset );
+   const asset_object& collateral_asset = _db.get_asset( o.amount.symbol );
+   const asset_prediction_pool_object& prediction_pool = _db.get_prediction_pool( o.prediction_asset );
+
+   time_point now = _db.head_block_time();
+   FC_ASSERT( now <= prediction_pool.outcome_time,
+      "Cannot exchange with a prediction market pool after the outcome time. Please await market resolution." );
+
+   if( o.exchange_base )
+   {
+      asset base_amount = asset( o.amount.amount, prediction_asset.symbol );
+      asset liquid_collateral = _db.get_liquid_balance( o.account, collateral_asset.symbol );
+      asset liquid_base = _db.get_liquid_balance( o.account, o.prediction_asset );
+      
+      if( o.withdraw )
+      {
+         FC_ASSERT( liquid_base >= base_amount, 
+            "Account: ${a} does not have enough liquid balance to exchange requested amount: ${i}.",
+            ("a", account.name)("i", base_amount) );
+
+         _db.adjust_liquid_balance( o.account, o.amount );
+         _db.adjust_liquid_balance( o.account, -base_amount );
+         _db.adjust_pending_supply( -o.amount );
+
+         _db.modify( prediction_pool, [&]( asset_prediction_pool_object& appo )
+         {
+            appo.adjust_prediction_bond_pool( -o.amount );
+         });
+      }
+      else
+      {
+         FC_ASSERT( liquid_collateral >= o.amount, 
+            "Account: ${a} does not have enough liquid balance to exchange requested amount: ${i}.",
+            ("a", account.name)("i", o.amount) );
+
+         _db.adjust_liquid_balance( o.account, -o.amount );
+         _db.adjust_liquid_balance( o.account, base_amount );
+         _db.adjust_pending_supply( o.amount );
+
+         _db.modify( prediction_pool, [&]( asset_prediction_pool_object& appo )
+         {
+            appo.adjust_prediction_bond_pool( o.amount );
+         });
+      }
+   }
+   else
+   {
+      asset liquid_collateral = _db.get_liquid_balance( o.account, o.amount.symbol );
+
+      if( o.withdraw )
+      {
+         asset outcome_amount;
+         asset liquid_outcome;
+
+         for( asset_symbol_type outcome : prediction_pool.outcome_assets )
+         {
+            liquid_outcome = _db.get_liquid_balance( o.account, outcome );
+            FC_ASSERT( liquid_outcome.amount >= o.amount.amount,
+               "Account: ${a} does not have enough liquid balance to exchange requested amount: ${i}.",
+               ("a", account.name)("i", o.amount) );
+         }
+
+         for( asset_symbol_type outcome : prediction_pool.outcome_assets )
+         {
+            outcome_amount = asset( o.amount.amount, outcome );
+            _db.adjust_liquid_balance( o.account, -outcome_amount );
+         }
+
+         _db.adjust_liquid_balance( o.account, o.amount );
+         _db.adjust_pending_supply( -o.amount );
+
+         _db.modify( prediction_pool, [&]( asset_prediction_pool_object& appo )
+         {
+            appo.adjust_collateral_pool( -o.amount );
+         });
+      }
+      else
+      {
+         FC_ASSERT( liquid_collateral >= o.amount,
+            "Account: ${a} does not have enough liquid balance to exchange requested amount: ${i}.",
+            ("a", account.name)("i", o.amount) );
+         
+         _db.adjust_liquid_balance( o.account, -o.amount );
+         _db.adjust_pending_supply( o.amount );
+
+         asset outcome_amount;
+
+         for( asset_symbol_type outcome : prediction_pool.outcome_assets )
+         {
+            outcome_amount = asset( o.amount.amount, outcome );
+            _db.adjust_liquid_balance( o.account, outcome_amount );
+         }
+
+         _db.modify( prediction_pool, [&]( asset_prediction_pool_object& appo )
+         {
+            appo.adjust_collateral_pool( o.amount );
+         });
+      }
+   }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
+void prediction_pool_resolve_evaluator::do_apply( const prediction_pool_resolve_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   const account_object& account = _db.get_account( o.account );
+   const asset_object& prediction_asset = _db.get_asset( o.amount.symbol );
+   const asset_object& outcome_asset = _db.get_asset( o.resolution_outcome );
+   const asset_prediction_pool_object& prediction_pool = _db.get_prediction_pool( o.amount.symbol );
+   asset liquid = _db.get_liquid_balance( o.account, o.amount.symbol );
+   time_point now = _db.head_block_time();
+
+   FC_ASSERT( prediction_pool.is_outcome( outcome_asset.symbol ),
+      "Resolution outcome must be a valid outcome within the prediction market." );
+   FC_ASSERT( now >= prediction_pool.outcome_time,
+      "Resolution outcome must be a valid outcome within the prediction market." );
+   
+   const auto& resolution_idx = _db.get_index< asset_prediction_pool_resolution_index >().indices().get< by_account >();
+   auto resolution_itr = resolution_idx.find( boost::make_tuple( o.account, prediction_asset.symbol ) );
+
+   if( resolution_itr == resolution_idx.end() )
+   {
+      FC_ASSERT( liquid >= o.amount,
+      "Account: ${a} does not have enough liquid balance to exchange requested amount: ${i}.",
+      ("a", account.name)("i", o.amount) );
+
+      _db.adjust_liquid_balance( o.account, -o.amount );
+      _db.adjust_pending_supply( -o.amount );
+
+      _db.create< asset_prediction_pool_resolution_object >( [&]( asset_prediction_pool_resolution_object& a )
+      {
+         a.account = o.account;
+         a.resolution_outcome = o.resolution_outcome;
+         a.prediction_symbol = o.amount.symbol;
+         a.amount = o.amount;
+      });
+   }
+   else
+   {
+      const asset_prediction_pool_resolution_object& resolution = *resolution_itr;
+
+      asset delta_amount = o.amount - resolution.amount;
+
+      FC_ASSERT( delta_amount.amount > 0,
+         "Must only increase amount after resolving prediction outcome." );
+      FC_ASSERT( o.resolution_outcome == resolution.resolution_outcome,
+         "Cannot change outcome selection resolving prediction outcome." );
+      FC_ASSERT( liquid >= delta_amount,
+         "Account: ${a} does not have enough liquid balance to exchange requested amount: ${i}.",
+         ("a", account.name)("i", delta_amount ) );
+
+      _db.adjust_liquid_balance( o.account, -delta_amount );
+      _db.adjust_pending_supply( delta_amount );
+
+      _db.modify( resolution, [&]( asset_prediction_pool_resolution_object& appro )
+      {
+         appro.amount = o.amount;
+      });
+   }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 

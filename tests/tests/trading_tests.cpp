@@ -882,7 +882,7 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
 
 
 
-BOOST_AUTO_TEST_CASE( bid_collateral_operation_test )
+BOOST_AUTO_TEST_CASE( asset_collateral_bid_operation_test )
 {
    try
    {
@@ -1056,7 +1056,7 @@ BOOST_AUTO_TEST_CASE( bid_collateral_operation_test )
 
       BOOST_REQUIRE( bitasset.has_settlement() );     // Bitasset has now undergone a black swan event
 
-      bid_collateral_operation bid;
+      asset_collateral_bid_operation bid;
 
       bid.signatory = "alice";
       bid.bidder = "alice";
@@ -1071,7 +1071,7 @@ BOOST_AUTO_TEST_CASE( bid_collateral_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const collateral_bid_object& alice_col_bid = db.get_collateral_bid( "alice", SYMBOL_USD );
+      const asset_collateral_bid_object& alice_col_bid = db.get_asset_collateral_bid( "alice", SYMBOL_USD );
 
       BOOST_REQUIRE( alice_col_bid.bidder == bid.bidder );
       BOOST_REQUIRE( alice_col_bid.collateral == bid.collateral );
@@ -1151,7 +1151,7 @@ BOOST_AUTO_TEST_CASE( bid_collateral_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const collateral_bid_object& bob_col_bid = db.get_collateral_bid( "bob", SYMBOL_USD );
+      const asset_collateral_bid_object& bob_col_bid = db.get_asset_collateral_bid( "bob", SYMBOL_USD );
 
       BOOST_REQUIRE( bob_col_bid.bidder == bid.bidder );
       BOOST_REQUIRE( bob_col_bid.collateral == bid.collateral );

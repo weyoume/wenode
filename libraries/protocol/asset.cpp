@@ -154,7 +154,9 @@ namespace node { namespace protocol {
       FC_ASSERT( is_valid_symbol( b.quote.symbol ) );
 
       if( std::tie( a.base.symbol, a.quote.symbol ) != std::tie( b.base.symbol, b.quote.symbol ) )
-            return false;
+      {
+         return false;
+      }   
 
       const auto amult = share_type( b.quote.amount.value ) * a.base.amount.value;
       const auto bmult = share_type( a.quote.amount.value ) * b.base.amount.value;
@@ -418,6 +420,7 @@ namespace node { namespace protocol {
    }
 
    // settlement price is in debt/collateral
+   
    price price_feed::max_short_squeeze_price()const
    {
       return settlement_price * ratio_type( COLLATERAL_RATIO_DENOM, maximum_short_squeeze_ratio );
@@ -438,25 +441,233 @@ namespace node { namespace protocol {
    {
       strike_price.validate();
       expiration_date.validate();
-
+      FC_ASSERT( multiple.value > 0,
+         "Option Strike multiple cannot be negative." );
       FC_ASSERT( strike_price.base.amount.value == BLOCKCHAIN_PRECISION.value || strike_price.quote.amount.value == BLOCKCHAIN_PRECISION.value ,
          "Option Strike price must specify an asset with a price unit of 1." );
-         
    }
+
 
    string option_strike::to_string()const
    {
-      return strike_price.quote.symbol + "-" + fc::to_string( strike_price.to_real() ) + "-" + strike_price.base.symbol + "-" + expiration_date.to_string();
+      string result;
+      result += OPTION_ASSET_PREFIX;
+      if( call )
+      {
+         result += OPTION_ASSET_CALL;
+      }
+      else
+      {
+         result += OPTION_ASSET_PUT;
+      }
+      result += ".";
+      result += strike_price.quote.symbol;
+      result += ".";
+      result += fc::to_string( strike_price.to_real() );
+      result += ".";
+      result += strike_price.base.symbol;
+      result += ".";
+      result += fc::to_string( expiration_date.day );
+      result += ".";
+      result += fc::to_string( expiration_date.month );
+      result += ".";
+      result += fc::to_string( expiration_date.year );
+
+      return result;
    }
+
+   /**
+    * More readable display symbol of an option strike.
+    * Space seperated and uses full wording.
+    * 
+    * QUOTE_SYMBOL STRIKE_PRICE BASE_SYMBOL TYPE OPTION - EXPIRATION: ( EXP_DAY / EXP_MONTH / EXP_YEAR )
+    * WYM 3.5 MUSD CALL OPTION - EXPIRATION: ( 1 / 1 / 2021 )
+    */
+   string option_strike::display_symbol()const
+   {
+      string result;
+
+      result += strike_price.quote.symbol;
+      result += " ";
+      result += fc::to_string( strike_price.to_real() );
+      result += " ";
+      result += strike_price.base.symbol;
+      result += " ";
+      if( call )
+      {
+         result += OPTION_ASSET_CALL;
+      }
+      else
+      {
+         result += OPTION_ASSET_PUT;
+      }
+      result += " OPTION - EXPIRATION: ( ";
+      result += fc::to_string( expiration_date.day );
+      result += " / ";
+      result += fc::to_string( expiration_date.month );
+      result += " / ";
+      result += fc::to_string( expiration_date.year );
+      result += " )";
+
+      return result;
+   }
+
+
+   /**
+    * Generates extended description of an option asset and its underlying assets.
+    */
+   string option_strike::details( string quote_display, string quote_details, string base_display, string base_details )const
+   {
+      string result;
+
+      result += quote_display;
+      result += " ";
+      result += fc::to_string( strike_price.to_real() );
+      result += " ";
+      result += base_display;
+      result += " ";
+      if( call )
+      {
+         result += OPTION_ASSET_CALL;
+      }
+      else
+      {
+         result += OPTION_ASSET_PUT;
+      }
+      result += " OPTION - EXPIRATION: ( ";
+      result += fc::to_string( expiration_date.day );
+      result += " / ";
+      result += fc::to_string( expiration_date.month );
+      result += " / ";
+      result += fc::to_string( expiration_date.year );
+      result += " )";
+      result += " Option Assets provides the right, but not the obligation to execute a trade to buy or sell an asset at the strike price on or before the expiration date. ";
+      result += " Quote Asset: ";
+      result += quote_details;
+      result += " Base Asset: ";
+      result += base_details;
+
+      return result;
+   }
+
+   /**
+    * Generates the Option Strike price characteristics of a
+    * specified string / asset symbol of the form:
+    * OPT.TYPE.QUOTE_SYMBOL.STRIKE_PRICE.BASE_SYMBOL.EXP_DAY.EXP_MONTH.EXP_YEAR
+    * OPT.CALL.WYM.3.5.MEUSD.1.1.2021
+    */
+   option_strike option_strike::from_string( const string& from )
+   {
+      try
+      {
+         option_strike result;
+
+         std::string str = fc::trim( from );
+         std::string delimiter = ".";
+         vector< string > tokens;
+         size_t prev = 0, pos = 0;
+         do
+         {
+            pos = str.find( delimiter, prev );
+            if( pos == string::npos )
+            {
+               pos = str.length();
+            }
+            string token = str.substr( prev, pos-prev );
+            if( !token.empty() )
+            {
+               tokens.push_back( token );
+            }
+            prev = pos + delimiter.length();
+         }
+         while( pos < str.length() && prev < str.length() );
+
+         FC_ASSERT( tokens.size() == 9,
+            "Option Asset Symbol must have 9 data components." );
+
+         FC_ASSERT( tokens[0] == OPTION_ASSET_PREFIX,
+            "Option Asset Symbol must begin with OPT." );
+         
+         if( tokens[ 1 ] == OPTION_ASSET_CALL )
+         {
+            result.call = true;
+         }
+         else if( tokens[ 1 ] == OPTION_ASSET_PUT )
+         {
+            result.call = false;
+         }
+         else
+         {
+            FC_ASSERT( false,
+               "Option Asset Symbol must specify either CALL or PUT option contract type." );
+         }
+
+         asset_symbol_type quote = tokens[2];
+
+         share_type satoshis = 0;
+         share_type scaled_precision = BLOCKCHAIN_PRECISION;
+
+         string lhs = tokens[3];
+
+         if( !lhs.empty() )
+         {
+            satoshis += fc::safe< int64_t >( std::stoll( lhs ) ) *= scaled_precision;
+         }
+
+         const size_t max_rhs_size = std::to_string( scaled_precision.value ).substr( 1 ).size();
+         string rhs = tokens[4];
+
+         FC_ASSERT( rhs.size() <= max_rhs_size );
+         while( rhs.size() < max_rhs_size )
+         {
+            rhs += '0';
+         }
+            
+         if( !rhs.empty() )
+         {
+            satoshis += std::stoll( rhs );
+         }
+            
+         FC_ASSERT( satoshis <= share_type::max(),
+            "Asset value is too large." );
+
+         asset_symbol_type base = tokens[5];
+
+         result.strike_price = price( asset( satoshis, base ), asset( BLOCKCHAIN_PRECISION, quote ) );
+         
+         const string day = tokens[6];
+         const string month = tokens[7];
+         const string year = tokens[8];
+
+         uint16_t day_n = std::stoll( day );
+         uint16_t month_n = std::stoll( month );
+         uint16_t year_n = std::stoll( year );
+
+         result.expiration_date = date_type( day_n, month_n, year_n );
+
+         result.validate();
+         return result;
+      }
+      FC_CAPTURE_AND_RETHROW( (from) )
+   }
+
 
    /**
     * OPT.TYPE.QUOTE_SYMBOL.STRIKE_PRICE.BASE_SYMBOL.EXP_DAY.EXP_MONTH.EXP_YEAR
     */
-   asset_symbol_type option_strike::call_option_symbol()const
+   asset_symbol_type option_strike::option_symbol()const
    {
       string result;
       result += OPTION_ASSET_PREFIX;
-      result += "CALL.";
+      result += ".";
+      if( call )
+      {
+         result += OPTION_ASSET_CALL;
+      }
+      else
+      {
+         result += OPTION_ASSET_PUT;
+      }
       result += strike_price.quote.symbol;
       result += ".";
       result += fc::to_string( strike_price.to_real() );
@@ -472,62 +683,74 @@ namespace node { namespace protocol {
       return asset_symbol_type( result );
    }
 
-   /**
-    * OPT.TYPE.QUOTE_SYMBOL.STRIKE_PRICE.BASE_SYMBOL.EXP_DAY.EXP_MONTH.EXP_YEAR
-    */
-   asset_symbol_type option_strike::put_option_symbol()const
-   {
-      string result;
-      result += OPTION_ASSET_PREFIX;
-      result += "PUT.";
-      result += strike_price.quote.symbol;
-      result += ".";
-      result += fc::to_string( strike_price.to_real() );
-      result += ".";
-      result += strike_price.base.symbol;
-      result += ".";
-      result += fc::to_string( expiration_date.day );
-      result += ".";
-      result += fc::to_string( expiration_date.month );
-      result += ".";
-      result += fc::to_string( expiration_date.year );
-
-      return asset_symbol_type( result );
-   }
 
    time_point option_strike::expiration()const
    {
       return fc::time_point( expiration_date );
    }
 
+
    bool operator == ( const option_strike& a, const option_strike& b )
    {
-      return std::tie( a.strike_price, a.expiration_date ) == std::tie( b.strike_price, b.expiration_date );
+      return std::tie( a.expiration_date, a.call, a.strike_price, a.multiple ) == std::tie( b.expiration_date, b.call, b.strike_price, b.multiple );
    }
 
    bool operator < ( const option_strike& a, const option_strike& b )
    {
-      return std::tie( a.strike_price, a.expiration_date ) < std::tie( b.strike_price, b.expiration_date );
+      return std::tie( a.expiration_date, a.call, a.strike_price, a.multiple ) < std::tie( b.expiration_date, b.call, b.strike_price, b.multiple );
    }
 
    bool operator <= ( const option_strike& a, const option_strike& b )
    {
-      return std::tie( a.strike_price, a.expiration_date ) <= std::tie( b.strike_price, b.expiration_date );
+      return std::tie( a.expiration_date, a.call, a.strike_price, a.multiple ) <= std::tie( b.expiration_date, b.call, b.strike_price, b.multiple );
    }
 
    bool operator != ( const option_strike& a, const option_strike& b )
    {
-      return std::tie( a.strike_price, a.expiration_date ) != std::tie( b.strike_price, b.expiration_date );
+      return std::tie( a.expiration_date, a.call, a.strike_price, a.multiple ) != std::tie( b.expiration_date, b.call, b.strike_price, b.multiple );
    }
 
    bool operator > ( const option_strike& a, const option_strike& b )
    {
-      return std::tie( a.strike_price, a.expiration_date ) > std::tie( b.strike_price, b.expiration_date );
+      return std::tie( a.expiration_date, a.call, a.strike_price, a.multiple ) > std::tie( b.expiration_date, b.call, b.strike_price, b.multiple );
    }
 
    bool operator >= ( const option_strike& a, const option_strike& b )
    {
-      return std::tie( a.strike_price, a.expiration_date ) >= std::tie( b.strike_price, b.expiration_date );
+      return std::tie( a.expiration_date, a.call, a.strike_price, a.multiple ) >= std::tie( b.expiration_date, b.call, b.strike_price, b.multiple );
+   }
+
+
+   // Asset Unit
+
+   bool operator == ( const asset_unit& a, const asset_unit& b )
+   {
+      return std::tie( a.units, a.balance_type, a.name, a.vesting_time ) == std::tie( b.units, b.balance_type, b.name, b.vesting_time );
+   }
+
+   bool operator < ( const asset_unit& a, const asset_unit& b )
+   {
+      return std::tie( a.units, a.balance_type, a.name, a.vesting_time ) < std::tie( b.units, b.balance_type, b.name, b.vesting_time );
+   }
+
+   bool operator <= ( const asset_unit& a, const asset_unit& b )
+   {
+      return std::tie( a.units, a.balance_type, a.name, a.vesting_time ) <= std::tie( b.units, b.balance_type, b.name, b.vesting_time );
+   }
+
+   bool operator != ( const asset_unit& a, const asset_unit& b )
+   {
+      return std::tie( a.units, a.balance_type, a.name, a.vesting_time ) != std::tie( b.units, b.balance_type, b.name, b.vesting_time );
+   }
+
+   bool operator > ( const asset_unit& a, const asset_unit& b )
+   {
+      return std::tie( a.units, a.balance_type, a.name, a.vesting_time ) > std::tie( b.units, b.balance_type, b.name, b.vesting_time );
+   }
+
+   bool operator >= ( const asset_unit& a, const asset_unit& b )
+   {
+      return std::tie( a.units, a.balance_type, a.name, a.vesting_time ) >= std::tie( b.units, b.balance_type, b.name, b.vesting_time );
    }
 
 } } // node::protocol

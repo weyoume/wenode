@@ -1810,6 +1810,64 @@ namespace node { namespace protocol {
       validate_uuidv4( request_id );
    }
 
+   void transfer_confidential_operation::validate() const
+   {
+      FC_ASSERT( is_valid_symbol( transfer_asset ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", transfer_asset) );
+      FC_ASSERT( input_accounts.size() == input_account_amounts.size(),
+         "Input accounts and input account amounts must be same length." );
+      FC_ASSERT( input_balances.size() == input_balance_signatures.size(),
+         "Input balances and input balance signatures must be same length." );
+      FC_ASSERT( output_accounts.size() == output_account_amounts.size(),
+         "Output accounts and output account amounts must be same length." );
+      FC_ASSERT( output_public_keys.size() == output_public_key_amounts.size(),
+         "Output public keys and output public key amounts must be same length." );
+
+      for( account_name_type a : input_accounts )
+      {
+         validate_account_name( a );
+      }
+
+      for( asset a : input_account_amounts )
+      {
+         FC_ASSERT( a.amount > 0,
+            "INVALID TRANSFER: NEGATIVE AMOUNT - THEFT NOT PERMITTED." );
+         FC_ASSERT( is_valid_symbol( a.symbol ),
+            "Symbol ${symbol} is not a valid symbol", ("symbol", a.symbol) );
+      }
+
+      for( account_name_type a : output_accounts )
+      {
+         validate_account_name( a );
+      }
+
+      for( asset a : output_account_amounts )
+      {
+         FC_ASSERT( a.amount > 0,
+            "INVALID TRANSFER: NEGATIVE AMOUNT - THEFT NOT PERMITTED." );
+         FC_ASSERT( is_valid_symbol( a.symbol ),
+            "Symbol ${symbol} is not a valid symbol", ("symbol", a.symbol) );
+      }
+
+      for( string a : output_public_keys )
+      {
+         FC_ASSERT( a.size() < MAX_STRING_LENGTH,
+         "Output public key is too long." );
+         FC_ASSERT( a.size() > 0,
+            "Output public key is required." );
+         FC_ASSERT( fc::is_utf8( a ),
+            "Output public key is not UTF8" );
+      }
+
+      for( asset a : output_public_key_amounts )
+      {
+         FC_ASSERT( a.amount > 0,
+            "INVALID TRANSFER: NEGATIVE AMOUNT - THEFT NOT PERMITTED." );
+         FC_ASSERT( is_valid_symbol( a.symbol ),
+            "Symbol ${symbol} is not a valid symbol", ("symbol", a.symbol) );
+      }
+   }
+
 
    //============================//
    // === Balance Operations === //
@@ -2217,7 +2275,7 @@ namespace node { namespace protocol {
       
       FC_ASSERT( amount_to_borrow.amount > 0, 
          "Please set a greater than zero amount to borrow and collateral.");
-      FC_ASSERT( ( amount_to_borrow * exchange_rate).amount > 0,
+      FC_ASSERT( ( amount_to_borrow * exchange_rate ).amount > 0,
          "Amount to sell cannot round to 0 when traded" );
       FC_ASSERT( is_valid_symbol( amount_to_borrow.symbol ),
          "Symbol ${symbol} is not a valid symbol", ( "symbol", amount_to_borrow.symbol ) );
@@ -2272,10 +2330,10 @@ namespace node { namespace protocol {
       validate_account_name( owner );
       validate_account_name( interface );
 
-      FC_ASSERT( amount_to_sell.symbol == min_exchange_rate.base.symbol,
+      FC_ASSERT( amount_to_sell.symbol == limit_close_price.base.symbol,
          "Sell asset must be the base of the price" );
-      min_exchange_rate.validate();
-      FC_ASSERT( ( amount_to_sell * min_exchange_rate ).amount > 0,
+      limit_close_price.validate();
+      FC_ASSERT( ( amount_to_sell * limit_close_price ).amount > 0,
          "Amount to sell cannot round to 0 when traded" );
       FC_ASSERT( order_id.size() < MAX_STRING_LENGTH,
          "Order ID is too long." );
@@ -2313,11 +2371,6 @@ namespace node { namespace protocol {
       validate_account_name( owner );
       validate_account_name( interface );
 
-      FC_ASSERT( underlying_amount.symbol == strike_price.strike_price.base.symbol,
-         "Sell asset must be the base of the strike price" );
-      strike_price.validate();
-      FC_ASSERT( ( underlying_amount * strike_price.strike_price ).amount > 0,
-         "Amount to issue cannot round to 0 when traded" );
       FC_ASSERT( order_id.size() < MAX_STRING_LENGTH,
          "Order ID is too long." );
       FC_ASSERT( order_id.size(),
@@ -2325,24 +2378,12 @@ namespace node { namespace protocol {
       FC_ASSERT( fc::is_utf8( order_id ),
          "Order ID is not UTF8" );
       validate_uuidv4( order_id );
+
+      FC_ASSERT( is_valid_symbol( options_issued.symbol ),
+         "Symbol ${symbol} is not a valid symbol.", ("symbol", options_issued.symbol) );
+      FC_ASSERT( options_issued.amount >= 0,
+         "Amount to issue cannot be negative." );
    }
-
-
-   void bid_collateral_operation::validate()const
-   {
-      validate_account_name( signatory );
-      validate_account_name( bidder );
-
-      FC_ASSERT( collateral.amount > 0,
-         "Additional Collateral must be greater than zero." );
-      FC_ASSERT( is_valid_symbol( collateral.symbol ),
-         "Symbol ${symbol} is not a valid symbol", ("symbol", collateral.symbol) );
-      FC_ASSERT( debt.amount > 0,
-         "Debt covered must be greater than zero." );
-      FC_ASSERT( is_valid_symbol( debt.symbol ),
-         "Symbol ${symbol} is not a valid symbol", ("symbol", debt.symbol) );
-   }
-
 
 
    //=========================//
@@ -2459,6 +2500,106 @@ namespace node { namespace protocol {
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
    }
 
+   void option_pool_create_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+
+      FC_ASSERT( is_valid_symbol( first_asset ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", first_asset) );
+      FC_ASSERT( is_valid_symbol( second_asset ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", second_asset) );
+   }
+
+   void prediction_pool_create_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+
+      FC_ASSERT( is_valid_symbol( prediction_symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", prediction_symbol) );
+      FC_ASSERT( is_valid_symbol( collateral_symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", collateral_symbol) );
+
+      for( asset_symbol_type a : outcome_assets )
+      {
+         FC_ASSERT( is_valid_symbol( a ),
+            "Symbol ${symbol} is not a valid symbol", ("symbol", a) );
+      }
+      for( string s : outcome_details )
+      {
+         FC_ASSERT( s.size() < MAX_STRING_LENGTH,
+            "Details are too long." );
+         FC_ASSERT( s.size(),
+            "Details are required." );
+         FC_ASSERT( fc::is_utf8( s ),
+            "Details are not UTF8." );
+      }
+
+      FC_ASSERT( display_symbol.size() < MAX_STRING_LENGTH,
+         "Display Symbol is too long." );
+      FC_ASSERT( display_symbol.size(),
+         "Display Symbol is required." );
+      FC_ASSERT( fc::is_utf8( display_symbol ),
+         "Display Symbol is not UTF8." );
+      
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ), 
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ), 
+            "JSON Metadata not valid JSON." );
+      }
+
+      FC_ASSERT( details.size(),
+         "Details are required." );
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ), 
+         "Details are not formatted in UTF8." );
+      FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL is too long." );
+      FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
+      if( url.size() > 0 )
+      {
+         validate_url( url );
+      }
+
+      FC_ASSERT( outcome_time > GENESIS_TIME,
+         "Outcome time must be after Genesis time." );
+      FC_ASSERT( prediction_bond.amount > 0,
+         "Amount must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( prediction_bond.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", prediction_bond.symbol) );
+   }
+
+   void prediction_pool_exchange_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+
+      FC_ASSERT( amount.amount > 0,
+         "Amount must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( amount.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+      FC_ASSERT( is_valid_symbol( prediction_asset ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", prediction_asset) );
+   }
+
+   void prediction_pool_resolve_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+
+      FC_ASSERT( amount.amount > 0,
+         "Amount must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( amount.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+      FC_ASSERT( is_valid_symbol( resolution_outcome ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", resolution_outcome) );
+   }
+
 
 
    //==========================//
@@ -2524,11 +2665,11 @@ namespace node { namespace protocol {
          FC_ASSERT( whitelist_markets.find(item) == whitelist_markets.end() );
       } 
       FC_ASSERT( minimum_feeds > 0 );
-      FC_ASSERT( force_settlement_offset_percent <= PERCENT_100 );
-      FC_ASSERT( maximum_force_settlement_volume <= PERCENT_100 );
+      FC_ASSERT( asset_settlement_offset_percent <= PERCENT_100 );
+      FC_ASSERT( maximum_asset_settlement_volume <= PERCENT_100 );
       FC_ASSERT( feed_lifetime >= MIN_FEED_LIFETIME,
          "Feed lifetime must be greater than network minimum." );
-      FC_ASSERT( force_settlement_delay >= MIN_SETTLEMENT_DELAY,
+      FC_ASSERT( asset_settlement_delay >= MIN_SETTLEMENT_DELAY,
          "Force Settlement delay must be greater than network minimum." );
    }
 
@@ -2611,6 +2752,95 @@ namespace node { namespace protocol {
          "New issuer must be different from issuer." );
    }
 
+   void asset_distribution_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( issuer );
+      
+      FC_ASSERT( is_valid_symbol( distribution_asset ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", distribution_asset ) );
+      FC_ASSERT( is_valid_symbol( fund_asset ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", fund_asset ) );
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ), 
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( fc::json::is_valid( json ), 
+            "JSON Metadata not valid JSON." );
+      }
+
+      FC_ASSERT( details.size(),
+         "Details are required." );
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ), 
+         "Details are not formatted in UTF8." );
+      FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL is too long." );
+      FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
+      if( url.size() > 0 )
+      {
+         validate_url( url );
+      }
+
+      FC_ASSERT( distribution_rounds > 0, 
+         "Distribution Rounds must be greater than 0." );
+      FC_ASSERT( distribution_interval_days > 0, 
+         "Distribution interval days must be greater than 0." );
+      FC_ASSERT( max_intervals_missed > 0, 
+         "Max Intervals missed must be greater than 0." );
+      FC_ASSERT( min_input_fund_units > 0, 
+         "Min Input fund units must be greater than 0." );
+      FC_ASSERT( max_input_fund_units > 0, 
+         "Max Input fund units must be greater than 0." );
+
+      for( asset_unit a : input_fund_unit )
+      {
+         validate_account_name( a.name );
+         FC_ASSERT( a.units > 0, 
+            "Asset unit amount must be greater than 0." );
+         FC_ASSERT( a.vesting_time > GENESIS_TIME, 
+            "Vesting time must be after genesis time." );
+      }
+
+      FC_ASSERT( min_unit_ratio > 0, 
+         "Minimum unit ratio must be greater than 0." );
+      FC_ASSERT( max_unit_ratio > 0, 
+         "Maximum unit ratio must be greater than 0." );
+      FC_ASSERT( min_input_balance_units > 0, 
+         "Min Input balance units must be greater than 0." );
+      FC_ASSERT( max_input_balance_units > 0, 
+         "Max Input balance units must be greater than 0." );
+      FC_ASSERT( begin_time > GENESIS_TIME, 
+         "Begin time must be after genesis time." );
+   }
+
+   void asset_distribution_fund_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( sender );
+      
+      FC_ASSERT( is_valid_symbol( distribution_asset ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", distribution_asset ) );
+      FC_ASSERT( is_valid_symbol( amount.symbol ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol ) );
+      FC_ASSERT( amount.amount > 0, 
+         "Fund amount must be greater than 0." );
+   }
+
+   void asset_option_exercise_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      
+      FC_ASSERT( is_valid_symbol( amount.symbol ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol ) );
+      FC_ASSERT( amount.amount > 0, 
+         "Fund amount must be greater than 0." );
+   }
+
    void asset_update_feed_producers_operation::validate() const
    {
       validate_account_name( signatory );
@@ -2657,6 +2887,21 @@ namespace node { namespace protocol {
          "Symbol ${symbol} is not a valid symbol", ("symbol", asset_to_settle ) );
       FC_ASSERT( asset_to_settle == settle_price.base.symbol,
          "Asset to settle must be the same asset as base fo settlement price." );
+   }
+
+   void asset_collateral_bid_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( bidder );
+
+      FC_ASSERT( collateral.amount > 0,
+         "Additional Collateral must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( collateral.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", collateral.symbol) );
+      FC_ASSERT( debt.amount > 0,
+         "Debt covered must be greater than zero." );
+      FC_ASSERT( is_valid_symbol( debt.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", debt.symbol) );
    }
 
 

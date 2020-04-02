@@ -23,45 +23,6 @@ namespace node { namespace chain {
       struct comment_reward_context;
    }
 
-   inline uint8_t find_msb( const uint128_t& u )
-   {
-      uint64_t x;
-      uint8_t places;
-      x      = (u.lo ? u.lo : 1);
-      places = (u.hi ?   64 : 0);
-      x      = (u.hi ? u.hi : x);
-      return uint8_t( boost::multiprecision::detail::find_msb(x) + places );
-   }
-
-   inline uint64_t approx_sqrt( const uint128_t& x )
-   {
-      if( (x.lo == 0) && (x.hi == 0) )
-         return 0;
-
-      uint8_t msb_x = find_msb(x);
-      uint8_t msb_z = msb_x >> 1;
-
-      uint128_t msb_x_bit = uint128_t(1) << msb_x;
-      uint64_t  msb_z_bit = uint64_t (1) << msb_z;
-
-      uint128_t mantissa_mask = msb_x_bit - 1;
-      uint128_t mantissa_x = x & mantissa_mask;
-      uint64_t mantissa_z_hi = (msb_x & 1) ? msb_z_bit : 0;
-      uint64_t mantissa_z_lo = (mantissa_x >> (msb_x - msb_z)).lo;
-      uint64_t mantissa_z = (mantissa_z_hi | mantissa_z_lo) >> 1;
-      uint64_t result = msb_z_bit | mantissa_z;
-
-      return result;
-   }
-
-   /**
-    * Generates a public key from a specified account name, authority type 
-    * and password using the graphene account authority standard.
-    */
-   inline public_key_type get_key( string name, string type, string password )
-   {
-      return fc::ecc::private_key::regenerate( fc::sha256::hash( std::string( name + type + password ) ) ).get_public_key();
-   }
 
    /**
     *   @class database
@@ -167,6 +128,8 @@ namespace node { namespace chain {
          const median_chain_property_object&    get_median_chain_properties()const;
          const price&                           get_usd_price()const;
          const comment_metrics_object&          get_comment_metrics() const;
+         const transaction_id_type&             get_current_transaction_id()const;
+         uint16_t                               get_current_op_in_trx()const;
 
          asset                                  asset_to_USD( const price& p, const asset& a ) const;
          asset                                  asset_to_USD( const asset& a ) const;
@@ -235,6 +198,9 @@ namespace node { namespace chain {
 
          const account_balance_object& get_account_balance( const account_name_type& owner, const asset_symbol_type& symbol )const;
          const account_balance_object* find_account_balance( const account_name_type& owner, const asset_symbol_type& symbol )const;
+
+         const confidential_balance_object& get_confidential_balance( const digest_type& hash )const;
+         const confidential_balance_object* find_confidential_balance( const digest_type& hash )const;
 
          const asset_delegation_object& get_asset_delegation( const account_name_type& delegator, const account_name_type& delegatee, const asset_symbol_type& symbol )const;
          const asset_delegation_object* find_asset_delegation( const account_name_type& delegator, const account_name_type& delegatee, const asset_symbol_type& symbol )const;
@@ -392,6 +358,12 @@ namespace node { namespace chain {
          const asset_option_pool_object& get_option_pool( const asset_symbol_type& symbol )const;
          const asset_option_pool_object* find_option_pool( const asset_symbol_type& symbol )const;
 
+         const asset_prediction_pool_object& get_prediction_pool( const asset_symbol_type& symbol )const;
+         const asset_prediction_pool_object* find_prediction_pool( const asset_symbol_type& symbol )const;
+
+         const asset_prediction_pool_resolution_object& get_prediction_pool_resolution( const account_name_type& name, const asset_symbol_type& symbol )const;
+         const asset_prediction_pool_resolution_object* find_prediction_pool_resolution( const account_name_type& name, const asset_symbol_type& symbol )const;
+
          const product_object& get_product( const account_name_type& name, const shared_string& product_id )const;
          const product_object* find_product( const account_name_type& name, const shared_string& product_id )const;
 
@@ -437,11 +409,17 @@ namespace node { namespace chain {
          const call_order_object& get_call_order( const account_name_type& name, const asset_symbol_type& symbol )const;
          const call_order_object* find_call_order( const account_name_type& name, const asset_symbol_type& symbol )const;
 
-         const collateral_bid_object& get_collateral_bid( const account_name_type& name, const asset_symbol_type& symbol )const;
-         const collateral_bid_object* find_collateral_bid( const account_name_type& name, const asset_symbol_type& symbol )const;
+         const asset_collateral_bid_object& get_asset_collateral_bid( const account_name_type& name, const asset_symbol_type& symbol )const;
+         const asset_collateral_bid_object* find_asset_collateral_bid( const account_name_type& name, const asset_symbol_type& symbol )const;
 
-         const force_settlement_object& get_force_settlement( const account_name_type& name, const asset_symbol_type& symbol )const;
-         const force_settlement_object* find_force_settlement( const account_name_type& name, const asset_symbol_type& symbol )const;
+         const asset_settlement_object& get_asset_settlement( const account_name_type& name, const asset_symbol_type& symbol )const;
+         const asset_settlement_object* find_asset_settlement( const account_name_type& name, const asset_symbol_type& symbol )const;
+
+         const asset_distribution_object& get_asset_distribution( const asset_symbol_type& symbol )const;
+         const asset_distribution_object* find_asset_distribution( const asset_symbol_type& symbol )const;
+
+         const asset_distribution_balance_object& get_asset_distribution_balance( const account_name_type& name, const asset_symbol_type& symbol )const;
+         const asset_distribution_balance_object* find_asset_distribution_balance( const account_name_type& name, const asset_symbol_type& symbol )const;
 
          const transfer_request_object& get_transfer_request( const account_name_type& name, const shared_string& request_id )const;
          const transfer_request_object* find_transfer_request( const account_name_type& name, const shared_string& request_id )const;
@@ -841,6 +819,18 @@ namespace node { namespace chain {
          
          void process_credit_interest();
 
+         void process_option_assets();
+
+         void process_prediction_assets();
+
+         void close_prediction_pool( const asset_prediction_pool_object& pool );
+
+         void process_asset_distribution();
+
+         void process_unique_assets();
+
+         void clear_asset_balances( const asset_symbol_type& symbol );
+
          void update_expired_feeds();
 
          void process_bitassets();
@@ -927,7 +917,7 @@ namespace node { namespace chain {
          int match( const margin_order_object& bid, const call_order_object& ask, const price& match_price,
                      const price& feed_price, const uint16_t maintenance_collateral_ratio,
                      const optional<price>& maintenance_collateralization );
-         asset match( const call_order_object& call, const force_settlement_object& settle, const price& match_price, 
+         asset match( const call_order_object& call, const asset_settlement_object& settle, const price& match_price, 
             asset max_settlement, const price& fill_price );
 
          bool fill_limit_order( const limit_order_object& order, const asset& pays, const asset& receives, bool cull_if_small,
@@ -936,10 +926,16 @@ namespace node { namespace chain {
          bool fill_margin_order( const margin_order_object& order, const asset& pays, const asset& receives, bool cull_if_small,
             const price& fill_price, const bool is_maker, const account_name_type& match_interface );
 
+         bool fill_option_order( const option_order_object& order, const asset& pays, const asset& receives, const asset& opt,
+            const price& fill_price );
+
+         bool fill_auction_order( const auction_order_object& order, const asset& pays, const asset& receives,
+            const price& fill_price );
+
          bool fill_call_order( const call_order_object& order, const asset& pays, const asset& receives,
             const price& fill_price, const bool is_maker, const account_name_type& match_interface, bool global_settle );
          
-         bool fill_settle_order( const force_settlement_object& settle, const asset& pays, const asset& receives,
+         bool fill_settle_order( const asset_settlement_object& settle, const asset& pays, const asset& receives,
             const price& fill_price, const bool is_maker, const account_name_type& match_interface );
 
          void liquid_fund( const asset& input, const account_object& account, const asset_liquidity_pool_object& pool );
@@ -976,6 +972,8 @@ namespace node { namespace chain {
 
          void process_margin_updates();
 
+         void process_auction_orders();
+
          void liquidate_credit_loan( const credit_loan_object& loan );
 
          asset network_credit_acquisition( const asset& amount, bool execute );
@@ -984,18 +982,20 @@ namespace node { namespace chain {
 
          bool check_for_blackswan( const asset_object& mia, bool enable_black_swan, const asset_bitasset_data_object* bitasset_ptr );
 
+         bool exercise_option( const asset& option, const account_object& account );
+
          void globally_settle_asset( const asset_object& mia, const price& settlement_price );
 
          void revive_bitasset( const asset_object& bitasset );
 
          void cancel_bids_and_revive_mpa( const asset_object& bitasset, const asset_bitasset_data_object& bad );
 
-         void cancel_bid(const collateral_bid_object& bid, bool create_virtual_op);
+         void cancel_bid(const asset_collateral_bid_object& bid, bool create_virtual_op);
 
-         void execute_bid( const collateral_bid_object& bid, share_type debt, 
+         void execute_bid( const asset_collateral_bid_object& bid, share_type debt, 
             share_type collateral_from_fund, const price_feed& current_feed );
 
-         void cancel_settle_order(const force_settlement_object& order, bool create_virtual_op );
+         void cancel_settle_order(const asset_settlement_object& order, bool create_virtual_op );
 
          void cancel_limit_order( const limit_order_object& order );
 

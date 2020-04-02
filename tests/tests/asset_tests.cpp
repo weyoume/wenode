@@ -548,9 +548,9 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_update.new_options.backing_asset = SYMBOL_COIN;
       asset_update.new_options.feed_lifetime = fc::days(2);
       asset_update.new_options.minimum_feeds = 3;
-      asset_update.new_options.force_settlement_delay = fc::hours(6);
-      asset_update.new_options.force_settlement_offset_percent = 3 * PERCENT_1;
-      asset_update.new_options.maximum_force_settlement_volume = 10 * PERCENT_1;
+      asset_update.new_options.asset_settlement_delay = fc::hours(6);
+      asset_update.new_options.asset_settlement_offset_percent = 3 * PERCENT_1;
+      asset_update.new_options.maximum_asset_settlement_volume = 10 * PERCENT_1;
 
       tx.operations.push_back( asset_update );
       tx.sign( elon_private_active_key, db.get_chain_id() );
@@ -571,9 +571,9 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       BOOST_REQUIRE( elon_bitasset.backing_asset == asset_update.new_options.backing_asset );
       BOOST_REQUIRE( elon_bitasset.feed_lifetime == asset_update.new_options.feed_lifetime );
       BOOST_REQUIRE( elon_bitasset.minimum_feeds == asset_update.new_options.minimum_feeds );
-      BOOST_REQUIRE( elon_bitasset.force_settlement_delay == asset_update.new_options.force_settlement_delay );
-      BOOST_REQUIRE( elon_bitasset.force_settlement_offset_percent == asset_update.new_options.force_settlement_offset_percent );
-      BOOST_REQUIRE( elon_bitasset.maximum_force_settlement_volume == asset_update.new_options.maximum_force_settlement_volume );
+      BOOST_REQUIRE( elon_bitasset.asset_settlement_delay == asset_update.new_options.asset_settlement_delay );
+      BOOST_REQUIRE( elon_bitasset.asset_settlement_offset_percent == asset_update.new_options.asset_settlement_offset_percent );
+      BOOST_REQUIRE( elon_bitasset.maximum_asset_settlement_volume == asset_update.new_options.maximum_asset_settlement_volume );
 
       validate_database();
 
@@ -948,7 +948,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const force_settlement_object& fred_settlement = db.get_force_settlement( "fred", "TSLA" );
+      const asset_settlement_object& fred_settlement = db.get_asset_settlement( "fred", "TSLA" );
 
       BOOST_REQUIRE( fred_settlement.balance == settle.amount );
       BOOST_REQUIRE( fred_settlement.last_updated == now() );
@@ -956,7 +956,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       generate_blocks( fred_settlement.settlement_date + BLOCK_INTERVAL );
 
-      const auto& settle_idx = db.get_index< force_settlement_index >().indices().get< by_account_asset >();
+      const auto& settle_idx = db.get_index< asset_settlement_index >().indices().get< by_account_asset >();
       auto settle_itr = settle_idx.find( std::make_tuple( "alice", "TSLA" ) );
 
       BOOST_REQUIRE( settle_itr == settle_idx.end() );

@@ -917,99 +917,178 @@ namespace node { namespace chain {
             c( *this );
          }
 
-         id_type                 id;
+         id_type                     id;
 
-         account_name_type       owner;
+         account_name_type           owner;
 
-         asset_symbol_type       symbol;
+         asset_symbol_type           symbol;                     ///< Symbol of the asset that the balance corresponds to.
 
-         share_type              liquid_balance;             ///< Balance that can be freely transferred.
+         share_type                  liquid_balance;             ///< Balance that can be freely transferred.
 
-         share_type              staked_balance;             ///< Balance that cannot be transferred, and is vested in the account for a period of time.
+         share_type                  staked_balance;             ///< Balance that cannot be transferred, and is vested in the account for a period of time.
 
-         share_type              reward_balance;             ///< Balance that is newly issued from the network.
+         share_type                  reward_balance;             ///< Balance that is newly issued from the network.
 
-         share_type              savings_balance;            ///< Balance that cannot be transferred, and must be withdrawn after a delay period. 
+         share_type                  savings_balance;            ///< Balance that cannot be transferred, and must be withdrawn after a delay period.
 
-         share_type              delegated_balance;          ///< Balance that is delegated to other accounts for voting power.
+         share_type                  delegated_balance;          ///< Balance that is delegated to other accounts for voting power.
 
-         share_type              receiving_balance;          ///< Balance that has been delegated to the account by other delegators. 
+         share_type                  receiving_balance;          ///< Balance that has been delegated to the account by other delegators.
 
-         share_type              total_balance;              ///< The total of all balances
+         share_type                  total_balance;              ///< The total of all balances.
 
-         share_type              stake_rate;                 ///< Amount of liquid balance that is being staked from the liquid balance to the staked balance.  
+         share_type                  stake_rate;                 ///< Amount of liquid balance that is being staked from the liquid balance to the staked balance. 
 
-         time_point              next_stake_time;            ///< time at which the stake rate will be transferred from liquid to staked. 
+         time_point                  next_stake_time;            ///< time at which the stake rate will be transferred from liquid to staked.
 
-         share_type              to_stake;                   ///< total amount to stake over the staking period. 
+         share_type                  to_stake;                   ///< total amount to stake over the staking period.
 
-         share_type              total_staked;               ///< total amount that has been staked so far. 
+         share_type                  total_staked;               ///< total amount that has been staked so far.
 
-         share_type              unstake_rate;               ///< Amount of staked balance that is being unstaked from the staked balance to the liquid balance.  
+         share_type                  unstake_rate;               ///< Amount of staked balance that is being unstaked from the staked balance to the liquid balance.
 
-         time_point              next_unstake_time;          ///< time at which the unstake rate will be transferred from staked to liquid. 
+         time_point                  next_unstake_time;          ///< time at which the unstake rate will be transferred from staked to liquid.
 
-         share_type              to_unstake;                 ///< total amount to unstake over the withdrawal period. 
+         share_type                  to_unstake;                 ///< total amount to unstake over the withdrawal period.
 
-         share_type              total_unstaked;             ///< total amount that has been unstaked so far. 
+         share_type                  total_unstaked;             ///< total amount that has been unstaked so far.
 
-         time_point              last_interest_time;         ///< Last time that interest was compounded.
+         time_point                  last_interest_time;         ///< Last time that interest was compounded.
 
-         asset get_liquid_balance()const { return asset(liquid_balance, symbol); }
+         asset                       get_liquid_balance()const
+         { 
+            return asset( liquid_balance, symbol );
+         }
 
-         asset get_reward_balance()const { return asset(reward_balance, symbol); }
+         asset                       get_reward_balance()const
+         { 
+            return asset( reward_balance, symbol );
+         }
 
-         asset get_staked_balance()const { return asset(staked_balance, symbol); }
+         asset                       get_staked_balance()const
+         { 
+            return asset( staked_balance, symbol );
+         }
 
-         asset get_savings_balance()const { return asset(savings_balance, symbol); }
+         asset                       get_savings_balance()const
+         { 
+            return asset( savings_balance, symbol );
+         }
 
-         asset get_delegated_balance()const { return asset(delegated_balance, symbol); }
+         asset                       get_delegated_balance()const
+         { 
+            return asset( delegated_balance, symbol );
+         }
 
-         asset get_receiving_balance()const { return asset(receiving_balance, symbol); }
+         asset                       get_receiving_balance()const
+         { 
+            return asset( receiving_balance, symbol );
+         }
 
-         asset get_total_balance()const { return asset(total_balance, symbol); }
+         asset                       get_total_balance()const
+         { 
+            return asset( total_balance, symbol );
+         }
 
-         asset get_voting_power()const { return asset((staked_balance - delegated_balance + receiving_balance), symbol); }
+         asset                       get_voting_power()const
+         { 
+            return asset( ( staked_balance - delegated_balance + receiving_balance ), symbol );
+         }
 
-         void adjust_liquid_balance(const asset& delta)
-         {
-            assert(delta.symbol == symbol);
+         void                        adjust_liquid_balance( const asset& delta )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             liquid_balance += delta.amount;
             total_balance += delta.amount;
-         }
+            FC_ASSERT( liquid_balance >= 0 );
+            FC_ASSERT( total_balance >= 0 );
+         } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
-         void adjust_reward_balance(const asset& delta)
-         {
-            assert(delta.symbol == symbol);
-            reward_balance += delta.amount;
-            total_balance += delta.amount;
-         }
-
-         void adjust_staked_balance(const asset& delta)
-         {
-            assert(delta.symbol == symbol);
+         void                        adjust_staked_balance( const asset& delta )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             staked_balance += delta.amount;
             total_balance += delta.amount;
-         }
+            FC_ASSERT( staked_balance >= 0 );
+            FC_ASSERT( total_balance >= 0 );
+         } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
-         void adjust_savings_balance(const asset& delta)
-         {
-            assert(delta.symbol == symbol);
+         void                        adjust_reward_balance( const asset& delta )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
+            reward_balance += delta.amount;
+            total_balance += delta.amount;
+            FC_ASSERT( reward_balance >= 0 );
+            FC_ASSERT( total_balance >= 0 );
+         } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
+
+         void                        adjust_savings_balance( const asset& delta )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             savings_balance += delta.amount;
             total_balance += delta.amount;
-         }
+            FC_ASSERT( savings_balance >= 0 );
+            FC_ASSERT( total_balance >= 0 );
+         } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
-         void adjust_delegated_balance(const asset& delta)
-         {
-            assert(delta.symbol == symbol);
+         void                        adjust_delegated_balance( const asset& delta )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
             delegated_balance += delta.amount;
+            FC_ASSERT( delegated_balance >= 0 );
+         } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
+
+         void                        adjust_receiving_balance( const asset& delta )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
+            receiving_balance += delta.amount;
+            FC_ASSERT( receiving_balance >= 0 );
+         } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
+   };
+
+
+   class account_vesting_balance_object : public object< account_vesting_balance_object_type, account_vesting_balance_object >
+   {
+      account_vesting_balance_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         account_vesting_balance_object( Constructor&& c, allocator< Allocator > a )
+         {
+            c( *this );
          }
 
-         void adjust_receiving_balance(const asset& delta)
-         {
-            assert(delta.symbol == symbol);
-            receiving_balance += delta.amount;
+         id_type                     id;
+
+         account_name_type           owner;
+
+         asset_symbol_type           symbol;                     ///< Symbol of the asset that the balance corresponds to.
+
+         share_type                  vesting_balance;            ///< Balance that is locked until the vesting time. Cannot be used for voting.
+
+         time_point                  vesting_time;               ///< Time at which the vesting balance will become liquid.
+
+         asset                       get_vesting_balance()const
+         { 
+            return asset( vesting_balance, symbol );
          }
+
+         void                        adjust_vesting_balance( const asset& delta, const fc::microseconds& delta_time )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
+            vesting_balance += delta.amount;
+            vesting_time += delta_time;
+            FC_ASSERT( vesting_balance >= 0 );
+         } FC_CAPTURE_AND_RETHROW( ( delta )( delta_time ) ) }
+
+         void                        create_vesting_balance( const asset& delta, const time_point& time )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
+            FC_ASSERT( time >= GENESIS_TIME );
+            vesting_balance = delta.amount;
+            vesting_time = time;
+            FC_ASSERT( vesting_balance >= 0 );
+         } FC_CAPTURE_AND_RETHROW( ( delta )( time ) ) }
    };
 
 
@@ -2029,6 +2108,65 @@ namespace node { namespace chain {
       allocator< account_balance_object >
    > account_balance_index;
 
+
+   struct by_vesting_time;
+   struct by_owner_symbol_time;
+
+   typedef multi_index_container <
+      account_vesting_balance_object,
+      indexed_by<
+         ordered_unique< tag<by_id>, 
+            member< account_vesting_balance_object, account_vesting_balance_id_type, &account_vesting_balance_object::id > 
+         >,
+         ordered_unique< tag< by_owner_symbol_time >,
+            composite_key< account_vesting_balance_object,
+               member< account_vesting_balance_object, account_name_type, &account_vesting_balance_object::owner >,
+               member< account_vesting_balance_object, asset_symbol_type, &account_vesting_balance_object::symbol >,
+               member< account_vesting_balance_object, time_point, &account_vesting_balance_object::vesting_time >,
+               member< account_vesting_balance_object, account_vesting_balance_id_type, &account_vesting_balance_object::id >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::less< asset_symbol_type >,
+               std::less< time_point >,
+               std::less< account_vesting_balance_id_type >
+            >
+         >,
+         ordered_unique< tag< by_owner >,
+            composite_key< account_vesting_balance_object,
+               member< account_vesting_balance_object, account_name_type, &account_vesting_balance_object::owner >,
+               member< account_vesting_balance_object, account_vesting_balance_id_type, &account_vesting_balance_object::id >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::less< account_vesting_balance_id_type >
+            >
+         >,
+         ordered_unique< tag< by_symbol >,
+            composite_key< account_vesting_balance_object,
+               member< account_vesting_balance_object, asset_symbol_type, &account_vesting_balance_object::symbol >,
+               member< account_vesting_balance_object, account_vesting_balance_id_type, &account_vesting_balance_object::id >
+            >,
+            composite_key_compare<
+               std::less< asset_symbol_type >,
+               std::less< account_vesting_balance_id_type >
+            >
+         >,
+        
+         ordered_unique< tag< by_vesting_time >,
+            composite_key< account_vesting_balance_object,
+               member< account_vesting_balance_object, time_point, &account_vesting_balance_object::vesting_time >,
+               member< account_vesting_balance_object, account_vesting_balance_id_type, &account_vesting_balance_object::id >
+            >,
+            composite_key_compare<
+               std::less< time_point >,
+               std::less< account_vesting_balance_id_type >
+            >
+         >
+      >,
+      allocator< account_vesting_balance_object >
+   > account_vesting_balance_index;
+
    struct by_name;
 
    typedef multi_index_container <
@@ -2472,6 +2610,16 @@ FC_REFLECT( node::chain::account_balance_object,
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::account_balance_object, node::chain::account_balance_index );
+
+FC_REFLECT( node::chain::account_vesting_balance_object,
+         (id)
+         (owner)
+         (symbol)
+         (vesting_balance)
+         (vesting_time)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_vesting_balance_object, node::chain::account_vesting_balance_index );
 
 FC_REFLECT( node::chain::account_authority_object,
          (id)

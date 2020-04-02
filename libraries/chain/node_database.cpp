@@ -328,6 +328,51 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       i.last_updated = now;
    });
 
+   // Create anonymous account for anonymous posting: password = "anonymouspassword"
+
+   create< account_object >( [&]( account_object& a )
+   {
+      a.name = ANON_ACCOUNT;
+      a.registrar = ANON_ACCOUNT;
+      a.secure_public_key = get_key( a.name, "secure", ANON_ACCOUNT_PASSWORD );
+      a.connection_public_key = get_key( a.name, "connection", ANON_ACCOUNT_PASSWORD );
+      a.friend_public_key = get_key( a.name, "friend", ANON_ACCOUNT_PASSWORD );
+      a.companion_public_key = get_key( a.name, "companion", ANON_ACCOUNT_PASSWORD );
+      a.created = now;
+      a.last_account_update = now;
+      a.last_vote_time = now;
+      a.last_post = now;
+      a.last_root_post = now;
+      a.last_transfer_time = now;
+      a.last_activity_reward = now;
+      a.last_account_recovery = now;
+      from_string( a.json, "" );
+      from_string( a.json_private, "" );
+      from_string( a.details, INIT_DETAILS );
+      from_string( a.url, INIT_URL );
+      from_string( a.image, INIT_IMAGE );
+      a.membership = membership_tier_type::TOP_MEMBERSHIP;
+      a.membership_expiration = time_point::maximum();
+      a.mined = true;
+   });
+
+   create< account_authority_object >( [&]( account_authority_object& auth )
+   {
+      auth.account = ANON_ACCOUNT;
+      auth.owner_auth.add_authority( get_key( ANON_ACCOUNT, "owner", ANON_ACCOUNT_PASSWORD ), 1 );
+      auth.owner_auth.weight_threshold = 1;
+      auth.active_auth.add_authority( get_key( ANON_ACCOUNT, "active", ANON_ACCOUNT_PASSWORD ), 1 );
+      auth.active_auth.weight_threshold = 1;
+      auth.posting_auth.add_authority( get_key( ANON_ACCOUNT, "posting", ANON_ACCOUNT_PASSWORD ), 1 );
+      auth.posting_auth.weight_threshold = 1;
+   });
+
+   create< account_following_object >( [&]( account_following_object& afo )
+   {
+      afo.account = ANON_ACCOUNT;
+      afo.last_updated = now;
+   });
+
    create< community_object >( [&]( community_object& bo )
    {
       bo.name = INIT_COMMUNITY;
@@ -391,7 +436,10 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       auth.account = PRODUCER_ACCOUNT;
       auth.owner_auth.weight_threshold = 1;
       auth.active_auth.weight_threshold = 1;
+      auth.posting_auth.weight_threshold = 1;
    });
+
+   // Create NULL account, which cannot make operations. 
 
    create< account_object >( [&]( account_object& a )
    {
@@ -424,6 +472,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       auth.account = NULL_ACCOUNT;
       auth.owner_auth.weight_threshold = 1;
       auth.active_auth.weight_threshold = 1;
+      auth.posting_auth.weight_threshold = 1;
    });
 
    create< account_object >( [&]( account_object& a )
@@ -1456,6 +1505,16 @@ const account_balance_object* database::find_account_balance( const account_name
    return find< account_balance_object, by_owner_symbol >( boost::make_tuple( owner, symbol ) );
 }
 
+const confidential_balance_object& database::get_confidential_balance( const digest_type& hash )const
+{ try {
+	return get< confidential_balance_object, by_hash >( hash );
+} FC_CAPTURE_AND_RETHROW( (hash) ) }
+
+const confidential_balance_object* database::find_confidential_balance( const digest_type& hash )const
+{
+   return find< confidential_balance_object, by_hash >( hash );
+}
+
 const asset_delegation_object& database::get_asset_delegation( const account_name_type& delegator, const account_name_type& delegatee, const asset_symbol_type& symbol )const
 { try {
 	return get< asset_delegation_object, by_delegation >( boost::make_tuple( delegator, delegatee, symbol ) );
@@ -1990,6 +2049,26 @@ const asset_option_pool_object* database::find_option_pool( const asset_symbol_t
    return find< asset_option_pool_object, by_asset_pair >( boost::make_tuple( SYMBOL_COIN, symbol ) );
 }
 
+const asset_prediction_pool_object& database::get_prediction_pool( const asset_symbol_type& symbol )const
+{ try {
+   return get< asset_prediction_pool_object, by_prediction_symbol >( symbol );
+} FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+const asset_prediction_pool_object* database::find_prediction_pool( const asset_symbol_type& symbol )const
+{
+   return find< asset_prediction_pool_object, by_prediction_symbol >( symbol );
+}
+
+const asset_prediction_pool_resolution_object& database::get_prediction_pool_resolution( const account_name_type& name, const asset_symbol_type& symbol )const
+{ try {
+   return get< asset_prediction_pool_resolution_object, by_account >( boost::make_tuple( name, symbol ) );
+} FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+const asset_prediction_pool_resolution_object* database::find_prediction_pool_resolution( const account_name_type& name, const asset_symbol_type& symbol )const
+{
+   return find< asset_prediction_pool_resolution_object, by_account >( boost::make_tuple( name, symbol ) );
+}
+
 const product_object& database::get_product( const account_name_type& name, const shared_string& product_id )const
 { try {
    return get< product_object, by_product_id >( boost::make_tuple( name, product_id ) );
@@ -2200,24 +2279,44 @@ const call_order_object* database::find_call_order( const account_name_type& nam
    return find< call_order_object, by_account >( boost::make_tuple( name, symbol ) );
 }
 
-const collateral_bid_object& database::get_collateral_bid( const account_name_type& name, const asset_symbol_type& symbol )const
+const asset_collateral_bid_object& database::get_asset_collateral_bid( const account_name_type& name, const asset_symbol_type& symbol )const
 { try {
-   return get< collateral_bid_object, by_account >( boost::make_tuple( name, symbol ) );
+   return get< asset_collateral_bid_object, by_account >( boost::make_tuple( name, symbol ) );
 } FC_CAPTURE_AND_RETHROW( (name)(symbol) ) }
 
-const collateral_bid_object* database::find_collateral_bid( const account_name_type& name, const asset_symbol_type& symbol )const
+const asset_collateral_bid_object* database::find_asset_collateral_bid( const account_name_type& name, const asset_symbol_type& symbol )const
 {
-   return find< collateral_bid_object, by_account >( boost::make_tuple( name, symbol ) );
+   return find< asset_collateral_bid_object, by_account >( boost::make_tuple( name, symbol ) );
 }
 
-const force_settlement_object& database::get_force_settlement( const account_name_type& name, const asset_symbol_type& symbol )const
+const asset_settlement_object& database::get_asset_settlement( const account_name_type& name, const asset_symbol_type& symbol )const
 { try {
-   return get< force_settlement_object, by_account_asset >( boost::make_tuple( name, symbol ) );
+   return get< asset_settlement_object, by_account_asset >( boost::make_tuple( name, symbol ) );
 } FC_CAPTURE_AND_RETHROW( (name)(symbol) ) }
 
-const force_settlement_object* database::find_force_settlement( const account_name_type& name, const asset_symbol_type& symbol )const
+const asset_settlement_object* database::find_asset_settlement( const account_name_type& name, const asset_symbol_type& symbol )const
 {
-   return find< force_settlement_object, by_account_asset >( boost::make_tuple( name, symbol ) );
+   return find< asset_settlement_object, by_account_asset >( boost::make_tuple( name, symbol ) );
+}
+
+const asset_distribution_object& database::get_asset_distribution( const asset_symbol_type& symbol )const
+{ try {
+   return get< asset_distribution_object, by_symbol >( symbol );
+} FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+const asset_distribution_object* database::find_asset_distribution( const asset_symbol_type& symbol )const
+{
+   return find< asset_distribution_object, by_symbol >( symbol );
+}
+
+const asset_distribution_balance_object& database::get_asset_distribution_balance( const account_name_type& name, const asset_symbol_type& symbol )const
+{ try {
+   return get< asset_distribution_balance_object, by_account >( boost::make_tuple( name, symbol ) );
+} FC_CAPTURE_AND_RETHROW( (name)(symbol) ) }
+
+const asset_distribution_balance_object* database::find_asset_distribution_balance( const account_name_type& name, const asset_symbol_type& symbol )const
+{
+   return find< asset_distribution_balance_object, by_account >( boost::make_tuple( name, symbol ) );
 }
 
 const savings_withdraw_object& database::get_savings_withdraw( const account_name_type& owner, const shared_string& request_id )const
@@ -2254,6 +2353,16 @@ const comment_metrics_object& database::get_comment_metrics() const
 { try {
    return get< comment_metrics_object>();
 } FC_CAPTURE_AND_RETHROW() }
+
+const transaction_id_type& database::get_current_transaction_id()const
+{
+   return _current_trx_id;
+}
+
+uint16_t database::get_current_op_in_trx()const
+{
+   return _current_op_in_trx;
+}
 
 asset database::asset_to_USD( const price& p, const asset& a ) const
 {
@@ -4359,159 +4468,6 @@ void database::process_credit_updates()
 } FC_CAPTURE_AND_RETHROW() }
 
 
-/**
- * Updates the state of all margin orders.
- * 
- * Compounds interest on all margin orders, checks collateralization
- * ratios for all orders, and liquidates them if they are under collateralized.
- * Places orders into the book into liquidation mode 
- * if they reach their specified limit stop or take profit price.
- */
-void database::process_margin_updates()
-{ try {
-   const median_chain_property_object& median_props = get_median_chain_properties();
-   time_point now = head_block_time();
-   const auto& margin_idx = get_index< margin_order_index >().indices().get< by_debt_collateral_position >();
-   auto margin_itr = margin_idx.begin();
-
-   while( margin_itr != margin_idx.end() )
-   {
-      const asset_object& debt_asset = get_asset( margin_itr->debt_asset() );
-      const asset_credit_pool_object& credit_pool = get_credit_pool( margin_itr->debt_asset(), false );
-      uint16_t fixed = median_props.credit_min_interest;
-      uint16_t variable = median_props.credit_variable_interest;
-      share_type interest_rate = credit_pool.interest_rate( fixed, variable );
-      asset total_interest = asset( 0, debt_asset.symbol );
-
-      while( margin_itr != margin_idx.end() && 
-         margin_itr->debt_asset() == debt_asset.symbol )
-      {
-         const asset_object& collateral_asset = get_asset( margin_itr->collateral_asset() );
-
-         asset_symbol_type symbol_a;
-         asset_symbol_type symbol_b;
-         if( debt_asset.id < collateral_asset.id )
-         {
-            symbol_a = debt_asset.symbol;
-            symbol_b = collateral_asset.symbol;
-         }
-         else
-         {
-            symbol_b = debt_asset.symbol;
-            symbol_a = collateral_asset.symbol;
-         }
-
-         const asset_liquidity_pool_object& col_debt_pool = get_liquidity_pool( symbol_a, symbol_b );
-         price col_debt_price = col_debt_pool.base_hour_median_price( debt_asset.symbol );
-
-         while( margin_itr != margin_idx.end() &&
-            margin_itr->debt_asset() == debt_asset.symbol &&
-            margin_itr->collateral_asset() == collateral_asset.symbol )
-         {
-            const asset_object& position_asset = get_asset( margin_itr->position_asset() );
-
-            asset_symbol_type symbol_a;
-            asset_symbol_type symbol_b;
-            if( debt_asset.id < position_asset.id )
-            {
-               symbol_a = debt_asset.symbol;
-               symbol_b = position_asset.symbol;
-            }
-            else
-            {
-               symbol_b = debt_asset.symbol;
-               symbol_a = position_asset.symbol;
-            }
-
-            const asset_liquidity_pool_object& pos_debt_pool = get_liquidity_pool( symbol_a, symbol_b );
-            price pos_debt_price = pos_debt_pool.base_hour_median_price( debt_asset.symbol );
-            
-            while( margin_itr != margin_idx.end() &&
-               margin_itr->debt_asset() == debt_asset.symbol &&
-               margin_itr->collateral_asset() == collateral_asset.symbol &&
-               margin_itr->position_asset() == position_asset.symbol )
-            {
-               const margin_order_object& margin = *margin_itr;
-               asset collateral_debt_value;
-
-               if( margin.collateral_asset() != margin.debt_asset() )
-               {
-                  collateral_debt_value = margin.collateral * col_debt_price;
-               }
-               else
-               {
-                  collateral_debt_value = margin.collateral;
-               }
-
-               asset position_debt_value = margin.position_balance * pos_debt_price;
-               asset equity = margin.debt_balance + position_debt_value + collateral_debt_value;
-               asset unrealized_value = margin.debt_balance + position_debt_value - margin.debt;
-               share_type collateralization = ( ( equity - margin.debt ).amount * share_type( PERCENT_100 ) ) / margin.debt.amount;
-               
-               asset interest = ( margin.debt * interest_rate * ( now - margin.last_interest_time ).count() ) / ( fc::days(365).count() * PERCENT_100 );
-
-               if( interest.amount > INTEREST_MIN_AMOUNT )      // Ensure interest is above dust to prevent lossy rounding
-               {
-                  total_interest += interest;
-               }
-               
-               modify( margin, [&]( margin_order_object& m )
-               {
-                  if( interest.amount > INTEREST_MIN_AMOUNT )
-                  {
-                     m.debt += interest;      // Increment interest onto margin loan
-                     m.interest += interest;
-                     m.last_interest_time = now;
-                     m.last_interest_rate = interest_rate;
-                  }
-
-                  m.collateralization = collateralization;
-                  m.unrealized_value = unrealized_value;
-               });
-
-               if( margin.collateralization < median_props.margin_liquidation_ratio ||
-                  pos_debt_price <= margin.stop_loss_price ||
-                  pos_debt_price >= margin.take_profit_price )
-               {
-                  close_margin_order( margin );       // If margin value falls below collateralization threshold, or stop prices are reached
-               }
-               else if( pos_debt_price <= margin.limit_stop_loss_price && !margin.liquidating )
-               {
-                  modify( margin, [&]( margin_order_object& m )
-                  {
-                     m.liquidating = true;
-                     m.last_updated = now;
-                     m.sell_price = ~m.limit_stop_loss_price;   // If price falls below limit stop loss, reverse order and sell at limit price
-                  });
-                  apply_order( margin );
-               }
-               else if( pos_debt_price >= margin.limit_take_profit_price && !margin.liquidating )
-               {
-                  modify( margin, [&]( margin_order_object& m )
-                  {
-                     m.liquidating = true;
-                     m.last_updated = now;
-                     m.sell_price = ~m.limit_take_profit_price;  // If price rises above take profit, reverse order and sell at limit price
-                  });
-                  apply_order( margin );
-               }
-
-               ++margin_itr;
-
-            }     // Same Position, Collateral, and Debt
-         }        // Same Collateral and Debt
-      }           // Same Debt
-
-      modify( credit_pool, [&]( asset_credit_pool_object& c )
-      {
-         c.last_interest_rate = interest_rate;
-         c.borrowed_balance += total_interest;
-      });
-   }
-} FC_CAPTURE_AND_RETHROW() }
-
-
-
 void database::adjust_view_weight( const supernode_object& supernode, share_type delta, bool adjust = true )
 { try {
    const median_chain_property_object& median_props = get_median_chain_properties();
@@ -4703,21 +4659,21 @@ void database::initialize_evaluators()
 
    // Community Evaluators
 
-   _my->_evaluator_registry.register_evaluator< community_create_evaluator                   >();
-   _my->_evaluator_registry.register_evaluator< community_update_evaluator                   >();
-   _my->_evaluator_registry.register_evaluator< community_add_mod_evaluator                  >();
-   _my->_evaluator_registry.register_evaluator< community_add_admin_evaluator                >();
-   _my->_evaluator_registry.register_evaluator< community_vote_mod_evaluator                 >();
-   _my->_evaluator_registry.register_evaluator< community_transfer_ownership_evaluator       >();
-   _my->_evaluator_registry.register_evaluator< community_join_request_evaluator             >();
-   _my->_evaluator_registry.register_evaluator< community_join_accept_evaluator              >();
-   _my->_evaluator_registry.register_evaluator< community_join_invite_evaluator              >();
-   _my->_evaluator_registry.register_evaluator< community_invite_accept_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< community_remove_member_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< community_blacklist_evaluator                >();
-   _my->_evaluator_registry.register_evaluator< community_subscribe_evaluator                >();
-   _my->_evaluator_registry.register_evaluator< community_event_evaluator                    >();
-   _my->_evaluator_registry.register_evaluator< community_event_attend_evaluator             >();
+   _my->_evaluator_registry.register_evaluator< community_create_evaluator               >();
+   _my->_evaluator_registry.register_evaluator< community_update_evaluator               >();
+   _my->_evaluator_registry.register_evaluator< community_add_mod_evaluator              >();
+   _my->_evaluator_registry.register_evaluator< community_add_admin_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< community_vote_mod_evaluator             >();
+   _my->_evaluator_registry.register_evaluator< community_transfer_ownership_evaluator   >();
+   _my->_evaluator_registry.register_evaluator< community_join_request_evaluator         >();
+   _my->_evaluator_registry.register_evaluator< community_join_accept_evaluator          >();
+   _my->_evaluator_registry.register_evaluator< community_join_invite_evaluator          >();
+   _my->_evaluator_registry.register_evaluator< community_invite_accept_evaluator        >();
+   _my->_evaluator_registry.register_evaluator< community_remove_member_evaluator        >();
+   _my->_evaluator_registry.register_evaluator< community_blacklist_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< community_subscribe_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< community_event_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< community_event_attend_evaluator         >();
 
    // Advertising Evaluators
 
@@ -4729,10 +4685,10 @@ void database::initialize_evaluators()
 
    // Graph Data Evaluators
 
-   _my->_evaluator_registry.register_evaluator< graph_node_evaluator                    >();
-   _my->_evaluator_registry.register_evaluator< graph_edge_evaluator                    >();
-   _my->_evaluator_registry.register_evaluator< graph_node_property_evaluator           >();
-   _my->_evaluator_registry.register_evaluator< graph_edge_property_evaluator           >();
+   _my->_evaluator_registry.register_evaluator< graph_node_evaluator                     >();
+   _my->_evaluator_registry.register_evaluator< graph_edge_evaluator                     >();
+   _my->_evaluator_registry.register_evaluator< graph_node_property_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< graph_edge_property_evaluator            >();
 
    // Transfer Evaluators
 
@@ -4742,6 +4698,7 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< transfer_recurring_evaluator             >();
    _my->_evaluator_registry.register_evaluator< transfer_recurring_request_evaluator     >();
    _my->_evaluator_registry.register_evaluator< transfer_recurring_accept_evaluator      >();
+   _my->_evaluator_registry.register_evaluator< transfer_confidential_evaluator          >();
 
    // Balance Evaluators
 
@@ -4769,7 +4726,6 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< auction_order_evaluator                  >();
    _my->_evaluator_registry.register_evaluator< call_order_evaluator                     >();
    _my->_evaluator_registry.register_evaluator< option_order_evaluator                   >();
-   _my->_evaluator_registry.register_evaluator< bid_collateral_evaluator                 >();
 
    // Pool Evaluators
    
@@ -4781,7 +4737,10 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< credit_pool_borrow_evaluator             >();
    _my->_evaluator_registry.register_evaluator< credit_pool_lend_evaluator               >();
    _my->_evaluator_registry.register_evaluator< credit_pool_withdraw_evaluator           >();
-
+   _my->_evaluator_registry.register_evaluator< option_pool_create_evaluator             >();
+   _my->_evaluator_registry.register_evaluator< prediction_pool_create_evaluator         >();
+   _my->_evaluator_registry.register_evaluator< prediction_pool_exchange_evaluator       >();
+   
    // Asset Evaluators
 
    _my->_evaluator_registry.register_evaluator< asset_create_evaluator                   >();
@@ -4789,10 +4748,14 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< asset_issue_evaluator                    >();
    _my->_evaluator_registry.register_evaluator< asset_reserve_evaluator                  >();
    _my->_evaluator_registry.register_evaluator< asset_update_issuer_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< asset_distribution_evaluator             >();
+   _my->_evaluator_registry.register_evaluator< asset_distribution_fund_evaluator        >();
+   _my->_evaluator_registry.register_evaluator< asset_option_exercise_evaluator          >();
    _my->_evaluator_registry.register_evaluator< asset_update_feed_producers_evaluator    >();
    _my->_evaluator_registry.register_evaluator< asset_publish_feed_evaluator             >();
    _my->_evaluator_registry.register_evaluator< asset_settle_evaluator                   >();
    _my->_evaluator_registry.register_evaluator< asset_global_settle_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< asset_collateral_bid_evaluator           >();
    
    // Block Producer Evaluators
 
@@ -4851,6 +4814,7 @@ void database::initialize_indexes()
    add_core_index< account_permission_index                >(*this);
    add_core_index< account_following_index                 >(*this);
    add_core_index< account_balance_index                   >(*this);
+   add_core_index< account_vesting_balance_index           >(*this);
    add_core_index< account_history_index                   >(*this);
    add_core_index< tag_following_index                     >(*this);
    add_core_index< connection_index                        >(*this);
@@ -4911,7 +4875,6 @@ void database::initialize_indexes()
    add_core_index< graph_node_property_index               >(*this);
    add_core_index< graph_edge_property_index               >(*this);
 
-
    // Transfer Indexes
 
    add_core_index< transfer_request_index                  >(*this);
@@ -4924,6 +4887,7 @@ void database::initialize_indexes()
    add_core_index< savings_withdraw_index                  >(*this);
    add_core_index< asset_delegation_index                  >(*this);
    add_core_index< asset_delegation_expiration_index       >(*this);
+   add_core_index< confidential_balance_index              >(*this);
 
    // Marketplace Indexes
 
@@ -4938,15 +4902,15 @@ void database::initialize_indexes()
    add_core_index< auction_order_index                     >(*this);
    add_core_index< call_order_index                        >(*this);
    add_core_index< option_order_index                      >(*this);
-   add_core_index< force_settlement_index                  >(*this);
-   add_core_index< collateral_bid_index                    >(*this);
-
+   
    // Asset Indexes
 
    add_core_index< asset_index                             >(*this);
    add_core_index< asset_dynamic_data_index                >(*this);
    add_core_index< asset_currency_data_index               >(*this);
    add_core_index< asset_bitasset_data_index               >(*this);
+   add_core_index< asset_settlement_index                  >(*this);
+   add_core_index< asset_collateral_bid_index              >(*this);
    add_core_index< asset_equity_data_index                 >(*this);
    add_core_index< asset_credit_data_index                 >(*this);
    add_core_index< asset_unique_data_index                 >(*this);
@@ -4954,7 +4918,9 @@ void database::initialize_indexes()
    add_core_index< asset_credit_pool_index                 >(*this);
    add_core_index< asset_option_pool_index                 >(*this);
    add_core_index< asset_prediction_pool_index             >(*this);
+   add_core_index< asset_prediction_pool_resolution_index  >(*this);
    add_core_index< asset_distribution_index                >(*this);
+   add_core_index< asset_distribution_balance_index        >(*this);
 
    // Credit Indexes
 
@@ -5203,6 +5169,13 @@ void database::_apply_block( const signed_block& next_block )
    process_credit_buybacks();
    process_margin_updates();
    process_credit_interest();
+
+   process_auction_orders();
+   process_option_assets();
+   process_prediction_assets();
+   process_unique_assets();
+   process_asset_distribution();
+
    process_membership_updates();
    process_txn_stake_rewards();
    process_validation_rewards();
@@ -5466,7 +5439,7 @@ void database::update_global_dynamic_data( const signed_block& b )
             modify( producer_missed, [&]( producer_object& p )
             {
                p.total_missed++;
-               if( int64_t( head_block_num() - p.last_confirmed_block_num ) > BLOCKS_PER_DAY )
+               if( ( head_block_num() - p.last_confirmed_block_num ) > BLOCKS_PER_DAY )
                {
                   p.active = false;
                   push_virtual_operation( shutdown_producer_operation( p.owner ) );
@@ -5755,7 +5728,7 @@ asset database::pay_network_fees( const asset& amount )
    {
       asset usd_purchased = liquid_exchange( total_fees, SYMBOL_USD, true, false );   // Liquid Exchange into USD, without paying fees to avoid recursive fees. 
 
-      create< force_settlement_object >([&]( force_settlement_object& fso )
+      create< asset_settlement_object >([&]( asset_settlement_object& fso )
       {
          fso.owner = NULL_ACCOUNT;
          fso.balance = usd_purchased;    // Settle USD purchased at below settlement price, to increase total Coin burned.
@@ -5831,7 +5804,7 @@ asset database::pay_network_fees( const account_object& payer, const asset& amou
    {
       asset usd_purchased = liquid_exchange( total_fees, SYMBOL_USD, true, false );      // Liquid Exchange into USD, without paying fees to avoid recursive fees. 
 
-      create< force_settlement_object >([&]( force_settlement_object& fso ) 
+      create< asset_settlement_object >([&]( asset_settlement_object& fso ) 
       {
          fso.owner = NULL_ACCOUNT;
          fso.balance = usd_purchased;        // Settle USD purchased at below settlement price, to increase total Coin burned.
@@ -6194,7 +6167,7 @@ void database::clear_expired_operations()
    }
 
    // Process expired force settlement orders
-   const auto& settlement_index = get_index< force_settlement_index >().indices().get< by_expiration >();
+   const auto& settlement_index = get_index< asset_settlement_index >().indices().get< by_expiration >();
    if( !settlement_index.empty() )
    {
       asset_symbol_type current_asset = settlement_index.begin()->settlement_asset_symbol();
@@ -6231,7 +6204,7 @@ void database::clear_expired_operations()
          itr = settlement_index.lower_bound( current_asset ) )
       {
          ++count;
-         const force_settlement_object& order = *itr;
+         const asset_settlement_object& order = *itr;
          auto order_id = order.id;
          current_asset = order.settlement_asset_symbol();
          const asset_object& mia_object = get_asset( current_asset );
@@ -6277,7 +6250,7 @@ void database::clear_expired_operations()
          if( max_settlement_volume.symbol != current_asset ) // only calculate once per asset
          {  
             const asset_dynamic_data_object& dyn_data = get_dynamic_data( mia_object.symbol );
-            max_settlement_volume = asset( mia_bitasset.max_force_settlement_volume(dyn_data.total_supply), mia_object.symbol );
+            max_settlement_volume = asset( mia_bitasset.max_asset_settlement_volume(dyn_data.total_supply), mia_object.symbol );
          }
 
          if( mia_bitasset.force_settled_volume >= max_settlement_volume.amount || current_asset_finished )
@@ -6295,7 +6268,7 @@ void database::clear_expired_operations()
 
          if( settlement_fill_price.base.symbol != current_asset )  // only calculate once per asset
          {
-            uint16_t offset = mia_bitasset.force_settlement_offset_percent;
+            uint16_t offset = mia_bitasset.asset_settlement_offset_percent;
             settlement_fill_price = mia_bitasset.current_feed.settlement_price / ratio_type( PERCENT_100 - offset, PERCENT_100 );
          }
             
@@ -6460,7 +6433,7 @@ void database::validate_invariants()const
       ++balance_itr;
    }
 
-   const auto& limit_idx = get_index< limit_order_index >().indices().get< by_price >();
+   const auto& limit_idx = get_index< limit_order_index >().indices().get< by_high_price >();
    auto limit_itr = limit_idx.begin();
 
    while( limit_itr != limit_idx.end() )
@@ -6470,7 +6443,7 @@ void database::validate_invariants()const
       ++limit_itr;
    }
 
-   const auto& margin_idx = get_index< margin_order_index >().indices().get< by_price >();
+   const auto& margin_idx = get_index< margin_order_index >().indices().get< by_high_price >();
    auto margin_itr = margin_idx.begin();
 
    while( margin_itr != margin_idx.end() )
@@ -6482,7 +6455,7 @@ void database::validate_invariants()const
       ++margin_itr;
    }
 
-   const auto& call_idx = get_index< call_order_index >().indices().get< by_price >();
+   const auto& call_idx = get_index< call_order_index >().indices().get< by_high_price >();
    auto call_itr = call_idx.begin();
 
    while( call_itr != call_idx.end() )
@@ -6587,12 +6560,12 @@ void database::validate_invariants()const
       ++withdraw_itr;
    }
 
-   const auto& settlement_idx = get_index< force_settlement_index >().indices().get< by_id >();
+   const auto& settlement_idx = get_index< asset_settlement_index >().indices().get< by_id >();
    auto settlement_itr = settlement_idx.begin();
 
    while( settlement_itr != settlement_idx.end() )
    {
-      const force_settlement_object& settlement = *settlement_itr;
+      const asset_settlement_object& settlement = *settlement_itr;
       asset_checksum[ settlement.balance.symbol ] -= settlement.balance;
       ++settlement_itr;
    }

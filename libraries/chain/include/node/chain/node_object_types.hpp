@@ -99,6 +99,7 @@ enum object_type
    account_permission_object_type,
    account_following_object_type,
    account_balance_object_type,
+   account_vesting_balance_object_type,
    account_history_object_type,
    tag_following_object_type,
    connection_object_type,
@@ -171,6 +172,7 @@ enum object_type
    savings_withdraw_object_type,
    asset_delegation_object_type,
    asset_delegation_expiration_object_type,
+   confidential_balance_object_type,
    
    // Marketplace Objects
 
@@ -185,8 +187,6 @@ enum object_type
    auction_order_object_type,
    call_order_object_type,
    option_order_object_type,
-   force_settlement_object_type,
-   collateral_bid_object_type,
    
    // Asset objects
 
@@ -194,6 +194,8 @@ enum object_type
    asset_dynamic_data_object_type,
    asset_currency_data_object_type,
    asset_bitasset_data_object_type,
+   asset_settlement_object_type,
+   asset_collateral_bid_object_type,
    asset_equity_data_object_type,
    asset_credit_data_object_type,
    asset_unique_data_object_type,
@@ -201,7 +203,9 @@ enum object_type
    asset_credit_pool_object_type,
    asset_option_pool_object_type,
    asset_prediction_pool_object_type,
+   asset_prediction_pool_resolution_object_type,
    asset_distribution_object_type,
+   asset_distribution_balance_object_type,
 
    // Credit Objects
 
@@ -246,6 +250,7 @@ class account_authority_object;
 class account_permission_object;
 class account_following_object;
 class account_balance_object;
+class account_vesting_balance_object;
 class account_history_object;
 class tag_following_object;
 class connection_object;
@@ -318,6 +323,7 @@ class unstake_asset_route_object;
 class savings_withdraw_object;
 class asset_delegation_object;
 class asset_delegation_expiration_object;
+class confidential_balance_object;
 
 // Marketplace Objects
 
@@ -332,8 +338,6 @@ class margin_order_object;
 class auction_order_object;
 class call_order_object;
 class option_order_object;
-class force_settlement_object;
-class collateral_bid_object;
 
 // Asset objects
 
@@ -341,6 +345,8 @@ class asset_object;
 class asset_dynamic_data_object;
 class asset_currency_data_object;
 class asset_bitasset_data_object;
+class asset_settlement_object;
+class asset_collateral_bid_object;
 class asset_equity_data_object;
 class asset_credit_data_object;
 class asset_unique_data_object;
@@ -348,7 +354,9 @@ class asset_liquidity_pool_object;
 class asset_credit_pool_object;
 class asset_option_pool_object;
 class asset_prediction_pool_object;
+class asset_prediction_pool_resolution_object;
 class asset_distribution_object;
+class asset_distribution_balance_object;
 
 // Credit objects
 
@@ -369,145 +377,149 @@ class commit_violation_object;
 
 // Global Objects
 
-typedef oid< dynamic_global_property_object         > dynamic_global_property_id_type;
-typedef oid< median_chain_property_object           > median_chain_property_id_type;
-typedef oid< transaction_object                     > transaction_object_id_type;        // Includes object to avoid collision with transaction_id_type
-typedef oid< operation_object                       > operation_id_type;
-typedef oid< reward_fund_object                     > reward_fund_id_type;
-typedef oid< block_summary_object                   > block_summary_id_type;
-typedef oid< hardfork_property_object               > hardfork_property_id_type;
+typedef oid< dynamic_global_property_object             > dynamic_global_property_id_type;
+typedef oid< median_chain_property_object               > median_chain_property_id_type;
+typedef oid< transaction_object                         > transaction_object_id_type;        // Includes object to avoid collision with transaction_id_type
+typedef oid< operation_object                           > operation_id_type;
+typedef oid< reward_fund_object                         > reward_fund_id_type;
+typedef oid< block_summary_object                       > block_summary_id_type;
+typedef oid< hardfork_property_object                   > hardfork_property_id_type;
 
 // Account Objects
 
-typedef oid< account_object                         > account_id_type;
-typedef oid< account_profile_object                 > account_profile_id_type;
-typedef oid< account_verification_object            > account_verification_id_type;
-typedef oid< account_business_object                > account_business_id_type;
-typedef oid< account_executive_vote_object          > account_executive_vote_id_type;
-typedef oid< account_officer_vote_object            > account_officer_vote_id_type;
-typedef oid< account_member_request_object          > account_member_request_id_type;
-typedef oid< account_member_invite_object           > account_member_invite_id_type;
-typedef oid< account_member_key_object              > account_member_key_id_type;
-typedef oid< account_authority_object               > account_authority_id_type;
-typedef oid< account_permission_object              > account_permission_id_type;
-typedef oid< account_following_object               > account_following_id_type;
-typedef oid< account_balance_object                 > account_balance_id_type;
-typedef oid< account_history_object                 > account_history_id_type;
-typedef oid< tag_following_object                   > tag_following_id_type;
-typedef oid< connection_object                      > connection_id_type;
-typedef oid< connection_request_object              > connection_request_id_type;
-typedef oid< owner_authority_history_object         > owner_authority_history_id_type;
-typedef oid< account_recovery_request_object        > account_recovery_request_id_type;
-typedef oid< change_recovery_account_request_object > change_recovery_account_request_id_type;
-typedef oid< decline_voting_rights_request_object   > decline_voting_rights_request_id_type;
+typedef oid< account_object                             > account_id_type;
+typedef oid< account_profile_object                     > account_profile_id_type;
+typedef oid< account_verification_object                > account_verification_id_type;
+typedef oid< account_business_object                    > account_business_id_type;
+typedef oid< account_executive_vote_object              > account_executive_vote_id_type;
+typedef oid< account_officer_vote_object                > account_officer_vote_id_type;
+typedef oid< account_member_request_object              > account_member_request_id_type;
+typedef oid< account_member_invite_object               > account_member_invite_id_type;
+typedef oid< account_member_key_object                  > account_member_key_id_type;
+typedef oid< account_authority_object                   > account_authority_id_type;
+typedef oid< account_permission_object                  > account_permission_id_type;
+typedef oid< account_following_object                   > account_following_id_type;
+typedef oid< account_balance_object                     > account_balance_id_type;
+typedef oid< account_vesting_balance_object             > account_vesting_balance_id_type;
+typedef oid< account_history_object                     > account_history_id_type;
+typedef oid< tag_following_object                       > tag_following_id_type;
+typedef oid< connection_object                          > connection_id_type;
+typedef oid< connection_request_object                  > connection_request_id_type;
+typedef oid< owner_authority_history_object             > owner_authority_history_id_type;
+typedef oid< account_recovery_request_object            > account_recovery_request_id_type;
+typedef oid< change_recovery_account_request_object     > change_recovery_account_request_id_type;
+typedef oid< decline_voting_rights_request_object       > decline_voting_rights_request_id_type;
 
 // Network objects
 
-typedef oid< network_officer_object                 > network_officer_id_type;
-typedef oid< network_officer_vote_object            > network_officer_vote_id_type;
-typedef oid< executive_board_object                 > executive_board_id_type;
-typedef oid< executive_board_vote_object            > executive_board_vote_id_type;
-typedef oid< governance_account_object              > governance_account_id_type;
-typedef oid< governance_subscription_object         > governance_subscription_id_type;
-typedef oid< supernode_object                       > supernode_id_type;
-typedef oid< interface_object                       > interface_id_type;
-typedef oid< mediator_object                        > mediator_id_type;
-typedef oid< community_enterprise_object            > community_enterprise_id_type;
-typedef oid< enterprise_approval_object             > enterprise_approval_id_type;
+typedef oid< network_officer_object                     > network_officer_id_type;
+typedef oid< network_officer_vote_object                > network_officer_vote_id_type;
+typedef oid< executive_board_object                     > executive_board_id_type;
+typedef oid< executive_board_vote_object                > executive_board_vote_id_type;
+typedef oid< governance_account_object                  > governance_account_id_type;
+typedef oid< governance_subscription_object             > governance_subscription_id_type;
+typedef oid< supernode_object                           > supernode_id_type;
+typedef oid< interface_object                           > interface_id_type;
+typedef oid< mediator_object                            > mediator_id_type;
+typedef oid< community_enterprise_object                > community_enterprise_id_type;
+typedef oid< enterprise_approval_object                 > enterprise_approval_id_type;
 
 // Comment Objects
 
-typedef oid< comment_object                         > comment_id_type;
-typedef oid< comment_vote_object                    > comment_vote_id_type;
-typedef oid< comment_view_object                    > comment_view_id_type;
-typedef oid< comment_share_object                   > comment_share_id_type;
-typedef oid< moderation_tag_object                  > moderation_tag_id_type;
-typedef oid< comment_metrics_object                 > comment_metrics_id_type;
-typedef oid< message_object                         > message_id_type;
-typedef oid< blog_object                            > blog_id_type;
-typedef oid< feed_object                            > feed_id_type;
+typedef oid< comment_object                             > comment_id_type;
+typedef oid< comment_vote_object                        > comment_vote_id_type;
+typedef oid< comment_view_object                        > comment_view_id_type;
+typedef oid< comment_share_object                       > comment_share_id_type;
+typedef oid< moderation_tag_object                      > moderation_tag_id_type;
+typedef oid< comment_metrics_object                     > comment_metrics_id_type;
+typedef oid< message_object                             > message_id_type;
+typedef oid< blog_object                                > blog_id_type;
+typedef oid< feed_object                                > feed_id_type;
 
 // Community Objects
 
-typedef oid< community_object                       > community_id_type;
-typedef oid< community_member_object                > community_member_id_type;
-typedef oid< community_member_key_object            > community_member_key_id_type;
-typedef oid< community_moderator_vote_object        > community_moderator_vote_id_type;
-typedef oid< community_join_request_object          > community_join_request_id_type;
-typedef oid< community_join_invite_object           > community_join_invite_id_type;
-typedef oid< community_event_object                 > community_event_id_type;
+typedef oid< community_object                           > community_id_type;
+typedef oid< community_member_object                    > community_member_id_type;
+typedef oid< community_member_key_object                > community_member_key_id_type;
+typedef oid< community_moderator_vote_object            > community_moderator_vote_id_type;
+typedef oid< community_join_request_object              > community_join_request_id_type;
+typedef oid< community_join_invite_object               > community_join_invite_id_type;
+typedef oid< community_event_object                     > community_event_id_type;
 
 // Advertising Objects
 
-typedef oid< ad_creative_object                     > ad_creative_id_type;
-typedef oid< ad_campaign_object                     > ad_campaign_id_type;
-typedef oid< ad_inventory_object                    > ad_inventory_id_type;
-typedef oid< ad_audience_object                     > ad_audience_id_type;
-typedef oid< ad_bid_object                          > ad_bid_id_type;
+typedef oid< ad_creative_object                         > ad_creative_id_type;
+typedef oid< ad_campaign_object                         > ad_campaign_id_type;
+typedef oid< ad_inventory_object                        > ad_inventory_id_type;
+typedef oid< ad_audience_object                         > ad_audience_id_type;
+typedef oid< ad_bid_object                              > ad_bid_id_type;
 
 // Graph Data Objects
 
-typedef oid< graph_node_object                      > graph_node_id_type;
-typedef oid< graph_edge_object                      > graph_edge_id_type;
-typedef oid< graph_node_property_object             > graph_node_property_id_type;
-typedef oid< graph_edge_property_object             > graph_edge_property_id_type;
+typedef oid< graph_node_object                          > graph_node_id_type;
+typedef oid< graph_edge_object                          > graph_edge_id_type;
+typedef oid< graph_node_property_object                 > graph_node_property_id_type;
+typedef oid< graph_edge_property_object                 > graph_edge_property_id_type;
 
 // Transfer Objects
 
-typedef oid< transfer_request_object                > transfer_request_id_type;
-typedef oid< transfer_recurring_object              > transfer_recurring_id_type;
-typedef oid< transfer_recurring_request_object      > transfer_recurring_request_id_type;
+typedef oid< transfer_request_object                    > transfer_request_id_type;
+typedef oid< transfer_recurring_object                  > transfer_recurring_id_type;
+typedef oid< transfer_recurring_request_object          > transfer_recurring_request_id_type;
 
 // Balance Objects
 
-typedef oid< unstake_asset_route_object             > unstake_asset_route_id_type;
-typedef oid< savings_withdraw_object                > savings_withdraw_id_type;
-typedef oid< asset_delegation_object                > asset_delegation_id_type;
-typedef oid< asset_delegation_expiration_object     > asset_delegation_expiration_id_type;
+typedef oid< unstake_asset_route_object                 > unstake_asset_route_id_type;
+typedef oid< savings_withdraw_object                    > savings_withdraw_id_type;
+typedef oid< asset_delegation_object                    > asset_delegation_id_type;
+typedef oid< asset_delegation_expiration_object         > asset_delegation_expiration_id_type;
+typedef oid< confidential_balance_object                > confidential_balance_id_type;
 
 // Marketplace Objects
 
-typedef oid< product_object                         > product_id_type;
-typedef oid< purchase_order_object                  > purchase_order_id_type;
-typedef oid< escrow_object                          > escrow_id_type;
+typedef oid< product_object                             > product_id_type;
+typedef oid< purchase_order_object                      > purchase_order_id_type;
+typedef oid< escrow_object                              > escrow_id_type;
 
 // Trading Objects
 
-typedef oid< limit_order_object                     > limit_order_id_type;
-typedef oid< margin_order_object                    > margin_order_id_type;
-typedef oid< auction_order_object                   > auction_order_id_type;
-typedef oid< call_order_object                      > call_order_id_type;
-typedef oid< option_order_object                    > option_order_id_type;
-typedef oid< force_settlement_object                > force_settlement_id_type;
-typedef oid< collateral_bid_object                  > collateral_bid_id_type;
+typedef oid< limit_order_object                         > limit_order_id_type;
+typedef oid< margin_order_object                        > margin_order_id_type;
+typedef oid< auction_order_object                       > auction_order_id_type;
+typedef oid< call_order_object                          > call_order_id_type;
+typedef oid< option_order_object                        > option_order_id_type;
 
 // Asset objects
 
-typedef oid< asset_object                           > asset_id_type;
-typedef oid< asset_dynamic_data_object              > asset_dynamic_data_id_type;
-typedef oid< asset_currency_data_object             > asset_currency_data_id_type;
-typedef oid< asset_bitasset_data_object             > asset_bitasset_data_id_type;
-typedef oid< asset_equity_data_object               > asset_equity_data_id_type;
-typedef oid< asset_credit_data_object               > asset_credit_data_id_type;
-typedef oid< asset_unique_data_object               > asset_unique_data_id_type;
-typedef oid< asset_liquidity_pool_object            > asset_liquidity_pool_id_type;
-typedef oid< asset_credit_pool_object               > asset_credit_pool_id_type;
-typedef oid< asset_option_pool_object               > asset_option_pool_id_type;
-typedef oid< asset_prediction_pool_object           > asset_prediction_pool_id_type;
-typedef oid< asset_distribution_object              > asset_distribution_id_type;
+typedef oid< asset_object                               > asset_id_type;
+typedef oid< asset_dynamic_data_object                  > asset_dynamic_data_id_type;
+typedef oid< asset_currency_data_object                 > asset_currency_data_id_type;
+typedef oid< asset_bitasset_data_object                 > asset_bitasset_data_id_type;
+typedef oid< asset_settlement_object                    > asset_settlement_id_type;
+typedef oid< asset_collateral_bid_object                > asset_collateral_bid_id_type;
+typedef oid< asset_equity_data_object                   > asset_equity_data_id_type;
+typedef oid< asset_credit_data_object                   > asset_credit_data_id_type;
+typedef oid< asset_unique_data_object                   > asset_unique_data_id_type;
+typedef oid< asset_liquidity_pool_object                > asset_liquidity_pool_id_type;
+typedef oid< asset_credit_pool_object                   > asset_credit_pool_id_type;
+typedef oid< asset_option_pool_object                   > asset_option_pool_id_type;
+typedef oid< asset_prediction_pool_object               > asset_prediction_pool_id_type;
+typedef oid< asset_prediction_pool_resolution_object    > asset_prediction_pool_resolution_id_type;
+typedef oid< asset_distribution_object                  > asset_distribution_id_type;
+typedef oid< asset_distribution_balance_object          > asset_distribution_balance_id_type;
 
 // Credit objects
 
-typedef oid< credit_collateral_object               > credit_collateral_id_type;
-typedef oid< credit_loan_object                     > credit_loan_id_type;
+typedef oid< credit_collateral_object                   > credit_collateral_id_type;
+typedef oid< credit_loan_object                         > credit_loan_id_type;
 
 // Block producer objects
 
-typedef oid< producer_object                        > producer_id_type;
-typedef oid< producer_schedule_object               > producer_schedule_id_type;
-typedef oid< producer_vote_object                   > producer_vote_id_type;
-typedef oid< block_validation_object                > block_validation_id_type;
-typedef oid< commit_violation_object                > commit_violation_id_type;
+typedef oid< producer_object                            > producer_id_type;
+typedef oid< producer_schedule_object                   > producer_schedule_id_type;
+typedef oid< producer_vote_object                       > producer_vote_id_type;
+typedef oid< block_validation_object                    > block_validation_id_type;
+typedef oid< commit_violation_object                    > commit_violation_id_type;
 
 enum bandwidth_type
 {
@@ -612,6 +624,7 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (account_permission_object_type)
          (account_following_object_type)
          (account_balance_object_type)
+         (account_vesting_balance_object_type)
          (account_history_object_type)
          (tag_following_object_type)
          (connection_object_type)
@@ -672,15 +685,19 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (graph_node_property_object_type)
          (graph_edge_property_object_type)
 
-         // Balance and Transfer Objects
+         // Transfer Objects
 
          (transfer_request_object_type)
          (transfer_recurring_object_type)
          (transfer_recurring_request_object_type)
+
+         // Balance Objects
+
          (unstake_asset_route_object_type)
          (savings_withdraw_object_type)
          (asset_delegation_object_type)
          (asset_delegation_expiration_object_type)
+         (confidential_balance_object_type)
 
          // Marketplace Objects
 
@@ -695,8 +712,6 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (auction_order_object_type)
          (call_order_object_type)
          (option_order_object_type)
-         (force_settlement_object_type)
-         (collateral_bid_object_type)
          
          // Asset objects
 
@@ -704,6 +719,8 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (asset_dynamic_data_object_type)
          (asset_currency_data_object_type)
          (asset_bitasset_data_object_type)
+         (asset_settlement_object_type)
+         (asset_collateral_bid_object_type)
          (asset_equity_data_object_type)
          (asset_credit_data_object_type)
          (asset_unique_data_object_type)
@@ -711,7 +728,9 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (asset_credit_pool_object_type)
          (asset_option_pool_object_type)
          (asset_prediction_pool_object_type)
+         (asset_prediction_pool_resolution_object_type)
          (asset_distribution_object_type)
+         (asset_distribution_balance_object_type)
 
          // Credit objects
 

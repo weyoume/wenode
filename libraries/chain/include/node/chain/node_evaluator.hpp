@@ -102,6 +102,7 @@ DEFINE_EVALUATOR( transfer_accept )
 DEFINE_EVALUATOR( transfer_recurring )
 DEFINE_EVALUATOR( transfer_recurring_request )
 DEFINE_EVALUATOR( transfer_recurring_accept )
+DEFINE_EVALUATOR( transfer_confidential )
 
 // Balance Evaluators
 
@@ -129,7 +130,6 @@ DEFINE_EVALUATOR( margin_order )
 DEFINE_EVALUATOR( auction_order )
 DEFINE_EVALUATOR( call_order )
 DEFINE_EVALUATOR( option_order )
-DEFINE_EVALUATOR( bid_collateral )
 
 // Liquidity Pool Evaluators
 
@@ -141,6 +141,10 @@ DEFINE_EVALUATOR( credit_pool_collateral )
 DEFINE_EVALUATOR( credit_pool_borrow )
 DEFINE_EVALUATOR( credit_pool_lend )
 DEFINE_EVALUATOR( credit_pool_withdraw )
+DEFINE_EVALUATOR( option_pool_create )
+DEFINE_EVALUATOR( prediction_pool_create )
+DEFINE_EVALUATOR( prediction_pool_exchange )
+DEFINE_EVALUATOR( prediction_pool_resolve )
 
 // Asset Evaluators
 
@@ -149,10 +153,14 @@ DEFINE_EVALUATOR( asset_update )
 DEFINE_EVALUATOR( asset_issue )
 DEFINE_EVALUATOR( asset_reserve )
 DEFINE_EVALUATOR( asset_update_issuer )
+DEFINE_EVALUATOR( asset_distribution )
+DEFINE_EVALUATOR( asset_distribution_fund )
+DEFINE_EVALUATOR( asset_option_exercise )
 DEFINE_EVALUATOR( asset_update_feed_producers )
 DEFINE_EVALUATOR( asset_publish_feed )
 DEFINE_EVALUATOR( asset_settle )
 DEFINE_EVALUATOR( asset_global_settle )
+DEFINE_EVALUATOR( asset_collateral_bid )
 
 // Block Producer Evaluators
 

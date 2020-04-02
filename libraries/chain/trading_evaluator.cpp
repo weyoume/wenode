@@ -1,4 +1,3 @@
-
 #include <node/chain/node_evaluator.hpp>
 #include <node/chain/database.hpp>
 #include <node/chain/custom_operation_interpreter.hpp>
@@ -72,6 +71,7 @@ void limit_order_evaluator::do_apply( const limit_order_operation& o )
          "Account does not have sufficient funds for limit order." );
 
       _db.adjust_liquid_balance( o.owner, -o.amount_to_sell );
+      _db.adjust_pending_supply( o.amount_to_sell );
 
       const limit_order_object& order = _db.create< limit_order_object >( [&]( limit_order_object& obj )
       {
@@ -108,6 +108,7 @@ void limit_order_evaluator::do_apply( const limit_order_operation& o )
             "Account does not have sufficient funds for limit order." );
 
          _db.adjust_liquid_balance( o.owner, delta );
+         _db.adjust_pending_supply( -delta );
 
          _db.modify( order, [&]( limit_order_object& obj )
          {
@@ -174,12 +175,12 @@ void margin_order_evaluator::do_apply( const margin_order_operation& o )
    const asset_object& position_asset = _db.get_asset( o.exchange_rate.quote.symbol );
    const credit_collateral_object& collateral = _db.get_collateral( o.owner, o.collateral.symbol );
 
-   FC_ASSERT( debt_asset.asset_type != asset_property_type::CREDIT_POOL_ASSET && debt_asset.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET, 
-      "Cannot borrow assets issued by liquidity or credit pools." );
-   FC_ASSERT( collateral_asset.asset_type != asset_property_type::CREDIT_POOL_ASSET && collateral_asset.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET, 
-      "Cannot collateralize assets issued by liquidity or credit pools." );
-   FC_ASSERT( position_asset.asset_type != asset_property_type::CREDIT_POOL_ASSET && position_asset.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET, 
-      "Cannot open margin positions in assets issued by liquidity or credit pools." );
+   FC_ASSERT( debt_asset.is_credit_enabled(),
+      "Cannot borrow debt asset: ${s}.", ("s", debt_asset.symbol) );
+   FC_ASSERT( collateral_asset.is_credit_enabled(), 
+      "Cannot collateralize asset: ${s}.", ("s", collateral_asset.symbol) );
+   FC_ASSERT( position_asset.is_credit_enabled(), 
+      "Cannot open margin position with asset: ${s}.", ("s", position_asset.symbol) );
 
    const asset_credit_pool_object& pool = _db.get_credit_pool( o.amount_to_borrow.symbol, false );
    asset min_collateral = ( o.amount_to_borrow * median_props.margin_open_ratio ) / PERCENT_100;        // Min margin collateral equal to 20% of debt value.
@@ -390,9 +391,6 @@ void margin_order_evaluator::do_apply( const margin_order_operation& o )
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-/**
- * TODO: Daily auction order matching DB method
- */
 void auction_order_evaluator::do_apply( const auction_order_operation& o )
 { try {
    const account_name_type& signed_for = o.owner;
@@ -436,13 +434,14 @@ void auction_order_evaluator::do_apply( const auction_order_operation& o )
          "Account does not have sufficient funds for Auction order." );
 
       _db.adjust_liquid_balance( o.owner, -o.amount_to_sell );
+      _db.adjust_pending_supply( o.amount_to_sell );
 
       _db.create< auction_order_object >( [&]( auction_order_object& aoo )
       {
          aoo.owner = o.owner;
          from_string( aoo.order_id, o.order_id );
          aoo.amount_to_sell = o.amount_to_sell;
-         aoo.min_exchange_rate = o.min_exchange_rate;
+         aoo.limit_close_price = o.limit_close_price;
          if( o.interface.size() )
          {
             aoo.interface = o.interface;
@@ -464,11 +463,12 @@ void auction_order_evaluator::do_apply( const auction_order_operation& o )
             "Account does not have sufficient funds for Auction order." );
 
          _db.adjust_liquid_balance( o.owner, delta );
+         _db.adjust_pending_supply( -delta );
 
          _db.modify( order, [&]( auction_order_object& aoo )
          {
             aoo.amount_to_sell = o.amount_to_sell;
-            aoo.min_exchange_rate = o.min_exchange_rate;
+            aoo.limit_close_price = o.limit_close_price;
             aoo.expiration = o.expiration;
             aoo.last_updated = now;
          });
@@ -530,6 +530,7 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
          "Account does not have sufficient liquid collateral asset funds for Call order." );
 
       _db.adjust_liquid_balance( o.owner, -o.collateral );
+      _db.adjust_pending_supply( o.collateral );
       _db.adjust_liquid_balance( o.owner, o.debt );
       
       _db.create< call_order_object >( [&]( call_order_object& coo )
@@ -556,6 +557,7 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
          "Account does not have sufficient liquid debt asset funds for Call order." );
 
       _db.adjust_liquid_balance( o.owner, -delta_collateral );
+      _db.adjust_pending_supply( delta_collateral );
       _db.adjust_liquid_balance( o.owner, delta_debt );
       
       if( o.debt.amount != 0 )
@@ -610,9 +612,6 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-/**
- * TODO: Option asset expiration DB method + strike price management + exercise evaluator
- */
 void option_order_evaluator::do_apply( const option_order_operation& o )
 { try {
    const account_name_type& signed_for = o.owner;
@@ -629,9 +628,19 @@ void option_order_evaluator::do_apply( const option_order_operation& o )
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
+   FC_ASSERT( o.options_issued.amount % BLOCKCHAIN_PRECISION == 0, 
+      "Option assets can only be issued in units of 1." );
+
+   const asset_object& option_asset = _db.get_asset( o.options_issued.symbol );
+
+   FC_ASSERT( option_asset.asset_type == asset_property_type::OPTION_ASSET, 
+      "Option asset with symbol: ${s} is not valid.",("s", o.options_issued.symbol ) );
+   
+   option_strike strike = option_strike::from_string( o.options_issued.symbol );
+
    time_point now = _db.head_block_time();
 
-   FC_ASSERT( o.strike_price.expiration() > now,
+   FC_ASSERT( strike.expiration() > now,
       "Option order has to expire after head block time." );
 
    if( o.interface.size() )
@@ -646,48 +655,49 @@ void option_order_evaluator::do_apply( const option_order_operation& o )
 
    const auto& option_idx = _db.get_index< option_order_index >().indices().get< by_account >();
    auto option_itr = option_idx.find( std::make_tuple( o.owner, o.order_id ) );
+   
+   const asset_option_pool_object& option_pool = _db.get_option_pool( strike.strike_price.base.symbol, strike.strike_price.quote.symbol );
 
-   const asset_option_pool_object& option_pool = _db.get_option_pool( o.strike_price.strike_price.base.symbol, o.strike_price.strike_price.quote.symbol );
+   FC_ASSERT( std::find( option_pool.call_strikes.begin(), option_pool.call_strikes.end(), strike ) != option_pool.call_strikes.end() ||
+      std::find( option_pool.put_strikes.begin(), option_pool.put_strikes.end(), strike ) != option_pool.put_strikes.end(),
+      "Option pool chain sheet does not support the specified option stike ${s}.", ("s", o.options_issued.symbol ) );
 
-   asset_symbol_type option_symbol;
-   bool valid_strike = false;
+   asset underlying_amount;
+   asset exercise_amount;
 
-   if( std::find( option_pool.call_strikes.begin(), option_pool.call_strikes.end(), o.strike_price ) != option_pool.call_strikes.end() )
+   if( strike.call )       // Call option underlying is quote asset to be bought with base asset.
    {
-      option_symbol = o.strike_price.call_option_symbol();
-      valid_strike = true;
+      underlying_amount = asset( o.options_issued.amount * strike.multiple, strike.strike_price.quote.symbol );
+      exercise_amount = underlying_amount * strike.strike_price;
    }
-   else if( std::find( option_pool.put_strikes.begin(), option_pool.put_strikes.end(), o.strike_price ) != option_pool.put_strikes.end() )
+   else                    // Put option underlying is base asset to buy the quote asset.
    {
-      option_symbol = o.strike_price.put_option_symbol();
-      valid_strike = true;
+      exercise_amount = asset( o.options_issued.amount * strike.multiple, strike.strike_price.quote.symbol );
+      underlying_amount = exercise_amount * strike.strike_price;
    }
-
-   FC_ASSERT( valid_strike,
-      "Option pool chain sheet does not support the specified option stike ${s}.", ("s", o.strike_price.to_string() ) );
-
-   asset option_position = asset( o.underlying_amount.amount / 100, option_symbol );
-
-   asset liquid_underlying = _db.get_liquid_balance( o.owner, o.underlying_amount.symbol );
-   asset liquid_position = _db.get_liquid_balance( o.owner, option_symbol );
+   
+   asset liquid_underlying = _db.get_liquid_balance( o.owner, underlying_amount.symbol );
+   asset liquid_position = _db.get_liquid_balance( o.owner, o.options_issued.symbol );
 
    if( option_itr == option_idx.end() )
    {
       FC_ASSERT( o.opened,
          "Option order cannot be closed: No Option order found with the specified ID." );
-      FC_ASSERT( liquid_underlying >= o.underlying_amount,
+      FC_ASSERT( liquid_underlying >= underlying_amount,
          "Account does not have sufficient liquid underlying asset funds for Option order." );
 
-      _db.adjust_liquid_balance( o.owner, -o.underlying_amount );
-      _db.adjust_liquid_balance( o.owner, option_position );
+      _db.adjust_liquid_balance( o.owner, -underlying_amount );
+      _db.adjust_pending_supply( underlying_amount );
+      _db.adjust_liquid_balance( o.owner, o.options_issued );
 
       _db.create< option_order_object >( [&]( option_order_object& ooo )
       {
          ooo.owner = o.owner;
          from_string( ooo.order_id, o.order_id );
-         ooo.underlying_amount = o.underlying_amount;
-         ooo.option_position = option_position;
-         ooo.strike_price = o.strike_price;
+         ooo.underlying_amount = underlying_amount;
+         ooo.exercise_amount = exercise_amount;
+         ooo.option_position = o.options_issued;
+         ooo.strike_price = strike;
          if( o.interface.size() )
          {
             ooo.interface = o.interface;
@@ -700,8 +710,8 @@ void option_order_evaluator::do_apply( const option_order_operation& o )
    {
       const option_order_object& order = *option_itr;
 
-      asset delta_underlying = o.underlying_amount - order.underlying_amount;
-      asset delta_position = option_position - order.option_position;
+      asset delta_underlying = underlying_amount - order.underlying_amount;
+      asset delta_position = o.options_issued - order.option_position;
 
       FC_ASSERT( liquid_underlying >= delta_underlying,
          "Account does not have sufficient liquid underlying asset funds for Option order." );
@@ -709,100 +719,22 @@ void option_order_evaluator::do_apply( const option_order_operation& o )
          "Account does not have sufficient liquid option asset funds for Option order." );
 
       _db.adjust_liquid_balance( o.owner, -delta_underlying );
+      _db.adjust_pending_supply( delta_underlying );
       _db.adjust_liquid_balance( o.owner, delta_position );
 
-      if( o.underlying_amount.amount != 0 )
+      if( o.options_issued.amount != 0 )
       {
          _db.modify( order, [&]( option_order_object& ooo )
          {
-            ooo.underlying_amount = o.underlying_amount;
-            ooo.option_position = option_position;
-            ooo.strike_price = o.strike_price;
+            ooo.underlying_amount = underlying_amount;
+            ooo.exercise_amount = exercise_amount;
+            ooo.option_position = o.options_issued;
             ooo.last_updated = now;
          });
       }
       else
       {
          _db.remove( order );
-      }
-   }
-} FC_CAPTURE_AND_RETHROW( ( o ) ) }
-
-
-void bid_collateral_evaluator::do_apply( const bid_collateral_operation& o )
-{ try {
-   const account_name_type& signed_for = o.bidder;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
-   const asset_object& debt_asset = _db.get_asset( o.debt.symbol );
-   const asset_bitasset_data_object& bitasset_data = _db.get_bitasset_data( debt_asset.symbol );
-   const asset& liquid = _db.get_liquid_balance( o.bidder, bitasset_data.backing_asset );
-
-   time_point now = _db.head_block_time();
-
-   FC_ASSERT( debt_asset.is_market_issued(),
-      "Unable to cover ${sym} as it is not a collateralized asset.", ("sym", debt_asset.symbol) );
-   FC_ASSERT( bitasset_data.has_settlement(),
-      "Asset being bidded on must have a settlement price.");
-   FC_ASSERT( o.collateral.symbol == bitasset_data.backing_asset,
-      "Additional collateral must be the same asset as backing asset.");
-
-   if( o.collateral.amount > 0 )
-   {
-      FC_ASSERT( liquid >= o.collateral,
-         "Cannot bid ${c} collateral when payer only has ${b}", ("c", o.collateral.amount)("b", liquid ) );
-   }
-
-   const auto& bid_idx = _db.get_index< collateral_bid_index >().indices().get< by_account >();
-   const auto& bid_itr = bid_idx.find( boost::make_tuple( o.bidder, o.debt.symbol ) );
-
-   if( bid_itr == bid_idx.end() )    // No bid exists
-   {
-      FC_ASSERT( o.debt.amount > 0,
-         "No collateral bid found." );
-      
-      _db.adjust_liquid_balance( o.bidder, -o.collateral );
-
-      _db.create< collateral_bid_object >([&]( collateral_bid_object& b )
-      {
-         b.bidder = o.bidder;
-         b.collateral = o.collateral;
-         b.debt = o.debt;
-         b.last_updated = now;
-         b.created = now;
-      });
-   }
-   else
-   {
-      const collateral_bid_object& bid = *bid_itr;
-
-      asset delta_collateral = o.collateral - bid.collateral;
-
-      _db.adjust_liquid_balance( o.bidder, -delta_collateral );
-
-      if( o.debt.amount > 0 )     // Editing bid
-      {
-         _db.modify( bid, [&]( collateral_bid_object& b )
-         {
-            b.collateral = o.collateral;
-            b.debt = o.debt;
-            b.last_updated = now;
-         });
-      }
-      else     // Removing bid
-      {
-         _db.cancel_bid( bid, false );
       }
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }

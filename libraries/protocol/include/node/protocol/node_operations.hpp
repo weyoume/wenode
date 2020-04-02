@@ -24,6 +24,7 @@ namespace node { namespace protocol {
    using node::protocol::price;
    using node::protocol::price_feed;
    using node::protocol::option_strike;
+   using node::protocol::asset_unit;
 
    inline void validate_account_name( const string& name )
    {
@@ -152,6 +153,79 @@ namespace node { namespace protocol {
    {
       return fc::ecc::private_key::regenerate( fc::sha256::hash( seed ) );
    };
+
+   /**
+    * Rounds a specifed value N to the nearest n significant figures.
+    */
+   inline double round_sig_figs( double N, double n ) 
+   { 
+      int h; 
+      double b, d, e, i, j, m, f; 
+      b = N; 
+
+      for (i = 0; b >= 1; ++i)
+      {
+         b = b / 10; 
+      }
+         
+      d = n - i; 
+      b = N; 
+      b = b * std::pow(10, d); 
+      e = b + 0.5; 
+      if( (float)e == (float)std::ceil(b) )
+      { 
+         f = (std::ceil(b)); 
+         h = f - 2; 
+         if (h % 2 != 0) 
+         { 
+            e = e - 1; 
+         } 
+      }
+      j = std::floor(e); 
+      m = std::pow(10, d); 
+      j = j / m;
+      return j; 
+   }
+
+   inline uint8_t find_msb( const uint128_t& u )
+   {
+      uint64_t x;
+      uint8_t places;
+      x      = (u.lo ? u.lo : 1);
+      places = (u.hi ?   64 : 0);
+      x      = (u.hi ? u.hi : x);
+      return uint8_t( boost::multiprecision::detail::find_msb(x) + places );
+   }
+
+   inline uint64_t approx_sqrt( const uint128_t& x )
+   {
+      if( (x.lo == 0) && (x.hi == 0) )
+         return 0;
+
+      uint8_t msb_x = find_msb(x);
+      uint8_t msb_z = msb_x >> 1;
+
+      uint128_t msb_x_bit = uint128_t(1) << msb_x;
+      uint64_t  msb_z_bit = uint64_t (1) << msb_z;
+
+      uint128_t mantissa_mask = msb_x_bit - 1;
+      uint128_t mantissa_x = x & mantissa_mask;
+      uint64_t mantissa_z_hi = (msb_x & 1) ? msb_z_bit : 0;
+      uint64_t mantissa_z_lo = (mantissa_x >> (msb_x - msb_z)).lo;
+      uint64_t mantissa_z = (mantissa_z_hi | mantissa_z_lo) >> 1;
+      uint64_t result = msb_z_bit | mantissa_z;
+
+      return result;
+   }
+
+   /**
+    * Generates a public key from a specified account name, authority type 
+    * and password using the graphene account authority standard.
+    */
+   inline public_key_type get_key( string name, string type, string password )
+   {
+      return fc::ecc::private_key::regenerate( fc::sha256::hash( std::string( name + type + password ) ) ).get_public_key();
+   }
 
 
    //============================//
@@ -2632,10 +2706,24 @@ namespace node { namespace protocol {
 
    /**
     * Transfers asset balances between accounts and confidential balances.
+    * 
+    * Confidential Transfers facilitate a UTXO style
+    * transaction payment process that utilizes Ring Signatures 
+    * and Ring CT to add provide privacy in payments of assets.
+    * 
+    * Accepts input accounts and input balances, and 
+    * Pays output accounts and output balances.
+    * 
+    * Confidential balances can be shuffled with other
+    * balances of the same amount size.
     */
    struct transfer_confidential_operation : public base_operation
    {
+      asset_symbol_type                transfer_asset;                ///< Symbol of the asset being transferred.
+
       vector< account_name_type >      input_accounts;                ///< Account that is accepting the recurring transfer.
+
+      vector< asset >                  input_account_amounts;         ///< The amount of the balance to be sent to each output public key in new balances.
 
       vector< digest_type >            input_balances;                ///< Input balance object hashes.
 
@@ -3108,7 +3196,7 @@ namespace node { namespace protocol {
 
       asset                  amount_to_sell;        ///< Asset being sold on exchange.
 
-      price                  exchange_rate;         ///< Minimum price to sell asset.
+      price                  exchange_rate;         ///< Minimum price to sell asset. Amount to sell is base.
 
       account_name_type      interface;             ///< Account of the interface that broadcasted the operation.
 
@@ -3141,7 +3229,7 @@ namespace node { namespace protocol {
 
       string                 order_id;                   ///< uuidv4 of the order for reference.
 
-      price                  exchange_rate;              ///< The asset pair price to sell the borrowed amount at on the exchange.
+      price                  exchange_rate;              ///< The asset pair price to sell the borrowed amount at on the exchange. Amount to borrow is base, Position is quote.
 
       asset                  collateral;                 ///< Collateral asset used to back the loan value. Returned to credit collateral object when position is closed. 
 
@@ -3183,19 +3271,19 @@ namespace node { namespace protocol {
    {
       account_name_type        signatory;
 
-      account_name_type        owner;                 ///< Owner of the Auction order.
+      account_name_type        owner;                    ///< Owner of the Auction order.
 
-      string                   order_id;              ///< uuidv4 of the order for reference.
+      string                   order_id;                 ///< uuidv4 of the order for reference.
 
-      asset                    amount_to_sell;        ///< Amount of asset to sell at auction clearing price.
+      asset                    amount_to_sell;           ///< Amount of asset to sell at auction clearing price.
 
-      price                    min_exchange_rate;     ///< The asset pair price to sell the amount at the auction clearing price.
+      price                    limit_close_price;        ///< The asset pair price to sell the amount at the auction clearing price. Amount to sell is base.
 
-      account_name_type        interface;             ///< Name of the interface that created the transaction.
+      account_name_type        interface;                ///< Name of the interface that created the transaction.
 
-      time_point               expiration;            ///< Time that the order expires.
+      time_point               expiration;               ///< Time that the order expires.
 
-      bool                     opened = true;         ///< True to open new order, false to cancel existing order.
+      bool                     opened = true;            ///< True to open new order, false to cancel existing order.
 
       void                     validate()const;
       void                     get_creator_name( account_name_type a )const{ a = owner; }
@@ -3269,8 +3357,8 @@ namespace node { namespace protocol {
     * OPT.TYPE.QUOTE_SYMBOL.STRIKE_PRICE.BASE_SYMBOL.EXP_DAY_EXP_MONTH.EXP_YEAR
     * 
     * Example:
-    * OPT.CALL.WYM.3.5.MEUSD.1.1.2021  == WYM call option at a strike price of 3.50 MEUSD expiring on 1st January 2021.
-    * OPT.PUT.WYM.2.0.MEUSD.1.2.2021  == WYM put option at a strike price of 2.00 MEUSD expiring on 1st February 2021.
+    * OPT.CALL.WYM.3.5.MEUSD.1.1.2021 == WYM call option at a strike price of 3.50 MEUSD expiring on 1st January 2021.
+    * OPT.PUT.WYM.2.0.MEUSD.1.2.2021 == WYM put option at a strike price of 2.00 MEUSD expiring on 1st February 2021.
     */
    struct option_order_operation : public base_operation
    {
@@ -3280,9 +3368,7 @@ namespace node { namespace protocol {
 
       string                   order_id;              ///< uuidv4 of the order for reference.
 
-      asset                    underlying_amount;     ///< Amount of assets to issue covered options contract assets against. Must be a multiple of 100 units.
-
-      option_strike            strike_price;          ///< The asset pair strike price at which the options can be exercised at any time before expiration.
+      asset                    options_issued;        ///< Amount of assets to issue covered options contract assets against. Must be a whole number.
 
       account_name_type        interface;             ///< Name of the interface that created the transaction.
 
@@ -3290,29 +3376,6 @@ namespace node { namespace protocol {
 
       void                     validate()const;
       void                     get_creator_name( account_name_type a )const{ a = owner; }
-      void                     get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-   };
-
-
-   /**
-    * Used to create a bid for outstanding debt of a globally settled market issued asset.
-    * 
-    * When the sum of bids for an asset's debt exceed the total amount of outstanding debt
-    * for the asset, the collateral in the global settlement fund is distributed to all accounts
-    * that create bids that bring the asset into operation and solvency again.
-    */
-   struct bid_collateral_operation : public base_operation
-   {
-      account_name_type        signatory;
-
-      account_name_type        bidder;        ///< Adds additional collateral to the market issued asset.
-
-      asset                    collateral;    ///< The amount of collateral to bid for the debt.
-
-      asset                    debt;          ///< The amount of debt to take over.
-
-      void                     validate()const;
-      void                     get_creator_name( account_name_type a )const{ a = bidder; }
       void                     get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -3332,6 +3395,9 @@ namespace node { namespace protocol {
     * Limit and margin orders will consume the best priced liquidity from either other orders,
     * or the pairs liquidity pools. 
     * Accounts that add liquidity to the pool earn a share fo the fees it earns from trading.
+    * 
+    * Design Inspired by Bancor Protocol:
+    * https://storage.googleapis.com/website-bancor/2018/04/01ba8253-bancor_protocol_whitepaper_en.pdf
     */
    struct liquidity_pool_create_operation : public base_operation
    {
@@ -3355,6 +3421,9 @@ namespace node { namespace protocol {
     * The asset is traded with the core asset's liquidity pool, and then
     * the proceeds are trading with the receive asset's liquidty pool for the 
     * best liquidity.
+    * 
+    * Design Inspired by Bancor Protocol:
+    * https://storage.googleapis.com/website-bancor/2018/04/01ba8253-bancor_protocol_whitepaper_en.pdf
     */
    struct liquidity_pool_exchange_operation : public base_operation
    {
@@ -3385,6 +3454,9 @@ namespace node { namespace protocol {
     * Returns a liquidity pool asset which can be redeemed for 
     * the assets contained within the pool, and is 
     * equivalent to an autonomously re-balanced holding of 50% of both assets.
+    * 
+    * Design Inspired by Bancor Protocol:
+    * https://storage.googleapis.com/website-bancor/2018/04/01ba8253-bancor_protocol_whitepaper_en.pdf
     */
    struct liquidity_pool_fund_operation : public base_operation
    {
@@ -3407,6 +3479,9 @@ namespace node { namespace protocol {
     * 
     * Redeems a liquidity pool asset for an asset contained within the 
     * reserves of the pool.
+    * 
+    * Design Inspired by Bancor Protocol:
+    * https://storage.googleapis.com/website-bancor/2018/04/01ba8253-bancor_protocol_whitepaper_en.pdf
     */
    struct liquidity_pool_withdraw_operation : public base_operation
    {
@@ -3427,7 +3502,11 @@ namespace node { namespace protocol {
    /**
     * Adds an asset to an account's credit collateral position of that asset.
     * 
-    * Collateral pools are used to borrow funds in credit borrow orders, margin orders, and option orders.
+    * Collateral pools are used to borrow funds in 
+    * credit borrow orders, margin orders, and option orders.
+    * 
+    * Design inspired by Compound Protocol:
+    * https://compound.finance/documents/Compound.Whitepaper.pdf
     */
    struct credit_pool_collateral_operation : public base_operation
    {
@@ -3446,8 +3525,15 @@ namespace node { namespace protocol {
    /**
     * Borrows an asset from the credit pool of the asset.
     * 
+    * Creates a collateralized loan from the credit pool 
+    * which is backed by the value fo the collateral, 
+    * according to available balances within liquidity pools.
+    * 
     * Borrowers pay a continous interest rate to the pool,
-    * which is redeemed by lenders.
+    * which is redeemed by lenders when they withdraw credit pool assets.
+    * 
+    * Design inspired by Compound Protocol:
+    * https://compound.finance/documents/Compound.Whitepaper.pdf
     */
    struct credit_pool_borrow_operation : public base_operation
    {
@@ -3472,8 +3558,11 @@ namespace node { namespace protocol {
     * 
     * Returns units of the credit pool asset for the amount,
     * which can be redeemed at a later time for an amount of the 
-    * lent asset, plus a share in the interest accumulated within the pool from
-    * borrowers.
+    * lent asset, plus a share in the interest accumulated 
+    * within the pool from borrowers.
+    * 
+    * Design inspired by Compound Protocol:
+    * https://compound.finance/documents/Compound.Whitepaper.pdf
     */
    struct credit_pool_lend_operation : public base_operation
    {
@@ -3494,6 +3583,9 @@ namespace node { namespace protocol {
     * 
     * Redeems a credit pool asset for its underlying credit reserves, 
     * plus additonal interest earned from borrowers.
+    * 
+    * Design inspired by Compound Protocol:
+    * https://compound.finance/documents/Compound.Whitepaper.pdf
     */
    struct credit_pool_withdraw_operation : public base_operation
    {
@@ -3524,9 +3616,9 @@ namespace node { namespace protocol {
 
       account_name_type     account;           ///< Creator of the new option pool.
 
-      asset_symbol_type     first_asset;       ///< Initial balance of one asset.
+      asset_symbol_type     first_asset;       ///< First asset in the option trading pair.
 
-      asset_symbol_type     second_asset;      ///< Initial balance of second asset, initial price is the ratio of these two amounts.
+      asset_symbol_type     second_asset;      ///< Second asset in the option trading pair.
 
       void                  validate()const;
       void                  get_creator_name( account_name_type a )const{ a = account; }
@@ -3543,6 +3635,19 @@ namespace node { namespace protocol {
     * market's valuation of the likelyhood of each outcome
     * occuring. The outcome that occurs is exchangable for 
     * one unit of the underlying asset.
+    * 
+    * The Outcome selection is voted on by the holders of the 
+    * prediction market asset, according to quadratic voting.
+    * The bondholders that vote for the successfully selected
+    * outcome receive a share in the total prediction bond pool, 
+    * plus the fees earned by the prediction market pool.
+    * 
+    * Prediction pools are resolved over 7 days after their outcome time. 
+    * Bondholders that fail to vote lose their prediction bond 
+    * to the reoslvers of the successful outcome.
+    * 
+    * Design Inspired by Augur Protocol:
+    * https://www.augur.net/whitepaper.pdf
     */
    struct prediction_pool_create_operation : public base_operation
    {
@@ -3566,11 +3671,9 @@ namespace node { namespace protocol {
 
       string                             details;                  ///< Description of the market, how it will be resolved using known public data sources.
 
-      time_point                         min_closing_time;         ///< Time after which the market can be closed.
+      time_point                         outcome_time;             ///< Time after which the outcome of the prediction market will become known and resolutions open.
 
-      time_point                         max_closing_time;         ///< Time by which the market must be closed with a selected outcome.
-
-      asset                              prediction_bond;          ///< Security deposit placed by the issuer on the market.
+      asset                              prediction_bond;          ///< Initial deposit placed by the issuer on the market, which requires them to vote in the resolution process.
 
       void                               validate()const;
       void                               get_creator_name( account_name_type a )const{ a = account; }
@@ -3586,6 +3689,9 @@ namespace node { namespace protocol {
     * Earns a share of the fees generated by the pool
     * Returns a prediction pool base asset which earn a share in the 
     * fees generated by the market.
+    * 
+    * Design Inspired by Augur Protocol:
+    * https://www.augur.net/whitepaper.pdf
     */
    struct prediction_pool_exchange_operation : public base_operation
    {
@@ -3597,11 +3703,36 @@ namespace node { namespace protocol {
 
       asset_symbol_type                  prediction_asset;           ///< Base Asset to the prediction pool to exchange with.
 
-      account_name_type                  interface;                  ///< Name of the interface account broadcasting the transaction.
-
       bool                               exchange_base = false;      ///< True to exchange base asset, false to exchange one of all prediction assets.
 
       bool                               withdraw = false;           ///< True to Withdraw collateral, false to add funds. 
+
+      void                               validate()const;
+      void                               get_creator_name( account_name_type a )const{ a = account; }
+      void                               get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+   };
+
+
+   /**
+    * Votes for a specified prediction market outcome resolution.
+    * 
+    * Prediction market assets are spent to vote for an outcome asset,
+    * and the most supported outcome is selected by quadratic voting.
+    * The Voters that support the winning option receive a share in the 
+    * prediction bond pool, plus market fees. 
+    * 
+    * Design Inspired by Augur Protocol:
+    * https://www.augur.net/whitepaper.pdf
+    */
+   struct prediction_pool_resolve_operation : public base_operation
+   {
+      account_name_type                  signatory;
+
+      account_name_type                  account;                    ///< Account executing the exchange with the pool.
+
+      asset                              amount;                     ///< Amount of prediction asset to vote with.
+
+      asset_symbol_type                  resolution_outcome;         ///< Base Asset to the prediction pool to exchange with.
 
       void                               validate()const;
       void                               get_creator_name( account_name_type a )const{ a = account; }
@@ -3697,11 +3828,11 @@ namespace node { namespace protocol {
 
       uint8_t                         minimum_feeds = 1;                                              ///< Minimum number of unexpired feeds required to extract a median feed from.
 
-      fc::microseconds                force_settlement_delay = FORCE_SETTLEMENT_DELAY;                ///< This is the delay between the time a long requests settlement and the chain evaluates the settlement.
+      fc::microseconds                asset_settlement_delay = ASSET_SETTLEMENT_DELAY;                ///< This is the delay between the time a long requests settlement and the chain evaluates the settlement.
 
-      uint16_t                        force_settlement_offset_percent = FORCE_SETTLEMENT_OFFSET;      ///< The percentage to adjust the feed price in the short's favor in the event of a forced settlement.
+      uint16_t                        asset_settlement_offset_percent = ASSET_SETTLEMENT_OFFSET;      ///< The percentage to adjust the feed price in the short's favor in the event of a forced settlement.
 
-      uint16_t                        maximum_force_settlement_volume = FORCE_SETTLEMENT_MAX_VOLUME;  ///< the percentage of current supply which may be force settled within each 24h interval.
+      uint16_t                        maximum_asset_settlement_volume = ASSET_SETTLEMENT_MAX_VOLUME;  ///< the percentage of current supply which may be force settled within each 24h interval.
 
       asset_symbol_type               backing_asset = SYMBOL_COIN;                                    ///< The symbol of the asset that the bitasset is collateralized by.
 
@@ -3877,15 +4008,127 @@ namespace node { namespace protocol {
 
 
    /**
+    * Creates a new asset distribution.
+    * 
+    * Asset distributions enables an asset to be newly issued 
+    * to accounts sending incoming payments according to
+    * specified parameters.
+    * 
+    * Enables funds to be sent into the distribution
+    * to create distribution balances.
+    * 
+    * Design Inspired by the Process flow of STEEM's Smart Media Tokens:
+    * https://smt.steem.com/smt-whitepaper.pdf
+    */
+   struct asset_distribution_operation : public base_operation
+   {
+      account_name_type             signatory;
+      
+      account_name_type             issuer;                       ///< The account which created the asset.
+
+      asset_symbol_type             distribution_asset;           ///< Asset that is generated by the distribution.
+
+      asset_symbol_type             fund_asset;                   ///< Asset being accepted for distribution assets.
+
+      string                        details;                      ///< Description of the distribution process.
+
+      string                        url;                          ///< Reference URL of the distribution process.
+
+      string                        json;                         ///< JSON Metadata of the distribution process.
+
+      uint32_t                      distribution_rounds;          ///< Number of distribution rounds, total distribution amount is divided between all rounds.
+
+      uint32_t                      distribution_interval_days;   ///< Duration of each distribution round, in days.
+
+      uint32_t                      max_intervals_missed;         ///< Number of Rounds that can be missed before the distribution is closed early.
+
+      share_type                    min_input_fund_units;         ///< Minimum funds required for each round of the distribution process.
+
+      share_type                    max_input_fund_units;         ///< Maximum funds to be accepted before closing each distribution round.
+      
+      vector< asset_unit >          input_fund_unit;              ///< The integer unit ratio for distribution of incoming funds.
+
+      vector< asset_unit >          output_distribution_unit;     ///< The integer unit ratio for distribution of released funds.
+
+      share_type                    min_unit_ratio;               ///< The lowest value of unit ratio between input and output units.
+
+      share_type                    max_unit_ratio;               ///< The highest possible initial value of unit ratio between input and output units. 
+
+      share_type                    min_input_balance_units;      ///< Minimum fund units that each sender can contribute in an individual balance.
+
+      share_type                    max_input_balance_units;      ///< Maximum fund units that each sender can contribute in an individual balance.
+      
+      time_point                    begin_time;                   ///< Time to begin the first distribution round
+
+      void                          validate()const;
+      void                          get_creator_name( account_name_type a )const{ a = issuer; }
+      void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+   };
+
+
+   /**
+    * Funds a new asset distribution balance.
+    * 
+    * Every distribution interval, all pending distribution balances 
+    * are converted into the distribution asset.
+    * 
+    * Design Inspired by the Process flow of STEEM's Smart Media Tokens:
+    * https://smt.steem.com/smt-whitepaper.pdf
+    */
+   struct asset_distribution_fund_operation : public base_operation
+   {
+      account_name_type             signatory;
+      
+      account_name_type             sender;                    ///< The account which sent the amount into the distribution.
+
+      asset_symbol_type             distribution_asset;        ///< Distribution asset for the fund to be sent to.
+
+      asset                         amount;                    ///< Asset amount being sent for distribution.
+
+      void                          validate()const;
+      void                          get_creator_name( account_name_type a )const{ a = sender; }
+      void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+   };
+
+
+   /**
+    * Uses an option asset to obtain the underlying asset at the strike price.
+    * 
+    * Option assets enable the holder to exercise them
+    * to trade the asset at the strike price.
+    * 
+    * The Exercised options match against the outstanding
+    * option orders that were created first, which are assigned the 
+    * exchanged quote funds. 
+    */
+   struct asset_option_exercise_operation : public base_operation
+   {
+      account_name_type             signatory;
+      
+      account_name_type             account;              ///< The account exercising the option asset.
+
+      asset                         amount;               ///< Option assets being exercised by exchanging the quoted asset for the underlying. 
+
+      void                          validate()const;
+      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+   };
+
+
+   /**
     * Update the set of feed-producing accounts for a BitAsset.
     *
     * BitAssets have price feeds selected by taking the 
     * median values of recommendations from a set of feed producers.
     * This operation is used to specify which
     * accounts may produce feeds for a given BitAsset.
+    * 
     * All valid feeds supplied by feed producers 
     * in @ref new_feed_producers, which were already feed producers
     * prior to execution of this operation, will be preserved.
+    * 
+    * Design inspired by Bitshares Protocol:
+    * https://www.bitshares.foundation/download/articles/BitSharesBlockchain.pdf
     */
    struct asset_update_feed_producers_operation : public base_operation
    {
@@ -3927,6 +4170,9 @@ namespace node { namespace protocol {
     * directionally opposite to eachother, so if we're
     * publishing a feed for USD, the call limit price 
     * will be CORE/USD and the short limit price will be USD/CORE.
+    * 
+    * Design inspired by Bitshares Protocol:
+    * https://www.bitshares.foundation/download/articles/BitSharesBlockchain.pdf
     */
    struct asset_publish_feed_operation : public base_operation
    {
@@ -3957,6 +4203,9 @@ namespace node { namespace protocol {
     * 
     * The price of this sale will be based on the feed 
     * price for the BitAsset being settled.
+    * 
+    * Design inspired by Bitshares Protocol:
+    * https://www.bitshares.foundation/download/articles/BitSharesBlockchain.pdf
     */
    struct asset_settle_operation : public base_operation
    {
@@ -3987,6 +4236,9 @@ namespace node { namespace protocol {
     * If this asset is used as backing for other bitassets, 
     * those bitassets will be force settled at their current
     * feed price.
+    * 
+    * Design inspired by Bitshares Protocol:
+    * https://www.bitshares.foundation/download/articles/BitSharesBlockchain.pdf
     */
    struct asset_global_settle_operation : public base_operation
    {
@@ -4001,6 +4253,32 @@ namespace node { namespace protocol {
       void                          validate()const;
       void                          get_creator_name( account_name_type a )const{ a = issuer; }
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+   };
+
+
+   /**
+    * Used to create a bid for outstanding debt of a globally settled market issued asset.
+    * 
+    * When the sum of bids for an asset's debt exceed 
+    * the total amount of outstanding debt
+    * for the asset, the collateral in the global 
+    * settlement fund is distributed to all accounts
+    * that create bids that bring the asset 
+    * into operation and solvency again.
+    */
+   struct asset_collateral_bid_operation : public base_operation
+   {
+      account_name_type        signatory;
+
+      account_name_type        bidder;        ///< Adds additional collateral to the market issued asset.
+
+      asset                    collateral;    ///< The amount of collateral to bid for the debt.
+
+      asset                    debt;          ///< The amount of debt to take over.
+
+      void                     validate()const;
+      void                     get_creator_name( account_name_type a )const{ a = bidder; }
+      void                     get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
    
 
@@ -5362,6 +5640,16 @@ FC_REFLECT( node::protocol::transfer_recurring_accept_operation,
          (accepted)
          );
 
+FC_REFLECT( node::protocol::transfer_confidential_operation,
+         (input_accounts)
+         (input_account_amounts)
+         (input_balances)
+         (input_balance_signatures)
+         (output_accounts)
+         (output_account_amounts)
+         (output_public_keys)
+         (output_public_key_amounts)
+         );
 
 
    //============================//
@@ -5546,7 +5834,7 @@ FC_REFLECT( node::protocol::auction_order_operation,
          (owner)
          (order_id)
          (amount_to_sell)
-         (min_exchange_rate)
+         (limit_close_price)
          (interface)
          (expiration)
          (opened)
@@ -5565,22 +5853,18 @@ FC_REFLECT( node::protocol::option_order_operation,
          (signatory)
          (owner)
          (order_id)
-         (underlying_amount)
-         (strike_price)
+         (options_issued)
          (interface)
          (opened)
          );
 
-FC_REFLECT( node::protocol::bid_collateral_operation, 
-         (signatory)
-         (bidder)
-         (collateral)
-         (debt)
-         );
+
 
    //=========================//
    //==== Pool Operations ====//
    //=========================//
+
+
 
 FC_REFLECT( node::protocol::liquidity_pool_create_operation, 
          (signatory)
@@ -5639,6 +5923,44 @@ FC_REFLECT( node::protocol::credit_pool_withdraw_operation,
          (amount)
          );
 
+FC_REFLECT( node::protocol::option_pool_create_operation, 
+         (signatory)
+         (account)
+         (first_asset)
+         (second_asset)
+         );
+
+FC_REFLECT( node::protocol::prediction_pool_create_operation, 
+         (signatory)
+         (account)
+         (prediction_symbol)
+         (collateral_symbol)
+         (outcome_assets)
+         (outcome_details)
+         (display_symbol)
+         (json)
+         (url)
+         (details)
+         (outcome_time)
+         (prediction_bond)
+         );
+
+FC_REFLECT( node::protocol::prediction_pool_exchange_operation, 
+         (signatory)
+         (account)
+         (amount)
+         (prediction_asset)
+         (exchange_base)
+         (withdraw)
+         );
+
+FC_REFLECT( node::protocol::prediction_pool_resolve_operation, 
+         (signatory)
+         (account)
+         (amount)
+         (resolution_outcome)
+         );
+
 
 
    //==========================//
@@ -5685,9 +6007,9 @@ FC_REFLECT( node::protocol::asset_options,
          (producer_activity_reward_percent)
          (feed_lifetime)
          (minimum_feeds)
-         (force_settlement_delay)
-         (force_settlement_offset_percent)
-         (maximum_force_settlement_volume)
+         (asset_settlement_delay)
+         (asset_settlement_offset_percent)
+         (maximum_asset_settlement_volume)
          (backing_asset)
          (dividend_share_percent)
          (liquid_dividend_percent)
@@ -5754,6 +6076,41 @@ FC_REFLECT( node::protocol::asset_update_issuer_operation,
          (new_issuer)
          );
 
+FC_REFLECT( node::protocol::asset_distribution_operation,
+         (signatory)
+         (issuer)
+         (distribution_asset)
+         (fund_asset)
+         (details)
+         (url)
+         (json)
+         (distribution_rounds)
+         (distribution_interval_days)
+         (max_intervals_missed)
+         (min_input_fund_units)
+         (max_input_fund_units)
+         (input_fund_unit)
+         (output_distribution_unit)
+         (min_unit_ratio)
+         (max_unit_ratio)
+         (min_input_balance_units)
+         (max_input_balance_units)
+         (begin_time)
+         );
+
+FC_REFLECT( node::protocol::asset_distribution_fund_operation,
+         (signatory)
+         (sender)
+         (distribution_asset)
+         (amount)
+         );
+
+FC_REFLECT( node::protocol::asset_option_exercise_operation,
+         (signatory)
+         (account)
+         (amount)
+         );
+
 FC_REFLECT( node::protocol::asset_update_feed_producers_operation,
          (signatory)
          (issuer)
@@ -5782,7 +6139,12 @@ FC_REFLECT( node::protocol::asset_global_settle_operation,
          (settle_price)
          );
 
-
+FC_REFLECT( node::protocol::asset_collateral_bid_operation, 
+         (signatory)
+         (bidder)
+         (collateral)
+         (debt)
+         );
 
    //=====================================//
    //==== Block Production Operations ====//

@@ -175,8 +175,8 @@ order_book market_history_api_impl::get_order_book( string buy_symbol, string se
    auto max_sell = price::max( asset_symbol_type( sell_symbol ), asset_symbol_type( buy_symbol ) );
    auto max_buy = price::max( asset_symbol_type( buy_symbol ), asset_symbol_type( sell_symbol ) );
 
-   const auto& limit_price_idx = db->get_index< chain::limit_order_index >().indices().get< by_price >();
-   const auto& margin_price_idx = db->get_index< chain::margin_order_index >().indices().get< by_price >();
+   const auto& limit_price_idx = db->get_index< chain::limit_order_index >().indices().get< by_high_price >();
+   const auto& margin_price_idx = db->get_index< chain::margin_order_index >().indices().get< by_high_price >();
 
    auto limit_sell_itr = limit_price_idx.lower_bound( max_sell );
    auto limit_buy_itr = limit_price_idx.lower_bound( max_buy );

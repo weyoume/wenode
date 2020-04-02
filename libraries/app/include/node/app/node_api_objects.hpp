@@ -1358,9 +1358,9 @@ struct bitasset_data_api_obj
       settlement_fund( b.settlement_fund ),
       feed_lifetime( b.feed_lifetime ),
       minimum_feeds( b.minimum_feeds ),
-      force_settlement_delay( b.force_settlement_delay ),
-      force_settlement_offset_percent( b.force_settlement_offset_percent ),
-      maximum_force_settlement_volume( b.maximum_force_settlement_volume )
+      asset_settlement_delay( b.asset_settlement_delay ),
+      asset_settlement_offset_percent( b.asset_settlement_offset_percent ),
+      maximum_asset_settlement_volume( b.maximum_asset_settlement_volume )
       {
          for( auto feed: b.feeds )
          {
@@ -1383,9 +1383,9 @@ struct bitasset_data_api_obj
    asset                                                   settlement_fund;       ///< Amount of collateral which is available for force settlement
    fc::microseconds                                        feed_lifetime;                            ///< Time before a price feed expires
    uint8_t                                                 minimum_feeds;                                              ///< Minimum number of unexpired feeds required to extract a median feed from
-   fc::microseconds                                        force_settlement_delay;                ///< This is the delay between the time a long requests settlement and the chain evaluates the settlement
-   uint16_t                                                force_settlement_offset_percent;      ///< The percentage to adjust the feed price in the short's favor in the event of a forced settlement
-   uint16_t                                                maximum_force_settlement_volume;  ///< the percentage of current supply which may be force settled within each 24h interval.
+   fc::microseconds                                        asset_settlement_delay;                ///< This is the delay between the time a long requests settlement and the chain evaluates the settlement
+   uint16_t                                                asset_settlement_offset_percent;      ///< The percentage to adjust the feed price in the short's favor in the event of a forced settlement
+   uint16_t                                                maximum_asset_settlement_volume;  ///< the percentage of current supply which may be force settled within each 24h interval.
 };
 
 
@@ -2931,9 +2931,9 @@ FC_REFLECT( node::app::bitasset_data_api_obj,
          (settlement_fund)
          (feed_lifetime)
          (minimum_feeds)
-         (force_settlement_delay)
-         (force_settlement_offset_percent)
-         (maximum_force_settlement_volume)
+         (asset_settlement_delay)
+         (asset_settlement_offset_percent)
+         (maximum_asset_settlement_volume)
          );
 
 FC_REFLECT( node::app::equity_data_api_obj,

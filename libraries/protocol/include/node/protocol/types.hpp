@@ -72,23 +72,23 @@ namespace node {
 
    namespace protocol {
 
-      typedef fc::ecc::private_key        private_key_type;
-      typedef fc::sha256                  chain_id_type;
-      typedef fixed_string_32             account_name_type;
-      typedef fixed_string_32             community_name_type;
-      typedef fixed_string_32             tag_name_type;
-      typedef fixed_string_32             asset_symbol_type;
-      typedef fixed_string_32             graph_node_name_type;
-      typedef fixed_string_32             graph_edge_name_type;
-      typedef fc::ripemd160               block_id_type;
-      typedef fc::ripemd160               checksum_type;
-      typedef fc::ripemd160               transaction_id_type;
-      typedef fc::sha256                  digest_type;
-      typedef fc::ecc::compact_signature  signature_type;
-      typedef safe<int64_t>               share_type;
-      typedef safe<int128_t>              share_128_type;
-      typedef uint16_t                    weight_type;
-      typedef boost::rational<int32_t>    ratio_type;
+      typedef fc::ecc::private_key              private_key_type;
+      typedef fc::sha256                        chain_id_type;
+      typedef fixed_string_32                   account_name_type;
+      typedef fixed_string_32                   community_name_type;
+      typedef fixed_string_32                   tag_name_type;
+      typedef fixed_string_32                   asset_symbol_type;
+      typedef fixed_string_32                   graph_node_name_type;
+      typedef fixed_string_32                   graph_edge_name_type;
+      typedef fc::ripemd160                     block_id_type;
+      typedef fc::ripemd160                     checksum_type;
+      typedef fc::ripemd160                     transaction_id_type;
+      typedef fc::sha256                        digest_type;
+      typedef fc::ecc::compact_signature        signature_type;
+      typedef safe<int64_t>                     share_type;
+      typedef safe<int128_t>                    share_128_type;
+      typedef uint16_t                          weight_type;
+      typedef boost::rational<int32_t>          ratio_type;
 
 
       /**
@@ -254,7 +254,7 @@ namespace node {
          CREDIT_POOL_ASSET,      ///< Credit pool asset that is backed by deposits of the base asset, used for borrowing funds from the pool, used as collateral to borrow base asset.
          OPTION_ASSET,           ///< Asset that enables the execution of a trade at a specific strike price until an expiration date. 
          PREDICTION_ASSET,       ///< Asset backed by an underlying collateral claim, on the condition that a prediction market resolve in a particular outcome.
-         GATEWAY_ASSET,          ///< Asset backed by deposits with an exchange counterparty of another asset or currency. 
+         GATEWAY_ASSET,          ///< Asset backed by deposits with an exchange counterparty of another asset or currency.
          UNIQUE_ASSET            ///< Asset with a supply of one, contains metadata relating to the ownership of a unique non-fungible asset.
       };
 
@@ -493,6 +493,31 @@ namespace node {
          "week",
          "month",
          "year"
+      };
+
+      /**
+       * Account Balance types that can be specified in asset units.
+       */
+      enum class account_balance_type : int
+      {
+         LIQUID_BALANCE,
+         STAKED_BALANCE,
+         REWARD_BALANCE,
+         SAVINGS_BALANCE,
+         VESTING_BALANCE,
+         DELEGATED_BALANCE,
+         RECEIVING_BALANCE
+      };
+
+      const static vector< string > account_balance_values =
+      {
+         "liquid",
+         "staked",
+         "reward",
+         "savings",
+         "vesting",
+         "delegated",
+         "receiving"
       };
 
       enum class asset_issuer_permission_flags : int

@@ -37,7 +37,7 @@
 #define CHAIN_ID                        (fc::sha256::hash("WeYouMe"))
 #define ADDRESS_PREFIX                  "WYM"
 
-#define BLOCKCHAIN_PRECISION            share_type( 100000000 ) // 100 Million integer units per currency unit
+#define BLOCKCHAIN_PRECISION            share_type( 100000000 )        // 100 Million integer units per currency unit
 #define BLOCKCHAIN_PRECISION_DIGITS     8
 
 #define MECOIN_SYMBOL                   "MEC"
@@ -46,32 +46,34 @@
 #define MECREDIT_SYMBOL                 "MCR"
 #define LIQUIDITY_ASSET_PREFIX          "LIQUID."
 #define CREDIT_ASSET_PREFIX             "CREDIT."
-#define OPTION_ASSET_PREFIX             "OPT."
+#define OPTION_ASSET_PREFIX             "OPT"
+#define OPTION_ASSET_CALL               "CALL"
+#define OPTION_ASSET_PUT                "PUT"
 
-#define SYMBOL_COIN  				    MECOIN_SYMBOL                 // [MEC: MeCoin - Cryptocurrency of the WeYouMe Blockchain]
-#define SYMBOL_EQUITY  					WEYOUME_SYMBOL                // [WYM: WeYouMe - CryptoEquity of the WeYouMe Blockchain]
-#define SYMBOL_USD    					MEUSD_SYMBOL                  // [MUSD: MeUSD - Stablecoin collateralized by MeCoin with value pegged to $1.00 USD]
-#define SYMBOL_CREDIT 					MECREDIT_SYMBOL               // [MCR: MeCredit - Interest bearing CryptoCredit issued by the WeYouMe blockchain]
+#define SYMBOL_COIN  				    MECOIN_SYMBOL                   // [MEC: MeCoin - Cryptocurrency of the WeYouMe Blockchain]
+#define SYMBOL_EQUITY  					WEYOUME_SYMBOL                  // [WYM: WeYouMe - CryptoEquity of the WeYouMe Blockchain]
+#define SYMBOL_USD    					MEUSD_SYMBOL                    // [MUSD: MeUSD - Stablecoin collateralized by MeCoin with value pegged to $1.00 USD]
+#define SYMBOL_CREDIT 					MECREDIT_SYMBOL                 // [MCR: MeCredit - Interest bearing CryptoCredit issued by the WeYouMe blockchain]
 
 #define MILLION                         (1000000)                       // 1 Million integer
 #define BILLION                         (1000000000)                    // 1 Billion Integer
 #define TRILLION                        (1000000000000)                 // 1 Trillion integer
-#define PERCENT_100                     (10000)                       // Uses 5 decimal place integer to enable percentages to 2 decimal places of precision
-#define PERCENT_1                       (PERCENT_100/100)             // 1% as percentage integer
-#define PERCENT_10_OF_PERCENT_1         (PERCENT_100/1000)            // 0.1% as percentage integer
+#define PERCENT_100                     (10000)                         // Uses 5 decimal place integer to enable percentages to 2 decimal places of precision
+#define PERCENT_1                       (PERCENT_100/100)               // 1% as percentage integer
+#define PERCENT_10_OF_PERCENT_1         (PERCENT_100/1000)              // 0.1% as percentage integer
 
 #define GENESIS_TIME                    fc::time_point(fc::microseconds(1590242400000000))    // 24th May 2020 network launch time
 #define MINING_TIME                     fc::time_point(fc::microseconds(1590242400000000))    // 24th May 2020 network launch time
 
 #define INIT_COIN_SUPPLY                (0)                                                  // Zero MeCoin preissuance
-#define INIT_EQUITY_SUPPLY              share_type( 10 * MILLION * BLOCKCHAIN_PRECISION )        // 10 Million Supply of WYM.
+#define INIT_EQUITY_SUPPLY              share_type( 10 * MILLION * BLOCKCHAIN_PRECISION )    // 10 Million Supply of WYM.
 #define MAX_ASSET_SUPPLY                share_type( TRILLION * BLOCKCHAIN_PRECISION )        // 1 Trillion max asset supply.
 
-#define BLOCK_INTERVAL                  fc::microseconds(788400)                                    // 0.7884 Seconds per block, resulting in exactly 40 Million blocks per year.
-#define BLOCKS_PER_YEAR                 int64_t(40 * MILLION)                                       // 40 Million blocks per year.
-#define BLOCKS_PER_DAY                  int64_t(fc::days(1).count() / BLOCK_INTERVAL.count())       // Approximately 109,589 Blocks per day.
-#define BLOCKS_PER_HOUR                 int64_t(fc::hours(1).count() / BLOCK_INTERVAL.count())      // Approximately 4,466 Blocks per hour.
-#define BLOCKS_PER_MINUTE               int64_t(fc::minutes(1).count() / BLOCK_INTERVAL.count())    // Approximately 76 Blocks per minute.
+#define BLOCK_INTERVAL                  fc::microseconds(788400)                                     // 0.7884 Seconds per block, resulting in exactly 40 Million blocks per year.
+#define BLOCKS_PER_YEAR                 uint64_t(40 * MILLION)                                       // 40 Million blocks per year.
+#define BLOCKS_PER_DAY                  uint64_t(fc::days(1).count() / BLOCK_INTERVAL.count())       // Approximately 109,589 Blocks per day.
+#define BLOCKS_PER_HOUR                 uint64_t(fc::hours(1).count() / BLOCK_INTERVAL.count())      // Approximately 4,466 Blocks per hour.
+#define BLOCKS_PER_MINUTE               uint64_t(fc::minutes(1).count() / BLOCK_INTERVAL.count())    // Approximately 76 Blocks per minute.
 
 #define ANNUAL_COIN_ISSUANCE            asset( 1 * BILLION * BLOCKCHAIN_PRECISION, SYMBOL_COIN)     // 1 Billion MEC issued per year
 #define BLOCK_REWARD                    (ANNUAL_COIN_ISSUANCE / BLOCKS_PER_YEAR)                    // 25 MeCoin issued per block
@@ -144,11 +146,11 @@
 
 #define HARDFORK_REQUIRED_PRODUCERS     ((GENESIS_PRODUCER_AMOUNT/4)*3) // 3 Quarters of producers required for hardfork version upgrade acceptance.
 #define MAX_TIME_UNTIL_EXPIRATION       (60*60)            // seconds,  aka: 1 hour
-#define MAX_MEMO_SIZE                   2048
-#define MAX_PROXY_RECURSION_DEPTH       4
-#define COIN_UNSTAKE_INTERVALS          4
+#define MAX_MEMO_SIZE                   (2048)
+#define MAX_PROXY_RECURSION_DEPTH       (4)
+#define COIN_UNSTAKE_INTERVALS          (4)
 #define STAKE_WITHDRAW_INTERVAL         fc::days(7)        // 1 week per stake withdrawal interval
-#define MAX_WITHDRAW_ROUTES             10
+#define MAX_WITHDRAW_ROUTES             (10)
 #define SAVINGS_WITHDRAW_TIME           (fc::days(3))
 #define SAVINGS_WITHDRAW_REQUEST_LIMIT  (100)
 #define MAX_ASSET_STAKE_INTERVALS       (104)              // Maximum weeks that an asset can stake over.
@@ -264,65 +266,80 @@
 #define ACTIVITY_BOOST_TOP_PERCENT             (200 * PERCENT_1) // Boost activty reward by 100%
 #define RECENT_REWARD_DECAY_RATE               fc::days(30)      // Activity Reward decays over 30 days
 
-#define MIN_ACCOUNT_NAME_LENGTH                3
-#define MAX_ACCOUNT_NAME_LENGTH                32
-#define MIN_ASSET_SYMBOL_LENGTH                3
-#define MAX_ASSET_SYMBOL_LENGTH                32
-#define MIN_PERMLINK_LENGTH                    0
-#define MAX_PERMLINK_LENGTH                    2048
-#define MAX_STRING_LENGTH                      2048
-#define MAX_TEXT_POST_LENGTH                   300
-#define MAX_SIG_CHECK_DEPTH                    2
-#define MAX_GOV_ACCOUNTS                       5
-#define MAX_EXEC_VOTES                         10
-#define MAX_OFFICER_VOTES                      150
+#define MIN_ACCOUNT_NAME_LENGTH                (3)
+#define MAX_ACCOUNT_NAME_LENGTH                (32)
+#define MIN_ASSET_SYMBOL_LENGTH                (3)
+#define MAX_ASSET_SYMBOL_LENGTH                (32)
+#define MIN_PERMLINK_LENGTH                    (0)
+#define MAX_PERMLINK_LENGTH                    (2048)
+#define MAX_STRING_LENGTH                      (2048)
+#define MAX_TEXT_POST_LENGTH                   (300)
+#define MAX_SIG_CHECK_DEPTH                    (2)
+#define MAX_GOV_ACCOUNTS                       (5)
+#define MAX_EXEC_VOTES                         (10)
+#define MAX_OFFICER_VOTES                      (150)
 #define MAX_EXEC_BUDGET                        asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT )
 #define COLLATERAL_RATIO_DENOM                 (1000)
-#define MIN_COLLATERAL_RATIO                   (1001)      // lower than this could result in divide by 0
-#define MAX_COLLATERAL_RATIO                   (32000)     // higher than this is unnecessary and may exceed int16 storage
-#define MAINTENANCE_COLLATERAL_RATIO           (1750)      // Call when collateral only pays off 175% the debt
-#define MAX_SHORT_SQUEEZE_RATIO                (1500)      // Stop calling when collateral only pays off 150% of the debt
+#define MIN_COLLATERAL_RATIO                   (1001)                        // Lower than this could result in divide by 0.
+#define MAX_COLLATERAL_RATIO                   (32000)                       // Higher than this is unnecessary and may exceed int16 storage.
+#define MAINTENANCE_COLLATERAL_RATIO           (1750)                        // Call when collateral only pays off 175% the debt.
+#define MAX_SHORT_SQUEEZE_RATIO                (1500)                        // Stop calling when collateral only pays off 150% of the debt.
 
-#define MARGIN_OPEN_RATIO                      (20 * PERCENT_1)      // Maximum margin loan when a position is opened is 5x the value of collateral equity. 
-#define MARGIN_LIQUIDATION_RATIO               (10 * PERCENT_1)      // Liquidate margin positions when their collateralization ratios fall below 10%, position is 4X the value of collateral equity
-#define CREDIT_OPEN_RATIO                      (125 * PERCENT_1)     // Credit borrow orders need at least 125% of the value of the loan in collateral. 
-#define CREDIT_LIQUIDATION_RATIO               (110 * PERCENT_1)     // Credit borrow orders are liquidated when the value of the collateral falls below 110% of the loan value.
-#define CREDIT_INTEREST_RATE                   (5 * PERCENT_1)       // 5% Initial Interest rate for network credit assets
-#define CREDIT_MIN_INTEREST                    (PERCENT_1)           // 1% interest PA minimum component on credit pools.
-#define CREDIT_VARIABLE_INTEREST               (4* PERCENT_1)        // 4% interest PA variable component on credit pools.
-#define CREDIT_INTERVAL_BLOCKS                 (BLOCKS_PER_HOUR)     // Interest payments for credit assets compound hourly.
-#define INTEREST_MIN_AMOUNT                    (100)                 // Minimum units of asset required to pay interest in credit pools each block.
-#define MARKET_MAX_CREDIT_RATIO                (50 * PERCENT_1)      // Total Margin and borrow positions are limited to 50% of the maximum collateral and debt liquidity. 
+#define MARGIN_OPEN_RATIO                      (20 * PERCENT_1)              // Maximum margin loan when a position is opened is 5x the value of collateral equity. 
+#define MARGIN_LIQUIDATION_RATIO               (10 * PERCENT_1)              // Liquidate margin positions when their collateralization ratios fall below 10%, position is 4X the value of collateral equity
+#define CREDIT_OPEN_RATIO                      (125 * PERCENT_1)             // Credit borrow orders need at least 125% of the value of the loan in collateral. 
+#define CREDIT_LIQUIDATION_RATIO               (110 * PERCENT_1)             // Credit borrow orders are liquidated when the value of the collateral falls below 110% of the loan value.
+#define CREDIT_INTEREST_RATE                   (5 * PERCENT_1)               // 5% Initial Interest rate for network credit assets.
+#define CREDIT_MIN_INTEREST                    (PERCENT_1)                   // 1% interest PA minimum component on credit pools.
+#define CREDIT_VARIABLE_INTEREST               (4* PERCENT_1)                // 4% interest PA variable component on credit pools.
+#define CREDIT_INTERVAL                        fc::hours(1)                  // Interest rate compounds once per hour.
+#define CREDIT_INTERVAL_BLOCKS                 uint64_t( CREDIT_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Interest payments for credit assets compound hourly.
+#define INTEREST_MIN_AMOUNT                    (100)                         // Minimum units of asset required to pay interest in credit pools each block.
+#define MARKET_MAX_CREDIT_RATIO                (50 * PERCENT_1)              // Total Margin and borrow positions are limited to 50% of the maximum collateral and debt liquidity. 
 
-#define EQUITY_MIN_PRODUCERS                   (10)                          // Accounts need at least 10 producer votes to claim equity reward. 
-#define EQUITY_BOOST_PRODUCERS                 (50)                          // Boost when account has min 50 producer votes
-#define EQUITY_ACTIVITY_TIME                   fc::days(30)                  // Dividends available when activity in the last 30 days
+#define EQUITY_MIN_PRODUCERS                   (10)                          // Accounts need at least 10 producer votes to claim equity reward.
+#define EQUITY_BOOST_PRODUCERS                 (50)                          // Boost when account has min 50 producer votes.
+#define EQUITY_ACTIVITY_TIME                   fc::days(30)                  // Dividends available when activity in the last 30 days.
 #define EQUITY_BOOST_ACTIVITY                  (BLOCKCHAIN_PRECISION * 15)   // Dividends are doubled when account has a rolling average of 15 activity rewards in the last 30 days.
 #define EQUITY_BOOST_BALANCE                   (BLOCKCHAIN_PRECISION * 10)   // Dividends are doubled when account has balance greater than 10 units.
-#define EQUITY_BOOST_TOP_PERCENT               (10 * PERCENT_1)              // Boost equity reward by 10% for top members
-#define POWER_BOOST_TOP_PERCENT                (10 * PERCENT_1)              // Boost power reward by 10% for top members
-#define EQUITY_INTERVAL                        fc::days(7)           // Time period of distributing dividends to equity assests
-#define EQUITY_INTERVAL_BLOCKS                 uint32_t(EQUITY_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Pays Equity rewards once per week.
-#define DIVIDEND_SHARE_PERCENT                 (5 * PERCENT_1)       // Percentage of incoming assets added to the dividends pool
-#define LIQUID_DIVIDEND_PERCENT                (10 * PERCENT_1)      // percentage of equity dividends distributed to liquid balances
-#define STAKED_DIVIDEND_PERCENT                (80 * PERCENT_1)      // percentage of equity dividends distributed to staked balances
-#define SAVINGS_DIVIDEND_PERCENT               (10 * PERCENT_1)      // percentage of equity dividends distirbuted to savings balances 
+#define EQUITY_BOOST_TOP_PERCENT               (10 * PERCENT_1)              // Boost equity reward by 10% for top members.
+#define POWER_BOOST_TOP_PERCENT                (10 * PERCENT_1)              // Boost power reward by 10% for top members.
+#define EQUITY_INTERVAL                        fc::days(7)                   // Time period of distributing dividends to equity assests.
+#define EQUITY_INTERVAL_BLOCKS                 uint64_t( EQUITY_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Pays Equity rewards once per week.
+#define DIVIDEND_SHARE_PERCENT                 (5 * PERCENT_1)               // Percentage of incoming assets added to the dividends pool.
+#define LIQUID_DIVIDEND_PERCENT                (10 * PERCENT_1)              // percentage of equity dividends distributed to liquid balances.
+#define STAKED_DIVIDEND_PERCENT                (80 * PERCENT_1)              // percentage of equity dividends distributed to staked balances.
+#define SAVINGS_DIVIDEND_PERCENT               (10 * PERCENT_1)              // percentage of equity dividends distirbuted to savings balances.
 
-#define CREDIT_BUYBACK_INTERVAL                fc::days(7)           // Time period of buying back credit assets 
-#define CREDIT_BUYBACK_INTERVAL_BLOCKS         uint32_t( CREDIT_BUYBACK_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Time period of buying back credit assets 
-#define BUYBACK_SHARE_PERCENT                  (5 * PERCENT_1)       // Percentage of incoming assets added to the buyback pool
-#define LIQUID_FIXED_INTEREST_RATE             (1 * PERCENT_1)       // Fixed component of Interest rate of the asset for liquid balances.
-#define LIQUID_VARIABLE_INTEREST_RATE          (2 * PERCENT_1)       // Variable component of Interest rate of the asset for liquid balances.
-#define STAKED_FIXED_INTEREST_RATE             (1 * PERCENT_1)       // Fixed component of Interest rate of the asset for staked balances.
-#define STAKED_VARIABLE_INTEREST_RATE          (10 * PERCENT_1)      // Variable component of Interest rate of the asset for staked balances.
-#define SAVINGS_FIXED_INTEREST_RATE            (1 * PERCENT_1)       // Fixed component of Interest rate of the asset for savings balances.
-#define SAVINGS_VARIABLE_INTEREST_RATE         (5 * PERCENT_1)       // Variable component of Interest rate of the asset for savings balances.
-#define VAR_INTEREST_RANGE                     (50 * PERCENT_1)      // Range of buyback price deviation for max and min variable interest rate.
+#define CREDIT_BUYBACK_INTERVAL                fc::days(7)                   // Processes Credit asset buybacks once per week.
+#define CREDIT_BUYBACK_INTERVAL_BLOCKS         uint64_t( CREDIT_BUYBACK_INTERVAL.count() / BLOCK_INTERVAL.count() )  // One week time period of buying back credit assets.
+#define BUYBACK_SHARE_PERCENT                  (5 * PERCENT_1)               // Percentage of incoming assets added to the buyback pool.
+#define LIQUID_FIXED_INTEREST_RATE             (1 * PERCENT_1)               // Fixed component of Interest rate of the asset for liquid balances.
+#define LIQUID_VARIABLE_INTEREST_RATE          (2 * PERCENT_1)               // Variable component of Interest rate of the asset for liquid balances.
+#define STAKED_FIXED_INTEREST_RATE             (1 * PERCENT_1)               // Fixed component of Interest rate of the asset for staked balances.
+#define STAKED_VARIABLE_INTEREST_RATE          (10 * PERCENT_1)              // Variable component of Interest rate of the asset for staked balances.
+#define SAVINGS_FIXED_INTEREST_RATE            (1 * PERCENT_1)               // Fixed component of Interest rate of the asset for savings balances.
+#define SAVINGS_VARIABLE_INTEREST_RATE         (5 * PERCENT_1)               // Variable component of Interest rate of the asset for savings balances.
+#define VAR_INTEREST_RANGE                     (50 * PERCENT_1)              // Range of buyback price deviation for max and min variable interest rate.
+#define AUCTION_INTERVAL                       fc::days(1)                   // Time period between auction order clearance.
+#define AUCTION_INTERVAL_BLOCKS                uint64_t( AUCTION_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Clears auction orders once per day.
 
-#define FORCE_SETTLEMENT_DELAY                 fc::days(1)           // 1 day
-#define FORCE_SETTLEMENT_OFFSET                0                     // 1%
-#define FORCE_SETTLEMENT_MAX_VOLUME            (20 * PERCENT_1)      // 20%
-#define PRICE_FEED_LIFETIME                    fc::days(1)           // 1 day
+#define OPTION_INTERVAL                        fc::days(1)                   // Time period between option updates.
+#define OPTION_INTERVAL_BLOCKS                 uint64_t( OPTION_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Checks for Option expirations and renews strike prices once per day.
+#define OPTION_NUM_STRIKES                     (10)                          // Each option asset generates 10 strike prices above and below the midpoint
+#define OPTION_STRIKE_WIDTH_PERCENT            (5 * PERCENT_1)               // Option strike prices are 5% of the mid price apart.
+#define OPTION_ASSET_MULTIPLE                  (100)                         // Option assets use a multiple of 100 underlying assets per unit.
+#define OPTION_SIG_FIGURES                     (2)                           // Option mid prices are rounded to 2 significant figures. 
+
+#define DISTRIBUTION_INTERVAL                  fc::days(1)
+#define DISTRIBUTION_INTERVAL_BLOCKS           uint64_t( DISTRIBUTION_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Distributes asset distributions once per day.
+#define UNIQUE_INTERVAL                        fc::days(1)
+#define UNIQUE_INTERVAL_BLOCKS                 uint64_t( UNIQUE_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Distributes unique access funds once per day.
+
+#define ASSET_SETTLEMENT_DELAY                 fc::days(1)                   
+#define ASSET_SETTLEMENT_OFFSET                0                            
+#define ASSET_SETTLEMENT_MAX_VOLUME            (20 * PERCENT_1)              // 20% of an asset can be settled per day
+#define PRICE_FEED_LIFETIME                    fc::days(1)                   // 1 day
 #define MAX_AUTHORITY_MEMBERSHIP               100
 #define MAX_ASSET_WHITELIST_AUTHORITIES        1000
 #define MAX_ASSET_FEED_PUBLISHERS              100
@@ -337,16 +354,18 @@
 #define CONNECTION_REQUEST_DURATION            fc::days(7)
 #define TRANSFER_REQUEST_DURATION              fc::days(7)
 #define RESET_ACCOUNT_DELAY                    fc::days(3)
-#define NETWORK_UPDATE_INTERVAL_BLOCKS         uint32_t(fc::minutes(10).count() / BLOCK_INTERVAL.count())
-#define MEDIAN_LIQUIDITY_INTERVAL_BLOCKS       uint32_t(fc::minutes(10).count() / BLOCK_INTERVAL.count())
+#define NETWORK_UPDATE_INTERVAL                fc::minutes(10)
+#define NETWORK_UPDATE_INTERVAL_BLOCKS         uint64_t( NETWORK_UPDATE_INTERVAL.count() / BLOCK_INTERVAL.count() )
 #define MEDIAN_LIQUIDITY_INTERVAL              fc::minutes(10)
+#define MEDIAN_LIQUIDITY_INTERVAL_BLOCKS       uint64_t( MEDIAN_LIQUIDITY_INTERVAL.count() / BLOCK_INTERVAL.count() )
 #define REP_UPDATE_BLOCK_INTERVAL              (BLOCKS_PER_DAY)
-#define METRIC_INTERVAL_BLOCKS                 (BLOCKS_PER_HOUR)      // Updates metrics once per hour
-#define METRIC_CALC_TIME                       (fc::days(30))        // Metrics include posts up to 30 days old. 
-#define FEED_INTERVAL_BLOCKS                   (BLOCKS_PER_HOUR)     // Updates feeds once per hour
-#define FEED_HISTORY_WINDOW                    fc::hours(84)         // 3.5 days
-#define MAX_FEED_AGE                           fc::days(30)          // 30 days
-#define MIN_FEEDS                              (TOTAL_PRODUCERS / 4) // protects the network from conversions before price has been established
+#define METRIC_INTERVAL                        fc::hours(1)                  // Updates metrics once per hour
+#define METRIC_INTERVAL_BLOCKS                 uint64_t( METRIC_INTERVAL.count() / BLOCK_INTERVAL.count() )
+#define METRIC_CALC_TIME                       (fc::days(30))                // Metrics include posts up to 30 days old. 
+#define FEED_INTERVAL_BLOCKS                   (BLOCKS_PER_HOUR)             // Updates feeds once per hour
+#define FEED_HISTORY_WINDOW                    fc::hours(84)                 // 3.5 days
+#define MAX_FEED_AGE                           fc::days(30)                  // 30 days
+#define MIN_FEEDS                              (TOTAL_PRODUCERS / 4)         // protects the network from conversions before price has been established
 #define MIN_UNDO_HISTORY                       10
 #define MAX_UNDO_HISTORY                       10000
 #define MAX_INSTANCE_ID                        (uint64_t(-1)>>16)
@@ -360,13 +379,17 @@
 #define PRODUCER_ACCOUNT                account_name_type("producers")              // Represents the current producers
 #define NULL_ACCOUNT                    account_name_type("null")                   // Represents the canonical account with NO authority (nobody can access funds in null account)
 #define TEMP_ACCOUNT                    account_name_type("temp")                   // Represents the canonical account with WILDCARD authority (anybody can access funds in temp account)
-#define PROXY_TO_SELF_ACCOUNT           ""                       // Represents the canonical account for specifying you will vote for directly (as opposed to a proxy)
-#define ROOT_POST_PARENT                (account_name_type())    // Represents the canonical root post parent account
+#define PROXY_TO_SELF_ACCOUNT           ""                                          // Represents the canonical account for specifying you will vote for directly (as opposed to a proxy)
+#define ROOT_POST_PARENT                (account_name_type())                       // Represents the canonical root post parent account
 #define COMMUNITY_ACCOUNT               account_name_type("community")              // Represents the Community Enterprise Fund
 #define EXECUTIVE_ACCOUNT               account_name_type("executive")              // Represents the Executive board
 #define DEVELOPMENT_ACCOUNT             account_name_type("development")            // Represents the Development Team
 #define MARKETING_ACCOUNT               account_name_type("marketing")              // Represents the Marketing Team
 #define ADVOCACY_ACCOUNT                account_name_type("advocacy")               // Represents the Advocacy Team
+#define ANON_ACCOUNT                    account_name_type("anonymous")              // Represents the Anonymous Account - open for all to post with - password is "anonymouspassword" publicly known and cannot be changed
+#define ANON_ACCOUNT_PASSWORD           "anonymouspassword"
+#define ASSET_UNIT_SENDER               account_name_type("sender")
+
 
 /**
  * Implementation Specific Config settings for launching entity.

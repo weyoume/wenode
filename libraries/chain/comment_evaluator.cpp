@@ -774,8 +774,8 @@ void vote_evaluator::do_apply( const vote_operation& o )
    const community_object* community_ptr = nullptr;
    if( comment.community.size() )
    {
-      community_ptr = _db.find_community( comment.community );      
-      const community_member_object& community_member = _db.get_community_member( comment.community );       
+      community_ptr = _db.find_community( comment.community );     
+      const community_member_object& community_member = _db.get_community_member( comment.community );
       FC_ASSERT( community_member.is_authorized_interact( voter.name ), 
          "User ${u} is not authorized to interact with posts in the community ${b}.",("b", comment.community)("u", voter.name));
    }

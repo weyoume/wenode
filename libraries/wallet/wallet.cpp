@@ -5064,7 +5064,7 @@ annotated_signed_transaction      wallet_api::bid_collateral(
 { try {
    FC_ASSERT( !is_locked() );
 
-   bid_collateral_operation op;
+   asset_collateral_bid_operation op;
 
    op.signatory = signatory;
    op.bidder = bidder;
