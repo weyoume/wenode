@@ -598,7 +598,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.symbol = SYMBOL_USD;
       a.issuer = NULL_ACCOUNT;
-      a.asset_type = asset_property_type::BITASSET_ASSET;
+      a.asset_type = asset_property_type::STABLECOIN_ASSET;
       a.max_supply = MAX_ASSET_SUPPLY;
       a.flags = int( asset_issuer_permission_flags::producer_fed_asset );
       a.issuer_permissions = 0;
@@ -606,7 +606,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.stake_intervals = 0;
    });
 
-   create< asset_bitasset_data_object >( [&]( asset_bitasset_data_object& a )
+   create< asset_stablecoin_data_object >( [&]( asset_stablecoin_data_object& a )
    {
       a.symbol = SYMBOL_USD;
       a.backing_asset = SYMBOL_COIN;
@@ -1221,16 +1221,23 @@ const signed_transaction database::get_recent_transaction( const transaction_id_
 
 annotated_signed_transaction database::get_transaction( const transaction_id_type& id )const
 { try {
-   const auto& idx = get_index< operation_index >().indices().get<by_transaction_id>();
-   auto itr = idx.lower_bound( id );
-   if( itr != idx.end() && itr->trx_id == id ) 
+   const auto& txn_idx = get_index< operation_index >().indices().get< by_transaction_id >();
+   auto txn_itr = txn_idx.lower_bound( id );
+
+   if( txn_itr != txn_idx.end() && 
+      txn_itr->trx_id == id )
    {
-      auto blk = fetch_block_by_number( itr->block );
-      FC_ASSERT( blk.valid() );
-      FC_ASSERT( blk->transactions.size() > itr->trx_in_block );
-      annotated_signed_transaction result = blk->transactions[itr->trx_in_block];
-      result.block_num       = itr->block;
-      result.transaction_num = itr->trx_in_block;
+      auto blk = fetch_block_by_number( txn_itr->block );
+      FC_ASSERT( blk.valid(), 
+         "Block not found at block height." );
+      FC_ASSERT( blk->transactions.size() > txn_itr->trx_in_block,
+         "Transaction in Block index too high." );
+
+      annotated_signed_transaction result = blk->transactions[txn_itr->trx_in_block];
+
+      result.block_num = txn_itr->block;
+      result.transaction_num = txn_itr->trx_in_block;
+
       return result;
    }
    FC_ASSERT( false, "Unknown Transaction ${t}", ("t",id));
@@ -1322,7 +1329,7 @@ const asset_object* database::find_core_asset() const
 
 const price& database::get_usd_price() const
 {
-   return get_bitasset_data( SYMBOL_USD ).current_feed.settlement_price;
+   return get_stablecoin_data( SYMBOL_USD ).current_feed.settlement_price;
 }
 
 const asset_object& database::get_asset( const asset_symbol_type& symbol ) const
@@ -1365,14 +1372,14 @@ const asset_currency_data_object* database::find_currency_data( const asset_symb
    return find< asset_currency_data_object, by_symbol >( (symbol) );
 }
 
-const asset_bitasset_data_object& database::get_bitasset_data( const asset_symbol_type& symbol ) const
+const asset_stablecoin_data_object& database::get_stablecoin_data( const asset_symbol_type& symbol ) const
 { try {
-   return get< asset_bitasset_data_object, by_symbol >( (symbol) );
+   return get< asset_stablecoin_data_object, by_symbol >( (symbol) );
 } FC_CAPTURE_AND_RETHROW( (symbol) ) }
 
-const asset_bitasset_data_object* database::find_bitasset_data( const asset_symbol_type& symbol ) const
+const asset_stablecoin_data_object* database::find_stablecoin_data( const asset_symbol_type& symbol ) const
 {
-   return find< asset_bitasset_data_object, by_symbol >( (symbol) );
+   return find< asset_stablecoin_data_object, by_symbol >( (symbol) );
 }
 
 const asset_equity_data_object& database::get_equity_data( const asset_symbol_type& symbol ) const
@@ -1385,6 +1392,16 @@ const asset_equity_data_object* database::find_equity_data( const asset_symbol_t
    return find< asset_equity_data_object, by_symbol >( (symbol) );
 }
 
+const asset_bond_data_object& database::get_bond_data( const asset_symbol_type& symbol ) const
+{ try {
+   return get< asset_bond_data_object, by_symbol >( (symbol) );
+} FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+const asset_bond_data_object* database::find_bond_data( const asset_symbol_type& symbol ) const
+{
+   return find< asset_bond_data_object, by_symbol >( (symbol) );
+}
+
 const asset_credit_data_object& database::get_credit_data( const asset_symbol_type& symbol ) const
 { try {
    return get< asset_credit_data_object, by_symbol >( (symbol) );
@@ -1393,6 +1410,16 @@ const asset_credit_data_object& database::get_credit_data( const asset_symbol_ty
 const asset_credit_data_object* database::find_credit_data( const asset_symbol_type& symbol ) const
 {
    return find< asset_credit_data_object, by_symbol >( (symbol) );
+}
+
+const asset_unique_data_object& database::get_unique_data( const asset_symbol_type& symbol ) const
+{ try {
+   return get< asset_unique_data_object, by_symbol >( (symbol) );
+} FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+const asset_unique_data_object* database::find_unique_data( const asset_symbol_type& symbol ) const
+{
+   return find< asset_unique_data_object, by_symbol >( (symbol) );
 }
 
 const account_object& database::get_account( const account_name_type& name )const
@@ -2449,20 +2476,20 @@ asset database::get_comment_reward( const util::comment_reward_context& ctx ) co
    FC_ASSERT( ctx.reward.value > 0 );
    FC_ASSERT( ctx.recent_content_claims > 0 );
 
-   u256 rf(ctx.total_reward_fund.amount.value);
-   u256 total_claims = util::to256( ctx.recent_content_claims );
+   uint256_t rf(ctx.total_reward_fund.amount.value);
+   uint256_t total_claims = util::to256( ctx.recent_content_claims );
 
-   u256 claim = util::to256( util::evaluate_reward_curve( 
+   uint256_t claim = util::to256( util::evaluate_reward_curve( 
       ctx.reward.value, 
       ctx.cashouts_received, 
       ctx.reward_curve, 
       ctx.decay_rate, 
       ctx.content_constant ) );
 
-   u256 payout_u256 = ( rf * claim ) / total_claims;
+   uint256_t payout_uint256_t = ( rf * claim ) / total_claims;
 
-   FC_ASSERT( payout_u256 <= u256( std::numeric_limits<int64_t>::max() ) );
-   share_type payout = static_cast< int64_t >( payout_u256 );
+   FC_ASSERT( payout_uint256_t <= uint256_t( std::numeric_limits<int64_t>::max() ) );
+   share_type payout = static_cast< int64_t >( payout_uint256_t );
    asset reward_value = asset( payout, ctx.total_reward_fund.symbol );
 
    if( reward_value * ctx.current_COIN_USD_price < MIN_PAYOUT_USD )
@@ -3345,33 +3372,33 @@ void database::update_business_account_set()
 } FC_CAPTURE_AND_RETHROW() }
 
 /**
- * Process updates across all bitassets, execute collateral bids
- * for settled bitassets, and update price feeds and force settlement volumes
+ * Process updates across all stablecoins, execute collateral bids
+ * for settled stablecoins, and update price feeds and force settlement volumes
  */
-void database::process_bitassets()
+void database::process_stablecoins()
 { try {
-   if( (head_block_num() % BITASSET_BLOCK_INTERVAL) != 0 )    // Runs once per day
+   if( (head_block_num() % STABLECOIN_BLOCK_INTERVAL) != 0 )    // Runs once per day
       return;
 
    time_point_sec now = head_block_time();
    uint64_t head_epoch_seconds = now.sec_since_epoch();
 
-   const auto& bitasset_idx = get_index< asset_bitasset_data_index >().indices().get< by_symbol >();
-   auto bitasset_itr = bitasset_idx.begin();
+   const auto& stablecoin_idx = get_index< asset_stablecoin_data_index >().indices().get< by_symbol >();
+   auto stablecoin_itr = stablecoin_idx.begin();
 
-   while( bitasset_itr != bitasset_idx.end() )
+   while( stablecoin_itr != stablecoin_idx.end() )
    {
-      const asset_bitasset_data_object& bitasset = *bitasset_itr;
-      const asset_object& asset_obj = get_asset( bitasset.symbol );
+      const asset_stablecoin_data_object& stablecoin = *stablecoin_itr;
+      const asset_object& asset_obj = get_asset( stablecoin.symbol );
       uint32_t flags = asset_obj.flags;
-      uint64_t feed_lifetime = bitasset.feed_lifetime.to_seconds();
+      uint64_t feed_lifetime = stablecoin.feed_lifetime.to_seconds();
 
-      if( bitasset.has_settlement() )
+      if( stablecoin.has_settlement() )
       {
-         process_bids( bitasset );
+         process_bids( stablecoin );
       }
 
-      modify( bitasset, [&]( asset_bitasset_data_object& abdo )
+      modify( stablecoin, [&]( asset_stablecoin_data_object& abdo )
       {
          abdo.force_settled_volume = 0; // Reset all BitAsset force settlement volumes to zero
 
@@ -3745,7 +3772,7 @@ void database::process_validation_rewards()
 /** 
  * Rewards producers when they have the current highest accumulated 
  * activity stake. Each time an account produces an activity reward transaction, 
- * they implicitly nominate thier highest voted producer to receive a daily vote as their Prime Producer.
+ * they implicitly nominate their highest voted producer to receive a daily vote as their Prime Producer.
  * Award is distributed every eight hours to the leader by activity stake.
  * This incentivizes producers to campaign to achieve prime producer designation with 
  * high stake, active accounts, in a competitive manner. 
@@ -4395,8 +4422,10 @@ void database::process_community_enterprise_fund()
 /** 
  * Updates the state of all credit loans.
  * 
- * Compounds interest on all credit loans, checks collateralization
- * ratios, and liquidates under collateralized loans in response to price changes.
+ * Compounds interest on all credit loans, 
+ * checks collateralization ratios, and 
+ * liquidates under collateralized loans in 
+ * response to price changes.
  */
 void database::process_credit_updates()
 { try {
@@ -4458,6 +4487,10 @@ void database::process_credit_updates()
             ++loan_itr;
          }
       }
+
+      asset interest_fees = ( total_interest * INTEREST_FEE_PERCENT ) / PERCENT_100;
+      total_interest -= interest_fees;
+      pay_network_fees( interest_fees );
 
       modify( credit_pool, [&]( asset_credit_pool_object& c )
       {
@@ -4699,6 +4732,8 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< transfer_recurring_request_evaluator     >();
    _my->_evaluator_registry.register_evaluator< transfer_recurring_accept_evaluator      >();
    _my->_evaluator_registry.register_evaluator< transfer_confidential_evaluator          >();
+   _my->_evaluator_registry.register_evaluator< transfer_to_confidential_evaluator       >();
+   _my->_evaluator_registry.register_evaluator< transfer_from_confidential_evaluator     >();
 
    // Balance Evaluators
 
@@ -4908,10 +4943,11 @@ void database::initialize_indexes()
    add_core_index< asset_index                             >(*this);
    add_core_index< asset_dynamic_data_index                >(*this);
    add_core_index< asset_currency_data_index               >(*this);
-   add_core_index< asset_bitasset_data_index               >(*this);
+   add_core_index< asset_stablecoin_data_index             >(*this);
    add_core_index< asset_settlement_index                  >(*this);
    add_core_index< asset_collateral_bid_index              >(*this);
    add_core_index< asset_equity_data_index                 >(*this);
+   add_core_index< asset_bond_data_index                   >(*this);
    add_core_index< asset_credit_data_index                 >(*this);
    add_core_index< asset_unique_data_index                 >(*this);
    add_core_index< asset_liquidity_pool_index              >(*this);
@@ -5160,11 +5196,13 @@ void database::_apply_block( const signed_block& next_block )
    process_funds();
 
    process_asset_staking();
-   process_bitassets();
+   process_stablecoins();
    process_savings_withdraws();
    process_recurring_transfers();
    process_equity_rewards();
    process_power_rewards();
+   process_bond_interest();
+   process_bond_assets();
    process_credit_updates();
    process_credit_buybacks();
    process_margin_updates();
@@ -5329,8 +5367,14 @@ void database::_apply_transaction( const signed_transaction& trx )
       {
          apply_operation( op );   // process the operations
          ++_current_op_in_trx;
-     } FC_CAPTURE_AND_RETHROW( (op) );
+      } FC_CAPTURE_AND_RETHROW( (op) );
    }
+
+   const auto& flash_idx = get_index< credit_loan_index >().indices().get< by_flash_loan >();
+   auto flash_itr = flash_idx.lower_bound( true );
+
+   FC_ASSERT( flash_itr == flash_idx.end(),
+      "Transaction does not repay flash loan: ${i}.",("i", to_string( flash_itr->loan_id ) ) );
 
    update_stake( trx );       // Apply stake weight to the block producer.
 
@@ -5554,7 +5598,7 @@ void database::update_last_irreversible_block()
    }
 
    // Take the highest of last committed and irreverisble blocks, and commit it to the local database.
-   uint64_t commit_height = std::max( props.last_committed_block_num, props.last_irreversible_block_num );   
+   uint64_t commit_height = std::max( props.last_committed_block_num, props.last_irreversible_block_num );
    
    commit( commit_height );  // Node will not reverse blocks after they have been committed or produced on by two thirds of producers.
 
@@ -5721,7 +5765,7 @@ asset database::pay_network_fees( const asset& amount )
    asset total_fees = amount;
 
    price credit_usd_price = get_liquidity_pool( SYMBOL_USD, SYMBOL_CREDIT ).hour_median_price;
-   price usd_settlement_price = get_bitasset_data( SYMBOL_USD ).settlement_price;
+   price usd_settlement_price = get_stablecoin_data( SYMBOL_USD ).settlement_price;
    price usd_market_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).base_hour_median_price( usd_settlement_price.base.symbol );
 
    if( usd_market_price < usd_settlement_price )   // If the market price of USD is below settlement price
@@ -5797,7 +5841,7 @@ asset database::pay_network_fees( const account_object& payer, const asset& amou
    total_fees -= ( g_paid + registrar_paid + referrer_paid );
 
    price credit_usd_price = get_liquidity_pool( SYMBOL_USD, SYMBOL_CREDIT ).hour_median_price;
-   price usd_settlement_price = get_bitasset_data( SYMBOL_USD ).settlement_price;
+   price usd_settlement_price = get_stablecoin_data( SYMBOL_USD ).settlement_price;
    price usd_market_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).base_hour_median_price( usd_settlement_price.base.symbol );
 
    if( usd_market_price < usd_settlement_price )       // If the market price of USD is below settlement price
@@ -6083,7 +6127,7 @@ void database::init_hardforks()
 
 
 /**
- * Expire all orders that have exceeded thier expiration time.
+ * Expire all orders that have exceeded their expiration time.
  */
 void database::clear_expired_operations()
 { try {
@@ -6208,7 +6252,7 @@ void database::clear_expired_operations()
          auto order_id = order.id;
          current_asset = order.settlement_asset_symbol();
          const asset_object& mia_object = get_asset( current_asset );
-         const asset_bitasset_data_object& mia_bitasset = get_bitasset_data( mia_object.symbol );
+         const asset_stablecoin_data_object& mia_stablecoin = get_stablecoin_data( mia_object.symbol );
 
          extra_dump = ( (count >= 1000) && (count <= 1020) );
 
@@ -6218,7 +6262,7 @@ void database::clear_expired_operations()
             ilog( "head_block_num is ${hb} current_asset is ${a}", ("hb", head_block_num())("a", current_asset) );
          }
 
-         if( mia_bitasset.has_settlement() )
+         if( mia_stablecoin.has_settlement() )
          {
             ilog( "Canceling a force settlement because of black swan" );
             cancel_settle_order( order, true );
@@ -6239,7 +6283,7 @@ void database::clear_expired_operations()
             break;
          }
          
-         if( mia_bitasset.current_feed.settlement_price.is_null() )
+         if( mia_stablecoin.current_feed.settlement_price.is_null() )
          {
             ilog("Canceling a force settlement in ${asset} because settlement price is null",
                  ("asset", mia_object.symbol));
@@ -6250,10 +6294,10 @@ void database::clear_expired_operations()
          if( max_settlement_volume.symbol != current_asset ) // only calculate once per asset
          {  
             const asset_dynamic_data_object& dyn_data = get_dynamic_data( mia_object.symbol );
-            max_settlement_volume = asset( mia_bitasset.max_asset_settlement_volume(dyn_data.total_supply), mia_object.symbol );
+            max_settlement_volume = asset( mia_stablecoin.max_asset_settlement_volume(dyn_data.total_supply), mia_object.symbol );
          }
 
-         if( mia_bitasset.force_settled_volume >= max_settlement_volume.amount || current_asset_finished )
+         if( mia_stablecoin.force_settled_volume >= max_settlement_volume.amount || current_asset_finished )
          {
             if( next_asset() )
             {
@@ -6268,8 +6312,8 @@ void database::clear_expired_operations()
 
          if( settlement_fill_price.base.symbol != current_asset )  // only calculate once per asset
          {
-            uint16_t offset = mia_bitasset.asset_settlement_offset_percent;
-            settlement_fill_price = mia_bitasset.current_feed.settlement_price / ratio_type( PERCENT_100 - offset, PERCENT_100 );
+            uint16_t offset = mia_stablecoin.asset_settlement_offset_percent;
+            settlement_fill_price = mia_stablecoin.current_feed.settlement_price / ratio_type( PERCENT_100 - offset, PERCENT_100 );
          }
             
          if( settlement_price.base.symbol != current_asset )  // only calculate once per asset
@@ -6278,11 +6322,11 @@ void database::clear_expired_operations()
          }
 
          auto& call_index = get_index< call_order_index >().indices().get< by_collateral >();
-         asset settled = asset( mia_bitasset.force_settled_volume , mia_object.symbol);
+         asset settled = asset( mia_stablecoin.force_settled_volume , mia_object.symbol);
          // Match against the least collateralized short until the settlement is finished or we reach max settlements
          while( settled < max_settlement_volume && find(order_id) )
          {
-            auto itr = call_index.lower_bound( boost::make_tuple( price::min( mia_bitasset.backing_asset, mia_object.symbol )));
+            auto itr = call_index.lower_bound( boost::make_tuple( price::min( mia_stablecoin.backing_asset, mia_object.symbol )));
             // There should always be a call order, since asset exists
             FC_ASSERT( itr != call_index.end() && 
                itr->debt_type() == mia_object.symbol, 
@@ -6304,9 +6348,9 @@ void database::clear_expired_operations()
             }
             settled += new_settled;
          }
-         if( mia_bitasset.force_settled_volume != settled.amount )
+         if( mia_stablecoin.force_settled_volume != settled.amount )
          {
-            modify(mia_bitasset, [settled](asset_bitasset_data_object& b) 
+            modify(mia_stablecoin, [settled](asset_stablecoin_data_object& b) 
             {
                b.force_settled_volume = settled.amount;
             });
@@ -6530,14 +6574,14 @@ void database::validate_invariants()const
       ++cred_itr;
    }
 
-   const auto& bitasset_idx = get_index< asset_bitasset_data_index >().indices().get< by_symbol >();
-   auto bitasset_itr = bitasset_idx.begin();
+   const auto& stablecoin_idx = get_index< asset_stablecoin_data_index >().indices().get< by_symbol >();
+   auto stablecoin_itr = stablecoin_idx.begin();
 
-   while( bitasset_itr != bitasset_idx.end() )
+   while( stablecoin_itr != stablecoin_idx.end() )
    {
-      const asset_bitasset_data_object& bitasset = *bitasset_itr;
-      asset_checksum[ bitasset.symbol ] -= bitasset.settlement_fund;
-      ++bitasset_itr;
+      const asset_stablecoin_data_object& stablecoin = *stablecoin_itr;
+      asset_checksum[ stablecoin.symbol ] -= stablecoin.settlement_fund;
+      ++stablecoin_itr;
    }
 
    const auto& escrow_idx = get_index< escrow_index >().indices().get< by_id >();

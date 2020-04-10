@@ -37,24 +37,25 @@ namespace node { namespace chain {
 /**
  * ASSET TYPES
  * 
- * CURRENCY_ASSET,         // Cryptocurrency that is issued by the network, starts from zero supply, issuing account is the null account, cannot be issued by any accounts. 
- * STANDARD_ASSET,         // Regular asset, can be transferred and staked, saved, and delegated.
- * EQUITY_ASSET,           // Asset issued by a business account that distributes a dividend from incoming revenue, and has voting power over a business accounts transactions. 
- * CREDIT_ASSET,           // Asset issued by a business account that is backed by repayments up to a face value, and interest payments.
- * BITASSET_ASSET,         // Asset based by collateral and track the value of an external asset.
- * LIQUIDITY_POOL_ASSET,   // Liquidity pool asset that is backed by the deposits of an asset pair's liquidity pool and earns trading fees. 
- * CREDIT_POOL_ASSET,      // Credit pool asset that is backed by deposits of the base asset, used for borrowing funds from the pool, used as collateral to borrow base asset.
- * OPTION_ASSET,           // Asset that enables the execution of a trade at a specific price until an expiration date. 
- * PREDICTION_ASSET,       // Asset backed by an underlying collateral claim, on the condition that a prediction market resolve in a particular outcome.
- * GATEWAY_ASSET,          // Asset backed by deposits with an exchange counterparty of another asset or currency. 
- * UNIQUE_ASSET,           // Asset with a supply of one, contains metadata relating to the ownership of a unique non-fungible asset. 
+ * CURRENCY_ASSET,         ///< Cryptocurrency that is issued by the network, starts from zero supply, issuing account is the null account, cannot be issued by any accounts. 
+ * STANDARD_ASSET,         ///< Regular asset, can be transferred and staked, saved, and delegated.
+ * STABLECOIN_ASSET,       ///< Asset backed by collateral that tracks the value of an external asset. Redeemable at any time with settlement.
+ * EQUITY_ASSET,           ///< Asset issued by a business account that distributes a dividend from incoming revenue, and has voting power over a business accounts transactions.
+ * BOND_ASSET,             ///< Asset backed by collateral that pays a coupon rate and is redeemed after expiration.
+ * CREDIT_ASSET,           ///< Asset issued by a business account that is backed by repayments up to a face value, and interest payments.
+ * LIQUIDITY_POOL_ASSET,   ///< Asset that is backed by the deposits of an asset pair's liquidity pool and earns trading fees. 
+ * CREDIT_POOL_ASSET,      ///< Asset that is backed by deposits of the base asset, used for borrowing funds from the pool, used as collateral to borrow base asset.
+ * OPTION_ASSET,           ///< Asset that enables the execution of a trade at a specific strike price until an expiration date. 
+ * PREDICTION_ASSET,       ///< Asset backed by an underlying collateral claim, on the condition that a prediction market resolve in a particular outcome.
+ * GATEWAY_ASSET,          ///< Asset backed by deposits with an exchange counterparty of another asset or currency.
+ * UNIQUE_ASSET            ///< Asset with a supply of one, contains metadata relating to the ownership of a unique non-fungible asset.
  */
 
 /**
  * Creates a new asset object.
  * 
  * Also creates its dynamic data object, 
- * and bitasset object if it is a bitasset.
+ * and stablecoin object if it is a stablecoin.
  * Creates the liquitity pool between the new asset and the core asset.
  * Creates the credit pool for the new asset.
  */
@@ -156,6 +157,42 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          issuer_account_name = NULL_ACCOUNT;
       }
       break;
+      case asset_property_type::STABLECOIN_ASSET:
+      {
+         const asset_object& backing_asset = _db.get_asset( o.options.backing_asset );
+         if( backing_asset.is_market_issued() )
+         {
+            const asset_stablecoin_data_object& backing_stablecoin_data = _db.get_stablecoin_data( backing_asset.symbol );
+            const asset_object& backing_backing_asset = _db.get_asset( backing_stablecoin_data.backing_asset );
+
+            FC_ASSERT( !backing_backing_asset.is_market_issued(),
+               "May not create a stablecoin backed by a stablecoin backed by a stablecoin." );
+            FC_ASSERT( backing_backing_asset.symbol == SYMBOL_COIN,
+               "Backing asset should be the core asset.");
+         } 
+         else 
+         {
+            FC_ASSERT( backing_asset.symbol == SYMBOL_COIN,
+               "Backing asset should be the core asset.");
+         }
+            
+         FC_ASSERT( o.options.feed_lifetime > MIN_FEED_LIFETIME,
+            "Feed lifetime must be greater than network minimum." );
+         FC_ASSERT( o.options.asset_settlement_delay > MIN_SETTLEMENT_DELAY,
+            "Force Settlement delay must be greater than network minimum." );
+
+         _db.create< asset_stablecoin_data_object >( [&]( asset_stablecoin_data_object& a )
+         {
+            a.symbol = o.symbol;
+            a.backing_asset = o.options.backing_asset;
+            a.feed_lifetime = o.options.feed_lifetime;
+            a.minimum_feeds = o.options.minimum_feeds;
+            a.asset_settlement_delay = o.options.asset_settlement_delay;
+            a.asset_settlement_offset_percent = o.options.asset_settlement_offset_percent;
+            a.maximum_asset_settlement_volume = o.options.maximum_asset_settlement_volume;
+         });
+      }
+      break;
       case asset_property_type::EQUITY_ASSET:
       {
          const account_business_object& abo = _db.get_account_business( o.issuer );
@@ -205,6 +242,31 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          });
       }
       break;
+      case asset_property_type::BOND_ASSET:
+      {
+         const account_business_object& abo = _db.get_account_business( o.issuer );
+         FC_ASSERT( abo.account == o.issuer, 
+            "Account: ${s} must be a business account to create a credit asset.",("s", o.issuer) );
+         FC_ASSERT( time_point( o.options.maturity_date ) > ( now + fc::days(30) ),
+            "Maturity must be at least 30 days in the future." );
+         
+         const asset_object& value_asset = _db.get_asset( o.options.value.symbol );
+         FC_ASSERT( value_asset.asset_type == asset_property_type::CURRENCY_ASSET || 
+            value_asset.asset_type == asset_property_type::STABLECOIN_ASSET, 
+            "Value asset must be either a currency or stablecoin type asset." );
+
+         _db.create< asset_bond_data_object >( [&]( asset_bond_data_object& a )
+         {
+            a.business_account = o.issuer;
+            a.symbol = o.symbol;
+            a.value = o.options.value;
+            a.collateralization = o.options.collateralization;
+            a.coupon_rate_percent = o.options.coupon_rate_percent;
+            a.maturity_date = o.options.maturity_date;
+            a.collateral_pool = asset( 0, a.value.symbol );
+         });
+      }
+      break;
       case asset_property_type::CREDIT_ASSET:
       {
          const account_business_object& abo = _db.get_account_business( o.issuer );
@@ -219,8 +281,8 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          
          const asset_object& buyback_asset = _db.get_asset( o.options.buyback_asset );
          FC_ASSERT( buyback_asset.asset_type == asset_property_type::CURRENCY_ASSET || 
-            buyback_asset.asset_type == asset_property_type::BITASSET_ASSET, 
-            "Buyback asset must beeither a currency or bitasset type asset." );
+            buyback_asset.asset_type == asset_property_type::STABLECOIN_ASSET, 
+            "Buyback asset must be either a currency or stablecoin type asset." );
 
          uint16_t revenue_share_sum = o.options.buyback_share_percent;
 
@@ -264,42 +326,6 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          });
       }
       break;
-      case asset_property_type::BITASSET_ASSET:
-      {
-         const asset_object& backing_asset = _db.get_asset( o.options.backing_asset );
-         if( backing_asset.is_market_issued() )
-         {
-            const asset_bitasset_data_object& backing_bitasset_data = _db.get_bitasset_data( backing_asset.symbol );
-            const asset_object& backing_backing_asset = _db.get_asset( backing_bitasset_data.backing_asset );
-
-            FC_ASSERT( !backing_backing_asset.is_market_issued(),
-               "May not create a bitasset backed by a bitasset backed by a bitasset." );
-            FC_ASSERT( backing_backing_asset.symbol == SYMBOL_COIN,
-               "Backing asset should be the core asset.");
-         } 
-         else 
-         {
-            FC_ASSERT( backing_asset.symbol == SYMBOL_COIN,
-               "Backing asset should be the core asset.");
-         }
-            
-         FC_ASSERT( o.options.feed_lifetime > MIN_FEED_LIFETIME,
-            "Feed lifetime must be greater than network minimum." );
-         FC_ASSERT( o.options.asset_settlement_delay > MIN_SETTLEMENT_DELAY,
-            "Force Settlement delay must be greater than network minimum." );
-
-         _db.create< asset_bitasset_data_object >( [&]( asset_bitasset_data_object& a )
-         {
-            a.symbol = o.symbol;
-            a.backing_asset = o.options.backing_asset;
-            a.feed_lifetime = o.options.feed_lifetime;
-            a.minimum_feeds = o.options.minimum_feeds;
-            a.asset_settlement_delay = o.options.asset_settlement_delay;
-            a.asset_settlement_offset_percent = o.options.asset_settlement_offset_percent;
-            a.maximum_asset_settlement_volume = o.options.maximum_asset_settlement_volume;
-         });
-      }
-      break;
       case asset_property_type::GATEWAY_ASSET:
       {
          const account_business_object& abo = _db.get_account_business( o.issuer );
@@ -311,6 +337,22 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       {
          FC_ASSERT( o.options.max_supply == BLOCKCHAIN_PRECISION,
             "Unique assets must have a maximum supply of exactly one unit." );
+
+         _db.create< asset_unique_data_object >( [&]( asset_unique_data_object& audo )
+         {
+            audo.symbol = o.symbol;
+            audo.controlling_owner = o.issuer;
+            audo.ownership_asset = o.options.ownership_asset;
+            for( account_name_type a : o.options.control_list )
+            {
+               audo.control_list.insert( a );
+            }
+            for( account_name_type a : o.options.access_list )
+            {
+               audo.access_list.insert( a );
+            }
+            audo.access_price = o.options.access_price;
+         });
       }
       break;
       case asset_property_type::LIQUIDITY_POOL_ASSET:
@@ -363,10 +405,24 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       a.market_fee_share_percent = o.options.market_fee_share_percent;
       a.issuer_permissions = o.options.issuer_permissions;
       a.flags = o.options.flags;
-      a.whitelist_authorities = o.options.whitelist_authorities;
-      a.blacklist_authorities = o.options.blacklist_authorities;
-      a.whitelist_markets = o.options.whitelist_markets;
-      a.blacklist_markets = o.options.blacklist_markets;
+
+      for( account_name_type auth : o.options.whitelist_authorities )
+      {
+         a.whitelist_authorities.insert( auth );
+      }
+      for( account_name_type auth : o.options.blacklist_authorities )
+      {
+         a.blacklist_authorities.insert( auth );
+      }
+      for( asset_symbol_type mar : o.options.whitelist_markets )
+      {
+         a.whitelist_markets.insert( mar );
+      }
+      for( asset_symbol_type mar : o.options.blacklist_markets )
+      {
+         a.blacklist_markets.insert( mar );
+      }
+      
       a.created = now;
       a.last_updated = now;
    });
@@ -395,10 +451,24 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       a.market_fee_share_percent = o.options.market_fee_share_percent;
       a.issuer_permissions = o.options.issuer_permissions;
       a.flags = o.options.flags;
-      a.whitelist_authorities = o.options.whitelist_authorities;
-      a.blacklist_authorities = o.options.blacklist_authorities;
-      a.whitelist_markets = o.options.whitelist_markets;
-      a.blacklist_markets = o.options.blacklist_markets;
+
+      for( account_name_type auth : o.options.whitelist_authorities )
+      {
+         a.whitelist_authorities.insert( auth );
+      }
+      for( account_name_type auth : o.options.blacklist_authorities )
+      {
+         a.blacklist_authorities.insert( auth );
+      }
+      for( asset_symbol_type mar : o.options.whitelist_markets )
+      {
+         a.whitelist_markets.insert( mar );
+      }
+      for( asset_symbol_type mar : o.options.blacklist_markets )
+      {
+         a.blacklist_markets.insert( mar );
+      }
+
       a.created = now;
       a.last_updated = now;
    });
@@ -447,10 +517,24 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       a.market_fee_share_percent = o.options.market_fee_share_percent;
       a.issuer_permissions = o.options.issuer_permissions;
       a.flags = o.options.flags;
-      a.whitelist_authorities = o.options.whitelist_authorities;
-      a.blacklist_authorities = o.options.blacklist_authorities;
-      a.whitelist_markets = o.options.whitelist_markets;
-      a.blacklist_markets = o.options.blacklist_markets;
+
+      for( account_name_type auth : o.options.whitelist_authorities )
+      {
+         a.whitelist_authorities.insert( auth );
+      }
+      for( account_name_type auth : o.options.blacklist_authorities )
+      {
+         a.blacklist_authorities.insert( auth );
+      }
+      for( asset_symbol_type mar : o.options.whitelist_markets )
+      {
+         a.whitelist_markets.insert( mar );
+      }
+      for( asset_symbol_type mar : o.options.blacklist_markets )
+      {
+         a.blacklist_markets.insert( mar );
+      }
+
       a.created = now;
       a.last_updated = now;
    });
@@ -499,10 +583,24 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       a.market_fee_share_percent = o.options.market_fee_share_percent;
       a.issuer_permissions = o.options.issuer_permissions;
       a.flags = o.options.flags;
-      a.whitelist_authorities = o.options.whitelist_authorities;
-      a.blacklist_authorities = o.options.blacklist_authorities;
-      a.whitelist_markets = o.options.whitelist_markets;
-      a.blacklist_markets = o.options.blacklist_markets;
+
+      for( account_name_type auth : o.options.whitelist_authorities )
+      {
+         a.whitelist_authorities.insert( auth );
+      }
+      for( account_name_type auth : o.options.blacklist_authorities )
+      {
+         a.blacklist_authorities.insert( auth );
+      }
+      for( asset_symbol_type mar : o.options.whitelist_markets )
+      {
+         a.whitelist_markets.insert( mar );
+      }
+      for( asset_symbol_type mar : o.options.blacklist_markets )
+      {
+         a.blacklist_markets.insert( mar );
+      }
+
       a.created = now;
       a.last_updated = now;
    });
@@ -543,19 +641,19 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
  * Loop through assets, looking for ones that are backed by the asset being changed. 
  * When found, perform checks to verify validity.
  *
- * @param op the bitasset update operation being performed
+ * @param op the stablecoin update operation being performed
  * @param new_backing_asset
  */
-void check_children_of_bitasset( database& db, const asset_update_operation& o, const asset_object& new_backing_asset )
+void check_children_of_stablecoin( database& db, const asset_update_operation& o, const asset_object& new_backing_asset )
 {
-   if( new_backing_asset.symbol != SYMBOL_COIN )    //  If new backing asset is CORE, no child bitassets to review. 
+   if( new_backing_asset.symbol != SYMBOL_COIN )    //  If new backing asset is CORE, no child stablecoins to review. 
    {
-      const auto& idx = db.get_index< asset_bitasset_data_index >().indices().get< by_backing_asset >();
+      const auto& idx = db.get_index< asset_stablecoin_data_index >().indices().get< by_backing_asset >();
       auto backed_range = idx.equal_range( o.asset_to_update );
       std::for_each( backed_range.first, backed_range.second, // loop through all assets that have this asset as a backing asset
-         [&new_backing_asset, &o, &db]( const asset_bitasset_data_object& bitasset_data )
+         [&new_backing_asset, &o, &db]( const asset_stablecoin_data_object& stablecoin_data )
          {
-            const auto& child = db.get_bitasset_data( bitasset_data.symbol );
+            const auto& child = db.get_stablecoin_data( stablecoin_data.symbol );
 
             FC_ASSERT( child.symbol != o.new_options.backing_asset,
                "The BitAsset would be invalidated by changing this backing asset ('A' backed by 'B' backed by 'A')." );
@@ -565,19 +663,19 @@ void check_children_of_bitasset( database& db, const asset_update_operation& o, 
 
 
 /**
- * @brief Apply requested changes to bitasset options
+ * @brief Apply requested changes to stablecoin options
  *
- * This applies the requested changes to the bitasset object.
+ * This applies the requested changes to the stablecoin object.
  * It also cleans up the releated feeds
  *
  * @param op the requested operation
  * @param db the database
  * @param bdo the actual database object
- * @param asset_to_update the asset_object related to this bitasset_data_object
+ * @param asset_to_update the asset_object related to this stablecoin_data_object
  * @returns true if the feed price is changed
  */
-bool update_bitasset_object_options( const asset_update_operation& o, database& db, 
-   asset_bitasset_data_object& bdo, const asset_object& asset_to_update )
+bool update_stablecoin_object_options( const asset_update_operation& o, database& db, 
+   asset_stablecoin_data_object& bdo, const asset_object& asset_to_update )
 {
    time_point now = db.head_block_time();
 
@@ -671,11 +769,8 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
 
    // Changed flags must be subset of old issuer permissions
 
-   FC_ASSERT(!(( o.new_options.flags ^ asset_obj.flags) & ~asset_obj.issuer_permissions ),
+   FC_ASSERT(!(( o.new_options.flags ^ asset_obj.flags ) & ~asset_obj.issuer_permissions ),
       "Flag change is forbidden by issuer permissions" );
-   FC_ASSERT( o.issuer == asset_obj.issuer,
-      "Incorrect issuer for asset! (${o.issuer} != ${a.issuer})",
-      ("o.issuer", o.issuer)("asset.issuer", asset_obj.issuer) );
    FC_ASSERT( o.new_options.whitelist_authorities.size() <= median_props.maximum_asset_whitelist_authorities,
       "Too many Whitelist authorities." );
 
@@ -712,11 +807,83 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
       break;
       case asset_property_type::STANDARD_ASSET:
       {
-         // No specific checks
+         FC_ASSERT( o.issuer == asset_obj.issuer,
+            "Only Issuer can update asset. (${o.issuer} != ${a.issuer})",
+            ("o.issuer", o.issuer)("asset.issuer", asset_obj.issuer) );
+      }
+      break;
+      case asset_property_type::STABLECOIN_ASSET:
+      {
+         FC_ASSERT( o.issuer == asset_obj.issuer,
+            "Only Issuer can update asset. (${o.issuer} != ${a.issuer})",
+            ("o.issuer", o.issuer)("asset.issuer", asset_obj.issuer) );
+         FC_ASSERT( asset_obj.is_market_issued(), 
+            "Asset must be market issued to update stablecoin." );
+         
+         const asset_stablecoin_data_object& current_stablecoin_data = _db.get_stablecoin_data( asset_obj.symbol );
+
+         FC_ASSERT( !current_stablecoin_data.has_settlement(), 
+            "Cannot update a stablecoin after a global settlement has executed." );
+
+         const asset_object& backing_asset = _db.get_asset( o.new_options.backing_asset );
+
+         if( o.new_options.backing_asset != current_stablecoin_data.backing_asset )   // Are we changing the backing asset?
+         {
+            FC_ASSERT( dyn_data.get_total_supply().amount == 0,
+               "Cannot update a stablecoin's backing asset if there is already a current supply. Please globally settle first." );
+            FC_ASSERT( o.new_options.backing_asset != asset_obj.symbol,
+               "Cannot update a stablecoin to be backed by itself. Please select a different backing asset." );
+            const asset_object& new_backing_asset = _db.get_asset( o.new_options.backing_asset ); // Check if the new backing asset exists
+
+            if ( new_backing_asset.symbol != SYMBOL_COIN ) // not backed by CORE
+            {
+               check_children_of_stablecoin( _db, o, new_backing_asset );   // Checks for recursive backing assets
+            }
+            
+            // Check if the new backing asset is itself backed by something. It must be CORE or a UIA.
+            if ( new_backing_asset.is_market_issued() )
+            {
+               const asset_stablecoin_data_object& backing_stablecoin_data = _db.get_stablecoin_data( new_backing_asset.symbol );
+               const asset_object& backing_backing_asset = _db.get_asset( backing_stablecoin_data.backing_asset );
+               FC_ASSERT( ( backing_backing_asset.symbol == SYMBOL_COIN || !backing_backing_asset.is_market_issued() ),
+                  "A BitAsset cannot be backed by a BitAsset that itself is backed by a BitAsset.");
+            }
+         }
+         
+         bool to_check_call_orders = false;
+
+         _db.modify( current_stablecoin_data, [&]( asset_stablecoin_data_object& bdo )
+         {
+            to_check_call_orders = update_stablecoin_object_options( o, _db, bdo, asset_obj );
+         });
+
+         if( to_check_call_orders )     // Process margin calls, allow black swan, not for a new limit order
+         {
+            _db.check_call_orders( asset_obj, true, false );
+         }
+         
+         if( backing_asset.is_market_issued() )
+         {
+            const asset_stablecoin_data_object& backing_stablecoin_data = _db.get_stablecoin_data( backing_asset.symbol );
+            const asset_object& backing_backing_asset = _db.get_asset( backing_stablecoin_data.backing_asset );
+
+            FC_ASSERT( !backing_backing_asset.is_market_issued(),
+               "May not create a stablecoin backed by a stablecoin backed by a stablecoin." );
+            FC_ASSERT( backing_backing_asset.symbol == SYMBOL_COIN,
+               "Backing asset should be the core asset." );
+         } 
+         else 
+         {
+            FC_ASSERT( backing_asset.symbol == SYMBOL_COIN,
+               "Backing asset should be the core asset.");
+         }
       }
       break;
       case asset_property_type::EQUITY_ASSET:
       {
+         FC_ASSERT( o.issuer == asset_obj.issuer,
+            "Only Issuer can update asset. (${o.issuer} != ${a.issuer})",
+            ("o.issuer", o.issuer)("asset.issuer", asset_obj.issuer) );
          const account_business_object& bus_acc = _db.get_account_business( o.issuer );
          const asset_equity_data_object& equity_obj = _db.get_equity_data( o.asset_to_update );
          uint16_t revenue_share_sum = o.new_options.dividend_share_percent;
@@ -757,8 +924,39 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
          });
       }
       break;
+      case asset_property_type::BOND_ASSET:
+      {
+         const account_business_object& abo = _db.get_account_business( o.issuer );
+         FC_ASSERT( abo.account == o.issuer, 
+            "Account: ${s} must be a business account to create a credit asset.",("s", o.issuer) );
+         FC_ASSERT( time_point( o.new_options.maturity_date ) > ( now + fc::days(30) ),
+            "Maturity must be at least 30 days in the future." );
+         
+         const asset_object& value_asset = _db.get_asset( o.new_options.value.symbol );
+         FC_ASSERT( value_asset.asset_type == asset_property_type::CURRENCY_ASSET || 
+            value_asset.asset_type == asset_property_type::STABLECOIN_ASSET, 
+            "Value asset must be either a currency or stablecoin type asset." );
+
+         const asset_dynamic_data_object& bond_dyn_data = _db.get_dynamic_data( o.asset_to_update );
+         const asset_bond_data_object& bond_obj = _db.get_bond_data( o.asset_to_update );
+
+         if( bond_dyn_data.total_supply == 0 )     // Only edit bond economics if no supply has been issued.
+         {
+            _db.modify( bond_obj, [&]( asset_bond_data_object& a )
+            {
+               a.value = o.new_options.value;
+               a.collateralization = o.new_options.collateralization;
+               a.coupon_rate_percent = o.new_options.coupon_rate_percent;
+               a.maturity_date = o.new_options.maturity_date;
+            });
+         }
+      }
+      break;
       case asset_property_type::CREDIT_ASSET:
       {
+         FC_ASSERT( o.issuer == asset_obj.issuer,
+            "Only Issuer can update asset. (${o.issuer} != ${a.issuer})",
+            ("o.issuer", o.issuer)("asset.issuer", asset_obj.issuer) );
          const account_business_object& bus_acc = _db.get_account_business( o.issuer );
          const asset_credit_data_object& credit_obj = _db.get_credit_data( o.asset_to_update );
          uint16_t revenue_share_sum = o.new_options.buyback_share_percent;
@@ -801,70 +999,6 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
          });
       }
       break;
-      case asset_property_type::BITASSET_ASSET:
-      {
-         FC_ASSERT( asset_obj.is_market_issued(), 
-            "Asset must be market issued to update bitasset." );
-         
-         const asset_bitasset_data_object& current_bitasset_data = _db.get_bitasset_data( asset_obj.symbol );
-
-         FC_ASSERT( !current_bitasset_data.has_settlement(), 
-            "Cannot update a bitasset after a global settlement has executed." );
-
-         const asset_object& backing_asset = _db.get_asset( o.new_options.backing_asset );
-
-         if( o.new_options.backing_asset != current_bitasset_data.backing_asset )   // Are we changing the backing asset?
-         {
-            FC_ASSERT( dyn_data.get_total_supply().amount == 0,
-               "Cannot update a bitasset's backing asset if there is already a current supply. Please globally settle first." );
-            FC_ASSERT( o.new_options.backing_asset != asset_obj.symbol,
-               "Cannot update a bitasset to be backed by itself. Please select a different backing asset." );
-            const asset_object& new_backing_asset = _db.get_asset( o.new_options.backing_asset ); // Check if the new backing asset exists
-
-            if ( new_backing_asset.symbol != SYMBOL_COIN ) // not backed by CORE
-            {
-               check_children_of_bitasset( _db, o, new_backing_asset );   // Checks for recursive backing assets
-            }
-            
-            // Check if the new backing asset is itself backed by something. It must be CORE or a UIA.
-            if ( new_backing_asset.is_market_issued() )
-            {
-               const asset_bitasset_data_object& backing_bitasset_data = _db.get_bitasset_data( new_backing_asset.symbol );
-               const asset_object& backing_backing_asset = _db.get_asset( backing_bitasset_data.backing_asset );
-               FC_ASSERT( ( backing_backing_asset.symbol == SYMBOL_COIN || !backing_backing_asset.is_market_issued() ),
-                  "A BitAsset cannot be backed by a BitAsset that itself is backed by a BitAsset.");
-            }
-         }
-         
-         bool to_check_call_orders = false;
-
-         _db.modify( current_bitasset_data, [&]( asset_bitasset_data_object& bdo )
-         {
-            to_check_call_orders = update_bitasset_object_options( o, _db, bdo, asset_obj );
-         });
-
-         if( to_check_call_orders )     // Process margin calls, allow black swan, not for a new limit order
-         {
-            _db.check_call_orders( asset_obj, true, false );
-         }
-         
-         if( backing_asset.is_market_issued() )
-         {
-            const asset_bitasset_data_object& backing_bitasset_data = _db.get_bitasset_data( backing_asset.symbol );
-            const asset_object& backing_backing_asset = _db.get_asset( backing_bitasset_data.backing_asset );
-
-            FC_ASSERT( !backing_backing_asset.is_market_issued(),
-               "May not create a bitasset backed by a bitasset backed by a bitasset." );
-            FC_ASSERT( backing_backing_asset.symbol == SYMBOL_COIN,
-               "Backing asset should be the core asset." );
-         } 
-         else 
-         {
-            FC_ASSERT( backing_asset.symbol == SYMBOL_COIN,
-               "Backing asset should be the core asset.");
-         }
-      }
-      break;
       case asset_property_type::LIQUIDITY_POOL_ASSET:
       {
          FC_ASSERT( false, "Cannot Edit Liquidity Pool asset." );
@@ -882,13 +1016,44 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
       break;
       case asset_property_type::GATEWAY_ASSET:
       {
-         
+         FC_ASSERT( o.issuer == asset_obj.issuer,
+            "Only Issuer can update asset. (${o.issuer} != ${a.issuer})",
+            ("o.issuer", o.issuer)("asset.issuer", asset_obj.issuer) );
       }
       break;
       case asset_property_type::UNIQUE_ASSET:
       {
+         const asset_unique_data_object& unique_obj = _db.get_unique_data( o.asset_to_update );
+         flat_set< account_name_type > control_list = unique_obj.control_list;
+         flat_set< account_name_type > access_list = unique_obj.access_list;
+
          FC_ASSERT( o.new_options.max_supply == BLOCKCHAIN_PRECISION,
             "Unique assets must have a maximum supply of exactly one unit." );
+         FC_ASSERT( unique_obj.is_control( o.issuer ),
+            "Account must be in the control list to update unique asset. (${o.issuer} != ${a.issuer})",
+            ("o.issuer", o.issuer)("asset.issuer", unique_obj.controlling_owner ) );
+
+         if( unique_obj.controlling_owner == o.issuer )
+         {
+            control_list.clear();
+            for( account_name_type a : o.new_options.control_list )
+            {
+               control_list.insert( a );
+            }
+         }
+
+         access_list.clear();
+         for( account_name_type a : o.new_options.access_list )
+         {
+            access_list.insert( a );
+         }
+         
+         _db.modify( unique_obj, [&]( asset_unique_data_object& a )
+         {
+            a.control_list = control_list;
+            a.access_list = access_list;
+            a.access_price = o.new_options.access_price;
+         });
       }
       break;
       default:
@@ -910,10 +1075,27 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
       a.market_fee_share_percent = o.new_options.market_fee_share_percent;
       a.issuer_permissions = o.new_options.issuer_permissions;
       a.flags = o.new_options.flags;
-      a.whitelist_authorities = o.new_options.whitelist_authorities;
-      a.blacklist_authorities = o.new_options.blacklist_authorities;
-      a.whitelist_markets = o.new_options.whitelist_markets;
-      a.blacklist_markets = o.new_options.blacklist_markets;
+      a.whitelist_authorities.clear();
+      a.blacklist_authorities.clear();
+      a.whitelist_markets.clear();
+      a.blacklist_markets.clear();
+
+      for( account_name_type auth : o.new_options.whitelist_authorities )
+      {
+         a.whitelist_authorities.insert( auth );
+      }
+      for( account_name_type auth : o.new_options.blacklist_authorities )
+      {
+         a.blacklist_authorities.insert( auth );
+      }
+      for( asset_symbol_type mar : o.new_options.whitelist_markets )
+      {
+         a.whitelist_markets.insert( mar );
+      }
+      for( asset_symbol_type mar : o.new_options.blacklist_markets )
+      {
+         a.blacklist_markets.insert( mar );
+      }
       a.last_updated = now;
    });
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -951,6 +1133,23 @@ void asset_issue_evaluator::do_apply( const asset_issue_operation& o )
       "The recipient account is not authorized to receive the asset being issued.");
    FC_ASSERT( ( asset_dyn_data.total_supply + o.asset_to_issue.amount ) <= asset_obj.max_supply,
       "Issuing this amount would exceed the asset's maximum supply. Please raise the maximum supply, or reduce issuance amount." );
+
+   if( asset_obj.asset_type == asset_property_type::BOND_ASSET )
+   {
+      const asset_bond_data_object& bond_obj = _db.get_bond_data( o.asset_to_issue.symbol );
+
+      asset bond_collateral = ( bond_obj.value * o.asset_to_issue.amount * bond_obj.collateralization )  / ( BLOCKCHAIN_PRECISION * PERCENT_100 );
+      asset liquid = _db.get_liquid_balance( o.issuer, bond_obj.value.symbol );
+      FC_ASSERT( liquid >= bond_collateral,
+         "Insufficient Collateral liquid balance to issue requested quantity of bond assets." );
+
+      _db.adjust_liquid_balance( o.issuer, -bond_collateral );
+
+      _db.modify( bond_obj, [&]( asset_bond_data_object& abdo )
+      {
+         abdo.collateral_pool += bond_collateral;
+      });
+   }
 
    _db.adjust_liquid_balance( o.issue_to_account, o.asset_to_issue );
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -1265,11 +1464,11 @@ void asset_update_feed_producers_evaluator::do_apply( const asset_update_feed_pr
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
    time_point now = _db.head_block_time();
    const asset_object& asset_obj = _db.get_asset( o.asset_to_update );
-   const asset_bitasset_data_object& bitasset_to_update = _db.get_bitasset_data( o.asset_to_update );
+   const asset_stablecoin_data_object& stablecoin_to_update = _db.get_stablecoin_data( o.asset_to_update );
    
    FC_ASSERT( o.new_feed_producers.size() <= median_props.maximum_asset_feed_publishers,
       "Cannot specify more feed producers than maximum allowed." );
-   FC_ASSERT( asset_obj.asset_type == asset_property_type::BITASSET_ASSET,
+   FC_ASSERT( asset_obj.asset_type == asset_property_type::STABLECOIN_ASSET,
       "Cannot update feed producers on a non-BitAsset." );
    FC_ASSERT(!( asset_obj.is_producer_fed() ),
       "Cannot set feed producers on a producer-fed asset." );
@@ -1281,7 +1480,7 @@ void asset_update_feed_producers_evaluator::do_apply( const asset_update_feed_pr
       _db.get_account( name );
    }
    
-   _db.modify( bitasset_to_update, [&]( asset_bitasset_data_object& abdo )
+   _db.modify( stablecoin_to_update, [&]( asset_stablecoin_data_object& abdo )
    {
       for( auto feed_itr = abdo.feeds.begin(); feed_itr != abdo.feeds.end(); )    // Remove any old publishers who are no longer publishers.
       {
@@ -1327,10 +1526,10 @@ void asset_publish_feed_evaluator::do_apply( const asset_publish_feed_operation&
    FC_ASSERT( base.is_market_issued(), 
       "Can only publish price feeds for market-issued assets" );
 
-   const asset_bitasset_data_object& bitasset = _db.get_bitasset_data( base.symbol );
+   const asset_stablecoin_data_object& stablecoin = _db.get_stablecoin_data( base.symbol );
 
    // The settlement price must be quoted in terms of the backing asset.
-   FC_ASSERT( o.feed.settlement_price.quote.symbol == bitasset.backing_asset,
+   FC_ASSERT( o.feed.settlement_price.quote.symbol == stablecoin.backing_asset,
       "Quote asset type in settlement price should be same as backing asset of this asset" );
    
    if( base.is_producer_fed() )     // Verify that the publisher is authoritative to publish a feed.
@@ -1340,22 +1539,22 @@ void asset_publish_feed_evaluator::do_apply( const asset_publish_feed_operation&
    }
    else
    {
-      FC_ASSERT( bitasset.feeds.count( o.publisher ),
+      FC_ASSERT( stablecoin.feeds.count( o.publisher ),
          "The account is not in the set of allowed price feed producers of this asset" );
    }
 
-   price_feed old_feed =  bitasset.current_feed;    // Store medians for this asset.
+   price_feed old_feed =  stablecoin.current_feed;    // Store medians for this asset.
    
-   _db.modify( bitasset , [&o,now]( asset_bitasset_data_object& abdo )
+   _db.modify( stablecoin , [&o,now]( asset_stablecoin_data_object& abdo )
    {
       abdo.feeds[ o.publisher ] = make_pair( now, o.feed );
       abdo.update_median_feeds( now );
    });
 
-   if( !( old_feed == bitasset.current_feed ) )
+   if( !( old_feed == stablecoin.current_feed ) )
    {
       // Check whether need to revive the asset and proceed if need
-      if( bitasset.has_settlement() && !bitasset.current_feed.settlement_price.is_null() ) // has globally settled and has a valid feed
+      if( stablecoin.has_settlement() && !stablecoin.current_feed.settlement_price.is_null() ) // has globally settled and has a valid feed
       {
          bool should_revive = false;
          const asset_dynamic_data_object& mia_dyn = _db.get_dynamic_data( base.symbol );
@@ -1366,14 +1565,14 @@ void asset_publish_feed_evaluator::do_apply( const asset_publish_feed_operation&
          else // if current supply is not zero, when collateral ratio of settlement fund is greater than MCR, revive the asset.
          {
             // calculate collateralization and compare to maintenance_collateralization
-            if( price( bitasset.settlement_fund, mia_dyn.get_total_supply() ) > bitasset.current_maintenance_collateralization )
+            if( price( stablecoin.settlement_fund, mia_dyn.get_total_supply() ) > stablecoin.current_maintenance_collateralization )
             {
                should_revive = true;
             }
          }
          if( should_revive )
          {
-            _db.revive_bitasset( base );
+            _db.revive_stablecoin( base );
          } 
       }
       _db.check_call_orders( base, true, false );    // Process margin calls, allow black swan, not for a new limit order
@@ -1404,9 +1603,9 @@ void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
    FC_ASSERT( asset_to_settle.is_market_issued(),
       "Cannot settle a non-market issued asset." );
 
-   const asset_bitasset_data_object& bitasset = _db.get_bitasset_data( o.amount.symbol );
+   const asset_stablecoin_data_object& stablecoin = _db.get_stablecoin_data( o.amount.symbol );
 
-   FC_ASSERT( asset_to_settle.enable_force_settle() || bitasset.has_settlement(),
+   FC_ASSERT( asset_to_settle.enable_force_settle() || stablecoin.has_settlement(),
       "Asset must be able to be force settled, or have a global settlement price to settle." );
 
    asset liquid = _db.get_liquid_balance( o.account, asset_to_settle.symbol );
@@ -1414,17 +1613,17 @@ void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
    FC_ASSERT( liquid >= o.amount,
       "Account does not have enough of the asset to settle the requested amount." );
 
-   if( bitasset.has_settlement() )   // Asset has been globally settled. 
+   if( stablecoin.has_settlement() )   // Asset has been globally settled. 
    {
-      asset settled_amount = o.amount * bitasset.settlement_price;     // Round down, in favor of global settlement fund.
+      asset settled_amount = o.amount * stablecoin.settlement_price;     // Round down, in favor of global settlement fund.
 
       if( o.amount == mia_dyn.get_total_supply() )     // Settling the entire asset remaining supply. 
       {
-         settled_amount.amount = bitasset.settlement_fund;   // Set the settled amount to the exact remaining supply. 
+         settled_amount.amount = stablecoin.settlement_fund;   // Set the settled amount to the exact remaining supply. 
       }
       else
       {
-         FC_ASSERT( settled_amount.amount <= bitasset.settlement_fund,
+         FC_ASSERT( settled_amount.amount <= stablecoin.settlement_fund,
             "Settled amount should be less than or equal to settlement fund." );         // should be strictly < except for PM with zero outcome
       }
          
@@ -1434,14 +1633,14 @@ void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
       asset pays = o.amount;
       if( o.amount != mia_dyn.get_total_supply() && settled_amount.amount != 0 )
       {
-         pays = settled_amount.multiply_and_round_up( bitasset.settlement_price );
+         pays = settled_amount.multiply_and_round_up( stablecoin.settlement_price );
       }
 
       _db.adjust_liquid_balance( o.account, -pays );
 
       if( settled_amount.amount > 0 )     // Transfer from global settlement fund to account. 
       {
-         _db.modify( bitasset, [&]( asset_bitasset_data_object& abdo )  
+         _db.modify( stablecoin, [&]( asset_stablecoin_data_object& abdo )  
          {
             abdo.settlement_fund -= settled_amount.amount;
          });
@@ -1455,7 +1654,7 @@ void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
       const auto& settle_idx = _db.get_index< asset_settlement_index >().indices().get< by_account_asset >();
       auto settle_itr = settle_idx.find( boost::make_tuple( o.account, o.amount.symbol ) );
 
-      time_point settlement_time = now + bitasset.asset_settlement_delay;
+      time_point settlement_time = now + stablecoin.asset_settlement_delay;
 
       if( settle_itr == settle_idx.end() )
       {
@@ -1524,22 +1723,22 @@ void asset_global_settle_evaluator::do_apply( const asset_global_settle_operatio
       "Only asset issuer can globally settle an asset." );
 
    const asset_dynamic_data_object& mia_dyn = _db.get_dynamic_data( o.asset_to_settle );
-   const asset_bitasset_data_object& bitasset = _db.get_bitasset_data( o.asset_to_settle );
+   const asset_stablecoin_data_object& stablecoin = _db.get_stablecoin_data( o.asset_to_settle );
 
    FC_ASSERT( mia_dyn.get_total_supply().amount > 0,
       "Cannot globally settle an asset with zero supply." );
-   FC_ASSERT( !bitasset.has_settlement(),
+   FC_ASSERT( !stablecoin.has_settlement(),
       "This asset has already been globally settled, cannot global settle again." );
 
    const auto& call_idx = _db.get_index< call_order_index >().indices().get< by_collateral >();
 
    FC_ASSERT( !call_idx.empty(), 
-      "Critical error: No debt positions found on entire network. Bitasset supply should not exist." );
+      "Critical error: No debt positions found on entire network. Stablecoin supply should not exist." );
 
-   auto call_itr = call_idx.lower_bound( price::min( bitasset.backing_asset, o.asset_to_settle ) );
+   auto call_itr = call_idx.lower_bound( price::min( stablecoin.backing_asset, o.asset_to_settle ) );
 
    FC_ASSERT( call_itr != call_idx.end() && call_itr->debt_type() == o.asset_to_settle,
-      "Critical error: No debt positions found for the asset being settled. Bitasset supply should not exist." );
+      "Critical error: No debt positions found for the asset being settled. Stablecoin supply should not exist." );
 
    const call_order_object& least_collateralized_short = *call_itr;
 
@@ -1567,16 +1766,16 @@ void asset_collateral_bid_evaluator::do_apply( const asset_collateral_bid_operat
    }
 
    const asset_object& debt_asset = _db.get_asset( o.debt.symbol );
-   const asset_bitasset_data_object& bitasset_data = _db.get_bitasset_data( debt_asset.symbol );
-   const asset& liquid = _db.get_liquid_balance( o.bidder, bitasset_data.backing_asset );
+   const asset_stablecoin_data_object& stablecoin_data = _db.get_stablecoin_data( debt_asset.symbol );
+   const asset& liquid = _db.get_liquid_balance( o.bidder, stablecoin_data.backing_asset );
 
    time_point now = _db.head_block_time();
 
    FC_ASSERT( debt_asset.is_market_issued(),
       "Unable to cover ${sym} as it is not a collateralized asset.", ("sym", debt_asset.symbol) );
-   FC_ASSERT( bitasset_data.has_settlement(),
+   FC_ASSERT( stablecoin_data.has_settlement(),
       "Asset being bidded on must have a settlement price.");
-   FC_ASSERT( o.collateral.symbol == bitasset_data.backing_asset,
+   FC_ASSERT( o.collateral.symbol == stablecoin_data.backing_asset,
       "Additional collateral must be the same asset as backing asset.");
 
    if( o.collateral.amount > 0 )

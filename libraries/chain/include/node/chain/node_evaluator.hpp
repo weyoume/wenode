@@ -103,6 +103,8 @@ DEFINE_EVALUATOR( transfer_recurring )
 DEFINE_EVALUATOR( transfer_recurring_request )
 DEFINE_EVALUATOR( transfer_recurring_accept )
 DEFINE_EVALUATOR( transfer_confidential )
+DEFINE_EVALUATOR( transfer_to_confidential )
+DEFINE_EVALUATOR( transfer_from_confidential )
 
 // Balance Evaluators
 

@@ -206,7 +206,7 @@ BOOST_AUTO_TEST_CASE( proof_of_work_operation_test )
       uint128_t target_pow = db.pow_difficulty();
       block_id_type head_block_id = db.head_block_id();
 
-      proof_of_work work;
+      x11_proof_of_work work;
 
       work.create( head_block_id, "alice", 0 );
       
@@ -352,22 +352,24 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
       verify.signatory = "alice";
       verify.producer = "alice";
       verify.block_id = db.head_block_id();
-      verify.block_height = db.head_block_num();
       verify.validate();
 
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
+      
       tx.operations.push_back( verify );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      const block_validation_object& validation = db.get_block_validation( "alice", verify.block_height );
+      uint64_t block_height = protocol::block_header::num_from_id( verify.block_id );
+
+      const block_validation_object& validation = db.get_block_validation( "alice", block_height );
 
       BOOST_REQUIRE( validation.producer == verify.producer );
       BOOST_REQUIRE( validation.block_id == verify.block_id );
-      BOOST_REQUIRE( validation.block_height == verify.block_height );
+      BOOST_REQUIRE( validation.block_height == block_height );
       BOOST_REQUIRE( validation.committed == false );
       BOOST_REQUIRE( validation.created == now() );
 
@@ -446,10 +448,11 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
       commit.signatory = "alice";
       commit.producer = "alice";
       commit.block_id = verify.block_id;
-      commit.block_height = verify.block_height;
       commit.verifications = verifications;
       commit.commitment_stake = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       commit.validate();
+
+      block_height = protocol::block_header::num_from_id( verify.block_id );
 
       tx.operations.push_back( commit );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -460,7 +463,7 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
 
       BOOST_REQUIRE( validation.producer == commit.producer );
       BOOST_REQUIRE( validation.block_id == commit.block_id );
-      BOOST_REQUIRE( validation.block_height == commit.block_height );
+      BOOST_REQUIRE( validation.block_height == block_height );
       BOOST_REQUIRE( validation.commitment_stake == commit.commitment_stake );
       BOOST_REQUIRE( validation.committed == true );
       BOOST_REQUIRE( validation.commit_time == now() );

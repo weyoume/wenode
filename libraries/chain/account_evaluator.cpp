@@ -52,7 +52,13 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
    
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
    time_point now = _db.head_block_time();
+   size_t name_length = o.new_account_name.size();
    asset acc_fee = median_props.account_creation_fee;
+
+   if( is_premium_account_name( o.new_account_name ) )    // Double fee per character less than 8 characters.
+   {
+      acc_fee.amount = share_type( acc_fee.amount.value << uint16_t( 8 - name_length ) );
+   }
    
    FC_ASSERT( o.fee >= asset( acc_fee.amount, SYMBOL_COIN ), 
       "Insufficient Fee: ${f} required, ${p} provided.", ("f", acc_fee )("p", o.fee) );
@@ -1878,11 +1884,11 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
 
    for( size_t i = 0; i < connection_tier_values.size(); i++ )
    {
-       if( o.connection_type == connection_tier_values[ i ] )
-        {
-            connection_tier = connection_tier_type( i );
-            break;
-        }
+      if( o.connection_type == connection_tier_values[ i ] )
+      {
+         connection_tier = connection_tier_type( i );
+         break;
+      }
    }
 
    switch( connection_tier )

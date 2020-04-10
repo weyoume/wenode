@@ -500,15 +500,15 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
    time_point now = _db.head_block_time();
    const asset_object& debt_asset = _db.get_asset( o.debt.symbol );
    const asset_dynamic_data_object& debt_dynamic_data = _db.get_dynamic_data( o.debt.symbol );
-   const asset_bitasset_data_object& debt_bitasset_data = _db.get_bitasset_data( o.debt.symbol );
+   const asset_stablecoin_data_object& debt_stablecoin_data = _db.get_stablecoin_data( o.debt.symbol );
 
    FC_ASSERT( debt_asset.is_market_issued(),
       "Asset ${sym} is not a collateralized asset.", ("sym", debt_asset.symbol) );
-   FC_ASSERT( !debt_bitasset_data.has_settlement(),
+   FC_ASSERT( !debt_stablecoin_data.has_settlement(),
       "Cannot update debt position when the asset has been globally settled" );
-   FC_ASSERT( o.collateral.symbol == debt_bitasset_data.backing_asset,
+   FC_ASSERT( o.collateral.symbol == debt_stablecoin_data.backing_asset,
       "Collateral asset type should be same as backing asset of debt asset" );
-   FC_ASSERT( !debt_bitasset_data.current_feed.settlement_price.is_null(),
+   FC_ASSERT( !debt_stablecoin_data.current_feed.settlement_price.is_null(),
       "Cannot borrow asset with no price feed." );
 
    const auto& call_idx = _db.get_index< call_order_index >().indices().get< by_account >();
@@ -598,7 +598,7 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
 
       const call_order_object& call_object = *call_obj_ptr;
    
-      FC_ASSERT( ( call_object.collateralization() > debt_bitasset_data.current_maintenance_collateralization ) || 
+      FC_ASSERT( ( call_object.collateralization() > debt_stablecoin_data.current_maintenance_collateralization ) || 
          ( old_collateralization.valid() &&
          call_object.debt.amount <= *old_debt && 
          call_object.collateralization() > *old_collateralization ),

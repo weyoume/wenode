@@ -65,6 +65,7 @@ struct discussion_query
       FC_ASSERT( filter_communities.find( community ) == filter_communities.end() );
       FC_ASSERT( filter_tags.find( tag ) == filter_tags.end() );
       FC_ASSERT( limit <= 100 );
+      FC_ASSERT( max_rating >= 1 && max_rating <= 9 );
    }
 
    string                  account = INIT_ACCOUNT;       ///< Name of the account being fetched for feed or blog queries.

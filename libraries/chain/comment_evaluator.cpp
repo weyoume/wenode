@@ -26,10 +26,28 @@ namespace node { namespace chain {
 // === Post and Comment Evaluators === //
 //=====================================//
 
+/**
+ * POST TYPES
+ * 
+ * TEXT_POST,        ///< A post containing a maxmium of 300 characters of text.
+ * IMAGE_POST,       ///< A post containing an IPFS media file of an image, and up to 1000 characters of description text.
+ * VIDEO_POST,       ///< A post containing a title, an IPFS media file or bittorrent magent link of a video, and up to 1000 characters of description tex.
+ * LINK_POST,        ///< A post containing a URL link, link title, and up to 1000 characters of description text.
+ * ARTICLE_POST,     ///< A post containing a title, a header image, and an unlimited amount of body text with embedded images.
+ * AUDIO_POST,       ///< A post containing a title, an IPFS link to an audio file, and up to 1000 characters of description text.
+ * FILE_POST,        ///< A post containing a title, either an IPFS link to a file, or a magnet link to a bittorrent swarm for a file, and up to 1000 characters of description text.
+ * POLL_POST,        ///< A post containing a title, at least 2 voting options, and up to 1000 characters of description text.
+ * LIVESTREAM_POST,  ///< A post containing a title, a link to a livestreaming video, and up to 1000 characters of description text.
+ * PRODUCT_POST,     ///< A post containing a product title, at least 1 IPFS image of the product, and purchase details to create an escrow order.
+ * LIST_POST         ///< A post containing a list of at least 2 other posts, a title, and up to 1000 characters of description text
+ */
+
 
 /**
- * Creates a new comment object, or edits an existing object with new details.
- * Comments made within a community must be created in a community that the user has the 
+ * Creates a new comment object, or edits an existing comments.
+ * 
+ * Comments made within a community must be created 
+ * in a community that the user has the 
  * permission to author a post in. 
 */
 void comment_evaluator::do_apply( const comment_operation& o )
@@ -86,6 +104,17 @@ void comment_evaluator::do_apply( const comment_operation& o )
          break;
       }
    }
+
+   connection_tier_type reply_connection = connection_tier_type::PUBLIC;
+
+   for( size_t i = 0; i < connection_tier_values.size(); i++ )
+   {
+      if( options.reply_connection == connection_tier_values[ i ] )
+      {
+         reply_connection = connection_tier_type( i );
+         break;
+      }
+   }
    
    const community_object* community_ptr = nullptr;
 
@@ -137,6 +166,12 @@ void comment_evaluator::do_apply( const comment_operation& o )
          }
          break;
       }
+
+      FC_ASSERT( o.options.rating <= community.max_rating, 
+         "Post rating exceeds maximum rating of community." );
+      FC_ASSERT( o.options.reward_currency == community.reward_currency ||
+         o.options.reward_currency == SYMBOL_COIN, 
+         "Community does not accept specified reward currency: ${c}.", ("c", o.options.reward_currency ));
    }
 
    switch( reach_type )
@@ -191,12 +226,22 @@ void comment_evaluator::do_apply( const comment_operation& o )
             "Comment rejected: Body size is too large for text post, maximum of 300 characters." );
          FC_ASSERT( o.title.size() == 0,
             "Comment rejected: Should not include title in text post." );
+         if( community_ptr != nullptr )
+         {
+            FC_ASSERT( community_ptr->enable_text_posts(), 
+               "Community Name: ${b} does not enable Text Posts.", ("b", o.community ));
+         }
       }
       break;
       case post_format_type::IMAGE_POST:
       {
          FC_ASSERT( o.ipfs.size() >= 1,
             "Comment rejected: Image post must contain at least one IPFS referenced image file." );
+         if( community_ptr != nullptr )
+         {
+            FC_ASSERT( community_ptr->enable_image_posts(), 
+               "Community Name: ${b} does not enable Image Posts.", ("b", o.community ));
+         }
       }
       break;
       case post_format_type::VIDEO_POST:
@@ -205,6 +250,11 @@ void comment_evaluator::do_apply( const comment_operation& o )
             "Comment rejected: Video post must contain at least one IPFS or magnet referenced video file." );
          FC_ASSERT( o.title.size() >=1,
             "Comment rejected: Should include title in video post." );
+         if( community_ptr != nullptr )
+         {
+            FC_ASSERT( community_ptr->enable_video_posts(), 
+               "Community Name: ${b} does not enable Video Posts.", ("b", o.community ));
+         }
       }
       break;
       case post_format_type::LINK_POST:
@@ -213,6 +263,11 @@ void comment_evaluator::do_apply( const comment_operation& o )
             "Comment rejected: Link post must contain at least a valid url link." );
          FC_ASSERT( o.title.size() >=1,
             "Comment rejected: Should include title in link post." );
+         if( community_ptr != nullptr )
+         {
+            FC_ASSERT( community_ptr->enable_link_posts(), 
+               "Community Name: ${b} does not enable Link Posts.", ("b", o.community ));
+         }
       }
       break;
       case post_format_type::ARTICLE_POST:
@@ -221,6 +276,11 @@ void comment_evaluator::do_apply( const comment_operation& o )
             "Comment rejected: Article post must include body." );
          FC_ASSERT( o.title.size() >=1,
             "Comment rejected: Article post must include title." );
+         if( community_ptr != nullptr )
+         {
+            FC_ASSERT( community_ptr->enable_article_posts(), 
+               "Community Name: ${b} does not enable Article Posts.", ("b", o.community ));
+         }
       }
       break;
       case post_format_type::AUDIO_POST:
@@ -229,6 +289,11 @@ void comment_evaluator::do_apply( const comment_operation& o )
             "Comment rejected: Audio post must contain at least one IPFS referenced audio file." );
          FC_ASSERT( o.title.size() >= 1,
             "Comment rejected: Audio post must contain title." );
+         if( community_ptr != nullptr )
+         {
+            FC_ASSERT( community_ptr->enable_audio_posts(), 
+               "Community Name: ${b} does not enable Audio Posts.", ("b", o.community ));
+         }
       }
       break;
       case post_format_type::FILE_POST:
@@ -237,16 +302,47 @@ void comment_evaluator::do_apply( const comment_operation& o )
             "Comment rejected: File post must contain at least one IPFS or Magnet referenced file." );
          FC_ASSERT( o.title.size() >= 1,
             "Comment rejected: File post must contain title." );
+         if( community_ptr != nullptr )
+         {
+            FC_ASSERT( community_ptr->enable_file_posts(), 
+               "Community Name: ${b} does not enable File Posts.", ("b", o.community ));
+         }
       }
       break;
       case post_format_type::POLL_POST:
+      {
+         if( community_ptr != nullptr )
+         {
+            FC_ASSERT( community_ptr->enable_poll_posts(), 
+               "Community Name: ${b} does not enable Poll Posts.", ("b", o.community ));
+         }
+      }
+      break;
       case post_format_type::LIVESTREAM_POST:
+      {
+         if( community_ptr != nullptr )
+         {
+            FC_ASSERT( community_ptr->enable_livestream_posts(), 
+               "Community Name: ${b} does not enable Livestream Posts.", ("b", o.community ));
+         }
+      }
+      break;
       case post_format_type::PRODUCT_POST:
+      {
+         if( community_ptr != nullptr )
+         {
+            FC_ASSERT( community_ptr->enable_product_posts(), 
+               "Community Name: ${b} does not enable Product Posts.", ("b", o.community ));
+         }
+      }
+      break;
       case post_format_type::LIST_POST:
       {
-         /**
-          *  TODO: Formatting of advanced post types. 
-          */
+         if( community_ptr != nullptr )
+         {
+            FC_ASSERT( community_ptr->enable_list_posts(), 
+               "Community Name: ${b} does not enable List Posts.", ("b", o.community ));
+         }
       }
       break;
       default:
@@ -287,15 +383,109 @@ void comment_evaluator::do_apply( const comment_operation& o )
       else         // Post is a new comment
       {
          const comment_object& root = _db.get( parent->root_comment );       // If root post, gets the posts own object.
+         const account_object& root_auth = _db.get_account( root.author );
 
          FC_ASSERT( root.allow_replies, 
             "The parent comment has disabled replies." );
-         FC_ASSERT( ( now - auth.last_post) > MIN_REPLY_INTERVAL, 
+         FC_ASSERT( ( now - auth.last_post ) > MIN_REPLY_INTERVAL, 
             "You may only comment once every 15 seconds.", ("now",now)("auth.last_post",auth.last_post) );
-         
-         FC_ASSERT( parent->comment_paid( o.author ), 
-            "User ${u} has not paid the required comment price: ${p} to reply to this post ${c}.",
-            ("c", parent->permlink)("u", auth.name)("p", parent->comment_price));
+
+         // If root charges a comment price, pay the comment price to root author.
+
+         if( root.comment_price.amount > 0 && !parent->comment_paid( o.author ) )
+         {
+            _db.adjust_liquid_balance( o.author, -root.comment_price );
+            _db.adjust_liquid_balance( root.author, root.comment_price );
+
+            _db.modify( root, [&]( comment_object& co )
+            {
+               if( co.payments_received[ o.author ].size() )
+               {
+                  if( co.payments_received[ o.author ][ root.comment_price.symbol ].amount > 0 )
+                  {
+                     co.payments_received[ o.author ][ root.comment_price.symbol ] += root.comment_price;
+                  }
+                  else
+                  {
+                     co.payments_received[ o.author ][ root.comment_price.symbol ] = root.comment_price;
+                  }
+               }
+               else
+               {
+                  co.payments_received[ o.author ][ root.comment_price.symbol ] = root.comment_price;
+               }
+            });
+         }
+
+         // If parent comment pays a reply price, then transfer from parent to root author.
+
+         if( parent->reply_price.amount > 0 && o.author == root.author )
+         {
+            asset liquid = _db.get_liquid_balance( parent->author, parent->reply_price.symbol );
+
+            if( liquid >= parent->reply_price )
+            {
+               _db.adjust_liquid_balance( parent->author, -parent->reply_price );
+               _db.adjust_liquid_balance( root.author, parent->reply_price );
+            }
+         }
+
+         account_name_type account_a_name;
+         account_name_type account_b_name;
+
+         if( auth.id < root_auth.id )        // Connection objects are sorted with lowest ID is account A. 
+         {
+            account_a_name = auth.name;
+            account_b_name = root_auth.name;
+         }
+         else
+         {
+            account_b_name = auth.name;
+            account_a_name = root_auth.name;
+         }
+
+         const auto& connection_idx = _db.get_index< connection_index >().indices().get< by_accounts >();
+
+         switch( reply_connection )
+         {
+            case connection_tier_type::PUBLIC:
+            {
+               // Anyone can comment
+            }
+            break;
+            case connection_tier_type::CONNECTION:
+            {
+               auto con_itr = connection_idx.find( boost::make_tuple( account_a_name, account_b_name, reply_connection ) );
+               FC_ASSERT( con_itr != connection_idx.end(), 
+                  "Cannot create reply: No Connection between Account: ${a} and Account: ${b}", ("a", account_a_name)("b", account_b_name) );
+            }
+            break;
+            case connection_tier_type::FRIEND:
+            {
+               auto con_itr = connection_idx.find( boost::make_tuple( account_a_name, account_b_name, reply_connection ) );
+               FC_ASSERT( con_itr != connection_idx.end(), 
+                  "Cannot create reply: No Friend Connection between Account: ${a} and Account: ${b}", ("a", account_a_name)("b", account_b_name) );
+            }
+            break;
+            case connection_tier_type::COMPANION:
+            {
+               auto con_itr = connection_idx.find( boost::make_tuple( account_a_name, account_b_name, reply_connection ) );
+               FC_ASSERT( con_itr != connection_idx.end(), 
+                  "Cannot create reply: No Companion Connection between Account: ${a} and Account: ${b}", ("a", account_a_name)("b", account_b_name) );
+            }
+            break;
+            case connection_tier_type::SECURE:
+            {
+               FC_ASSERT( false, 
+                  "Cannot create reply: Post is set to Close replies.");
+            }
+            break;
+            default:
+            {
+               FC_ASSERT( false, 
+                  "Invalid connection type." );
+            }
+         }
 
          const reward_fund_object& reward_fund = _db.get_reward_fund( root.reward_currency );
          auto curve = reward_fund.curation_reward_curve;
@@ -392,6 +582,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          com.rating = options.rating;
          com.community = o.community;
          com.reach = reach_type;
+         com.reply_connection = reply_connection;
          com.post_type = format_type;
          com.author_reputation = auth.author_reputation;
          com.comment_price = o.comment_price;
@@ -551,6 +742,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
             com.rating = options.rating;
             com.community = o.community;
             com.reach = reach_type;
+            com.reply_connection = reply_connection;
             com.reward_currency = options.reward_currency;
             com.max_accepted_payout = options.max_accepted_payout;
             com.percent_liquid = options.percent_liquid;
@@ -648,7 +840,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
         
          _db.clear_comment_feeds( comment );
       }
-   } // end EDIT case
+   }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 

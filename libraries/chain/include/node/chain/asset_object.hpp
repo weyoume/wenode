@@ -15,17 +15,18 @@ namespace node { namespace chain {
    /**
     * ASSET TYPES
     * 
-    * CURRENCY_ASSET,         // Cryptocurrency that is issued by the network, starts from zero supply, issuing account is the null account, cannot be issued by any accounts. 
-    * STANDARD_ASSET,         // Regular asset, can be transferred and staked, saved, and delegated.
-    * EQUITY_ASSET,           // Asset issued by a business account that distributes a dividend from incoming revenue, and has voting power over a business accounts transactions. 
-    * CREDIT_ASSET,           // Asset issued by a business account that is backed by repayments up to a face value, and interest payments.
-    * BITASSET_ASSET,         // Asset based by collateral and track the value of an external asset.
-    * LIQUIDITY_POOL_ASSET,   // Liquidity pool asset that is backed by the deposits of an asset pair's liquidity pool and earns trading fees. 
-    * CREDIT_POOL_ASSET,      // Credit pool asset that is backed by deposits of the base asset, used for borrowing funds from the pool, used as collateral to borrow base asset.
-    * OPTION_ASSET,           // Asset that enables the execution of a trade at a specific price until an expiration date. 
-    * PREDICTION_ASSET,       // Asset backed by an underlying collateral claim, on the condition that a prediction market resolve in a particular outcome.
-    * GATEWAY_ASSET,          // Asset backed by deposits with an exchange counterparty of another asset or currency. 
-    * UNIQUE_ASSET,           // Asset with a supply of one, contains metadata relating to the ownership of a unique non-fungible asset. 
+    * CURRENCY_ASSET,         ///< Cryptocurrency that is issued by the network, starts from zero supply, issuing account is the null account, cannot be issued by any accounts. 
+    * STANDARD_ASSET,         ///< Regular asset, can be transferred and staked, saved, and delegated.
+    * STABLECOIN_ASSET,       ///< Asset backed by collateral that tracks the value of an external asset. Redeemable at any time with settlement.
+    * EQUITY_ASSET,           ///< Asset issued by a business account that distributes a dividend from incoming revenue, and has voting power over a business accounts transactions.
+    * BOND_ASSET,             ///< Asset backed by collateral that pays a coupon rate and is redeemed after expiration.
+    * CREDIT_ASSET,           ///< Asset issued by a business account that is backed by repayments up to a face value, and interest payments.
+    * LIQUIDITY_POOL_ASSET,   ///< Asset that is backed by the deposits of an asset pair's liquidity pool and earns trading fees. 
+    * CREDIT_POOL_ASSET,      ///< Asset that is backed by deposits of the base asset, used for borrowing funds from the pool, used as collateral to borrow base asset.
+    * OPTION_ASSET,           ///< Asset that enables the execution of a trade at a specific strike price until an expiration date. 
+    * PREDICTION_ASSET,       ///< Asset backed by an underlying collateral claim, on the condition that a prediction market resolve in a particular outcome.
+    * GATEWAY_ASSET,          ///< Asset backed by deposits with an exchange counterparty of another asset or currency.
+    * UNIQUE_ASSET            ///< Asset with a supply of one, contains metadata relating to the ownership of a unique non-fungible asset.
     */
 
    /**
@@ -97,7 +98,7 @@ namespace node { namespace chain {
          { 
             switch( asset_type )
             {
-               case asset_property_type::BITASSET_ASSET:
+               case asset_property_type::STABLECOIN_ASSET:
                case asset_property_type::PREDICTION_ASSET:
                case asset_property_type::LIQUIDITY_POOL_ASSET:
                case asset_property_type::CREDIT_POOL_ASSET:
@@ -122,7 +123,7 @@ namespace node { namespace chain {
                   case asset_property_type::CURRENCY_ASSET:
                   case asset_property_type::CREDIT_ASSET:
                   case asset_property_type::EQUITY_ASSET:
-                  case asset_property_type::BITASSET_ASSET:
+                  case asset_property_type::STABLECOIN_ASSET:
                   case asset_property_type::GATEWAY_ASSET:
                   {
                      return true;
@@ -396,6 +397,16 @@ namespace node { namespace chain {
             
          } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
+         void                          adjust_confidential_supply( const asset& delta )
+         { try {
+            FC_ASSERT( delta.symbol == symbol );
+            confidential_supply += delta.amount;
+            total_supply += delta.amount;
+            FC_ASSERT( confidential_supply >= 0 );
+            FC_ASSERT( total_supply >= 0 );
+            
+         } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
+
          void                          clear_supply()     ///< Clears the entire asset supply, used for expiring assets - options, prediction assets
          {
             total_supply = 0;
@@ -413,14 +424,12 @@ namespace node { namespace chain {
 
 
    /**
-    * Manages the details of a currency asset.
+    * Currency assets are distributed to network contributors,
+    * and each have their own reward fund objects.
     * 
     * Enables currency asset issuers to specify the
     * characteristics of the distribution of the cryptocurrency 
     * at creation, which cannot be altered afterwards. 
-    * 
-    * Currency assets are distributed to network contributors,
-    * and each have thier own reward fund objects.
     */
    class asset_currency_data_object : public object < asset_currency_data_object_type, asset_currency_data_object>
    {
@@ -478,12 +487,17 @@ namespace node { namespace chain {
 
 
    /**
-    * Manages the details of a market issued bitasset.
+    * Stablecoin Assets provide a fully collateralized instrument that tracks the price of an external asset.
     * 
-    * Enables asset feed providers to upload price feeds to 
-    * determine the ratio of collateral required for creating 
-    * call orders to create collateralized debt positions of the 
-    * @ref backing_asset
+    * Borrowers can lock collateral corresponding to at least 200% of the 
+    * value of the position to issue new units of the stablecoin.
+    * 
+    * Stablecoin asset units do not present the holder with 
+    * counterparty risk, and do not earn an interest rate of return.
+    * 
+    * Price feeds are used to determine the ratio of collateral 
+    * required for creating call orders to create collateralized 
+    * debt positions.
     *
     * In the event of a black swan, the swan price is saved
     * in the settlement price, and all margin positions
@@ -493,24 +507,24 @@ namespace node { namespace chain {
     * (no feeds, etc) and forced settlement occurs
     * immediately when requested, using the settlement price and fund.
     */
-   class asset_bitasset_data_object : public object < asset_bitasset_data_object_type, asset_bitasset_data_object>
+   class asset_stablecoin_data_object : public object < asset_stablecoin_data_object_type, asset_stablecoin_data_object>
    {
-      asset_bitasset_data_object() = delete;
+      asset_stablecoin_data_object() = delete;
 
       public:
          template< typename Constructor, typename Allocator >
-         asset_bitasset_data_object( Constructor&& c, allocator< Allocator > a )
+         asset_stablecoin_data_object( Constructor&& c, allocator< Allocator > a )
          {
             c( *this );
          }
 
          id_type                   id;
 
-         asset_symbol_type         symbol;                                        ///< The symbol of the bitasset that this object belongs to
+         asset_symbol_type         symbol;                                        ///< The symbol of the stablecoin that this object belongs to
 
          account_name_type         issuer;                                        ///< The account name of the issuer 
 
-         asset_symbol_type         backing_asset;                                 ///< The collateral backing asset of the bitasset
+         asset_symbol_type         backing_asset;                                 ///< The collateral backing asset of the stablecoin
 
          flat_map< account_name_type, pair< time_point, price_feed > >  feeds;    ///< Feeds published for this asset. 
 
@@ -706,6 +720,17 @@ namespace node { namespace chain {
          } 
    };
 
+
+   /**
+    * Equity assets enable a business account to raise equity capital.
+    * 
+    * Equity assets providing voting rights over the business account's 
+    * leadership structure as to which accounts can use the signatory authority
+    * to conduct business management operations.
+    * 
+    * Equity asset holder also receive a weekly dividend from the incoming 
+    * revenue flow to the issuing business account paid automatically.
+    */
    class asset_equity_data_object : public object < asset_equity_data_object_type, asset_equity_data_object>
    {
       asset_equity_data_object() = delete;
@@ -771,15 +796,77 @@ namespace node { namespace chain {
          } FC_CAPTURE_AND_RETHROW( ( delta ) ) };
    };
 
+   /**
+    * Bond assets enable a business account to borrow funds for a fixed interest rate and duration.
+    * 
+    * Bond assets pay a specified coupon rate to the holders of the assets.
+    * At the maturity time of the bond, it is settled for 
+    * the underlying collateral value at the face value of the bond from
+    * the account of the issuer. 
+    * 
+    * In the event that the issuer cannot pay the bond on maturity,
+    * the collateral backing the bond asset is paid to the bondholders.
+    * 
+    * This asset represents a semi-collateralized loan 
+    * from the market to the issuer with a fixed income and fixed duration.
+    * 
+    * The asset holds counterparty risk that its issuer may default, 
+    * in exchange for a higher market rate of interest return.
+    * the value of the Bond should flucuate based on the creditworthiness
+    * of the issuing account. Users should not the publicly 
+    * visible cash flow conditions of the issuer account before
+    * purchasing the bond asset.
+    * 
+    * Because of the fixed interest rate, the value of the asset may diverge from the face value,
+    * and most of the credit risk should be expressed in the market price of the bond.
+    */
+   class asset_bond_data_object : public object < asset_bond_data_object_type, asset_bond_data_object>
+   {
+      asset_bond_data_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         asset_bond_data_object( Constructor&& c, allocator< Allocator > a )
+         {
+            c( *this );
+         }
+
+         id_type                          id;
+
+         account_name_type                business_account;          ///< The account name of the issuer. Locks collateral to issue new bond units.
+
+         asset_symbol_type                symbol;                    ///< The symbol of the bond asset.
+
+         asset                            value;                     ///< Face value amount of each unit of the bond. Interest is paid as a percentage of value.
+
+         uint16_t                         collateralization;         ///< Percentage of value that is locked in collateral to back the bonds. Should be at least 10%.
+
+         uint16_t                         coupon_rate_percent;       ///< Percentage rate of the value that is paid each month in interest to the holders.
+
+         date_type                        maturity_date;             ///< Date at which the bond will mature. Principle value will be automatically paid from business_account.
+
+         asset                            collateral_pool;           ///< Amount of collateral backing the bond assets. Distributed in case of default. 
+
+         asset_symbol_type                collateral_asset()const { return value.symbol; }
+
+         time_point                       maturity()const { return time_point( maturity_date ); }
+   };
+
 
    /**
-    * Credit assets enable business accounts to borrow funds.
+    * Credit assets enable business accounts to borrow funds from the market without requiring upfront collateral.
     * 
-    * By issuing credit assets, backed by repurchases up to a given buyback price, or face value
-    * Accounts place repurchase orders from thier buyback pool at the buyback price
-    * and maintain the asset's face value.
-    * Credit assets additionally pay interest to holders by issuing new credit asset supply
-    * at an interest rate that linearly varies with the difference between the 
+    * Credit assets are backed by future automatic repurchases up 
+    * to a given buyback pricein response to incoming cash 
+    * flows to the issuing business account. 
+    * 
+    * Accounts place repurchase orders from their buyback 
+    * pool at the buyback price to maintain the asset's 
+    * face value in normal market conditions.
+    * 
+    * Credit assets additionally pay interest to holders
+    * by issuing new credit asset supply at an interest 
+    * rate that linearly varies with the difference between the 
     * buyback price and the market price in the liquidity pool,
     * with a fixed component and a variable component.
     * 
@@ -791,6 +878,20 @@ namespace node { namespace chain {
     * V = Variable Component
     * 
     * R = V * ( -0.5 * min( 1, max(-1, (M-B)/(B*Ra) ) ) + 0.5 ) + F
+    * 
+    * This asset represents an uncollateralized loan 
+    * from the market to the issuer with a variable income and perpetual duration.
+    * 
+    * The asset holds counterparty risk that its issuer may default, 
+    * in exchange for a higher market rate of interest return.
+    * The value of the Credit should flucuate based on the creditworthiness
+    * of the issuing account. Users should note the publicly 
+    * visible cash flow conditions of the issuer account before
+    * purchasing the credit asset.
+    * 
+    * Because of the variable interest rate, the value of the asset should closely approximate
+    * the buyback asset value, and most of the credit risk should be expressed in the interest rate
+    * instead of the market value.
     */
    class asset_credit_data_object : public object < asset_credit_data_object_type, asset_credit_data_object>
    {
@@ -817,21 +918,21 @@ namespace node { namespace chain {
          
          time_point             last_buyback;                    ///< Time that the last credit buyback occurred.
 
-         uint32_t               buyback_share_percent;           ///< Percentage of incoming assets added to the buyback pool
+         uint16_t               buyback_share_percent;           ///< Percentage of incoming assets added to the buyback pool.
 
-         uint32_t               liquid_fixed_interest_rate;      ///< Fixed component of Interest rate of the asset for liquid balances.
+         uint16_t               liquid_fixed_interest_rate;      ///< Fixed component of Interest rate of the asset for liquid balances.
 
-         uint32_t               liquid_variable_interest_rate;   ///< Variable component of Interest rate of the asset for liquid balances.
+         uint16_t               liquid_variable_interest_rate;   ///< Variable component of Interest rate of the asset for liquid balances.
 
-         uint32_t               staked_fixed_interest_rate;      ///< Fixed component of Interest rate of the asset for staked balances.
+         uint16_t               staked_fixed_interest_rate;      ///< Fixed component of Interest rate of the asset for staked balances.
 
-         uint32_t               staked_variable_interest_rate;   ///< Variable component of Interest rate of the asset for staked balances.
+         uint16_t               staked_variable_interest_rate;   ///< Variable component of Interest rate of the asset for staked balances.
 
-         uint32_t               savings_fixed_interest_rate;     ///< Fixed component of Interest rate of the asset for savings balances.
+         uint16_t               savings_fixed_interest_rate;     ///< Fixed component of Interest rate of the asset for savings balances.
 
-         uint32_t               savings_variable_interest_rate;  ///< Variable component of Interest rate of the asset for savings balances.
+         uint16_t               savings_variable_interest_rate;  ///< Variable component of Interest rate of the asset for savings balances.
 
-         uint32_t               var_interest_range;              ///< The percentage range from the buyback price over which to apply the variable interest rate.
+         uint16_t               var_interest_range;              ///< The percentage range from the buyback price over which to apply the variable interest rate.
 
          void                   adjust_pool( const asset& delta )
          {
@@ -868,8 +969,6 @@ namespace node { namespace chain {
 
          asset_symbol_type                    symbol;                      ///< The symbol of the unique asset.
 
-         account_name_type                    issuer;                      ///< The account name of the issuer.
-
          account_name_type                    controlling_owner;           ///< Account that currently owns the asset. Controls the control list.
 
          asset_symbol_type                    ownership_asset;             ///< Asset that represents controlling ownership of the unique asset. Same as symbol for no liquid ownership asset.
@@ -883,7 +982,17 @@ namespace node { namespace chain {
          share_type                           access_price_amount()const
          {
             return access_price.amount;
-         }                                 
+         }
+
+         bool is_control( const account_name_type& account )const  
+         {
+            return std::find( control_list.begin(), control_list.end(), account ) != control_list.end();
+         };
+
+         bool is_access( const account_name_type& account )const  
+         {
+            return std::find( access_list.begin(), access_list.end(), account ) != access_list.end();
+         }; 
    };
 
 
@@ -1067,15 +1176,15 @@ namespace node { namespace chain {
 
          asset_symbol_type          credit_symbol;          ///< Ticker symbol string of the credit asset for use as collateral to borrow the base asset.
 
-         asset                      base_balance;           ///< Balance of the base asset that is available for loans and redemptions. 
+         asset                      base_balance;           ///< Balance of the base asset that is available for loans and redemptions.
 
-         asset                      borrowed_balance;       ///< Total amount of base asset currently lent to borrowers, accumulates compounding interest payments. 
+         asset                      borrowed_balance;       ///< Total amount of base asset currently lent to borrowers, accumulates compounding interest payments.
 
          asset                      credit_balance;         ///< Balance of the credit asset redeemable for an increasing amount of base asset.
 
-         share_type                 last_interest_rate;     ///< The most recently calculated interest rate when last compounded. 
+         share_type                 last_interest_rate;     ///< The most recently calculated interest rate when last compounded.
 
-         price                      last_price;             ///< The last price that assets were lent or withdrawn at. 
+         price                      last_price;             ///< The last price that assets were lent or withdrawn at.
 
          price                      current_price()const    ///< Credit pool's current price of the credit asset, denominated in the base asset. Increases over time with incoming interest.
          {
@@ -1573,22 +1682,44 @@ namespace node { namespace chain {
    struct by_feed_expiration;
 
    typedef multi_index_container<
-      asset_bitasset_data_object,
+      asset_stablecoin_data_object,
       indexed_by<
-         ordered_unique< tag< by_id >, member< asset_bitasset_data_object, asset_bitasset_data_id_type, &asset_bitasset_data_object::id > >,
-         ordered_unique< tag< by_symbol >, member< asset_bitasset_data_object, asset_symbol_type, &asset_bitasset_data_object::symbol > >,
+         ordered_unique< tag< by_id >, member< asset_stablecoin_data_object, asset_stablecoin_data_id_type, &asset_stablecoin_data_object::id > >,
+         ordered_unique< tag< by_symbol >, member< asset_stablecoin_data_object, asset_symbol_type, &asset_stablecoin_data_object::symbol > >,
          ordered_non_unique< tag< by_backing_asset >, 
-            member< asset_bitasset_data_object, asset_symbol_type, &asset_bitasset_data_object::backing_asset > 
+            member< asset_stablecoin_data_object, asset_symbol_type, &asset_stablecoin_data_object::backing_asset > 
          >,
          ordered_unique< tag< by_feed_expiration >,
-            composite_key< asset_bitasset_data_object,
-               const_mem_fun< asset_bitasset_data_object, time_point, &asset_bitasset_data_object::feed_expiration_time >,
-               member< asset_bitasset_data_object, asset_bitasset_data_id_type, &asset_bitasset_data_object::id >
+            composite_key< asset_stablecoin_data_object,
+               const_mem_fun< asset_stablecoin_data_object, time_point, &asset_stablecoin_data_object::feed_expiration_time >,
+               member< asset_stablecoin_data_object, asset_stablecoin_data_id_type, &asset_stablecoin_data_object::id >
             >
          >
       >,
-      allocator< asset_bitasset_data_object >
-   > asset_bitasset_data_index;
+      allocator< asset_stablecoin_data_object >
+   > asset_stablecoin_data_index;
+
+   struct by_maturity;
+
+
+   typedef multi_index_container<
+      asset_bond_data_object,
+      indexed_by<
+         ordered_unique< tag< by_id >, member< asset_bond_data_object, asset_bond_data_id_type, &asset_bond_data_object::id > >,
+         ordered_unique< tag< by_symbol >, member< asset_bond_data_object, asset_symbol_type, &asset_bond_data_object::symbol > >,
+         ordered_non_unique< tag< by_backing_asset >, 
+            const_mem_fun< asset_bond_data_object, asset_symbol_type, &asset_bond_data_object::collateral_asset > 
+         >,
+         ordered_unique< tag< by_maturity >,
+            composite_key< asset_bond_data_object,
+               const_mem_fun< asset_bond_data_object, time_point, &asset_bond_data_object::maturity >,
+               member< asset_bond_data_object, asset_bond_data_id_type, &asset_bond_data_object::id >
+            >
+         >
+      >,
+      allocator< asset_bond_data_object >
+   > asset_bond_data_index;
+
 
    struct by_expiration;
    struct by_account_asset;
@@ -1943,7 +2074,7 @@ FC_REFLECT( node::chain::asset_currency_data_object,
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::asset_currency_data_object, node::chain::asset_currency_data_index );
 
-FC_REFLECT( node::chain::asset_bitasset_data_object,
+FC_REFLECT( node::chain::asset_stablecoin_data_object,
          (id)
          (symbol)
          (issuer)
@@ -1962,7 +2093,20 @@ FC_REFLECT( node::chain::asset_bitasset_data_object,
          (maximum_asset_settlement_volume)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::chain::asset_bitasset_data_object, node::chain::asset_bitasset_data_index );
+CHAINBASE_SET_INDEX_TYPE( node::chain::asset_stablecoin_data_object, node::chain::asset_stablecoin_data_index );
+
+FC_REFLECT( node::chain::asset_bond_data_object,
+         (id)
+         (business_account)
+         (symbol)
+         (value)
+         (collateralization)
+         (coupon_rate_percent)
+         (maturity_date)
+         (collateral_pool)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::asset_bond_data_object, node::chain::asset_bond_data_index );
 
 FC_REFLECT( node::chain::asset_settlement_object, 
          (id)
@@ -2034,7 +2178,6 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::asset_credit_data_object, node::chain::as
 FC_REFLECT( node::chain::asset_unique_data_object,
          (id)
          (symbol)
-         (issuer)
          (controlling_owner)
          (ownership_asset)
          (control_list)

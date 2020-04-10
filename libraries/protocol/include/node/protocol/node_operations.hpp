@@ -2,6 +2,7 @@
 #include <node/protocol/base.hpp>
 #include <node/protocol/block_header.hpp>
 #include <node/protocol/asset.hpp>
+#include <node/protocol/x11.hpp>
 
 #include <fc/utf8.hpp>
 #include <fc/crypto/equihash.hpp>
@@ -1090,7 +1091,7 @@ namespace node { namespace protocol {
     * Creates or updates a network officer object for a member.
     * 
     * Network officers receive a reward dsitribution from each block
-    * based on the amount of votes they have received from supporters of thier
+    * based on the amount of votes they have received from supporters of their
     * work to develop improvements the protocol or its interfaces, 
     * market it to new users, and advocate it to businesses and organisations. 
     */
@@ -1216,7 +1217,7 @@ namespace node { namespace protocol {
 
       asset                         budget;            ///< Total amount of Credit asset requested for team compensation and funding.
 
-      string                        details;           ///< Information about the board and thier team.
+      string                        details;           ///< Information about the board and their team.
 
       string                        url;               ///< The teams's description URL explaining their details. 
 
@@ -1318,7 +1319,7 @@ namespace node { namespace protocol {
     * 7 - Operate a notification API endpoint for receiving account notifications.
     * 
     * Supernodes receive rewards from the network proportionately with their 7 day stake weighted average file views.
-    * Users dynamically download IPFS media files from the Supernodes with the lowest ping via thier gateway endpoint.
+    * Users dynamically download IPFS media files from the Supernodes with the lowest ping via their gateway endpoint.
     * Users upload IPFS media files to multiple active Supernodes via their gateway endpoints.
     * Users upload videos files to mutliple bittorrent seed nodes for distribution via webtorrent. 
     * User select the Node, Auth and notification API endpoints with the lowest ping when using the WeYouMe applications. 
@@ -1556,6 +1557,8 @@ namespace node { namespace protocol {
 
       string                                reach = feed_reach_values[7];       ///< The extent to which the post will be distributed to account's followers and connections feeds.
 
+      string                                reply_connection = connection_tier_values[0];  ///< Replies to the comment must be connected to the author to at least this level. 
+
       uint16_t                              rating = 1;                         ///< User nominated rating as to the maturity of the content, and display sensitivity.
 
       asset_symbol_type                     reward_currency = SYMBOL_COIN;      ///< The reward currency that the post will earn.
@@ -1594,57 +1597,62 @@ namespace node { namespace protocol {
     * - Video Posts: contains a single video, contained as a magnet Bittorrent fileswarm reference.
     * - Link Posts: contains a URL link, and a description.
     * 
-    * Posts can be public, and unencrypted, or private and encrypted with a @ref public_key
-    * that a desired audience has been given access to prior to publication.
+    * Posts can be public, and unencrypted, or private 
+    * and encrypted with a @ref public_key that a desired audience 
+    * has been given access to prior to publication.
     * 
-    * Posts can be made to communities, which collect posts under a common topic 
-    * for a community, and are moderated by a group specified by the founder of the community.
+    * Posts can be made to communities, which collect 
+    * posts under a common topic for a community, and are 
+    * moderated by a group specified by the founder of the community.
     * 
-    * Posts earn an allocation of Content rewards from coin issuance, depnding on the amount
-    * of Votes, Views, Shares, and Comments that it receives, and the voting power that each 
+    * Posts earn an allocation of Content rewards from coin issuance, 
+    * depending on the amount of Votes, Views, Shares, 
+    * and Comments that it receives, and the voting power that each 
     * interacting account has.
     */
    struct comment_operation : public base_operation
    {
       account_name_type              signatory;
 
-      account_name_type              author;          ///< Name of the account that created the post.
+      account_name_type              author;               ///< Name of the account that created the post.
 
-      string                         permlink;        ///< Unique identifing string for the post.
+      string                         permlink;             ///< Unique identifing string for the post.
 
-      string                         title;           ///< Content related name of the post, used to find post with search API.
+      string                         title;                ///< Content related name of the post, used to find post with search API.
 
-      string                         body;            ///< String containing text for display when the post is opened.
+      string                         body;                 ///< String containing text for display when the post is opened.
 
-      vector< string >               ipfs;            ///< Vector of Strings containing IPFS file hashes: images, videos, files.
+      vector< string >               ipfs;                 ///< Vector of Strings containing IPFS file hashes: images, videos, files.
 
-      vector< string >               magnet;          ///< Vector of Strings containing bittorrent magnet links to torrent file swarms: videos, files.
+      vector< string >               magnet;               ///< Vector of Strings containing bittorrent magnet links to torrent file swarms: videos, files.
 
-      string                         url;             ///< String containing a URL for the post to link to.
+      string                         url;                  ///< String containing a URL for the post to link to.
 
-      string                         language;        ///< String containing the two letter ISO language code of the native language of the author.
+      string                         language;             ///< String containing the two letter ISO language code of the native language of the author.
 
-      community_name_type            community;       ///< The name of the community to which the post is uploaded to.
+      community_name_type            community;            ///< The name of the community to which the post is uploaded to.
 
-      string                         public_key;      ///< The public key used to encrypt the post, holders of the private key may decrypt.
+      string                         public_key;           ///< The public key used to encrypt the post, holders of the private key may decrypt.
 
-      account_name_type              interface;       ///< Name of the interface application that broadcasted the transaction.
+      account_name_type              interface;            ///< Name of the interface application that broadcasted the transaction.
 
-      asset                          comment_price;   ///< Price that is required to comment on the post.
+      asset                          comment_price;        ///< Price that is required to comment on the post.
 
-      asset                          premium_price;   ///< Price that is required to unlock premium content.
+      asset                          reply_price;          ///< Price that is paid to the comment root author when the root author replies.
 
-      account_name_type              parent_author;   ///< Account that created the post this post is replying to, empty if root post.
+      asset                          premium_price;        ///< Price that is required to unlock premium content.
 
-      string                         parent_permlink; ///< Permlink of the post this post is replying to, empty if root post.
+      account_name_type              parent_author;        ///< Account that created the post this post is replying to, empty if root post.
 
-      vector< tag_name_type >        tags;            ///< Set of string tags for sorting the post by.
+      string                         parent_permlink;      ///< Permlink of the post this post is replying to, empty if root post.
 
-      string                         json;            ///< json string of additional interface specific data relating to the post.
+      vector< tag_name_type >        tags;                 ///< Set of string tags for sorting the post by.
 
-      comment_options                options;         ///< Settings for the post, that effect how the network applies and displays it. 
+      string                         json;                 ///< json string of additional interface specific data relating to the post.
 
-      bool                           deleted = false; ///< True to delete post, false to create post. 
+      comment_options                options;              ///< Settings for the post, that effect how the network applies and displays it. 
+
+      bool                           deleted = false;      ///< True to delete post, false to create post. 
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1840,6 +1848,14 @@ namespace node { namespace protocol {
 
       string                         url;                   ///< External reference URL.
 
+      asset_symbol_type              reward_currency;       ///< The Currency asset used for content rewards in the community.
+
+      uint16_t                       max_rating;            ///< Highest severity rating that posts in the community can have.
+
+      uint32_t                       flags;                 ///< The currently active flags on the community for content settings.
+
+      uint32_t                       permissions = COMMUNITY_PERMISSION_MASK;  ///< The flag permissions that can be activated on the community for content settings.
+
       void                           validate()const;
       void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       void                           get_creator_name( account_name_type a )const{ a = founder; }
@@ -1873,6 +1889,14 @@ namespace node { namespace protocol {
       account_name_type              pinned_author;         ///< Author of the pinned post.
 
       string                         pinned_permlink;       ///< Permlink of the pinned post.
+
+      asset_symbol_type              reward_currency;       ///< The Currency asset used for content rewards in the community.
+
+      uint16_t                       max_rating;            ///< Highest severity rating that posts in the community can have.
+
+      uint32_t                       flags;                 ///< The currently active flags on the community for content settings.
+
+      uint32_t                       permissions;           ///< The flag permissions that can be activated on the community for content settings.
 
       bool                           active = true;         ///< True when the community is active, false to deactivate. 
 
@@ -2277,7 +2301,7 @@ namespace node { namespace protocol {
     * 
     * Ad inventory can be bidded on by ad campign owners, for display 
     * in the interfaces operated by the provider, to engage 
-    * with thier audience.
+    * with their audience.
     */
    struct ad_inventory_operation : public base_operation
    {
@@ -2704,52 +2728,201 @@ namespace node { namespace protocol {
    };
 
 
+   /** 
+    * Provided to maintain the invariant that all authority
+    * required by an operation is explicit in the operation.
+    */
+   struct confidential_input
+   {
+      fc::ecc::commitment_type       commitment;
+
+      authority                      owner;
+   };
+
    /**
-    * Transfers asset balances between accounts and confidential balances.
+    * When sending a stealth tranfer we assume users are unable to scan
+    * the full blockchain; therefore, payments require confirmation data
+    * to be passed out of band. We assume this out-of-band channel is
+    * not secure and therefore the contents of the confirmation must be encrypted. 
+    */
+   struct stealth_confirmation
+   {
+      struct memo_data
+      {
+         optional< public_key_type >      from;
+
+         asset                            amount;
+
+         fc::sha256                       blinding_factor;
+
+         fc::ecc::commitment_type         commitment;
+
+         uint32_t                         check = 0;
+      };
+
+      /**
+       * Packs *this then encodes as base58 encoded string.
+       */
+      operator string()const;
+      /**
+       * Unpacks from a base58 string
+       */
+      stealth_confirmation( const std::string& base58 );
+      stealth_confirmation(){}
+
+      public_key_type                    one_time_key;
+
+      optional< public_key_type >        to;
+
+      vector< char >                     encrypted_memo;
+   };
+
+   /**
+    * Defines data required to create a new blind commitment.
+    * The blinded output that must be proven to be greater than 0.
+    */
+   struct confidential_output
+   {
+      fc::ecc::commitment_type                commitment;
+
+      range_proof_type                        range_proof;       ///< Only required if there is more than one blind output.
+
+      authority                               owner;
+
+      optional< stealth_confirmation >        stealth_memo;
+   };
+
+
+   /**
+    * Stealth Transfers enable users to maintain their finanical privacy against even
+    * though all transactions are public.
     * 
-    * Confidential Transfers facilitate a UTXO style
-    * transaction payment process that utilizes Ring Signatures 
-    * and Ring CT to add provide privacy in payments of assets.
+    * Every account has three balances:
+    *
+    * 1. Public Balance - everyone can see the balance changes and the parties involved
+    * 2. Blinded Balance - everyone can see who is transacting but not the amounts involved
+    * 3. Stealth Balance - both the amounts and parties involved are obscured
+    *
+    * Account owners may set a flag that allows their account to receive(or not) transfers of these kinds
+    * Asset issuers can enable or disable the use of each of these types of accounts.
+    * All assets in a confidential transfer must be of the same type.
+    *
+    * Using the "temp account" which has no permissions required, users can transfer a
+    * stealth balance to the temp account and then use the temp account to register a new
+    * account. In this way users can use stealth funds to create anonymous accounts with which
+    * they can perform other actions that are not compatible with blinded balances (such as market orders)
+    *
+    * There are two ways to transfer value while maintaining privacy:
     * 
-    * Accepts input accounts and input balances, and 
-    * Pays output accounts and output balances.
-    * 
-    * Confidential balances can be shuffled with other
-    * balances of the same amount size.
+    * 1. Account to account with amount kept secret.
+    * 2. Stealth transfers with amount sender/receiver kept secret.
+    *
+    * When doing account to account transfers, everyone with access to the
+    * memo key can see the amounts, but they will not have access to the funds.
+    * When using stealth transfers the same key is used for control and reading
+    * the memo.
+    *
+    * This operation is more expensive than a normal transfer and has
+    * a fee proportional to the size of the operation.
+    *
+    * Using this operation you can transfer from an account and/or blinded balances
+    * to an account and/or blinded balances.
+    *
+    * Stealth Transfers:
+    *
+    * Assuming Receiver has key pair R,r and has shared public key R with Sender
+    * Assuming Sender has key pair S,s
+    * Generate one time key pair  O,o  as s.child(nonce) where nonce can be inferred from transaction
+    * Calculate secret V = o*R
+    * blinding_factor = sha256(V)
+    * memo is encrypted via aes of V
+    * owner = R.child(sha256(blinding_factor))
+    *
+    * Sender gives Receiver output ID to complete the payment.
+    *
+    * This process can also be used to send money to a cold wallet 
+    * without having to pre-register any accounts.
+    *
+    * Outputs are assigned the same IDs as the inputs until no more input IDs are available,
+    * in which case a the return value will be the *first* ID allocated for an output. Additional
+    * output IDs are allocated sequentially thereafter.
+    * If there are fewer outputs than inputs
+    * then the input IDs are freed and never used again.
     */
    struct transfer_confidential_operation : public base_operation
    {
-      asset_symbol_type                transfer_asset;                ///< Symbol of the asset being transferred.
+      vector< confidential_input >         inputs;
 
-      vector< account_name_type >      input_accounts;                ///< Account that is accepting the recurring transfer.
+      vector< confidential_output >        outputs;
 
-      vector< asset >                  input_account_amounts;         ///< The amount of the balance to be sent to each output public key in new balances.
-
-      vector< digest_type >            input_balances;                ///< Input balance object hashes.
-
-      vector< signature_type >         input_balance_signatures;      ///< Signatures corresponding to the spending keys of the balances.
-
-      vector< account_name_type >      output_accounts;               ///< Account to receive the transfer.
-
-      vector< asset >                  output_account_amounts;        ///< The amount of the balance to be sent to each output public key in new balances.
-
-      vector< string >                 output_public_keys;            ///< Public spending keys of the new balances to be created.
-
-      vector< asset >                  output_public_key_amounts;     ///< The amount of the balance to be sent to each output public key in new balances.
+      asset                                fee;
       
-      void                             validate()const;
-      void                             get_required_active_authorities( flat_set<account_name_type>& a )const{ for( const auto& i : input_accounts ) a.insert(i); }
-      void                             get_creator_name( account_name_type a )const 
+      void                                 validate()const;
+      void                                 get_required_authorities( vector<authority>& a )const
+      {
+         for( const auto& in : inputs )
+         {
+            a.push_back( in.owner ); 
+         }
+      }
+      void                                 get_creator_name( account_name_type a )const 
       { 
-         if( input_accounts.begin() != input_accounts.end() )
+         const account_name_type& n = account_name_type( NULL_ACCOUNT );
+         a = n;
+      }
+   };
+
+   
+   /**
+    * Converts public account balance to a blinded or stealth balance.
+    */
+   struct transfer_to_confidential_operation : public base_operation
+   {
+      account_name_type                  signatory;
+
+      account_name_type                  from;
+
+      asset                              amount;
+
+      blind_factor_type                  blinding_factor;
+
+      vector< confidential_output >      outputs;
+
+      asset                              fee;
+
+      void                               validate()const;
+      void                               get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      void                               get_creator_name( account_name_type a )const{ a = from; }
+   };
+
+
+   /**
+    * Converts blinded/stealth balance to a public account balance.
+    */
+   struct transfer_from_confidential_operation : public base_operation
+   {
+      account_name_type                 to;
+
+      asset                             amount;
+
+      blind_factor_type                 blinding_factor;
+
+      vector< confidential_input >      inputs;
+
+      asset                             fee;
+
+      void                              validate()const;
+      void                              get_required_authorities( vector<authority>& a )const
+      {
+         for( const auto& in : inputs )
          {
-            a = *input_accounts.begin();
-         }
-         else
-         {
-            const account_name_type& n = account_name_type( NULL_ACCOUNT );
-            a = n;
-         }
+            a.push_back( in.owner ); 
+         }  
+      }
+      void                              get_creator_name( account_name_type a )const 
+      { 
+         const account_name_type& n = account_name_type( NULL_ACCOUNT );
+         a = n;
       }
    };
 
@@ -3037,7 +3210,7 @@ namespace node { namespace protocol {
     * according to a specifed percentage.
     * 4 - After 7 days, the median release percentage is selected and enacted. 
     * 5 - Accounts that did not vote to release funds forfeit their security bond to the dispute pool.
-    * 6 - Accounts forfeit a percentage of thier security bond depending on the difference 
+    * 6 - Accounts forfeit a percentage of their security bond depending on the difference 
     * between their final voted release percentage and the median voted release percentage.
     * 7 - The dispute pool of all forfeited funds is divded equally between all accounts
     * that voted to release funds.
@@ -3532,20 +3705,30 @@ namespace node { namespace protocol {
     * Borrowers pay a continous interest rate to the pool,
     * which is redeemed by lenders when they withdraw credit pool assets.
     * 
+    * User can enable a Flash Loan to remove the collateralization
+    * requirement, and borrow an unlimited amount of funds from the 
+    * credit pool, by repaying the loan with one day's worth of interest
+    * within the same transaction.
+    * 
     * Design inspired by Compound Protocol:
     * https://compound.finance/documents/Compound.Whitepaper.pdf
+    * 
+    * Flash Loan Design inspired by Aave Protocol:
+    * https://github.com/aave/aave-protocol/blob/master/docs/Aave_Protocol_Whitepaper_v1_0.pdf
     */
    struct credit_pool_borrow_operation : public base_operation
    {
       account_name_type     signatory;
 
-      account_name_type     account;         ///< Account borrowing funds from the pool, must have sufficient collateral.
+      account_name_type     account;              ///< Account borrowing funds from the pool, must have sufficient collateral.
 
-      asset                 amount;          ///< Amount of an asset to borrow. Limit of 75% of collateral value. Set to 0 to repay loan.
+      asset                 amount;               ///< Amount of an asset to borrow. Limit of 75% of collateral value. Set to 0 to repay loan.
 
-      asset                 collateral;      ///< Amount of an asset to use as collateral for the loan. Set to 0 to reclaim collateral to collateral balance. 
+      asset                 collateral;           ///< Amount of an asset to use as collateral for the loan. Set to 0 to reclaim collateral to collateral balance.
 
-      string                loan_id;         ///< uuidv4 unique identifier for the loan.
+      string                loan_id;              ///< uuidv4 unique identifier for the loan.
+
+      bool                  flash_loan = false;   ///< True to execute a no collateral loan within a single transaction. Must be repaid within same txn.
 
       void                  validate()const;
       void                  get_creator_name( account_name_type a )const{ a = account; }
@@ -3593,7 +3776,7 @@ namespace node { namespace protocol {
 
       account_name_type     account;       ///< Account withdrawing its lent asset from the credit pool by redeeming credit-assets. 
 
-      asset                 amount;        ///< Amount of interest bearing credit assets being redeemed for thier underlying assets. 
+      asset                 amount;        ///< Amount of interest bearing credit assets being redeemed for their underlying assets. 
 
       void                  validate()const;
       void                  get_creator_name( account_name_type a )const{ a = account; }
@@ -3774,13 +3957,13 @@ namespace node { namespace protocol {
 
       uint32_t                        flags = 0;                             ///< The currently active flags on this permission.
 
-      flat_set< account_name_type >   whitelist_authorities;                 ///< Accounts able to transfer this asset if the flag is set and whitelist is non-empty.
+      vector< account_name_type >     whitelist_authorities;                 ///< Accounts able to transfer this asset if the flag is set and whitelist is non-empty.
 
-      flat_set< account_name_type >   blacklist_authorities;                 ///< Accounts which cannot transfer or receive this asset.
+      vector< account_name_type >     blacklist_authorities;                 ///< Accounts which cannot transfer or receive this asset.
 
-      flat_set< asset_symbol_type >   whitelist_markets;                     ///< The assets that this asset may be traded against in the market
+      vector< asset_symbol_type >     whitelist_markets;                     ///< The assets that this asset may be traded against in the market
 
-      flat_set< asset_symbol_type >   blacklist_markets;                     ///< The assets that this asset may not be traded against in the market.
+      vector< asset_symbol_type >     blacklist_markets;                     ///< The assets that this asset may not be traded against in the market.
 
       // === Currency Asset Options === //
 
@@ -3822,7 +4005,7 @@ namespace node { namespace protocol {
 
       uint16_t                        producer_activity_reward_percent = PRODUCER_ACTIVITY_PERCENT;   ///< Percentage of producer reward paid to the highest voted producer in activity rewards.
 
-      // === Bitasset Options === //
+      // === Stablecoin Options === //
 
       fc::microseconds                feed_lifetime = PRICE_FEED_LIFETIME;                            ///< Time before a price feed expires.
 
@@ -3834,7 +4017,7 @@ namespace node { namespace protocol {
 
       uint16_t                        maximum_asset_settlement_volume = ASSET_SETTLEMENT_MAX_VOLUME;  ///< the percentage of current supply which may be force settled within each 24h interval.
 
-      asset_symbol_type               backing_asset = SYMBOL_COIN;                                    ///< The symbol of the asset that the bitasset is collateralized by.
+      asset_symbol_type               backing_asset = SYMBOL_COIN;                                    ///< The symbol of the asset that the stablecoin is collateralized by.
 
       // === Equity Asset Options === //
 
@@ -3872,21 +4055,41 @@ namespace node { namespace protocol {
 
       price                           buyback_price = price();                                           ///< Price that credit asset is repurchased at to repay creditors.
 
-      uint32_t                        buyback_share_percent = BUYBACK_SHARE_PERCENT;                     ///< Percentage of incoming assets added to the buyback pool.
+      uint16_t                        buyback_share_percent = BUYBACK_SHARE_PERCENT;                     ///< Percentage of incoming assets added to the buyback pool.
 
-      uint32_t                        liquid_fixed_interest_rate = LIQUID_FIXED_INTEREST_RATE;           ///< Fixed component of Interest rate of the asset for liquid balances.
+      uint16_t                        liquid_fixed_interest_rate = LIQUID_FIXED_INTEREST_RATE;           ///< Fixed component of Interest rate of the asset for liquid balances.
 
-      uint32_t                        liquid_variable_interest_rate = LIQUID_VARIABLE_INTEREST_RATE;     ///< Variable component of Interest rate of the asset for liquid balances.
+      uint16_t                        liquid_variable_interest_rate = LIQUID_VARIABLE_INTEREST_RATE;     ///< Variable component of Interest rate of the asset for liquid balances.
 
-      uint32_t                        staked_fixed_interest_rate = STAKED_FIXED_INTEREST_RATE;           ///< Fixed component of Interest rate of the asset for staked balances.
+      uint16_t                        staked_fixed_interest_rate = STAKED_FIXED_INTEREST_RATE;           ///< Fixed component of Interest rate of the asset for staked balances.
 
-      uint32_t                        staked_variable_interest_rate = STAKED_VARIABLE_INTEREST_RATE;     ///< Variable component of Interest rate of the asset for staked balances.
+      uint16_t                        staked_variable_interest_rate = STAKED_VARIABLE_INTEREST_RATE;     ///< Variable component of Interest rate of the asset for staked balances.
 
-      uint32_t                        savings_fixed_interest_rate = SAVINGS_FIXED_INTEREST_RATE;         ///< Fixed component of Interest rate of the asset for savings balances.
+      uint16_t                        savings_fixed_interest_rate = SAVINGS_FIXED_INTEREST_RATE;         ///< Fixed component of Interest rate of the asset for savings balances.
 
-      uint32_t                        savings_variable_interest_rate = SAVINGS_VARIABLE_INTEREST_RATE;   ///< Variable component of Interest rate of the asset for savings balances.
+      uint16_t                        savings_variable_interest_rate = SAVINGS_VARIABLE_INTEREST_RATE;   ///< Variable component of Interest rate of the asset for savings balances.
 
-      uint32_t                        var_interest_range = VAR_INTEREST_RANGE;                           ///< The percentage range from the buyback price over which to apply the variable interest rate.
+      uint16_t                        var_interest_range = VAR_INTEREST_RANGE;                           ///< The percentage range from the buyback price over which to apply the variable interest rate.
+
+      // === Unique Asset Options === //
+
+      asset_symbol_type               ownership_asset = SYMBOL_EQUITY;                                   ///< Asset that represents controlling ownership of the unique asset. Same as symbol for no liquid ownership asset.
+
+      vector< account_name_type >     control_list;                                                      ///< List of accounts that have control over access to the unique asset.
+
+      vector< account_name_type >     access_list;                                                       ///< List of accounts that have access to the unique asset.
+
+      asset                           access_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );         ///< Price per day for all accounts in the access list.
+
+      // === Bond Asset Options === //
+
+      asset                           value = asset( 100*BLOCKCHAIN_PRECISION, SYMBOL_USD );             ///< Face value amount of each unit of the bond. Interest is paid as a percentage of value.
+
+      uint16_t                        collateralization = BOND_COLLATERALIZATION_PERCENT;                ///< Percentage of value that is locked in collateral to back the bonds. Should be at least 10%.
+
+      uint16_t                        coupon_rate_percent = BOND_COUPON_RATE_PERCENT;                    ///< Percentage rate of the value that is paid each month in interest to the holders.
+
+      date_type                       maturity_date = date_type();                                       ///< Date at which the bond will mature. Principle value will be automatically paid from business_account.
 
       void validate()const;
    };
@@ -4182,7 +4385,7 @@ namespace node { namespace protocol {
 
       asset_symbol_type             symbol;        ///< Asset for which the feed is published.
 
-      price_feed                    feed;          ///< Exchange rate between bitasset and backing asset.
+      price_feed                    feed;          ///< Exchange rate between stablecoin and backing asset.
 
       void                          validate()const;
       void                          get_creator_name( account_name_type a )const{ a = publisher; }
@@ -4233,8 +4436,8 @@ namespace node { namespace protocol {
     * settle_price and all open margin positions 
     * are called at the settle price.
     * 
-    * If this asset is used as backing for other bitassets, 
-    * those bitassets will be force settled at their current
+    * If this asset is used as backing for other stablecoins, 
+    * those stablecoins will be force settled at their current
     * feed price.
     * 
     * Design inspired by Bitshares Protocol:
@@ -4317,7 +4520,7 @@ namespace node { namespace protocol {
 
       uint16_t               margin_liquidation_ratio = MARGIN_LIQUIDATION_RATIO;           ///< The minimum permissible collateralization ratio before a loan is liquidated. 
 
-      uint16_t               maximum_asset_feed_publishers = MAX_ASSET_FEED_PUBLISHERS;     ///< The maximum number of accounts that can publish price feeds for a bitasset.
+      uint16_t               maximum_asset_feed_publishers = MAX_ASSET_FEED_PUBLISHERS;     ///< The maximum number of accounts that can publish price feeds for a stablecoin.
 
       asset                  membership_base_price = MEMBERSHIP_FEE_BASE;                   ///< The price for standard membership per month.
 
@@ -4506,7 +4709,7 @@ namespace node { namespace protocol {
     * 
     * Producer Details should address the following particulars:
     * 
-    * - The Hardware that the producer operating thier node on.
+    * - The Hardware that the producer operating their node on.
     * - The Backup Node setup that is in use.
     * - Any Relevant past experience operating block producers.
     * - The Team members that are operating the producer.
@@ -4551,15 +4754,15 @@ namespace node { namespace protocol {
 
    struct proof_of_work_input
    {
-      account_name_type             miner_account;
+      account_name_type             miner_account = NULL_ACCOUNT;
 
-      block_id_type                 prev_block;
+      block_id_type                 prev_block = block_id_type();
 
       uint64_t                      nonce = 0;
    };
 
 
-   struct proof_of_work
+   struct x11_proof_of_work
    {
       proof_of_work_input           input;
 
@@ -4585,7 +4788,7 @@ namespace node { namespace protocol {
    };
 
 
-   typedef fc::static_variant< proof_of_work, equihash_proof_of_work > proof_of_work_type;
+   typedef fc::static_variant< x11_proof_of_work, equihash_proof_of_work > proof_of_work_type;
 
 
    /**
@@ -4612,7 +4815,10 @@ namespace node { namespace protocol {
 
       void                          validate()const;
 
-      void                          get_creator_name( account_name_type a )const{ a = work.get< proof_of_work >().input.miner_account; }
+      void                          get_creator_name( account_name_type a )const
+      { 
+         a = work.get< x11_proof_of_work >().input.miner_account; 
+      }
 
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const;      ///< No signatory authorities required, proof of work is implicit authority.
 
@@ -4638,9 +4844,7 @@ namespace node { namespace protocol {
 
       account_name_type             producer;      ///< The name of the block producing account.
 
-      block_id_type                 block_id;      ///< The block id of the block being verifed as valid and received. 
-
-      uint64_t                      block_height;  ///< The height of the block being verified.
+      block_id_type                 block_id;      ///< The Block ID of the block being verifed as valid and received. 
 
       void                          validate()const;
       void                          get_creator_name( account_name_type a )const{ a = producer; }
@@ -4657,19 +4861,27 @@ namespace node { namespace protocol {
     * 3 - They will not produce future blocks that do not contain that block as an ancestor.
     * 4 - They stake a given value of COIN on their commitment.
     * 
-    * In resolution of the Nothing At Stake problem of consensus, in which producers sign multiple
-    * commitments without validating blocks to ensure maximum reward, they are penalized for commiting to
-    * different blocks at the same height, or producing blocks which do not contain a committed block as an ancestor.
+    * In resolution of the Nothing At Stake problem of consensus, 
+    * in which producers sign multiple
+    * commitments without validating blocks to ensure maximum reward, 
+    * they are penalized for commiting to different blocks at the same height, 
+    * or producing blocks which do not contain a committed block as an ancestor.
     * 
-    * If the producer signs duplicate commitments at the same height, or produces blocks that deviate from this
-    * blocks history, the staked value is forfeited to any account that publishes a violation proof transaction.
+    * If the producer signs duplicate commitments at the same height,
+    * or produces blocks that deviate from this blocks history,
+    * the staked value is forfeited to any account that publishes a violation proof transaction.
     * 
-    * Producers cannot sign commitments for blocks that are already irreversible by production history depth, 
-    * or have already been committed by more than two thirds of producers. 
-    * After a block becomes irreversible, the fastest Two Thirds Plus One (67) block producers that have committed
-    * to the block are rewarded according to their staked amounts from the validation reward pool.
-    * If more than 67 producers signed and published commitments transactions, all producers within the last
-    * block to include commitment transactions before exceeding 67 are included for the reward distribution.
+    * Producers cannot sign commitments for blocks that 
+    * are already irreversible by production history depth, 
+    * or have already been committed by more than two thirds of producers.
+    * 
+    * After a block becomes irreversible, the fastest Two Thirds Plus One (67) 
+    * block producers that have committed to the block are rewarded according to their 
+    * staked amounts from the validation reward pool.
+    * 
+    * If more than 67 producers signed and published commitments transactions, 
+    * all producers within the last block to include commitment transactions 
+    * before exceeding 67 are included for the reward distribution.
     */
    struct commit_block_operation : public base_operation
    {
@@ -4678,8 +4890,6 @@ namespace node { namespace protocol {
       account_name_type                 producer;            ///< The name of the block producing account.
 
       block_id_type                     block_id;            ///< The block id of the block being committed as irreversible to that producer. 
-
-      uint64_t                          block_height;        ///< The height of the block being committed to.
 
       flat_set< transaction_id_type >   verifications;       ///< The set of attesting transaction ids of verification transactions from currently active producers.
 
@@ -5215,6 +5425,7 @@ FC_REFLECT( node::protocol::comment_operation,
          (public_key)
          (interface)
          (comment_price)
+         (reply_price)
          (premium_price)
          (parent_author)
          (parent_permlink)
@@ -5640,16 +5851,62 @@ FC_REFLECT( node::protocol::transfer_recurring_accept_operation,
          (accepted)
          );
 
-FC_REFLECT( node::protocol::transfer_confidential_operation,
-         (input_accounts)
-         (input_account_amounts)
-         (input_balances)
-         (input_balance_signatures)
-         (output_accounts)
-         (output_account_amounts)
-         (output_public_keys)
-         (output_public_key_amounts)
+FC_REFLECT( node::protocol::stealth_confirmation,
+         (one_time_key)
+         (to)
+         (encrypted_memo)
          );
+
+FC_REFLECT( node::protocol::stealth_confirmation::memo_data,
+         (from)
+         (amount)
+         (blinding_factor)
+         (commitment)
+         (check)
+         );
+
+FC_REFLECT( node::protocol::blind_memo,
+         (from)
+         (amount)
+         (message)
+         (check)
+         );
+
+FC_REFLECT( node::protocol::confidential_input,
+         (commitment)
+         (owner)
+         );
+
+FC_REFLECT( node::protocol::confidential_output,
+         (commitment)
+         (range_proof)
+         (owner)
+         (stealth_memo)
+         );
+
+FC_REFLECT( node::protocol::transfer_confidential_operation,
+         (inputs)
+         (outputs)
+         (fee)
+         );
+
+FC_REFLECT( node::protocol::transfer_to_confidential_operation,
+         (signatory)
+         (from)
+         (amount)
+         (blinding_factor)
+         (outputs)
+         (fee)
+         );
+
+FC_REFLECT( node::protocol::transfer_from_confidential_operation,
+         (to)
+         (amount)
+         (blinding_factor)
+         (inputs)
+         (fee)
+         );
+
 
 
    //============================//
@@ -5909,6 +6166,7 @@ FC_REFLECT( node::protocol::credit_pool_borrow_operation,
          (amount)
          (collateral)
          (loan_id)
+         (flash_loan)
          );
 
 FC_REFLECT( node::protocol::credit_pool_lend_operation, 
@@ -6214,7 +6472,7 @@ FC_REFLECT( node::protocol::producer_update_operation,
          (active)
          );
 
-FC_REFLECT( node::protocol::proof_of_work,
+FC_REFLECT( node::protocol::x11_proof_of_work,
          (input)
          (pow_summary) 
          );
@@ -6244,14 +6502,12 @@ FC_REFLECT( node::protocol::verify_block_operation,
          (signatory)
          (producer)
          (block_id)
-         (block_height)
          );
 
 FC_REFLECT( node::protocol::commit_block_operation,
          (signatory)
          (producer)
          (block_id)
-         (block_height)
          (verifications)
          (commitment_stake)
          );

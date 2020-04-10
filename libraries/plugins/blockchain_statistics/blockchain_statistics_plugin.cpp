@@ -91,7 +91,7 @@ struct operation_process
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
-         const account_object& worker = _db.get_account( op.work.get< proof_of_work >().input.miner_account );
+         const account_object& worker = _db.get_account( op.work.get< x11_proof_of_work >().input.miner_account );
 
          if( worker.created == _db.head_block_time() )
          {

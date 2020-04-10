@@ -3573,6 +3573,7 @@ annotated_signed_transaction      wallet_api::comment(
    string public_key,
    string interface,
    asset comment_price,
+   asset reply_price,
    asset premium_price,
    string parent_author, 
    string parent_permlink, 
@@ -3610,6 +3611,7 @@ annotated_signed_transaction      wallet_api::comment(
    op.public_key = public_key;
    op.interface = interface;
    op.comment_price = comment_price;
+   op.reply_price = reply_price;
    op.premium_price = premium_price;
    op.parent_author = parent_author;
    op.parent_permlink = parent_permlink;
@@ -5585,7 +5587,6 @@ annotated_signed_transaction      wallet_api::verify_block(
    string signatory,
    string producer,
    string block_id,
-   uint64_t block_height,
    bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
@@ -5595,7 +5596,6 @@ annotated_signed_transaction      wallet_api::verify_block(
    op.signatory = signatory;
    op.producer = producer;
    op.block_id = block_id_type( block_id );
-   op.block_height = block_height;
 
    signed_transaction tx;
    tx.operations.push_back(op);
@@ -5609,7 +5609,6 @@ annotated_signed_transaction      wallet_api::commit_block(
    string signatory,
    string producer,
    string block_id,
-   uint64_t block_height,
    flat_set< transaction_id_type > verifications,
    asset commitment_stake,
    bool broadcast )
@@ -5621,7 +5620,6 @@ annotated_signed_transaction      wallet_api::commit_block(
    op.signatory = signatory;
    op.producer = producer;
    op.block_id = block_id_type( block_id );
-   op.block_height = block_height;
    op.verifications = verifications;
    op.commitment_stake = commitment_stake;
 

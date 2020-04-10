@@ -2420,6 +2420,7 @@ class wallet_api
        * @param public_key The public key used to encrypt the post, holders of the private key may decrypt.
        * @param interface Name of the interface application that broadcasted the transaction.
        * @param comment_price Price that is required to comment on the post.
+       * @param reply_price Price that is paid to the root comment author when the root author replies.
        * @param premium_price Price that is required to unlock premium content.
        * @param parent_author Account that created the post this post is replying to, empty if root post.
        * @param parent_permlink Permlink of the post this post is replying to, empty if root post.
@@ -2443,6 +2444,7 @@ class wallet_api
          string public_key,
          string interface,
          asset comment_price,
+         asset reply_price,
          asset premium_price,
          string parent_author, 
          string parent_permlink, 
@@ -3622,7 +3624,7 @@ class wallet_api
        *
        * @param signatory The name of the account signing the transaction.
        * @param account Account withdrawing its lent asset from the credit pool by redeeming credit-assets. 
-       * @param amount Amount of interest bearing credit assets being redeemed for thier underlying assets. 
+       * @param amount Amount of interest bearing credit assets being redeemed for their underlying assets. 
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             credit_pool_withdraw(
@@ -3755,7 +3757,7 @@ class wallet_api
        * @param signatory The name of the account signing the transaction.
        * @param publisher Account publishing the price feed.
        * @param symbol Asset for which the feed is published.
-       * @param feed Exchange rate between bitasset and backing asset.
+       * @param feed Exchange rate between stablecoin and backing asset.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             asset_publish_feed(
@@ -3855,15 +3857,13 @@ class wallet_api
        *
        * @param signatory The name of the account signing the transaction.
        * @param producer The name of the block producing account.
-       * @param block_id The block id of the block being verifed as valid and received. 
-       * @param block_height The height of the block being verified.
+       * @param block_id The block id of the block being verifed as valid and received.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             verify_block(
          string signatory,
          string producer,
          string block_id,
-         uint64_t block_height,
          bool broadcast = false );
 
 
@@ -3872,17 +3872,15 @@ class wallet_api
        *
        * @param signatory The name of the account signing the transaction.
        * @param producer The name of the block producing account.
-       * @param block_id The block id of the block being committed as irreversible to that producer. 
-       * @param block_height The height of the block being committed to.
+       * @param block_id The block id of the block being committed as irreversible to that producer.
        * @param verifications The set of attesting transaction ids of verification transactions from currently active producers.
-       * @param commitment_stake The value of staked balance that the producer stakes on this commitment. Must be at least one unit of COIN. 
+       * @param commitment_stake The value of staked balance that the producer stakes on this commitment. Must be at least one unit of COIN.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             commit_block(
          string signatory,
          string producer,
          string block_id,
-         uint64_t block_height,
          flat_set< transaction_id_type > verifications,
          asset commitment_stake,
          bool broadcast = false );

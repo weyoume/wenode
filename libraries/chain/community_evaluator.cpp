@@ -28,7 +28,18 @@ namespace node { namespace chain {
 // === Community Evaluators === //
 //==============================//
 
-
+/**
+ * COMMUNITY TYPES
+ * 
+ * OPEN_PUBLIC_COMMUNITY,         ///< All Users can read, interact, post, and request to join. Accounts cannot be blacklisted.
+ * GENERAL_PUBLIC_COMMUNITY,      ///< All Users can read, interact, post, and request to join.
+ * EXCLUSIVE_PUBLIC_COMMUNITY,    ///< All users can read, interact, and request to join. Members can post and invite.
+ * CLOSED_PUBLIC_COMMUNITY,       ///< All users can read, and request to join. Members can interact, post, and invite.
+ * OPEN_PRIVATE_COMMUNITY,        ///< Members can read and interact, and create posts. Moderators can invite and accept.
+ * GENERAL_PRIVATE_COMMUNITY,     ///< Members can read and interact, and create posts. Moderators can invite and accept. Cannot share posts.
+ * EXCLUSIVE_PRIVATE_COMMUNITY,   ///< Members can read and interact, and post. Cannot share posts or request to join. Admins can invite and accept.
+ * CLOSED_PRIVATE_COMMUNITY       ///< Members can read and interact. Moderators can post. Cannot share posts or request to join. Admins can invite and accept.
+ */
 void community_create_evaluator::do_apply( const community_create_operation& o )
 { try {
    const account_name_type& signed_for = o.founder;
@@ -51,7 +62,10 @@ void community_create_evaluator::do_apply( const community_create_operation& o )
       "Founders can only create one community per day." );
    const community_object* community_ptr = _db.find_community( o.name );
    FC_ASSERT( community_ptr == nullptr,
-      "Community with the name: ${n} already exists.", ("n", o.name) );
+      "Community with the name: ${n} already exists. Please select another name.", ("n", o.name) );
+   const asset_object& reward_currency = _db.get_asset( o.reward_currency );
+    FC_ASSERT( reward_currency.asset_type == asset_property_type::CURRENCY_ASSET,
+      "Reward currency asset must be either a currency type asset." );
 
    community_privacy_type privacy_type = community_privacy_type::OPEN_PUBLIC_COMMUNITY;
 
@@ -74,6 +88,9 @@ void community_create_evaluator::do_apply( const community_create_operation& o )
       from_string( bo.details, o.details );
       from_string( bo.url, o.url );
       bo.community_public_key = public_key_type( o.community_public_key );
+      bo.max_rating = o.max_rating;
+      bo.flags = o.flags;
+      bo.permissions = o.permissions;
       bo.created = now;
       bo.last_community_update = now;
       bo.last_post = now;
@@ -148,12 +165,25 @@ void community_update_evaluator::do_apply( const community_update_operation& o )
          "Pinned post must be contained within the community." );
    }
 
+   // New permissions must be subset of old permissions.
+   
+   FC_ASSERT(!( o.permissions & ~community.permissions ), 
+      "Cannot reinstate previously revoked community permissions.");
+   
+   // Changed flags must be subset of old permissions.
+
+   FC_ASSERT(!(( o.flags ^ community.flags ) & ~community.permissions ),
+      "Flag change is not possible within community permissions." );
+
    _db.modify( community, [&]( community_object& bo )
    {
       from_string( bo.json, o.json );
       from_string( bo.json_private, o.json_private );
       from_string( bo.details, o.details );
       from_string( bo.url, o.url );
+      bo.max_rating = o.max_rating;
+      bo.flags = o.flags;
+      bo.permissions = o.permissions;
       bo.community_public_key = public_key_type( o.community_public_key );
       bo.last_community_update = now;
       bo.active = o.active;

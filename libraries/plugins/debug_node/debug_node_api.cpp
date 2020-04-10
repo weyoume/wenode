@@ -117,7 +117,7 @@ void debug_node_api_impl::debug_mine( debug_mine_result& result, const debug_min
 {
    std::shared_ptr< chain::database > db = app.chain_database();
 
-   chain::proof_of_work work;
+   chain::x11_proof_of_work work;
    work.input.miner_account = args.miner_account;
    work.input.prev_block = db->head_block_id();
    get_plugin()->debug_mine_work( work, db->pow_difficulty() );

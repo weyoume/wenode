@@ -102,17 +102,17 @@ void producer_update_evaluator::do_apply( const producer_update_operation& o )
 
 void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
 { try {
-   const auto& work = o.work.get< proof_of_work >();
+   const auto& work = o.work.get< x11_proof_of_work >();
    uint128_t target_pow = _db.pow_difficulty();
-   uint32_t recent_block_num = protocol::block_header::num_from_id( work.input.prev_block );
    account_name_type miner_account = work.input.miner_account;
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
    time_point now = _db.head_block_time();
+   fc::optional< signed_block > prev_block = _db.fetch_block_by_id( work.input.prev_block );
 
-   FC_ASSERT( work.input.prev_block == _db.head_block_id(),
-      "Proof of Work op not for last block." );
-   FC_ASSERT( recent_block_num > props.last_irreversible_block_num,
+   FC_ASSERT( prev_block.valid(),
+      "Proof of Work Prev block not found on node." );
+   FC_ASSERT( prev_block->block_num() > props.last_irreversible_block_num,
       "Proof of Work done for block older than last irreversible block number." );
    FC_ASSERT( work.pow_summary < target_pow,
       "Insufficient work difficulty. Work: ${w}, Target: ${t} .", ("w",work.pow_summary)("t", target_pow) );
@@ -120,9 +120,9 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
    uint128_t work_difficulty = ( 1 << 30 ) / work.pow_summary;
 
    const auto& accounts_by_name = _db.get_index< account_index >().indices().get< by_name >();
-   auto itr = accounts_by_name.find( miner_account );
+   auto acc_itr = accounts_by_name.find( miner_account );
 
-   if( itr == accounts_by_name.end() )
+   if( acc_itr == accounts_by_name.end() )
    {
       FC_ASSERT( o.new_owner_key.valid(),
          "New owner key is not valid." );
@@ -215,16 +215,18 @@ void verify_block_evaluator::do_apply( const verify_block_operation& o )
    const producer_object& producer = _db.get_producer( o.producer );
    FC_ASSERT( producer.active, 
       "Account: ${s} must be active to verify blocks.",("s", o.producer) );
-   uint32_t recent_block_num = protocol::block_header::num_from_id( o.block_id );
-   
-   FC_ASSERT( recent_block_num == o.block_height,
-      "Block with this ID not found at this height." );
+
+   fc::optional< signed_block > prev_block = _db.fetch_block_by_id( o.block_id );
+   FC_ASSERT( prev_block.valid(),
+      "Proof of Work Prev block not found on node." );
+   uint64_t recent_block_num = prev_block->block_num();
    FC_ASSERT( recent_block_num > props.last_irreversible_block_num,
       "Verify Block done for block older than last irreversible block number." );
    FC_ASSERT( recent_block_num > props.last_committed_block_num,
       "Verify Block done for block older than last committed block number." );
 
    const producer_schedule_object& pso = _db.get_producer_schedule();
+   const transaction_id_type& txn_id = _db.get_current_transaction_id();
    vector< account_name_type > top_voting_producers = pso.top_voting_producers;
    vector< account_name_type > top_mining_producers = pso.top_mining_producers;
 
@@ -233,7 +235,7 @@ void verify_block_evaluator::do_apply( const verify_block_operation& o )
       "Producer must be a top producer or miner to publish a block verification." );
 
    const auto& valid_idx = _db.get_index< block_validation_index >().indices().get< by_producer_height >();
-   auto valid_itr = valid_idx.find( boost::make_tuple( o.producer, o.block_height ) );
+   auto valid_itr = valid_idx.find( boost::make_tuple( o.producer, recent_block_num ) );
    
    if( valid_itr == valid_idx.end() )     // New verification object at this height.
    {
@@ -241,9 +243,11 @@ void verify_block_evaluator::do_apply( const verify_block_operation& o )
       {
          bvo.producer = o.producer;
          bvo.block_id = o.block_id;
-         bvo.block_height = o.block_height;
-         bvo.created  = now;
+         bvo.block_height = recent_block_num;
+         bvo.created = now;
          bvo.committed = false;
+         bvo.verify_txn = txn_id;
+         bvo.commit_txn = transaction_id_type();
       });
    }
    else   // Existing verifcation exists, Changing uncommitted block_id.
@@ -254,11 +258,12 @@ void verify_block_evaluator::do_apply( const verify_block_operation& o )
          "Operation must change an uncommitted block id." );
       FC_ASSERT( val.committed == false,
          "CANNOT ALTER COMMITED VALIDATION. PRODUCER: ${p) BLOCK_ID1: ${a} BLOCK_ID2: ${b} BLOCK HEIGHT: ${h} ATTEMPTED PRODUCER VIOLATION DETECTED.", 
-            ("p", o.producer)("a", val.block_id)("b", o.block_id)("h", o.block_height) );
+         ("p", o.producer)("a", val.block_id)("b", o.block_id)("h", recent_block_num) );
 
       _db.modify( val, [&]( block_validation_object& bvo )
       {
          bvo.block_id = o.block_id;
+         bvo.verify_txn = txn_id;
       });
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -281,19 +286,20 @@ void commit_block_evaluator::do_apply( const commit_block_operation& o )
    }
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    time_point now = _db.head_block_time();
-   uint32_t recent_block_num = protocol::block_header::num_from_id( o.block_id );
    const producer_object& producer = _db.get_producer( o.producer );
 
-   FC_ASSERT( recent_block_num == o.block_height,
-      "Block with this ID not found at this height." );
+   fc::optional< signed_block > prev_block = _db.fetch_block_by_id( o.block_id );
+   FC_ASSERT( prev_block.valid(),
+      "Proof of Work Prev block not found on node." );
+   uint64_t recent_block_num = prev_block->block_num();
    FC_ASSERT( recent_block_num > props.last_irreversible_block_num,
-      "Commit Block done for block older than last irreversible block number." );
+      "Verify Block done for block older than last irreversible block number." );
    FC_ASSERT( recent_block_num > props.last_committed_block_num,
-      "Commit Block done for block older than last irreversible block number." );
+      "Verify Block done for block older than last committed block number." );
    
    const producer_schedule_object& pso = _db.get_producer_schedule();
    const auto& valid_idx = _db.get_index< block_validation_index >().indices().get< by_producer_height >();
-   auto valid_itr = valid_idx.find( boost::make_tuple( o.producer, o.block_height ) );
+   auto valid_itr = valid_idx.find( boost::make_tuple( o.producer, recent_block_num ) );
 
    FC_ASSERT( pso.is_top_producer( o.producer ),
       "Producer must be a top producer or miner to publish a block commit." );
@@ -326,7 +332,6 @@ void commit_block_evaluator::do_apply( const commit_block_operation& o )
             verify_op.validate();
             const producer_object& verify_wit = _db.get_producer( verify_op.producer );
             if( verify_op.block_id == o.block_id && 
-               verify_op.block_height == o.block_height &&
                pso.is_top_producer( verify_wit.owner ) )
             {
                verifiers.insert( verify_wit.owner );
@@ -338,6 +343,8 @@ void commit_block_evaluator::do_apply( const commit_block_operation& o )
    FC_ASSERT( verifiers.size() >=( IRREVERSIBLE_THRESHOLD * ( DPOS_VOTING_PRODUCERS + POW_MINING_PRODUCERS ) / PERCENT_100 ),
       "Insufficient Unique Concurrent Valid Verifications for commit transaction. Please await further verifications from block producers." );
 
+   const transaction_id_type& txn_id = _db.get_current_transaction_id();
+
    _db.modify( val, [&]( block_validation_object& bvo )
    {
       bvo.committed = true;                            // Verification cannot be altered after committed. 
@@ -345,11 +352,12 @@ void commit_block_evaluator::do_apply( const commit_block_operation& o )
       bvo.commitment_stake = o.commitment_stake;       // Reward is weighted by stake committed. 
       bvo.verifications = o.verifications;
       bvo.verifiers = verifiers;
+      bvo.commit_txn = txn_id;
    });
 
    _db.modify( producer, [&]( producer_object& p )
    {
-      p.last_commit_height = o.block_height;
+      p.last_commit_height = recent_block_num;
       p.last_commit_id = o.block_id;
    });
    
@@ -399,8 +407,8 @@ void producer_violation_evaluator::do_apply( const producer_violation_operation&
    first_trx.verify_authority( chain_id, get_active, get_owner, get_posting, MAX_SIG_CHECK_DEPTH );
    second_trx.verify_authority( chain_id, get_active, get_owner, get_posting, MAX_SIG_CHECK_DEPTH );
    
-   uint32_t first_height = 0;
-   uint32_t second_height = 0;
+   uint64_t first_height = 0;
+   uint64_t second_height = 0;
    block_id_type first_block_id = block_id_type();
    block_id_type second_block_id = block_id_type();
    account_name_type first_producer = account_name_type();
@@ -414,8 +422,8 @@ void producer_violation_evaluator::do_apply( const producer_violation_operation&
       {
          const commit_block_operation& commit_op = op.get< commit_block_operation >();
          commit_op.validate();
-         first_height = commit_op.block_height;
          first_block_id = commit_op.block_id;
+         first_height = protocol::block_header::num_from_id( commit_op.block_id );
          first_producer = commit_op.producer;
          first_stake = commit_op.commitment_stake;
          break;
@@ -428,8 +436,8 @@ void producer_violation_evaluator::do_apply( const producer_violation_operation&
       {
          const commit_block_operation& commit_op = op.get< commit_block_operation >();
          commit_op.validate();
-         second_height = commit_op.block_height;
          second_block_id = commit_op.block_id;
+         second_height = protocol::block_header::num_from_id( commit_op.block_id );
          second_producer = commit_op.producer;
          second_stake = commit_op.commitment_stake;
          break;

@@ -4,6 +4,7 @@
 #include <algorithm>
 
 namespace node { namespace protocol {
+
    digest_type block_header::digest()const
    {
       return digest_type::hash(*this);

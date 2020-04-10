@@ -489,7 +489,6 @@ namespace node { namespace protocol {
    } FC_CAPTURE_AND_RETHROW( (day)(month)(year) ) }
 
 
-   
 } } // node::protocol
 
 namespace fc

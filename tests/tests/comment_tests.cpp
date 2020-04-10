@@ -65,6 +65,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       comment.parent_permlink = "ipsum";
       comment.json = "{\"foo\":\"bar\"}";
       comment.comment_price = asset( 0, SYMBOL_COIN );
+      comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;
@@ -128,6 +129,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( to_string( alice_comment.parent_permlink ) == comment.parent_permlink );
       BOOST_REQUIRE( to_string( alice_comment.json ) == comment.json );
       BOOST_REQUIRE( alice_comment.comment_price == comment.comment_price );
+      BOOST_REQUIRE( alice_comment.reply_price == comment.reply_price );
       BOOST_REQUIRE( alice_comment.premium_price == comment.premium_price );
 
       BOOST_REQUIRE( alice_comment.last_updated == now() );
@@ -224,6 +226,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( to_string( bob_comment.parent_permlink ) == comment.parent_permlink );
       BOOST_REQUIRE( to_string( bob_comment.json ) == comment.json );
       BOOST_REQUIRE( bob_comment.comment_price == comment.comment_price );
+      BOOST_REQUIRE( bob_comment.reply_price == comment.reply_price );
       BOOST_REQUIRE( bob_comment.premium_price == comment.premium_price );
 
       BOOST_REQUIRE( bob_comment.last_updated == now() );
@@ -308,6 +311,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( to_string( candice_comment.parent_permlink ) == comment.parent_permlink );
       BOOST_REQUIRE( to_string( candice_comment.json ) == comment.json );
       BOOST_REQUIRE( candice_comment.comment_price == comment.comment_price );
+      BOOST_REQUIRE( candice_comment.reply_price == comment.reply_price );
       BOOST_REQUIRE( candice_comment.premium_price == comment.premium_price );
 
       BOOST_REQUIRE( candice_comment.last_updated == now() );
@@ -790,6 +794,7 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
       comment.parent_permlink = "ipsum";
       comment.json = "{\"json\":\"valid\"}";
       comment.comment_price = asset( 0, SYMBOL_COIN );
+      comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;
@@ -998,6 +1003,7 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
       comment.parent_permlink = "ipsum";
       comment.json = "{\"json\":\"valid\"}";
       comment.comment_price = asset( 0, SYMBOL_COIN );
+      comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;
@@ -1138,6 +1144,7 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
       comment.parent_permlink = "ipsum";
       comment.json = "{\"json\":\"valid\"}";
       comment.comment_price = asset( 0, SYMBOL_COIN );
+      comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;
@@ -1273,6 +1280,7 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       comment.parent_permlink = "ipsum";
       comment.json = "{\"json\":\"valid\"}";
       comment.comment_price = asset( 0, SYMBOL_COIN );
+      comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;

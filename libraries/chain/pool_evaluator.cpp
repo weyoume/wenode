@@ -430,12 +430,17 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
       max_debt = max_debt * median_price;
    }
 
-   FC_ASSERT( o.collateral.amount >= min_collateral.amount,
+   FC_ASSERT( o.collateral.amount >= min_collateral.amount || o.flash_loan,
       "Collateral is insufficient to support a loan of this size." );
    FC_ASSERT( debt_asset.is_credit_enabled(),
       "Cannot borrow debt asset: ${s}.", ("s", debt_asset.symbol) );
    FC_ASSERT( collateral_asset.is_credit_enabled(), 
       "Cannot collateralize asset: ${s}.", ("s", collateral_asset.symbol) );
+   if( o.flash_loan )
+   {
+      FC_ASSERT( o.collateral.amount == 0,
+         "Flash loan is instantaneously repaid within same transaction and does not require collateral." );
+   }
 
    const auto& loan_idx = _db.get_index< credit_loan_index >().indices().get< by_loan_id >();
    auto loan_itr = loan_idx.find( boost::make_tuple( account.name, o.loan_id ) ); 
@@ -444,14 +449,17 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
    {
       FC_ASSERT( account.loan_default_balance.amount == 0,
          "Account has an outstanding loan default balance. Please expend network credit collateral to recoup losses before opening a new loan." );
-      FC_ASSERT( _db.credit_check( o.amount, o.collateral, pool ),
+      FC_ASSERT( _db.credit_check( o.amount, o.collateral, pool ) || o.flash_loan,
          "New loan with provided collateral and debt is not viable with current asset liquidity conditions. Please lower debt." );
-      FC_ASSERT( o.amount.amount != 0 && o.collateral.amount != 0,
-         "Loan does not exist to close out. Please set non-zero amount and collateral." );
-      FC_ASSERT( collateral.collateral.amount >= o.collateral.amount,
+      FC_ASSERT( o.amount.amount != 0,
+         "Loan does not exist to close out. Please set non-zero amount." );
+      FC_ASSERT( o.collateral.amount != 0 || o.flash_loan,
+         "Loan does not exist to close out. Please set non-zero collateral." );
+      FC_ASSERT( collateral.collateral.amount >= o.collateral.amount || o.flash_loan ,
          "Insufficient collateral balance in this asset to vest the amount requested in the loan. Please increase collateral." );
       FC_ASSERT( pool.base_balance.amount >= o.amount.amount,
          "Insufficient Available asset to borrow from credit pool. Please lower debt." );
+      
 
       _db.create< credit_loan_object >( [&]( credit_loan_object& clo )
       {
@@ -467,13 +475,17 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
          clo.created = now;
          clo.last_updated = now;
          clo.last_interest_time = now;
-      });   
-
-      _db.modify( collateral, [&]( credit_collateral_object& cco )
-      {
-         cco.collateral -= o.collateral;     // Decrement from pledged collateral object balance.
-         cco.last_updated = now;
+         clo.flash_loan = o.flash_loan;
       });
+
+      if( !o.flash_loan )
+      {
+         _db.modify( collateral, [&]( credit_collateral_object& cco )
+         {
+            cco.collateral -= o.collateral;     // Decrement from pledged collateral object balance.
+            cco.last_updated = now;
+         });
+      }
       
       _db.modify( pool, [&]( asset_credit_pool_object& acpo )
       {
@@ -492,32 +504,46 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
       asset old_debt = loan.debt;
       asset delta_debt = o.amount - old_debt;
 
-      FC_ASSERT( delta_collateral.amount != 0 || delta_debt.amount != 0,
+      FC_ASSERT( delta_collateral.amount != 0 || 
+         delta_debt.amount != 0,
          "Operation would not change collateral or debt position in the loan." );
-      FC_ASSERT( collateral.collateral.amount >= delta_collateral.amount,
+      FC_ASSERT( collateral.collateral.amount >= delta_collateral.amount || o.flash_loan,
          "Insufficient collateral balance in this asset to vest the amount requested in the loan." );
       FC_ASSERT( liquid.amount >= -delta_debt.amount,
          "Insufficient liquid balance in this asset to repay the amount requested." );
+      FC_ASSERT( loan.flash_loan == o.flash_loan,
+         "Flash Loan status cannot be altered. Loan must be repaid within same Transaction with 1 day of accrued interest." );
 
       share_type interest_rate = pool.interest_rate( median_props.credit_min_interest, median_props.credit_variable_interest );     // Calulate pool's interest rate
       share_type interest_accrued = ( loan.debt.amount * interest_rate * ( now - loan.last_interest_time ).count() ) / ( PERCENT_100 * fc::days(365).count() );
+      if( o.flash_loan )
+      {
+         interest_accrued = ( loan.debt.amount * interest_rate * ( fc::days(1) ).count() ) / ( PERCENT_100 * fc::days(365).count() );
+      }
       asset interest_asset = asset( interest_accrued, loan.debt.symbol );      // Accrue interest on debt balance
-
+      asset interest_fees = ( interest_asset * INTEREST_FEE_PERCENT ) / PERCENT_100;
+      interest_asset -= interest_fees;
+      
       if( o.amount.amount == 0 || o.collateral.amount == 0 )   // Closing out the loan, ensure both amount and collateral are zero if one is zero. 
       {
          FC_ASSERT( o.amount.amount == 0 && 
             o.collateral.amount == 0,
             "Both collateral and amount must be set to zero to close out loan." );
+
          asset closing_debt = old_debt + interest_asset;
 
-         _db.adjust_liquid_balance( o.account, -closing_debt );    // Return debt to the pending supply of the credit pool.
+         _db.adjust_liquid_balance( o.account, -( closing_debt + interest_fees ) );    // Return debt to the pending supply of the credit pool.
          _db.adjust_pending_supply( closing_debt );
+         _db.pay_network_fees( interest_fees );
 
-         _db.modify( collateral, [&]( credit_collateral_object& cco )
+         if( !o.flash_loan )
          {
-            cco.collateral += old_collateral;     // Return collateral to the account's collateral balance.
-            cco.last_updated = now;
-         });
+            _db.modify( collateral, [&]( credit_collateral_object& cco )
+            {
+               cco.collateral += old_collateral;     // Return collateral to the account's collateral balance.
+               cco.last_updated = now;
+            });
+         }
 
          _db.modify( pool, [&]( asset_credit_pool_object& acpo )
          {
@@ -529,28 +555,32 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
       }
       else      // modifying the loan or repaying partially. 
       {
-         FC_ASSERT( delta_debt.amount < 0 || account.loan_default_balance.amount == 0,
+         FC_ASSERT( delta_debt.amount < 0 || 
+            account.loan_default_balance.amount == 0,
             "Account has an outstanding loan default balance. Please expend network credits to recoup losses before increasing debt." );
-         FC_ASSERT( _db.credit_check( o.amount, o.collateral, pool ),
+         FC_ASSERT( _db.credit_check( o.amount, o.collateral, pool ) || o.flash_loan,
             "New loan with provided collateral and debt is not viable with current asset liquidity conditions. Please lower debt." );
 
          asset new_debt = o.amount + interest_asset;
 
-         _db.modify( collateral, [&]( credit_collateral_object& cco )
+         if( !o.flash_loan )
          {
-            cco.collateral -= delta_collateral;    // Update to new collateral amount
-            cco.last_updated = now;
-         });
+            _db.modify( collateral, [&]( credit_collateral_object& cco )
+            {
+               cco.collateral -= delta_collateral;         // Update to new collateral amount.
+               cco.last_updated = now;
+            });
+         }
 
          _db.modify( pool, [&]( asset_credit_pool_object& acpo )
          {
-            acpo.borrowed_balance += delta_debt;  // Update borrowed balance
+            acpo.borrowed_balance += delta_debt;       // Update borrowed balance.
             acpo.base_balance -= delta_debt; 
          });
 
          _db.modify( loan, [&]( credit_loan_object& clo )
          {
-            clo.debt = new_debt;    // Update to new loan parameters
+            clo.debt = new_debt;           // Update to new loan parameters.
             clo.collateral = o.collateral;
             if( loan.debt.symbol != loan.collateral.symbol )
             {
@@ -561,8 +591,9 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
             clo.last_interest_time = now;
          });
 
-         _db.adjust_liquid_balance( o.account, delta_debt );    // Shift newly borrowed or repaid amount with pending supply. 
+         _db.adjust_liquid_balance( o.account, delta_debt );        // Shift newly borrowed or repaid amount with pending supply. 
          _db.adjust_pending_supply( -delta_debt );
+         _db.pay_network_fees( interest_fees );
       }
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }

@@ -377,6 +377,129 @@ void database::update_median_liquidity()
 
 
 /**
+ * Executes Bond coupon interest payments.
+ * 
+ * All bond assets pay a coupon interest rate once 
+ * per week from the issuing business account to all bondholders.
+ */         
+void database::process_bond_interest()
+{ try {
+   if( (head_block_num() % BOND_COUPON_INTERVAL_BLOCKS) != 0 )
+      return;
+
+   const auto& bond_idx = get_index< asset_bond_data_index >().indices().get< by_symbol >();
+   const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol >();
+   auto bond_itr = bond_idx.begin();
+   time_point now = head_block_time();
+
+   while( bond_itr != bond_idx.end() )
+   {
+      const asset_bond_data_object& bond = *bond_itr;
+      asset total_interest_fees = asset( 0, bond.value.symbol );
+      asset total_interest = asset( 0, bond.value.symbol );
+      auto balance_itr = balance_idx.lower_bound( bond.symbol );
+
+      while( balance_itr != balance_idx.end() && 
+         balance_itr->symbol == bond.symbol )
+      {
+         const account_balance_object& balance = *balance_itr;
+
+         asset interest = asset( ( bond.value.amount * balance.total_balance * bond.coupon_rate_percent * ( now - balance.last_interest_time ).to_seconds() ) / fc::days(365).to_seconds(), bond.value.symbol );
+         total_interest += interest;
+
+         modify( balance, [&]( account_balance_object& b )
+         {
+            b.last_interest_time = now;
+         });
+
+         asset interest_fees = ( interest * INTEREST_FEE_PERCENT ) / PERCENT_100;
+         interest -= interest_fees;
+         total_interest_fees += interest_fees;
+         
+         adjust_liquid_balance( balance.owner, interest );
+         ++balance_itr;
+      }
+
+      adjust_liquid_balance( bond.business_account, -total_interest );
+      pay_network_fees( total_interest_fees );
+
+      ++bond_itr;
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
+ * Check for and close all bonds which have reached their maturity date.
+ */
+void database::process_bond_assets()
+{ try {
+   time_point now = head_block_time();
+   const auto& bond_idx = get_index< asset_bond_data_index >().indices().get< by_maturity >();
+   const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol >();
+   auto bond_itr = bond_idx.begin();
+   
+   while( bond_itr != bond_idx.end() &&
+      now >= bond_itr->maturity() )
+   {
+      const asset_bond_data_object& bond = *bond_itr;
+      auto balance_itr = balance_idx.lower_bound( bond.symbol );
+      ++bond_itr;
+
+      const asset_dynamic_data_object& bond_dyn_data = get_dynamic_data( bond.symbol );
+      asset total_principle = ( bond.value * bond_dyn_data.total_supply ) / BLOCKCHAIN_PRECISION;
+      asset issuer_liquid = get_liquid_balance( bond.business_account, bond.value.symbol );
+      asset principle_remaining = total_principle;
+
+      if( issuer_liquid >= total_principle )
+      {
+         while( balance_itr != balance_idx.end() && 
+            balance_itr->symbol == bond.symbol &&
+            principle_remaining.amount > 0 )
+         {
+            const account_balance_object& balance = *balance_itr;
+            asset principle = asset( balance.liquid_balance * bond.value.amount, bond.value.symbol );
+            adjust_liquid_balance( balance.owner, principle );
+            principle_remaining -= principle;
+            ++balance_itr;
+         }
+
+         asset paid = total_principle - principle_remaining - bond.collateral_pool;
+         adjust_liquid_balance( bond.business_account, -paid );
+      }
+      else
+      {
+         principle_remaining = issuer_liquid + bond.collateral_pool;
+         asset partial_value = principle_remaining / bond_dyn_data.total_supply;
+
+         while( balance_itr != balance_idx.end() && 
+            balance_itr->symbol == bond.symbol &&
+            principle_remaining.amount > 0 )
+         {
+            const account_balance_object& balance = *balance_itr;
+            asset principle = asset( balance.liquid_balance * partial_value.amount, bond.value.symbol );
+
+            if( principle > principle_remaining )
+            {
+               principle = principle_remaining;
+            }
+
+            adjust_liquid_balance( balance.owner, principle );
+            principle_remaining -= principle;
+            ++balance_itr;
+         }
+
+         asset paid = issuer_liquid - principle_remaining;
+         adjust_liquid_balance( bond.business_account, -paid );
+      }
+
+      clear_asset_balances( bond.symbol );      // Clear all balances and order positions of the bond.
+
+      remove( bond );
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
  * Executes buyback orders to repurchase credit assets using
  * an asset's buyback pool of funds
  * up to the asset's buyback price, or face value.
@@ -765,6 +888,8 @@ void database::close_prediction_pool( const asset_prediction_pool_object& pool )
    {
       clear_asset_balances( a );
    }
+
+   remove( pool );
    
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -911,12 +1036,12 @@ void database::process_unique_assets()
 /**
  * Processes all asset distribution rounds.
  * 
- * - Checks for asset distributions that have reached thier next round time.
- * - Checks if they have reached thier soft cap input amount.
- * - Splits all incoming distribution balances to the component accounts of the input asset unit
- * - Issues new assets to the component accounts of the output distribution asset unit.
- * - Increments the counter of the intervals paid or missed.
- * - Closes distributions that have been fully completed.
+ * 1 - Checks for asset distributions that have reached their next round time.
+ * 2 - Checks if they have reached their soft cap input amount.
+ * 3 - Splits all incoming distribution balances to the component accounts of the input asset unit
+ * 4 - Issues new assets to the component accounts of the output distribution asset unit.
+ * 5 - Increments the counter of the intervals paid or missed.
+ * 6 - Closes distributions that have been fully completed.
  */
 void database::process_asset_distribution()
 { try {
@@ -1655,6 +1780,34 @@ void database::adjust_pending_supply( const asset& delta )
    
 } FC_CAPTURE_AND_RETHROW( (delta) ) }
 
+
+/**
+ * Adjusts the network's confidential supply of a specified asset.
+ */
+void database::adjust_confidential_supply( const asset& delta )
+{ try {
+   if( delta.amount == 0 )
+   {
+      return;
+   }
+
+   const asset_dynamic_data_object& asset_dyn_data = get_dynamic_data( delta.symbol );
+   if( delta.amount < 0 ) 
+   {
+      FC_ASSERT( asset_dyn_data.get_confidential_supply() >= -delta, 
+         "Insufficient Pending supply: ${a}'s balance of ${b} is less than required ${r}",
+               ("a", delta.symbol)
+               ("b", to_pretty_string( asset_dyn_data.get_confidential_supply() ))
+               ("r", to_pretty_string( -delta )));
+   }
+   
+   modify( asset_dyn_data, [&](asset_dynamic_data_object& addo) 
+   {
+      addo.adjust_confidential_supply( delta );
+   });
+   
+} FC_CAPTURE_AND_RETHROW( (delta) ) }
+
 /**
  * Retrieves an account's liquid balance of a specified asset.
  */
@@ -1921,30 +2074,30 @@ void database::update_expired_feeds()
 { try {
    const auto head_time = head_block_time();
 
-   const auto& idx = get_index< asset_bitasset_data_index >().indices().get< by_feed_expiration >();
+   const auto& idx = get_index< asset_stablecoin_data_index >().indices().get< by_feed_expiration >();
    auto itr = idx.begin();
    while( itr != idx.end() && itr->feed_is_expired( head_time ) ) // update feeds, check margin calls for each asset whose feed is expired
    {
-      const asset_bitasset_data_object& bitasset = *itr;
+      const asset_stablecoin_data_object& stablecoin = *itr;
       ++itr; 
       const asset_object* asset_ptr = nullptr;
-      price_feed old_median_feed = bitasset.current_feed;
+      price_feed old_median_feed = stablecoin.current_feed;
 
-      modify( bitasset, [&]( asset_bitasset_data_object& abdo )
+      modify( stablecoin, [&]( asset_stablecoin_data_object& abdo )
       {
          abdo.update_median_feeds( head_time );
       });
 
-      if( !bitasset.current_feed.settlement_price.is_null() && !( bitasset.current_feed == old_median_feed ) ) // `==` check is safe here
+      if( !stablecoin.current_feed.settlement_price.is_null() && !( stablecoin.current_feed == old_median_feed ) ) // `==` check is safe here
       {
-         asset_ptr = find_asset(bitasset.symbol);
+         asset_ptr = find_asset(stablecoin.symbol);
          check_call_orders( *asset_ptr, true, false );
       }
    } 
 } FC_CAPTURE_AND_RETHROW() }
 
 
-void database::process_bids( const asset_bitasset_data_object& bad )
+void database::process_bids( const asset_stablecoin_data_object& bad )
 { try {
    if( bad.current_feed.settlement_price.is_null() )       // Asset must have settlement price
    {

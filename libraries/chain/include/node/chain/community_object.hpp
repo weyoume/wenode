@@ -48,25 +48,27 @@ namespace node { namespace chain {
 
          shared_string                      json_private;                       ///< Private ciphertext json information about the community.
 
-         comment_id_type                    pinned_post;                        ///< Post pinned to the top of the community's page. 
+         comment_id_type                    pinned_post;                        ///< Post pinned to the top of the community's page.
 
          uint16_t                           max_rating;                         ///< Highest severity rating that posts in the community can have.
 
          uint32_t                           flags;                              ///< The currently active flags on the community for content settings.
 
-         uint32_t                           subscriber_count = 0;               ///< number of accounts that are subscribed to the community
+         uint32_t                           permissions;                        ///< The flag permissions that can be activated on the community for content settings. 
 
-         uint32_t                           post_count = 0;                     ///< number of posts created in the community
+         uint32_t                           subscriber_count = 0;               ///< number of accounts that are subscribed to the community.
+
+         uint32_t                           post_count = 0;                     ///< number of posts created in the community.
          
-         uint32_t                           comment_count = 0;                  ///< number of comments on posts in the community
+         uint32_t                           comment_count = 0;                  ///< number of comments on posts in the community.
 
-         uint32_t                           vote_count = 0;                     ///< accumulated number of votes received by all posts in the community
+         uint32_t                           vote_count = 0;                     ///< accumulated number of votes received by all posts in the community.
 
-         uint32_t                           view_count = 0;                     ///< accumulated number of views on posts in the community 
+         uint32_t                           view_count = 0;                     ///< accumulated number of views on posts in the community.
 
-         uint32_t                           share_count = 0;                    ///< accumulated number of shares on posts in the community 
+         uint32_t                           share_count = 0;                    ///< accumulated number of shares on posts in the community.
 
-         asset                              total_content_rewards = asset(0, SYMBOL_COIN);   ///< total amount of rewards earned by curators in the community
+         asset_symbol_type                  reward_currency = SYMBOL_COIN;      ///< The Currency asset used for content rewards in the community. 
 
          time_point                         created;                            ///< Time that the community was created.
 
@@ -78,12 +80,12 @@ namespace node { namespace chain {
 
          bool                               active;                             ///< True if the community is active, false to suspend all interaction.
 
-         bool require_member_whitelist()const                                   ///< True if members must be whitelisted by founder
+         bool require_member_whitelist()const                                   ///< True if members must be whitelisted by founder.
          { 
             return ( flags & int( community_permission_flags::member_whitelist ) );
          }
 
-         bool require_profile()const                                            ///< True if members must be have profile data
+         bool require_profile()const                                            ///< True if members must be have profile data.
          { 
             return ( flags & int( community_permission_flags::require_profile ) );
          }
@@ -190,29 +192,29 @@ namespace node { namespace chain {
             c( *this );
          }
 
-         id_type                                    id;
+         id_type                                        id;
 
-         community_name_type                        name;                        ///< Name of the community with permissions set.
+         community_name_type                            name;                        ///< Name of the community with permissions set.
 
-         account_name_type                          founder;                     ///< Name of the founding account of the community. Has full permissions.
+         account_name_type                              founder;                     ///< Name of the founding account of the community. Has full permissions.
 
-         community_privacy_type                     community_privacy;           ///< Privacy setting of community, determines transaction authorization. 
+         community_privacy_type                         community_privacy;           ///< Privacy setting of community, determines transaction authorization. 
 
-         flat_set< account_name_type >              subscribers;                 ///< List of accounts that subscribe to the posts made in the community.
+         flat_set< account_name_type >                  subscribers;                 ///< List of accounts that subscribe to the posts made in the community.
 
-         flat_set< account_name_type >              members;                     ///< List of accounts that are permitted to post in the community. Can invite and accept on public communities
+         flat_set< account_name_type >                  members;                     ///< List of accounts that are permitted to post in the community. Can invite and accept on public communities
  
-         flat_set< account_name_type >              moderators;                  ///< Accounts able to filter posts. Can invite and accept on private communities.
+         flat_set< account_name_type >                  moderators;                  ///< Accounts able to filter posts. Can invite and accept on private communities.
 
-         flat_set< account_name_type >              administrators;              ///< Accounts able to add and remove moderators and update community details. Can invite and accept on Exclusive communities. 
+         flat_set< account_name_type >                  administrators;              ///< Accounts able to add and remove moderators and update community details. Can invite and accept on Exclusive communities. 
 
-         flat_set< account_name_type >              blacklist;                   ///< Accounts that are not able to post in this community, or request to join.
+         flat_set< account_name_type >                  blacklist;                   ///< Accounts that are not able to post in this community, or request to join.
 
-         flat_map< account_name_type, share_type >  mod_weight;                  ///< Map of all moderator voting weights for distributing rewards. 
+         flat_map< account_name_type, share_type >      mod_weight;                  ///< Map of all moderator voting weights for distributing rewards. 
 
-         share_type                                 total_mod_weight = 0;        ///< Total of all moderator weights. 
+         share_type                                     total_mod_weight = 0;        ///< Total of all moderator weights. 
 
-         time_point                                 last_updated;                 ///< Time that the community was last updated.
+         time_point                                     last_updated;                 ///< Time that the community was last updated.
 
          /**
           * Adjacency value determines how similar two accounts are by comparing the 
@@ -952,7 +954,7 @@ FC_REFLECT( node::chain::community_object,
          (vote_count)
          (view_count)
          (share_count)
-         (total_content_rewards)
+         (reward_currency)
          (created)
          (last_community_update)
          (last_post)

@@ -236,7 +236,7 @@ namespace node { namespace protocol {
     */
    struct price_feed
    {
-      price       settlement_price;                                              ///< Forced settlements will evaluate using this price, defined as BITASSET / COLLATERAL
+      price       settlement_price;                                              ///< Forced settlements will evaluate using this price, defined as STABLECOIN / COLLATERAL
 
       uint16_t    maintenance_collateral_ratio = MAINTENANCE_COLLATERAL_RATIO;   ///< Fixed point between 1.000 and 10.000, implied fixed point denominator is COLLATERAL_RATIO_DENOM
 
@@ -277,6 +277,7 @@ namespace node { namespace protocol {
          date_type expiration_date = date_type() ) : 
          strike_price(strike_price), 
          call(call),
+         multiple(multiple),
          expiration_date(expiration_date){}
 
       price              strike_price;         ///< Price that the option can be exercised at.

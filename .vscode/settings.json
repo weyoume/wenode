@@ -88,7 +88,10 @@
 		"scoped_allocator": "cpp",
 		"csetjmp": "cpp",
 		"rope": "cpp",
-		"slist": "cpp"
+		"slist": "cpp",
+		"sph_blake.h": "c",
+		"sph_bmw.h": "c",
+		"sph_types.h": "c"
 	},
 	"C_Cpp.errorSquiggles": "Enabled",
 	"C_Cpp.intelliSenseEngineFallback": "Enabled",

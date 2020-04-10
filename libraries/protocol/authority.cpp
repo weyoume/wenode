@@ -117,6 +117,40 @@ bool is_valid_account_name( const string& name )
    return true;
 }
 
+/**
+ * True when Name is less than 8 characters and all letters, 
+ * with no full stops, numbers or hyphens.
+ */
+bool is_premium_account_name( const string& name )
+{
+   const size_t len = name.size();
+   if( len < MIN_ACCOUNT_NAME_LENGTH )
+   {
+      return false;
+   }
+   if( len > 8 )
+   {
+      return false;
+   }
+      
+   for( size_t i=0; i<len; i++ )
+   {
+      switch( name[i] )
+      {
+         case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': case 'h':
+         case 'i': case 'j': case 'k': case 'l': case 'm': case 'n': case 'o': case 'p':
+         case 'q': case 'r': case 's': case 't': case 'u': case 'v': case 'w': case 'x':
+         case 'y': case 'z':
+            break;
+         default:
+            return false;
+      }
+   }
+
+   return true;
+}
+
+
 bool operator == ( const authority& a, const authority& b )
 {
    return ( a.weight_threshold == b.weight_threshold ) &&

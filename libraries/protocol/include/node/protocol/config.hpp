@@ -75,10 +75,13 @@
 #define BLOCKS_PER_HOUR                 uint64_t(fc::hours(1).count() / BLOCK_INTERVAL.count())      // Approximately 4,466 Blocks per hour.
 #define BLOCKS_PER_MINUTE               uint64_t(fc::minutes(1).count() / BLOCK_INTERVAL.count())    // Approximately 76 Blocks per minute.
 
-#define ANNUAL_COIN_ISSUANCE            asset( 1 * BILLION * BLOCKCHAIN_PRECISION, SYMBOL_COIN)     // 1 Billion MEC issued per year
-#define BLOCK_REWARD                    (ANNUAL_COIN_ISSUANCE / BLOCKS_PER_YEAR)                    // 25 MeCoin issued per block
-#define MAX_ACCEPTED_PAYOUT             asset( BILLION * BLOCKCHAIN_PRECISION, SYMBOL_USD );        // Maximum amount accepted as a content reward payout
+#define ANNUAL_COIN_ISSUANCE            asset( 1 * BILLION * BLOCKCHAIN_PRECISION, SYMBOL_COIN)      // 1 Billion MEC issued per year
+#define BLOCK_REWARD                    (ANNUAL_COIN_ISSUANCE / BLOCKS_PER_YEAR)                     // 25 MeCoin issued per block
+#define MAX_ACCEPTED_PAYOUT             asset( BILLION * BLOCKCHAIN_PRECISION, SYMBOL_USD );         // Maximum amount accepted as a content reward payout
 
+#define PRODUCER_TICK_INTERVAL                fc::microseconds(197100)  // Time taken between block producer ticks, at which they check for producer new blocks
+#define MINING_TICK_INTERVAL                  fc::seconds(5)            // Time taken between mining ticks, updates the recent block after this time
+#define VALIDATION_TICK_INTERVAL              fc::seconds(1)            // Time taken between mining ticks, updates the recent block after this time
 #define IRREVERSIBLE_THRESHOLD                (67 * PERCENT_1)          // Blocks produced become irrervsible after approval by this percentage of active producers. 
 #define POW_TARGET_TIME                       fc::minutes(10)           // Aim for approximately one proof of work every 10 minutes to be produced. 
 #define POW_DECAY_TIME                        fc::days(7)               // Averaging time of one week for adjusting proof of work difficulty. 
@@ -109,7 +112,7 @@
 
 #define SET_UPDATE_BLOCK_INTERVAL       (BLOCKS_PER_DAY)      // Updates business account executive sets once every day.
 #define ENTERPRISE_BLOCK_INTERVAL       (BLOCKS_PER_DAY)      // Distributes community enterprise funding once every day.
-#define BITASSET_BLOCK_INTERVAL         (BLOCKS_PER_DAY)      // Updates the settlement volume on bitassets and processes collateral bids
+#define STABLECOIN_BLOCK_INTERVAL         (BLOCKS_PER_DAY)      // Updates the settlement volume on stablecoins and processes collateral bids
 #define VOTE_RECHARGE_TIME              fc::days(7)           // 7 days to regenerate maximum voting power. Accumulation period of unused transactions for allocating rewards.
 #define VIEW_RECHARGE_TIME              fc::days(7)           // 7 day to regenerate maximum viewing power. Accumulation period of unused transactions for allocating rewards.
 #define SHARE_RECHARGE_TIME             fc::days(7)           // 7 days to regenerate maximum sharing power. Accumulation period of unused transactions for allocating rewards.
@@ -255,10 +258,12 @@
 #define ESCROW_DISPUTE_DURATION                    fc::days(7)       // 7 days of mediation time required before release of funds. 
 #define ESCROW_DISPUTE_MEDIATOR_AMOUNT             5                 // 5 Random top mediators added to dispute for resolution.  
 
-#define SUBSCRIPTION_FEE_PERCENT               (2 * PERCENT_1) // Percentage fee charged on subscription content purchases: 2%
-#define NETWORK_SUBSCRIPTION_FEE_PERCENT       (50 * PERCENT_1) // Percentage of subscription fee consumed as network revenue: 50%
-#define INTERFACE_SUBSCRIPTION_FEE_PERCENT     (25 * PERCENT_1) // Percentage of subscription fee shared with the purchaser's interface: 50%
-#define NODE_SUBSCRIPTION_FEE_PERCENT          (25 * PERCENT_1) // Percentage of subscription fee shared with hostign supernodes: 50%
+#define SUBSCRIPTION_FEE_PERCENT               (2 * PERCENT_1)   // Percentage fee charged on subscription content purchases: 2%
+#define NETWORK_SUBSCRIPTION_FEE_PERCENT       (50 * PERCENT_1)  // Percentage of subscription fee consumed as network revenue: 50%
+#define INTERFACE_SUBSCRIPTION_FEE_PERCENT     (25 * PERCENT_1)  // Percentage of subscription fee shared with the purchaser's interface: 50%
+#define NODE_SUBSCRIPTION_FEE_PERCENT          (25 * PERCENT_1)  // Percentage of subscription fee shared with hosting supernodes: 50%
+
+#define INTEREST_FEE_PERCENT                   (5*PERCENT_1)     // Percentage of interest paid in network fees: 5%
 
 #define MIN_ACTIVITY_PRODUCERS                 (10)              // Accounts need at least 10 producer votes to claim activity reward. 
 #define ACTIVITY_BOOST_STANDARD_PERCENT        (125 * PERCENT_1) // Boost activty reward by 25%
@@ -295,7 +300,12 @@
 #define CREDIT_INTERVAL                        fc::hours(1)                  // Interest rate compounds once per hour.
 #define CREDIT_INTERVAL_BLOCKS                 uint64_t( CREDIT_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Interest payments for credit assets compound hourly.
 #define INTEREST_MIN_AMOUNT                    (100)                         // Minimum units of asset required to pay interest in credit pools each block.
-#define MARKET_MAX_CREDIT_RATIO                (50 * PERCENT_1)              // Total Margin and borrow positions are limited to 50% of the maximum collateral and debt liquidity. 
+#define MARKET_MAX_CREDIT_RATIO                (50 * PERCENT_1)              // Total Margin and borrow positions are limited to 50% of the maximum collateral and debt liquidity.
+
+#define BOND_COLLATERALIZATION_PERCENT         (20 * PERCENT_1)              // Percentage of bond face value required for collateral.
+#define BOND_COUPON_RATE_PERCENT               (5 * PERCENT_1)               // Interest rate paid on bond assets.
+#define BOND_COUPON_INTERVAL                   fc::days(7)                   // Processes Bond Asset coupon interest rate each week.
+#define BOND_COUPON_INTERVAL_BLOCKS            uint64_t( BOND_COUPON_INTERVAL.count() / BLOCK_INTERVAL.count() )  // One week time period of paying bond coupons.
 
 #define EQUITY_MIN_PRODUCERS                   (10)                          // Accounts need at least 10 producer votes to claim equity reward.
 #define EQUITY_BOOST_PRODUCERS                 (50)                          // Boost when account has min 50 producer votes.

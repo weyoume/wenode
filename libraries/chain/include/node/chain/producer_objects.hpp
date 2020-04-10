@@ -39,7 +39,6 @@ namespace node { namespace chain {
     * votes                  += delta_vote
     * virtual_scheduled_time = virtual_last_update + (1000*MAXVOTES - virtual_position) / vote
     */
-
    class producer_object : public object< producer_object_type, producer_object >
    {
       producer_object() = delete;
@@ -267,25 +266,29 @@ namespace node { namespace chain {
 
          block_validation_object(){}
 
-         id_type                          id;
+         id_type                               id;
 
-         account_name_type                producer;             ///< Name of the block producer creating the validation.
+         account_name_type                     producer;             ///< Name of the block producer creating the validation.
 
-         block_id_type                    block_id;             ///< Block ID commited to for the height.
+         block_id_type                         block_id;             ///< Block ID commited to for the height.
 
-         uint64_t                         block_height;         ///< Height of the block being validated.
+         uint64_t                              block_height;         ///< Height of the block being validated.
 
-         time_point                       created;              ///< Time that the validation was created.
+         transaction_id_type                   verify_txn;           ///< Transaction ID in which this validation object was verified.
 
-         flat_set< transaction_id_type >  verifications;        ///< Validation transactions from other producers.
+         flat_set< transaction_id_type >       verifications;        ///< Validation transactions from other producers.
 
-         flat_set< account_name_type >    verifiers;            ///< Accounts that have verfied this block id at this height.
+         flat_set< account_name_type >         verifiers;            ///< Accounts that have also verfied this block id at this height.
 
-         bool                             committed = false;    ///< True if the validation has been committed with stake.
+         bool                                  committed = false;    ///< True if the validation has been committed with stake.
 
-         time_point                       commit_time = fc::time_point::min();    ///< Time that the validation was committed.
+         time_point                            commit_time = fc::time_point::min();    ///< Time that the validation was committed.
 
-         asset                            commitment_stake;     ///< Amount of COIN staked on the validity of the block.
+         asset                                 commitment_stake;     ///< Amount of COIN staked on the validity of the block.
+
+         transaction_id_type                   commit_txn;           ///< Transaction ID in which this validation object was commited.
+
+         time_point                            created;              ///< Time that the validation was created.
    };
 
 
@@ -453,6 +456,7 @@ namespace node { namespace chain {
    struct by_recent_created;
    struct by_commit_time;
    struct by_producer_block_id;
+   struct by_block_id;
    
    typedef multi_index_container<
       block_validation_object,
@@ -478,6 +482,16 @@ namespace node { namespace chain {
             composite_key< block_validation_object,
                member<block_validation_object, account_name_type, &block_validation_object::producer >,
                member<block_validation_object, block_id_type, &block_validation_object::block_id >
+            >
+         >,
+         ordered_unique< tag<by_block_id>,
+            composite_key< block_validation_object,
+               member<block_validation_object, block_id_type, &block_validation_object::block_id >,
+               member< block_validation_object, block_validation_id_type, &block_validation_object::id >
+            >,
+            composite_key_compare< 
+               std::less< block_id_type >, 
+               std::less< block_validation_id_type >
             >
          >,
          ordered_unique< tag<by_recent_created>,
@@ -624,12 +638,14 @@ FC_REFLECT( node::chain::block_validation_object,
          (producer)
          (block_id)
          (block_height)
-         (created)
+         (verify_txn)
          (verifications)
          (verifiers)
          (committed)
          (commit_time)
          (commitment_stake)
+         (commit_txn)
+         (created)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::block_validation_object, node::chain::block_validation_index );

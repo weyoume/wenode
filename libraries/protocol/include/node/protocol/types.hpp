@@ -34,8 +34,8 @@ namespace node {
    using                                    fc::uint128_t;
    typedef boost::multiprecision::int128_t  int128_t;
    typedef boost::multiprecision::int256_t  int256_t;
-   typedef boost::multiprecision::uint256_t u256;
-   typedef boost::multiprecision::uint512_t u512;
+   typedef boost::multiprecision::uint256_t uint256_t;
+   typedef boost::multiprecision::uint512_t uint512_t;
 
    using                               std::map;
    using                               std::vector;
@@ -68,6 +68,8 @@ namespace node {
    using                               fc::ecc::range_proof_type;
    using                               fc::ecc::range_proof_info;
    using                               fc::ecc::commitment_type;
+   using                               fc::ecc::blind_factor_type;
+
    struct void_t{};
 
    namespace protocol {
@@ -247,11 +249,12 @@ namespace node {
       {
          CURRENCY_ASSET,         ///< Cryptocurrency that is issued by the network, starts from zero supply, issuing account is the null account, cannot be issued by any accounts. 
          STANDARD_ASSET,         ///< Regular asset, can be transferred and staked, saved, and delegated.
-         EQUITY_ASSET,           ///< Asset issued by a business account that distributes a dividend from incoming revenue, and has voting power over a business accounts transactions. 
+         STABLECOIN_ASSET,       ///< Asset backed by collateral that tracks the value of an external asset. Redeemable at any time with settlement.
+         EQUITY_ASSET,           ///< Asset issued by a business account that distributes a dividend from incoming revenue, and has voting power over a business accounts transactions.
+         BOND_ASSET,             ///< Asset issued by a business account, partially backed by collateral, that pays a coupon rate and is redeemed after maturity.
          CREDIT_ASSET,           ///< Asset issued by a business account that is backed by repayments up to a face value, and interest payments.
-         BITASSET_ASSET,         ///< Asset based by collateral and track the value of an external asset.
-         LIQUIDITY_POOL_ASSET,   ///< Liquidity pool asset that is backed by the deposits of an asset pair's liquidity pool and earns trading fees. 
-         CREDIT_POOL_ASSET,      ///< Credit pool asset that is backed by deposits of the base asset, used for borrowing funds from the pool, used as collateral to borrow base asset.
+         LIQUIDITY_POOL_ASSET,   ///< Asset that is backed by the deposits of an asset pair's liquidity pool and earns trading fees. 
+         CREDIT_POOL_ASSET,      ///< Asset that is backed by deposits of the base asset, used for borrowing funds from the pool, used as collateral to borrow base asset.
          OPTION_ASSET,           ///< Asset that enables the execution of a trade at a specific strike price until an expiration date. 
          PREDICTION_ASSET,       ///< Asset backed by an underlying collateral claim, on the condition that a prediction market resolve in a particular outcome.
          GATEWAY_ASSET,          ///< Asset backed by deposits with an exchange counterparty of another asset or currency.
@@ -262,9 +265,10 @@ namespace node {
       {
          "currency",
          "standard",
+         "stablecoin",
          "equity",
+         "bond",
          "credit",
-         "bitasset",
          "liquidity_pool",
          "credit_pool",
          "option",
@@ -371,7 +375,8 @@ namespace node {
          "public",
          "connection",
          "friend",
-         "companion"
+         "companion",
+         "secure"
       };
 
       /**
@@ -533,11 +538,11 @@ namespace node {
          disable_liquid              = 256,     ///< The asset cannot be used to create a liquidity pool.
          disable_options             = 512,     ///< The asset cannot be used to issue options assets.
          disable_escrow              = 1024,    ///< Disable escrow transfers and marketplace trades using the asset.
-         disable_force_settle        = 2048,    ///< Disable force settling of bitassets, only global settle may return collateral.
+         disable_force_settle        = 2048,    ///< Disable force settling of stablecoins, only global settle may return collateral.
          disable_confidential        = 4096,    ///< Asset cannot be used with confidential transactions.
          disable_auction             = 8192,    ///< Disable creation of auction orders for the asset.
          producer_fed_asset          = 16384,   ///< Allow the asset to be price food to be published by top voting producers.
-         global_settle               = 32768,   ///< Allow the bitasset issuer to force a global settlement: Set in permissions, but not flags.
+         global_settle               = 32768,   ///< Allow the stablecoin issuer to force a global settlement: Set in permissions, but not flags.
          governance_oversight        = 65536,   ///< Asset update, issuer transfer and issuance require the account's governance address to approve.
          immutable_properties        = 131072   ///< Disable any future asset options updates or changes to flags.
       };
@@ -723,6 +728,25 @@ namespace node {
          friend bool operator >= ( const date_type& date1, const date_type& date2 );
       };
 
+
+      /**
+       * This data is encrypted and stored in the
+       * encrypted memo portion of the blind output.
+       */
+      struct blind_memo
+      {
+         account_name_type         from;
+
+         share_type                amount;
+
+         string                    message;
+
+         uint32_t                  check = 0;
+      };
+
+
+      
+
 } };  // node::protocol
 
 namespace fc
@@ -796,8 +820,9 @@ FC_REFLECT_ENUM( node::protocol::asset_property_type,
          (CURRENCY_ASSET)
          (STANDARD_ASSET)
          (EQUITY_ASSET)
+         (BOND_ASSET)
          (CREDIT_ASSET)
-         (BITASSET_ASSET)
+         (STABLECOIN_ASSET)
          (LIQUIDITY_POOL_ASSET)
          (CREDIT_POOL_ASSET)
          (OPTION_ASSET)

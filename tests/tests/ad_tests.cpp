@@ -69,6 +69,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       comment.parent_permlink = "adcreativepermlink";
       comment.json = "{\"json\":\"valid\"}";
       comment.comment_price = asset( 0, SYMBOL_COIN );
+      comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;

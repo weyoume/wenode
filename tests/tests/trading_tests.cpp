@@ -1052,9 +1052,9 @@ BOOST_AUTO_TEST_CASE( asset_collateral_bid_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const asset_bitasset_data_object& bitasset = db.get_bitasset_data( SYMBOL_USD );
+      const asset_stablecoin_data_object& stablecoin = db.get_stablecoin_data( SYMBOL_USD );
 
-      BOOST_REQUIRE( bitasset.has_settlement() );     // Bitasset has now undergone a black swan event
+      BOOST_REQUIRE( stablecoin.has_settlement() );     // Stablecoin has now undergone a black swan event
 
       asset_collateral_bid_operation bid;
 
@@ -1159,11 +1159,11 @@ BOOST_AUTO_TEST_CASE( asset_collateral_bid_operation_test )
       BOOST_REQUIRE( bob_col_bid.created == now() );
       BOOST_REQUIRE( bob_col_bid.last_updated == now() );
       
-      generate_blocks( BITASSET_BLOCK_INTERVAL + 1 );
+      generate_blocks( STABLECOIN_BLOCK_INTERVAL + 1 );
 
-      BOOST_REQUIRE( bitasset.has_settlement() );  // Requires price feed before revival
+      BOOST_REQUIRE( stablecoin.has_settlement() );  // Requires price feed before revival
 
-      generate_blocks( BITASSET_BLOCK_INTERVAL - 1 );
+      generate_blocks( STABLECOIN_BLOCK_INTERVAL - 1 );
 
       feed.signatory = "alice";
       feed.publisher = "alice";
@@ -1196,7 +1196,7 @@ BOOST_AUTO_TEST_CASE( asset_collateral_bid_operation_test )
 
       generate_block();
 
-      BOOST_REQUIRE( !bitasset.has_settlement() );  // Asset is now revived.
+      BOOST_REQUIRE( !stablecoin.has_settlement() );  // Asset is now revived.
 
       validate_database();
 

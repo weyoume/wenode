@@ -485,12 +485,12 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Update credit asset" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: Create bitasset" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Create stablecoin" );
 
       asset_create.signatory = "elon";
       asset_create.issuer = "elon";
       asset_create.symbol = "TSLA";
-      asset_create.asset_type = "bitasset";
+      asset_create.asset_type = "stablecoin";
       asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "TSLA" );
@@ -511,14 +511,14 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       BOOST_REQUIRE( elon_asset.issuer == asset_create.issuer );
       BOOST_REQUIRE( elon_asset.symbol == asset_create.symbol );
-      BOOST_REQUIRE( elon_asset.asset_type == asset_property_type::BITASSET_ASSET );
+      BOOST_REQUIRE( elon_asset.asset_type == asset_property_type::STABLECOIN_ASSET );
       BOOST_REQUIRE( elon_asset.created == now() );
       BOOST_REQUIRE( elon_asset.last_updated == now() );
 
-      const asset_bitasset_data_object& elon_bitasset = db.get_bitasset_data( "TSLA" );
+      const asset_stablecoin_data_object& elon_stablecoin = db.get_stablecoin_data( "TSLA" );
 
-      BOOST_REQUIRE( elon_bitasset.issuer == asset_create.issuer );
-      BOOST_REQUIRE( elon_bitasset.backing_asset == SYMBOL_COIN );
+      BOOST_REQUIRE( elon_stablecoin.issuer == asset_create.issuer );
+      BOOST_REQUIRE( elon_stablecoin.backing_asset == SYMBOL_COIN );
 
       const asset_credit_pool_object& elon_credit_pool = db.get_credit_pool( "TSLA", false );
 
@@ -534,9 +534,9 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: Create bitasset" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Create stablecoin" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: Update bitasset" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Update stablecoin" );
 
       asset_update.signatory = "elon";
       asset_update.issuer = "elon";
@@ -561,23 +561,23 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       BOOST_REQUIRE( elon_asset.issuer == asset_create.issuer );
       BOOST_REQUIRE( elon_asset.symbol == asset_create.symbol );
-      BOOST_REQUIRE( elon_asset.asset_type == asset_property_type::BITASSET_ASSET );
+      BOOST_REQUIRE( elon_asset.asset_type == asset_property_type::STABLECOIN_ASSET );
       BOOST_REQUIRE( to_string( elon_asset.display_symbol ) == asset_update.new_options.display_symbol );
       BOOST_REQUIRE( to_string( elon_asset.details ) == asset_update.new_options.details );
       BOOST_REQUIRE( to_string( elon_asset.json ) == asset_update.new_options.json );
       BOOST_REQUIRE( to_string( elon_asset.url ) == asset_update.new_options.url );
       BOOST_REQUIRE( elon_asset.last_updated == now() );
 
-      BOOST_REQUIRE( elon_bitasset.backing_asset == asset_update.new_options.backing_asset );
-      BOOST_REQUIRE( elon_bitasset.feed_lifetime == asset_update.new_options.feed_lifetime );
-      BOOST_REQUIRE( elon_bitasset.minimum_feeds == asset_update.new_options.minimum_feeds );
-      BOOST_REQUIRE( elon_bitasset.asset_settlement_delay == asset_update.new_options.asset_settlement_delay );
-      BOOST_REQUIRE( elon_bitasset.asset_settlement_offset_percent == asset_update.new_options.asset_settlement_offset_percent );
-      BOOST_REQUIRE( elon_bitasset.maximum_asset_settlement_volume == asset_update.new_options.maximum_asset_settlement_volume );
+      BOOST_REQUIRE( elon_stablecoin.backing_asset == asset_update.new_options.backing_asset );
+      BOOST_REQUIRE( elon_stablecoin.feed_lifetime == asset_update.new_options.feed_lifetime );
+      BOOST_REQUIRE( elon_stablecoin.minimum_feeds == asset_update.new_options.minimum_feeds );
+      BOOST_REQUIRE( elon_stablecoin.asset_settlement_delay == asset_update.new_options.asset_settlement_delay );
+      BOOST_REQUIRE( elon_stablecoin.asset_settlement_offset_percent == asset_update.new_options.asset_settlement_offset_percent );
+      BOOST_REQUIRE( elon_stablecoin.maximum_asset_settlement_volume == asset_update.new_options.maximum_asset_settlement_volume );
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: Update bitasset" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Update stablecoin" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Issue Standard asset" );
 
@@ -783,7 +783,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: New Issuer issuing asset to own account" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: Update Bitasset feed producers" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Update Stablecoin feed producers" );
 
       asset_update_feed_producers_operation update_feed;
 
@@ -808,14 +808,14 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       for( auto f : update_feed.new_feed_producers )
       {
-         BOOST_REQUIRE( elon_bitasset.feeds.count( f ) );
+         BOOST_REQUIRE( elon_stablecoin.feeds.count( f ) );
       }
       
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: Update Bitasset feed producers" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Update Stablecoin feed producers" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: Publish bitasset price feed" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Publish stablecoin price feed" );
 
       asset_publish_feed_operation feed;
 
@@ -850,11 +850,11 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( elon_bitasset.current_feed == feed.feed );
+      BOOST_REQUIRE( elon_stablecoin.current_feed == feed.feed );
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: Publish bitasset price feed" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Publish stablecoin price feed" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Asset settlement" );
 
@@ -982,8 +982,8 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_REQUIRE( elon_bitasset.has_settlement() );
-      BOOST_REQUIRE( elon_bitasset.settlement_fund.value > 0 );
+      BOOST_REQUIRE( elon_stablecoin.has_settlement() );
+      BOOST_REQUIRE( elon_stablecoin.settlement_fund.value > 0 );
 
       validate_database();
 

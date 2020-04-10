@@ -193,10 +193,11 @@ enum object_type
    asset_object_type,
    asset_dynamic_data_object_type,
    asset_currency_data_object_type,
-   asset_bitasset_data_object_type,
+   asset_stablecoin_data_object_type,
    asset_settlement_object_type,
    asset_collateral_bid_object_type,
    asset_equity_data_object_type,
+   asset_bond_data_object_type,
    asset_credit_data_object_type,
    asset_unique_data_object_type,
    asset_liquidity_pool_object_type,
@@ -344,10 +345,11 @@ class option_order_object;
 class asset_object;
 class asset_dynamic_data_object;
 class asset_currency_data_object;
-class asset_bitasset_data_object;
+class asset_stablecoin_data_object;
 class asset_settlement_object;
 class asset_collateral_bid_object;
 class asset_equity_data_object;
+class asset_bond_data_object;
 class asset_credit_data_object;
 class asset_unique_data_object;
 class asset_liquidity_pool_object;
@@ -494,10 +496,11 @@ typedef oid< option_order_object                        > option_order_id_type;
 typedef oid< asset_object                               > asset_id_type;
 typedef oid< asset_dynamic_data_object                  > asset_dynamic_data_id_type;
 typedef oid< asset_currency_data_object                 > asset_currency_data_id_type;
-typedef oid< asset_bitasset_data_object                 > asset_bitasset_data_id_type;
+typedef oid< asset_stablecoin_data_object               > asset_stablecoin_data_id_type;
 typedef oid< asset_settlement_object                    > asset_settlement_id_type;
 typedef oid< asset_collateral_bid_object                > asset_collateral_bid_id_type;
 typedef oid< asset_equity_data_object                   > asset_equity_data_id_type;
+typedef oid< asset_bond_data_object                     > asset_bond_data_id_type;
 typedef oid< asset_credit_data_object                   > asset_credit_data_id_type;
 typedef oid< asset_unique_data_object                   > asset_unique_data_id_type;
 typedef oid< asset_liquidity_pool_object                > asset_liquidity_pool_id_type;
@@ -718,10 +721,11 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (asset_object_type)
          (asset_dynamic_data_object_type)
          (asset_currency_data_object_type)
-         (asset_bitasset_data_object_type)
+         (asset_stablecoin_data_object_type)
          (asset_settlement_object_type)
          (asset_collateral_bid_object_type)
          (asset_equity_data_object_type)
+         (asset_bond_data_object_type)
          (asset_credit_data_object_type)
          (asset_unique_data_object_type)
          (asset_liquidity_pool_object_type)

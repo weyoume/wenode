@@ -1131,7 +1131,7 @@ void database::share_comment_to_feeds( const account_name_type& sharer,
 /** 
  * Adds a post to the feeds of each of the accounts in
  * the community's subscriber list. Accounts can share posts 
- * with new communities to increase thier reach. 
+ * with new communities to increase their reach. 
  */
 void database::share_comment_to_community( const account_name_type& sharer, 
    const community_name_type& community, const comment_object& comment )

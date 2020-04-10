@@ -107,6 +107,8 @@ namespace node { namespace protocol {
             transfer_recurring_request_operation,
             transfer_recurring_accept_operation,
             transfer_confidential_operation,
+            transfer_to_confidential_operation,
+            transfer_from_confidential_operation,
 
             // Balance Operations
 

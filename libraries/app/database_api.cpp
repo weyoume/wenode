@@ -404,9 +404,9 @@ database_api_impl::~database_api_impl()
 
 void database_api::on_api_startup() {}
 
-u256 to256( const fc::uint128& t )
+uint256_t to256( const fc::uint128& t )
 {
-   u256 results( t.high_bits() );
+   uint256_t results( t.high_bits() );
    results <<= 65;
    results += t.low_bits();
    return results;
@@ -1683,11 +1683,11 @@ vector< extended_asset > database_api_impl::get_assets( vector< string > assets 
          results.back().confidential_supply = asset_dyn_itr->confidential_supply.value;
       }
 
-      const auto& bitasset_idx = _db.get_index< asset_bitasset_data_index >().indices().get< by_symbol >();
-      auto bitasset_itr = bitasset_idx.find( asset );
-      if( bitasset_itr != bitasset_idx.end() )
+      const auto& stablecoin_idx = _db.get_index< asset_stablecoin_data_index >().indices().get< by_symbol >();
+      auto stablecoin_itr = stablecoin_idx.find( asset );
+      if( stablecoin_itr != stablecoin_idx.end() )
       {
-         results.back().bitasset = bitasset_data_api_obj( *bitasset_itr );
+         results.back().stablecoin = stablecoin_data_api_obj( *stablecoin_itr );
       }
 
       const auto& equity_idx = _db.get_index< asset_equity_data_index >().indices().get< by_symbol >();
@@ -2861,31 +2861,31 @@ market_call_orders database_api_impl::get_call_orders( string buy_symbol, string
    const asset_object& buy_asset = _db.get_asset( buy_symbol );
    const asset_object& sell_asset = _db.get_asset( sell_symbol );
 
-   asset_symbol_type bitasset_symbol;
+   asset_symbol_type stablecoin_symbol;
 
-   if( buy_asset.asset_type == asset_property_type::BITASSET_ASSET )
+   if( buy_asset.asset_type == asset_property_type::STABLECOIN_ASSET )
    {
-      bitasset_symbol = buy_asset.symbol;
+      stablecoin_symbol = buy_asset.symbol;
    }
-   else if( sell_asset.asset_type == asset_property_type::BITASSET_ASSET )
+   else if( sell_asset.asset_type == asset_property_type::STABLECOIN_ASSET )
    {
-      bitasset_symbol = sell_asset.symbol;
+      stablecoin_symbol = sell_asset.symbol;
    }
    else
    {
       return results;
    }
 
-   const asset_bitasset_data_object& bit_obj = _db.get_bitasset_data( bitasset_symbol );
+   const asset_stablecoin_data_object& bit_obj = _db.get_stablecoin_data( stablecoin_symbol );
    results.settlement_price = bit_obj.current_feed.settlement_price;
 
    const auto& call_idx = _db.get_index< call_order_index >().indices().get< by_debt >();
    
-   auto call_itr = call_idx.lower_bound( bitasset_symbol );
+   auto call_itr = call_idx.lower_bound( stablecoin_symbol );
    auto call_end = call_idx.end();
 
    while( call_itr != call_end &&
-      call_itr->debt_type() == bitasset_symbol && 
+      call_itr->debt_type() == stablecoin_symbol && 
       results.calls.size() < limit )
    {
       results.calls.push_back( call_order_api_obj( *call_itr ) );
@@ -3068,16 +3068,16 @@ market_state database_api_impl::get_market_state( string buy_symbol, string sell
    const asset_object& sell_asset = _db.get_asset( sell_symbol );
    if( buy_asset.is_market_issued() )
    {
-      const asset_bitasset_data_object& buy_bitasset = _db.get_bitasset_data( buy_symbol );
-      if( buy_bitasset.backing_asset == sell_symbol )
+      const asset_stablecoin_data_object& buy_stablecoin = _db.get_stablecoin_data( buy_symbol );
+      if( buy_stablecoin.backing_asset == sell_symbol )
       {
          results.call_orders = get_call_orders( buy_symbol, sell_symbol );
       }
    }
    if( sell_asset.is_market_issued() )
    {
-      const asset_bitasset_data_object& sell_bitasset = _db.get_bitasset_data( sell_symbol );
-      if( sell_bitasset.backing_asset == buy_symbol )
+      const asset_stablecoin_data_object& sell_stablecoin = _db.get_stablecoin_data( sell_symbol );
+      if( sell_stablecoin.backing_asset == buy_symbol )
       {
          results.call_orders = get_call_orders( buy_symbol, sell_symbol );
       }
@@ -4266,8 +4266,8 @@ discussion database_api_impl::get_discussion( comment_id_type id, uint32_t trunc
    d.active_shares = get_active_shares( d.author, d.permlink );
    d.active_mod_tags = get_active_mod_tags( d.author, d.permlink );
    d.body_length = d.body.size();
-
-   if( truncate_body ) 
+   
+   if( truncate_body )
    {
       d.body = d.body.substr( 0, truncate_body );
 
@@ -4324,6 +4324,8 @@ vector< discussion > database_api_impl::get_discussions(
    }
       
    const auto& comment_tag_idx = _db.get_index< tags::tag_index >().indices().get< tags::by_comment >();
+   const auto& gov_idx = _db.get_index< governance_subscription_index >().indices().get< by_account_governance >();
+   auto gov_itr = gov_idx.begin();
    comment_id_type start;
 
    if( query.start_author && query.start_permlink ) 
@@ -4565,7 +4567,69 @@ vector< discussion > database_api_impl::get_discussions(
             }
          }
 
-         results.push_back( get_discussion( tidx_itr->comment, truncate_body ) );
+         discussion d = get_discussion( tidx_itr->comment, truncate_body );
+         vector< moderation_state > active_mod_tags;
+         vector< account_name_type > accepted_moderators;
+
+         if( query.account != account_name_type() )
+         {
+            gov_itr = gov_idx.lower_bound( query.account );
+            while( gov_itr != gov_idx.end() && 
+               gov_itr->account == query.account )
+            {
+               accepted_moderators.push_back( gov_itr->governance_account );
+               ++gov_itr;
+            }
+         }
+
+         if( d.community != community_name_type() )
+         {
+            const community_member_object& community = _db.get_community_member( d.community );
+            for( account_name_type mod : community.moderators )
+            {
+               accepted_moderators.push_back( mod );
+            }
+         }
+
+         bool filtered = false;
+         
+         for( moderation_state m : d.active_mod_tags )
+         {
+            if( std::find( accepted_moderators.begin(), accepted_moderators.end(), m.moderator ) != accepted_moderators.end() )
+            {
+               active_mod_tags.push_back( m );
+               if( m.filter )
+               {
+                  filtered = true;
+                  break;
+               }
+            }
+         }
+
+         if( filtered )
+         {
+            ++tidx_itr;
+            continue;
+         }
+
+         moderation_state init_state;
+         init_state.rating = d.rating;
+         active_mod_tags.push_back( init_state );        // Inject author's own rating.
+
+         std::sort( active_mod_tags.begin(), active_mod_tags.end(), [&]( moderation_state a, moderation_state b )
+         {
+            return a.rating < b.rating;
+         });
+
+         d.median_rating = active_mod_tags[ active_mod_tags.size() / 2 ].rating;
+
+         if( d.median_rating > query.max_rating )        // Exclude if median rating is greater than maximum.
+         {
+            ++tidx_itr;
+            continue;
+         }
+
+         results.push_back( d );
 
          if( filter( results.back() ) )
          {

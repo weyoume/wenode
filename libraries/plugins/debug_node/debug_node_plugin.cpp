@@ -29,6 +29,7 @@ class debug_node_plugin_impl
       debug_node_plugin* _self;
 
       uint32_t                                  _mining_threads = 1;
+      
       std::vector<std::shared_ptr<fc::thread> > _thread_pool;
 };
 
@@ -55,7 +56,7 @@ struct debug_mine_state
    std::string                    miner_account;
    chain::block_id_type           prev_block;
    uint128_t                      summary_target = 0;
-   fc::promise< chain::proof_of_work >::ptr work;
+   fc::promise< chain::x11_proof_of_work >::ptr work;
    fc::mutex                      set_work_mutex;
 };
 
@@ -63,7 +64,7 @@ debug_mine_state::debug_mine_state() {}
 debug_mine_state::~debug_mine_state() {}
 
 void debug_node_plugin::debug_mine_work(
-   chain::proof_of_work& work,
+   chain::x11_proof_of_work& work,
    uint128_t summary_target
    )
 {
@@ -71,7 +72,7 @@ void debug_node_plugin::debug_mine_work(
    mine_state->miner_account = work.input.miner_account;
    mine_state->prev_block = work.input.prev_block;
    mine_state->summary_target = summary_target;
-   mine_state->work = fc::promise< chain::proof_of_work >::ptr( new fc::promise< chain::proof_of_work >() );
+   mine_state->work = fc::promise< chain::x11_proof_of_work >::ptr( new fc::promise< chain::x11_proof_of_work >() );
 
    uint32_t thread_num = 0;
    uint32_t num_threads = _my->_mining_threads;
@@ -88,7 +89,7 @@ void debug_node_plugin::debug_mine_work(
       wlog( "Launching thread ${i}", ("i", thread_num) );
       t->async( [mine_state,nonce_offset,nonce_stride]()
       {
-         chain::proof_of_work work;
+         chain::x11_proof_of_work work;
          std::string miner_account = mine_state->miner_account;
          chain::block_id_type prev_block = mine_state->prev_block;
          uint128_t summary_target = mine_state->summary_target;

@@ -224,14 +224,15 @@ namespace node { namespace app {
       discussion( const comment_object& o ):comment_api_obj(o){}
       discussion(){}
 
-      string                        url;                 // /category/@rootauthor/root_permlink#author/permlink
+      string                        url;                       // /category/@rootauthor/root_permlink#author/permlink
       string                        root_title;
       vector< vote_state >          active_votes;
       vector< view_state >          active_views;
       vector< share_state >         active_shares;
       vector< moderation_state >    active_mod_tags;
-      vector< string >              replies;                    // author/slug mapping
+      vector< string >              replies;                   // author/slug mapping.
       uint32_t                      body_length = 0;
+      uint16_t                      median_rating = 1;         // The median of all moderation tag ratings.
       blog_api_obj                  blog;                      // Details Injected if using get_discussions_by_blog.
       feed_api_obj                  feed;                      // Details injected if using get_discussions_by_feed.
    };
@@ -318,7 +319,7 @@ namespace node { namespace app {
       int64_t                                  receiving_supply;          // The current receiving supply supply of the asset, should equal delegated
       int64_t                                  pending_supply;            // The current supply contained in reward funds and active order objects
       int64_t                                  confidential_supply;       // total confidential asset supply
-      bitasset_data_api_obj                    bitasset;
+      stablecoin_data_api_obj                    stablecoin;
       equity_data_api_obj                      equity; 
       credit_data_api_obj                      credit;
       credit_pool_api_obj                      credit_pool;
@@ -583,6 +584,7 @@ FC_REFLECT_DERIVED( node::app::discussion, (node::app::comment_api_obj),
          (active_mod_tags)
          (replies)
          (body_length)
+         (median_rating)
          (blog)
          (feed)
          );
@@ -627,7 +629,7 @@ FC_REFLECT_DERIVED( node::app::extended_asset, ( node::app::asset_api_obj ),
          (receiving_supply)
          (pending_supply)
          (confidential_supply)
-         (bitasset)
+         (stablecoin)
          (equity)
          (credit)
          (credit_pool)

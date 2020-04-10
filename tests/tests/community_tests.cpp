@@ -321,6 +321,7 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       comment.parent_permlink = "ipsum";
       comment.json = "{\"json\":\"valid\"}";
       comment.comment_price = asset( 0, SYMBOL_COIN );
+      comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;
@@ -1498,6 +1499,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.parent_permlink = "lorem";
       comment.json = "{\"json\":\"valid\"}";
       comment.comment_price = asset( 0, SYMBOL_COIN );
+      comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;

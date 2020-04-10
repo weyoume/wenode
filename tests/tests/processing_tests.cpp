@@ -617,11 +617,11 @@ BOOST_AUTO_TEST_CASE( asset_feed_publish_mean )
 
       generate_blocks( BLOCKS_PER_HOUR ); // Jump forward 1 hour
 
-      const asset_bitasset_data_object& bitasset = db.get_bitasset_data( SYMBOL_USD );
+      const asset_stablecoin_data_object& stablecoin = db.get_stablecoin_data( SYMBOL_USD );
 
-      BOOST_REQUIRE( bitasset.current_feed.settlement_price == price( asset( 650, SYMBOL_USD ), asset( 1000, SYMBOL_COIN ) ) );
+      BOOST_REQUIRE( stablecoin.current_feed.settlement_price == price( asset( 650, SYMBOL_USD ), asset( 1000, SYMBOL_COIN ) ) );
 
-      BOOST_REQUIRE( bitasset.feeds.size() == 7 );
+      BOOST_REQUIRE( stablecoin.feeds.size() == 7 );
 
       validate_database();
 
@@ -648,7 +648,7 @@ BOOST_AUTO_TEST_CASE( asset_feed_publish_mean )
 
          generate_blocks( BLOCKS_PER_HOUR  ); // Jump forward 1 hour
 
-         BOOST_REQUIRE( bitasset.current_feed.settlement_price == ops[4].feed.settlement_price );
+         BOOST_REQUIRE( stablecoin.current_feed.settlement_price == ops[4].feed.settlement_price );
 
          validate_database();
       }

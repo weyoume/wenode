@@ -91,7 +91,7 @@ struct median_chain_property_api_obj
    uint16_t               market_max_credit_ratio;              ///< The maximum percentage of core asset liquidity balances that can be loaned.
    uint16_t               margin_open_ratio;                    ///< The minimum required collateralization ratio for a credit loan to be opened. 
    uint16_t               margin_liquidation_ratio;             ///< The minimum permissible collateralization ratio before a loan is liquidated. 
-   uint16_t               maximum_asset_feed_publishers;        ///< The maximum number of accounts that can publish price feeds for a bitasset.
+   uint16_t               maximum_asset_feed_publishers;        ///< The maximum number of accounts that can publish price feeds for a stablecoin.
    asset                  membership_base_price;                ///< The price for standard membership per month.
    asset                  membership_mid_price;                 ///< The price for Mezzanine membership per month.
    asset                  membership_top_price;                 ///< The price for top level membership per month.
@@ -136,6 +136,7 @@ struct comment_api_obj
       public_key( o.public_key ),
       encrypted( o.is_encrypted() ),
       reach( feed_reach_values[ int( o.reach ) ] ),
+      reply_connection( connection_tier_values[ int( o.reply_connection ) ] ),
       community( o.community ),
       body( to_string( o.body ) ),
       url( to_string( o.url ) ),
@@ -148,6 +149,8 @@ struct comment_api_obj
       json( to_string( o.json ) ),    
       category( to_string( o.category ) ),
       comment_price( o.comment_price ),
+      reply_price( o.reply_price ),
+      premium_price( o.premium_price ),
       last_updated( o.last_updated ),
       created( o.created ),
       active( o.active ),
@@ -226,7 +229,8 @@ struct comment_api_obj
    string                         post_type;                    ///< The type of post that is being created, image, text, article, video etc. 
    public_key_type                public_key;                   ///< The public key used to encrypt the post, holders of the private key may decrypt.
    bool                           encrypted;                    ///< True if the post is encrypted for a specific audience. 
-   string                         reach;                        ///< The reach of the post across followers, connections, friends and companions
+   string                         reach;                        ///< The reach of the post across followers, connections, friends and companions.
+   string                         reply_connection;             ///< Level of connection that can reply to the comment. 
    community_name_type            community;                    ///< The name of the community to which the post is uploaded to. Null string if no community. 
    vector< tag_name_type >        tags;                         ///< Set of string tags for sorting the post by.
    string                         body;                         ///< String containing text for display when the post is opened.
@@ -242,6 +246,8 @@ struct comment_api_obj
    string                         json;                         ///< IPFS link to file containing - Json metadata of the Title, Link, and additional interface specific data relating to the post.
    string                         category;
    asset                          comment_price;                ///< The price paid to create a comment
+   asset                          reply_price;                  ///< Price paid to create a reply to the post
+   asset                          premium_price;                ///< Price paid to unlock premium post. 
    vector< pair< account_name_type, asset > >  payments_received;    ///< Map of all transfers received that referenced this comment. 
    vector< beneficiary_route_type > beneficiaries;
    time_point                     last_updated;                 ///< The time the comment was last edited by the author
@@ -1190,7 +1196,7 @@ struct community_api_obj
       vote_count( b.vote_count ),
       view_count( b.view_count ),
       share_count( b.share_count ),
-      total_content_rewards( b.total_content_rewards ),
+      reward_currency( b.reward_currency ),
       created( b.created ),
       last_community_update( b.last_community_update ),
       last_post( b.last_post ),
@@ -1213,7 +1219,7 @@ struct community_api_obj
    uint32_t                           vote_count;                 ///< accumulated number of votes received by all posts in the community
    uint32_t                           view_count;                 ///< accumulated number of views on posts in the community 
    uint32_t                           share_count;                ///< accumulated number of shares on posts in the community 
-   asset                              total_content_rewards;      ///< total amount of rewards earned by posts in the community
+   asset_symbol_type                  reward_currency;            ///< The Currency asset used for content rewards in the community. 
    time_point                         created;                    ///< Time that the community was created.
    time_point                         last_community_update;      ///< Time that the community's details were last updated.
    time_point                         last_post;                  ///< Time that the user most recently created a comment.
@@ -1344,9 +1350,9 @@ struct asset_api_obj
 };
 
 
-struct bitasset_data_api_obj
+struct stablecoin_data_api_obj
 {
-   bitasset_data_api_obj( const chain::asset_bitasset_data_object& b ):
+   stablecoin_data_api_obj( const chain::asset_stablecoin_data_object& b ):
       id( b.id ),
       symbol( b.symbol ),
       issuer( b.issuer ),
@@ -1368,12 +1374,12 @@ struct bitasset_data_api_obj
          }
       }
    
-   bitasset_data_api_obj(){}
+   stablecoin_data_api_obj(){}
 
-   asset_bitasset_data_id_type                             id;
-   asset_symbol_type                                       symbol;                                  ///< The symbol of the bitasset that this object belongs to
+   asset_stablecoin_data_id_type                             id;
+   asset_symbol_type                                       symbol;                                  ///< The symbol of the stablecoin that this object belongs to
    account_name_type                                       issuer;                                  ///< The account name of the issuer 
-   asset_symbol_type                                       backing_asset;             ///< The collateral backing asset of the bitasset
+   asset_symbol_type                                       backing_asset;             ///< The collateral backing asset of the stablecoin
    map<account_name_type, pair<time_point,price_feed>>     feeds;                       ///< Feeds published for this asset. 
    price_feed                                              current_feed;                            ///< Currently active price feed, median of values from the currently active feeds.
    time_point                                              current_feed_publication_time;           ///< Publication time of the oldest feed which was factored into current_feed.
@@ -1461,14 +1467,14 @@ struct credit_data_api_obj
    asset                      buyback_pool;                              ///< Amount of assets pooled to buyback the asset at next interval
    price                      buyback_price;                             ///< Price at which the credit asset is bought back
    time_point                 last_buyback;                              ///< Time that the asset was last updated
-   uint32_t                   buyback_share_percent;                     ///< Percentage of incoming assets added to the buyback pool
-   uint32_t                   liquid_fixed_interest_rate;                ///< Fixed component of Interest rate of the asset for liquid balances.
-   uint32_t                   liquid_variable_interest_rate;             ///< Variable component of Interest rate of the asset for liquid balances.
-   uint32_t                   staked_fixed_interest_rate;                ///< Fixed component of Interest rate of the asset for staked balances.
-   uint32_t                   staked_variable_interest_rate;             ///< Variable component of Interest rate of the asset for staked balances.
-   uint32_t                   savings_fixed_interest_rate;               ///< Fixed component of Interest rate of the asset for savings balances.
-   uint32_t                   savings_variable_interest_rate;            ///< Variable component of Interest rate of the asset for savings balances.
-   uint32_t                   var_interest_range;                        ///< The percentage range from the buyback price over which to apply the variable interest rate.
+   uint16_t                   buyback_share_percent;                     ///< Percentage of incoming assets added to the buyback pool
+   uint16_t                   liquid_fixed_interest_rate;                ///< Fixed component of Interest rate of the asset for liquid balances.
+   uint16_t                   liquid_variable_interest_rate;             ///< Variable component of Interest rate of the asset for liquid balances.
+   uint16_t                   staked_fixed_interest_rate;                ///< Fixed component of Interest rate of the asset for staked balances.
+   uint16_t                   staked_variable_interest_rate;             ///< Variable component of Interest rate of the asset for staked balances.
+   uint16_t                   savings_fixed_interest_rate;               ///< Fixed component of Interest rate of the asset for savings balances.
+   uint16_t                   savings_variable_interest_rate;            ///< Variable component of Interest rate of the asset for savings balances.
+   uint16_t                   var_interest_range;                        ///< The percentage range from the buyback price over which to apply the variable interest rate.
 };
 
 struct liquidity_pool_api_obj
@@ -2460,6 +2466,7 @@ FC_REFLECT( node::app::comment_api_obj,
          (post_type)
          (public_key)
          (reach)
+         (reply_connection)
          (community)
          (tags)
          (body)
@@ -2864,7 +2871,7 @@ FC_REFLECT( node::app::community_api_obj,
          (vote_count)
          (view_count)
          (share_count)
-         (total_content_rewards)
+         (reward_currency)
          (created)
          (last_community_update)
          (last_post)
@@ -2917,7 +2924,7 @@ FC_REFLECT( node::app::asset_api_obj,
          (blacklist_markets)
          );
 
-FC_REFLECT( node::app::bitasset_data_api_obj,
+FC_REFLECT( node::app::stablecoin_data_api_obj,
          (id)
          (symbol)
          (issuer)

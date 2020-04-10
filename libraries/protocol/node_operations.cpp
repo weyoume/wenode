@@ -1,4 +1,5 @@
 #include <node/protocol/node_operations.hpp>
+#include <fc/crypto/base58.hpp>
 #include <fc/io/json.hpp>
 
 #include <locale>
@@ -922,17 +923,27 @@ namespace node { namespace protocol {
 
       FC_ASSERT( public_key.size() < MAX_STRING_LENGTH,
          "Comment rejected: Title size is too large." );
+      FC_ASSERT( comment_price.amount >= 0,
+         "Comment price cannot be negative." );
+      FC_ASSERT( reply_price.amount >= 0,
+         "Reply price cannot be negative." );
+      FC_ASSERT( premium_price.amount >= 0,
+         "Premium price cannot be negative." );
 
       if( comment_price.amount > 0 )
       {
          FC_ASSERT( is_valid_symbol( comment_price.symbol ),
             "Symbol ${symbol} is not a valid symbol", ("symbol", comment_price.symbol) );
       }
-
+      if( reply_price.amount > 0 )
+      {
+         FC_ASSERT( is_valid_symbol( reply_price.symbol ),
+            "Symbol ${symbol} is not a valid symbol", ("symbol", reply_price.symbol) );
+      }
       if( premium_price.amount > 0 )
       {
          FC_ASSERT( is_valid_symbol( premium_price.symbol ),
-            "Symbol ${symbol} is not a valid symbol", ("symbol", comment_price.symbol) );
+            "Symbol ${symbol} is not a valid symbol", ("symbol", premium_price.symbol) );
       }
    }
 
@@ -1055,6 +1066,8 @@ namespace node { namespace protocol {
       }
       FC_ASSERT( community_public_key.size() < MAX_STRING_LENGTH,
          "Community public key is too long." );
+      FC_ASSERT( max_rating >= 1 && max_rating <= 9, 
+         "Post Max Rating level should be between 1 and 9" );
    }
 
    void community_update_operation::validate() const
@@ -1810,68 +1823,172 @@ namespace node { namespace protocol {
       validate_uuidv4( request_id );
    }
 
-   void transfer_confidential_operation::validate() const
+
+   /**
+    *  Packs *this then encodes as base58 encoded string.
+    */
+   stealth_confirmation::operator string()const
    {
-      FC_ASSERT( is_valid_symbol( transfer_asset ),
-         "Symbol ${symbol} is not a valid symbol", ("symbol", transfer_asset) );
-      FC_ASSERT( input_accounts.size() == input_account_amounts.size(),
-         "Input accounts and input account amounts must be same length." );
-      FC_ASSERT( input_balances.size() == input_balance_signatures.size(),
-         "Input balances and input balance signatures must be same length." );
-      FC_ASSERT( output_accounts.size() == output_account_amounts.size(),
-         "Output accounts and output account amounts must be same length." );
-      FC_ASSERT( output_public_keys.size() == output_public_key_amounts.size(),
-         "Output public keys and output public key amounts must be same length." );
+      return fc::to_base58( fc::raw::pack( *this ) );
+   }
+   /**
+    * Unpacks from a base58 string
+    */
+   stealth_confirmation::stealth_confirmation( const std::string& base58 )
+   {
+      *this = fc::raw::unpack<stealth_confirmation>( fc::from_base58( base58 ) );
+   }
 
-      for( account_name_type a : input_accounts )
+
+   /**
+    * Verifies that input commitments - output commitments add up to 0.
+    * 
+    * Require all inputs and outputs to be sorted by commitment 
+    * to prevent duplicate commitments
+    * and ensure information is not leaked through ordering of commitments.
+    * 
+    * This method can be computationally intensive due to the 
+    * commitment sum verifcation. This part is done last to avoid 
+    * comparing unnecessarilty.
+    */
+   void transfer_confidential_operation::validate()const
+   {
+      FC_ASSERT( is_valid_symbol( fee.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", fee.symbol) );
+
+      vector< commitment_type > in(inputs.size());
+      vector< commitment_type > out(outputs.size());
+      int64_t net_public = fee.amount.value;              // from_amount.value - to_amount.value;
+
+      for( uint32_t i = 0; i < in.size(); ++i )
       {
-         validate_account_name( a );
+         in[i] = inputs[i].commitment;
+         if( i > 0 )
+         {
+            FC_ASSERT( in[i-1] < in[i] );
+         }
       }
 
-      for( asset a : input_account_amounts )
+      for( uint32_t i = 0; i < out.size(); ++i )
       {
-         FC_ASSERT( a.amount > 0,
-            "INVALID TRANSFER: NEGATIVE AMOUNT - THEFT NOT PERMITTED." );
-         FC_ASSERT( is_valid_symbol( a.symbol ),
-            "Symbol ${symbol} is not a valid symbol", ("symbol", a.symbol) );
+         out[i] = outputs[i].commitment;
+         if( i > 0 ) 
+         {
+            FC_ASSERT( out[i-1] < out[i] );
+         }
+         FC_ASSERT( !outputs[i].owner.is_impossible() );
       }
 
-      for( account_name_type a : output_accounts )
-      {
-         validate_account_name( a );
-      }
+      FC_ASSERT( in.size(),
+         "Transfer must have at least one input" );
 
-      for( asset a : output_account_amounts )
+      if( outputs.size() > 1 )
       {
-         FC_ASSERT( a.amount > 0,
-            "INVALID TRANSFER: NEGATIVE AMOUNT - THEFT NOT PERMITTED." );
-         FC_ASSERT( is_valid_symbol( a.symbol ),
-            "Symbol ${symbol} is not a valid symbol", ("symbol", a.symbol) );
+         for( auto out : outputs )
+         {
+            auto info = fc::ecc::range_get_info( out.range_proof );
+            FC_ASSERT( info.max_value <= MAX_ASSET_SUPPLY );
+         }
       }
+      FC_ASSERT( fc::ecc::verify_sum( in, out, net_public ), 
+         "Input commitments sum is not equal to Output commitments.", ("net_public", net_public) );
+   } 
 
-      for( string a : output_public_keys )
+
+   /**
+    * Require all outputs to be sorted.
+    * This prevents duplicates AND prevents implementations
+    * From accidentally leaking information by how they arrange commitments.
+    */
+   void transfer_to_confidential_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( from );
+
+      FC_ASSERT( fee.amount >= 0 );
+      FC_ASSERT( amount.amount > 0 );
+
+      FC_ASSERT( is_valid_symbol( fee.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", fee.symbol) );
+      FC_ASSERT( is_valid_symbol( amount.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+
+      vector< commitment_type > in;
+      vector< commitment_type > out(outputs.size());
+      int64_t net_public = amount.amount.value;
+
+      for( uint32_t i = 0; i < out.size(); ++i )
       {
-         FC_ASSERT( a.size() < MAX_STRING_LENGTH,
-         "Output public key is too long." );
-         FC_ASSERT( a.size() > 0,
-            "Output public key is required." );
-         FC_ASSERT( fc::is_utf8( a ),
-            "Output public key is not UTF8" );
+         out[i] = outputs[i].commitment;
+         if( i > 0 )
+         {
+            FC_ASSERT( out[i-1] < out[i], "All outputs must be sorted by commitment id" );
+         }
+         
+         FC_ASSERT( !outputs[i].owner.is_impossible(),
+            "Balance owner authority cannot be impossible to sign." );
       }
+      FC_ASSERT( out.size(), "Transfer must have at least one output" );
 
-      for( asset a : output_public_key_amounts )
+      auto public_c = fc::ecc::blind(blinding_factor,net_public);
+
+      FC_ASSERT( fc::ecc::verify_sum( {public_c}, out, 0 ), "", ("net_public",net_public) );
+
+      if( outputs.size() > 1 )
       {
-         FC_ASSERT( a.amount > 0,
-            "INVALID TRANSFER: NEGATIVE AMOUNT - THEFT NOT PERMITTED." );
-         FC_ASSERT( is_valid_symbol( a.symbol ),
-            "Symbol ${symbol} is not a valid symbol", ("symbol", a.symbol) );
+         for( auto out : outputs )
+         {
+            auto info = fc::ecc::range_get_info( out.range_proof );
+            FC_ASSERT( info.max_value <= MAX_ASSET_SUPPLY );
+         }
       }
    }
+
+
+   /**
+    * Requiring all inputs to be sorted we also prevent duplicate commitments on the input
+    */
+   void transfer_from_confidential_operation::validate()const
+   {
+      validate_account_name( to );
+
+      FC_ASSERT( is_valid_symbol( fee.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", fee.symbol) );
+      FC_ASSERT( is_valid_symbol( amount.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+
+      FC_ASSERT( amount.amount > 0 );
+      FC_ASSERT( fee.amount >= 0 );
+      FC_ASSERT( inputs.size() > 0 );
+      FC_ASSERT( amount.symbol == fee.symbol );
+
+      vector< commitment_type >      in(inputs.size());
+
+      vector< commitment_type >      out;
+
+      int64_t                        net_public = fee.amount.value + amount.amount.value;
+
+      out.push_back( fc::ecc::blind( blinding_factor, net_public ) );
+
+      for( uint32_t i = 0; i < in.size(); ++i )
+      {
+         in[i] = inputs[i].commitment;
+
+         if( i > 0 )
+         {
+            FC_ASSERT( in[i-1] < in[i], "all inputs must be sorted by commitment id" );
+         } 
+      }
+      FC_ASSERT( in.size(), "there must be at least one input" );
+      FC_ASSERT( fc::ecc::verify_sum( in, out, 0 ) );
+   }
+
 
 
    //============================//
    // === Balance Operations === //
    //============================//
+
 
 
    void claim_reward_balance_operation::validate() const
@@ -2397,12 +2514,12 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( account );
 
-      FC_ASSERT( first_amount.amount > 0,
-         "First Amount must be greater than zero." );
+      FC_ASSERT( first_amount.amount >= BLOCKCHAIN_PRECISION,
+         "First Amount must be greater than or equal to 1 unit." );
       FC_ASSERT( is_valid_symbol( first_amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", first_amount.symbol) );
-      FC_ASSERT( second_amount.amount > 0,
-         "Second Amount must be greater than zero." );
+      FC_ASSERT( second_amount.amount >= BLOCKCHAIN_PRECISION,
+         "Second Amount must be greater than or equal to 1 unit." );
       FC_ASSERT( is_valid_symbol( second_amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", second_amount.symbol) );
    }
@@ -2413,8 +2530,8 @@ namespace node { namespace protocol {
       validate_account_name( account );
       validate_account_name( interface );
 
-      FC_ASSERT( amount.amount > 0,
-         "Amount must be greater than zero." );
+      FC_ASSERT( amount.amount >= 0,
+         "Amount must be greater than or equal to zero." );
       FC_ASSERT( is_valid_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
       FC_ASSERT( is_valid_symbol( receive_asset ),
@@ -2432,7 +2549,7 @@ namespace node { namespace protocol {
       validate_account_name( account );
 
       FC_ASSERT( amount.amount > 0,
-         "Amount must be greater than zero." );
+         "Amount must be greater than or equal to zero." );
       FC_ASSERT( is_valid_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
       FC_ASSERT( is_valid_symbol( pair_asset ),
@@ -2444,8 +2561,8 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( account );
 
-      FC_ASSERT( amount.amount > 0,
-         "Amount must be greater than zero." );
+      FC_ASSERT( amount.amount >= 0,
+         "Amount must be greater than or equal to zero." );
       FC_ASSERT( is_valid_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
       FC_ASSERT( is_valid_symbol( receive_asset ),
@@ -2457,8 +2574,8 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( account );
 
-      FC_ASSERT( amount.amount > 0,
-         "Amount must be greater than zero." );
+      FC_ASSERT( amount.amount >= 0,
+         "Amount must be greater than or equal to zero." );
       FC_ASSERT( is_valid_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
    }
@@ -2468,12 +2585,12 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( account );
 
-      FC_ASSERT( amount.amount > 0,
-         "Amount must be greater than zero." );
+      FC_ASSERT( amount.amount >= 0,
+         "Amount must be greater than or equal to zero." );
       FC_ASSERT( is_valid_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
-      FC_ASSERT( collateral.amount > 0,
-         "Amount must be greater than zero." );
+      FC_ASSERT( collateral.amount >= 0,
+         "Amount must be greater than or equal to zero." );
       FC_ASSERT( is_valid_symbol( collateral.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
    }
@@ -2483,8 +2600,8 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( account );
 
-      FC_ASSERT( amount.amount > 0,
-         "Amount must be greater than zero." );
+      FC_ASSERT( amount.amount >= 0,
+         "Amount must be greater than or equal to zero." );
       FC_ASSERT( is_valid_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
    }
@@ -2494,7 +2611,7 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( account );
 
-      FC_ASSERT( amount.amount > 0,
+      FC_ASSERT( amount.amount >= 0,
          "Amount must be greater than zero." );
       FC_ASSERT( is_valid_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
@@ -2610,18 +2727,19 @@ namespace node { namespace protocol {
 
    void asset_options::validate()const
    {
-      FC_ASSERT( max_supply > 0, 
-         "Maximum asset supply must be greater than zero." );
-      FC_ASSERT( max_supply <= MAX_ASSET_SUPPLY,
-         "Max supply is too high." );
-      FC_ASSERT( market_fee_percent <= PERCENT_100,
-         "Market fee percent must be less than 100%." );
-      FC_ASSERT( max_market_fee >= 0 && max_market_fee <= MAX_ASSET_SUPPLY,
-         "Max market fee must be between 0 and Max asset supply" );
-      FC_ASSERT( stake_intervals >= 0,
-         "Stake intervals must be greater than or equal to 0.");
-      FC_ASSERT( unstake_intervals >= 0,
-         "Unstake intervals must be greater than or equal to 0.");
+      FC_ASSERT( display_symbol.size(),
+         "Display Symbol are required." );
+      FC_ASSERT( display_symbol.size() < MAX_URL_LENGTH,
+         "Display Symbol is too long." );
+      FC_ASSERT( fc::is_utf8( display_symbol ), 
+         "Display Symbol is not formatted in UTF8." );
+
+      FC_ASSERT( details.size(),
+         "Details are required." );
+      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ), 
+         "Details are not formatted in UTF8." );
 
       if( json.size() > 0 )
       {
@@ -2631,12 +2749,6 @@ namespace node { namespace protocol {
             "JSON Metadata not valid JSON." );
       }
 
-      FC_ASSERT( details.size(),
-         "Details are required." );
-      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
-         "Details are too long." );
-      FC_ASSERT( fc::is_utf8( details ), 
-         "Details are not formatted in UTF8." );
       FC_ASSERT( url.size() < MAX_URL_LENGTH,
          "URL is too long." );
       FC_ASSERT( fc::is_utf8( url ),
@@ -2645,32 +2757,194 @@ namespace node { namespace protocol {
       {
          validate_url( url );
       }
+
+      FC_ASSERT( max_supply > 0, 
+         "Maximum asset supply must be greater than zero." );
+      FC_ASSERT( max_supply <= MAX_ASSET_SUPPLY,
+         "Max supply is too high." );
+      FC_ASSERT( market_fee_percent <= PERCENT_100,
+         "Market fee percent must be between 0 and 100%." );
+      FC_ASSERT( market_fee_share_percent <= PERCENT_100,
+         "Market fee share percent must be between 0 and 100%." );
+      FC_ASSERT( max_market_fee <= MAX_ASSET_SUPPLY,
+         "Max market fee must be between 0 and Max asset supply" );
       
       // There must be no high bits in permissions whose meaning is not known.
+
       FC_ASSERT( !( issuer_permissions & ~ASSET_ISSUER_PERMISSION_MASK ) );
+
       // The global_settle flag may never be set (this is a permission only)
+
       FC_ASSERT( !( flags & int( asset_issuer_permission_flags::global_settle ) ) );
 
       if( !whitelist_authorities.empty() || !blacklist_authorities.empty() )
       {
          FC_ASSERT( flags & int( asset_issuer_permission_flags::balance_whitelist ) );
       }
-         
-      for( auto item : whitelist_markets )
+
+      for( account_name_type item : whitelist_authorities )
       {
-         FC_ASSERT( blacklist_markets.find(item) == blacklist_markets.end() );
+         FC_ASSERT( std::find( blacklist_authorities.begin(), blacklist_authorities.end(), item ) == blacklist_authorities.end() );
       }
-      for( auto item : blacklist_markets )
+      for( account_name_type item : blacklist_authorities )
       {
-         FC_ASSERT( whitelist_markets.find(item) == whitelist_markets.end() );
-      } 
-      FC_ASSERT( minimum_feeds > 0 );
-      FC_ASSERT( asset_settlement_offset_percent <= PERCENT_100 );
-      FC_ASSERT( maximum_asset_settlement_volume <= PERCENT_100 );
+         FC_ASSERT( std::find( whitelist_authorities.begin(), whitelist_authorities.end(), item ) == whitelist_authorities.end() );
+      }
+      for( asset_symbol_type item : whitelist_markets )
+      {
+         FC_ASSERT( std::find( blacklist_markets.begin(), blacklist_markets.end(), item ) == blacklist_markets.end() );
+      }
+      for( asset_symbol_type item : blacklist_markets )
+      {
+         FC_ASSERT( std::find( whitelist_markets.begin(), whitelist_markets.end(), item ) == whitelist_markets.end() );
+      }
+
+      // === Currency Asset Options === //
+
+      FC_ASSERT( is_valid_symbol( block_reward.symbol ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", block_reward.symbol) );
+      FC_ASSERT( block_reward.amount > 0,
+         "Block reward must be greater than zero." );
+      FC_ASSERT( block_reward_reduction_percent <= PERCENT_100,
+         "Block Reward reduction percent must be between 0 and 100%." );
+      FC_ASSERT( block_reward_reduction_days > 0,
+         "Block Reward reduction days must be greater than 0." );
+      FC_ASSERT( content_reward_percent <= PERCENT_100,
+         "Content reward percent must be between 0 and 100%." );
+      FC_ASSERT( is_valid_symbol( equity_asset ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", equity_asset) );
+      FC_ASSERT( equity_reward_percent <= PERCENT_100,
+         "Equity reward percent must be between 0 and 100%." );
+      FC_ASSERT( producer_reward_percent <= PERCENT_100,
+         "Producer reward percent must be between 0 and 100%." );
+      FC_ASSERT( supernode_reward_percent <= PERCENT_100,
+         "Supernode reward percent must be between 0 and 100%." );
+      FC_ASSERT( power_reward_percent <= PERCENT_100,
+         "Power reward percent must be between 0 and 100%." );
+      FC_ASSERT( community_fund_reward_percent <= PERCENT_100,
+         "Community Fund reward percent must be between 0 and 100%." );
+      FC_ASSERT( development_reward_percent <= PERCENT_100,
+         "Development reward percent must be between 0 and 100%." );
+      FC_ASSERT( marketing_reward_percent <= PERCENT_100,
+         "Marketing reward percent must be between 0 and 100%." );
+      FC_ASSERT( advocacy_reward_percent <= PERCENT_100,
+         "Advocacy reward percent must be between 0 and 100%." );
+      FC_ASSERT( activity_reward_percent <= PERCENT_100,
+         "Activity reward percent must be between 0 and 100%." );
+      FC_ASSERT( producer_block_reward_percent <= PERCENT_100,
+         "Producer Block reward percent must be between 0 and 100%." );
+      FC_ASSERT( validation_reward_percent <= PERCENT_100,
+         "Validation reward percent must be between 0 and 100%." );
+      FC_ASSERT( txn_stake_reward_percent <= PERCENT_100,
+         "Transaction Stake reward percent must be between 0 and 100%." );
+      FC_ASSERT( work_reward_percent <= PERCENT_100,
+         "Work reward percent must be between 0 and 100%." );
+      FC_ASSERT( producer_activity_reward_percent <= PERCENT_100,
+         "Producer Activity reward percent must be between 0 and 100%." );
+
+      // === Stablecoin Options === //
+
       FC_ASSERT( feed_lifetime >= MIN_FEED_LIFETIME,
          "Feed lifetime must be greater than network minimum." );
+      FC_ASSERT( minimum_feeds > 0,
+         "Minimum Feeds must be greater than 0." );
       FC_ASSERT( asset_settlement_delay >= MIN_SETTLEMENT_DELAY,
          "Force Settlement delay must be greater than network minimum." );
+      FC_ASSERT( asset_settlement_offset_percent <= PERCENT_100,
+         "Asset Settlement offset percent must be between 0 and 100%." );
+      FC_ASSERT( maximum_asset_settlement_volume <= PERCENT_100,
+         "Maximum Asset Settlement volume percent must be between 0 and 100%." );
+      FC_ASSERT( is_valid_symbol( backing_asset ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", backing_asset) );
+
+      // === Equity Asset Options === //
+
+      FC_ASSERT( dividend_share_percent <= PERCENT_100,
+         "Dividend Share percent must be between 0 and 100%." );
+      FC_ASSERT( liquid_dividend_percent <= PERCENT_100,
+         "Liquid Dividend Share percent must be between 0 and 100%." );
+      FC_ASSERT( staked_dividend_percent <= PERCENT_100,
+         "Staked Dividend Share percent must be between 0 and 100%." );
+      FC_ASSERT( savings_dividend_percent <= PERCENT_100,
+         "Savings Dividend Share percent must be between 0 and 100%." );
+      FC_ASSERT( liquid_voting_rights <= PERCENT_100,
+         "Liquid Voting Rights must be between 0 and 100%." );
+      FC_ASSERT( staked_voting_rights <= PERCENT_100,
+         "Staked Voting Rights must be between 0 and 100%." );
+      FC_ASSERT( savings_voting_rights <= PERCENT_100,
+         "Savings Voting Rights must be between 0 and 100%." );
+      FC_ASSERT( min_active_time <= fc::days(365) && 
+         min_active_time >= fc::days(1),
+         "Min active time must be between 1 and 365 days." );
+      FC_ASSERT( min_balance <= MAX_ASSET_SUPPLY &&
+         min_balance >= 0,
+         "Activty min balance must be between 0 and max asset supply." );
+      FC_ASSERT( min_producers <= 100 && min_producers >= 0,
+         "Activity min producers must be between 0 and 100." );
+      FC_ASSERT( boost_balance <= MAX_ASSET_SUPPLY &&
+         boost_balance >= 0,
+         "Activty boost balance must be between 0 and max asset supply." );
+      FC_ASSERT( boost_activity <= MAX_ASSET_SUPPLY &&
+         boost_activity >= 0,
+         "Activty boost activity must be between 0 and max asset supply." );
+      FC_ASSERT( boost_producers <= 100 && 
+         boost_producers >= 0,
+         "Activity boost producers must be between 0 and 100." );
+      FC_ASSERT( boost_top <= PERCENT_100,
+         "Boost Top must be between 0 and 100%." );
+
+      // === Credit Asset options === //
+
+      FC_ASSERT( is_valid_symbol( buyback_asset ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", buyback_asset) );
+      buyback_price.validate();
+      FC_ASSERT( liquid_fixed_interest_rate <= PERCENT_100,
+         "Liquid Fixed Interest percent must be between 0 and 100%." );
+      FC_ASSERT( liquid_variable_interest_rate <= PERCENT_100,
+         "Liquid Variable Interest percent must be between 0 and 100%." );
+      FC_ASSERT( staked_fixed_interest_rate <= PERCENT_100,
+         "Staked Fixed Interest percent must be between 0 and 100%." );
+      FC_ASSERT( staked_variable_interest_rate <= PERCENT_100,
+         "Staked Variable Interest percent must be between 0 and 100%." );
+      FC_ASSERT( savings_fixed_interest_rate <= PERCENT_100,
+         "Savings Fixed Interest percent must be between 0 and 100%." );
+      FC_ASSERT( savings_variable_interest_rate <= PERCENT_100,
+         "Savings Variable Interest percent must be between 0 and 100%." );
+      FC_ASSERT( var_interest_range <= PERCENT_100,
+         "Variable Interest Range must be between 0 and 100%." );
+
+      // === Unique Asset Options === //
+
+      FC_ASSERT( is_valid_symbol( ownership_asset ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", ownership_asset) );
+
+      for( account_name_type item : control_list )
+      {
+         FC_ASSERT( std::find( control_list.begin(), control_list.end(), item ) != control_list.end() );
+      }
+      for( account_name_type item : access_list )
+      {
+         FC_ASSERT( std::find( access_list.begin(), access_list.end(), item ) != access_list.end() );
+      }
+
+      FC_ASSERT( is_valid_symbol( access_price.symbol ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", access_price.symbol) );
+      FC_ASSERT( access_price.amount >= 0,
+         "Access Price must be greater than or equal to 0." );
+
+      // === Bond Asset Options === //
+
+      FC_ASSERT( is_valid_symbol( value.symbol ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", value.symbol) );
+      FC_ASSERT( value.amount >= 0,
+         "Value must be greater than or equal to 0." );
+      FC_ASSERT( collateralization <= PERCENT_100,
+         "Collateralization percentage must be between 0 and 100%." );
+      FC_ASSERT( coupon_rate_percent <= PERCENT_100,
+         "Coupon Rate Percent must be between 0 and 100%." );
+      maturity_date.validate();
+      FC_ASSERT( maturity_date.day == 1,
+         "Maturity date should be the first of the month." );
    }
 
    void asset_create_operation::validate()const
@@ -2696,7 +2970,6 @@ namespace node { namespace protocol {
          "Asset must have initial liquidity in the USD asset." );
       FC_ASSERT( usd_liquidity.amount >= 10 * BLOCKCHAIN_PRECISION, 
          "Asset must have at least 10 USD asset of initial liquidity." );
-
       FC_ASSERT( asset_type.size() < MAX_URL_LENGTH,
          "Asset Type is invalid." );
       FC_ASSERT( fc::is_utf8( asset_type ),
@@ -2990,20 +3263,33 @@ namespace node { namespace protocol {
       }
    }
 
-   void proof_of_work::create( const block_id_type& prev, const account_name_type& account_name, uint64_t n )
+   /**
+    * X11 and ECC Signature Based Proof of Work Function:
+    * 
+    * 1 - Take the hash of the Input to the proof.
+    * 2 - Get the Private key from the hash.
+    * 3 - Take the Hash of the private key.
+    * 4 - Sign the Hash of the private key, with that same private key.
+    * 5 - Take the Hash of the Signature.
+    * 6 - Get the Public Key that would have signed the Hash of the Signature to result in the original signature.
+    * 7 - Take the hash of both the Input to the proof and the notional public key.
+    */
+   void x11_proof_of_work::create( const block_id_type& prev, const account_name_type& account_name, uint64_t n )
    {
       input.miner_account = account_name;
       input.prev_block = prev;
       input.nonce = n;
 
-      auto prv_key = fc::sha256::hash( input );
-      auto input = fc::sha256::hash( prv_key );
-      auto signature = fc::ecc::private_key::regenerate( prv_key ).sign_compact(input);
+      x11 key_secret = x11::hash( input );
+      private_key_type private_key = fc::ecc::private_key::regenerate( fc::sha256( key_secret ) );
 
-      auto sig_hash            = fc::sha256::hash( signature );
-      public_key_type recover  = fc::ecc::public_key( signature, sig_hash );
+      x11 key_hash = x11::hash( private_key );
+      signature_type signature = private_key.sign_compact( fc::sha256( key_hash ) );
 
-      fc::sha256 work = fc::sha256::hash(std::make_pair(input,recover));
+      x11 sig_hash = x11::hash( signature );
+      public_key_type recovered_pub_key = fc::ecc::public_key( signature, fc::sha256( sig_hash ) );
+
+      x11 work = x11::hash( std::make_pair( input, recovered_pub_key ) );
       pow_summary = work.approx_log_32();
    }
 
@@ -3018,12 +3304,13 @@ namespace node { namespace protocol {
       pow_summary = fc::sha256::hash( proof.inputs ).approx_log_32();
    }
 
-   void proof_of_work::validate()const
+   void x11_proof_of_work::validate()const
    {
       validate_account_name( input.miner_account );
-      proof_of_work tmp; 
-      tmp.create( input.prev_block, input.miner_account, input.nonce );
-      FC_ASSERT( pow_summary == tmp.pow_summary, 
+      x11_proof_of_work proof; 
+      proof.create( input.prev_block, input.miner_account, input.nonce );
+
+      FC_ASSERT( pow_summary == proof.pow_summary, 
          "Reported work does not match calculated work" );
    }
 

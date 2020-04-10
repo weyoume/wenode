@@ -65,6 +65,12 @@ void transfer_evaluator::do_apply( const transfer_operation& o )
    {
       FC_ASSERT( o.amount.amount == BLOCKCHAIN_PRECISION,
          "Unique asset must be transferred as a single unit asset." );
+      const asset_unique_data_object& unique = _db.get_unique_data( asset_obj.symbol );
+
+      _db.modify( unique, [&]( asset_unique_data_object& audo )
+      {
+         audo.controlling_owner = o.to;
+      });
    }
 
    FC_ASSERT( to_account_permissions.is_authorized_transfer( o.from, asset_obj ),
@@ -506,81 +512,170 @@ void transfer_recurring_accept_evaluator::do_apply( const transfer_recurring_acc
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
-void transfer_confidential_evaluator::do_apply( const transfer_confidential_operation& o )
+void transfer_confidential_evaluator::do_apply( const transfer_confidential_operation& o ) 
 { try {
-   const asset_object& asset_obj = _db.get_asset( o.transfer_asset );
+   const auto& confidential_idx = _db.get_index< confidential_balance_index >().indices().get< by_commitment >();
+   auto confidential_itr = confidential_idx.begin();
+
+   const asset_object& asset_obj = _db.get_asset( o.fee.symbol );
+   transaction_id_type txid = _db.get_current_transaction_id();
+   uint16_t op_in_trx = _db.get_current_op_in_trx();
    time_point now = _db.head_block_time();
-   asset total_input = asset( 0, asset_obj.symbol );
-   asset total_output = asset( 0, asset_obj.symbol );
 
-   for( size_t i = 0; i < o.input_accounts.size(); i++ )
+   FC_ASSERT( asset_obj.enable_confidential(), 
+      "Asset does not enable confidential transfers." );
+   FC_ASSERT( !asset_obj.is_transfer_restricted(),
+      "Asset is transfer restricted." );
+   FC_ASSERT( !asset_obj.require_balance_whitelist(),
+      "Asset requires a whitelist to hold balance." );
+
+   for( const auto& out : o.outputs )
    {
-      account_name_type a = o.input_accounts[ i ];
-      asset amount = o.input_account_amounts[ i ];
-
-      const account_object& from_account = _db.get_account( a );
-      FC_ASSERT( from_account.active,
-         "Account: ${s} must be active to receive transfer.",("s", a) );
-      const account_permission_object& from_account_permissions = _db.get_account_permissions( a );
-      FC_ASSERT( from_account_permissions.is_authorized_transfer( a, asset_obj ),
-         "Transfer is not authorized, due to sender account's asset permisssions." );
-      asset from_liquid = _db.get_liquid_balance( a, asset_obj.symbol );
-      FC_ASSERT( from_liquid >= amount,
-         "Account does not have sufficient liquid balance for confidential transfer." );
-      _db.adjust_liquid_balance( a, -amount );
-      total_input += amount;
+      out.owner.validate();
+      for( const auto& a : out.owner.account_auths )
+      {
+         const account_object& acc = _db.get_account( a.first );
+         FC_ASSERT( acc.active,
+            "Account must be active to be balance account authority." );
+      }
    }
 
-   for( size_t i = 0; i < o.input_balances.size(); i++ )
+   for( const auto& in : o.inputs )
    {
-      digest_type hash = o.input_balances[ i ];
-      signature_type sig = o.input_balance_signatures[ i ];
-      public_key_type pubkey = fc::ecc::public_key( sig, hash, true );
-      const confidential_balance_object& balance = _db.get_confidential_balance( hash );
-      FC_ASSERT( pubkey == balance.spend_key,
-         "Signature is not valid to spend the balance." );
-      total_input += balance.amount;
-      _db.remove( balance );
+      confidential_itr = confidential_idx.find( in.commitment );
+      FC_ASSERT( confidential_itr != confidential_idx.end(),
+         "Input Commitment is not found", ("commitment",in.commitment) );
+      FC_ASSERT( confidential_itr->symbol == o.fee.symbol,
+         "Confidential Balance must be the same asset as fee asset." );
+      FC_ASSERT( confidential_itr->owner == in.owner,
+         "Confidential Balance owner is not the same as input balance." );
    }
 
-   for( size_t i = 0; i < o.output_accounts.size(); i++ )
+   for( const auto& in : o.inputs )
    {
-      account_name_type a = o.output_accounts[ i ];
-      asset amount = o.output_account_amounts[ i ];
-      const account_object& to_account = _db.get_account( a );
-      FC_ASSERT( to_account.active,
-         "Account: ${s} must be active to receive transfer.",("s", a) );
-      const account_permission_object& to_account_permissions = _db.get_account_permissions( a );
-      FC_ASSERT( to_account_permissions.is_authorized_transfer( a, asset_obj ),
-         "Transfer is not authorized, due to recipient account's asset permisssions." );
-      _db.adjust_liquid_balance( a, amount );
-      total_output += amount;
+      confidential_itr = confidential_idx.find( in.commitment );
+      FC_ASSERT( confidential_itr != confidential_idx.end(), 
+         "Input Commitment is not found", ("commitment",in.commitment) );
+      _db.remove( *confidential_itr );
    }
 
-   for( size_t i = 0; i < o.output_public_keys.size(); i++ )
+   for( size_t i = 0; i < o.outputs.size(); i++ )
    {
-      public_key_type key = public_key_type( o.output_public_keys[ i ] );
-      asset amount = o.output_public_key_amounts[ i ];
-      total_output += amount;
+      confidential_output out = o.outputs[ i ];
       uint16_t index = i;
-      transaction_id_type txid = _db.get_current_transaction_id();
-      uint16_t op_in_trx = _db.get_current_op_in_trx();
-
+      
       _db.create< confidential_balance_object >( [&]( confidential_balance_object& cbo )
       {
+         cbo.owner = out.owner;
+         cbo.commitment = out.commitment;
          cbo.prev = txid;
          cbo.op_in_trx = op_in_trx;
          cbo.index = index;
-         cbo.spend_key = key;
-         cbo.amount = amount;
          cbo.created = now;
       });
    }
 
-   FC_ASSERT( total_input == total_output,
-      "Confidential Transfer must spend an amount equal to input amount." );
-   
-} FC_CAPTURE_AND_RETHROW( ( o )) }
+   _db.pay_network_fees( o.fee );
+   _db.adjust_confidential_supply( -o.fee );
 
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
+
+void transfer_to_confidential_evaluator::do_apply( const transfer_to_confidential_operation& o ) 
+{ try {
+   const account_name_type& signed_for = o.from;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   const asset_object& asset_obj = _db.get_asset( o.amount.symbol );
+   transaction_id_type txid = _db.get_current_transaction_id();
+   uint16_t op_in_trx = _db.get_current_op_in_trx();
+   time_point now = _db.head_block_time();
+
+   FC_ASSERT( asset_obj.enable_confidential(), 
+      "Asset does not enable confidential transfers." );
+   FC_ASSERT( !asset_obj.is_transfer_restricted(),
+      "Asset is transfer restricted." );
+   FC_ASSERT( !asset_obj.require_balance_whitelist(),
+      "Asset requires a whitelist to hold balance." );
+
+   for( confidential_output out : o.outputs )
+   {
+      out.owner.validate();
+      for( const auto& a : out.owner.account_auths )
+      {
+         const account_object& acc = _db.get_account( a.first );
+         FC_ASSERT( acc.active,
+            "Account must be active to be balance account authority." );
+      }
+   }
+
+   asset from_liquid = _db.get_liquid_balance( o.from, asset_obj.symbol );
+   FC_ASSERT( from_liquid >= ( o.amount + o.fee ),
+      "Account does not have sufficient liquid balance for confidential transfer." );
+
+   _db.adjust_liquid_balance( o.from, -( o.amount + o.fee ) );
+   _db.pay_network_fees( o.fee );
+   _db.adjust_confidential_supply( o.amount );
+
+   for( size_t i = 0; i < o.outputs.size(); i++ )
+   {
+      confidential_output out = o.outputs[ i ];
+      uint16_t index = i;
+      
+      _db.create< confidential_balance_object >( [&]( confidential_balance_object& cbo )
+      {
+         cbo.owner = out.owner;
+         cbo.commitment = out.commitment;
+         cbo.prev = txid;
+         cbo.op_in_trx = op_in_trx;
+         cbo.index = index;
+         cbo.created = now;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW( (o) ) }
+
+
+void transfer_from_confidential_evaluator::do_apply( const transfer_from_confidential_operation& o )
+{ try {
+   const auto& confidential_idx = _db.get_index< confidential_balance_index >().indices().get< by_commitment >();
+   auto confidential_itr = confidential_idx.begin();
+
+   for( const auto& in : o.inputs )
+   {
+      confidential_itr = confidential_idx.find( in.commitment );
+
+      FC_ASSERT( confidential_itr != confidential_idx.end(), 
+         "Confidential balance not found." );
+      FC_ASSERT( confidential_itr->symbol == o.amount.symbol,
+         "Confidential balance asset is not the same as payment symbol." );
+      FC_ASSERT( confidential_itr->symbol == o.fee.symbol,
+         "Confidential Balance must be the same asset as fee asset." );
+      FC_ASSERT( confidential_itr->owner == in.owner,
+         "Confidential Balance owner is not the same as input balance." );
+   }
+
+   _db.adjust_confidential_supply( -( o.amount + o.fee ) );
+   _db.pay_network_fees( o.fee );
+   _db.adjust_liquid_balance( o.to, o.amount );
+   
+   for( const auto& in : o.inputs )
+   {
+      confidential_itr = confidential_idx.find( in.commitment );
+      FC_ASSERT( confidential_itr != confidential_idx.end() );
+      _db.remove( *confidential_itr );
+   }
+
+} FC_CAPTURE_AND_RETHROW( (o) ) }
 
 } } // node::chain

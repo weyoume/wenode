@@ -52,7 +52,9 @@ namespace node { namespace chain {
 
          public_key_type                   public_key;                          ///< The public key used to encrypt the post, holders of the private key may decrypt. 
 
-         feed_reach_type                   reach;                               ///< The reach of the post across followers, connections, friends and companions
+         feed_reach_type                   reach;                               ///< The reach of the post across followers, connections, friends and companions.
+
+         connection_tier_type              reply_connection;                    ///< Replies to the comment must be connected to the author to at least this level. 
 
          community_name_type               community;                           ///< The name of the community to which the post is uploaded to. Null string if no community. 
 
@@ -75,6 +77,8 @@ namespace node { namespace chain {
          shared_string                     category;                            ///< Permlink of root post that this comment is applied to.
 
          asset                             comment_price;                       ///< The price paid to create a comment.
+
+         asset                             reply_price;                         ///< The price paid to the root comment author when the root author replies to the comment.
 
          asset                             premium_price;                       ///< The price paid to unlock the post's premium encryption.
 
@@ -177,8 +181,12 @@ namespace node { namespace chain {
             return public_key != public_key_type();
          };
 
-         bool                              comment_paid( account_name_type name ) const    ///< return true if user has paid comment price
+         bool                              comment_paid( account_name_type name ) const    ///< Return true if user has paid comment price
          {
+            if( name == author )
+            {
+               return true;
+            }
             if( comment_price.amount > 0 )
             {
                if( payments_received.find( name ) != payments_received.end() )
@@ -212,7 +220,48 @@ namespace node { namespace chain {
             {
                return true;     // No comment price, allow all comments.
             }
-         }   
+         }
+
+         bool                              premium_paid( account_name_type name ) const    ///< Return true if user has paid premium price
+         {
+            if( name == author )
+            {
+               return true;
+            }
+            if( premium_price.amount > 0 )
+            {
+               if( payments_received.find( name ) != payments_received.end() )
+               {
+                  flat_map< asset_symbol_type, asset > payments = payments_received.at( name );
+
+                  if( payments.find( premium_price.symbol ) != payments.end() )
+                  {
+                     asset premium_payment = payments.at( premium_price.symbol );
+
+                     if( premium_payment >= premium_price )
+                     {
+                        return true;    // Premium price payment received.
+                     }
+                     else
+                     {
+                        return false; 
+                     } 
+                  }
+                  else
+                  {
+                     return false; 
+                  }
+               }
+               else
+               {
+                  return false; 
+               }
+            }
+            else
+            {
+               return true;     // No premium price, allow all comments.
+            }
+         }
    };
    
 
@@ -414,13 +463,13 @@ namespace node { namespace chain {
 
          community_name_type            community;        ///< The name of the community to which the post is uploaded to.
 
-         vector< tag_name_type >        tags;             ///< Set of string tags for sorting the post by
+         vector< tag_name_type >        tags;             ///< Set of string tags for sorting the post by.
 
          uint16_t                       rating;           ///< Moderator updated rating as to the maturity of the content, and display sensitivity. 
 
          shared_string                  details;          ///< Explaination as to what rule the post is in contravention of and why it was tagged.
 
-         account_name_type              interface;        ///< Interface account used for the transaction
+         account_name_type              interface;        ///< Interface account used for the transaction.
 
          bool                           filter;           ///< True if the post should be filtered by the community or governance address subscribers. 
 
@@ -432,6 +481,7 @@ namespace node { namespace chain {
 
    /** 
     * Encrypted Private messages are sent between users following this specification:
+    * 
     * 1 - Plaintext is encrypted with the private key of the sender
     * 2 - This is then encrypted with the public key of the recipient.
     * 3 - The ciphertext is included in the message field
@@ -1155,6 +1205,7 @@ FC_REFLECT( node::chain::comment_object,
          (post_type)
          (public_key)
          (reach)
+         (reply_connection)
          (community)
          (tags)
          (interface)
@@ -1166,6 +1217,7 @@ FC_REFLECT( node::chain::comment_object,
          (json)
          (category)
          (comment_price)
+         (reply_price)
          (premium_price)
          (payments_received)
          (beneficiaries)

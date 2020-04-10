@@ -12,8 +12,6 @@
 
 namespace node { namespace chain {
 
-   
-
    class account_object : public object< account_object_type, account_object >
    {
       account_object() = delete;

@@ -123,7 +123,7 @@ bool database::apply_order( const limit_order_object& new_order_object )
 
    bool to_check_call_orders = false;
 
-   const asset_bitasset_data_object* sell_abd_ptr = find_bitasset_data( sell_asset_symbol );
+   const asset_stablecoin_data_object* sell_abd_ptr = find_stablecoin_data( sell_asset_symbol );
    price call_match_price;
 
    if( sell_asset.is_market_issued() )
@@ -327,7 +327,7 @@ bool database::apply_order( const margin_order_object& new_order_object )
 
    bool to_check_call_orders = false;
 
-   const asset_bitasset_data_object* sell_abd_ptr = find_bitasset_data( sell_asset_symbol );
+   const asset_stablecoin_data_object* sell_abd_ptr = find_stablecoin_data( sell_asset_symbol );
    price call_match_price;
 
    if( sell_asset.is_market_issued() )
@@ -1224,7 +1224,7 @@ bool database::fill_call_order( const call_order_object& order, const asset& pay
 
    if( !global_settle )
    {
-      adjust_pending_supply( -receives );    // reduce the pending supply of the bitasset, as it has been repaid, unless globally settling
+      adjust_pending_supply( -receives );    // reduce the pending supply of the stablecoin, as it has been repaid, unless globally settling
    }
 
    if( collateral_freed.valid() )
@@ -2505,6 +2505,10 @@ void database::process_margin_updates()
          }        // Same Collateral and Debt
       }           // Same Debt
 
+      asset interest_fees = ( total_interest * INTEREST_FEE_PERCENT ) / PERCENT_100;
+      total_interest -= interest_fees;
+      pay_network_fees( interest_fees );
+
       modify( credit_pool, [&]( asset_credit_pool_object& c )
       {
          c.last_interest_rate = interest_rate;
@@ -2686,8 +2690,7 @@ asset database::network_credit_acquisition( const asset& amount, bool execute )
    asset credit_acquired;
 
    const asset_object& asset_obj = get_asset( amount.symbol );
-   FC_ASSERT( asset_obj.asset_type != asset_property_type::CREDIT_POOL_ASSET && 
-      asset_obj.asset_type != asset_property_type::LIQUIDITY_POOL_ASSET, 
+   FC_ASSERT( asset_obj.is_credit_enabled(), 
       "Cannot acquire assets that do not facilitate liquidity pools." );
 
    if( amount.symbol != SYMBOL_CREDIT )
@@ -2840,11 +2843,11 @@ bool database::exercise_option( const asset& option, const account_object& accou
 */
 void database::globally_settle_asset( const asset_object& mia, const price& settlement_price )
 { try {
-   const asset_bitasset_data_object& bitasset = get_bitasset_data( mia.symbol );
-   FC_ASSERT( !bitasset.has_settlement(),
+   const asset_stablecoin_data_object& stablecoin = get_stablecoin_data( mia.symbol );
+   FC_ASSERT( !stablecoin.has_settlement(),
       "Black swan already occurred, it should not happen again" );
 
-   const asset_symbol_type& backing_asset = bitasset.backing_asset;
+   const asset_symbol_type& backing_asset = stablecoin.backing_asset;
    asset collateral_gathered = asset( 0, backing_asset );
    const asset_dynamic_data_object& mia_dyn = get_dynamic_data( mia.symbol );
    auto original_mia_supply = mia_dyn.total_supply;
@@ -2853,8 +2856,8 @@ void database::globally_settle_asset( const asset_object& mia, const price& sett
 
    // Cancel all call orders and accumulate it into collateral_gathered.
 
-   auto call_itr = call_price_index.lower_bound( price::min( bitasset.backing_asset, mia.symbol ) );
-   auto call_end = call_price_index.upper_bound( price::max( bitasset.backing_asset, mia.symbol ) );
+   auto call_itr = call_price_index.lower_bound( price::min( stablecoin.backing_asset, mia.symbol ) );
+   auto call_end = call_price_index.upper_bound( price::max( stablecoin.backing_asset, mia.symbol ) );
    asset pays;
 
    while( call_itr != call_end )
@@ -2869,10 +2872,10 @@ void database::globally_settle_asset( const asset_object& mia, const price& sett
       collateral_gathered += pays;
       const call_order_object& order = *call_itr;
       ++call_itr;
-      FC_ASSERT( fill_call_order( order, pays, order.debt, settlement_price, true, NULL_ACCOUNT, true ) );  // Fill call orders without deducting pending supply of bitasset
+      FC_ASSERT( fill_call_order( order, pays, order.debt, settlement_price, true, NULL_ACCOUNT, true ) );  // Fill call orders without deducting pending supply of stablecoin
    }
 
-   modify( bitasset, [&]( asset_bitasset_data_object& obj )
+   modify( stablecoin, [&]( asset_stablecoin_data_object& obj )
    {
       obj.settlement_price = asset( original_mia_supply, mia.symbol ) / collateral_gathered;     // Activate global settlement price on asset
       obj.settlement_fund = collateral_gathered.amount;
@@ -2880,15 +2883,15 @@ void database::globally_settle_asset( const asset_object& mia, const price& sett
 } FC_CAPTURE_AND_RETHROW( (mia)(settlement_price) ) }
 
 
-void database::revive_bitasset( const asset_object& bitasset )
+void database::revive_stablecoin( const asset_object& stablecoin )
 { try {
-   FC_ASSERT( bitasset.is_market_issued(),
+   FC_ASSERT( stablecoin.is_market_issued(),
       "Asset must be a market issued asset." );
-   const asset_bitasset_data_object& bad = get_bitasset_data( bitasset.symbol );
+   const asset_stablecoin_data_object& bad = get_stablecoin_data( stablecoin.symbol );
 
    FC_ASSERT( bad.has_settlement(),
       "Asset must have a settlement price before it can be revived.");
-   const asset_dynamic_data_object& bdd = get_dynamic_data( bitasset.symbol );
+   const asset_dynamic_data_object& bdd = get_dynamic_data( stablecoin.symbol );
 
    FC_ASSERT( !bad.current_feed.settlement_price.is_null(),
       "Settlement price cannot be null to revive asset." );
@@ -2897,9 +2900,9 @@ void database::revive_bitasset( const asset_object& bitasset )
    {
       const asset_collateral_bid_object& pseudo_bid = create< asset_collateral_bid_object >([&]( asset_collateral_bid_object& bid )
       {
-         bid.bidder = bitasset.issuer;
+         bid.bidder = stablecoin.issuer;
          bid.collateral = asset( 0, bad.backing_asset );
-         bid.debt = asset( bdd.total_supply, bitasset.symbol );
+         bid.debt = asset( bdd.total_supply, stablecoin.symbol );
       });
 
       execute_bid( pseudo_bid, bdd.total_supply, bad.settlement_fund, bad.current_feed );
@@ -2910,33 +2913,33 @@ void database::revive_bitasset( const asset_object& bitasset )
          "Cannot have settlement fund with zero total asset supply." );
    }
       
-   cancel_bids_and_revive_mpa( bitasset, bad );
-} FC_CAPTURE_AND_RETHROW( (bitasset) ) }
+   cancel_bids_and_revive_mpa( stablecoin, bad );
+} FC_CAPTURE_AND_RETHROW( (stablecoin) ) }
 
 
-void database::cancel_bids_and_revive_mpa( const asset_object& bitasset, const asset_bitasset_data_object& bad )
+void database::cancel_bids_and_revive_mpa( const asset_object& stablecoin, const asset_stablecoin_data_object& bad )
 { try {
-   FC_ASSERT( bitasset.is_market_issued(),
+   FC_ASSERT( stablecoin.is_market_issued(),
       "Asset must be a market issued asset." );
    FC_ASSERT( bad.has_settlement(),
       "Asset must have a settlement price before it can be revived." );
    
    const auto& bid_idx = get_index< asset_collateral_bid_index >().indices().get< by_price >();
-   auto bid_itr = bid_idx.lower_bound( boost::make_tuple( bitasset.symbol, price::max( bad.backing_asset, bitasset.symbol ) ) );
+   auto bid_itr = bid_idx.lower_bound( boost::make_tuple( stablecoin.symbol, price::max( bad.backing_asset, stablecoin.symbol ) ) );
 
-   while( bid_itr != bid_idx.end() && bid_itr->inv_swan_price().quote.symbol == bitasset.symbol )
+   while( bid_itr != bid_idx.end() && bid_itr->inv_swan_price().quote.symbol == stablecoin.symbol )
    {
       const asset_collateral_bid_object& bid = *bid_itr;
       ++bid_itr;
       cancel_bid( bid, true );    // cancel remaining bids
    }
 
-   modify( bad, [&]( asset_bitasset_data_object& obj )
+   modify( bad, [&]( asset_stablecoin_data_object& obj )
    {
       obj.settlement_price = price();
       obj.settlement_fund = 0;
    });
-} FC_CAPTURE_AND_RETHROW( ( bitasset ) ) }
+} FC_CAPTURE_AND_RETHROW( ( stablecoin ) ) }
 
 
 void database::cancel_bid( const asset_collateral_bid_object& bid, bool create_virtual_op )
@@ -2957,7 +2960,7 @@ void database::cancel_bid( const asset_collateral_bid_object& bid, bool create_v
 /**
  * Converts a processed collateral bid into a call order
  * with the requested debt and collateral values, plus collateral dispursed from
- * the settlement fund of the bitasset.
+ * the settlement fund of the stablecoin.
  */
 void database::execute_bid( const asset_collateral_bid_object& bid, share_type debt, 
    share_type collateral_from_fund, const price_feed& current_feed )
@@ -3163,13 +3166,13 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
       return false;
    }
 
-   const asset_bitasset_data_object& bitasset = get_bitasset_data( mia.symbol );
+   const asset_stablecoin_data_object& stablecoin = get_stablecoin_data( mia.symbol );
 
-   if( check_for_blackswan( mia, enable_black_swan, &bitasset ) )
+   if( check_for_blackswan( mia, enable_black_swan, &stablecoin ) )
    {
       return false;
    }
-   if( bitasset.current_feed.settlement_price.is_null() ) 
+   if( stablecoin.current_feed.settlement_price.is_null() ) 
    {
       return false;
    }
@@ -3177,8 +3180,8 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
    auto limit_index = get_index < limit_order_index >();
    const auto& limit_price_index = limit_index.indices().get< by_high_price >();
 
-   auto max_price = price::max( mia.symbol, bitasset.backing_asset );      // looking for limit orders selling the most USD for the least CORE
-   auto min_price = bitasset.current_feed.max_short_squeeze_price();       // stop when limit orders are selling too little USD for too much CORE
+   auto max_price = price::max( mia.symbol, stablecoin.backing_asset );      // looking for limit orders selling the most USD for the least CORE
+   auto min_price = stablecoin.current_feed.max_short_squeeze_price();       // stop when limit orders are selling too little USD for too much CORE
 
    auto limit_itr = limit_price_index.lower_bound( max_price );            // limit_price_index is sorted from greatest to least
    auto limit_end = limit_price_index.upper_bound( min_price );
@@ -3190,8 +3193,8 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
 
    const auto& call_collateral_index = get_index< call_order_index >().indices().get< by_collateral >();
 
-   auto call_min = price::min( bitasset.backing_asset, mia.symbol );
-   auto call_max = price::max( bitasset.backing_asset, mia.symbol );
+   auto call_min = price::min( stablecoin.backing_asset, mia.symbol );
+   auto call_max = price::max( stablecoin.backing_asset, mia.symbol );
 
    auto call_collateral_itr = call_collateral_index.begin();
    auto call_collateral_end = call_collateral_itr;
@@ -3203,14 +3206,14 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
 
    uint64_t head_num = head_block_num();
 
-   while( !check_for_blackswan( mia, enable_black_swan, &bitasset ) && 
+   while( !check_for_blackswan( mia, enable_black_swan, &stablecoin ) && 
       limit_itr != limit_end && 
       ( call_collateral_itr != call_collateral_end ) )
    {
 
       const call_order_object& call_order = *call_collateral_itr;
 
-      if( ( bitasset.current_maintenance_collateralization < call_order.collateralization() ) ) 
+      if( ( stablecoin.current_maintenance_collateralization < call_order.collateralization() ) ) 
       {
          return margin_called;
       }
@@ -3226,11 +3229,11 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
          elog( "black swan detected on asset ${symbol} (${id}) at block ${b}", ("id",mia.symbol)("symbol",mia.symbol)("b",head_num) );
          edump((enable_black_swan));
          FC_ASSERT( enable_black_swan );
-         globally_settle_asset( mia, bitasset.current_feed.settlement_price );
+         globally_settle_asset( mia, stablecoin.current_feed.settlement_price );
          return true;
       }
 
-      usd_to_buy.amount = call_order.get_max_debt_to_cover( match_price, bitasset.current_feed.settlement_price, bitasset.current_feed.maintenance_collateral_ratio, bitasset.current_maintenance_collateralization );
+      usd_to_buy.amount = call_order.get_max_debt_to_cover( match_price, stablecoin.current_feed.settlement_price, stablecoin.current_feed.maintenance_collateral_ratio, stablecoin.current_maintenance_collateralization );
       
       asset usd_for_sale = limit_order.amount_for_sale();
       asset call_pays, call_receives, order_pays, order_receives;
@@ -3273,19 +3276,19 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
  * If there is no valid price feed or no bids then there is no black swan.
  * A black swan occurs if MAX(HB,SP) <= LC
  */
-bool database::check_for_blackswan( const asset_object& mia, bool enable_black_swan, const asset_bitasset_data_object* bitasset_ptr )
+bool database::check_for_blackswan( const asset_object& mia, bool enable_black_swan, const asset_stablecoin_data_object* stablecoin_ptr )
 {
    if( !mia.is_market_issued() )       // Asset must be market issued
    {
       return false;
    } 
 
-   const asset_bitasset_data_object& bitasset = ( bitasset_ptr ? *bitasset_ptr : get_bitasset_data(mia.symbol));
-   if( bitasset.has_settlement() )
+   const asset_stablecoin_data_object& stablecoin = ( stablecoin_ptr ? *stablecoin_ptr : get_stablecoin_data(mia.symbol));
+   if( stablecoin.has_settlement() )
    {
       return true;     // already force settled
    }
-   auto settle_price = bitasset.current_feed.settlement_price;
+   auto settle_price = stablecoin.current_feed.settlement_price;
 
    if( settle_price.is_null() )
    {
@@ -3295,7 +3298,7 @@ bool database::check_for_blackswan( const asset_object& mia, bool enable_black_s
    const call_order_object* call_ptr = nullptr; // place holder for the call order with least collateral ratio
 
    asset_symbol_type debt_asset_symbol = mia.symbol;
-   auto call_min = price::min( bitasset.backing_asset, debt_asset_symbol );
+   auto call_min = price::min( stablecoin.backing_asset, debt_asset_symbol );
 
    const auto& call_collateral_index = get_index< call_order_index >().indices().get< by_collateral >();
    auto call_itr = call_collateral_index.lower_bound( call_min );
@@ -3312,16 +3315,16 @@ bool database::check_for_blackswan( const asset_object& mia, bool enable_black_s
 
    price highest = settle_price;
    
-   highest = bitasset.current_feed.max_short_squeeze_price();
+   highest = stablecoin.current_feed.max_short_squeeze_price();
 
    const auto& limit_index = get_index< limit_order_index >();
    const auto& limit_price_index = limit_index.indices().get< by_high_price >();
 
    // looking for limit orders selling the most USD for the least CORE
-   price highest_possible_bid = price::max( mia.symbol, bitasset.backing_asset );
+   price highest_possible_bid = price::max( mia.symbol, stablecoin.backing_asset );
 
    // stop when limit orders are selling too little USD for too much CORE
-   price lowest_possible_bid  = price::min( mia.symbol, bitasset.backing_asset );
+   price lowest_possible_bid  = price::min( mia.symbol, stablecoin.backing_asset );
 
    FC_ASSERT( highest_possible_bid.base.symbol == lowest_possible_bid.base.symbol );
    // limit_price_index is sorted from greatest to least

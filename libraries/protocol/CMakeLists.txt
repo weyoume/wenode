@@ -1,22 +1,35 @@
-file(GLOB HEADERS "include/node/protocol/*.hpp")
+file(GLOB HEADERS "include/node/protocol/*.hpp" "include/node/protocol/*.h" )
 
 ## SORT .cpp by most likely to change / break compile
 add_library( node_protocol
 
-             types.cpp
-             authority.cpp
-             operations.cpp
-             sign_state.cpp
-             operation_util_impl.cpp
-             node_operations.cpp
-             transaction.cpp
-             block.cpp
-             asset.cpp
-             version.cpp
-             get_config.cpp
+            types.cpp
+            authority.cpp
+            operations.cpp
+            sign_state.cpp
+            operation_util_impl.cpp
+            node_operations.cpp
+            transaction.cpp
+            block.cpp
+            asset.cpp
+            version.cpp
+            get_config.cpp
 
-             ${HEADERS}
-           )
+            x11.cpp
+            blake.c
+            bmw.c
+            groestl.c
+            jh.c
+            keccak.c
+            skein.c
+            luffa.c
+            cubehash.c
+            shavite.c
+            simd.c
+            echo.c
+
+            ${HEADERS}
+         )
 
 target_link_libraries( node_protocol fc )
 target_include_directories( node_protocol

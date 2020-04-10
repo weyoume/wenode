@@ -10,7 +10,7 @@
 
 namespace node { namespace protocol {
    struct chain_properties;
-   struct proof_of_work;
+   struct x11_proof_of_work;
    struct signed_block;
 } }
 
@@ -92,7 +92,7 @@ class debug_node_plugin : public node::app::plugin
       void load_debug_updates( const fc::variant_object& target );
 
       void debug_mine_work(
-         chain::proof_of_work& work,
+         chain::x11_proof_of_work& work,
          uint128_t summary_target
          );
 

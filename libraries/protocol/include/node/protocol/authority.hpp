@@ -96,6 +96,8 @@ void add_authority_accounts(
  */
 bool is_valid_account_name( const string& name );
 
+bool is_premium_account_name( const string& name );
+
 bool operator == ( const authority& a, const authority& b );
 
 } } // namespace node::protocol

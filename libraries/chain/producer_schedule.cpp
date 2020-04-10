@@ -661,7 +661,7 @@ void update_producer_schedule( database& db )
 
       const account_authority_object& producer_auth = db.get_account_authority( PRODUCER_ACCOUNT );
       
-      // Add top voting_producers to producer authority for producer fed bitassets
+      // Add top voting_producers to producer authority for producer fed stablecoins
       db.modify( producer_auth, [&]( account_authority_object& a )
       {
          a.active_auth.clear();

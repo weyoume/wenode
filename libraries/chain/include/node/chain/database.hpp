@@ -157,14 +157,20 @@ namespace node { namespace chain {
          const asset_currency_data_object& get_currency_data( const asset_symbol_type& symbol ) const;
          const asset_currency_data_object* find_currency_data( const asset_symbol_type& symbol ) const;
 
-         const asset_bitasset_data_object& get_bitasset_data( const asset_symbol_type& symbol ) const;
-         const asset_bitasset_data_object* find_bitasset_data( const asset_symbol_type& symbol ) const;
+         const asset_stablecoin_data_object& get_stablecoin_data( const asset_symbol_type& symbol ) const;
+         const asset_stablecoin_data_object* find_stablecoin_data( const asset_symbol_type& symbol ) const;
 
          const asset_equity_data_object& get_equity_data( const asset_symbol_type& symbol ) const;
          const asset_equity_data_object* find_equity_data( const asset_symbol_type& symbol ) const;
 
+         const asset_bond_data_object& get_bond_data( const asset_symbol_type& symbol ) const;
+         const asset_bond_data_object* find_bond_data( const asset_symbol_type& symbol ) const;
+
          const asset_credit_data_object& get_credit_data( const asset_symbol_type& symbol ) const;
          const asset_credit_data_object* find_credit_data( const asset_symbol_type& symbol ) const;
+
+         const asset_unique_data_object& get_unique_data( const asset_symbol_type& symbol ) const;
+         const asset_unique_data_object* find_unique_data( const asset_symbol_type& symbol ) const;
 
          const account_object& get_account(  const account_name_type& name )const;
          const account_object* find_account( const account_name_type& name )const;
@@ -814,6 +820,10 @@ namespace node { namespace chain {
          void process_escrow_transfers();
 
          void update_median_liquidity();
+
+         void process_bond_interest();
+
+         void process_bond_assets();
          
          void process_credit_buybacks();
          
@@ -833,9 +843,9 @@ namespace node { namespace chain {
 
          void update_expired_feeds();
 
-         void process_bitassets();
+         void process_stablecoins();
 
-         void process_bids( const asset_bitasset_data_object& bad );
+         void process_bids( const asset_stablecoin_data_object& bad );
 
          void clear_expired_delegations();
 
@@ -862,6 +872,7 @@ namespace node { namespace chain {
          void adjust_receiving_balance( const account_object& a, const asset& delta );
 
          void adjust_pending_supply( const asset& delta );
+         void adjust_confidential_supply( const asset& delta );
 
          asset get_liquid_balance( const account_object& a, const asset_symbol_type& symbol)const;
          asset get_liquid_balance( const account_name_type& a, const asset_symbol_type& symbol)const;
@@ -980,15 +991,15 @@ namespace node { namespace chain {
 
          bool check_call_orders( const asset_object& mia, bool enable_black_swan, bool for_new_limit_order );
 
-         bool check_for_blackswan( const asset_object& mia, bool enable_black_swan, const asset_bitasset_data_object* bitasset_ptr );
+         bool check_for_blackswan( const asset_object& mia, bool enable_black_swan, const asset_stablecoin_data_object* stablecoin_ptr );
 
          bool exercise_option( const asset& option, const account_object& account );
 
          void globally_settle_asset( const asset_object& mia, const price& settlement_price );
 
-         void revive_bitasset( const asset_object& bitasset );
+         void revive_stablecoin( const asset_object& stablecoin );
 
-         void cancel_bids_and_revive_mpa( const asset_object& bitasset, const asset_bitasset_data_object& bad );
+         void cancel_bids_and_revive_mpa( const asset_object& stablecoin, const asset_stablecoin_data_object& bad );
 
          void cancel_bid(const asset_collateral_bid_object& bid, bool create_virtual_op);
 
