@@ -47,6 +47,10 @@ void graph_node_evaluator::do_apply( const graph_node_operation& o )
 
    flat_set< string > attribute_set;
 
+   connection_tier_type connection_tier = connection_tier_type::PUBLIC;
+
+   // Use the highest level of node encryption required by node properties
+
    for( graph_node_name_type property : o.node_types )
    {
       const graph_node_property_object& node_property = _db.get_graph_node_property( property );
@@ -54,6 +58,11 @@ void graph_node_evaluator::do_apply( const graph_node_operation& o )
       for( auto att : node_property.attributes )
       {
          attribute_set.insert( to_string( att ) );
+      }
+
+      if( node_property.graph_privacy > connection_tier )
+      {
+         connection_tier = node_property.graph_privacy;
       }
    }
 
@@ -72,6 +81,46 @@ void graph_node_evaluator::do_apply( const graph_node_operation& o )
       FC_ASSERT( interface.active, 
          "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
    }
+
+   const account_object& account = _db.get_account( o.account );
+   public_key_type public_key = public_key_type();
+
+   switch( connection_tier )
+   {
+      case connection_tier_type::PUBLIC:
+      {
+         public_key = public_key_type();
+      }
+      break;
+      case connection_tier_type::CONNECTION:
+      {
+         public_key = account.connection_public_key;
+      }
+      break;
+      case connection_tier_type::FRIEND:
+      {
+         public_key = account.friend_public_key;
+      }
+      break;
+      case connection_tier_type::COMPANION:
+      {
+         public_key = account.companion_public_key;
+      }
+      break;
+      case connection_tier_type::SECURE:
+      {
+         public_key = account.secure_public_key;
+      }
+      break;
+      default:
+      {
+         FC_ASSERT( false, 
+            "Invalid connection type." );
+      }
+   }
+
+   FC_ASSERT( public_key == public_key_type( o.node_public_key ),
+      "Node must use the required public key of the highest graph privacy level of all node types." );
    
    time_point now = _db.head_block_time();
 
@@ -168,30 +217,109 @@ void graph_edge_evaluator::do_apply( const graph_edge_operation& o )
 
    const graph_node_object& from_node = _db.get_graph_node( o.from_node_account, o.from_node_id );
    const graph_node_object& to_node = _db.get_graph_node( o.to_node_account, o.to_node_id );
+   const account_object& from_account = _db.get_account( o.from_node_account );
+   const account_object& to_account = _db.get_account( o.to_node_account );
 
    flat_set< string > attribute_set;
+
+   connection_tier_type graph_privacy = connection_tier_type::PUBLIC;
+   connection_tier_type edge_permission = connection_tier_type::PUBLIC;
 
    for( graph_edge_name_type property : o.edge_types )
    {
       const graph_edge_property_object& edge_property = _db.get_graph_edge_property( property );
-
       for( auto att : edge_property.attributes )
       {
          attribute_set.insert( to_string( att ) );
       }
-
       for( graph_node_name_type node_type : from_node.node_types )
       {
          FC_ASSERT( std::find( edge_property.from_node_types.begin(), edge_property.from_node_types.end(), node_type ) != edge_property.from_node_types.end(),
             "From Node type not found in available node types in edge property ${a}.", ("a", node_type ) );
+         const graph_node_property_object& node_property = _db.get_graph_node_property( node_type );
+         if( node_property.edge_permission > edge_permission )
+         {
+            edge_permission = node_property.edge_permission;
+         }
       }
-
       for( graph_node_name_type node_type : to_node.node_types )
       {
          FC_ASSERT( std::find( edge_property.to_node_types.begin(), edge_property.to_node_types.end(), node_type ) != edge_property.to_node_types.end(),
             "To Node type not found in available node types in edge property ${a}.", ("a", node_type ) );
+         const graph_node_property_object& node_property = _db.get_graph_node_property( node_type );
+         if( node_property.edge_permission > edge_permission )
+         {
+            edge_permission = node_property.edge_permission;
+         }
+      }
+      if( edge_property.graph_privacy > graph_privacy )
+      {
+         graph_privacy = edge_property.graph_privacy;
+      }
+      if( edge_property.edge_permission > edge_permission )
+      {
+         edge_permission = edge_property.edge_permission;
       }
    }
+   
+   const account_object& account = _db.get_account( o.account );
+   public_key_type public_key = public_key_type();
+
+   switch( graph_privacy )
+   {
+      case connection_tier_type::PUBLIC:
+      {
+         public_key = public_key_type();
+      }
+      break;
+      case connection_tier_type::CONNECTION:
+      {
+         public_key = account.connection_public_key;
+      }
+      break;
+      case connection_tier_type::FRIEND:
+      {
+         public_key = account.friend_public_key;
+      }
+      break;
+      case connection_tier_type::COMPANION:
+      {
+         public_key = account.companion_public_key;
+      }
+      break;
+      case connection_tier_type::SECURE:
+      {
+         public_key = account.secure_public_key;
+      }
+      break;
+      default:
+      {
+         FC_ASSERT( false, 
+            "Invalid connection type." );
+      }
+   }
+
+   account_name_type account_a_name;
+   account_name_type account_b_name;
+
+   if( from_account.id < to_account.id )
+   {
+      account_a_name = from_account.name;
+      account_b_name = to_account.name;
+   }
+   else
+   {
+      account_b_name = from_account.name;
+      account_a_name = to_account.name;
+   }
+
+   const auto& con_idx = _db.get_index< connection_index >().indices().get< by_accounts >();
+   auto con_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, edge_permission ) );
+
+   FC_ASSERT( con_itr != con_idx.end(),
+      "Edge creation requires connection between from account and to account." );
+   FC_ASSERT( public_key == public_key_type( o.edge_public_key ),
+      "Edge must use the required public key of the highest graph privacy level of all edge types." );
 
    for( auto att : attribute_set )
    {

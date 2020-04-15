@@ -32,38 +32,53 @@ namespace node { namespace chain {
             c(*this);
          };
 
-         id_type                                 id;           
+         id_type                                  id;           
 
-         account_name_type                       account;                     ///< Name of the account that created the node.
+         account_name_type                        account;                     ///< Name of the account that created the node.
 
-         shared_vector< graph_node_name_type >   node_types;                  ///< Set of Types of node being created, determines the required attributes.
+         shared_vector< graph_node_name_type >    node_types;                  ///< Set of Types of node being created, determines the required attributes.
 
-         shared_string                           node_id;                     ///< uuidv4 identifying the node. Unique for each account.
+         shared_string                            node_id;                     ///< uuidv4 identifying the node. Unique for each account.
 
-         shared_string                           name;                        ///< Name of the node.
+         shared_string                            name;                        ///< Name of the node.
 
-         shared_string                           details;                     ///< Describes the additional details of the node.
+         shared_string                            details;                     ///< Describes the additional details of the node.
 
-         shared_vector< shared_string >          attributes;                  ///< List of attributes types for this node.
+         shared_vector< shared_string >           attributes;                  ///< List of attributes types for this node.
 
-         shared_vector< shared_string >          attribute_values;            ///< List of attribute values for this node.
+         shared_vector< shared_string >           attribute_values;            ///< List of attribute values for this node.
 
-         shared_string                           json;                        ///< Public plaintext JSON node attribute information.
+         shared_string                            json;                        ///< Public plaintext JSON node attribute information.
 
-         shared_string                           json_private;                ///< Private encrypted ciphertext JSON node attribute information.
+         shared_string                            json_private;                ///< Private encrypted ciphertext JSON node attribute information.
 
-         public_key_type                         node_public_key;             ///< Key used for encrypting and decrypting private node JSON data and attribute values.
+         public_key_type                          node_public_key;             ///< Key used for encrypting and decrypting private node JSON data and attribute values.
 
-         account_name_type                       interface;                   ///< Name of the application that facilitated the creation of the node.
+         account_name_type                        interface;                   ///< Name of the application that facilitated the creation of the node.
 
-         time_point                              created;                     ///< Time the node was created.
+         time_point                               created;                     ///< Time the node was created.
 
-         time_point                              last_updated;                ///< Time that the node was last updated by its creator.
+         time_point                               last_updated;                ///< Time that the node was last updated by its creator.
 
-         graph_node_name_type                    primary_node_type()const     ///< Primary node type of this node. 
+         bool                                     is_encrypted()const          ///< True if the node is encrypted by a public key.
+         {
+            return node_public_key != public_key_type();
+         };
+
+         graph_node_name_type                     primary_node_type()const     ///< Primary node type of this node.
          {
             return node_types[0];
          };
+
+         flat_map< string, string >               attribute_map()const
+         {
+            flat_map< string, string > map;
+            for( size_t i = 0; i < attributes.size(); i++ )
+            {
+               map[ to_string( attributes[ i ] ) ] = to_string( attribute_values [ i ] );
+            }
+            return map;
+         }
    };
 
 
@@ -79,12 +94,12 @@ namespace node { namespace chain {
          template<typename Constructor, typename Allocator>
          graph_edge_object( Constructor&& c, allocator< Allocator > a ) :
          edge_types( a.get_segment_manager() ),
-         edge_id(a), 
-         name(a), 
-         details(a), 
-         attributes( a.get_segment_manager() ), 
-         attribute_values( a.get_segment_manager() ), 
-         json(a), 
+         edge_id(a),
+         name(a),
+         details(a),
+         attributes( a.get_segment_manager() ),
+         attribute_values( a.get_segment_manager() ),
+         json(a),
          json_private(a)
          {
             c(*this);
@@ -122,10 +137,25 @@ namespace node { namespace chain {
 
          time_point                               last_updated;                ///< Time that the edge was last updated by its creator.
 
+         bool                                     is_encrypted()const          ///< True if the edge is encrypted by a public key.
+         {
+            return edge_public_key != public_key_type();
+         };
+
          graph_edge_name_type                     primary_edge_type()const     ///< Primary edge type of this edge. 
          {
             return edge_types[0];
          };
+
+         flat_map< string, string >               attribute_map()const
+         {
+            flat_map< string, string > map;
+            for( size_t i = 0; i < attributes.size(); i++ )
+            {
+               map[ to_string( attributes[ i ] ) ] = to_string( attribute_values [ i ] );
+            }
+            return map;
+         }
    };
 
 
@@ -201,6 +231,8 @@ namespace node { namespace chain {
 
          connection_tier_type                      graph_privacy;               ///< Encryption level of the edge attribute data.
 
+         connection_tier_type                      edge_permission;             ///< The Level of connection required to create an edge of this type. 
+
          shared_vector< graph_node_name_type >     from_node_types;             ///< Types of node that the edge can connect from. Empty for all types. 
 
          shared_vector< graph_node_name_type >     to_node_types;               ///< Types of node that the edge can connect to. Empty for all types.
@@ -238,7 +270,7 @@ namespace node { namespace chain {
             >,
             composite_key_compare< 
                std::less< account_name_type >,
-               strcmp_less 
+               strcmp_less
             >
          >,
          ordered_unique< tag< by_node_type >,
@@ -247,8 +279,8 @@ namespace node { namespace chain {
                member< graph_node_object, graph_node_id_type, &graph_node_object::id >
             >,
             composite_key_compare< 
-               std::less< graph_node_name_type >, 
-               std::less< graph_node_id_type > 
+               std::less< graph_node_name_type >,
+               std::less< graph_node_id_type >
             >
          >,
          ordered_unique< tag< by_account >,
@@ -257,8 +289,8 @@ namespace node { namespace chain {
                member< graph_node_object, graph_node_id_type, &graph_node_object::id >
             >,
             composite_key_compare< 
-               std::less< account_name_type >, 
-               std::less< graph_node_id_type > 
+               std::less< account_name_type >,
+               std::less< graph_node_id_type >
             >
          >,
          ordered_unique< tag< by_node_id >,
@@ -267,8 +299,8 @@ namespace node { namespace chain {
                member< graph_node_object, graph_node_id_type, &graph_node_object::id >
             >,
             composite_key_compare< 
-               strcmp_less, 
-               std::less< graph_node_id_type > 
+               strcmp_less,
+               std::less< graph_node_id_type >
             >
          >,
          ordered_unique< tag< by_last_updated >,
@@ -277,8 +309,8 @@ namespace node { namespace chain {
                member< graph_node_object, graph_node_id_type, &graph_node_object::id >
             >,
             composite_key_compare< 
-               std::greater< time_point >, 
-               std::less< graph_node_id_type > 
+               std::greater< time_point >,
+               std::less< graph_node_id_type >
             >
          >
       >,

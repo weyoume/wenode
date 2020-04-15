@@ -468,7 +468,7 @@ namespace node { namespace chain {
 
          account_name_type                 seller;                 ///< The Seller of the product.
 
-         shared_string                     product_id;             ///< uuidv4 refrring to the product.
+         shared_string                     product_id;             ///< uuidv4 referring to the product.
 
          shared_vector< shared_string >    order_variants;         ///< Variants of product ordered in the purchase.
 
@@ -888,6 +888,7 @@ namespace node { namespace chain {
    > product_index;
 
    struct by_order_id;
+   struct by_buyer_product_id;
 
 
    typedef multi_index_container<
@@ -896,12 +897,38 @@ namespace node { namespace chain {
          ordered_unique< tag< by_id >, member< purchase_order_object, purchase_order_id_type, &purchase_order_object::id > >,
          ordered_unique< tag< by_order_id >,
             composite_key< purchase_order_object,
-               member< purchase_order_object, account_name_type,  &purchase_order_object::buyer >,
+               member< purchase_order_object, account_name_type, &purchase_order_object::buyer >,
                member< purchase_order_object, shared_string, &purchase_order_object::order_id >
             >,
             composite_key_compare<
                std::less< account_name_type >,
                strcmp_less
+            >
+         >,
+         ordered_unique< tag< by_product_id >,
+            composite_key< purchase_order_object,
+               member< purchase_order_object, account_name_type, &purchase_order_object::seller >,
+               member< purchase_order_object, shared_string, &purchase_order_object::product_id >,
+               member< purchase_order_object, purchase_order_id_type, &purchase_order_object::id >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               strcmp_less,
+               std::less< purchase_order_id_type >
+            >
+         >,
+         ordered_unique< tag< by_buyer_product_id >,
+            composite_key< purchase_order_object,
+               member< purchase_order_object, account_name_type, &purchase_order_object::buyer >,
+               member< purchase_order_object, account_name_type, &purchase_order_object::seller >,
+               member< purchase_order_object, shared_string, &purchase_order_object::product_id >,
+               member< purchase_order_object, purchase_order_id_type, &purchase_order_object::id >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::less< account_name_type >,
+               strcmp_less,
+               std::less< purchase_order_id_type >
             >
          >,
          ordered_unique< tag< by_last_updated >,

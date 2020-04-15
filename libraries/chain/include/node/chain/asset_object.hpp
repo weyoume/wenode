@@ -665,13 +665,13 @@ namespace node { namespace chain {
 
          id_type                id;
 
-         account_name_type      owner;             ///< Name of the account that is force settling the asset
+         account_name_type      owner;             ///< Name of the account that is force settling the asset.
 
-         asset                  balance;           ///< Amount of debt asset being settled
+         asset                  balance;           ///< Amount of debt asset being settled.
 
-         time_point             settlement_date;   ///< Date of asset settlement for collateral
+         time_point             settlement_date;   ///< Date of asset settlement for collateral.
 
-         account_name_type      interface;         ///< The interface account that created the order
+         account_name_type      interface;         ///< The interface account that created the order.
 
          time_point             created;           ///< Time that the settlement was created.
 
@@ -2095,19 +2095,6 @@ FC_REFLECT( node::chain::asset_stablecoin_data_object,
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::asset_stablecoin_data_object, node::chain::asset_stablecoin_data_index );
 
-FC_REFLECT( node::chain::asset_bond_data_object,
-         (id)
-         (business_account)
-         (symbol)
-         (value)
-         (collateralization)
-         (coupon_rate_percent)
-         (maturity_date)
-         (collateral_pool)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::asset_bond_data_object, node::chain::asset_bond_data_index );
-
 FC_REFLECT( node::chain::asset_settlement_object, 
          (id)
          (owner)
@@ -2154,6 +2141,19 @@ FC_REFLECT( node::chain::asset_equity_data_object,
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::asset_equity_data_object, node::chain::asset_equity_data_index );
+
+FC_REFLECT( node::chain::asset_bond_data_object,
+         (id)
+         (business_account)
+         (symbol)
+         (value)
+         (collateralization)
+         (coupon_rate_percent)
+         (maturity_date)
+         (collateral_pool)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::asset_bond_data_object, node::chain::asset_bond_data_index );
 
 FC_REFLECT( node::chain::asset_credit_data_object,
          (id)

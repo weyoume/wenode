@@ -657,37 +657,37 @@ namespace node { namespace chain {
             c( *this );
          }
 
-         id_type                        id;                 
+         id_type                               id;                 
 
-         account_name_type              account;                ///< Account that created the event.
+         account_name_type                     account;                ///< Account that created the event.
 
-         community_name_type            community;              ///< Community being invited to join.
+         community_name_type                   community;              ///< Community being invited to join.
 
-         shared_string                  event_name;             ///< The Name of the event.
+         shared_string                         event_name;             ///< The Name of the event.
 
-         shared_string                  location;               ///< Address location of the event.
+         shared_string                         location;               ///< Address location of the event.
 
-         shared_string                  details;                ///< Event details describing the purpose of the event.
+         shared_string                         details;                ///< Event details describing the purpose of the event.
 
-         shared_string                  url;                    ///< Reference URL for the event.
+         shared_string                         url;                    ///< Reference URL for the event.
 
-         shared_string                  json;                   ///< Additional Event JSON data.
+         shared_string                         json;                   ///< Additional Event JSON data.
 
-         flat_set< account_name_type >  invited;                ///< Members that are invited to the event, all members if empty.
+         flat_set< account_name_type >         invited;                ///< Members that are invited to the event, all members if empty.
 
-         flat_set< account_name_type >  interested;             ///< Members that are interested in the event.
+         flat_set< account_name_type >         interested;             ///< Members that are interested in the event.
 
-         flat_set< account_name_type >  attending;              ///< Members that have confirmed that they will be attending the event.
+         flat_set< account_name_type >         attending;              ///< Members that have confirmed that they will be attending the event.
 
-         flat_set< account_name_type >  not_attending;          ///< Members that have confirmed that they will not be attending the event.
+         flat_set< account_name_type >         not_attending;          ///< Members that have confirmed that they will not be attending the event.
 
-         time_point                     event_start_time;       ///< Time that the Event will begin.
+         time_point                            event_start_time;       ///< Time that the Event will begin.
 
-         time_point                     event_end_time;         ///< Time that the event will end.
+         time_point                            event_end_time;         ///< Time that the event will end.
 
-         time_point                     last_updated;           ///< Time that the event was last updated.
+         time_point                            last_updated;           ///< Time that the event was last updated.
 
-         time_point                     created;                ///< Time that the event was created.
+         time_point                            created;                ///< Time that the event was created.
    };
 
    struct by_name;

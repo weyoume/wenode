@@ -133,8 +133,7 @@ namespace node { namespace chain {
     * Holds an asset balance that can be spent by a public key.
     * 
     * Acts as a UTXO payment mechanism that splits balances
-    * into equal chunks that can be shuffled to provide 
-    * privacy.
+    * into equal chunks that can be shuffled to provide privacy.
     */
    class confidential_balance_object : public object< confidential_balance_object_type, confidential_balance_object >
    {
@@ -157,7 +156,7 @@ namespace node { namespace chain {
 
          uint16_t                      index;               ///< Number of the balance created from the origin transaction.
 
-         fc::ecc::commitment_type      commitment;          ///< Commitment of the Balance.
+         commitment_type               commitment;          ///< Commitment of the Balance.
 
          asset_symbol_type             symbol;              ///< Asset symbol of the balance.
 
@@ -175,9 +174,17 @@ namespace node { namespace chain {
             fc::raw::pack( enc, created );
             return enc.result();
          }
+
+         account_name_type             account_auth()const
+         {
+            return (*owner.account_auths.begin() ).first;
+         }
+
+         public_key_type               key_auth()const
+         {
+            return (*owner.key_auths.begin() ).first;
+         }
    };
-
-
 
 
    struct by_expiration;
@@ -285,6 +292,8 @@ namespace node { namespace chain {
    struct by_hash;
    struct by_created;
    struct by_commitment;
+   struct by_key_auth;
+   struct by_account_auth;
 
    typedef multi_index_container<
       confidential_balance_object,
@@ -292,7 +301,27 @@ namespace node { namespace chain {
          ordered_unique< tag< by_id >, member< confidential_balance_object, confidential_balance_id_type, &confidential_balance_object::id > >,
          ordered_unique< tag< by_hash >, const_mem_fun< confidential_balance_object, digest_type, &confidential_balance_object::hash > >,
          ordered_non_unique< tag< by_created >, member< confidential_balance_object, time_point, &confidential_balance_object::created > >,
-         ordered_unique< tag< by_commitment >, member< confidential_balance_object, fc::ecc::commitment_type, &confidential_balance_object::commitment > >
+         ordered_unique< tag< by_commitment >, member< confidential_balance_object, commitment_type, &confidential_balance_object::commitment > >,
+         ordered_unique< tag< by_key_auth >,
+            composite_key< confidential_balance_object,
+               const_mem_fun< confidential_balance_object, public_key_type, &confidential_balance_object::key_auth >,
+               member< confidential_balance_object, confidential_balance_id_type, &confidential_balance_object::id >
+            >,
+            composite_key_compare< 
+               std::less< public_key_type >,
+               std::less< confidential_balance_id_type >
+            >
+         >,
+         ordered_unique< tag< by_account_auth >, 
+            composite_key< confidential_balance_object,
+               const_mem_fun< confidential_balance_object, account_name_type, &confidential_balance_object::account_auth >,
+               member< confidential_balance_object, confidential_balance_id_type, &confidential_balance_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::less< confidential_balance_id_type >
+            >
+         >
       >,
       allocator< confidential_balance_object >
    > confidential_balance_index;

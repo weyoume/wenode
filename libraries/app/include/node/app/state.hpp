@@ -111,16 +111,20 @@ namespace node { namespace app {
 
    struct order_state
    {
-      vector< limit_order_api_obj >          limit_orders;
-      vector< margin_order_api_obj >         margin_orders;
-      vector< call_order_api_obj >           call_orders;
-      vector< credit_loan_api_obj >          loan_orders;
-      vector< credit_collateral_api_obj >    collateral;
+      vector< limit_order_api_obj >             limit_orders;
+      vector< margin_order_api_obj >            margin_orders;
+      vector< call_order_api_obj >              call_orders;
+      vector< option_order_api_obj >            option_orders;
+      vector< credit_loan_api_obj >             loan_orders;
+      vector< credit_collateral_api_obj >       collateral;
    };
 
    struct balance_state
    {
-      map< asset_symbol_type, account_balance_api_obj >       balances;
+      map< asset_symbol_type, account_balance_api_obj >                     balances;
+      vector< confidential_balance_api_obj >                                confidential_balances;
+      map< asset_symbol_type, distribution_balance_api_obj >                distribution_balances;
+      map< asset_symbol_type, prediction_pool_resolution_api_obj >          prediction_resolutions;
    };
 
    struct key_state
@@ -128,7 +132,7 @@ namespace node { namespace app {
       map< account_name_type, encrypted_keypair_type >       connection_keys;
       map< account_name_type, encrypted_keypair_type >       friend_keys;
       map< account_name_type, encrypted_keypair_type >       companion_keys;
-      map< community_name_type, encrypted_keypair_type >         community_keys;
+      map< community_name_type, encrypted_keypair_type >     community_keys;
       map< account_name_type, encrypted_keypair_type >       business_keys;
    };
 
@@ -169,9 +173,9 @@ namespace node { namespace app {
 
    struct community_state
    {
-      map< community_name_type, community_request_api_obj >                        pending_requests;
-      map< community_name_type, community_invite_api_obj >                         incoming_invites;
-      map< community_name_type, community_invite_api_obj >                         outgoing_invites;
+      map< community_name_type, community_request_api_obj >                    pending_requests;
+      map< community_name_type, community_invite_api_obj >                     incoming_invites;
+      map< community_name_type, community_invite_api_obj >                     outgoing_invites;
       map< community_name_type, int64_t >                                      incoming_moderator_votes;
       map< community_name_type, map<account_name_type, uint16_t > >            outgoing_moderator_votes;
       vector< community_name_type >                                            founded_communities;
@@ -189,9 +193,11 @@ namespace node { namespace app {
       map< account_name_type, connection_request_api_obj >                 outgoing_requests;
    };
 
-   struct business_account_state
+   struct business_account_state : public account_business_api_obj
    {
-      account_business_api_obj                                             business;
+      business_account_state(){}
+      business_account_state( const account_business_object& a ):account_business_api_obj( a ){}
+
       vector< account_name_type >                                          member_businesses;
       vector< account_name_type >                                          officer_businesses;
       vector< account_name_type >                                          executive_businesses;
@@ -199,6 +205,15 @@ namespace node { namespace app {
       map< account_name_type, account_invite_api_obj >                     incoming_invites;
       map< account_name_type, account_request_api_obj >                    outgoing_requests;
       map< account_name_type, account_invite_api_obj >                     outgoing_invites;
+   };
+
+   struct profile_account_state : public account_profile_api_obj
+   {
+      profile_account_state(){}
+      profile_account_state( const account_profile_object& a ):account_profile_api_obj( a ){}
+      
+      map< account_name_type, account_verification_api_obj >               incoming_verifications;
+      map< account_name_type, account_verification_api_obj >               outgoing_verifications;
    };
 
    struct network_state
@@ -210,6 +225,8 @@ namespace node { namespace app {
       supernode_api_obj                                                    supernode;
       governance_account_api_obj                                           governance_account;
       vector< community_enterprise_api_obj >                               enterprise_proposals;
+      vector< block_validation_api_obj >                                   validations;
+      vector< commit_violation_api_obj >                                   violations;
 
       map< account_name_type, uint16_t >                                   producer_votes;
       map< string, map< account_name_type, uint16_t > >                    network_officer_votes;
@@ -239,8 +256,8 @@ namespace node { namespace app {
 
    struct ad_bid_state : public ad_bid_api_obj
    {
-      ad_bid_state(){}
       ad_bid_state( const ad_bid_object& a ):ad_bid_api_obj( a ){}
+      ad_bid_state(){}
 
       ad_creative_api_obj                     creative;
       ad_campaign_api_obj                     campaign;
@@ -260,6 +277,20 @@ namespace node { namespace app {
       vector< ad_bid_state >                  incoming_bids;
    };
 
+   struct product_state : public product_api_obj
+   {
+      product_state( const product_object& a ):product_api_obj( a ){}
+      product_state(){}
+
+      vector< purchase_order_api_obj >        purchase_orders;
+   };
+
+   struct graph_data_state
+   {
+      vector< graph_node_api_obj >            nodes;
+      vector< graph_edge_api_obj >            edges;
+   };
+
    struct message_state
    {
       vector< message_api_obj >                                inbox;
@@ -269,14 +300,15 @@ namespace node { namespace app {
 
    struct extended_account : public account_api_obj
    {
-      extended_account(){}
       extended_account( const account_object& a, const database& db ):account_api_obj( a, db ){}
+      extended_account(){}
 
       account_following_api_obj                         following;
       connection_state                                  connections;
+      business_account_state                            business;
+      profile_account_state                             profile;
       balance_state                                     balances;
       order_state                                       orders;
-      business_account_state                            business;
       key_state                                         keychain;
       message_state                                     messages;
       transfer_state                                    transfers;
@@ -291,8 +323,8 @@ namespace node { namespace app {
 
    struct extended_community : public community_api_obj
    {
-      extended_community(){}
       extended_community( const community_object& b ):community_api_obj( b ){}
+      extended_community(){}
 
       vector< account_name_type >                             subscribers;                 // List of accounts that subscribe to the posts made in the community.
       vector< account_name_type >                             members;                     // List of accounts that are permitted to post in the community. Can invite and accept on public communities
@@ -303,68 +335,92 @@ namespace node { namespace app {
       int64_t                                                 total_mod_weight = 0;        // Total of all moderator weights. 
       map< account_name_type, community_request_api_obj >     requests;
       map< account_name_type, community_invite_api_obj >      invites;
+      map< string, community_event_api_obj >                  events;
    };
 
    struct extended_asset : public asset_api_obj
    {
-      extended_asset(){}
       extended_asset( const asset_object& a ):asset_api_obj( a ){}
+      extended_asset(){}
 
-      int64_t                                  total_supply;              // The total outstanding supply of the asset
-      int64_t                                  liquid_supply;             // The current liquid supply of the asset
-      int64_t                                  staked_supply;             // The current staked supply of the asset
-      int64_t                                  reward_supply;             // The current reward supply of the asset
-      int64_t                                  savings_supply;            // The current savings supply of the asset
-      int64_t                                  delegated_supply;          // The current delegated supply of the asset
-      int64_t                                  receiving_supply;          // The current receiving supply supply of the asset, should equal delegated
-      int64_t                                  pending_supply;            // The current supply contained in reward funds and active order objects
-      int64_t                                  confidential_supply;       // total confidential asset supply
-      stablecoin_data_api_obj                    stablecoin;
-      equity_data_api_obj                      equity; 
-      credit_data_api_obj                      credit;
-      credit_pool_api_obj                      credit_pool;
-      map< string, liquidity_pool_api_obj >    liquidity_pools;
+      int64_t                                                        total_supply;              // The total outstanding supply of the asset
+      int64_t                                                        liquid_supply;             // The current liquid supply of the asset
+      int64_t                                                        staked_supply;             // The current staked supply of the asset
+      int64_t                                                        reward_supply;             // The current reward supply of the asset
+      int64_t                                                        savings_supply;            // The current savings supply of the asset
+      int64_t                                                        delegated_supply;          // The current delegated supply of the asset
+      int64_t                                                        receiving_supply;          // The current receiving supply supply of the asset, should equal delegated
+      int64_t                                                        pending_supply;            // The current supply contained in reward funds and active order objects
+      int64_t                                                        confidential_supply;       // Total confidential asset supply
+      
+      currency_data_api_obj                                          currency;
+      stablecoin_data_api_obj                                        stablecoin;
+      equity_data_api_obj                                            equity;
+      bond_data_api_obj                                              bond;
+      credit_data_api_obj                                            credit;
+      unique_data_api_obj                                            unique;
+      credit_pool_api_obj                                            credit_pool;
+      map< asset_symbol_type, liquidity_pool_api_obj >               liquidity_pools;
+      map< asset_symbol_type, option_pool_api_obj >                  option_pools;
+      prediction_pool_api_obj                                        prediction;
+      map< asset_symbol_type, prediction_pool_resolution_api_obj >   resolutions;
+      distribution_api_obj                                           distribution;
+      map< account_name_type, distribution_balance_api_obj >         distribution_balances;
    };
-   
 
    struct market_limit_orders
    {
-      vector<limit_order_api_obj>             limit_bids;
-      vector<limit_order_api_obj>             limit_asks;
+      vector< limit_order_api_obj >           limit_bids;
+      vector< limit_order_api_obj >           limit_asks;
    };
 
    struct market_margin_orders
    {
-      vector<margin_order_api_obj>            margin_bids;
-      vector<margin_order_api_obj>            margin_asks;
+      vector< margin_order_api_obj >          margin_bids;
+      vector< margin_order_api_obj >          margin_asks;
+   };
+
+   struct market_auction_orders
+   {
+      vector< auction_order_api_obj >         auction_bids;
+      vector< auction_order_api_obj >         auction_asks;
    };
 
    struct market_call_orders
    {
-      vector<call_order_api_obj>              calls;
+      vector< call_order_api_obj >            calls;
       price                                   settlement_price;
+   };
+
+   struct market_option_orders
+   {
+      vector< option_order_api_obj >          option_calls;
+      vector< option_order_api_obj >          option_puts;
    };
 
    struct market_credit_loans
    {
-      vector<credit_loan_api_obj>             loan_bids;
-      vector<credit_loan_api_obj>             loan_asks;
+      vector< credit_loan_api_obj >           loan_bids;
+      vector< credit_loan_api_obj >           loan_asks;
    };
 
    struct market_state
    {
       market_limit_orders                     limit_orders;
       market_margin_orders                    margin_orders;
+      market_auction_orders                   auction_orders;
       market_call_orders                      call_orders;
+      market_option_orders                    option_orders;
       vector< liquidity_pool_api_obj >        liquidity_pools;
       vector< credit_pool_api_obj >           credit_pools;
+      vector< option_pool_api_obj >           option_pools;
       market_credit_loans                     credit_loans;
    };
 
    struct search_result_state
    {
       vector< account_api_obj >               accounts;
-      vector< community_api_obj >                 communities;
+      vector< community_api_obj >             communities;
       vector< tag_following_api_obj >         tags;
       vector< asset_api_obj >                 assets;
       vector< discussion >                    posts;
@@ -376,7 +432,7 @@ namespace node { namespace app {
       dynamic_global_property_api_obj         props;
       app::tag_index                          tag_idx;
       map< string, extended_account >         accounts;
-      map< string, extended_community >           communities;
+      map< string, extended_community >       communities;
       map< string, tag_following_api_obj >    tags;
       map< string, discussion_index >         discussion_idx;
       map< string, tag_api_obj >              tag_stats;
@@ -487,12 +543,16 @@ FC_REFLECT( node::app::order_state,
          (limit_orders)
          (margin_orders)
          (call_orders)
+         (option_orders)
          (loan_orders)
          (collateral)
          );
 
 FC_REFLECT( node::app::balance_state,
          (balances)
+         (confidential_balances)
+         (distribution_balances)
+         (prediction_resolutions)
          );
 
 FC_REFLECT( node::app::operation_state,
@@ -549,7 +609,6 @@ FC_REFLECT( node::app::connection_state,
          );
 
 FC_REFLECT( node::app::business_account_state,
-         (business)
          (member_businesses)
          (officer_businesses)
          (executive_businesses)
@@ -557,6 +616,11 @@ FC_REFLECT( node::app::business_account_state,
          (incoming_invites)
          (outgoing_requests)
          (outgoing_invites)
+         );
+
+FC_REFLECT( node::app::profile_account_state,
+         (incoming_verifications)
+         (outgoing_verifications)
          );
 
 FC_REFLECT( node::app::network_state,
@@ -567,6 +631,8 @@ FC_REFLECT( node::app::network_state,
          (supernode)
          (governance_account)
          (enterprise_proposals)
+         (validations)
+         (violations)
          (producer_votes)
          (network_officer_votes)
          (executive_board_votes)
@@ -592,9 +658,10 @@ FC_REFLECT_DERIVED( node::app::discussion, (node::app::comment_api_obj),
 FC_REFLECT_DERIVED( node::app::extended_account, ( node::app::account_api_obj ),
          (following)
          (connections)
+         (business)
+         (profile)
          (balances)
          (orders)
-         (business)
          (keychain)
          (messages)
          (transfers)
@@ -629,11 +696,17 @@ FC_REFLECT_DERIVED( node::app::extended_asset, ( node::app::asset_api_obj ),
          (receiving_supply)
          (pending_supply)
          (confidential_supply)
+         (distribution)
          (stablecoin)
          (equity)
+         (bond)
          (credit)
+         (unique)
          (credit_pool)
          (liquidity_pools)
+         (option_pools)
+         (prediction)
+         (resolutions)
          );
 
 FC_REFLECT( node::app::message_state,
@@ -660,9 +733,19 @@ FC_REFLECT( node::app::market_margin_orders,
          (margin_asks)
          );
 
+FC_REFLECT( node::app::market_auction_orders,
+         (auction_bids)
+         (auction_asks)
+         );
+
 FC_REFLECT( node::app::market_call_orders,
          (calls)
          (settlement_price)
+         );
+
+FC_REFLECT( node::app::market_option_orders,
+         (option_calls)
+         (option_puts)
          );
 
 FC_REFLECT( node::app::market_credit_loans,
@@ -673,9 +756,12 @@ FC_REFLECT( node::app::market_credit_loans,
 FC_REFLECT( node::app::market_state,
          (limit_orders)
          (margin_orders)
+         (auction_orders)
          (call_orders)
+         (option_orders)
          (liquidity_pools)
          (credit_pools)
+         (option_pools)
          (credit_loans)
          );
 
@@ -688,6 +774,15 @@ FC_REFLECT( node::app::account_ad_state,
          (account_bids)
          (creative_bids)
          (incoming_bids)
+         );
+
+FC_REFLECT( node::app::product_state,
+         (purchase_orders)
+         );
+
+FC_REFLECT( node::app::graph_data_state,
+         (nodes)
+         (edges)
          );
 
 FC_REFLECT( node::app::search_result_state,

@@ -82,8 +82,6 @@ namespace node { namespace chain {
 
          public_key_type              signing_key;                           ///< The key used to sign blocks on behalf of this producer.
 
-         time_point                   created;                               ///< The time the producer was created.
-
          uint64_t                     last_commit_height = 0;                ///< Block height that has been most recently committed by the producer
 
          block_id_type                last_commit_id = block_id_type();      ///< Block ID of the height that was most recently committed by the producer. 
@@ -131,6 +129,10 @@ namespace node { namespace chain {
          hardfork_version             hardfork_version_vote;                 ///< The vote for the next hardfork update version.
 
          time_point                   hardfork_time_vote = GENESIS_TIME;     ///< The time to activate the next hardfork.
+
+         time_point                   created;                               ///< The time the producer was created.
+
+         time_point                   last_updated;                          ///< The time the producer was last updated.
 
          void                         decay_weights( time_point now, const median_chain_property_object& median_props )
          {
@@ -303,21 +305,21 @@ namespace node { namespace chain {
 
          commit_violation_object(){}
 
-         id_type                          id;
+         id_type                          id;                       
 
-         account_name_type                reporter;
+         account_name_type                reporter;                ///< Name of the account creating the violation.
 
-         account_name_type                producer;
+         account_name_type                producer;                ///< Name of the account that violated a commit transaction
 
-         uint64_t                         block_height;
+         uint64_t                         block_height;            ///< Height of the block that the violation occured on.
 
-         signed_transaction               first_trx;
+         signed_transaction               first_trx;               ///< First Transaction that conflicts.
 
-         signed_transaction               second_trx; 
+         signed_transaction               second_trx;              ///< Second Transaction that conflicts.
 
-         time_point                       created;
+         time_point                       created;                 ///< Time that the violation was created.
 
-         asset                            forfeited_stake;
+         asset                            forfeited_stake;         ///< Stake value that was forfeited.
    };
 
    struct by_voting_power;
@@ -343,40 +345,47 @@ namespace node { namespace chain {
                member< producer_object, share_type, &producer_object::voting_power >,
                member< producer_object, account_name_type, &producer_object::owner >
             >,
-            composite_key_compare< std::greater< share_type >, std::less< account_name_type > >
+            composite_key_compare< 
+               std::greater< share_type >, 
+               std::less< account_name_type > 
+            >
          >,
-
          ordered_unique< tag< by_mining_power >,
             composite_key< producer_object,
                member< producer_object, share_type, &producer_object::mining_power >,
                member< producer_object, account_name_type, &producer_object::owner >
             >,
-            composite_key_compare< std::greater< share_type >, std::less< account_name_type > >
+            composite_key_compare< 
+               std::greater< share_type >, 
+               std::less< account_name_type > 
+            >
          >,
-
          ordered_unique< tag< by_activity_stake >,
             composite_key< producer_object,
                member< producer_object, uint128_t, &producer_object::accumulated_activity_stake >,
                member< producer_object, producer_id_type, &producer_object::id >
             >,
-            composite_key_compare< std::greater< uint128_t >, std::less< producer_id_type > >
+            composite_key_compare< 
+               std::greater< uint128_t >, 
+               std::less< producer_id_type > 
+            >
          >,
-
          ordered_unique< tag< by_txn_stake_weight >,
             composite_key< producer_object,
                member< producer_object, uint128_t, &producer_object::recent_txn_stake_weight >,
                member< producer_object, producer_id_type, &producer_object::id >
             >,
-            composite_key_compare< std::greater< uint128_t >, std::less< producer_id_type > >
+            composite_key_compare< 
+               std::greater< uint128_t >, 
+               std::less< producer_id_type > 
+            >
          >,
-
          ordered_unique< tag< by_voting_schedule_time >,
             composite_key< producer_object,
                member< producer_object, uint128_t, &producer_object::voting_virtual_scheduled_time >,
                member< producer_object, producer_id_type, &producer_object::id >
             >
          >,
-
          ordered_unique< tag< by_mining_schedule_time >,
             composite_key< producer_object,
                member< producer_object, uint128_t, &producer_object::mining_virtual_scheduled_time >,
@@ -461,32 +470,36 @@ namespace node { namespace chain {
    typedef multi_index_container<
       block_validation_object,
       indexed_by<
-         ordered_unique< tag<by_id>, member< block_validation_object, block_validation_id_type, &block_validation_object::id > >,
-         ordered_unique< tag<by_producer_height>,
+         ordered_unique< tag< by_id >, member< block_validation_object, block_validation_id_type, &block_validation_object::id > >,
+         ordered_unique< tag< by_producer_height >,
             composite_key< block_validation_object,
-               member<block_validation_object, account_name_type, &block_validation_object::producer >,
-               member<block_validation_object, uint64_t, &block_validation_object::block_height >
+               member< block_validation_object, account_name_type, &block_validation_object::producer >,
+               member< block_validation_object, uint64_t, &block_validation_object::block_height >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::greater< uint64_t >
             >
          >,
-         ordered_unique< tag<by_height_stake>,
+         ordered_unique< tag< by_height_stake >,
             composite_key< block_validation_object,
-               member<block_validation_object, uint64_t, &block_validation_object::block_height >,
-               member<block_validation_object, asset, &block_validation_object::commitment_stake >
+               member< block_validation_object, uint64_t, &block_validation_object::block_height >,
+               member< block_validation_object, asset, &block_validation_object::commitment_stake >
             >,
             composite_key_compare< 
-               std::less< uint64_t >, 
-               std::greater< asset > 
+               std::less< uint64_t >,
+               std::greater< asset >
             >
          >,
-         ordered_unique< tag<by_producer_block_id>,
+         ordered_unique< tag< by_producer_block_id >,
             composite_key< block_validation_object,
-               member<block_validation_object, account_name_type, &block_validation_object::producer >,
-               member<block_validation_object, block_id_type, &block_validation_object::block_id >
+               member< block_validation_object, account_name_type, &block_validation_object::producer >,
+               member< block_validation_object, block_id_type, &block_validation_object::block_id >
             >
          >,
-         ordered_unique< tag<by_block_id>,
+         ordered_unique< tag< by_block_id >,
             composite_key< block_validation_object,
-               member<block_validation_object, block_id_type, &block_validation_object::block_id >,
+               member< block_validation_object, block_id_type, &block_validation_object::block_id >,
                member< block_validation_object, block_validation_id_type, &block_validation_object::id >
             >,
             composite_key_compare< 
@@ -494,9 +507,9 @@ namespace node { namespace chain {
                std::less< block_validation_id_type >
             >
          >,
-         ordered_unique< tag<by_recent_created>,
+         ordered_unique< tag< by_recent_created >,
             composite_key< block_validation_object,
-               member<block_validation_object, time_point, &block_validation_object::created >,
+               member< block_validation_object, time_point, &block_validation_object::created >,
                member< block_validation_object, block_validation_id_type, &block_validation_object::id >
             >,
             composite_key_compare< 
@@ -504,14 +517,14 @@ namespace node { namespace chain {
                std::less< block_validation_id_type >
             >
          >,
-         ordered_unique< tag<by_commit_time>,
+         ordered_unique< tag< by_commit_time >,
             composite_key< block_validation_object,
-               member<block_validation_object, time_point, &block_validation_object::commit_time >,
+               member< block_validation_object, time_point, &block_validation_object::commit_time >,
                member< block_validation_object, block_validation_id_type, &block_validation_object::id >
             >,
             composite_key_compare< 
-               std::less< time_point >, 
-               std::less< block_validation_id_type > 
+               std::less< time_point >,
+               std::less< block_validation_id_type >
             >
          >
       >,
@@ -523,23 +536,31 @@ namespace node { namespace chain {
    typedef multi_index_container<
       commit_violation_object,
       indexed_by<
-         ordered_unique< tag<by_id>, member< commit_violation_object, commit_violation_id_type, &commit_violation_object::id > >,
-         ordered_unique< tag<by_reporter_height>,
+         ordered_unique< tag< by_id >, member< commit_violation_object, commit_violation_id_type, &commit_violation_object::id > >,
+         ordered_unique< tag< by_reporter_height >,
             composite_key< commit_violation_object,
-               member<commit_violation_object, account_name_type, &commit_violation_object::reporter >,
-               member<commit_violation_object, uint64_t, &commit_violation_object::block_height >
+               member< commit_violation_object, account_name_type, &commit_violation_object::reporter >,
+               member< commit_violation_object, uint64_t, &commit_violation_object::block_height >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::greater< uint64_t >
             >
          >,
-         ordered_unique< tag<by_producer_height>,
+         ordered_unique< tag< by_producer_height >,
             composite_key< commit_violation_object,
-               member<commit_violation_object, account_name_type, &commit_violation_object::producer >,
-               member<commit_violation_object, uint64_t, &commit_violation_object::block_height >
+               member< commit_violation_object, account_name_type, &commit_violation_object::producer >,
+               member< commit_violation_object, uint64_t, &commit_violation_object::block_height >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::greater< uint64_t >
             >
          >,
-         ordered_unique< tag<by_recent_created>,
+         ordered_unique< tag< by_recent_created >,
             composite_key< commit_violation_object,
-               member<commit_violation_object, time_point, &commit_violation_object::created >,
-               member<commit_violation_object, commit_violation_id_type, &commit_violation_object::id >
+               member< commit_violation_object, time_point, &commit_violation_object::created >,
+               member< commit_violation_object, commit_violation_id_type, &commit_violation_object::id >
             >,
             composite_key_compare< 
                std::greater< time_point >, 
@@ -572,7 +593,6 @@ FC_REFLECT( node::chain::producer_object,
          (latitude)
          (longitude)
          (signing_key)
-         (created)
          (last_commit_height)
          (last_commit_id)
          (total_blocks)
@@ -597,6 +617,8 @@ FC_REFLECT( node::chain::producer_object,
          (running_version)
          (hardfork_version_vote)
          (hardfork_time_vote)
+         (created)
+         (last_updated)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::producer_object, node::chain::producer_index );

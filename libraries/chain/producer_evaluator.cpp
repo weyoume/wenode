@@ -70,6 +70,7 @@ void producer_update_evaluator::do_apply( const producer_update_operation& o )
          p.signing_key = public_key_type( o.block_signing_key );
          p.props = o.props;
          p.active = o.active;
+         p.last_updated = now;
       });
    }
    else
@@ -93,6 +94,7 @@ void producer_update_evaluator::do_apply( const producer_update_operation& o )
          p.longitude = o.longitude;
          p.signing_key = public_key_type( o.block_signing_key );
          p.created = now;
+         p.last_updated = now;
          p.props = o.props;
          p.active = true;
       });

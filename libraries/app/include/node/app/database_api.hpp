@@ -148,6 +148,7 @@ struct search_query
    bool                              include_posts = true;               ///< Set True to include post results by title.
 };
 
+
 /**
  * Defines the arguments to an ad query, and provides the relevant display context
  * query from a discussion feed, or a search.
@@ -170,6 +171,102 @@ struct ad_query
    uint32_t                limit = 0;
 };
 
+
+/**
+ * Defines the arguments to a graph query.
+ */
+struct graph_query 
+{
+   void validate()const
+   {
+      FC_ASSERT( limit <= 1000 );
+   }
+
+   set< string >                  select_accounts;                           ///< Name of the graph node and edge creator accounts to include.
+
+   set< string >                  filter_accounts;                           ///< Name of the graph node and edge creator accounts to not include.
+
+   bool                           include_private = false;                   ///< True to include private graphs.
+
+
+   set< string >                  intersect_select_node_types;               ///< Name of the graph node types to include.
+
+   set< string >                  intersect_filter_node_types;               ///< Name of the graph node types to not include.
+
+   set< string >                  union_select_node_types;                   ///< Name of the graph node types to include.
+
+   set< string >                  union_filter_node_types;                   ///< Name of the graph node types to not include.
+
+
+   vector< string >               node_intersect_select_attributes;          ///< Nodes are included if they include all attributes.
+
+   vector< string >               node_union_select_attributes;              ///< Nodes are included if they include any of these attributes.
+
+   vector< string >               node_intersect_filter_attributes;          ///< Nodes are not included if they include all attributes.
+
+   vector< string >               node_union_filter_attributes;              ///< Nodes are not included if they include any of these attributes.
+
+
+   vector< string >               node_intersect_select_values;              ///< Nodes are included if they include all values for intersect select attributes.
+
+   vector< string >               node_union_select_values;                  ///< Nodes are included if they include any of these union select attributes.
+
+   vector< string >               node_intersect_filter_values;              ///< Nodes are not included if they include all intersect filter attributes.
+
+   vector< string >               node_union_filter_values;                  ///< Nodes are not included if they include any of these union filter attributes.
+
+
+   set< string >                  intersect_select_edge_types;               ///< Name of the graph edge types to include.
+
+   set< string >                  intersect_filter_edge_types;               ///< Name of the graph edge types to not include.
+
+   set< string >                  union_select_edge_types;                   ///< Name of the graph edge types to include.
+
+   set< string >                  union_filter_edge_types;                   ///< Name of the graph edge types to not include.
+
+
+   vector< string >               edge_intersect_select_attributes;          ///< Edges are included if they include all attributes.
+
+   vector< string >               edge_union_select_attributes;              ///< Edges are included if they include any of these attributes.
+
+   vector< string >               edge_intersect_filter_attributes;          ///< Edges are not included if they include all attributes.
+
+   vector< string >               edge_union_filter_attributes;              ///< Edges are not included if they include any of these attributes.
+   
+
+   vector< string >               edge_intersect_select_values;              ///< Edges are included if they include all values for intersect select attributes.
+
+   vector< string >               edge_union_select_values;                  ///< Edges are included if they include any of these union select attributes.
+
+   vector< string >               edge_intersect_filter_values;              ///< Edges are not included if they include all intersect filter attributes.
+
+   vector< string >               edge_union_filter_values;                  ///< Edges are not included if they include any of these union filter attributes.
+
+   
+   uint32_t                       limit = 0;
+};
+
+
+/**
+ * Defines the arguments to a graph query.
+ */
+struct confidential_query 
+{
+   void validate()const
+   {
+      FC_ASSERT( limit <= 1000 );
+   }
+
+   set< commitment_type >         select_commitments;           ///< Commitments to include balances.
+
+   set< string >                  select_account_auths;         ///< Account auths to include balances.
+
+   set< string >                  select_key_auths;             ///< Key auths to include balances.
+   
+   uint32_t                       limit = 0;
+};
+
+
 /**
  * The database_api class implements the RPC API for the chain database.
  *
@@ -191,17 +288,17 @@ class database_api
       //=================//
 
 
-      fc::variant_object                  get_config()const;
+      fc::variant_object                              get_config()const;
 
-      dynamic_global_property_api_obj     get_dynamic_global_properties()const;
+      dynamic_global_property_api_obj                 get_dynamic_global_properties()const;
 
-      median_chain_property_api_obj       get_median_chain_properties()const;
+      median_chain_property_api_obj                   get_median_chain_properties()const;
 
-      producer_schedule_api_obj           get_producer_schedule()const;
+      producer_schedule_api_obj                       get_producer_schedule()const;
 
-      hardfork_version                    get_hardfork_version()const;
+      hardfork_version                                get_hardfork_version()const;
 
-      scheduled_hardfork                  get_next_scheduled_hardfork()const;
+      scheduled_hardfork                              get_next_scheduled_hardfork()const;
 
 
       //===================//
@@ -209,21 +306,23 @@ class database_api
       //===================//
 
 
-      vector< account_api_obj >                       get_accounts( vector< string > names ) const;
+      vector< account_api_obj >                       get_accounts( vector< string > names )const;
 
-      vector< account_api_obj >                       get_accounts_by_followers( string from, uint32_t limit ) const;
+      vector< account_api_obj >                       get_accounts_by_followers( string from, uint32_t limit )const;
 
-      vector< account_concise_api_obj >               get_concise_accounts( vector< string > names ) const;
+      vector< account_concise_api_obj >               get_concise_accounts( vector< string > names )const;
 
-      vector< extended_account >                      get_full_accounts( vector< string > names ) const;
+      vector< extended_account >                      get_full_accounts( vector< string > names )const;
 
       map< uint32_t, applied_operation >              get_account_history( string account, uint64_t from, uint32_t limit )const;
 
-      vector< message_state >                         get_messages( vector< string > names ) const;
+      vector< message_state >                         get_messages( vector< string > names )const;
 
-      vector< balance_state >                         get_balances( vector< string > names ) const;
+      vector< balance_state >                         get_balances( vector< string > names )const;
 
-      vector< key_state >                             get_keychains( vector< string > names) const;
+      vector< confidential_balance_api_obj >          get_confidential_balances( const confidential_query& query )const;
+
+      vector< key_state >                             get_keychains( vector< string > names)const;
 
       set< string >                                   lookup_accounts( string lower_bound_name, uint32_t limit )const;
 
@@ -231,7 +330,7 @@ class database_api
 
       vector< owner_authority_history_api_obj >       get_owner_history( string account )const;
 
-      optional< account_recovery_request_api_obj >    get_recovery_request( string account ) const;
+      optional< account_recovery_request_api_obj >    get_recovery_request( string account )const;
 
       optional< account_bandwidth_api_obj >           get_account_bandwidth( string account, producer::bandwidth_type type )const;
 
@@ -265,9 +364,9 @@ class database_api
       //=====================//
 
 
-      vector< extended_community >                        get_communities( vector< string > communities )const;
+      vector< extended_community >                    get_communities( vector< string > communities )const;
 
-      vector< extended_community >                        get_communities_by_subscribers( string from, uint32_t limit )const;
+      vector< extended_community >                    get_communities_by_subscribers( string from, uint32_t limit )const;
 
       uint64_t                                        get_community_count()const;
 
@@ -321,21 +420,27 @@ class database_api
       //================//
 
 
-      vector< order_state >                get_open_orders( vector< string > names )const;
+      vector< order_state >                           get_open_orders( vector< string > names )const;
 
-      market_limit_orders                  get_limit_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const;
+      market_limit_orders                             get_limit_orders( string buy_symbol, string sell_symbol, uint32_t limit )const;
 
-      market_margin_orders                 get_margin_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const;
+      market_margin_orders                            get_margin_orders( string buy_symbol, string sell_symbol, uint32_t limit )const;
 
-      market_call_orders                   get_call_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const;
+      market_option_orders                            get_option_orders( string buy_symbol, string sell_symbol, uint32_t limit )const;
 
-      market_credit_loans                  get_credit_loans( string buy_symbol, string sell_symbol, uint32_t limit ) const;
+      market_call_orders                              get_call_orders( string buy_symbol, string sell_symbol, uint32_t limit )const;
 
-      vector< credit_pool_api_obj >        get_credit_pools( vector< string > assets ) const;
+      market_auction_orders                           get_auction_orders( string buy_symbol, string sell_symbol, uint32_t limit )const;
 
-      vector< liquidity_pool_api_obj >     get_liquidity_pools( string buy_symbol, string sell_symbol ) const;
+      market_credit_loans                             get_credit_loans( string buy_symbol, string sell_symbol, uint32_t limit )const;
 
-      market_state                         get_market_state( string buy_symbol, string sell_symbol )const;
+      vector< credit_pool_api_obj >                   get_credit_pools( vector< string > assets )const;
+
+      vector< liquidity_pool_api_obj >                get_liquidity_pools( string buy_symbol, string sell_symbol )const;
+
+      vector< option_pool_api_obj >                   get_option_pools( string buy_symbol, string sell_symbol )const;
+
+      market_state                                    get_market_state( string buy_symbol, string sell_symbol )const;
 
 
       //=============//
@@ -343,17 +448,41 @@ class database_api
       //=============//
 
 
-      vector< account_ad_state >           get_account_ads( vector< string > names )const;
+      vector< account_ad_state >                      get_account_ads( vector< string > names )const;
 
-      vector< ad_bid_state >               get_interface_audience_bids( const ad_query& query )const;
+      vector< ad_bid_state >                          get_interface_audience_bids( const ad_query& query )const;
 
 
+      //==================//
+      // === Products === //
+      //==================//
+
+
+      product_state                                   get_product( string seller, string product_id )const;
+
+      vector< product_state >                         get_products_by_sellers( vector< string > names )const;
+
+      vector< product_state >                         get_products_by_buyers( vector< string > names )const;
+
+
+      //=====================//
+      // === Graph Data  === //
+      //=====================//
+
+
+      graph_data_state                                get_graph_query( const graph_query& query )const;
+
+      vector< graph_node_property_api_obj >           get_graph_node_properties( vector< string > names )const;
+
+      vector< graph_edge_property_api_obj >           get_graph_edge_properties( vector< string > names )const;
+
+      
       //================//
       // === Search === //
       //================//
 
 
-      search_result_state                  get_search_query( const search_query& query )const;  
+      search_result_state                             get_search_query( const search_query& query )const;
 
 
       //=================================//
@@ -361,23 +490,23 @@ class database_api
       //=================================//
 
 
-      optional< block_header >             get_block_header( uint64_t block_num )const;
+      optional< block_header >                        get_block_header( uint64_t block_num )const;
 
-      optional< signed_block_api_obj >     get_block( uint64_t block_num )const;
+      optional< signed_block_api_obj >                get_block( uint64_t block_num )const;
 
-      vector< applied_operation >          get_ops_in_block( uint64_t block_num, bool only_virtual = true)const;
+      vector< applied_operation >                     get_ops_in_block( uint64_t block_num, bool only_virtual = true)const;
 
-      std::string                          get_transaction_hex( const signed_transaction& trx )const;
+      std::string                                     get_transaction_hex( const signed_transaction& trx )const;
 
-      annotated_signed_transaction         get_transaction( transaction_id_type trx_id )const;
+      annotated_signed_transaction                    get_transaction( transaction_id_type trx_id )const;
 
-      set<public_key_type>                 get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
+      set<public_key_type>                            get_required_signatures( const signed_transaction& trx, const flat_set<public_key_type>& available_keys )const;
 
-      set<public_key_type>                 get_potential_signatures( const signed_transaction& trx )const;
+      set<public_key_type>                            get_potential_signatures( const signed_transaction& trx )const;
 
-      bool                                 verify_authority( const signed_transaction& trx )const;
+      bool                                            verify_authority( const signed_transaction& trx )const;
 
-      bool                                 verify_account_authority( const string& name_or_id, const flat_set<public_key_type>& signers )const;
+      bool                                            verify_account_authority( const string& name_or_id, const flat_set<public_key_type>& signers )const;
 
 
       //======================//
@@ -385,27 +514,27 @@ class database_api
       //======================//
 
 
-      vector< vote_state >                 get_active_votes( string author, string permlink )const;
+      vector< vote_state >                            get_active_votes( string author, string permlink )const;
 
-      vector< view_state >                 get_active_views( string author, string permlink )const;
+      vector< view_state >                            get_active_views( string author, string permlink )const;
 
-      vector< share_state >                get_active_shares( string author, string permlink )const;
+      vector< share_state >                           get_active_shares( string author, string permlink )const;
 
-      vector< moderation_state >           get_active_mod_tags( string author, string permlink )const;
+      vector< moderation_state >                      get_active_mod_tags( string author, string permlink )const;
 
-      vector< account_vote >               get_account_votes( string account, string from_author, string from_permlink, uint32_t limit )const;
+      vector< account_vote >                          get_account_votes( string account, string from_author, string from_permlink, uint32_t limit )const;
 
-      vector< account_view >               get_account_views( string account, string from_author, string from_permlink, uint32_t limit )const;
+      vector< account_view >                          get_account_views( string account, string from_author, string from_permlink, uint32_t limit )const;
 
-      vector< account_share >              get_account_shares( string account, string from_author, string from_permlink, uint32_t limit )const;
+      vector< account_share >                         get_account_shares( string account, string from_author, string from_permlink, uint32_t limit )const;
 
-      vector< account_moderation >         get_account_moderation( string account, string from_author, string from_permlink, uint32_t limit )const;
+      vector< account_moderation >                    get_account_moderation( string account, string from_author, string from_permlink, uint32_t limit )const;
 
-      vector< tag_following_api_obj >      get_tag_followings( vector< string > tags )const;
+      vector< tag_following_api_obj >                 get_tag_followings( vector< string > tags )const;
 
-      vector< tag_api_obj >                get_top_tags( string after_tag, uint32_t limit )const;
+      vector< tag_api_obj >                           get_top_tags( string after_tag, uint32_t limit )const;
 
-      vector< pair< tag_name_type, uint32_t > >   get_tags_used_by_author( string author )const;
+      vector< pair< tag_name_type, uint32_t > >       get_tags_used_by_author( string author )const;
 
 
       //=====================//
@@ -413,47 +542,47 @@ class database_api
       //=====================//
 
 
-      discussion                           get_content( string author, string permlink )const;
+      discussion                                      get_content( string author, string permlink )const;
       
-      vector< discussion >                 get_content_replies( string parent, string parent_permlink )const;
+      vector< discussion >                            get_content_replies( string parent, string parent_permlink )const;
 
-      vector< discussion >                 get_replies_by_last_update( account_name_type start_author, string start_permlink, uint32_t limit )const;
+      vector< discussion >                            get_replies_by_last_update( account_name_type start_author, string start_permlink, uint32_t limit )const;
 
-      vector< discussion >                 get_discussions_by_sort_rank( const discussion_query& query )const;
+      vector< discussion >                            get_discussions_by_sort_rank( const discussion_query& query )const;
 
-      vector< discussion >                 get_discussions_by_feed( const discussion_query& query )const;
+      vector< discussion >                            get_discussions_by_feed( const discussion_query& query )const;
 
-      vector< discussion >                 get_discussions_by_blog( const discussion_query& query )const;
+      vector< discussion >                            get_discussions_by_blog( const discussion_query& query )const;
 
-      vector< discussion >                 get_discussions_by_recommended( const discussion_query& query )const;
+      vector< discussion >                            get_discussions_by_recommended( const discussion_query& query )const;
 
-      vector< discussion >                 get_discussions_by_comments( const discussion_query& query )const;
+      vector< discussion >                            get_discussions_by_comments( const discussion_query& query )const;
 
-      vector< discussion >                 get_discussions_by_payout(const discussion_query& query )const;
+      vector< discussion >                            get_discussions_by_payout(const discussion_query& query )const;
 
-      vector< discussion >                 get_post_discussions_by_payout( const discussion_query& query )const;
+      vector< discussion >                            get_post_discussions_by_payout( const discussion_query& query )const;
 
-      vector< discussion >                 get_comment_discussions_by_payout( const discussion_query& query )const;
+      vector< discussion >                            get_comment_discussions_by_payout( const discussion_query& query )const;
 
-      vector< discussion >                 get_discussions_by_created( const discussion_query& query )const;
+      vector< discussion >                            get_discussions_by_created( const discussion_query& query )const;
 
-      vector< discussion >                 get_discussions_by_active( const discussion_query& query )const;
+      vector< discussion >                            get_discussions_by_active( const discussion_query& query )const;
 
-      vector< discussion >                 get_discussions_by_votes( const discussion_query& query )const;
+      vector< discussion >                            get_discussions_by_votes( const discussion_query& query )const;
 
-      vector< discussion >                 get_discussions_by_views( const discussion_query& query )const;
+      vector< discussion >                            get_discussions_by_views( const discussion_query& query )const;
 
-      vector< discussion >                 get_discussions_by_shares( const discussion_query& query )const;
+      vector< discussion >                            get_discussions_by_shares( const discussion_query& query )const;
 
-      vector< discussion >                 get_discussions_by_children( const discussion_query& query )const;
+      vector< discussion >                            get_discussions_by_children( const discussion_query& query )const;
 
-      vector< discussion >                 get_discussions_by_vote_power( const discussion_query& query )const;
+      vector< discussion >                            get_discussions_by_vote_power( const discussion_query& query )const;
 
-      vector< discussion >                 get_discussions_by_view_power( const discussion_query& query )const;
+      vector< discussion >                            get_discussions_by_view_power( const discussion_query& query )const;
 
-      vector< discussion >                 get_discussions_by_share_power( const discussion_query& query )const;
+      vector< discussion >                            get_discussions_by_share_power( const discussion_query& query )const;
 
-      vector< discussion >                 get_discussions_by_comment_power( const discussion_query& query )const;
+      vector< discussion >                            get_discussions_by_comment_power( const discussion_query& query )const;
 
 
 
@@ -462,7 +591,7 @@ class database_api
       //===============//
 
 
-      state                                get_state( string path )const;
+      state                                           get_state( string path )const;
 
 
       //=======================//
@@ -470,7 +599,7 @@ class database_api
       //=======================//
    
 
-      void                                set_block_applied_callback( std::function< void(const variant& block_header ) > cb );
+      void                                            set_block_applied_callback( std::function< void(const variant& block_header ) > cb );
 
 
       //=========================//
@@ -478,7 +607,7 @@ class database_api
       //=========================//
 
 
-      void                                on_api_startup();
+      void                                            on_api_startup();
 
    private:
       discussion get_discussion( comment_id_type id, uint32_t truncate_body )const;
@@ -570,6 +699,44 @@ FC_REFLECT( node::app::ad_query,
          (limit)
          );
 
+FC_REFLECT( node::app::graph_query,
+         (select_accounts)
+         (filter_accounts)
+         (include_private)
+         (intersect_select_node_types)
+         (intersect_filter_node_types)
+         (union_select_node_types)
+         (union_filter_node_types)
+         (node_intersect_select_attributes)
+         (node_union_select_attributes)
+         (node_intersect_filter_attributes)
+         (node_union_filter_attributes)
+         (node_intersect_select_values)
+         (node_union_select_values)
+         (node_intersect_filter_values)
+         (node_union_filter_values)
+         (intersect_select_edge_types)
+         (intersect_filter_edge_types)
+         (union_select_edge_types)
+         (union_filter_edge_types)
+         (edge_intersect_select_attributes)
+         (edge_union_select_attributes)
+         (edge_intersect_filter_attributes)
+         (edge_union_filter_attributes)
+         (edge_intersect_select_values)
+         (edge_union_select_values)
+         (edge_intersect_filter_values)
+         (edge_union_filter_values)
+         (limit)
+         );
+
+FC_REFLECT( node::app::confidential_query,
+         (select_commitments)
+         (select_account_auths)
+         (select_key_auths)
+         (limit)
+         );
+
 FC_API( node::app::database_api,
 
          // Globals
@@ -642,6 +809,7 @@ FC_API( node::app::database_api,
          (get_open_orders)
          (get_limit_orders)
          (get_margin_orders)
+         (get_option_orders)
          (get_call_orders)
          (get_credit_loans)
          (get_credit_pools)
@@ -652,6 +820,12 @@ FC_API( node::app::database_api,
 
          (get_account_ads)
          (get_interface_audience_bids)
+
+         // Graph
+         
+         (get_graph_query)
+         (get_graph_node_properties)
+         (get_graph_edge_properties)
 
          // Search 
 
