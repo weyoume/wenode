@@ -162,6 +162,7 @@ namespace node { namespace protocol {
             asset_distribution_operation,
             asset_distribution_fund_operation,
             asset_option_exercise_operation,
+            asset_stimulus_fund_operation,
             asset_update_feed_producers_operation,
             asset_publish_feed_operation,
             asset_settle_operation,

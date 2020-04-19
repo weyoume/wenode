@@ -1849,6 +1849,13 @@ vector< extended_asset > database_api_impl::get_assets( vector< string > assets 
          results.back().credit = credit_data_api_obj( *credit_itr );
       }
 
+      const auto& stimulus_idx = _db.get_index< asset_stimulus_data_index >().indices().get< by_symbol >();
+      auto stimulus_itr = stimulus_idx.find( asset );
+      if( stimulus_itr != stimulus_idx.end() )
+      {
+         results.back().stimulus = stimulus_data_api_obj( *stimulus_itr );
+      }
+
       const auto& unique_idx = _db.get_index< asset_unique_data_index >().indices().get< by_symbol >();
       auto unique_itr = unique_idx.find( asset );
       if( unique_itr != unique_idx.end() )
@@ -3881,8 +3888,8 @@ graph_data_state database_api_impl::get_graph_query( const graph_query& query )c
    nodes.reserve( query.limit );
    edges.reserve( query.limit );
 
-   bool found;
-   bool not_found;
+   bool found = false;
+   bool not_found = false;
 
    while( node_itr != node_idx.end() )
    {

@@ -833,7 +833,7 @@ struct connection_api_obj
       encrypted_key_b( c.encrypted_key_b ),
       connection_type( connection_tier_values[ int( c.connection_type ) ] ),
       connection_id( to_string( c.connection_id ) ),
-      connection_strength( c.connection_strength ),
+      message_count( c.message_count ),
       consecutive_days( c.consecutive_days ),
       last_message_time_a( c.last_message_time_a ),
       last_message_time_b( c.last_message_time_b ),
@@ -849,7 +849,7 @@ struct connection_api_obj
    encrypted_keypair_type       encrypted_key_b;          ///< B's private connection key, encrypted with the public secure key of account A.
    string                       connection_type;          ///< The connection level shared in this object
    string                       connection_id;            ///< Unique uuidv4 for the connection, for local storage of decryption key.
-   uint32_t                     connection_strength;      ///< Number of total messages sent between connections
+   uint32_t                     message_count;      ///< Number of total messages sent between connections
    uint32_t                     consecutive_days;         ///< Number of consecutive days that the connected accounts have both sent a message.
    time_point                   last_message_time_a;      ///< Time since the account A last sent a message
    time_point                   last_message_time_b;      ///< Time since the account B last sent a message
@@ -2962,6 +2962,42 @@ struct credit_data_api_obj
 };
 
 
+struct stimulus_data_api_obj
+{
+   stimulus_data_api_obj( const chain::asset_stimulus_data_object& o ):
+      id( o.id ),
+      business_account( o.business_account ),
+      symbol( o.symbol ),
+      redemption_asset( o.redemption_asset ),
+      redemption_pool( o.redemption_pool ),
+      redemption_price( o.redemption_price ),
+      distribution_amount( o.distribution_amount ),
+      next_distribution_date( o.next_distribution_date )
+      {
+         for( auto acc : o.distribution_list )
+         {
+            distribution_list.push_back( acc );
+         }
+         for( auto acc : o.redemption_list )
+         {
+            redemption_list.push_back( acc );
+         }
+      }
+
+   stimulus_data_api_obj(){}
+
+   asset_stimulus_data_id_type          id;
+   account_name_type                    business_account;                   ///< The business account name of the issuer.
+   asset_symbol_type                    symbol;                             ///< The symbol of the stimulus asset.
+   asset_symbol_type                    redemption_asset;                   ///< Symbol of the asset that can be redeemed in exchange the stimulus asset.
+   asset                                redemption_pool;                    ///< Amount of assets pooled to redeem in exchange for the stimulus asset.
+   price                                redemption_price;                   ///< Price at which the stimulus asset is redeemed. Redemption asset is base.
+   vector< account_name_type >          distribution_list;                  ///< List of accounts that receive an equal balance of the stimulus asset.
+   vector< account_name_type >          redemption_list;                    ///< List of accounts that can receive and redeem the stimulus asset.
+   asset                                distribution_amount;                ///< Amount of stimulus asset distributed each interval.
+   date_type                            next_distribution_date;             ///< Date that the next stimulus asset distribution will proceed.
+};
+
 
 struct unique_data_api_obj
 {
@@ -3838,7 +3874,7 @@ FC_REFLECT( node::app::connection_api_obj,
          (encrypted_key_b)
          (connection_type)
          (connection_id)
-         (connection_strength)
+         (message_count)
          (consecutive_days)
          (last_message_time_a)
          (last_message_time_b)
@@ -4723,6 +4759,19 @@ FC_REFLECT( node::app::credit_data_api_obj,
          (savings_fixed_interest_rate)
          (savings_variable_interest_rate)
          (var_interest_range)
+         );
+
+FC_REFLECT( node::app::stimulus_data_api_obj,
+         (id)
+         (business_account)
+         (symbol)
+         (redemption_asset)
+         (redemption_pool)
+         (redemption_price)
+         (distribution_list)
+         (redemption_list)
+         (distribution_amount)
+         (next_distribution_date)
          );
 
 FC_REFLECT( node::app::unique_data_api_obj,

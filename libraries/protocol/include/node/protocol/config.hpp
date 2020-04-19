@@ -341,6 +341,9 @@
 #define OPTION_ASSET_MULTIPLE                  (100)                         // Option assets use a multiple of 100 underlying assets per unit.
 #define OPTION_SIG_FIGURES                     (2)                           // Option mid prices are rounded to 2 significant figures. 
 
+#define STIMULUS_INTERVAL                      fc::days(1)                   // Time period between stimulus updates.
+#define STIMULUS_INTERVAL_BLOCKS               uint64_t( STIMULUS_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Checks for stimulus expirations and distributions once per day.
+
 #define DISTRIBUTION_INTERVAL                  fc::days(1)
 #define DISTRIBUTION_INTERVAL_BLOCKS           uint64_t( DISTRIBUTION_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Distributes asset distributions once per day.
 #define UNIQUE_INTERVAL                        fc::days(1)
@@ -371,7 +374,9 @@
 #define REP_UPDATE_BLOCK_INTERVAL              (BLOCKS_PER_DAY)
 #define METRIC_INTERVAL                        fc::hours(1)                  // Updates metrics once per hour
 #define METRIC_INTERVAL_BLOCKS                 uint64_t( METRIC_INTERVAL.count() / BLOCK_INTERVAL.count() )
-#define METRIC_CALC_TIME                       (fc::days(30))                // Metrics include posts up to 30 days old. 
+#define METRIC_CALC_TIME                       (fc::days(30))                // Metrics include posts up to 30 days old.
+#define MESSAGE_COUNT_INTERVAL                 fc::days(1)                   // Updates consecutive days
+#define MESSAGE_COUNT_INTERVAL_BLOCKS          uint64_t( MESSAGE_COUNT_INTERVAL.count() / BLOCK_INTERVAL.count() )
 #define FEED_INTERVAL_BLOCKS                   (BLOCKS_PER_HOUR)             // Updates feeds once per hour
 #define FEED_HISTORY_WINDOW                    fc::hours(84)                 // 3.5 days
 #define MAX_FEED_AGE                           fc::days(30)                  // 30 days

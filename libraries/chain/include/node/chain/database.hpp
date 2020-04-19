@@ -169,6 +169,9 @@ namespace node { namespace chain {
          const asset_credit_data_object& get_credit_data( const asset_symbol_type& symbol ) const;
          const asset_credit_data_object* find_credit_data( const asset_symbol_type& symbol ) const;
 
+         const asset_stimulus_data_object& get_stimulus_data( const asset_symbol_type& symbol ) const;
+         const asset_stimulus_data_object* find_stimulus_data( const asset_symbol_type& symbol ) const;
+
          const asset_unique_data_object& get_unique_data( const asset_symbol_type& symbol ) const;
          const asset_unique_data_object* find_unique_data( const asset_symbol_type& symbol ) const;
 
@@ -781,6 +784,8 @@ namespace node { namespace chain {
 
          void update_comment_metrics();
 
+         void update_message_counter();
+
          void add_comment_to_feeds( const comment_object& comment );
 
          void share_comment_to_feeds( const account_name_type& sharer, const feed_reach_type& reach, const comment_object& comment );
@@ -828,6 +833,8 @@ namespace node { namespace chain {
          void process_credit_buybacks();
          
          void process_credit_interest();
+
+         void process_stimulus_assets();
 
          void process_option_assets();
 

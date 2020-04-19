@@ -1484,21 +1484,21 @@ namespace node { namespace chain {
 
          encrypted_keypair_type       encrypted_key_b;          ///< B's private connection key, encrypted with the public secure key of account A.
 
-         connection_tier_type         connection_type;          ///< The connection level shared in this object
+         connection_tier_type         connection_type;          ///< The connection level shared in this object.
 
          shared_string                connection_id;            ///< Unique uuidv4 for the connection, for local storage of decryption key.
 
-         uint32_t                     connection_strength = 0;  ///< Number of total messages sent between connections
+         uint32_t                     message_count;            ///< Number of total messages sent between connections.
 
-         uint32_t                     consecutive_days = 0;     ///< Number of consecutive days that the connected accounts have both sent a message.
+         uint32_t                     consecutive_days;         ///< Number of consecutive days that the connected accounts have both sent a message.
 
          time_point                   last_message_time_a;      ///< Time since the account A last sent a message.
 
          time_point                   last_message_time_b;      ///< Time since the account B last sent a message.
 
-         time_point                   last_updated;             ///< Time the connection keys were last updated. 
+         time_point                   last_updated;             ///< Time the connection keys were last updated.
 
-         time_point                   created;                  ///< Time the connection was created. 
+         time_point                   created;                  ///< Time the connection was created.
 
          time_point                   last_message_time()const
          {
@@ -2364,34 +2364,57 @@ namespace node { namespace chain {
    struct by_accounts;
    struct by_account_a;
    struct by_account_b;
+   struct by_last_message_time;
 
    typedef multi_index_container<
       connection_object,
       indexed_by<
-         ordered_unique< tag<by_id>, member< connection_object, connection_id_type, &connection_object::id > >,
-         ordered_unique< tag<by_accounts>,
+         ordered_unique< tag< by_id >, member< connection_object, connection_id_type, &connection_object::id > >,
+         ordered_unique< tag< by_accounts >,
             composite_key< connection_object,
-               member<connection_object, account_name_type, &connection_object::account_a >,
-               member<connection_object, account_name_type, &connection_object::account_b >,
-               member<connection_object, connection_tier_type, &connection_object::connection_type >
+               member< connection_object, account_name_type, &connection_object::account_a >,
+               member< connection_object, account_name_type, &connection_object::account_b >,
+               member< connection_object, connection_tier_type, &connection_object::connection_type >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< account_name_type >, std::greater< connection_tier_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< account_name_type >, 
+               std::greater< connection_tier_type > 
+            >
          >,
-         ordered_unique< tag<by_account_a>,
+         ordered_unique< tag< by_account_a >,
             composite_key< connection_object,
-               member<connection_object, account_name_type, &connection_object::account_a >,
-               member<connection_object, connection_tier_type, &connection_object::connection_type >,
+               member< connection_object, account_name_type, &connection_object::account_a >,
+               member< connection_object, connection_tier_type, &connection_object::connection_type >,
                member< connection_object, connection_id_type, &connection_object::id > 
             >,
-            composite_key_compare< std::less< account_name_type >, std::greater< connection_tier_type >, std::less<connection_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::greater< connection_tier_type >, 
+               std::less<connection_id_type > 
+            >
          >,
-         ordered_unique< tag<by_account_b>,
+         ordered_unique< tag< by_account_b >,
             composite_key< connection_object,
-               member<connection_object, account_name_type, &connection_object::account_b >,
-               member<connection_object, connection_tier_type, &connection_object::connection_type >,
+               member< connection_object, account_name_type, &connection_object::account_b >,
+               member< connection_object, connection_tier_type, &connection_object::connection_type >,
                member< connection_object, connection_id_type, &connection_object::id > 
             >,
-            composite_key_compare< std::less< account_name_type >, std::greater< connection_tier_type >, std::less<connection_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::greater< connection_tier_type >, 
+               std::less< connection_id_type > 
+            >
+         >,
+         ordered_unique< tag< by_last_message_time >,
+            composite_key< connection_object,
+               const_mem_fun< connection_object, time_point, &connection_object::last_message_time >,
+               member< connection_object, connection_id_type, &connection_object::id > 
+            >,
+            composite_key_compare< 
+               std::greater< time_point >, 
+               std::less< connection_id_type > 
+            >
          >
       >,
       allocator< connection_object >
@@ -2677,7 +2700,7 @@ FC_REFLECT( node::chain::connection_object,
          (encrypted_key_b)
          (connection_type)
          (connection_id)
-         (connection_strength)
+         (message_count)
          (consecutive_days)
          (last_message_time_a)
          (last_message_time_b)

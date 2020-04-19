@@ -631,6 +631,102 @@ void database::process_credit_interest()
 } FC_CAPTURE_AND_RETHROW() }
 
 
+
+/**
+ * Expires all stimulus balances, and redistributes new balances
+ * to the accounts within the distribution list.
+ * Redeems stimulus assets for the equivalent amount of
+ * redemption assets.
+ */
+void database::process_stimulus_assets()
+{ try {
+   if( (head_block_num() % STIMULUS_INTERVAL_BLOCKS ) != 0 )
+   { 
+      return; 
+   }
+
+   time_point now = head_block_time();
+   const auto& stimulus_idx = get_index< asset_stimulus_data_index >().indices().get< by_expiration >();
+   auto stimulus_itr = stimulus_idx.begin();
+   const auto& balance_idx = get_index< account_balance_index >().indices().get< by_owner_symbol >();
+   auto balance_itr = balance_idx.begin();
+
+   asset_symbol_type stimulus_symbol;
+
+   while( stimulus_itr != stimulus_idx.end() &&
+      now >= stimulus_itr->expiration() )
+   {
+      const asset_stimulus_data_object& stimulus = *stimulus_itr;
+
+      asset total_redemption = asset( 0, stimulus.redemption_asset );
+      asset balance_to_redeem = asset( 0, stimulus.symbol );
+      price redemption_price = stimulus.redemption_price;
+      date_type new_date;
+      
+      if( stimulus.next_distribution_date.month > 11 )
+      {
+         new_date = date_type( 1, 1, stimulus.next_distribution_date.year + 1 );
+      }
+      else
+      {
+         new_date = date_type( 1, stimulus.next_distribution_date.month + 1, stimulus.next_distribution_date.year );
+      }
+
+      modify( stimulus, [&]( asset_stimulus_data_object& asdo )
+      {
+         asdo.next_distribution_date = new_date;
+      });
+
+      for( account_name_type s : stimulus.redemption_list )     // Exchange all balances in redemption list for redemption pool assets
+      {
+         balance_itr = balance_idx.find( boost::make_tuple( s, stimulus.symbol ) );
+         if( balance_itr != balance_idx.end() )
+         {
+            asset balance = balance_itr->get_total_balance();
+            balance_to_redeem += balance;
+         }
+      }
+
+      if( stimulus.redemption_pool < balance_to_redeem * stimulus.redemption_price )
+      {
+         redemption_price = price( stimulus.redemption_pool, balance_to_redeem );
+      }
+
+      for( account_name_type s : stimulus.redemption_list )     // Exchange all balances in redemption list for redemption pool assets
+      {
+         balance_itr = balance_idx.find( boost::make_tuple( s, stimulus.symbol ) );
+         if( balance_itr != balance_idx.end() )
+         {
+            asset balance = balance_itr->get_total_balance();
+            asset redemption = balance * stimulus.redemption_price;
+            total_redemption += redemption;
+            adjust_liquid_balance( s, redemption );
+         }
+      }
+
+      modify( stimulus, [&]( asset_stimulus_data_object& asdo )
+      {
+         asdo.adjust_pool( -total_redemption );
+      });
+
+      adjust_pending_supply( -total_redemption );
+
+      clear_asset_balances( stimulus.symbol );      // Clear all balances and order positions of the stimulus asset.
+
+      if( stimulus.redemption_pool >= stimulus.amount_to_distribute() * stimulus.redemption_price )
+      {
+         for( account_name_type s : stimulus.distribution_list )
+         {
+            adjust_liquid_balance( s, stimulus.distribution_amount );
+         }
+      }
+      
+      stimulus_itr = stimulus_idx.begin();    // Reset to front of index by expiration time
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+
+
 /**
 void database::update_median_feed() 
 { try {

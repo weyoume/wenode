@@ -1412,6 +1412,16 @@ const asset_credit_data_object* database::find_credit_data( const asset_symbol_t
    return find< asset_credit_data_object, by_symbol >( (symbol) );
 }
 
+const asset_stimulus_data_object& database::get_stimulus_data( const asset_symbol_type& symbol ) const
+{ try {
+   return get< asset_stimulus_data_object, by_symbol >( (symbol) );
+} FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+const asset_stimulus_data_object* database::find_stimulus_data( const asset_symbol_type& symbol ) const
+{
+   return find< asset_stimulus_data_object, by_symbol >( (symbol) );
+}
+
 const asset_unique_data_object& database::get_unique_data( const asset_symbol_type& symbol ) const
 { try {
    return get< asset_unique_data_object, by_symbol >( (symbol) );
@@ -4786,6 +4796,7 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< asset_distribution_evaluator             >();
    _my->_evaluator_registry.register_evaluator< asset_distribution_fund_evaluator        >();
    _my->_evaluator_registry.register_evaluator< asset_option_exercise_evaluator          >();
+   _my->_evaluator_registry.register_evaluator< asset_stimulus_fund_evaluator            >();
    _my->_evaluator_registry.register_evaluator< asset_update_feed_producers_evaluator    >();
    _my->_evaluator_registry.register_evaluator< asset_publish_feed_evaluator             >();
    _my->_evaluator_registry.register_evaluator< asset_settle_evaluator                   >();
@@ -5189,6 +5200,7 @@ void database::_apply_block( const signed_block& next_block )
    update_community_moderator_set();
    update_business_account_set();
    update_comment_metrics();
+   update_message_counter();
    update_median_liquidity();
    update_proof_of_work_target();
    update_account_reputations();
@@ -5207,6 +5219,7 @@ void database::_apply_block( const signed_block& next_block )
    process_credit_buybacks();
    process_margin_updates();
    process_credit_interest();
+   process_stimulus_assets();
 
    process_auction_orders();
    process_option_assets();

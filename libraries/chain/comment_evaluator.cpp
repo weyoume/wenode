@@ -905,9 +905,9 @@ void message_evaluator::do_apply( const message_operation& o )
    }
 
    const auto& connection_idx = _db.get_index< connection_index >().indices().get< by_accounts >();
-   auto con_itr = connection_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::CONNECTION ) );
+   auto connection_itr = connection_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::CONNECTION ) );
 
-   FC_ASSERT( con_itr != connection_idx.end(), 
+   FC_ASSERT( connection_itr != connection_idx.end(), 
       "Cannot send message: No Connection between Account: ${a} and Account: ${b}", ("a", account_a_name)("b", account_b_name) );
 
    const auto& message_idx = _db.get_index< message_index >().indices().get< by_sender_uuid >();
@@ -925,6 +925,19 @@ void message_evaluator::do_apply( const message_operation& o )
          from_string( mo.uuid, o.uuid );
          mo.created = now;
          mo.last_updated = now;
+      });
+
+      _db.modify( *connection_itr, [&]( connection_object& co )
+      {
+         if( account_a_name == sender.name )
+         {
+            co.last_message_time_a = now;
+         }
+         else if( account_b_name == sender.name )
+         {
+            co.last_message_time_b = now;
+         }
+         co.message_count++;
       });
    }
    else

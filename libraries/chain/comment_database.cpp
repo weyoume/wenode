@@ -652,6 +652,44 @@ void database::update_comment_metrics()
 } FC_CAPTURE_AND_RETHROW() }
 
 
+/**
+ * Increments the message counter of all connections between accounts if 
+ * they have messaged each other in the last 36 hours once per day.
+ */
+void database::update_message_counter()
+{ try {
+   if( (head_block_num() % MESSAGE_COUNT_INTERVAL_BLOCKS) != 0 )
+      return;
+
+   time_point now = head_block_time();
+
+   const auto& connection_idx = get_index< connection_index >().indices().get< by_last_message_time >();
+   auto connection_itr = connection_idx.begin();
+
+   while( connection_itr != connection_idx.end() && 
+      connection_itr->last_message_time() + fc::days(7) >= now )
+   {
+      if( connection_itr->last_message_time() + fc::hours(36) >= now )
+      {
+         modify( *connection_itr, [&]( connection_object& co )
+         {
+            co.consecutive_days++;
+         });
+      }
+      else if( connection_itr->consecutive_days > 0 )
+      {
+         modify( *connection_itr, [&]( connection_object& co )
+         {
+            co.consecutive_days = 0;
+         });
+      }
+
+      ++connection_itr;
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+
+
 /** 
  * Adds a newly created post to the authors following, mutual, connection,
  * friend, and companion feeds according to the post's specified reach.

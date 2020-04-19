@@ -72,6 +72,12 @@ void transfer_evaluator::do_apply( const transfer_operation& o )
          audo.controlling_owner = o.to;
       });
    }
+   else if( asset_obj.asset_type == asset_property_type::STIMULUS_ASSET )
+   {
+      const asset_stimulus_data_object& stimulus = _db.get_stimulus_data( asset_obj.symbol );
+      FC_ASSERT( stimulus.is_redemption( o.to ),
+         "Stimulus asset must be transferred to members of the redemption list." );
+   }
 
    FC_ASSERT( to_account_permissions.is_authorized_transfer( o.from, asset_obj ),
       "Transfer is not authorized, due to recipient account's asset permisssions" );

@@ -199,6 +199,7 @@ enum object_type
    asset_equity_data_object_type,
    asset_bond_data_object_type,
    asset_credit_data_object_type,
+   asset_stimulus_data_object_type,
    asset_unique_data_object_type,
    asset_liquidity_pool_object_type,
    asset_credit_pool_object_type,
@@ -351,6 +352,7 @@ class asset_collateral_bid_object;
 class asset_equity_data_object;
 class asset_bond_data_object;
 class asset_credit_data_object;
+class asset_stimulus_data_object;
 class asset_unique_data_object;
 class asset_liquidity_pool_object;
 class asset_credit_pool_object;
@@ -502,6 +504,7 @@ typedef oid< asset_collateral_bid_object                > asset_collateral_bid_i
 typedef oid< asset_equity_data_object                   > asset_equity_data_id_type;
 typedef oid< asset_bond_data_object                     > asset_bond_data_id_type;
 typedef oid< asset_credit_data_object                   > asset_credit_data_id_type;
+typedef oid< asset_stimulus_data_object                 > asset_stimulus_data_id_type;
 typedef oid< asset_unique_data_object                   > asset_unique_data_id_type;
 typedef oid< asset_liquidity_pool_object                > asset_liquidity_pool_id_type;
 typedef oid< asset_credit_pool_object                   > asset_credit_pool_id_type;
@@ -727,6 +730,7 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (asset_equity_data_object_type)
          (asset_bond_data_object_type)
          (asset_credit_data_object_type)
+         (asset_stimulus_data_object_type)
          (asset_unique_data_object_type)
          (asset_liquidity_pool_object_type)
          (asset_credit_pool_object_type)

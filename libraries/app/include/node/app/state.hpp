@@ -358,6 +358,7 @@ namespace node { namespace app {
       equity_data_api_obj                                            equity;
       bond_data_api_obj                                              bond;
       credit_data_api_obj                                            credit;
+      stimulus_data_api_obj                                          stimulus;
       unique_data_api_obj                                            unique;
       credit_pool_api_obj                                            credit_pool;
       map< asset_symbol_type, liquidity_pool_api_obj >               liquidity_pools;
@@ -701,6 +702,7 @@ FC_REFLECT_DERIVED( node::app::extended_asset, ( node::app::asset_api_obj ),
          (equity)
          (bond)
          (credit)
+         (stimulus)
          (unique)
          (credit_pool)
          (liquidity_pools)

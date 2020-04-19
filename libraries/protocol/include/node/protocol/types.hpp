@@ -253,6 +253,7 @@ namespace node {
          EQUITY_ASSET,           ///< Asset issued by a business account that distributes a dividend from incoming revenue, and has voting power over a business accounts transactions.
          BOND_ASSET,             ///< Asset issued by a business account, partially backed by collateral, that pays a coupon rate and is redeemed after maturity.
          CREDIT_ASSET,           ///< Asset issued by a business account that is backed by repayments up to a face value, and interest payments.
+         STIMULUS_ASSET,         ///< Asset issued by a business account with expiring balances that is distributed to a set of accounts on regular intervals.
          LIQUIDITY_POOL_ASSET,   ///< Asset that is backed by the deposits of an asset pair's liquidity pool and earns trading fees. 
          CREDIT_POOL_ASSET,      ///< Asset that is backed by deposits of the base asset, used for borrowing funds from the pool, used as collateral to borrow base asset.
          OPTION_ASSET,           ///< Asset that enables the execution of a trade at a specific strike price until an expiration date. 
@@ -269,6 +270,7 @@ namespace node {
          "equity",
          "bond",
          "credit",
+         "stimulus",
          "liquidity_pool",
          "credit_pool",
          "option",
@@ -819,10 +821,11 @@ FC_REFLECT_ENUM( node::protocol::product_sale_type,
 FC_REFLECT_ENUM( node::protocol::asset_property_type,
          (CURRENCY_ASSET)
          (STANDARD_ASSET)
+         (STABLECOIN_ASSET)
          (EQUITY_ASSET)
          (BOND_ASSET)
          (CREDIT_ASSET)
-         (STABLECOIN_ASSET)
+         (STIMULUS_ASSET)
          (LIQUIDITY_POOL_ASSET)
          (CREDIT_POOL_ASSET)
          (OPTION_ASSET)

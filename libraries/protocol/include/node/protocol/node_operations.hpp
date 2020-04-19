@@ -4091,6 +4091,18 @@ namespace node { namespace protocol {
 
       date_type                       maturity_date = date_type();                                       ///< Date at which the bond will mature. Principle value will be automatically paid from business_account.
 
+      // === Stimulus Asset Options === //
+
+      asset_symbol_type               redemption_asset = SYMBOL_USD;                                     ///< Symbol of the asset that can be redeemed in exchange the stimulus asset.
+
+      price                           redemption_price = price();                                        ///< Price at which the stimulus asset is redeemed. Redemption asset is base.
+      
+      vector< account_name_type >     distribution_list;                                                 ///< List of accounts that receive an equal balance of the stimulus asset.
+
+      vector< account_name_type >     redemption_list;                                                   ///< List of accounts that can receive and redeem the stimulus asset.
+
+      asset                           distribution_amount = asset();                                     ///< Amount of stimulus asset distributed each interval.
+
       void validate()const;
    };
 
@@ -4311,6 +4323,28 @@ namespace node { namespace protocol {
       account_name_type             account;              ///< The account exercising the option asset.
 
       asset                         amount;               ///< Option assets being exercised by exchanging the quoted asset for the underlying. 
+
+      void                          validate()const;
+      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+   };
+
+
+   /**
+    * Adds funds to the redemption pool of a stimulus asset.
+    * 
+    * Stimulus assets are redeemable for the underlying redemption pool 
+    * and all balances are redistributed once per month. 
+    */
+   struct asset_stimulus_fund_operation : public base_operation
+   {
+      account_name_type             signatory;
+      
+      account_name_type             account;              ///< The account funding the stimulus asset.
+
+      asset_symbol_type             stimulus_asset;       ///< Asset symbol of the asset to add stimulus funds to.
+
+      asset                         amount;               ///< Redemption asset being injected into the redemption pool.
 
       void                          validate()const;
       void                          get_creator_name( account_name_type a )const{ a = account; }
@@ -6366,6 +6400,13 @@ FC_REFLECT( node::protocol::asset_distribution_fund_operation,
 FC_REFLECT( node::protocol::asset_option_exercise_operation,
          (signatory)
          (account)
+         (amount)
+         );
+
+FC_REFLECT( node::protocol::asset_stimulus_fund_operation,
+         (signatory)
+         (account)
+         (stimulus_asset)
          (amount)
          );
 

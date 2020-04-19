@@ -3114,6 +3114,19 @@ namespace node { namespace protocol {
          "Fund amount must be greater than 0." );
    }
 
+   void asset_stimulus_fund_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      
+      FC_ASSERT( is_valid_symbol( amount.symbol ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol ) );
+      FC_ASSERT( amount.amount > 0, 
+         "Fund amount must be greater than 0." );
+      FC_ASSERT( is_valid_symbol( stimulus_asset ), 
+         "Symbol ${symbol} is not a valid symbol", ("symbol", stimulus_asset ) );
+   }
+
    void asset_update_feed_producers_operation::validate() const
    {
       validate_account_name( signatory );

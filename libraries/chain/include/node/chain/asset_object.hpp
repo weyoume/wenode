@@ -21,6 +21,7 @@ namespace node { namespace chain {
     * EQUITY_ASSET,           ///< Asset issued by a business account that distributes a dividend from incoming revenue, and has voting power over a business accounts transactions.
     * BOND_ASSET,             ///< Asset backed by collateral that pays a coupon rate and is redeemed after expiration.
     * CREDIT_ASSET,           ///< Asset issued by a business account that is backed by repayments up to a face value, and interest payments.
+    * STIMULUS_ASSET,         ///< Asset issued by a business account with expiring balances that is distributed to a set of accounts on regular intervals.
     * LIQUIDITY_POOL_ASSET,   ///< Asset that is backed by the deposits of an asset pair's liquidity pool and earns trading fees. 
     * CREDIT_POOL_ASSET,      ///< Asset that is backed by deposits of the base asset, used for borrowing funds from the pool, used as collateral to borrow base asset.
     * OPTION_ASSET,           ///< Asset that enables the execution of a trade at a specific strike price until an expiration date. 
@@ -103,6 +104,7 @@ namespace node { namespace chain {
                case asset_property_type::LIQUIDITY_POOL_ASSET:
                case asset_property_type::CREDIT_POOL_ASSET:
                case asset_property_type::OPTION_ASSET:
+               case asset_property_type::STIMULUS_ASSET:
                {
                   return true;
                }
@@ -943,6 +945,83 @@ namespace node { namespace chain {
 
 
    /**
+    * Stimulus Assets enable business accounts to accelerate the velocity of money in a market.
+    * 
+    * Stimulus assets are issued to all members of the distribution list once per month
+    * and all balances expire at the end of each month.
+    * 
+    * Accounts can fund the redemption pool to provide value to all the beneficiaries of the 
+    * asset in the redemption list and products to the distribution recipients.
+    * 
+    * The redemption pool acts as a subsidy for the products and services of the 
+    * redemption list of accounts which can receive payments in the asset.
+    * 
+    * The redemption price is a specified rate at which members of the redemption list
+    * can exchange the stimulus asset for the funds from the redemption pool.
+    * 
+    * Each month's distribution must be fully backed by the redemption pool.
+    */
+   class asset_stimulus_data_object : public object < asset_stimulus_data_object_type, asset_stimulus_data_object>
+   {
+      asset_stimulus_data_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         asset_stimulus_data_object( Constructor&& c, allocator< Allocator > a )
+         {
+            c( *this );
+         }
+
+         id_type                              id;
+
+         account_name_type                    business_account;                   ///< The business account name of the issuer.
+
+         asset_symbol_type                    symbol;                             ///< The symbol of the stimulus asset.
+
+         asset_symbol_type                    redemption_asset;                   ///< Symbol of the asset that can be redeemed in exchange the stimulus asset.
+
+         asset                                redemption_pool;                    ///< Amount of assets pooled to redeem in exchange for the stimulus asset.
+
+         price                                redemption_price;                   ///< Price at which the stimulus asset is redeemed. Redemption asset is base.
+         
+         flat_set< account_name_type >        distribution_list;                  ///< List of accounts that receive an equal balance of the stimulus asset.
+
+         flat_set< account_name_type >        redemption_list;                    ///< List of accounts that can receive and redeem the stimulus asset.
+
+         asset                                distribution_amount;                ///< Amount of stimulus asset distributed each interval.
+
+         date_type                            next_distribution_date;             ///< Date that the next stimulus asset distribution will proceed.
+
+         time_point                           expiration()const
+         {
+            return time_point( next_distribution_date );
+         }
+
+         void                                 adjust_pool( const asset& delta )
+         {
+            FC_ASSERT( delta.symbol == redemption_asset );
+            redemption_pool += delta;
+         }
+
+         asset                                amount_to_distribute()const
+         {
+            share_type recipients = distribution_list.size();
+            return asset( distribution_amount.amount * recipients, redemption_asset );
+         }
+
+         bool                                 is_redemption( const account_name_type& account )const
+         {
+            return std::find( redemption_list.begin(), redemption_list.end(), account ) != redemption_list.end();
+         };
+
+         bool                                 is_distribution( const account_name_type& account )const
+         {
+            return std::find( distribution_list.begin(), distribution_list.end(), account ) != distribution_list.end();
+         };
+   };
+
+
+   /**
     * Unique assets enable a single unit of an asset
     * to be transferred between accounts to represent 
     * a non-fungible asset.
@@ -1720,7 +1799,6 @@ namespace node { namespace chain {
       allocator< asset_bond_data_object >
    > asset_bond_data_index;
 
-
    struct by_expiration;
    struct by_account_asset;
    
@@ -1809,6 +1887,22 @@ namespace node { namespace chain {
       >,
       allocator< asset_credit_data_object >
    > asset_credit_data_index;
+
+
+   typedef multi_index_container<
+      asset_stimulus_data_object,
+      indexed_by<
+         ordered_unique< tag< by_id >, member< asset_stimulus_data_object, asset_stimulus_data_id_type, &asset_stimulus_data_object::id > >,
+         ordered_unique< tag< by_symbol >, member<asset_stimulus_data_object, asset_symbol_type, &asset_stimulus_data_object::symbol> >,
+         ordered_unique< tag< by_expiration >,
+            composite_key< asset_stimulus_data_object,
+               const_mem_fun< asset_stimulus_data_object, time_point, &asset_stimulus_data_object::expiration >,
+               member< asset_stimulus_data_object, asset_stimulus_data_id_type, &asset_stimulus_data_object::id >
+            >
+         >
+      >,
+      allocator< asset_stimulus_data_object >
+   > asset_stimulus_data_index;
 
 
    struct by_access_price;
@@ -2174,6 +2268,21 @@ FC_REFLECT( node::chain::asset_credit_data_object,
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::asset_credit_data_object, node::chain::asset_credit_data_index );
+
+FC_REFLECT( node::chain::asset_stimulus_data_object,
+         (id)
+         (business_account)
+         (symbol)
+         (redemption_asset)
+         (redemption_pool)
+         (redemption_price)
+         (distribution_list)
+         (redemption_list)
+         (distribution_amount)
+         (next_distribution_date)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::asset_stimulus_data_object, node::chain::asset_stimulus_data_index );
 
 FC_REFLECT( node::chain::asset_unique_data_object,
          (id)

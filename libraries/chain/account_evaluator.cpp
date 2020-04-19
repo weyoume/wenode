@@ -1966,6 +1966,8 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
          from_string( co.connection_id, o.connection_id );
          co.last_message_time_a = now;
          co.last_message_time_b = now;
+         co.message_count = 0;
+         co.consecutive_days = 0;
          co.last_updated = now;
          co.created = now;
       });

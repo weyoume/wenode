@@ -43,6 +43,7 @@ namespace node { namespace chain {
  * EQUITY_ASSET,           ///< Asset issued by a business account that distributes a dividend from incoming revenue, and has voting power over a business accounts transactions.
  * BOND_ASSET,             ///< Asset backed by collateral that pays a coupon rate and is redeemed after expiration.
  * CREDIT_ASSET,           ///< Asset issued by a business account that is backed by repayments up to a face value, and interest payments.
+ * STIMULUS_ASSET,         ///< Asset issued by a business account with expiring balances that is distributed to a set of accounts on regular intervals.
  * LIQUIDITY_POOL_ASSET,   ///< Asset that is backed by the deposits of an asset pair's liquidity pool and earns trading fees. 
  * CREDIT_POOL_ASSET,      ///< Asset that is backed by deposits of the base asset, used for borrowing funds from the pool, used as collateral to borrow base asset.
  * OPTION_ASSET,           ///< Asset that enables the execution of a trade at a specific strike price until an expiration date. 
@@ -323,6 +324,65 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          _db.modify( *bus_acc_ptr, [&]( account_business_object& a )
          {
             a.credit_revenue_shares[ o.symbol ] = o.options.buyback_share_percent;
+         });
+      }
+      break;
+      case asset_property_type::STIMULUS_ASSET:
+      {
+         const account_business_object& abo = _db.get_account_business( o.issuer );
+         FC_ASSERT( abo.account == o.issuer, 
+            "Account: ${s} must be a business account to create a stimulus asset.",("s", o.issuer) );
+         FC_ASSERT( !o.options.redemption_price.is_null(),
+            "Redemption price cannot be null." );
+         FC_ASSERT( o.options.redemption_price.base.symbol == o.options.redemption_asset,
+            "Redemption price must have Redemption asset as base." );
+         FC_ASSERT( o.options.redemption_price.quote.symbol == o.symbol,
+            "Redemption price must have Stimulus asset as quote." );
+
+         flat_set< account_name_type > distribution_list;
+         flat_set< account_name_type > redemption_list;
+
+         for( account_name_type a : o.options.distribution_list )
+         {
+            distribution_list.insert( a );
+         }
+         for( account_name_type a : o.options.redemption_list )
+         {
+            redemption_list.insert( a );
+         }
+
+         share_type recipients = o.options.distribution_list.size();
+         FC_ASSERT( o.options.max_supply >= o.options.distribution_amount.amount * recipients,
+            "Stimulus asset monthly distribution must not exceed asset max supply." );
+         
+         const asset_object& redemption_asset = _db.get_asset( o.options.redemption_asset );
+         FC_ASSERT( redemption_asset.asset_type == asset_property_type::CURRENCY_ASSET || 
+            redemption_asset.asset_type == asset_property_type::STABLECOIN_ASSET, 
+            "Redemption asset must be either a currency or stablecoin type asset." );
+
+         date_type today = date_type( now );
+         date_type next_distribution_date;
+
+         if( today.month > 11 )
+         {
+            next_distribution_date = date_type( 1, 1, today.year + 1 );
+         }
+         else
+         {
+            next_distribution_date = date_type( 1, today.month + 1, today.year );
+         }
+
+         _db.create< asset_stimulus_data_object >( [&]( asset_stimulus_data_object& asdo )
+         {
+            asdo.business_account = o.issuer;
+            asdo.symbol = o.symbol;
+            asdo.redemption_asset = o.options.redemption_asset;
+            asdo.redemption_pool = asset( 0, asdo.redemption_asset );
+            asdo.redemption_price = o.options.redemption_price;
+            asdo.redemption_list = redemption_list;
+            asdo.distribution_list = distribution_list;
+            asdo.distribution_amount = o.options.distribution_amount;
+            asdo.next_distribution_date = next_distribution_date;
          });
       }
       break;
@@ -999,6 +1059,51 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
          });
       }
       break;
+      case asset_property_type::STIMULUS_ASSET:
+      {
+         FC_ASSERT( o.issuer == asset_obj.issuer,
+            "Only Issuer can update asset. (${o.issuer} != ${a.issuer})",
+            ("o.issuer", o.issuer)("asset.issuer", asset_obj.issuer) );
+         const asset_stimulus_data_object& stimulus_obj = _db.get_stimulus_data( o.asset_to_update );
+         FC_ASSERT( !o.new_options.redemption_price.is_null(),
+            "Redemption price cannot be null." );
+         FC_ASSERT( o.new_options.redemption_price.base.symbol == o.new_options.redemption_asset,
+            "Redemption price must have Redemption asset as base." );
+         FC_ASSERT( o.new_options.redemption_price.quote.symbol == o.asset_to_update,
+            "Redemption price must have Stimulus asset as quote." );
+
+         flat_set< account_name_type > distribution_list;
+         flat_set< account_name_type > redemption_list;
+
+         for( account_name_type a : o.new_options.distribution_list )
+         {
+            distribution_list.insert( a );
+         }
+         for( account_name_type a : o.new_options.redemption_list )
+         {
+            redemption_list.insert( a );
+         }
+
+         share_type recipients = o.new_options.distribution_list.size();
+         asset new_distribution = asset( o.new_options.distribution_amount.amount * recipients, stimulus_obj.symbol );
+         FC_ASSERT( o.new_options.max_supply >= new_distribution.amount,
+            "Stimulus asset monthly distribution must not exceed asset max supply." );
+
+         if( stimulus_obj.redemption_price > o.new_options.redemption_price )
+         {
+            FC_ASSERT( stimulus_obj.redemption_pool >= new_distribution * o.new_options.redemption_price,
+               "Cannot raise redemption price without sufficient redemption pool balance." );
+         }
+         
+         _db.modify( stimulus_obj, [&]( asset_stimulus_data_object& asdo )
+         {
+            asdo.redemption_price = o.new_options.redemption_price;
+            asdo.distribution_list = distribution_list;
+            asdo.redemption_list = redemption_list;
+            asdo.distribution_amount = o.new_options.distribution_amount;
+         });
+      }
+      break;
       case asset_property_type::LIQUIDITY_POOL_ASSET:
       {
          FC_ASSERT( false, "Cannot Edit Liquidity Pool asset." );
@@ -1137,7 +1242,6 @@ void asset_issue_evaluator::do_apply( const asset_issue_operation& o )
    if( asset_obj.asset_type == asset_property_type::BOND_ASSET )
    {
       const asset_bond_data_object& bond_obj = _db.get_bond_data( o.asset_to_issue.symbol );
-
       asset bond_collateral = ( bond_obj.value * o.asset_to_issue.amount * bond_obj.collateralization )  / ( BLOCKCHAIN_PRECISION * PERCENT_100 );
       asset liquid = _db.get_liquid_balance( o.issuer, bond_obj.value.symbol );
       FC_ASSERT( liquid >= bond_collateral,
@@ -1442,6 +1546,46 @@ void asset_option_exercise_evaluator::do_apply( const asset_option_exercise_oper
 
    _db.exercise_option( o.amount, account );
 
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
+void asset_stimulus_fund_evaluator::do_apply( const asset_stimulus_fund_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   const asset_object& stimulus_asset = _db.get_asset( o.stimulus_asset );
+   const asset_object& redemption_asset = _db.get_asset( o.amount.symbol );
+   const asset_stimulus_data_object& stimulus = _db.get_stimulus_data( o.stimulus_asset );
+   
+   FC_ASSERT( stimulus_asset.asset_type == asset_property_type::STIMULUS_ASSET, 
+      "Can only fund stimulus type assets: ${s} is not a stimulus asset.",("s", o.stimulus_asset ) );
+   FC_ASSERT( redemption_asset.asset_type == asset_property_type::CURRENCY_ASSET || 
+      redemption_asset.asset_type == asset_property_type::STABLECOIN_ASSET, 
+      "Redemption asset must be either a currency or stablecoin type asset." );
+
+   asset liquid = _db.get_liquid_balance( o.account, redemption_asset.symbol );
+
+   FC_ASSERT( liquid >= o.amount,
+      "Account has insufficient liquid balance of option asset to exercise specified amount." );
+
+   _db.adjust_liquid_balance( o.account, -o.amount );
+
+   _db.modify( stimulus, [&]( asset_stimulus_data_object& asdo )
+   {
+      asdo.adjust_pool( o.amount );
+   });
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
