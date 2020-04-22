@@ -397,50 +397,37 @@ namespace node { namespace chain {
    > producer_index;
 
    struct by_account_producer;
-   struct by_account_rank_producer;
    struct by_account_rank;
    struct by_producer_account;
 
    typedef multi_index_container<
       producer_vote_object,
       indexed_by<
-         ordered_unique< tag<by_id>, member< producer_vote_object, producer_vote_id_type, &producer_vote_object::id > >,
-         ordered_unique< tag<by_account_producer>,
+         ordered_unique< tag< by_id >, member< producer_vote_object, producer_vote_id_type, &producer_vote_object::id > >,
+         ordered_unique< tag< by_account_producer >,
             composite_key< producer_vote_object,
-               member<producer_vote_object, account_name_type, &producer_vote_object::account >,
-               member<producer_vote_object, account_name_type, &producer_vote_object::producer >
+               member< producer_vote_object, account_name_type, &producer_vote_object::account >,
+               member< producer_vote_object, account_name_type, &producer_vote_object::producer >
             >,
             composite_key_compare< 
                std::less< account_name_type >, 
                std::less< account_name_type > 
             >
          >,
-         ordered_unique< tag<by_account_rank_producer>,
+         ordered_unique< tag< by_account_rank >,
             composite_key< producer_vote_object,
-               member<producer_vote_object, account_name_type, &producer_vote_object::account >,
-               member<producer_vote_object, uint16_t, &producer_vote_object::vote_rank >,
-               member<producer_vote_object, account_name_type, &producer_vote_object::producer >
-            >,
-            composite_key_compare< 
-               std::less< account_name_type >,
-               std::less< uint16_t >, 
-               std::less< account_name_type > 
-            >
-         >,
-         ordered_unique< tag<by_account_rank>,
-            composite_key< producer_vote_object,
-               member<producer_vote_object, account_name_type, &producer_vote_object::account >,
-               member<producer_vote_object, uint16_t, &producer_vote_object::vote_rank >
+               member< producer_vote_object, account_name_type, &producer_vote_object::account >,
+               member< producer_vote_object, uint16_t, &producer_vote_object::vote_rank >
             >,
             composite_key_compare< 
                std::less< account_name_type >,
                std::less< uint16_t >
             >
          >,
-         ordered_unique< tag<by_producer_account>,
+         ordered_unique< tag< by_producer_account >,
             composite_key< producer_vote_object,
-               member<producer_vote_object, account_name_type, &producer_vote_object::producer >,
-               member<producer_vote_object, account_name_type, &producer_vote_object::account >
+               member< producer_vote_object, account_name_type, &producer_vote_object::producer >,
+               member< producer_vote_object, account_name_type, &producer_vote_object::account >
             >,
             composite_key_compare< 
                std::less< account_name_type >, 

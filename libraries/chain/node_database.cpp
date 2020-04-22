@@ -1554,12 +1554,12 @@ const confidential_balance_object* database::find_confidential_balance( const di
 
 const asset_delegation_object& database::get_asset_delegation( const account_name_type& delegator, const account_name_type& delegatee, const asset_symbol_type& symbol )const
 { try {
-	return get< asset_delegation_object, by_delegation >( boost::make_tuple( delegator, delegatee, symbol ) );
+	return get< asset_delegation_object, by_delegator >( boost::make_tuple( delegator, delegatee, symbol ) );
 } FC_CAPTURE_AND_RETHROW( (delegator)(delegatee)(symbol) ) }
 
 const asset_delegation_object* database::find_asset_delegation( const account_name_type& delegator, const account_name_type& delegatee, const asset_symbol_type& symbol )const
 {
-   return find< asset_delegation_object, by_delegation >( boost::make_tuple( delegator, delegatee, symbol ) );
+   return find< asset_delegation_object, by_delegator >( boost::make_tuple( delegator, delegatee, symbol ) );
 }
 
 const account_permission_object& database::get_account_permissions( const account_name_type& account )const
@@ -4785,6 +4785,7 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< option_pool_create_evaluator             >();
    _my->_evaluator_registry.register_evaluator< prediction_pool_create_evaluator         >();
    _my->_evaluator_registry.register_evaluator< prediction_pool_exchange_evaluator       >();
+   _my->_evaluator_registry.register_evaluator< prediction_pool_resolve_evaluator        >();
    
    // Asset Evaluators
 

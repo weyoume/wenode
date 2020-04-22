@@ -440,14 +440,6 @@ class wallet_api
       scheduled_hardfork                              get_next_scheduled_hardfork()const;
 
 
-      /** 
-       * Returns the current balances of the network reward fund pools.
-       * 
-       * @returns Funds contained within reward pools, pending allocation to network participants. 
-       */
-      vector< reward_fund_api_obj >                   get_reward_funds( vector< string > assets )const;
-
-
       //======================//
       // === Account API ==== //
       //======================//
@@ -482,30 +474,12 @@ class wallet_api
 
 
       /** 
-       * Returns concise information about the given account.
-       *
-       * @param name The name of the account to provide information about.
-       * @returns Account Object information pertaining to the specified account.
-       */
-      account_concise_api_obj                         get_concise_account( string name ) const;
-
-
-      /** 
        * Returns concise information about a list of given accounts.
        *
        * @param names The name of the accounts to provide information about.
        * @returns Account Object information pertaining to the specified accounts.
        */
       vector< account_concise_api_obj >               get_concise_accounts( vector< string > names ) const;
-
-
-      /** 
-       * Returns full representation of the given account, and all objects that it controls.
-       *
-       * @param name The name of the account to provide information about.
-       * @returns Account Object information pertaining to the specified account.
-       */
-      extended_account                                get_full_account( string name ) const;
 
 
       /** 
@@ -548,6 +522,18 @@ class wallet_api
        * @returns Balance state information pertaining to the specified accounts.
        */
       vector< balance_state >                         get_balances( vector< string > names ) const;
+
+
+      /** 
+       * Returns the confidential balances from a query.
+       * 
+       * Includes all balances with specified owner authorities and 
+       * commitments.
+       *
+       * @param query The specified list of authorities and commitments.
+       * @returns Balance state information pertaining to the specified accounts.
+       */
+      vector< confidential_balance_api_obj >          get_confidential_balances( const confidential_query& query ) const;
 
 
       /** 
@@ -617,14 +603,6 @@ class wallet_api
       // === Asset API === //
       //===================//
 
-      /** 
-       * Returns all available information about a specified asset.
-       *
-       * @param asset The name of the asset to retrieve information about.
-       * @returns Asset Object information pertaining to the specified asset.
-       */
-      extended_asset                                  get_asset( string asset )const;
-
 
       /** 
        * Returns all available information about a list of specified assets.
@@ -636,14 +614,6 @@ class wallet_api
 
 
       /** 
-       * Returns the number of registered assets.
-       * 
-       * @returns Number of assets that have been created on the network.
-       */
-      uint64_t                                        get_asset_count()const;
-
-
-      /** 
        * Retrieves the details of an active escrow transfer.
        *
        * @param from The account that is the sender of the funds into the escrow.
@@ -652,69 +622,11 @@ class wallet_api
        */
       optional< escrow_api_obj >                      get_escrow( string from, string escrow_id )const;
 
-      /**
-       * Returns staked fund withdraw routes for an account.
-       *
-       * @param account Account to query routes.
-       * @param type Withdraw type type [incoming, outgoing, all].
-       * @returns Withdraw routes of an account.
-       */
-      vector< withdraw_route >                        get_withdraw_routes( string account, withdraw_route_type type = all )const;
 
 
-      /**
-       * Returns active savings withdrawals from an account.
-       *
-       * @param account Account to query withdrawls.
-       * @returns Savings withdrawals from an account.
-       */
-      vector< savings_withdraw_api_obj >              get_savings_withdraw_from( string account )const;
-
-
-      /**
-       * Returns active savings withdrawals to an account.
-       *
-       * @param account Account to query withdrawls.
-       * @returns Savings withdrawals to an account.
-       */
-      vector< savings_withdraw_api_obj >              get_savings_withdraw_to( string account )const;
-
-
-      /**
-       * Returns active asset delegations from an account.
-       *
-       * @param account Account to query delegations.
-       * @param from First delegating account to return results from.
-       * @param limit maximum amount of delegations to retrieve.
-       * @returns Delegation balances from an account.
-       */
-      vector< asset_delegation_api_obj >              get_asset_delegations( string account, string from, uint32_t limit = 100 )const;
-
-
-      /**
-       * Returns delegation expirations from an account that will return deletaed balance after expiration.
-       *
-       * @param account Account to query delegations.
-       * @param from Time to begin from.
-       * @param limit maximum amount of delegation expirations to retrieve.
-       * @returns Delegation balances from an account.
-       */
-      vector< asset_delegation_expiration_api_obj >   get_expiring_asset_delegations( string account, time_point from, uint32_t limit = 100 )const;
-
-
-
-      //===================//
+      //=======================//
       // === Community API === //
-      //===================//
-
-
-      /** 
-       * Returns all available information about a specified community.
-       *
-       * @param community The name of the community to retrieve information about.
-       * @returns Community Object information pertaining to the specified community.
-       */
-      extended_community                                  get_community( string community )const;
+      //=======================//
 
 
       /** 
@@ -723,7 +635,7 @@ class wallet_api
        * @param communities List of communities to retrieve information about.
        * @returns Community Object information pertaining to the specified community.
        */
-      vector< extended_community >                        get_communities( vector< string > communities )const;
+      vector< extended_community >                    get_communities( vector< string > communities )const;
 
 
 
@@ -734,15 +646,7 @@ class wallet_api
        * @param limit Amount of communities to retrieve.
        * @returns List of Community Objects pertaining to the top subscribed communities.
        */
-      vector< extended_community >                        get_communities_by_subscribers( string from, uint32_t limit )const;
-
-
-      /** 
-       * Returns the number of registered communities.
-       * 
-       * @returns Number of communities that have been created on the network.
-       */
-      uint64_t                                        get_community_count()const;
+      vector< extended_community >                    get_communities_by_subscribers( string from, uint32_t limit )const;
 
 
       //=====================//
@@ -751,21 +655,12 @@ class wallet_api
 
 
       /** 
-       * Returns information about a specified producer.
+       * Returns information about a list of accounts.
        * 
-       * @param name The name of the producer account.
-       * @returns Producer object information pertaining to the specified producer. 
+       * @param names List of names of the accounts.
+       * @returns All Network objects related to each account.
        */
-      producer_api_obj                                get_producer_by_account( string name )const;
-
-
-      /** 
-       * Returns information about a list of producers.
-       * 
-       * @param names List of names of the producers.
-       * @returns Producer objects information pertaining to the list of specified producers. 
-       */
-      vector< producer_api_obj >                      get_producers_by_account( vector< string > names )const;
+      vector< account_network_state >                 get_account_network_state( vector< string > names )const;
 
 
       /**
@@ -774,24 +669,6 @@ class wallet_api
        * @returns All Producers in the current round of block production.
        */
       vector< account_name_type >                     get_active_producers()const;
-
-
-      /** 
-       * Lists all producers that have been created.
-       *
-       * @param from The name of the first producer to return.
-       * @param limit The maximum number of producers to return (max: 1000)
-       * @returns List of producers in alphabetical order.
-       */
-      set< account_name_type >                        lookup_producer_accounts( string from, uint32_t limit )const;
-
-
-      /** 
-       * Returns the number of registered producers.
-       * 
-       * @returns Number of producers that have been created on the network.
-       */
-      uint64_t                                        get_producer_count()const;
 
       
       /** 
@@ -812,24 +689,6 @@ class wallet_api
        * @returns List of Producer Objects pertaining to the top mining producers.
        */
       vector< producer_api_obj >                      get_producers_by_mining_power( string from, uint32_t limit )const;
-
-
-      /** 
-       * Returns a specifed network officer.
-       *
-       * @param name name of the officer.
-       * @returns Network officer object information pertaining to the specified officer. 
-       */
-      network_officer_api_obj                         get_network_officer_by_account( string name )const;
-
-
-      /** 
-       * Returns a specifed list of the network officers.
-       *
-       * @param names List of names of the officers.
-       * @returns Network officer object information pertaining to the list of specified officers. 
-       */
-      vector< network_officer_api_obj >               get_network_officers_by_account( vector< string > names )const;
 
 
       /** 
@@ -863,24 +722,6 @@ class wallet_api
 
 
       /** 
-       * Returns a specifed executive board.
-       *
-       * @param name name of the community business account.
-       * @returns Executive board object information pertaining to the account.
-       */
-      executive_board_api_obj                         get_executive_board_by_account( string name )const;
-
-
-      /** 
-       * Returns a specifed list of executive boards.
-       *
-       * @param names List of names of executive boards.
-       * @returns List of Executive board object information pertaining to the specified accounts.
-       */
-      vector< executive_board_api_obj >               get_executive_boards_by_account( vector< string > names )const;
-
-
-      /** 
        * Returns a list of the highest voted executive boards.
        *
        * @param from The first account in the rankings to retrieve.
@@ -888,23 +729,6 @@ class wallet_api
        * @returns List of Executive boards with the highest stakeholder voting power.
        */
       vector< executive_board_api_obj >               get_executive_boards_by_voting_power( string from, uint32_t limit )const;
-
-      /** 
-       * Returns a specifed Supernode.
-       *
-       * @param name The name of the supernode.
-       * @returns Executive board object information pertaining to the account.
-       */
-      supernode_api_obj                               get_supernode_by_account( string name )const;
-
-
-      /** 
-       * Returns a specifed list of supernodes.
-       *
-       * @param names List of names of supernodes.
-       * @returns List of supernode object information pertaining to the specified accounts.
-       */
-      vector< supernode_api_obj >                     get_supernodes_by_account( vector< string > names )const;
 
 
       /** 
@@ -916,23 +740,6 @@ class wallet_api
        */
       vector< supernode_api_obj >                     get_supernodes_by_view_weight( string from, uint32_t limit )const;
 
-      /** 
-       * Returns a specifed Interface.
-       *
-       * @param name The name of the interface.
-       * @returns Executive board object information pertaining to the account.
-       */
-      interface_api_obj                               get_interface_by_account( string name )const;
-
-
-      /** 
-       * Returns a specifed list of interfaces.
-       *
-       * @param names List of names of interfaces.
-       * @returns List of interface object information pertaining to the specified accounts.
-       */
-      vector< interface_api_obj >                     get_interfaces_by_account( vector< string > names )const;
-
 
       /** 
        * Returns a list of the interfaces with the highest recent view count.
@@ -942,23 +749,6 @@ class wallet_api
        * @returns List of interfaces with the highest recent view count.
        */
       vector< interface_api_obj >                     get_interfaces_by_users( string from, uint32_t limit )const;
-
-      /** 
-       * Returns a specifed Governance account.
-       *
-       * @param name The name of the governance account.
-       * @returns governance account object information pertaining to the account.
-       */
-      governance_account_api_obj                      get_governance_account_by_account( string name )const;
-
-
-      /** 
-       * Returns a specifed list of governance accounts.
-       *
-       * @param names List of names of governance accounts.
-       * @returns List of governance account object information pertaining to the specified accounts.
-       */
-      vector< governance_account_api_obj >            get_governance_accounts_by_account( vector< string > names )const;
       
 
       /** 
@@ -1021,6 +811,17 @@ class wallet_api
 
 
       /** 
+       * Returns a list of open option orders on a market price pair.
+       *
+       * @param buy_symbol Asset to be the base price of ask orders.
+       * @param sell_symbol Asset to the the base price of bid orders.
+       * @param limit Maximum number of orders to retrieve from both sides of the orderbook.
+       * @returns Orders in a specified price pair.
+       */
+      market_option_orders                            get_option_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const;
+
+
+      /** 
        * Returns a list of open call orders on a market price pair.
        *
        * @param buy_symbol Asset to be the base price of ask orders.
@@ -1029,6 +830,17 @@ class wallet_api
        * @returns Orders in a specified price pair.
        */
       market_call_orders                              get_call_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const;
+
+
+      /** 
+       * Returns a list of open auction orders on a market price pair.
+       *
+       * @param buy_symbol Asset to be the base price of ask orders.
+       * @param sell_symbol Asset to the the base price of bid orders.
+       * @param limit Maximum number of orders to retrieve from both sides of the orderbook.
+       * @returns Orders in a specified price pair.
+       */
+      market_auction_orders                           get_auction_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const;
 
 
       /** 
@@ -1059,6 +871,16 @@ class wallet_api
        * @returns Liquidity pool objects relating to the specified symbols.
        */
       vector< liquidity_pool_api_obj >                get_liquidity_pools( string buy_symbol, string sell_symbol )const;
+
+
+      /** 
+       * Returns a set of the option pools available on a list of assets.
+       *
+       * @param buy_symbol Asset to be the included in the option pools.
+       * @param sell_symbol Asset to be the included in the option pools.
+       * @returns Option pool objects relating to the specified symbols.
+       */
+      vector< option_pool_api_obj >                   get_option_pools( string buy_symbol, string sell_symbol )const;
 
 
       /** 
@@ -1101,6 +923,62 @@ class wallet_api
        */
       vector< ad_bid_state >                          get_interface_audience_bids( const ad_query& query )const;
 
+
+      //=====================//
+      // === Product API === //
+      //=====================//
+
+
+      /** 
+       * Returns a specified product.
+       *
+       * @param seller The seller account of the product.
+       * @param product_id uuidv4 of the product.
+       * @returns Product and associated purchases.
+       */
+      product_api_obj                                 get_product( string seller, string product_id )const;
+
+
+      /** 
+       * Returns all product offers by a specified list of sellers.
+       *
+       * @param names The seller accounts to retrieve.
+       * @returns Product and associated purchases.
+       */
+      vector< account_product_state >                 get_account_products( vector< string > names )const;
+
+
+
+      //===================//
+      // === Graph API === //
+      //===================//
+
+      
+      /** 
+       * Returns a specified set of nodes and edges.
+       *
+       * @param query The query details for nodes and edges to retrieve.
+       * @returns Nodes and edges matching the query
+       */
+      graph_data_state                                get_graph_query( const graph_query& query )const;
+
+
+      /** 
+       * Returns the properties of a list of specified node types.
+       *
+       * @param names The accounts to retrieve.
+       * @returns Node property details of node types.
+       */
+      vector< graph_node_property_api_obj >           get_graph_node_properties( vector< string > names )const;
+
+
+      /** 
+       * Returns the properties of a list of specified edge types.
+       *
+       * @param names The accounts to retrieve.
+       * @returns Edge property details of node types.
+       */
+      vector< graph_edge_property_api_obj >           get_graph_edge_properties( vector< string > names )const;
 
 
       //====================//
@@ -1553,7 +1431,7 @@ class wallet_api
        * @param url The string of the current URL.
        * @returns state object containing the necessary details for the application page.
        */
-      app::state                              get_state( string url );
+      app::state                           get_state( string url );
 
 
 
@@ -1666,6 +1544,80 @@ class wallet_api
          share_type officer_vote_threshold,
          string business_public_key,
          bool deleted,
+         bool broadcast );
+
+
+      /**
+       * Update the encrypted profile account details of an existing account.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account The name of the profile account.
+       * @param governance_account The account's governance account to assign the profile.
+       * @param profile_public_key The public encryption key of the profile data.
+       * @param first_name The user's first name. 
+       * @param last_name The user's last name. 
+       * @param gender The user's specified gender.
+       * @param date_of_birth The user's date of birth.
+       * @param email The user's email address.
+       * @param phone The user's phone number.
+       * @param nationality The user's country of residence.
+       * @param address The user's place of residence.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           account_profile( 
+         string signatory,
+         string account,
+         string governance_account,
+         string profile_public_key,
+         string first_name,
+         string last_name,
+         string gender,
+         string date_of_birth,
+         string email,
+         string phone,
+         string nationality,
+         string address,
+         bool broadcast );
+
+
+      /**
+       * Create or Update an account verification between two accounts.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param verifier_account The name of the account creating the verification
+       * @param verified_account The account being verified.
+       * @param shared_image IPFS reference to the image being signed of both account owners.
+       * @param image_signature The signature of the shared image with the profile key of the verified account.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           account_verification( 
+         string signatory,
+         string verifier_account,
+         string verified_account,
+         string shared_image,
+         signature_type image_signature,
+         bool broadcast );
+
+
+      /**
+       * Create or Update the business account details of an existing account.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Name of the business account to update.
+       * @param governance_account Name of the governance account that the business account is registered with.
+       * @param init_ceo_account Name of the account that should become the initial Chief Executive Officer.
+       * @param business_type The type of business account being created.
+       * @param officer_vote_threshold The voting power required to be an active officer.
+       * @param business_public_key The public key used for encrypted business content.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           account_business( 
+         string signatory,
+         string governance_account,
+         string init_ceo_account,
+         string business_type,
+         int64_t officer_vote_threshold,
+         string business_public_key,
          bool broadcast );
 
 
@@ -2575,9 +2527,9 @@ class wallet_api
 
 
 
-      //============================//
+      //================================//
       // === Community Transactions === //
-      //============================//
+      //================================//
 
 
 
@@ -2593,6 +2545,10 @@ class wallet_api
        * @param json_private Private ciphertext json information about the community.
        * @param details Details of the community, describing what it is for.
        * @param url External reference URL.
+       * @param reward_currency The Currency asset used for content rewards in the community.
+       * @param max_rating Highest severity rating that posts in the community can have.
+       * @param flags The currently active flags on the community for content settings.
+       * @param permissions The flag permissions that can be activated on the community for content settings.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           community_create(
@@ -2605,6 +2561,10 @@ class wallet_api
          string json_private,
          string details,
          string url,
+         string reward_currency,
+         uint16_t max_rating,
+         uint32_t flags,
+         uint32_t permissions,
          bool broadcast );
 
 
@@ -2621,6 +2581,11 @@ class wallet_api
        * @param url External reference URL.
        * @param pinned_author Author of the pinned post.
        * @param pinned_permlink Permlink of the pinned post.
+       * @param reward_currency The Currency asset used for content rewards in the community.
+       * @param max_rating Highest severity rating that posts in the community can have.
+       * @param flags The currently active flags on the community for content settings.
+       * @param permissions The flag permissions that can be activated on the community for content settings.
+       * @param active True when the community is active, false to deactivate.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           community_update(
@@ -2634,6 +2599,11 @@ class wallet_api
          string url,
          string pinned_author,
          string pinned_permlink,
+         string reward_currency,
+         uint16_t max_rating,
+         uint32_t flags,
+         uint32_t permissions,
+         bool active,
          bool broadcast );
 
 
@@ -2850,6 +2820,60 @@ class wallet_api
          bool broadcast );
 
 
+      /**
+       * Creates or updates a community event.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account that created the event.
+       * @param community Community being invited to join.
+       * @param event_name The Name of the event. Unique within each community.
+       * @param location Address of the location of the event.
+       * @param details Event details describing the purpose of the event.
+       * @param url Link containining additional event information.
+       * @param json Additional Event JSON data.
+       * @param invited Members that are invited to the event, all community members if empty.
+       * @param event_start_time Time that the Event will begin.
+       * @param event_end_time Time that the event will end.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           community_event(
+         string signatory,
+         string account,
+         string community,
+         string event_name,
+         string location,
+         string details,
+         string url,
+         string json,
+         vector< string > invited,
+         time_point event_start_time,
+         time_point event_end_time,
+         bool broadcast );
+
+
+      /**
+       * Denotes the status of an account attending an event.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account that is attending the event.
+       * @param community Community that the event is within.
+       * @param event_name The Name of the event.
+       * @param interested True to set interested in the event, and receive notifications about it, false to remove interedt status.
+       * @param attending True to attend the event, false to remove attending status.
+       * @param not_attending True to state not attending the event, false to remove not attending status.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           community_event_attend(
+         string signatory,
+         string account,
+         string community,
+         string event_name,
+         bool interested,
+         bool attending,
+         bool not_attending,
+         bool broadcast );
+
+
 
       //=========================//
       // === Ad Transactions === //
@@ -3000,6 +3024,147 @@ class wallet_api
          time_point expiration,
          bool active,
          bool broadcast );
+
+
+      //============================//
+      //==== Graph Transactions ====//
+      //============================//
+
+
+
+      /**
+       * Creates a new node in the Network's Graph Database.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Name of the account that created the node.
+       * @param node_types Types of node being created, determines the required attributes.
+       * @param node_id uuidv4 identifying the node. Unique for each account.
+       * @param name Name of the node.
+       * @param details Describes the additional details of the node.
+       * @param attributes The Attributes of the node.
+       * @param attribute_values The Attribute values of the node.
+       * @param json Public plaintext JSON node attribute information.
+       * @param json_private Private encrypted ciphertext JSON node attribute information.
+       * @param node_public_key Key used for encrypting and decrypting private node JSON data.
+       * @param interface Name of the application that facilitated the creation of the node.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           graph_node(
+         string signatory,
+         string account,
+         vector< string > node_types,
+         string node_id,
+         string name,
+         string details,
+         vector< string > attributes,
+         vector< string > attribute_values,
+         string json,
+         string json_private,
+         string node_public_key,
+         string interface,
+         bool broadcast );
+
+
+      /**
+       * Creates a new edge in the Network's Graph Database.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Name of the account that created the edge.
+       * @param edge_types Types of edge being created, determines the required attributes.
+       * @param edge_id uuidv4 identifying the edge. Unique for each account.
+       * @param from_node_account The account that is the creator of the Base connecting node.
+       * @param from_node_id The uuidv4 of the base connecting node.
+       * @param to_node_account The account that is the creator of the Node being connected to.
+       * @param to_node_id The uuidv4 of the Node being connected to.
+       * @param name Name of the edge.
+       * @param details Describes the additional details of the edge.
+       * @param attributes The Attributes of the edge.
+       * @param attribute_values The Attribute values of the edge.
+       * @param json Public plaintext JSON edge attribute information.
+       * @param json_private Private encrypted ciphertext JSON edge attribute information.
+       * @param edge_public_key Key used for encrypting and decrypting private edge JSON data.
+       * @param interface Name of the application that facilitated the creation of the edge.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           graph_edge(
+         string signatory,
+         string account,
+         vector< string > edge_types,
+         string edge_id,
+         string from_node_account,
+         string from_node_id,
+         string to_node_account,
+         string to_node_id,
+         string name,
+         string details,
+         vector< string > attributes,
+         vector< string > attribute_values,
+         string json,
+         string json_private,
+         string edge_public_key,
+         string interface,
+         bool broadcast );
+
+
+      /**
+       * Creates a new type of node for instantiation in the Network's Graph Database.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Name of the account that created the node.
+       * @param node_type Name of the type of node being specified.
+       * @param graph_privacy Encryption level of the node attribute data.
+       * @param edge_permission The Level of connection required to create an edge to or from this node type. 
+       * @param details Describes the additional details of the node.
+       * @param url The Attributes of the node.
+       * @param json Public plaintext JSON node attribute information.
+       * @param attributes List of attributes that each node is required to have.
+       * @param interface Name of the application that facilitated the creation of the node.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           graph_node_property(
+         string signatory,
+         string account,
+         string node_type,
+         string graph_privacy,
+         string edge_permission,
+         string details,
+         string url,
+         string json,
+         vector< string > attributes,
+         string interface,
+         bool broadcast );
+
+
+      /**
+       * Creates a new type of edge for instantiation in the Network's Graph Database.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Name of the account that created the edge type.
+       * @param edge_type Name of the type of edge being specified.
+       * @param graph_privacy Encryption level of the edge attribute data.
+       * @param from_node_types Types of node that the edge can connect from. Empty for all types. 
+       * @param to_node_types Types of node that the edge can connect to. Empty for all types.
+       * @param details Describes the additional details of the edge.
+       * @param url Reference URL link for more details.
+       * @param json JSON Metadata for the edge type.
+       * @param attributes List of attributes that each edge is required to have.
+       * @param interface Name of the application that facilitated the creation of the edge type.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           graph_edge_property(
+         string signatory,
+         string account,
+         string edge_type,
+         string graph_privacy,
+         vector< string > from_node_types,
+         vector< string > to_node_types,
+         string details,
+         string url,
+         string json,
+         vector< string > attributes,
+         string interface,
+         bool broadcast );
+
 
 
 
@@ -3158,6 +3323,61 @@ class wallet_api
          bool broadcast = false );
 
 
+      /**
+       * Transfers funds from a confidential balance owner to another owner.
+       *
+       * @param inputs Inputs to the confidential transfer from confidential balances.
+       * @param outputs Outputs of the confidential transfer to new confidential balances.
+       * @param fee Fee paid for the transfer.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction            transfer_confidential(
+         vector< confidential_input > inputs,
+         vector< confidential_output > outputs,
+         asset fee,
+         bool broadcast = false );
+
+
+      /**
+       * Converts public account balance to a confidential balance.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param from Account to transfer funds from and create new confidential balances.
+       * @param amount Amount of funds to transfer.
+       * @param blinding_factor Factor to blind the output values.
+       * @param outputs Confidential balance outputs.
+       * @param fee Fee amount paid for the transfer.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction            transfer_to_confidential(
+         string signatory,
+         string from,
+         asset amount,
+         blind_factor_type blinding_factor,
+         vector< confidential_output > outputs,
+         asset fee,
+         bool broadcast = false );
+
+
+      /**
+       * Converts confidential balances to a public account balance.
+       *
+       * @param to Account to transfer the balances to.
+       * @param amount Amount of funds to transfer from confidential balances.
+       * @param blinding_factor Factor to blind the input values.
+       * @param inputs Confidential balance inputs.
+       * @param fee Fee amount paid for the transfer.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction            transfer_from_confidential(
+         string to,
+         asset amount,
+         blind_factor_type blinding_factor,
+         vector< confidential_input > inputs,
+         asset fee,
+         bool broadcast = false );
+
+
 
       //==============================//
       // === Balance Transactions === //
@@ -3290,9 +3510,87 @@ class wallet_api
 
 
 
-      //=============================//
+      //==================================//
       // === Marketplace Transactions === //
-      //=============================//
+      //==================================//
+
+
+      /**
+       * Creates or updates a product item for marketplace purchasing with escrow transfers.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account The Seller of the product.
+       * @param product_id uuidv4 referring to the product.
+       * @param name The descriptive name of the product.
+       * @param sale_type The type of sale to be used for the product.
+       * @param url Reference URL of the product or seller.
+       * @param json JSON metadata attributes of the product.
+       * @param product_variants The collection of product variants. Each map must have a key for each variant.
+       * @param product_details The Description details of each variant of the product.
+       * @param product_images IPFS references to images of each product variant.
+       * @param product_prices The price (or min auction price) for each variant of the product.
+       * @param stock_available The available stock of each variant of the product.
+       * @param delivery_variants The types of product delivery available to purchasers.
+       * @param delivery_details The details of product delivery variants.
+       * @param delivery_prices The price for each variant of delivery.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction            product_update(
+         string signatory,
+         string account,
+         string product_id,
+         string name,
+         string sale_type,
+         string url,
+         string json,
+         vector< string > product_variants,
+         vector< string > product_details,
+         vector< string > product_images,
+         vector< asset > product_prices,
+         vector< uint32_t > stock_available,
+         vector< string > delivery_variants,
+         vector< string > delivery_details,
+         vector< asset > delivery_prices,
+         bool broadcast = false );
+
+
+      /**
+       * Requests a purchase of a specifed quantity of a product.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param buyer The Buyer of the product.
+       * @param order_id uuidv4 referring to the purchase order.
+       * @param seller The Seller of the product.
+       * @param product_id uuidv4 refrring to the product.
+       * @param order_variants Variants of product ordered in the purchase.
+       * @param order_size The number of each product variant ordered.
+       * @param memo The memo for the transaction, encryption on the memo is advised.
+       * @param json Additonal JSON object attribute details.
+       * @param shipping_address The shipping address requested, encrypted with the secure key of the seller.
+       * @param delivery_variant The type of product delivery selected.
+       * @param delivery_details The Description details of the delivery.
+       * @param acceptance_time Time that the escrow proposal must be approved before.
+       * @param escrow_expiration Time after which balance can be claimed by FROM or TO freely.
+       * @param completed False when order is pending, true when completed.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction            product_purchase(
+         string signatory,
+         string buyer,
+         string order_id,
+         string seller,
+         string product_id,
+         vector< string > order_variants,
+         vector< uint32_t > order_size,
+         string memo,
+         string json,
+         string shipping_address,
+         string delivery_variant,
+         string delivery_details,
+         time_point acceptance_time,
+         time_point escrow_expiration,
+         bool completed,
+         bool broadcast = false );
 
 
       /**
@@ -3452,6 +3750,31 @@ class wallet_api
 
 
       /**
+       * Creates a new auction order that sells at the daily auction clearing price.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param owner Owner of the Auction order.
+       * @param order_id uuidv4 of the order for reference.
+       * @param amount_to_sell Amount of asset to sell at auction clearing price.
+       * @param limit_close_price The asset pair price to sell the amount at the auction clearing price. Amount to sell is base.
+       * @param interface Name of the interface that created the transaction.
+       * @param expiration Time that the order expires.
+       * @param opened True to open new order, false to cancel existing order.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             auction_order(
+         string signatory,
+         string owner,
+         string order_id,
+         asset amount_to_sell,
+         price limit_close_price,
+         string interface,
+         time_point expiration,
+         bool opened,
+         bool broadcast );
+
+
+      /**
        * Creates a new collateralized debt position in a market issued asset.
        *
        * @param signatory The name of the account signing the transaction.
@@ -3473,21 +3796,24 @@ class wallet_api
 
 
       /**
-       * Used to create a bid for outstanding debt of a globally settled market issued asset.
+       * Creates a new auction order that sells at the daily auction clearing price.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param bidder Adds additional collateral to the market issued asset.
-       * @param collateral The amount of collateral to bid for the debt.
-       * @param debt The amount of debt to take over.
+       * @param owner Owner of the Option order.
+       * @param order_id uuidv4 of the order for reference.
+       * @param options_issued Amount of assets to issue covered options contract assets against. Must be a whole number.
+       * @param interface Name of the interface that created the transaction.
+       * @param opened True to open new order, false to close existing order by repaying options assets.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction             bid_collateral(
+      annotated_signed_transaction             option_order(
          string signatory,
-         string bidder,
-         asset collateral,
-         asset debt,
+         string owner,
+         string order_id,
+         asset options_issued,
+         string interface,
+         bool opened,
          bool broadcast );
-
 
 
       //===========================//
@@ -3633,6 +3959,94 @@ class wallet_api
          asset amount,
          bool broadcast );
 
+      
+      /**
+       * Creates a new Option pool between two assets.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Creator of the new option pool.
+       * @param first_asset First asset in the option trading pair.
+       * @param second_asset Second asset in the option trading pair.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             option_pool_create(
+         string signatory,
+         string account,
+         string first_asset,
+         string second_asset,
+         bool broadcast );
+
+
+      /**
+       * Creates a new prediction pool for a prediction market.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Creator of the new prediction pool.
+       * @param prediction_symbol Ticker symbol of the prediction pool primary asset.
+       * @param collateral_symbol Symbol of the collateral asset backing the prediction market.
+       * @param outcome_assets Symbols for each outcome of the prediction market.
+       * @param outcome_details Description of each outcome and the resolution conditions for each asset.
+       * @param display_symbol Non-consensus display name for interface reference.
+       * @param json JSON Metadata of the prediction market.
+       * @param url Reference URL of the prediction market.
+       * @param details Description of the market, how it will be resolved using known public data sources.
+       * @param outcome_time Time after which the outcome of the prediction market will become known and resolutions open.
+       * @param prediction_bond Initial deposit placed by the issuer on the market, which requires them to vote in the resolution process.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             prediction_pool_create(
+         string signatory,
+         string account,
+         string prediction_symbol,
+         string collateral_symbol,
+         vector< string > outcome_assets,
+         vector< string > outcome_details,
+         string display_symbol,
+         string json,
+         string url,
+         string details,
+         time_point outcome_time,
+         asset prediction_bond,
+         bool broadcast );
+
+
+      /**
+       * Adds or removes capital collateral funds from a prediction pool.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account executing the exchange with the pool.
+       * @param amount Amount of collateral asset to be exchanged.
+       * @param prediction_asset Base Asset to the prediction pool to exchange with.
+       * @param exchange_base True to exchange base asset, false to exchange one of all prediction assets.
+       * @param withdraw True to Withdraw collateral, false to add funds.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             prediction_pool_exchange(
+         string signatory,
+         string account,
+         asset amount,
+         string prediction_asset,
+         bool exchange_base,
+         bool withdraw,
+         bool broadcast );
+
+
+      /**
+       * Votes for a specified prediction market outcome resolution.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account executing the exchange with the pool.
+       * @param amount Amount of prediction asset to vote with.
+       * @param resolution_outcome Base Asset to the prediction pool to exchange with.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             prediction_pool_resolve(
+         string signatory,
+         string account,
+         asset amount,
+         string resolution_outcome,
+         bool broadcast );
+
 
 
       //============================//
@@ -3735,6 +4149,102 @@ class wallet_api
 
 
       /**
+       * Creates a new asset distribution.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param issuer The account which created the asset.
+       * @param distribution_asset Asset that is generated by the distribution.
+       * @param fund_asset Asset being accepted for distribution assets.
+       * @param details Description of the distribution process.
+       * @param url Reference URL of the distribution process.
+       * @param json JSON Metadata of the distribution process.
+       * @param distribution_rounds Number of distribution rounds, total distribution amount is divided between all rounds.
+       * @param distribution_interval_days Duration of each distribution round, in days.
+       * @param max_intervals_missed Number of Rounds that can be missed before the distribution is closed early.
+       * @param min_input_fund_units Minimum funds required for each round of the distribution process.
+       * @param max_input_fund_units Maximum funds to be accepted before closing each distribution round.
+       * @param input_fund_unit The integer unit ratio for distribution of incoming funds.
+       * @param output_distribution_unit The integer unit ratio for distribution of released funds.
+       * @param min_unit_ratio The lowest value of unit ratio between input and output units.
+       * @param max_unit_ratio The highest possible initial value of unit ratio between input and output units. 
+       * @param min_input_balance_units Minimum fund units that each sender can contribute in an individual balance.
+       * @param max_input_balance_units Maximum fund units that each sender can contribute in an individual balance.
+       * @param begin_time Time to begin the first distribution round.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             asset_distribution(
+         string signatory,
+         string issuer,
+         string distribution_asset,
+         string fund_asset,
+         string details,
+         string url,
+         string json,
+         uint32_t distribution_rounds,
+         uint32_t distribution_interval_days,
+         uint32_t max_intervals_missed,
+         int64_t min_input_fund_units,
+         int64_t max_input_fund_units,
+         vector< asset_unit > input_fund_unit,
+         vector< asset_unit > output_distribution_unit,
+         int64_t min_unit_ratio,
+         int64_t max_unit_ratio,
+         int64_t min_input_balance_units,
+         int64_t max_input_balance_units,
+         time_point begin_time,
+         bool broadcast );
+
+
+      /**
+       * Funds a new asset distribution balance.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param sender The account which sent the amount into the distribution.
+       * @param distribution_asset Distribution asset for the fund to be sent to.
+       * @param amount Asset amount being sent for distribution.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             asset_distribution_fund(
+         string signatory,
+         string sender,
+         string distribution_asset,
+         asset amount,
+         bool broadcast );
+
+
+      /**
+       * Uses an option asset to obtain the underlying asset at the strike price.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account The account exercising the option asset.
+       * @param amount Option assets being exercised by exchanging the quoted asset for the underlying. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             asset_option_exercise(
+         string signatory,
+         string account,
+         asset amount,
+         bool broadcast );
+
+
+      /**
+       * Adds funds to the redemption pool of a stimulus asset.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account The account funding the stimulus asset.
+       * @param stimulus_asset Asset symbol of the asset to add stimulus funds to.
+       * @param amount Redemption asset being injected into the redemption pool.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             asset_stimulus_fund(
+         string signatory,
+         string account,
+         string stimulus_asset,
+         asset amount,
+         bool broadcast );
+
+
+      /**
        * Update the set of feed-producing accounts for a BitAsset.
        *
        * @param signatory The name of the account signing the transaction.
@@ -3799,6 +4309,23 @@ class wallet_api
          string issuer,
          string asset_to_settle,
          price settle_price,
+         bool broadcast );
+
+
+      /**
+       * Used to create a bid for outstanding debt of a globally settled market issued asset.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param bidder Adds additional collateral to the market issued asset.
+       * @param collateral The amount of collateral to bid for the debt.
+       * @param debt The amount of debt to take over.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction             asset_collateral_bid(
+         string signatory,
+         string bidder,
+         asset collateral,
+         asset debt,
          bool broadcast );
 
 
@@ -3987,9 +4514,6 @@ FC_REFLECT( node::wallet::encrypted_message_data,
          );
 
 FC_API( node::wallet::wallet_api,
-
-         // Wallet API
-
          (help)
          (info)
          (about)
@@ -4012,9 +4536,6 @@ FC_API( node::wallet::wallet_api,
          (get_encrypted_message)
          (get_decrypted_message)
          (derive_private_key)
-        
-         // Key API
-
          (get_private_key)
          (get_private_key_from_password)
          (suggest_seed_phrase)
@@ -4022,105 +4543,62 @@ FC_API( node::wallet::wallet_api,
          (list_keys)
          (import_key)
          (encrypt_keys)
-
-         // Global API
-
          (get_config)
          (get_dynamic_global_properties)
          (get_median_chain_properties)
          (get_producer_schedule)
          (get_hardfork_version)
          (get_next_scheduled_hardfork)
-         (get_reward_funds)
-
-         // Account API
-
          (get_account)
          (get_accounts)
          (get_accounts_by_followers)
-         (get_concise_account)
          (get_concise_accounts)
-         (get_full_account)
          (get_full_accounts)
          (get_account_history)
          (get_messages)
          (get_balances)
+         (get_confidential_balances)
          (get_keychains)
          (lookup_accounts)
          (get_account_count)
          (get_owner_history)
          (get_recovery_request)
          (get_account_bandwidth)
-
-         // Asset API
-
-         (get_asset)
          (get_assets)
-         (get_asset_count)
          (get_escrow)
-         (get_withdraw_routes)
-         (get_savings_withdraw_from)
-         (get_savings_withdraw_to)
-         (get_asset_delegations)
-         (get_expiring_asset_delegations)
-
-         // Community API
-
-         (get_community)
          (get_communities)
          (get_communities_by_subscribers)
-         (get_community_count)
-
-         // Network API
-
-         (get_producer_by_account)
-         (get_producers_by_account)
+         (get_account_network_state)
          (get_active_producers)
-         (lookup_producer_accounts)
-         (get_producer_count)
          (get_producers_by_voting_power)
          (get_producers_by_mining_power)
-         (get_network_officer_by_account)
-         (get_network_officers_by_account)
          (get_development_officers_by_voting_power)
          (get_marketing_officers_by_voting_power)
          (get_advocacy_officers_by_voting_power)
-         (get_executive_board_by_account)
-         (get_executive_boards_by_account)
          (get_executive_boards_by_voting_power)
-         (get_supernode_by_account)
-         (get_supernodes_by_account)
          (get_supernodes_by_view_weight)
-         (get_interface_by_account)
-         (get_interfaces_by_account)
          (get_interfaces_by_users)
-         (get_governance_account_by_account)
-         (get_governance_accounts_by_account)
          (get_governance_accounts_by_subscriber_power)
          (get_enterprise_by_voting_power)
-
-         // Market API
-
          (get_open_orders)
          (get_limit_orders)
          (get_margin_orders)
+         (get_auction_orders)
          (get_call_orders)
+         (get_option_orders)
          (get_credit_loans)
          (get_credit_pools)
          (get_liquidity_pools)
+         (get_option_pools)
          (get_market_state)
-
-         // Ad API
-
          (get_account_ads)
          (get_interface_audience_bids)
-
-         // Search API
-
+         (get_product)
+         (get_account_products)
+         (get_graph_query)
+         (get_graph_node_properties)
+         (get_graph_edge_properties)
          (get_search_query)
-
-         // Blocks and Transactions API
-
          (sign_transaction)
          (get_prototype_operation)
          (network_add_nodes)
@@ -4129,9 +4607,6 @@ FC_API( node::wallet::wallet_api,
          (get_ops_in_block)
          (get_transaction)
          (get_transaction_id)
-
-         // Post + Tag API
-
          (get_active_votes)
          (get_active_views)
          (get_active_shares)
@@ -4143,9 +4618,6 @@ FC_API( node::wallet::wallet_api,
          (get_tag_followings)
          (get_top_tags)
          (get_tags_used_by_author)
-
-         // Discussion API
-
          (get_content)
          (get_content_replies)
          (get_replies_by_last_update)
@@ -4167,15 +4639,11 @@ FC_API( node::wallet::wallet_api,
          (get_discussions_by_view_power)
          (get_discussions_by_share_power)
          (get_discussions_by_comment_power)
-
-         // State API
-
          (get_state)
-
-         // Account Transaction API
-
          (account_create)
          (account_update)
+         (account_profile)
+         (account_verification)
          (account_membership)
          (account_vote_executive)
          (account_vote_officer)
@@ -4198,9 +4666,6 @@ FC_API( node::wallet::wallet_api,
          (account_follow)
          (tag_follow)
          (activity_reward)
-
-         // Network Transactions
-
          (update_network_officer)
          (network_officer_vote)
          (update_executive_board)
@@ -4213,18 +4678,12 @@ FC_API( node::wallet::wallet_api,
          (create_community_enterprise)
          (claim_enterprise_milestone)
          (approve_enterprise_milestone)
-
-         // Post and Comment Transactions
-
          (comment)
          (message)
          (vote)
          (view)
          (share)
          (moderation_tag)
-
-         // Community Transactions
-
          (community_create)
          (community_update)
          (community_add_mod)
@@ -4238,26 +4697,26 @@ FC_API( node::wallet::wallet_api,
          (community_remove_member)
          (community_blacklist)
          (community_subscribe)
-
-         // Ad Transactions
-
+         (community_event)
+         (community_event_attend)
          (ad_creative)
          (ad_campaign)
          (ad_inventory)
          (ad_audience)
          (ad_bid)
-
-         // Transfer Transactions
-
+         (graph_node)
+         (graph_edge)
+         (graph_node_property)
+         (graph_edge_property)
          (transfer)
          (transfer_request)
          (transfer_accept)
          (transfer_recurring)
          (transfer_recurring_request)
          (transfer_recurring_accept)
-
-         // Balance Transactions
-
+         (transfer_confidential)
+         (transfer_to_confidential)
+         (transfer_from_confidential)
          (claim_reward_balance)
          (stake_asset)
          (unstake_asset)
@@ -4265,23 +4724,17 @@ FC_API( node::wallet::wallet_api,
          (transfer_to_savings)
          (transfer_from_savings)
          (delegate_asset)
-
-         // Marketplace Transactions
-
+         (product_update)
+         (product_purchase)
          (escrow_transfer)
          (escrow_approve)
          (escrow_dispute)
          (escrow_release)
-
-         // Trading Transactions
-
          (limit_order)
          (margin_order)
+         (auction_order)
          (call_order)
-         (bid_collateral)
-
-         // Pool Transactions
-
+         (option_order)
          (liquidity_pool_create)
          (liquidity_pool_exchange)
          (liquidity_pool_fund)
@@ -4290,29 +4743,29 @@ FC_API( node::wallet::wallet_api,
          (credit_pool_borrow)
          (credit_pool_lend)
          (credit_pool_withdraw)
-
-         // Asset Transactions
-
+         (option_pool_create)
+         (prediction_pool_create)
+         (prediction_pool_exchange)
+         (prediction_pool_resolve)
          (asset_create)
          (asset_update)
          (asset_issue)
          (asset_reserve)
          (asset_update_issuer)
+         (asset_distribution)
+         (asset_distribution_fund)
+         (asset_option_exercise)
+         (asset_stimulus_fund)
          (asset_update_feed_producers)
          (asset_publish_feed)
          (asset_settle)
          (asset_global_settle)
-
-         // Block Producer Transactions
-
+         (asset_collateral_bid)
          (producer_update)
          (proof_of_work)
          (verify_block)
          (commit_block)
          (producer_violation)
-
-         // Custom Transactions
-
          (custom)
          (custom_json)
          );

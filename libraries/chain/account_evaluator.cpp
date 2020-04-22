@@ -2392,7 +2392,7 @@ void activity_reward_evaluator::do_apply( const activity_reward_operation& o )
    FC_ASSERT( now < ( vote.created + fc::days(1) ),
       "Referred Recent Vote should have been made in the last 24 hours." );
 
-   const auto& vote_idx = _db.get_index< producer_vote_index >().indices().get< by_account_rank_producer >();
+   const auto& vote_idx = _db.get_index< producer_vote_index >().indices().get< by_account_rank >();
    auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, 1 ) );     // Gets top voted producer of account.
 
    const producer_object& producer = _db.get_producer( vote_itr->producer );

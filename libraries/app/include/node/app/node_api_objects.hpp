@@ -20,7 +20,6 @@ typedef chain::unstake_asset_route_object              unstake_asset_route_api_o
 typedef chain::decline_voting_rights_request_object    decline_voting_rights_request_api_obj;
 typedef chain::producer_vote_object                    producer_vote_api_obj;
 typedef chain::producer_schedule_object                producer_schedule_api_obj;
-typedef chain::producer_vote_object                    producer_vote_api_obj;
 typedef chain::asset_delegation_object                 asset_delegation_api_obj;
 typedef chain::asset_delegation_expiration_object      asset_delegation_expiration_api_obj;
 typedef producer::account_bandwidth_object             account_bandwidth_api_obj;
@@ -579,6 +578,46 @@ struct account_business_api_obj
 };
 
 
+struct account_executive_vote_api_obj
+{
+   account_executive_vote_api_obj( const chain::account_executive_vote_object& a ):
+      id( a.id ),
+      account( a.account ),
+      business_account( a.business_account ),
+      executive_account( a.executive_account ),
+      role( executive_role_values[ int( a.role ) ] ),
+      vote_rank( a.vote_rank ){}
+      
+   account_executive_vote_api_obj(){}
+
+   account_executive_vote_id_type        id;
+   account_name_type                     account;               ///< Username of the account, voting for the executive.
+   account_name_type                     business_account;      ///< Name of the referred business account.
+   account_name_type                     executive_account;     ///< Name of the executive account.
+   string                                role;                  ///< Role voted in favor of.
+   uint16_t                              vote_rank;             ///< The rank of the executive vote.
+};
+
+
+struct account_officer_vote_api_obj
+{
+   account_officer_vote_api_obj( const chain::account_officer_vote_object& a ):
+      id( a.id ),
+      account( a.account ),
+      business_account( a.business_account ),
+      officer_account( a.officer_account ),
+      vote_rank( a.vote_rank ){}
+      
+   account_officer_vote_api_obj(){}
+
+   account_officer_vote_id_type          id;
+   account_name_type                     account;               ///< Username of the account, voting for the officer.
+   account_name_type                     business_account;      ///< Name of the referred business account.
+   account_name_type                     officer_account;       ///< Name of the officer account.
+   uint16_t                              vote_rank;             ///< The rank of the officer vote.
+};
+
+
 struct account_permission_api_obj
 {
    account_permission_api_obj( const chain::account_permission_object& a ):
@@ -956,6 +995,25 @@ struct network_officer_api_obj
 };
 
 
+struct network_officer_vote_api_obj
+{
+   network_officer_vote_api_obj( const chain::network_officer_vote_object& o ):
+      id( o.id ),
+      account( o.account ),
+      network_officer( o.network_officer ),
+      officer_type( network_officer_role_values[ int( o.officer_type ) ] ),
+      vote_rank( o.vote_rank ){}
+
+   network_officer_vote_api_obj(){}
+
+   network_officer_vote_id_type        id;
+   account_name_type                   account;                    ///< The name of the account voting for the officer.
+   account_name_type                   network_officer;            ///< The name of the network officer being voted for.
+   string                              officer_type;               ///< the type of network officer that is being voted for.
+   uint16_t                            vote_rank;                  ///< the ranking of the vote for the officer.
+};
+
+
 struct executive_board_api_obj
 {
    executive_board_api_obj( const chain::executive_board_object& o ):
@@ -986,8 +1044,25 @@ struct executive_board_api_obj
    time_point                     created;                    ///< The time the executive team was created.
    uint32_t                       vote_count;                 ///< The number of accounts that support the executive team.
    int64_t                        voting_power;               ///< The amount of voting power that votes for the executive team. 
-   uint32_t                       producer_vote_count;         ///< The number of accounts that support the executive team.
-   int64_t                        producer_voting_power;       ///< The amount of voting power that votes for the executive team.
+   uint32_t                       producer_vote_count;        ///< The number of accounts that support the executive team.
+   int64_t                        producer_voting_power;      ///< The amount of voting power that votes for the executive team.
+};
+
+
+struct executive_board_vote_api_obj
+{
+   executive_board_vote_api_obj( const chain::executive_board_vote_object& o ):
+      id( o.id ),
+      account( o.account ),
+      executive_board( o.executive_board ),
+      vote_rank( o.vote_rank ){}
+
+   executive_board_vote_api_obj(){}
+
+   executive_board_vote_id_type        id;
+   account_name_type                   account;               ///< The name of the account that voting for the executive board.
+   account_name_type                   executive_board;       ///< The name of the executive board being voted for.
+   uint16_t                            vote_rank;             ///< The rank the rank of the vote for the executive board. 
 };
 
 
@@ -1010,17 +1085,34 @@ struct governance_account_api_obj
    governance_account_api_obj(){}
 
    governance_account_id_type     id;
-   account_name_type              account;                    ///< The name of the governance account that created the governance account.
-   bool                           active;                     ///< True if the governance account is active, set false to deactivate.
-   bool                           account_approved;           ///< True when the governance account has reach sufficient voting support to receive budget.
-   string                         details;                    ///< The governance account's details description. 
-   string                         url;                        ///< The governance account's reference URL. 
-   string                         json;                       ///< Json metadata of the governance account. 
-   time_point                     created;                    ///< The time the governance account was created.
-   uint32_t                       subscriber_count;           ///< The number of accounts that support the governance account.
-   int64_t                        subscriber_power;           ///< The amount of voting power that votes for the governance account. 
+   account_name_type              account;                     ///< The name of the governance account that created the governance account.
+   bool                           active;                      ///< True if the governance account is active, set false to deactivate.
+   bool                           account_approved;            ///< True when the governance account has reach sufficient voting support to receive budget.
+   string                         details;                     ///< The governance account's details description. 
+   string                         url;                         ///< The governance account's reference URL. 
+   string                         json;                        ///< Json metadata of the governance account. 
+   time_point                     created;                     ///< The time the governance account was created.
+   uint32_t                       subscriber_count;            ///< The number of accounts that support the governance account.
+   int64_t                        subscriber_power;            ///< The amount of voting power that votes for the governance account. 
    uint32_t                       producer_subscriber_count;   ///< The number of accounts that support the governance account.
    int64_t                        producer_subscriber_power;   ///< The amount of voting power that votes for the governance account.
+};
+
+
+struct governance_subscription_api_obj
+{
+   governance_subscription_api_obj( const chain::governance_subscription_object& o ):
+      id( o.id ),
+      account( o.account ),
+      governance_account( o.governance_account ),
+      vote_rank( o.vote_rank ){}
+
+   governance_subscription_api_obj(){}
+
+   governance_subscription_id_type     id;
+   account_name_type                   account;                    ///< The name of the account that subscribes to the governance account.
+   account_name_type                   governance_account;         ///< The name of the governance account being subscribed to.
+   uint16_t                            vote_rank;                  ///< The preference rank of subscription for fee splitting.
 };
 
 
@@ -1064,7 +1156,7 @@ struct supernode_api_obj
    uint64_t                daily_active_users;          ///< The average number of accounts (X percent 100) that have used files from the node in the prior 24h.
    uint64_t                monthly_active_users;        ///< The average number of accounts (X percent 100) that have used files from the node in the prior 30 days.
    int64_t                 recent_view_weight;          ///< The rolling 7 day average of daily accumulated voting power of viewers. 
-   time_point              last_updated;            ///< The time the file weight and active users was last decayed.
+   time_point              last_updated;                ///< The time the file weight and active users was last decayed.
    time_point              last_activation_time;        ///< The time the Supernode was last reactivated, must be at least 24h ago to claim rewards.
 };
 
@@ -1215,6 +1307,51 @@ struct community_enterprise_api_obj
    uint32_t                           current_producer_approvals;                 ///< The number of top 50 producers that support the latest claimed milestone.
    int64_t                            current_producer_voting_power;              ///< The amount of producer voting power that supports the latest claimed milestone.
    time_point                         created;                                    ///< The time the proposal was created.
+};
+
+class enterprise_approval_object : public object< enterprise_approval_object_type, enterprise_approval_object >
+   {
+      enterprise_approval_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         enterprise_approval_object( Constructor&& c, allocator< Allocator > a ) :
+         enterprise_id(a)
+         {
+            c( *this );
+         }
+
+         id_type                        id;
+
+         account_name_type              account;                   ///< Account approving the enterprise Milestone.
+
+         account_name_type              creator;                   ///< The name of the account that created the community enterprise proposal.
+
+         shared_string                  enterprise_id;             ///< UUIDv4 referring to the proposal being claimed.
+
+         uint16_t                       vote_rank;                 ///< The vote rank of the approval for enterprise.
+
+         int16_t                        milestone;                 ///< Number of the milestone being approved for release.
+   };
+
+struct enterprise_approval_api_obj
+{
+   enterprise_approval_api_obj( const chain::enterprise_approval_object& o ):
+      id( o.id ),
+      account( o.account ),
+      creator( o.creator ),
+      enterprise_id( to_string( o.enterprise_id ) ),
+      vote_rank( o.vote_rank ),
+      milestone( o.milestone ){}
+
+   enterprise_approval_api_obj(){}
+
+   enterprise_approval_id_type       id;
+   account_name_type                  account;                   ///< Account approving the enterprise Milestone.
+   account_name_type                  creator;                   ///< The name of the account that created the community enterprise proposal.
+   string                             enterprise_id;             ///< UUIDv4 referring to the proposal being claimed.
+   uint16_t                           vote_rank;                 ///< The vote rank of the approval for enterprise.
+   int16_t                            milestone;                 ///< Number of the milestone being approved for release.
 };
 
 
@@ -3927,6 +4064,15 @@ FC_REFLECT( node::app::network_officer_api_obj,
          (producer_voting_power)
          );
 
+FC_REFLECT( node::app::network_officer_vote_api_obj,
+         (id)
+         (account)
+         (network_officer)
+         (officer_type)
+         (vote_rank)
+         );
+
+
 FC_REFLECT( node::app::executive_board_api_obj,
          (id)
          (account)
@@ -3943,6 +4089,13 @@ FC_REFLECT( node::app::executive_board_api_obj,
          (producer_voting_power)
          );
 
+FC_REFLECT( node::app::executive_board_vote_api_obj,
+         (id)
+         (account)
+         (executive_board)
+         (vote_rank)
+         );
+
 FC_REFLECT( node::app::governance_account_api_obj,
          (id)
          (account)
@@ -3956,6 +4109,13 @@ FC_REFLECT( node::app::governance_account_api_obj,
          (subscriber_power)
          (producer_subscriber_count)
          (producer_subscriber_power)
+         );
+
+FC_REFLECT( node::app::governance_subscription_api_obj,
+         (id)
+         (account)
+         (governance_account)
+         (vote_rank)
          );
 
 FC_REFLECT( node::app::supernode_api_obj,
@@ -4040,6 +4200,15 @@ FC_REFLECT( node::app::community_enterprise_api_obj,
          (current_producer_approvals)
          (current_producer_voting_power)
          (created)
+         );
+
+FC_REFLECT( node::app::enterprise_approval_api_obj,
+         (id)
+         (account)
+         (creator)
+         (enterprise_id)
+         (vote_rank)
+         (milestone)
          );
 
 

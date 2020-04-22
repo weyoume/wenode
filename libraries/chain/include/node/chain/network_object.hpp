@@ -484,7 +484,11 @@ namespace node { namespace chain {
                member< network_officer_object, uint32_t, &network_officer_object::vote_count >,
                member< network_officer_object, network_officer_id_type, &network_officer_object::id >
             >,
-            composite_key_compare< std::less< network_officer_role_type >, std::greater< uint32_t >, std::less< network_officer_id_type > >
+            composite_key_compare< 
+               std::less< network_officer_role_type >, 
+               std::greater< uint32_t >, 
+               std::less< network_officer_id_type > 
+            >
          >,
          ordered_unique< tag< by_type_voting_power >,
             composite_key< network_officer_object,
@@ -492,7 +496,11 @@ namespace node { namespace chain {
                member< network_officer_object, share_type, &network_officer_object::voting_power >,
                member< network_officer_object, network_officer_id_type, &network_officer_object::id >
             >,
-            composite_key_compare< std::less< network_officer_role_type >, std::greater< share_type >, std::less< network_officer_id_type > >
+            composite_key_compare< 
+               std::less< network_officer_role_type >, 
+               std::greater< share_type >, 
+               std::less< network_officer_id_type > 
+            >
          >
       >,
       allocator< network_officer_object >
@@ -505,26 +513,26 @@ namespace node { namespace chain {
    typedef multi_index_container<
       network_officer_vote_object,
       indexed_by<
-         ordered_unique< tag<by_id>, member< network_officer_vote_object, network_officer_vote_id_type, &network_officer_vote_object::id > >,
-         ordered_unique< tag<by_account_officer>,
+         ordered_unique< tag< by_id >, member< network_officer_vote_object, network_officer_vote_id_type, &network_officer_vote_object::id > >,
+         ordered_unique< tag< by_account_officer >,
             composite_key< network_officer_vote_object,
-               member<network_officer_vote_object, account_name_type, &network_officer_vote_object::account >,
-               member<network_officer_vote_object, account_name_type, &network_officer_vote_object::network_officer >,
-               member<network_officer_vote_object, uint16_t, &network_officer_vote_object::vote_rank >
+               member< network_officer_vote_object, account_name_type, &network_officer_vote_object::account >,
+               member< network_officer_vote_object, account_name_type, &network_officer_vote_object::network_officer >,
+               member< network_officer_vote_object, uint16_t, &network_officer_vote_object::vote_rank >
             >
          >,
-         ordered_unique< tag<by_account_type_rank>,
+         ordered_unique< tag< by_account_type_rank >,
             composite_key< network_officer_vote_object,
-               member<network_officer_vote_object, account_name_type, &network_officer_vote_object::account >,
-               member<network_officer_vote_object, network_officer_role_type, &network_officer_vote_object::officer_type >,
-               member<network_officer_vote_object, uint16_t, &network_officer_vote_object::vote_rank >
+               member< network_officer_vote_object, account_name_type, &network_officer_vote_object::account >,
+               member< network_officer_vote_object, network_officer_role_type, &network_officer_vote_object::officer_type >,
+               member< network_officer_vote_object, uint16_t, &network_officer_vote_object::vote_rank >
             >
          >,
-         ordered_unique< tag<by_officer_account>,
+         ordered_unique< tag< by_officer_account >,
             composite_key< network_officer_vote_object,
-               member<network_officer_vote_object, account_name_type, &network_officer_vote_object::network_officer >,
-               member<network_officer_vote_object, account_name_type, &network_officer_vote_object::account >,
-               member<network_officer_vote_object, uint16_t, &network_officer_vote_object::vote_rank >
+               member< network_officer_vote_object, account_name_type, &network_officer_vote_object::network_officer >,
+               member< network_officer_vote_object, account_name_type, &network_officer_vote_object::account >,
+               member< network_officer_vote_object, uint16_t, &network_officer_vote_object::vote_rank >
             >
          >
       >,
@@ -551,21 +559,30 @@ namespace node { namespace chain {
                member< executive_board_object, asset, &executive_board_object::budget >,
                member< executive_board_object, executive_board_id_type, &executive_board_object::id >
             >,
-            composite_key_compare< std::greater< asset >, std::less< executive_board_id_type > >
+            composite_key_compare< 
+               std::greater< asset >, 
+               std::less< executive_board_id_type > 
+            >
          >,
          ordered_unique< tag< by_vote_count >,
             composite_key< executive_board_object,
                member< executive_board_object, uint32_t, &executive_board_object::vote_count >,
                member< executive_board_object, executive_board_id_type, &executive_board_object::id >
             >,
-            composite_key_compare< std::greater< uint32_t >, std::less< executive_board_id_type > >
+            composite_key_compare< 
+               std::greater< uint32_t >, 
+               std::less< executive_board_id_type > 
+            >
          >,
          ordered_unique< tag< by_voting_power >,
             composite_key< executive_board_object,
                member< executive_board_object, share_type, &executive_board_object::voting_power >,
                member< executive_board_object, executive_board_id_type, &executive_board_object::id >
             >,
-            composite_key_compare< std::greater< share_type >, std::less< executive_board_id_type > >
+            composite_key_compare< 
+               std::greater< share_type >, 
+               std::less< executive_board_id_type > 
+            >
          >
       >,
       allocator< executive_board_object >
@@ -578,24 +595,24 @@ namespace node { namespace chain {
    typedef multi_index_container<
       executive_board_vote_object,
       indexed_by<
-         ordered_unique< tag<by_id>, member< executive_board_vote_object, executive_board_vote_id_type, &executive_board_vote_object::id > >,
-         ordered_unique< tag<by_account_executive >,
+         ordered_unique< tag< by_id >, member< executive_board_vote_object, executive_board_vote_id_type, &executive_board_vote_object::id > >,
+         ordered_unique< tag< by_account_executive >,
             composite_key< executive_board_vote_object,
-               member<executive_board_vote_object, account_name_type, &executive_board_vote_object::account >,
-               member<executive_board_vote_object, account_name_type, &executive_board_vote_object::executive_board >
+               member< executive_board_vote_object, account_name_type, &executive_board_vote_object::account >,
+               member< executive_board_vote_object, account_name_type, &executive_board_vote_object::executive_board >
             >
          >,
-         ordered_unique< tag<by_account_rank >,
+         ordered_unique< tag< by_account_rank >,
             composite_key< executive_board_vote_object,
-               member<executive_board_vote_object, account_name_type, &executive_board_vote_object::account >,
-               member<executive_board_vote_object, uint16_t, &executive_board_vote_object::vote_rank >
+               member< executive_board_vote_object, account_name_type, &executive_board_vote_object::account >,
+               member< executive_board_vote_object, uint16_t, &executive_board_vote_object::vote_rank >
             >
          >,
-         ordered_unique< tag<by_executive_account >,
+         ordered_unique< tag< by_executive_account >,
             composite_key< executive_board_vote_object,
-               member<executive_board_vote_object, account_name_type, &executive_board_vote_object::executive_board >,
-               member<executive_board_vote_object, account_name_type, &executive_board_vote_object::account >,
-               member<executive_board_vote_object, uint16_t, &executive_board_vote_object::vote_rank >
+               member< executive_board_vote_object, account_name_type, &executive_board_vote_object::executive_board >,
+               member< executive_board_vote_object, account_name_type, &executive_board_vote_object::account >,
+               member< executive_board_vote_object, uint16_t, &executive_board_vote_object::vote_rank >
             >
          >
       >,
@@ -615,14 +632,20 @@ namespace node { namespace chain {
                member< governance_account_object, uint32_t, &governance_account_object::subscriber_count >,
                member< governance_account_object, governance_account_id_type, &governance_account_object::id >
             >,
-            composite_key_compare< std::greater< uint32_t >, std::less< governance_account_id_type > >
+            composite_key_compare< 
+               std::greater< uint32_t >, 
+               std::less< governance_account_id_type > 
+            >
          >,
          ordered_unique< tag< by_subscriber_power >,
             composite_key< governance_account_object,
                member< governance_account_object, share_type, &governance_account_object::subscriber_power >,
                member< governance_account_object, governance_account_id_type, &governance_account_object::id >
             >,
-            composite_key_compare< std::greater< share_type >, std::less< governance_account_id_type > >
+            composite_key_compare< 
+               std::greater< share_type >, 
+               std::less< governance_account_id_type > 
+            >
          >
       >,
       allocator< governance_account_object >
@@ -634,17 +657,23 @@ namespace node { namespace chain {
    typedef multi_index_container<
       governance_subscription_object,
       indexed_by<
-         ordered_unique< tag<by_id>, member< governance_subscription_object, governance_subscription_id_type, &governance_subscription_object::id > >,
-         ordered_unique< tag<by_account_governance>,
+         ordered_unique< tag< by_id >, member< governance_subscription_object, governance_subscription_id_type, &governance_subscription_object::id > >,
+         ordered_unique< tag< by_account_governance >,
             composite_key< governance_subscription_object,
-               member<governance_subscription_object, account_name_type, &governance_subscription_object::account >,
-               member<governance_subscription_object, account_name_type, &governance_subscription_object::governance_account >
+               member< governance_subscription_object, account_name_type, &governance_subscription_object::account >,
+               member< governance_subscription_object, account_name_type, &governance_subscription_object::governance_account >
             >
          >,
-         ordered_unique< tag<by_governance_account>,
+         ordered_unique< tag< by_account_rank >,
             composite_key< governance_subscription_object,
-               member<governance_subscription_object, account_name_type, &governance_subscription_object::governance_account >,
-               member<governance_subscription_object, account_name_type, &governance_subscription_object::account >
+               member< governance_subscription_object, account_name_type, &governance_subscription_object::account >,
+               member< governance_subscription_object, uint16_t, &governance_subscription_object::vote_rank >
+            >
+         >,
+         ordered_unique< tag< by_governance_account >,
+            composite_key< governance_subscription_object,
+               member< governance_subscription_object, account_name_type, &governance_subscription_object::governance_account >,
+               member< governance_subscription_object, account_name_type, &governance_subscription_object::account >
             >
          >
       >,
@@ -667,21 +696,30 @@ namespace node { namespace chain {
                member< supernode_object, uint64_t, &supernode_object::daily_active_users >,
                member< supernode_object, supernode_id_type, &supernode_object::id >
             >,
-            composite_key_compare< std::greater< uint64_t >, std::less< supernode_id_type > >
+            composite_key_compare< 
+               std::greater< uint64_t >, 
+               std::less< supernode_id_type > 
+            >
          >,
          ordered_unique< tag< by_monthly_active_users >,
             composite_key< supernode_object,
                member< supernode_object, uint64_t, &supernode_object::monthly_active_users >,
                member< supernode_object, supernode_id_type, &supernode_object::id >
             >,
-            composite_key_compare< std::greater< uint64_t >, std::less< supernode_id_type > >
+            composite_key_compare< 
+               std::greater< uint64_t >, 
+               std::less< supernode_id_type > 
+            >
          >,
          ordered_unique< tag< by_view_weight >,
             composite_key< supernode_object,
                member< supernode_object, share_type, &supernode_object::recent_view_weight >,
                member< supernode_object, supernode_id_type, &supernode_object::id >
             >,
-            composite_key_compare< std::greater< share_type >, std::less< supernode_id_type > >
+            composite_key_compare< 
+               std::greater< share_type >, 
+               std::less< supernode_id_type > 
+            >
          >
       >,
       allocator< supernode_object >
@@ -700,14 +738,20 @@ namespace node { namespace chain {
                member< interface_object, uint64_t, &interface_object::daily_active_users >,
                member< interface_object, interface_id_type, &interface_object::id >
             >,
-            composite_key_compare< std::greater< uint64_t >, std::less< interface_id_type > >
+            composite_key_compare< 
+               std::greater< uint64_t >, 
+               std::less< interface_id_type > 
+            >
          >,
          ordered_unique< tag< by_monthly_active_users >,
             composite_key< interface_object,
                member< interface_object, uint64_t, &interface_object::monthly_active_users >,
                member< interface_object, interface_id_type, &interface_object::id >
             >,
-            composite_key_compare< std::greater< uint64_t >, std::less< interface_id_type > >
+            composite_key_compare< 
+               std::greater< uint64_t >, 
+               std::less< interface_id_type > 
+            >
          >
       >,
       allocator< interface_object >
@@ -727,7 +771,10 @@ namespace node { namespace chain {
                member< mediator_object, uint128_t, &mediator_object::mediation_virtual_position >,
                member< mediator_object, mediator_id_type, &mediator_object::id >
             >,
-            composite_key_compare< std::greater< uint128_t >, std::less< mediator_id_type > >
+            composite_key_compare< 
+               std::greater< uint128_t >, 
+               std::less< mediator_id_type > 
+            >
          >
       >,
       allocator< mediator_object >
@@ -763,49 +810,70 @@ namespace node { namespace chain {
                member< community_enterprise_object, account_name_type, &community_enterprise_object::creator >,
                member< community_enterprise_object, community_enterprise_id_type, &community_enterprise_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< community_enterprise_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< community_enterprise_id_type > 
+            >
          >,
          ordered_unique< tag< by_enterprise_id >,
             composite_key< community_enterprise_object,
                member< community_enterprise_object, account_name_type, &community_enterprise_object::creator >,
                member< community_enterprise_object, shared_string, &community_enterprise_object::enterprise_id >
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               strcmp_less 
+            >
          >,
          ordered_unique< tag< by_daily_budget >,
             composite_key< community_enterprise_object,
                member< community_enterprise_object, asset, &community_enterprise_object::daily_budget >,
                member< community_enterprise_object, community_enterprise_id_type, &community_enterprise_object::id >
             >,
-            composite_key_compare< std::greater< asset >, std::less< community_enterprise_id_type > >
+            composite_key_compare< 
+               std::greater< asset >, 
+               std::less< community_enterprise_id_type > 
+            >
          >,
          ordered_unique< tag< by_pending_budget >,
             composite_key< community_enterprise_object,
                member< community_enterprise_object, asset, &community_enterprise_object::pending_budget >,
                member< community_enterprise_object, community_enterprise_id_type, &community_enterprise_object::id >
             >,
-            composite_key_compare< std::greater< asset >, std::less< community_enterprise_id_type > >
+            composite_key_compare< 
+               std::greater< asset >, 
+               std::less< community_enterprise_id_type > 
+            >
          >,
          ordered_unique< tag< by_total_voting_power >,
             composite_key< community_enterprise_object,
                member< community_enterprise_object, share_type, &community_enterprise_object::total_voting_power >,
                member< community_enterprise_object, community_enterprise_id_type, &community_enterprise_object::id >
             >,
-            composite_key_compare< std::greater< share_type >, std::less< community_enterprise_id_type > >
+            composite_key_compare< 
+               std::greater< share_type >, 
+               std::less< community_enterprise_id_type > 
+            >
          >,
          ordered_unique< tag< by_total_producer_voting_power >,
             composite_key< community_enterprise_object,
                member< community_enterprise_object, share_type, &community_enterprise_object::total_producer_voting_power >,
                member< community_enterprise_object, community_enterprise_id_type, &community_enterprise_object::id >
             >,
-            composite_key_compare< std::greater< share_type >, std::less< community_enterprise_id_type > >
+            composite_key_compare< 
+               std::greater< share_type >, 
+               std::less< community_enterprise_id_type > 
+            >
          >,
          ordered_unique< tag< by_total_budget >,
             composite_key< community_enterprise_object,
                const_mem_fun< community_enterprise_object, asset, &community_enterprise_object::total_budget >,
                member< community_enterprise_object, community_enterprise_id_type, &community_enterprise_object::id >
             >,
-            composite_key_compare< std::greater< asset >, std::less< community_enterprise_id_type > >
+            composite_key_compare< 
+               std::greater< asset >, 
+               std::less< community_enterprise_id_type > 
+            >
          >
       >,
       allocator< community_enterprise_object >

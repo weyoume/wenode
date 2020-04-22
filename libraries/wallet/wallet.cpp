@@ -293,7 +293,6 @@ public:
       result["usd_price"] = dynamic_props.current_median_usd_price;
       result["equity_price"] = dynamic_props.current_median_equity_price;
       result["account_creation_fee"] = _remote_db->get_median_chain_properties().account_creation_fee;
-      result["reward_fund"] = fc::variant( _remote_db->get_reward_funds( { SYMBOL_COIN } ) ).get_object();
       return result;
    }
 
@@ -1334,17 +1333,9 @@ scheduled_hardfork                wallet_api::get_next_scheduled_hardfork() cons
    return my->_remote_db->get_next_scheduled_hardfork();
 }
 
-
-vector< reward_fund_api_obj >     wallet_api::get_reward_funds( vector< string > assets ) const
-{
-   return my->_remote_db->get_reward_funds( assets );
-}
-
-
       //======================//
       // === Account API ==== //
       //======================//
-
 
 
 account_api_obj                   wallet_api::get_account( string name ) const
@@ -1353,7 +1344,6 @@ account_api_obj                   wallet_api::get_account( string name ) const
    FC_ASSERT( !accounts.empty(), "Unknown account" );
    return accounts.front();
 }
-
 
 vector< account_api_obj >         wallet_api::get_accounts( vector< string > names ) const
 {
@@ -1367,25 +1357,9 @@ vector< account_api_obj >         wallet_api::get_accounts_by_followers( string 
 }
 
 
-account_concise_api_obj           wallet_api::get_concise_account( string name ) const
-{
-   vector< account_concise_api_obj > accounts = my->_remote_db->get_concise_accounts( { name } );
-   FC_ASSERT( !accounts.empty(), "Unknown account" );
-   return accounts.front();
-}
-
-
 vector< account_concise_api_obj > wallet_api::get_concise_accounts( vector< string > names ) const
 {
    return my->_remote_db->get_concise_accounts( names );
-}
-
-
-extended_account                  wallet_api::get_full_account( string name ) const
-{
-   vector< extended_account > accounts = my->_remote_db->get_full_accounts( { name } );
-   FC_ASSERT( !accounts.empty(), "Unknown account" );
-   return accounts.front();
 }
 
 
@@ -1480,6 +1454,12 @@ vector< balance_state >           wallet_api::get_balances( vector< string > nam
 }
 
 
+vector< confidential_balance_api_obj > wallet_api::get_confidential_balances( const confidential_query& query ) const
+{
+   return my->_remote_db->get_confidential_balances( query );
+}
+
+
 vector< key_state >               wallet_api::get_keychains( vector< string > names ) const
 {
    vector< key_state > results = my->_remote_db->get_keychains( names );
@@ -1548,23 +1528,9 @@ optional< account_bandwidth_api_obj >   wallet_api::get_account_bandwidth( strin
 
 
 
-extended_asset                    wallet_api::get_asset( string asset )const
-{
-   vector< extended_asset > assets = my->_remote_db->get_assets( { asset } );
-   FC_ASSERT( !assets.empty(), "Unknown asset" );
-   return assets.front();
-}
-
-
 vector< extended_asset >          wallet_api::get_assets( vector< string > assets )const
 {
    return my->_remote_db->get_assets( assets );
-}
-
-
-uint64_t                          wallet_api::get_asset_count()const
-{
-   return my->_remote_db->get_asset_count();
 }
 
 
@@ -1574,49 +1540,9 @@ optional< escrow_api_obj >        wallet_api::get_escrow( string from, string es
 }
 
 
-vector< withdraw_route >          wallet_api::get_withdraw_routes( string account, withdraw_route_type type )const
-{
-   return my->_remote_db->get_withdraw_routes( account, type );
-}
-
-
-vector< savings_withdraw_api_obj >  wallet_api::get_savings_withdraw_from( string account )const
-{
-   return my->_remote_db->get_savings_withdraw_from( account );
-}
-
-
-vector< savings_withdraw_api_obj >  wallet_api::get_savings_withdraw_to( string account )const
-{
-   return my->_remote_db->get_savings_withdraw_to( account );
-}
-
-
-vector< asset_delegation_api_obj >  wallet_api::get_asset_delegations( string account, string from, uint32_t limit )const
-{
-   return my->_remote_db->get_asset_delegations( account, from, limit );
-}
-
-
-vector< asset_delegation_expiration_api_obj >   wallet_api::get_expiring_asset_delegations( string account, time_point from, uint32_t limit )const
-{
-   return my->_remote_db->get_expiring_asset_delegations( account, from, limit );
-}
-
-
-
-      //===================//
+      //=======================//
       // === Community API === //
-      //===================//
-
-
-
-extended_community                    wallet_api::get_community( string community )const
-{
-   vector< extended_community > communities = my->_remote_db->get_communities( { community } );
-   FC_ASSERT( !communities.empty(), "Unknown community" );
-   return communities.front();
-}
+      //=======================//
 
 
 vector< extended_community >          wallet_api::get_communities( vector< string > communities )const
@@ -1631,166 +1557,66 @@ vector< extended_community >          wallet_api::get_communities_by_subscribers
 }
 
 
-uint64_t                          wallet_api::get_community_count()const
-{
-   return my->_remote_db->get_community_count();
-}
-
-
-
       //=====================//
       // === Network API === //
       //=====================//
 
 
-
-producer_api_obj                  wallet_api::get_producer_by_account( string name )const
+vector< account_network_state >        wallet_api::get_account_network_state( vector< string > names )const
 {
-   vector< producer_api_obj > producers = my->_remote_db->get_producers_by_account( { name } );
-   FC_ASSERT( !producers.empty(), "Unknown producer" );
-   return producers.front();
+   return my->_remote_db->get_account_network_state( names );
 }
 
-
-vector< producer_api_obj >        wallet_api::get_producers_by_account( vector< string > names )const
-{
-   return my->_remote_db->get_producers_by_account( names );
-}
-
-
-vector< account_name_type >       wallet_api::get_active_producers()const
+vector< account_name_type >            wallet_api::get_active_producers()const
 {
    return my->_remote_db->get_active_producers();
 }
 
-
-set< account_name_type >          wallet_api::lookup_producer_accounts( string from, uint32_t limit )const
-{
-   return my->_remote_db->lookup_producer_accounts( from, limit );
-}
-
-
-uint64_t                          wallet_api::get_producer_count()const
-{
-   return my->_remote_db->get_producer_count();
-}
-
-
-vector< producer_api_obj >        wallet_api::get_producers_by_voting_power( string from, uint32_t limit )const
+vector< producer_api_obj >             wallet_api::get_producers_by_voting_power( string from, uint32_t limit )const
 {
    return my->_remote_db->get_producers_by_voting_power( from, limit );
 }
 
 
-vector< producer_api_obj >        wallet_api::get_producers_by_mining_power( string from, uint32_t limit )const
+vector< producer_api_obj >             wallet_api::get_producers_by_mining_power( string from, uint32_t limit )const
 {
    return my->_remote_db->get_producers_by_mining_power( from, limit );
 }
 
 
-network_officer_api_obj           wallet_api::get_network_officer_by_account( string name )const
-{
-   vector< network_officer_api_obj > network_officers = my->_remote_db->get_network_officers_by_account( { name } );
-   FC_ASSERT( !network_officers.empty(), "Unknown network_officer" );
-   return network_officers.front();
-}
-
-
-vector< network_officer_api_obj > wallet_api::get_network_officers_by_account( vector< string > names )const
-{
-   return my->_remote_db->get_network_officers_by_account( names );
-}
-
-
-vector< network_officer_api_obj > wallet_api::get_development_officers_by_voting_power( string from, uint32_t limit )const
+vector< network_officer_api_obj >      wallet_api::get_development_officers_by_voting_power( string from, uint32_t limit )const
 {
    return my->_remote_db->get_development_officers_by_voting_power( from, limit );
 }
 
 
-vector< network_officer_api_obj > wallet_api::get_marketing_officers_by_voting_power( string from, uint32_t limit )const
+vector< network_officer_api_obj >      wallet_api::get_marketing_officers_by_voting_power( string from, uint32_t limit )const
 {
    return my->_remote_db->get_marketing_officers_by_voting_power( from, limit );
 }
 
 
-vector< network_officer_api_obj > wallet_api::get_advocacy_officers_by_voting_power( string from, uint32_t limit )const
+vector< network_officer_api_obj >      wallet_api::get_advocacy_officers_by_voting_power( string from, uint32_t limit )const
 {
    return my->_remote_db->get_advocacy_officers_by_voting_power( from, limit );
 }
 
 
-executive_board_api_obj           wallet_api::get_executive_board_by_account( string name )const
-{
-   vector< executive_board_api_obj > executive_boards = my->_remote_db->get_executive_boards_by_account( { name } );
-   FC_ASSERT( !executive_boards.empty(), "Unknown executive_board" );
-   return executive_boards.front();
-}
-
-
-vector< executive_board_api_obj > wallet_api::get_executive_boards_by_account( vector< string > names )const
-{
-   return my->_remote_db->get_executive_boards_by_account( names );
-}
-
-
-vector< executive_board_api_obj > wallet_api::get_executive_boards_by_voting_power( string from, uint32_t limit )const
+vector< executive_board_api_obj >      wallet_api::get_executive_boards_by_voting_power( string from, uint32_t limit )const
 {
    return my->_remote_db->get_executive_boards_by_voting_power( from, limit );
 }
 
 
-supernode_api_obj                 wallet_api::get_supernode_by_account( string name )const
-{
-   vector< supernode_api_obj > supernodes = my->_remote_db->get_supernodes_by_account( { name } );
-   FC_ASSERT( !supernodes.empty(), "Unknown supernode" );
-   return supernodes.front();
-}
-
-
-vector< supernode_api_obj >       wallet_api::get_supernodes_by_account( vector< string > names )const
-{
-   return my->_remote_db->get_supernodes_by_account( names );
-}
-
-
-vector< supernode_api_obj >       wallet_api::get_supernodes_by_view_weight( string from, uint32_t limit )const
+vector< supernode_api_obj >            wallet_api::get_supernodes_by_view_weight( string from, uint32_t limit )const
 {
    return my->_remote_db->get_supernodes_by_view_weight( from, limit );
 }
 
 
-interface_api_obj                 wallet_api::get_interface_by_account( string name )const
-{
-   vector< interface_api_obj > interfaces = my->_remote_db->get_interfaces_by_account( { name } );
-   FC_ASSERT( !interfaces.empty(), "Unknown interface" );
-   return interfaces.front();
-}
-
-
-vector< interface_api_obj >       wallet_api::get_interfaces_by_account( vector< string > names )const
-{
-   return my->_remote_db->get_interfaces_by_account( names );
-}
-
-
-vector< interface_api_obj >       wallet_api::get_interfaces_by_users( string from, uint32_t limit )const
+vector< interface_api_obj >            wallet_api::get_interfaces_by_users( string from, uint32_t limit )const
 {
    return my->_remote_db->get_interfaces_by_users( from, limit );
-}
-
-
-governance_account_api_obj        wallet_api::get_governance_account_by_account( string name )const
-{
-   vector< governance_account_api_obj > governance_accounts = my->_remote_db->get_governance_accounts_by_account( { name } );
-   FC_ASSERT( !governance_accounts.empty(), "Unknown governance_account" );
-   return governance_accounts.front();
-}
-
-
-vector< governance_account_api_obj >   wallet_api::get_governance_accounts_by_account( vector< string > names )const
-{
-   return my->_remote_db->get_governance_accounts_by_account( names );
 }
 
 
@@ -1830,9 +1656,21 @@ market_margin_orders              wallet_api::get_margin_orders( string buy_symb
 }
 
 
+market_option_orders              wallet_api::get_option_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const
+{
+   return my->_remote_db->get_option_orders( buy_symbol, sell_symbol, limit );
+}
+
+
 market_call_orders                wallet_api::get_call_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const
 {
    return my->_remote_db->get_call_orders( buy_symbol, sell_symbol, limit );
+}
+
+
+market_auction_orders             wallet_api::get_auction_orders( string buy_symbol, string sell_symbol, uint32_t limit ) const
+{
+   return my->_remote_db->get_auction_orders( buy_symbol, sell_symbol, limit );
 }
 
 
@@ -1854,17 +1692,21 @@ vector< liquidity_pool_api_obj >  wallet_api::get_liquidity_pools( string buy_sy
 }
 
 
+vector< option_pool_api_obj >     wallet_api::get_option_pools( string buy_symbol, string sell_symbol )const
+{
+   return my->_remote_db->get_option_pools( buy_symbol, sell_symbol );
+}
+
+
 market_state                      wallet_api::get_market_state( string buy_symbol, string sell_symbol )const
 {
    return my->_remote_db->get_market_state( buy_symbol, sell_symbol );
 }
 
 
-
       //================//
       // === Ad API === //
       //================//
-
 
 
 vector< account_ad_state >        wallet_api::get_account_ads( vector< string > names )const
@@ -1879,6 +1721,46 @@ vector< ad_bid_state >            wallet_api::get_interface_audience_bids( const
 }
 
 
+      //=====================//
+      // === Product API === //
+      //=====================//
+
+
+
+product_api_obj                   wallet_api::get_product( string seller, string product_id )const
+{
+   return my->_remote_db->get_product( seller, product_id );
+}
+
+
+vector< account_product_state >   wallet_api::get_account_products( vector< string > names )const
+{
+   return my->_remote_db->get_account_products( names );
+}
+
+
+      //=====================//
+      // === Graph Data  === //
+      //=====================//
+
+
+graph_data_state                     wallet_api::get_graph_query( const graph_query& query )const
+{
+   return my->_remote_db->get_graph_query( query );
+}
+
+
+vector< graph_node_property_api_obj > wallet_api::get_graph_node_properties( vector< string > names )const
+{
+   return my->_remote_db->get_graph_node_properties( names );
+}
+
+
+vector< graph_edge_property_api_obj > wallet_api::get_graph_edge_properties( vector< string > names )const
+{
+   return my->_remote_db->get_graph_edge_properties( names );
+}
+
 
       //====================//
       // === Search API === //
@@ -1892,35 +1774,9 @@ search_result_state               wallet_api::get_search_query( const search_que
 }
 
 
-
       //=====================================//
       // === Blocks and Transactions API === //
       //=====================================//
-
-
-
-annotated_signed_transaction      wallet_api::sign_transaction( signed_transaction tx, bool broadcast )
-{ try {
-   return my->sign_transaction( tx, broadcast );
-} FC_CAPTURE_AND_RETHROW( (tx) ) }
-
-
-operation                         wallet_api::get_prototype_operation(string operation_name)
-{
-   return my->get_prototype_operation( operation_name );
-}
-
-
-void                              wallet_api::network_add_nodes( const vector<string>& nodes )
-{
-   my->network_add_nodes( nodes );
-}
-
-
-vector< variant >                 wallet_api::network_get_connected_peers()
-{
-   return my->network_get_connected_peers();
-}
 
 
 optional< signed_block_api_obj >  wallet_api::get_block( uint64_t num )
@@ -1938,6 +1794,30 @@ vector< applied_operation >       wallet_api::get_ops_in_block( uint64_t block_n
 annotated_signed_transaction      wallet_api::get_transaction( transaction_id_type trx_id )const
 {
    return my->_remote_db->get_transaction( trx_id );
+}
+
+
+annotated_signed_transaction      wallet_api::sign_transaction( signed_transaction tx, bool broadcast )
+{ try {
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW( (tx) ) }
+
+
+operation                         wallet_api::get_prototype_operation( string operation_name )
+{
+   return my->get_prototype_operation( operation_name );
+}
+
+
+void                              wallet_api::network_add_nodes( const vector<string>& nodes )
+{
+   my->network_add_nodes( nodes );
+}
+
+
+vector< variant >                 wallet_api::network_get_connected_peers()
+{
+   return my->network_get_connected_peers();
 }
 
 
@@ -2580,6 +2460,102 @@ annotated_signed_transaction      wallet_api::account_update(
    op.connection_public_key = connection_public_key;
    op.friend_public_key = friend_public_key;
    op.companion_public_key = companion_public_key;
+   
+   signed_transaction tx;
+   tx.operations.push_back(op);
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+
+} FC_CAPTURE_AND_RETHROW() }
+
+annotated_signed_transaction      wallet_api::account_profile(
+   string signatory,
+   string account,
+   string governance_account,
+   string profile_public_key,
+   string first_name,
+   string last_name,
+   string gender,
+   string date_of_birth,
+   string email,
+   string phone,
+   string nationality,
+   string address,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   account_profile_operation op;
+
+   op.signatory = signatory;
+   op.account = account;
+   op.governance_account = governance_account;
+   op.profile_public_key = profile_public_key;
+   op.first_name = first_name;
+   op.last_name = last_name;
+   op.gender = gender;
+   op.date_of_birth = date_of_birth;
+   op.email = email;
+   op.phone = phone;
+   op.nationality = nationality;
+   op.address = address;
+   
+   signed_transaction tx;
+   tx.operations.push_back(op);
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::account_verification(
+   string signatory,
+   string verifier_account,
+   string verified_account,
+   string shared_image,
+   signature_type image_signature,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   account_verification_operation op;
+
+   op.signatory = signatory;
+   op.verifier_account = verifier_account;
+   op.verified_account = verified_account;
+   op.shared_image = shared_image;
+   op.image_signature = image_signature;
+   
+   signed_transaction tx;
+   tx.operations.push_back(op);
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::account_business(
+   string signatory,
+   string governance_account,
+   string init_ceo_account,
+   string business_type,
+   int64_t officer_vote_threshold,
+   string business_public_key,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   account_business_operation op;
+
+   op.signatory = signatory;
+   op.governance_account = governance_account;
+   op.init_ceo_account = init_ceo_account;
+   op.business_type = business_type;
+   op.officer_vote_threshold = officer_vote_threshold;
+   op.business_public_key = business_public_key;
    
    signed_transaction tx;
    tx.operations.push_back(op);
@@ -3831,6 +3807,10 @@ annotated_signed_transaction      wallet_api::community_create(
    string json_private,
    string details,
    string url,
+   string reward_currency,
+   uint16_t max_rating,
+   uint32_t flags,
+   uint32_t permissions,
    bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
@@ -3846,6 +3826,10 @@ annotated_signed_transaction      wallet_api::community_create(
    op.json_private = json_private;
    op.details = details;
    op.url = url;
+   op.reward_currency = reward_currency;
+   op.max_rating = max_rating;
+   op.flags = flags;
+   op.permissions = permissions;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -3866,6 +3850,11 @@ annotated_signed_transaction      wallet_api::community_update(
    string url,
    string pinned_author,
    string pinned_permlink,
+   string reward_currency,
+   uint16_t max_rating,
+   uint32_t flags,
+   uint32_t permissions,
+   bool active,
    bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
@@ -3882,6 +3871,11 @@ annotated_signed_transaction      wallet_api::community_update(
    op.url = url;
    op.pinned_author = pinned_author;
    op.pinned_permlink = pinned_permlink;
+   op.reward_currency = reward_currency;
+   op.max_rating = max_rating;
+   op.flags = flags;
+   op.permissions = permissions;
+   op.active = active;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -4180,6 +4174,88 @@ annotated_signed_transaction      wallet_api::community_subscribe(
 } FC_CAPTURE_AND_RETHROW() }
 
 
+annotated_signed_transaction      wallet_api::community_event(
+   string signatory,
+   string account,
+   string community,
+   string event_name,
+   string location,
+   string details,
+   string url,
+   string json,
+   vector< string > invited,
+   time_point event_start_time,
+   time_point event_end_time,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   community_event_operation op;
+
+   op.signatory = signatory;
+   op.account = account;
+   op.community = community;
+   op.event_name = event_name;
+   op.location = location;
+   op.details = details;
+   op.url = url;
+   op.json = json;
+
+   set< account_name_type > inv;
+   
+   for( auto a : invited )
+   {
+      inv.insert( account_name_type( a ) );
+   }
+
+   op.invited.reserve( inv.size() );
+
+   for( auto a : inv )
+   {
+      op.invited.push_back( a );
+   }
+
+   op.event_start_time = event_start_time;
+   op.event_end_time = event_end_time;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::community_event_attend(
+   string signatory,
+   string account,
+   string community,
+   string event_name,
+   bool interested,
+   bool attending,
+   bool not_attending,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   community_event_attend_operation op;
+
+   op.signatory = signatory;
+   op.account = account;
+   op.community = community;
+   op.event_name = event_name;
+   op.interested = interested;
+   op.attending = attending;
+   op.not_attending = not_attending;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
 
       //=========================//
       // === Ad Transactions === //
@@ -4384,6 +4460,228 @@ annotated_signed_transaction      wallet_api::ad_bid(
    op.json = json;
    op.expiration = expiration;
    op.active = active;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+      //============================//
+      //==== Graph Transactions ====//
+      //============================//
+
+
+annotated_signed_transaction      wallet_api::graph_node(
+   string signatory,
+   string account,
+   vector< string > node_types,
+   string node_id,
+   string name,
+   string details,
+   vector< string > attributes,
+   vector< string > attribute_values,
+   string json,
+   string json_private,
+   string node_public_key,
+   string interface,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   graph_node_operation op;
+
+   op.signatory = signatory;
+   op.account = account;
+
+   set< graph_node_name_type > nodes;
+   
+   for( auto a : node_types )
+   {
+      nodes.insert( graph_node_name_type( a ) );
+   }
+
+   op.node_types.reserve( nodes.size() );
+
+   for( auto a : nodes )
+   {
+      op.node_types.push_back( a );
+   }
+
+   op.node_id = node_id;
+   op.name = name;
+   op.details = details;
+   op.attributes = attributes;
+   op.attribute_values = attribute_values;
+   op.json = json;
+   op.json_private = json_private;
+   op.node_public_key = node_public_key;
+   op.interface = interface;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::graph_edge(
+   string signatory,
+   string account,
+   vector< string > edge_types,
+   string edge_id,
+   string from_node_account,
+   string from_node_id,
+   string to_node_account,
+   string to_node_id,
+   string name,
+   string details,
+   vector< string > attributes,
+   vector< string > attribute_values,
+   string json,
+   string json_private,
+   string edge_public_key,
+   string interface,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   graph_edge_operation op;
+
+   op.signatory = signatory;
+   op.account = account;
+
+   set< graph_edge_name_type > edges;
+   
+   for( auto a : edge_types )
+   {
+      edges.insert( graph_edge_name_type( a ) );
+   }
+
+   op.edge_types.reserve( edges.size() );
+
+   for( auto a : edges )
+   {
+      op.edge_types.push_back( a );
+   }
+
+   op.edge_id = edge_id;
+   op.from_node_account = from_node_account;
+   op.from_node_id = from_node_id;
+   op.to_node_account = to_node_account;
+   op.to_node_id = to_node_id;
+   op.name = name;
+   op.details = details;
+   op.attributes = attributes;
+   op.attribute_values = attribute_values;
+   op.json = json;
+   op.json_private = json_private;
+   op.edge_public_key = edge_public_key;
+   op.interface = interface;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::graph_node_property(
+   string signatory,
+   string account,
+   string node_type,
+   string graph_privacy,
+   string edge_permission,
+   string details,
+   string url,
+   string json,
+   vector< string > attributes,
+   string interface,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   graph_node_property_operation op;
+
+   op.signatory = signatory;
+   op.account = account;
+   op.node_type = node_type;
+   op.graph_privacy = graph_privacy;
+   op.edge_permission = edge_permission;
+   op.details = details;
+   op.url = url;
+   op.json = json;
+   op.attributes = attributes;
+   op.interface = interface;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::graph_edge_property(
+   string signatory,
+   string account,
+   string edge_type,
+   string graph_privacy,
+   vector< string > from_node_types,
+   vector< string > to_node_types,
+   string details,
+   string url,
+   string json,
+   vector< string > attributes,
+   string interface,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   graph_edge_property_operation op;
+
+   op.signatory = signatory;
+   op.account = account;
+   op.edge_type = edge_type;
+   op.graph_privacy = graph_privacy;
+
+   set< graph_node_name_type > from_nodes;
+   
+   for( auto a : from_node_types )
+   {
+      from_nodes.insert( graph_node_name_type( a ) );
+   }
+
+   op.from_node_types.reserve( from_nodes.size() );
+
+   for( auto a : from_nodes )
+   {
+      op.from_node_types.push_back( a );
+   }
+
+   set< graph_node_name_type > to_nodes;
+   
+   for( auto a : to_node_types )
+   {
+      to_nodes.insert( graph_node_name_type( a ) );
+   }
+
+   op.to_node_types.reserve( to_nodes.size() );
+
+   for( auto a : to_nodes )
+   {
+      op.to_node_types.push_back( a );
+   }
+
+   op.details = details;
+   op.url = url;
+   op.json = json;
+   op.attributes = attributes;
+   op.interface = interface;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -4612,6 +4910,81 @@ annotated_signed_transaction      wallet_api::transfer_recurring_accept(
 } FC_CAPTURE_AND_RETHROW() }
 
 
+annotated_signed_transaction      wallet_api::transfer_confidential(
+   vector< confidential_input > inputs,
+   vector< confidential_output > outputs,
+   asset fee,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   transfer_confidential_operation op;
+
+   op.inputs = inputs;
+   op.outputs = outputs;
+   op.fee = fee;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::transfer_to_confidential(
+   string signatory,
+   string from,
+   asset amount,
+   blind_factor_type blinding_factor,
+   vector< confidential_output > outputs,
+   asset fee,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   transfer_to_confidential_operation op;
+
+   op.signatory = signatory;
+   op.from = from;
+   op.amount = amount;
+   op.blinding_factor = blinding_factor;
+   op.outputs = outputs;
+   op.fee = fee;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::transfer_from_confidential(
+   string to,
+   asset amount,
+   blind_factor_type blinding_factor,
+   vector< confidential_input > inputs,
+   asset fee,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   transfer_from_confidential_operation op;
+
+   op.to = to;
+   op.amount = amount;
+   op.blinding_factor = blinding_factor;
+   op.inputs = inputs;
+   op.fee = fee;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
 
       //==============================//
       // === Balance Transactions === //
@@ -4806,9 +5179,102 @@ annotated_signed_transaction       wallet_api::delegate_asset(
 
 
 
-      //=============================//
+      //==================================//
       // === Marketplace Transactions === //
-      //=============================//
+      //==================================//
+
+
+
+annotated_signed_transaction       wallet_api::product_update(
+   string signatory,
+   string account,
+   string product_id,
+   string name,
+   string sale_type,
+   string url,
+   string json,
+   vector< string > product_variants,
+   vector< string > product_details,
+   vector< string > product_images,
+   vector< asset > product_prices,
+   vector< uint32_t > stock_available,
+   vector< string > delivery_variants,
+   vector< string > delivery_details,
+   vector< asset > delivery_prices,
+   bool broadcast)
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   product_update_operation op;
+
+   op.signatory = signatory;
+   op.account = account;
+   op.product_id = product_id;
+   op.name = name;
+   op.sale_type = sale_type;
+   op.url = url;
+   op.json = json;
+   op.product_variants = product_variants;
+   op.product_details = product_details;
+   op.product_images = product_images;
+   op.product_prices = product_prices;
+   op.stock_available = stock_available;
+   op.delivery_variants = delivery_variants;
+   op.delivery_details = delivery_details;
+   op.delivery_prices = delivery_prices;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction       wallet_api::product_purchase(
+   string signatory,
+   string buyer,
+   string order_id,
+   string seller,
+   string product_id,
+   vector< string > order_variants,
+   vector< uint32_t > order_size,
+   string memo,
+   string json,
+   string shipping_address,
+   string delivery_variant,
+   string delivery_details,
+   time_point acceptance_time,
+   time_point escrow_expiration,
+   bool completed,
+   bool broadcast)
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   product_purchase_operation op;
+
+   op.signatory = signatory;
+   op.buyer = buyer;
+   op.order_id = order_id;
+   op.seller = seller;
+   op.product_id = product_id;
+   op.order_variants = order_variants;
+   op.order_size = order_size;
+   op.memo = memo;
+   op.json = json;
+   op.shipping_address = shipping_address;
+   op.delivery_variant = delivery_variant;
+   op.delivery_details = delivery_details;
+   op.acceptance_time = acceptance_time;
+   op.escrow_expiration = escrow_expiration;
+   op.completed = completed;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
 
 
 
@@ -5029,6 +5495,38 @@ annotated_signed_transaction      wallet_api::margin_order(
 } FC_CAPTURE_AND_RETHROW() }
 
 
+annotated_signed_transaction      wallet_api::auction_order(
+   string signatory,
+   string owner,
+   string order_id,
+   asset amount_to_sell,
+   price limit_close_price,
+   string interface,
+   time_point expiration,
+   bool opened,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   auction_order_operation op;
+
+   op.signatory = signatory;
+   op.owner = owner;
+   op.order_id = order_id;
+   op.amount_to_sell = amount_to_sell;
+   op.limit_close_price = limit_close_price;
+   op.interface = interface;
+   op.expiration = expiration;
+   op.opened = opened;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
 annotated_signed_transaction      wallet_api::call_order(
    string signatory,
    string owner,
@@ -5057,21 +5555,25 @@ annotated_signed_transaction      wallet_api::call_order(
 } FC_CAPTURE_AND_RETHROW() }
 
 
-annotated_signed_transaction      wallet_api::bid_collateral(
+annotated_signed_transaction      wallet_api::option_order(
    string signatory,
-   string bidder,
-   asset collateral,
-   asset debt,
+   string owner,
+   string order_id,
+   asset options_issued,
+   string interface,
+   bool opened,
    bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
 
-   asset_collateral_bid_operation op;
+   option_order_operation op;
 
    op.signatory = signatory;
-   op.bidder = bidder;
-   op.collateral = collateral;
-   op.debt = debt;
+   op.owner = owner;
+   op.order_id = order_id;
+   op.options_issued = options_issued;
+   op.interface = interface;
+   op.opened = opened;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -5282,6 +5784,136 @@ annotated_signed_transaction      wallet_api::credit_pool_withdraw(
 } FC_CAPTURE_AND_RETHROW() }
 
 
+annotated_signed_transaction      wallet_api::option_pool_create(
+   string signatory,
+   string account,
+   string first_asset,
+   string second_asset,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   option_pool_create_operation op;
+
+   op.signatory = signatory;
+   op.account = account;
+   op.first_asset = first_asset;
+   op.second_asset = second_asset;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::prediction_pool_create(
+   string signatory,
+   string account,
+   string prediction_symbol,
+   string collateral_symbol,
+   vector< string > outcome_assets,
+   vector< string > outcome_details,
+   string display_symbol,
+   string json,
+   string url,
+   string details,
+   time_point outcome_time,
+   asset prediction_bond,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   prediction_pool_create_operation op;
+
+   op.signatory = signatory;
+   op.account = account;
+   op.prediction_symbol = prediction_symbol;
+   op.collateral_symbol = collateral_symbol;
+
+   set< asset_symbol_type > out;
+   
+   for( auto a : outcome_assets )
+   {
+      out.insert( asset_symbol_type( a ) );
+   }
+
+   op.outcome_assets.reserve( out.size() );
+
+   for( auto a : out )
+   {
+      op.outcome_assets.push_back( a );
+   }
+
+   op.outcome_details = outcome_details;
+   op.display_symbol = display_symbol;
+   op.json = json;
+   op.url = url;
+   op.details = details;
+   op.outcome_time = outcome_time;
+   op.prediction_bond = prediction_bond;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::prediction_pool_exchange(
+   string signatory,
+   string account,
+   asset amount,
+   string prediction_asset,
+   bool exchange_base,
+   bool withdraw,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   prediction_pool_exchange_operation op;
+
+   op.signatory = signatory;
+   op.account = account;
+   op.amount = amount;
+   op.prediction_asset = prediction_asset;
+   op.exchange_base = exchange_base;
+   op.withdraw = withdraw;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::prediction_pool_resolve(
+   string signatory,
+   string account,
+   asset amount,
+   string resolution_outcome,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   prediction_pool_resolve_operation op;
+
+   op.signatory = signatory;
+   op.account = account;
+   op.amount = amount;
+   op.resolution_outcome = resolution_outcome;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
 
       //============================//
       // === Asset Transactions === //
@@ -5422,6 +6054,130 @@ annotated_signed_transaction      wallet_api::asset_update_issuer(
 } FC_CAPTURE_AND_RETHROW() }
 
 
+annotated_signed_transaction      wallet_api::asset_distribution(
+   string signatory,
+   string issuer,
+   string distribution_asset,
+   string fund_asset,
+   string details,
+   string url,
+   string json,
+   uint32_t distribution_rounds,
+   uint32_t distribution_interval_days,
+   uint32_t max_intervals_missed,
+   int64_t min_input_fund_units,
+   int64_t max_input_fund_units,
+   vector< asset_unit > input_fund_unit,
+   vector< asset_unit > output_distribution_unit,
+   int64_t min_unit_ratio,
+   int64_t max_unit_ratio,
+   int64_t min_input_balance_units,
+   int64_t max_input_balance_units,
+   time_point begin_time,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   asset_distribution_operation op;
+
+   op.signatory = signatory;
+   op.issuer = issuer;
+   op.distribution_asset = distribution_asset;
+   op.fund_asset = fund_asset;
+   op.details = details;
+   op.url = url;
+   op.json = json;
+   op.distribution_rounds = distribution_rounds;
+   op.distribution_interval_days = distribution_interval_days;
+   op.max_intervals_missed = max_intervals_missed;
+   op.min_input_fund_units = min_input_fund_units;
+   op.max_input_fund_units = max_input_fund_units;
+   op.input_fund_unit = input_fund_unit;
+   op.output_distribution_unit = output_distribution_unit;
+   op.min_unit_ratio = min_unit_ratio;
+   op.max_unit_ratio = max_unit_ratio;
+   op.min_input_balance_units = min_input_balance_units;
+   op.max_input_balance_units = max_input_balance_units;
+   op.begin_time = begin_time;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::asset_distribution_fund(
+   string signatory,
+   string sender,
+   string distribution_asset,
+   asset amount,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   asset_distribution_fund_operation op;
+
+   op.signatory = signatory;
+   op.sender = sender;
+   op.distribution_asset = distribution_asset;
+   op.amount = amount;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::asset_option_exercise(
+   string signatory,
+   string account,
+   asset amount,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   asset_option_exercise_operation op;
+
+   op.signatory = signatory;
+   op.account = account;
+   op.amount = amount;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::asset_stimulus_fund(
+   string signatory,
+   string account,
+   string stimulus_asset,
+   asset amount,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   asset_stimulus_fund_operation op;
+
+   op.signatory = signatory;
+   op.account = account;
+   op.stimulus_asset = stimulus_asset;
+   op.amount = amount;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
 annotated_signed_transaction      wallet_api::asset_update_feed_producers(
    string signatory,
    string issuer,
@@ -5518,11 +6274,33 @@ annotated_signed_transaction      wallet_api::asset_global_settle(
 } FC_CAPTURE_AND_RETHROW() }
 
 
+annotated_signed_transaction      wallet_api::asset_collateral_bid(
+   string signatory,
+   string bidder,
+   asset collateral,
+   asset debt,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   asset_collateral_bid_operation op;
+
+   op.signatory = signatory;
+   op.bidder = bidder;
+   op.collateral = collateral;
+   op.debt = debt;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
 
       //=====================================//
       // === Block Producer Transactions === //
       //=====================================//
-
 
 
 annotated_signed_transaction      wallet_api::producer_update(

@@ -434,7 +434,7 @@ namespace node { namespace protocol {
    {
       account_name_type             signatory;
 
-      account_name_type             account;                  ///< Name of the account to update.   
+      account_name_type             account;                  ///< Name of the business account to update.
 
       account_name_type             governance_account;       ///< Name of the governance account that the business account is registered with.
 
@@ -2205,7 +2205,7 @@ namespace node { namespace protocol {
 
 
    /**
-    * Creates or updates an event within a community.
+    * Denotes the status of an account attending an event.
     */
    struct community_event_attend_operation : public base_operation
    {
@@ -2421,7 +2421,7 @@ namespace node { namespace protocol {
 
       account_name_type                  account;                ///< Name of the account that created the node.
 
-      vector< graph_node_name_type >     node_types;             ///< Set of Types of node being created, determines the required attributes.
+      vector< graph_node_name_type >     node_types;             ///< Types of node being created, determines the required attributes.
 
       string                             node_id;                ///< uuidv4 identifying the node. Unique for each account.
 
@@ -2437,7 +2437,7 @@ namespace node { namespace protocol {
 
       string                             json_private;           ///< Private encrypted ciphertext JSON node attribute information.
 
-      string                             node_public_key;        ///< Key used for encrypting and decrypting private node JSON data
+      string                             node_public_key;        ///< Key used for encrypting and decrypting private node JSON data.
 
       account_name_type                  interface;              ///< Name of the application that facilitated the creation of the node.
 
@@ -2794,8 +2794,7 @@ namespace node { namespace protocol {
 
 
    /**
-    * Stealth Transfers enable users to maintain their finanical privacy against even
-    * though all transactions are public.
+    * Transfers funds from a confidential balance owner to another owner.
     * 
     * Every account has three balances:
     *
@@ -2851,11 +2850,11 @@ namespace node { namespace protocol {
     */
    struct transfer_confidential_operation : public base_operation
    {
-      vector< confidential_input >         inputs;
+      vector< confidential_input >         inputs;       ///< Inputs to the confidential transfer from confidential balances.
 
-      vector< confidential_output >        outputs;
+      vector< confidential_output >        outputs;      ///< Outputs of the confidential transfer to new confidential balances.
 
-      asset                                fee;
+      asset                                fee;          ///< Fee paid for the transfer.
       
       void                                 validate()const;
       void                                 get_required_authorities( vector<authority>& a )const
@@ -2874,21 +2873,21 @@ namespace node { namespace protocol {
 
    
    /**
-    * Converts public account balance to a blinded or stealth balance.
+    * Converts public account balance to a confidential balance.
     */
    struct transfer_to_confidential_operation : public base_operation
    {
-      account_name_type                  signatory;
+      account_name_type                  signatory;      
 
-      account_name_type                  from;
+      account_name_type                  from;                ///< Account to transfer funds from and create new confidential balances. 
 
-      asset                              amount;
+      asset                              amount;              ///< Amount of funds to transfer. 
 
-      blind_factor_type                  blinding_factor;
+      blind_factor_type                  blinding_factor;     ///< Factor to blind the output values. 
 
-      vector< confidential_output >      outputs;
+      vector< confidential_output >      outputs;             ///< Confidential balance outputs. 
 
-      asset                              fee;
+      asset                              fee;                 ///< Fee amount paid for the transfer. 
 
       void                               validate()const;
       void                               get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -2897,19 +2896,19 @@ namespace node { namespace protocol {
 
 
    /**
-    * Converts blinded/stealth balance to a public account balance.
+    * Converts confidential balances to a public account balance.
     */
    struct transfer_from_confidential_operation : public base_operation
    {
-      account_name_type                 to;
+      account_name_type                 to;                   ///< Account to transfer the balances to.
 
-      asset                             amount;
+      asset                             amount;               ///< Amount of funds to transfer from confidential balances.
 
-      blind_factor_type                 blinding_factor;
+      blind_factor_type                 blinding_factor;      ///< Factor to blind the input values.
 
-      vector< confidential_input >      inputs;
+      vector< confidential_input >      inputs;               ///< Confidential balance inputs.
 
-      asset                             fee;
+      asset                             fee;                  ///< Fee amount paid for the transfer.
 
       void                              validate()const;
       void                              get_required_authorities( vector<authority>& a )const
@@ -3838,9 +3837,9 @@ namespace node { namespace protocol {
 
       account_name_type                  account;                  ///< Creator of the new prediction pool.
 
-      asset_symbol_type                  prediction_symbol;        ///< Ticker symbol of the prediction pool primary asset.
+      asset_symbol_type                  prediction_symbol;        ///< Symbol of the prediction pool primary asset.
 
-      asset_symbol_type                  collateral_symbol;        ///< Ticker symbol of the collateral asset backing the prediction market.
+      asset_symbol_type                  collateral_symbol;        ///< Symbol of the collateral asset backing the prediction market.
 
       vector< asset_symbol_type >        outcome_assets;           ///< Symbols for each outcome of the prediction market.
 
@@ -4273,7 +4272,7 @@ namespace node { namespace protocol {
 
       share_type                    max_input_balance_units;      ///< Maximum fund units that each sender can contribute in an individual balance.
       
-      time_point                    begin_time;                   ///< Time to begin the first distribution round
+      time_point                    begin_time;                   ///< Time to begin the first distribution round.
 
       void                          validate()const;
       void                          get_creator_name( account_name_type a )const{ a = issuer; }

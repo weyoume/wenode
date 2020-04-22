@@ -37,20 +37,6 @@ struct scheduled_hardfork
    fc::time_point       live_time;
 };
 
-struct withdraw_route
-{
-   string               from;
-   string               to;
-   uint16_t             percent;
-   bool                 auto_stake;
-};
-
-enum withdraw_route_type
-{
-   incoming,
-   outgoing,
-   all
-};
 
 class database_api_impl;
 
@@ -342,21 +328,7 @@ class database_api
 
       vector< extended_asset >                        get_assets( vector< string > assets )const;
 
-      uint64_t                                        get_asset_count()const;
-
       optional< escrow_api_obj >                      get_escrow( string from, string escrow_id )const;
-
-      vector< withdraw_route >                        get_withdraw_routes( string account, withdraw_route_type type = outgoing )const;
-
-      vector< savings_withdraw_api_obj >              get_savings_withdraw_from( string account )const;
-
-      vector< savings_withdraw_api_obj >              get_savings_withdraw_to( string account )const;
-
-      vector< asset_delegation_api_obj >              get_asset_delegations( string account, string from, uint32_t limit = 100 )const;
-
-      vector< asset_delegation_expiration_api_obj >   get_expiring_asset_delegations( string account, time_point from, uint32_t limit = 100 )const;
-
-      vector< reward_fund_api_obj >                   get_reward_funds( vector< string > assets )const;
 
 
       //=====================//
@@ -368,27 +340,19 @@ class database_api
 
       vector< extended_community >                    get_communities_by_subscribers( string from, uint32_t limit )const;
 
-      uint64_t                                        get_community_count()const;
-
 
       //=================//
       // === Network === //
       //=================//
 
 
-      vector< producer_api_obj >                      get_producers_by_account( vector< string > names )const;
+      vector< account_network_state >                 get_account_network_state( vector< string > names )const;
 
       vector< account_name_type >                     get_active_producers()const;
-
-      set< account_name_type >                        lookup_producer_accounts( string lower_bound_name, uint32_t limit )const;
-
-      uint64_t                                        get_producer_count()const;
 
       vector< producer_api_obj >                      get_producers_by_voting_power( string from, uint32_t limit )const;
 
       vector< producer_api_obj >                      get_producers_by_mining_power( string from, uint32_t limit )const;
-
-      vector< network_officer_api_obj >               get_network_officers_by_account( vector< string > names )const;
 
       vector< network_officer_api_obj >               get_development_officers_by_voting_power( string from, uint32_t limit )const;
 
@@ -396,19 +360,11 @@ class database_api
 
       vector< network_officer_api_obj >               get_advocacy_officers_by_voting_power( string from, uint32_t limit )const;
 
-      vector< executive_board_api_obj >               get_executive_boards_by_account( vector< string > names )const;
-
       vector< executive_board_api_obj >               get_executive_boards_by_voting_power( string from, uint32_t limit )const;
-
-      vector< supernode_api_obj >                     get_supernodes_by_account( vector< string > names )const;
 
       vector< supernode_api_obj >                     get_supernodes_by_view_weight( string from, uint32_t limit )const;
 
-      vector< interface_api_obj >                     get_interfaces_by_account( vector< string > names )const;
-
       vector< interface_api_obj >                     get_interfaces_by_users( string from, uint32_t limit )const;
-
-      vector< governance_account_api_obj >            get_governance_accounts_by_account( vector< string > names )const;
 
       vector< governance_account_api_obj >            get_governance_accounts_by_subscriber_power( string from, uint32_t limit )const;
 
@@ -458,11 +414,9 @@ class database_api
       //==================//
 
 
-      product_state                                   get_product( string seller, string product_id )const;
+      product_api_obj                                 get_product( string seller, string product_id )const;
 
-      vector< product_state >                         get_products_by_sellers( vector< string > names )const;
-
-      vector< product_state >                         get_products_by_buyers( vector< string > names )const;
+      vector< account_product_state >                 get_account_products( vector< string > names )const;
 
 
       //=====================//
@@ -646,19 +600,6 @@ FC_REFLECT( node::app::scheduled_hardfork,
          (live_time)
          );
 
-FC_REFLECT( node::app::withdraw_route,
-         (from)
-         (to)
-         (percent)
-         (auto_stake)
-         );
-
-FC_REFLECT_ENUM( node::app::withdraw_route_type,
-         (incoming)
-         (outgoing)
-         (all)
-         );
-
 FC_REFLECT( node::app::discussion_query,
          (account)
          (community)
@@ -747,7 +688,6 @@ FC_API( node::app::database_api,
          (get_producer_schedule)
          (get_hardfork_version)
          (get_next_scheduled_hardfork)
-         (get_reward_funds)
 
          // Accounts
 
@@ -758,6 +698,7 @@ FC_API( node::app::database_api,
          (get_account_history)
          (get_messages)
          (get_balances)
+         (get_confidential_balances)
          (get_keychains)
          (lookup_accounts)
          (get_account_count)
@@ -768,41 +709,28 @@ FC_API( node::app::database_api,
          // Assets
 
          (get_assets)
-         (get_asset_count)
          (get_escrow)
-         (get_withdraw_routes)
-         (get_savings_withdraw_from)
-         (get_savings_withdraw_to)
-         (get_asset_delegations)
-         (get_expiring_asset_delegations)
 
          // Communities
 
          (get_communities)
          (get_communities_by_subscribers)
-         (get_community_count)
 
          // Network
 
-         (get_producers_by_account)
+         (get_account_network_state)
          (get_active_producers)
-         (lookup_producer_accounts)
-         (get_producer_count)
          (get_producers_by_voting_power)
          (get_producers_by_mining_power)
-         (get_network_officers_by_account)
          (get_development_officers_by_voting_power)
          (get_marketing_officers_by_voting_power)
          (get_advocacy_officers_by_voting_power)
-         (get_executive_boards_by_account)
          (get_executive_boards_by_voting_power)
-         (get_supernodes_by_account)
          (get_supernodes_by_view_weight)
-         (get_interfaces_by_account)
          (get_interfaces_by_users)
-         (get_governance_accounts_by_account)
          (get_governance_accounts_by_subscriber_power)
          (get_enterprise_by_voting_power)
+         
          
          // Market
 
@@ -811,15 +739,22 @@ FC_API( node::app::database_api,
          (get_margin_orders)
          (get_option_orders)
          (get_call_orders)
+         (get_auction_orders)
          (get_credit_loans)
          (get_credit_pools)
          (get_liquidity_pools)
+         (get_option_pools)
          (get_market_state)
 
          // Ads
 
          (get_account_ads)
          (get_interface_audience_bids)
+
+         // Products
+
+         (get_product)
+         (get_account_products)
 
          // Graph
          
@@ -871,7 +806,7 @@ FC_API( node::app::database_api,
          (get_discussions_by_payout)
          (get_post_discussions_by_payout)
          (get_comment_discussions_by_payout)
-         
+
          (get_discussions_by_created)
          (get_discussions_by_active)
          (get_discussions_by_votes)

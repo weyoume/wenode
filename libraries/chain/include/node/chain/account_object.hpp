@@ -1803,6 +1803,7 @@ namespace node { namespace chain {
    struct by_account_business_role_rank;
    struct by_account_business_role_executive;
    struct by_business_account_role_rank;
+   struct by_executive;
 
    typedef multi_index_container <
       account_executive_vote_object,
@@ -1813,6 +1814,12 @@ namespace node { namespace chain {
          ordered_unique< tag< by_business >,
             composite_key< account_executive_vote_object,
                member< account_executive_vote_object, account_name_type, &account_executive_vote_object::business_account >,
+               member< account_executive_vote_object, account_executive_vote_id_type, &account_executive_vote_object::id >
+            >
+         >,
+         ordered_unique< tag< by_executive >,
+            composite_key< account_executive_vote_object,
+               member< account_executive_vote_object, account_name_type, &account_executive_vote_object::executive_account >,
                member< account_executive_vote_object, account_executive_vote_id_type, &account_executive_vote_object::id >
             >
          >,
@@ -1864,6 +1871,7 @@ namespace node { namespace chain {
    struct by_account_business_rank;
    struct by_business_officer;
    struct by_business_account_rank;
+   struct by_officer;
    
    typedef multi_index_container <
       account_officer_vote_object,
@@ -1874,6 +1882,12 @@ namespace node { namespace chain {
          ordered_unique< tag< by_business >,
             composite_key< account_officer_vote_object,
                member< account_officer_vote_object, account_name_type, &account_officer_vote_object::business_account >,
+               member< account_officer_vote_object, account_officer_vote_id_type, &account_officer_vote_object::id >
+            >
+         >,
+         ordered_unique< tag< by_officer >,
+            composite_key< account_officer_vote_object,
+               member< account_officer_vote_object, account_name_type, &account_officer_vote_object::officer_account >,
                member< account_officer_vote_object, account_officer_vote_id_type, &account_officer_vote_object::id >
             >
          >,
@@ -2235,27 +2249,45 @@ namespace node { namespace chain {
       allocator< tag_following_object >
    > tag_following_index;
 
-   struct by_delegation;
+   struct by_delegator;
+   struct by_delegatee;
 
    typedef multi_index_container <
       asset_delegation_object,
       indexed_by <
          ordered_unique< tag< by_id >,
             member< asset_delegation_object, asset_delegation_id_type, &asset_delegation_object::id > >,
-         ordered_unique< tag< by_delegation >,
+         ordered_unique< tag< by_delegator >,
             composite_key< asset_delegation_object,
                member< asset_delegation_object, account_name_type, &asset_delegation_object::delegator >,
                member< asset_delegation_object, account_name_type, &asset_delegation_object::delegatee >,
                const_mem_fun< asset_delegation_object, asset_symbol_type, &asset_delegation_object::symbol >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< account_name_type >, std::less< asset_symbol_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< account_name_type >, 
+               std::less< asset_symbol_type > 
+            >
+         >,
+         ordered_unique< tag< by_delegatee >,
+            composite_key< asset_delegation_object,
+               member< asset_delegation_object, account_name_type, &asset_delegation_object::delegatee >,
+               member< asset_delegation_object, account_name_type, &asset_delegation_object::delegator >,
+               const_mem_fun< asset_delegation_object, asset_symbol_type, &asset_delegation_object::symbol >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< account_name_type >, 
+               std::less< asset_symbol_type > 
+            >
          >
       >,
       allocator< asset_delegation_object >
    > asset_delegation_index;
 
    struct by_expiration;
-   struct by_account_expiration;
+   struct by_delegator;
+   struct by_delegatee;
 
    typedef multi_index_container <
       asset_delegation_expiration_object,
@@ -2267,15 +2299,34 @@ namespace node { namespace chain {
                member< asset_delegation_expiration_object, time_point, &asset_delegation_expiration_object::expiration >,
                member< asset_delegation_expiration_object, asset_delegation_expiration_id_type, &asset_delegation_expiration_object::id >
             >,
-            composite_key_compare< std::less< time_point >, std::less< asset_delegation_expiration_id_type > >
+            composite_key_compare< 
+               std::less< time_point >,
+               std::less< asset_delegation_expiration_id_type >
+            >
          >,
-         ordered_unique< tag< by_account_expiration >,
+         ordered_unique< tag< by_delegator >,
             composite_key< asset_delegation_expiration_object,
                member< asset_delegation_expiration_object, account_name_type, &asset_delegation_expiration_object::delegator >,
                member< asset_delegation_expiration_object, time_point, &asset_delegation_expiration_object::expiration >,
                member< asset_delegation_expiration_object, asset_delegation_expiration_id_type, &asset_delegation_expiration_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< time_point >, std::less< asset_delegation_expiration_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< time_point >, 
+               std::less< asset_delegation_expiration_id_type > 
+            >
+         >,
+         ordered_unique< tag< by_delegatee >,
+            composite_key< asset_delegation_expiration_object,
+               member< asset_delegation_expiration_object, account_name_type, &asset_delegation_expiration_object::delegatee >,
+               member< asset_delegation_expiration_object, time_point, &asset_delegation_expiration_object::expiration >,
+               member< asset_delegation_expiration_object, asset_delegation_expiration_id_type, &asset_delegation_expiration_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< time_point >, 
+               std::less< asset_delegation_expiration_id_type > 
+            >
          >
       >,
       allocator< asset_delegation_expiration_object >

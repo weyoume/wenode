@@ -78,33 +78,35 @@ void community_create_evaluator::do_apply( const community_create_operation& o )
       }
    }
 
-   _db.create< community_object >( [&]( community_object& bo )
+   _db.create< community_object >( [&]( community_object& co )
    {
-      bo.name = o.name;
-      bo.founder = founder.name;
-      bo.community_privacy = privacy_type;
-      from_string( bo.json, o.json );
-      from_string( bo.json_private, o.json_private );
-      from_string( bo.details, o.details );
-      from_string( bo.url, o.url );
-      bo.community_public_key = public_key_type( o.community_public_key );
-      bo.max_rating = o.max_rating;
-      bo.flags = o.flags;
-      bo.permissions = o.permissions;
-      bo.created = now;
-      bo.last_community_update = now;
-      bo.last_post = now;
-      bo.last_root_post = now;
+      co.name = o.name;
+      co.founder = founder.name;
+      co.community_privacy = privacy_type;
+      co.community_public_key = public_key_type( o.community_public_key );
+      from_string( co.json, o.json );
+      from_string( co.json_private, o.json_private );
+      from_string( co.details, o.details );
+      from_string( co.url, o.url );
+      co.max_rating = o.max_rating;
+      co.flags = o.flags;
+      co.permissions = o.permissions;
+      co.reward_currency = o.reward_currency;
+      co.created = now;
+      co.last_community_update = now;
+      co.last_post = now;
+      co.last_root_post = now;
+      co.active = true;
    });
 
-   const community_member_object& new_community_member = _db.create< community_member_object >( [&]( community_member_object& bmo )
+   const community_member_object& new_community_member = _db.create< community_member_object >( [&]( community_member_object& cmo )
    {
-      bmo.name = o.name;
-      bmo.founder = founder.name;
-      bmo.subscribers.insert( founder.name );
-      bmo.members.insert( founder.name );
-      bmo.moderators.insert( founder.name );
-      bmo.administrators.insert( founder.name );
+      cmo.name = o.name;
+      cmo.founder = founder.name;
+      cmo.subscribers.insert( founder.name );
+      cmo.members.insert( founder.name );
+      cmo.moderators.insert( founder.name );
+      cmo.administrators.insert( founder.name );
    });
 
    _db.create< community_moderator_vote_object >( [&]( community_moderator_vote_object& v )
@@ -175,22 +177,23 @@ void community_update_evaluator::do_apply( const community_update_operation& o )
    FC_ASSERT(!(( o.flags ^ community.flags ) & ~community.permissions ),
       "Flag change is not possible within community permissions." );
 
-   _db.modify( community, [&]( community_object& bo )
+   _db.modify( community, [&]( community_object& co )
    {
-      from_string( bo.json, o.json );
-      from_string( bo.json_private, o.json_private );
-      from_string( bo.details, o.details );
-      from_string( bo.url, o.url );
-      bo.max_rating = o.max_rating;
-      bo.flags = o.flags;
-      bo.permissions = o.permissions;
-      bo.community_public_key = public_key_type( o.community_public_key );
-      bo.last_community_update = now;
-      bo.active = o.active;
+      co.community_public_key = public_key_type( o.community_public_key );
+      from_string( co.json, o.json );
+      from_string( co.json_private, o.json_private );
+      from_string( co.details, o.details );
+      from_string( co.url, o.url );
+      co.max_rating = o.max_rating;
+      co.flags = o.flags;
+      co.permissions = o.permissions;
+      co.reward_currency = o.reward_currency;
+      co.last_community_update = now;
+      co.active = o.active;
 
       if( pinned_post_ptr != nullptr )
       {
-         bo.pinned_post = pinned_post_ptr->id;
+         co.pinned_post = pinned_post_ptr->id;
       }
    });
 } FC_CAPTURE_AND_RETHROW( ( o )) }
@@ -336,17 +339,17 @@ void community_add_mod_evaluator::do_apply( const community_add_mod_operation& o
          "Account: ${a} cannot be removed while the founder of Community: ${b}.", ("a", o.moderator)("b", o.community));
    }
 
-   _db.modify( community_member, [&]( community_member_object& bmo )
+   _db.modify( community_member, [&]( community_member_object& cmo )
    {
       if( o.added )
       {
-         bmo.moderators.insert( moderator.name );
-         bmo.last_updated = now;
+         cmo.moderators.insert( moderator.name );
+         cmo.last_updated = now;
       }
       else 
       {
-         bmo.moderators.erase( moderator.name );
-         bmo.last_updated = now;
+         cmo.moderators.erase( moderator.name );
+         cmo.last_updated = now;
       }
    });
 
@@ -401,17 +404,17 @@ void community_add_admin_evaluator::do_apply( const community_add_admin_operatio
          "Account: ${a} cannot be removed as administrator while the Founder of Community: ${b}.", ("a", o.admin)("b", o.community));
    }
    
-   _db.modify( community_member, [&]( community_member_object& bmo )
+   _db.modify( community_member, [&]( community_member_object& cmo )
    {
       if( o.added )
       {
-         bmo.administrators.insert( administrator.name );
-         bmo.last_updated = now;
+         cmo.administrators.insert( administrator.name );
+         cmo.last_updated = now;
       }
       else 
       {
-         bmo.administrators.erase( administrator.name );
-         bmo.last_updated = now;
+         cmo.administrators.erase( administrator.name );
+         cmo.last_updated = now;
       }
    });
 } FC_CAPTURE_AND_RETHROW( ( o )) }
@@ -455,16 +458,16 @@ void community_transfer_ownership_evaluator::do_apply( const community_transfer_
    FC_ASSERT( from_account_permissions.is_authorized_transfer( o.new_founder ),
       "Transfer is not authorized, due to sender account's permisssions" );
 
-   _db.modify( community, [&]( community_object& bo )
+   _db.modify( community, [&]( community_object& co )
    {
-      bo.founder = o.new_founder;
-      bo.last_community_update = now;
+      co.founder = o.new_founder;
+      co.last_community_update = now;
    });
 
-   _db.modify( community_member, [&]( community_member_object& bmo )
+   _db.modify( community_member, [&]( community_member_object& cmo )
    {
-      bmo.founder = o.new_founder;
-      bmo.last_updated = now;
+      cmo.founder = o.new_founder;
+      cmo.last_updated = now;
    });
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
@@ -627,10 +630,10 @@ void community_join_accept_evaluator::do_apply( const community_join_accept_oper
 
    if( o.accepted )   // Accepting the request, skipped if rejecting
    {
-      _db.modify( community_member, [&]( community_member_object& bmo )
+      _db.modify( community_member, [&]( community_member_object& cmo )
       {
-         bmo.members.insert( member.name );
-         bmo.last_updated = now;
+         cmo.members.insert( member.name );
+         cmo.last_updated = now;
       });
 
       _db.create< community_member_key_object >( [&]( community_member_key_object& bmko )
@@ -685,10 +688,10 @@ void community_invite_accept_evaluator::do_apply( const community_invite_accept_
    
    if( o.accepted )   // Accepting the request, skipped if rejecting
    {
-      _db.modify( community_member, [&]( community_member_object& bmo )
+      _db.modify( community_member, [&]( community_member_object& cmo )
       {
-         bmo.members.insert( account.name );
-         bmo.last_updated = now;
+         cmo.members.insert( account.name );
+         cmo.last_updated = now;
       });
    }
    else
@@ -740,10 +743,10 @@ void community_remove_member_evaluator::do_apply( const community_remove_member_
          "Account: ${a} is not authorised to remove accounts from community: ${b}.", ("a", o.account)("b", o.community)); 
    }
    
-   _db.modify( community_member, [&]( community_member_object& bmo )
+   _db.modify( community_member, [&]( community_member_object& cmo )
    {
-      bmo.members.erase( member.name );
-      bmo.last_updated = now;
+      cmo.members.erase( member.name );
+      cmo.last_updated = now;
    });
 
    auto key_itr = key_idx.find( std::make_tuple( o.member, o.community ) );
@@ -789,17 +792,17 @@ void community_blacklist_evaluator::do_apply( const community_blacklist_operatio
    FC_ASSERT( community_member.founder != member.name,
       "Account: ${a} cannot be blacklisted while the founder of community: ${b}.", ("a", o.member)("b", o.community));
 
-   _db.modify( community_member, [&]( community_member_object& bmo )
+   _db.modify( community_member, [&]( community_member_object& cmo )
    {
       if( o.blacklisted )
       {
-         bmo.blacklist.insert( member.name );
+         cmo.blacklist.insert( member.name );
       }
       else
       {
-         bmo.blacklist.erase( member.name );
+         cmo.blacklist.erase( member.name );
       }
-      bmo.last_updated = now;
+      cmo.last_updated = now;
    });
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
@@ -844,10 +847,10 @@ void community_subscribe_evaluator::do_apply( const community_subscribe_operatio
    {
       if( o.subscribed )     // Add subscriber
       {
-         _db.modify( community_member, [&]( community_member_object& bmo )
+         _db.modify( community_member, [&]( community_member_object& cmo )
          {
-            bmo.add_subscriber( account.name );
-            bmo.last_updated = now;
+            cmo.add_subscriber( account.name );
+            cmo.last_updated = now;
          });
 
          _db.modify( account_following, [&]( account_following_object& afo )
@@ -869,10 +872,10 @@ void community_subscribe_evaluator::do_apply( const community_subscribe_operatio
    {
       if( o.subscribed )     // Remove subscriber
       {
-         _db.modify( community_member, [&]( community_member_object& bmo )
+         _db.modify( community_member, [&]( community_member_object& cmo )
          {
-            bmo.remove_subscriber( account.name );
-            bmo.last_updated = now;
+            cmo.remove_subscriber( account.name );
+            cmo.last_updated = now;
          });
 
          _db.modify( account_following, [&]( account_following_object& afo )

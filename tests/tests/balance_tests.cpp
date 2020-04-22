@@ -796,7 +796,7 @@ BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
       bob_receiving_balance = db.get_receiving_balance( "bob", SYMBOL_COIN );
       bob_voting_power = db.get_voting_power( "bob" );
 
-      const auto& delegation_idx = db.get_index< asset_delegation_index >().indices().get< by_delegation >();
+      const auto& delegation_idx = db.get_index< asset_delegation_index >().indices().get< by_delegator >();
       auto delegation_itr = delegation_idx.find( boost::make_tuple( "alice", "bob", SYMBOL_COIN ) );
 
       BOOST_REQUIRE( delegation_itr == delegation_idx.end() );

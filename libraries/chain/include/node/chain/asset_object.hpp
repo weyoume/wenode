@@ -1058,17 +1058,19 @@ namespace node { namespace chain {
 
          asset                                access_price;                ///< Price per day for all accounts in the access list.
 
+         asset                                purchase_price;              ///< Price at which the current owner is willing to sell the unique asset at.
+
          share_type                           access_price_amount()const
          {
             return access_price.amount;
          }
 
-         bool is_control( const account_name_type& account )const  
+         bool                                 is_control( const account_name_type& account )const  
          {
             return std::find( control_list.begin(), control_list.end(), account ) != control_list.end();
          };
 
-         bool is_access( const account_name_type& account )const  
+         bool                                 is_access( const account_name_type& account )const  
          {
             return std::find( access_list.begin(), access_list.end(), account ) != access_list.end();
          }; 
