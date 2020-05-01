@@ -57,7 +57,7 @@ namespace node { namespace chain {
    using node::protocol::network_officer_role_type;
    using node::protocol::executive_role_type;
    using node::protocol::proposal_distribution_type;
-   using node::protocol::product_sale_type;
+   using node::protocol::product_auction_type;
    using node::protocol::asset_property_type;
    using node::protocol::ad_format_type;
    using node::protocol::post_format_type;
@@ -97,6 +97,10 @@ namespace node { namespace chain {
          id_type                id;
 
          asset                  account_creation_fee = MIN_ACCOUNT_CREATION_FEE;               ///< Minimum fee required to create a new account by staking.
+
+         asset                  asset_coin_liquidity = MIN_ASSET_COIN_LIQUIDITY;               ///< Minimum COIN required to create a new asset.
+
+         asset                  asset_usd_liquidity = MIN_ASSET_USD_LIQUIDITY;                 ///< Minimum USD required to create a new asset by.
 
          uint64_t               maximum_block_size = MAX_BLOCK_SIZE;                           ///< The maximum block size of the network in bytes. No Upper bound on block size limit.
 
@@ -223,8 +227,9 @@ namespace node { namespace chain {
 
 
    /**
-    * Credit collateral object holds assets in collateral for use to support a
-    * credit borrowing order from the asset's credit pool, 
+    * Holds assets in collateral for use to support a credit borrowing order.
+    * 
+    * Borrows funds from the asset's credit pool,
     * or a margin order by substracting collateral from 
     * the object to include in a margin order's collateral.
     */
@@ -282,215 +287,6 @@ namespace node { namespace chain {
                std::make_pair( debt.symbol, collateral.symbol ) :
                std::make_pair( collateral.symbol, debt.symbol );
          }
-   };
-
-
-   class escrow_object : public object< escrow_object_type, escrow_object >
-   {
-      escrow_object() = delete;
-
-      public:
-         template< typename Constructor, typename Allocator >
-         escrow_object( Constructor&& c, allocator< Allocator > a ) :
-         escrow_id(a), memo(a), json(a)
-         {
-            c( *this );
-         }
-
-         id_type                                   id;
-
-         account_name_type                         from;                   ///< Account sending funds.
-
-         account_name_type                         to;                     ///< Account receiving funds.
-
-         account_name_type                         from_mediator;          ///< Representative of the sending account.
-
-         account_name_type                         to_mediator;            ///< Representative of the receiving account.
-
-         asset                                     payment;                ///< Total payment to be transferred.
-
-         asset                                     balance;                ///< Current funds deposited in the escrow.
-
-         shared_string                             escrow_id;              ///< uuidv4 referring to the escrow payment.
-
-         shared_string                             memo;                   ///< Details of the transaction for reference.
-
-         shared_string                             json;                   ///< Additonal JSON object attribute details.
-
-         time_point                                acceptance_time;        ///< time that the transfer must be approved by.
-
-         time_point                                escrow_expiration;      ///< Time that the escrow is able to be claimed by either TO or FROM.
-
-         time_point                                dispute_release_time;   ///< Time that the balance is distributed to median release percentage.
-
-         flat_set< account_name_type >             mediators;              ///< Set of accounts able to mediate the dispute.
-
-         flat_map< account_name_type, uint16_t >   release_percentages;    ///< Declared release percentages of all accounts.
-
-         flat_map< account_name_type, bool >       approvals;              ///< Map of account approvals, paid into balance.
-
-         time_point                                created;                ///< Time that the order was created.
-
-         time_point                                last_updated;           ///< Time that the order was last updated, approved, or disputed.
-
-         bool                                      disputed = false;       ///< True when escrow is in dispute.
-
-         bool                                      from_approved()const    ///< True when the from account has approved.
-         {
-            return approvals.at( from );
-         };
-
-         bool                                      to_approved()const      ///< True when the to account has approved
-         {
-            return approvals.at( to );
-         };
-
-         bool                                      from_mediator_approved()const    ///< True when the mediator added by from account has approved
-         {
-            if( from_mediator != account_name_type() )
-            {
-               return approvals.at( from_mediator );
-            }
-            else
-            {
-               return false;
-            }
-         };
-
-         bool                                      to_mediator_approved()const    ///< True when the mediator added by to account has approved
-         {
-            if( to_mediator != account_name_type() )
-            {
-               return approvals.at( to_mediator );
-            }
-            else
-            {
-               return false;
-            }
-         };
-
-         bool                                      is_approved()const      ///< True when all participating accounts have approved
-         { 
-            return from_approved() && to_approved() && from_mediator_approved() && to_mediator_approved();
-         };
-
-         bool                                      is_mediator( const account_name_type& account )const    ///< True when an acocunt is a mediator
-         {
-            return std::find( mediators.begin(), mediators.end(), account ) != mediators.end();
-         };
-   };
-
-
-   class product_object : public object< product_object_type, product_object >
-   {
-      product_object() = delete;
-
-      public:
-         template< typename Constructor, typename Allocator >
-         product_object( Constructor&& c, allocator< Allocator > a ) :
-         product_id(a), 
-         name(a), 
-         url(a), 
-         json(a), 
-         product_variants( a.get_segment_manager() ), 
-         product_details( a.get_segment_manager() ), 
-         product_images( a.get_segment_manager() ), 
-         product_prices( a.get_segment_manager() ), 
-         stock_available( a.get_segment_manager() ), 
-         delivery_variants( a.get_segment_manager() ), 
-         delivery_details( a.get_segment_manager() ), 
-         delivery_prices( a.get_segment_manager() )
-         {
-            c( *this );
-         }
-
-         id_type                               id;
-
-         account_name_type                     account;                ///< The Seller of the product.
-
-         shared_string                         product_id;             ///< The name of the product.
-
-         shared_string                         name;                   ///< The name of the product. Unique for each account.
-
-         product_sale_type                     sale_type;              ///< The type of sale to be used for the product.
-
-         shared_string                         url;                    ///< Reference URL of the product or seller.
-
-         shared_string                         json;                   ///< JSON metadata attributes of the product.
-
-         shared_vector< shared_string >        product_variants;       ///< The collection of product variants. Each map must have a key for each variant.
-
-         shared_vector< shared_string >        product_details;        ///< The Description details of each variant of the product.
-
-         shared_vector< shared_string >        product_images;         ///< IPFS references to images of each product variant.
-
-         shared_vector< asset >                product_prices;         ///< The price (or min auction price) for each variant of the product.
-
-         shared_vector< uint32_t >             stock_available;        ///< The available stock of each variant of the product.
-
-         shared_vector< shared_string >        delivery_variants;      ///< The types of product delivery available to purchasers.
-
-         shared_vector< shared_string >        delivery_details;       ///< The Description details of each variant of the delivery.
-
-         shared_vector< asset >                delivery_prices;        ///< The price for each variant of delivery.
-
-         time_point                            created;                ///< Time that the order was created.
-
-         time_point                            last_updated;           ///< Time that the order was last updated, approved, or disputed.
-   };
-
-
-   class purchase_order_object : public object< purchase_order_object_type, purchase_order_object >
-   {
-      purchase_order_object() = delete;
-
-      public:
-         template< typename Constructor, typename Allocator >
-         purchase_order_object( Constructor&& c, allocator< Allocator > a ) :
-         order_id(a), 
-         product_id(a), 
-         order_variants( a.get_segment_manager() ), 
-         order_size( a.get_segment_manager() ), 
-         memo(a), 
-         json(a), 
-         shipping_address(a),
-         delivery_variant(a), 
-         delivery_details(a)
-         {
-            c( *this );
-         }
-
-         id_type                           id;
-
-         account_name_type                 buyer;                  ///< The Buyer of the product.
-
-         shared_string                     order_id;               ///< uuidv4 referring to the purchase order.
-
-         account_name_type                 seller;                 ///< The Seller of the product.
-
-         shared_string                     product_id;             ///< uuidv4 referring to the product.
-
-         shared_vector< shared_string >    order_variants;         ///< Variants of product ordered in the purchase.
-
-         shared_vector< uint32_t >         order_size;             ///< The number of each product variant ordered. 
-
-         shared_string                     memo;                   ///< The memo for the transaction, encryption on the memo is advised.
-
-         shared_string                     json;                   ///< Additonal JSON object attribute details.
-
-         shared_string                     shipping_address;       ///< The shipping address requested, encrypted with the secure key of the seller.
-
-         shared_string                     delivery_variant;       ///< The type of product delivery selected.
-
-         shared_string                     delivery_details;       ///< The Description details of the delivery.
-
-         asset                             order_value;            ///< The total value of the order.
-
-         time_point                        created;                ///< Time that the order was created.
-
-         time_point                        last_updated;           ///< Time that the order was last updated, approved, or disputed.
-
-         bool                              completed = false;      ///< True when the purchase order has been completed, false when outstanding. 
    };
 
 
@@ -744,14 +540,11 @@ namespace node { namespace chain {
    struct by_expiration;
    struct by_request_id;
    struct by_from_account;
-
-
    struct by_end;
    struct by_begin;
    struct by_next_transfer;
    struct by_transfer_id;
    struct by_to_account;
-
    struct by_price;
    struct by_account;
    struct by_owner;
@@ -793,159 +586,8 @@ namespace node { namespace chain {
    struct by_acceptance_time;
    struct by_dispute_release_time;
    struct by_balance;
-
-   typedef multi_index_container<
-      escrow_object,
-      indexed_by<
-         ordered_unique< tag< by_id >, member< escrow_object, escrow_id_type, &escrow_object::id > >,
-         ordered_unique< tag< by_from_id >,
-            composite_key< escrow_object,
-               member< escrow_object, account_name_type,  &escrow_object::from >,
-               member< escrow_object, shared_string, &escrow_object::escrow_id >
-            >,
-            composite_key_compare< 
-               std::less< account_name_type >, 
-               strcmp_less 
-            >
-         >,
-         ordered_unique< tag< by_to >,
-            composite_key< escrow_object,
-               member< escrow_object, account_name_type, &escrow_object::to >,
-               member< escrow_object, escrow_id_type, &escrow_object::id >
-            >,
-            composite_key_compare< 
-               std::less< account_name_type >, 
-               std::less< escrow_id_type >
-            >
-         >,
-         ordered_unique< tag< by_acceptance_time >,
-            composite_key< escrow_object,
-               const_mem_fun< escrow_object, bool, &escrow_object::is_approved >,
-               member< escrow_object, time_point, &escrow_object::acceptance_time >,
-               member< escrow_object, escrow_id_type, &escrow_object::id >
-            >,
-            composite_key_compare< 
-               std::less< bool >,
-               std::less< time_point >,
-               std::less< escrow_id_type >
-            >
-         >,
-         ordered_unique< tag< by_dispute_release_time >,
-            composite_key< escrow_object,
-               member< escrow_object, bool, &escrow_object::disputed >,
-               member< escrow_object, time_point, &escrow_object::dispute_release_time >,
-               member< escrow_object, escrow_id_type, &escrow_object::id >
-            >,
-            composite_key_compare< 
-               std::less< bool >,
-               std::less< time_point >,
-               std::less< escrow_id_type >
-            >
-         >,
-         ordered_unique< tag< by_balance >,
-            composite_key< escrow_object,
-               member< escrow_object, asset, &escrow_object::balance >,
-               member< escrow_object, escrow_id_type, &escrow_object::id >
-            >,
-            composite_key_compare<
-               std::greater< asset >,
-               std::less< escrow_id_type >
-            >
-         >
-      >,
-      allocator< escrow_object >
-   > escrow_index;
-
    struct by_product_id;
    struct by_last_updated;
-
-   typedef multi_index_container<
-      product_object,
-      indexed_by<
-         ordered_unique< tag< by_id >, member< product_object, product_id_type, &product_object::id > >,
-         ordered_unique< tag< by_product_id >,
-            composite_key< product_object,
-               member< product_object, account_name_type,  &product_object::account >,
-               member< product_object, shared_string, &product_object::product_id >
-            >,
-            composite_key_compare<
-               std::less< account_name_type >,
-               strcmp_less
-            >
-         >,
-         ordered_unique< tag< by_last_updated >,
-            composite_key< product_object,
-               member< product_object, time_point, &product_object::last_updated >,
-               member< product_object, product_id_type, &product_object::id >
-            >,
-            composite_key_compare< 
-               std::greater< time_point >, 
-               std::less< product_id_type >
-            >
-         >
-      >,
-      allocator< product_object >
-   > product_index;
-
-   struct by_order_id;
-   struct by_buyer_product_id;
-
-
-   typedef multi_index_container<
-      purchase_order_object,
-      indexed_by<
-         ordered_unique< tag< by_id >, member< purchase_order_object, purchase_order_id_type, &purchase_order_object::id > >,
-         ordered_unique< tag< by_order_id >,
-            composite_key< purchase_order_object,
-               member< purchase_order_object, account_name_type, &purchase_order_object::buyer >,
-               member< purchase_order_object, shared_string, &purchase_order_object::order_id >
-            >,
-            composite_key_compare<
-               std::less< account_name_type >,
-               strcmp_less
-            >
-         >,
-         ordered_unique< tag< by_product_id >,
-            composite_key< purchase_order_object,
-               member< purchase_order_object, account_name_type, &purchase_order_object::seller >,
-               member< purchase_order_object, shared_string, &purchase_order_object::product_id >,
-               member< purchase_order_object, purchase_order_id_type, &purchase_order_object::id >
-            >,
-            composite_key_compare<
-               std::less< account_name_type >,
-               strcmp_less,
-               std::less< purchase_order_id_type >
-            >
-         >,
-         ordered_unique< tag< by_buyer_product_id >,
-            composite_key< purchase_order_object,
-               member< purchase_order_object, account_name_type, &purchase_order_object::buyer >,
-               member< purchase_order_object, account_name_type, &purchase_order_object::seller >,
-               member< purchase_order_object, shared_string, &purchase_order_object::product_id >,
-               member< purchase_order_object, purchase_order_id_type, &purchase_order_object::id >
-            >,
-            composite_key_compare<
-               std::less< account_name_type >,
-               std::less< account_name_type >,
-               strcmp_less,
-               std::less< purchase_order_id_type >
-            >
-         >,
-         ordered_unique< tag< by_last_updated >,
-            composite_key< purchase_order_object,
-               member< purchase_order_object, time_point, &purchase_order_object::last_updated >,
-               member< purchase_order_object, purchase_order_id_type, &purchase_order_object::id >
-            >,
-            composite_key_compare< 
-               std::greater< time_point >, 
-               std::less< purchase_order_id_type >
-            >
-         >
-      >,
-      allocator< purchase_order_object >
-   > purchase_order_index;
-
-
    struct by_request_id;
    struct by_to_complete;
    struct by_complete_from_request_id;
@@ -1203,10 +845,13 @@ namespace node { namespace chain {
 #include <node/chain/community_object.hpp>
 #include <node/chain/ad_object.hpp>
 #include <node/chain/graph_object.hpp>
+#include <node/chain/marketplace_object.hpp>
 
 FC_REFLECT( node::chain::median_chain_property_object,
          (id)
          (account_creation_fee)
+         (asset_coin_liquidity)
+         (asset_usd_liquidity)
          (maximum_block_size)
          (pow_target_time)
          (pow_decay_time)
@@ -1286,73 +931,6 @@ FC_REFLECT( node::chain::credit_loan_object,
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::credit_loan_object, node::chain::credit_loan_index );
-
-FC_REFLECT( node::chain::escrow_object,
-         (id)
-         (from)
-         (to)
-         (from_mediator)
-         (to_mediator)
-         (payment)
-         (balance)
-         (escrow_id)
-         (memo)
-         (json)
-         (acceptance_time)
-         (escrow_expiration)
-         (dispute_release_time)
-         (mediators)
-         (release_percentages)
-         (approvals)
-         (created)
-         (last_updated)
-         (disputed)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::escrow_object, node::chain::escrow_index );
-
-FC_REFLECT( node::chain::product_object,
-         (id)
-         (account)
-         (product_id)
-         (name)
-         (sale_type)
-         (url)
-         (json)
-         (product_variants)
-         (product_details)
-         (product_images)
-         (product_prices)
-         (stock_available)
-         (delivery_variants)
-         (delivery_details)
-         (delivery_prices)
-         (created)
-         (last_updated)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::product_object, node::chain::product_index );
-
-FC_REFLECT( node::chain::purchase_order_object,
-         (id)
-         (buyer)
-         (order_id)
-         (seller)
-         (product_id)
-         (order_variants)
-         (order_size)
-         (memo)
-         (json)
-         (shipping_address)
-         (delivery_variant)
-         (delivery_details)
-         (order_value)
-         (created)
-         (last_updated)
-         (completed)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::purchase_order_object, node::chain::purchase_order_index );
 
 FC_REFLECT( node::chain::savings_withdraw_object,
          (id)

@@ -281,6 +281,7 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
 
       account_update_operation update;
 
+      update.signatory = "alice";
       update.account = "alice";
       update.details = "Details.";
       update.json = "{\"json\":\"valid\"}";
@@ -479,6 +480,175 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when account authority does not exist" );
 
       BOOST_TEST_MESSAGE( "├── Passed: ACCOUNT UPDATE" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+
+
+BOOST_AUTO_TEST_CASE( account_profile_operation_sequence )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT PROFILE SEQUENCE" );
+      
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Create new profile account" );
+
+      ACTORS( (alice)(bob) );
+
+      fund( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+
+      fund( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund_stake( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+
+      fc::ecc::private_key alice_private_profile_key = protocol::generate_private_key( string( "aliceprofilepassword" ) );
+      public_key_type alice_public_profile_key = alice_private_profile_key.get_public_key();
+      fc::ecc::private_key bob_private_profile_key = protocol::generate_private_key( string( "bobprofilepassword" ) );
+      public_key_type bob_public_profile_key = bob_private_profile_key.get_public_key();
+
+      account_profile_operation profile;
+
+      profile.signatory = "alice";
+      profile.account = "alice";
+      profile.governance_account = INIT_ACCOUNT;
+      profile.profile_public_key = string( alice_public_profile_key );
+      profile.first_name = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_profile_key, string( "#Alice" ) );
+      profile.last_name = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_profile_key, string( "#Smith" ) );
+      profile.gender = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_profile_key, string( "#Female" ) );
+      profile.date_of_birth = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_profile_key, string( "#14-03-1980" ) );
+      profile.email = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_profile_key, string( "#alice@gmail.com" ) );
+      profile.phone = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_profile_key, string( "#0400111222" ) );
+      profile.nationality = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_profile_key, string( "#Australia" ) );
+      profile.address = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_profile_key, string( "#1 Collins Street, Melbourne, 3000, VIC" ) );
+      profile.validate();
+
+      signed_transaction tx;
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( profile );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+      
+      validate_database();
+
+      const account_profile_object& alice_profile = db.get_account_profile( "alice" );
+
+      BOOST_REQUIRE( profile.account == alice_profile.account );
+      BOOST_REQUIRE( profile.governance_account == alice_profile.governance_account );
+      BOOST_REQUIRE( profile.profile_public_key == string( alice_profile.profile_public_key ) );
+      BOOST_REQUIRE( profile.first_name == to_string( alice_profile.first_name ) );
+      BOOST_REQUIRE( profile.last_name == to_string( alice_profile.last_name ) );
+      BOOST_REQUIRE( profile.gender == to_string( alice_profile.gender ) );
+      BOOST_REQUIRE( profile.date_of_birth == to_string( alice_profile.date_of_birth ) );
+      BOOST_REQUIRE( profile.email == to_string( alice_profile.email ) );
+      BOOST_REQUIRE( profile.phone == to_string( alice_profile.phone ) );
+      BOOST_REQUIRE( profile.nationality == to_string( alice_profile.nationality ) );
+      BOOST_REQUIRE( profile.address == to_string( alice_profile.address ) );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Create new profile account" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Update profile account details" );
+
+      profile.first_name = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_profile_key, string( "#Alice" ) );
+      profile.last_name = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_profile_key, string( "#Smith" ) );
+      profile.gender = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_profile_key, string( "#Female" ) );
+      profile.date_of_birth = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_profile_key, string( "#14-03-1980" ) );
+      profile.email = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_profile_key, string( "#alice.smith@gmail.com" ) );
+      profile.phone = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_profile_key, string( "#0400333444" ) );
+      profile.nationality = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_profile_key, string( "#Australia" ) );
+      profile.address = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_profile_key, string( "#1 Swanson Street, Melbourne, 3000, VIC" ) );
+      profile.validate();
+
+      tx.operations.push_back( profile );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+      
+      validate_database();
+
+      BOOST_REQUIRE( profile.account == alice_profile.account );
+      BOOST_REQUIRE( profile.governance_account == alice_profile.governance_account );
+      BOOST_REQUIRE( profile.profile_public_key == string( alice_profile.profile_public_key ) );
+      BOOST_REQUIRE( profile.first_name == to_string( alice_profile.first_name ) );
+      BOOST_REQUIRE( profile.last_name == to_string( alice_profile.last_name ) );
+      BOOST_REQUIRE( profile.gender == to_string( alice_profile.gender ) );
+      BOOST_REQUIRE( profile.date_of_birth == to_string( alice_profile.date_of_birth ) );
+      BOOST_REQUIRE( profile.email == to_string( alice_profile.email ) );
+      BOOST_REQUIRE( profile.phone == to_string( alice_profile.phone ) );
+      BOOST_REQUIRE( profile.nationality == to_string( alice_profile.nationality ) );
+      BOOST_REQUIRE( profile.address == to_string( alice_profile.address ) );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Update profile account details" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Create account verification link" );
+
+      profile.signatory = "bob";
+      profile.account = "bob";
+      profile.governance_account = INIT_ACCOUNT;
+      profile.profile_public_key = string( bob_public_posting_key );
+      profile.first_name = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, bob_public_profile_key,  string( "#Bob" ) );
+      profile.last_name = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, bob_public_profile_key, string( "#Vanderberg" ) );
+      profile.gender = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, bob_public_profile_key, string( "#Male" ) );
+      profile.date_of_birth = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, bob_public_profile_key, string( "#09-02-1951" ) );
+      profile.email = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, bob_public_profile_key, string( "#bob@gmail.com" ) );
+      profile.phone = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, bob_public_profile_key, string( "#0400987654" ) );
+      profile.nationality = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, bob_public_profile_key, string( "#Australia" ) );
+      profile.address = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, bob_public_profile_key, string( "#1 Bourke Street, Melbourne, 3000, VIC" ) );
+      profile.validate();
+
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( profile );
+      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+      
+      validate_database();
+
+      const account_profile_object& bob_profile = db.get_account_profile( "bob" );
+
+      BOOST_REQUIRE( profile.account == bob_profile.account );
+      BOOST_REQUIRE( profile.governance_account == bob_profile.governance_account );
+      BOOST_REQUIRE( profile.profile_public_key == string( bob_profile.profile_public_key ) );
+      BOOST_REQUIRE( profile.first_name == to_string( bob_profile.first_name ) );
+      BOOST_REQUIRE( profile.last_name == to_string( bob_profile.last_name ) );
+      BOOST_REQUIRE( profile.gender == to_string( bob_profile.gender ) );
+      BOOST_REQUIRE( profile.date_of_birth == to_string( bob_profile.date_of_birth ) );
+      BOOST_REQUIRE( profile.email == to_string( bob_profile.email ) );
+      BOOST_REQUIRE( profile.phone == to_string( bob_profile.phone ) );
+      BOOST_REQUIRE( profile.nationality == to_string( bob_profile.nationality ) );
+      BOOST_REQUIRE( profile.address == to_string( bob_profile.address ) );
+
+      account_verification_operation verification;
+
+      verification.signatory = "alice";
+      verification.verifier_account = "alice";
+      verification.verified_account = "bob";
+      verification.shared_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+
+      digest_type::encoder enc;
+      fc::raw::pack( enc, verification.shared_image );
+
+      verification.image_signature = bob_private_posting_key.sign_compact( enc.result() );
+      verification.validate();
+
+      tx.operations.push_back( verification );
+      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+      
+      validate_database();
+
+      const account_verification_object alice_verification = db.get_account_verification( "alice", "bob" );
+
+      BOOST_REQUIRE( verification.verifier_account == alice_verification.verifier_account );
+      BOOST_REQUIRE( verification.verified_account == alice_verification.verified_account );
+      BOOST_REQUIRE( verification.shared_image == to_string( alice_verification.shared_image ) );
+      BOOST_REQUIRE( verification.image_signature == alice_verification.image_signature );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Create account verification link" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: ACCOUNT PROFILE SEQUENCE" );
    }
    FC_LOG_AND_RETHROW()
 }

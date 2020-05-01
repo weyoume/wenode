@@ -571,33 +571,6 @@ class wallet_api
        */
       uint64_t                                        get_account_count()const;
 
-      /**
-       * Gets the details of an accounts history of owner keys, including all previous keys and their times in use.
-       * 
-       * @param account The name of the account to query.
-       * @returns Previously used owner authority keys.
-       */
-      vector< owner_authority_history_api_obj >       get_owner_history( string account )const;
-
-      /**
-       * Gets an active account recovery request for a specified account.
-       * 
-       * @param account The name of the account to query.
-       * @returns If an account recovery request is active, returns it.
-       */
-      optional< account_recovery_request_api_obj >    get_recovery_request( string account ) const;
-
-
-      /**
-       * Gets an accounts bandwidth information.
-       * 
-       * @param account The name of the account to query.
-       * @param type the variant of bandwidth to be queried post | forum | market 
-       * @returns Account bandwidth object from the specified account.
-       */
-      optional< account_bandwidth_api_obj >           get_account_bandwidth( string account, producer::bandwidth_type type )const;
-
-
 
       //===================//
       // === Asset API === //
@@ -934,16 +907,25 @@ class wallet_api
        *
        * @param seller The seller account of the product.
        * @param product_id uuidv4 of the product.
-       * @returns Product and associated purchases.
+       * @returns Product sale details.
        */
-      product_api_obj                                 get_product( string seller, string product_id )const;
+      product_sale_api_obj                            get_product_sale( string seller, string product_id )const;
+
+      /** 
+       * Returns a specified product.
+       *
+       * @param seller The seller account of the product.
+       * @param auction_id uuidv4 of the auction.
+       * @returns Product auction details.
+       */
+      product_auction_sale_api_obj                    get_product_auction_sale( string seller, string auction_id )const;
 
 
       /** 
        * Returns all product offers by a specified list of sellers.
        *
        * @param names The seller accounts to retrieve.
-       * @returns Product and associated purchases.
+       * @returns Products, auctions, purchases and bids.
        */
       vector< account_product_state >                 get_account_products( vector< string > names )const;
 
@@ -1089,43 +1071,13 @@ class wallet_api
 
 
       /**
-       * Returns the votes that have been made on a specified comment.
+       * Returns the votes, views, shares, and moderation tags that have been made on a specified comment.
        * 
        * @param author Author of the comment.
        * @param permlink Permlink of the comment.
-       * @returns List of the state of all votes made on the comment.
+       * @returns List of the state of all votes, views, shares, and moderation tags made on the comment.
        */
-      vector< vote_state >                 get_active_votes( string author, string permlink )const;
-
-
-      /**
-       * Returns the views that have been made on a specified comment.
-       * 
-       * @param author Author of the comment.
-       * @param permlink Permlink of the comment.
-       * @returns List of the state of all views made on the comment.
-       */
-      vector< view_state >                 get_active_views( string author, string permlink )const;
-
-
-      /**
-       * Returns the shares that have been made on a specified comment.
-       * 
-       * @param author Author of the comment.
-       * @param permlink Permlink of the comment.
-       * @returns List of the state of all shares made on the comment.
-       */
-      vector< share_state >                get_active_shares( string author, string permlink )const;
-
-
-      /**
-       * Returns the moderation tags that have been made on a specified comment.
-       * 
-       * @param author Author of the comment.
-       * @param permlink Permlink of the comment.
-       * @returns List of the state of all moderation tags made on the comment.
-       */
-      vector< moderation_state >           get_active_mod_tags( string author, string permlink )const;
+      comment_interaction_state            get_comment_interactions( string author, string permlink )const;
 
 
       /**
@@ -1603,7 +1555,6 @@ class wallet_api
        * Create or Update the business account details of an existing account.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param account Name of the business account to update.
        * @param governance_account Name of the governance account that the business account is registered with.
        * @param init_ceo_account Name of the account that should become the initial Chief Executive Officer.
        * @param business_type The type of business account being created.
@@ -2062,7 +2013,7 @@ class wallet_api
        * @param officer_type The type of network officer that the account serves as. 
        * @param details Information about the network officer and their work
        * @param url The officers's description URL explaining their details. 
-       * @param json Additonal information about the officer.
+       * @param json Additional information about the officer.
        * @param active Set true to activate the officer, false to deactivate. 
        * @param broadcast Set True to broadcast transaction.
        */
@@ -2105,7 +2056,7 @@ class wallet_api
        * @param budget The type of executive board that the account serves as. 
        * @param details Information about the executive board and their work
        * @param url The teams's description URL explaining their details. 
-       * @param json Additonal information about the executive board.
+       * @param json Additional information about the executive board.
        * @param active Set true to activate the board, false to deactivate. 
        * @param broadcast Set True to broadcast transaction.
        */
@@ -2147,7 +2098,7 @@ class wallet_api
        * @param account Name of the governance account.
        * @param details Information about the governance account's filtering and tagging policies
        * @param url The governance account's description URL explaining their details. 
-       * @param json Additonal information about the governance account policies.
+       * @param json Additional information about the governance account policies.
        * @param active Set true to activate governance account, false to deactivate. 
        * @param broadcast Set True to broadcast transaction.
        */
@@ -2190,7 +2141,7 @@ class wallet_api
        * @param auth_api_endpoint The Transaction signing authentication API endpoint of the supernode.
        * @param ipfs_endpoint The IPFS file storage API endpoint of the supernode.
        * @param bittorrent_endpoint The Bittorrent Seed Box endpoint URL of the Supernode. 
-       * @param json Additonal information about the Supernode.
+       * @param json Additional information about the Supernode.
        * @param active Set true to activate the supernode, false to deactivate. 
        * @param broadcast Set True to broadcast transaction.
        */
@@ -2216,7 +2167,7 @@ class wallet_api
        * @param account Name of the member's account.
        * @param details Information about the interface, and what they are offering to users.
        * @param url The interface's reference URL.
-       * @param json Additonal information about the interface.
+       * @param json Additional information about the interface.
        * @param active Set true to activate the interface, false to deactivate. 
        * @param broadcast Set True to broadcast transaction.
        */
@@ -2237,7 +2188,7 @@ class wallet_api
        * @param account Name of the member's account.
        * @param details Information about the mediator, and what they are offering to users
        * @param url The mediator's reference URL.
-       * @param json Additonal information about the mediator.
+       * @param json Additional information about the mediator.
        * @param mediator_bond Amount of Core asset to stake in the mediation pool. 
        * @param active Set true to activate the interface, false to deactivate. 
        * @param broadcast Set True to broadcast transaction.
@@ -2523,6 +2474,83 @@ class wallet_api
          string interface,
          bool filter,
          bool applied,
+         bool broadcast );
+
+
+      /**
+       * Lists contain a curated group of accounts, comments, communities and other objects.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param creator Name of the account that created the list.
+       * @param list_id uuidv4 referring to the list.
+       * @param name Name of the list, unique for each account.
+       * @param accounts Account IDs within the list.
+       * @param comments Comment IDs within the list.
+       * @param communities Community IDs within the list.
+       * @param assets Asset IDs within the list.
+       * @param products Product IDs within the list.
+       * @param auctions Auction IDs within the list.
+       * @param nodes Graph node IDs within the list.
+       * @param edges Graph edge IDs within the list.
+       * @param node_types Graph node property IDs within the list.
+       * @param edge_types Graph edge property IDs within the list.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           list(
+         string signatory,
+         string creator,
+         string list_id,
+         string name,
+         flat_set< int64_t > accounts,
+         flat_set< int64_t > comments,
+         flat_set< int64_t > communities,
+         flat_set< int64_t > assets,
+         flat_set< int64_t > products,
+         flat_set< int64_t > auctions,
+         flat_set< int64_t > nodes,
+         flat_set< int64_t > edges,
+         flat_set< int64_t > node_types,
+         flat_set< int64_t > edge_types,
+         bool broadcast );
+
+
+      /**
+       * Polls enable accounts to vote on a series of options.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param creator Name of the account that created the poll.
+       * @param poll_id uuidv4 referring to the poll.
+       * @param details Text describing the question being asked.
+       * @param poll_options Available poll voting options.
+       * @param completion_time Time the poll voting completes.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           poll(
+         string signatory,
+         string creator,
+         string poll_id,
+         string details,
+         vector< string > poll_options,
+         time_point completion_time,
+         bool broadcast );
+
+
+      /**
+       * Poll Vote for a specified poll option.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param voter Name of the account that created the vote.
+       * @param creator Name of the account that created the poll.
+       * @param poll_id uuidv4 referring to the poll.
+       * @param poll_option Poll option chosen.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           poll_vote(
+         string signatory,
+         string voter,
+         string creator,
+         string poll_id,
+         string poll_option,
          bool broadcast );
 
 
@@ -3522,35 +3550,37 @@ class wallet_api
        * @param account The Seller of the product.
        * @param product_id uuidv4 referring to the product.
        * @param name The descriptive name of the product.
-       * @param sale_type The type of sale to be used for the product.
        * @param url Reference URL of the product or seller.
        * @param json JSON metadata attributes of the product.
        * @param product_variants The collection of product variants. Each map must have a key for each variant.
        * @param product_details The Description details of each variant of the product.
        * @param product_images IPFS references to images of each product variant.
        * @param product_prices The price (or min auction price) for each variant of the product.
+       * @param wholesale_discount Discount percentages that are applied when quantity is above a given size.
        * @param stock_available The available stock of each variant of the product.
        * @param delivery_variants The types of product delivery available to purchasers.
        * @param delivery_details The details of product delivery variants.
        * @param delivery_prices The price for each variant of delivery.
+       * @param active True when the product is active and able to be sold, false when discontinued.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction            product_update(
+      annotated_signed_transaction            product_sale(
          string signatory,
          string account,
          string product_id,
          string name,
-         string sale_type,
          string url,
          string json,
          vector< string > product_variants,
          vector< string > product_details,
          vector< string > product_images,
          vector< asset > product_prices,
+         flat_map< uint32_t, uint16_t > wholesale_discount,
          vector< uint32_t > stock_available,
          vector< string > delivery_variants,
          vector< string > delivery_details,
          vector< asset > delivery_prices,
+         bool active,
          bool broadcast = false );
 
 
@@ -3565,13 +3595,12 @@ class wallet_api
        * @param order_variants Variants of product ordered in the purchase.
        * @param order_size The number of each product variant ordered.
        * @param memo The memo for the transaction, encryption on the memo is advised.
-       * @param json Additonal JSON object attribute details.
+       * @param json Additional JSON object attribute details.
        * @param shipping_address The shipping address requested, encrypted with the secure key of the seller.
        * @param delivery_variant The type of product delivery selected.
        * @param delivery_details The Description details of the delivery.
        * @param acceptance_time Time that the escrow proposal must be approved before.
        * @param escrow_expiration Time after which balance can be claimed by FROM or TO freely.
-       * @param completed False when order is pending, true when completed.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            product_purchase(
@@ -3589,7 +3618,82 @@ class wallet_api
          string delivery_details,
          time_point acceptance_time,
          time_point escrow_expiration,
-         bool completed,
+         bool broadcast = false );
+
+
+      /**
+       * Creates or updates a product auction sale. 
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account The Seller of the auction product.
+       * @param auction_id uuidv4 referring to the auction product.
+       * @param auction_type The Auction price selection mechanism.
+       * @param name The descriptive name of the product.
+       * @param url Reference URL of the product or seller.
+       * @param json JSON metadata attributes of the product.
+       * @param product_details The Description details of each variant of the product.
+       * @param product_images IPFS references to images of each product variant.
+       * @param reserve_bid The min auction bid, or minimum price of a reverse auction at final bid time.
+       * @param maximum_bid The max auction bid. Auction will immediately conclude if this price is bidded. Starting price of reverse auction.
+       * @param delivery_variants The types of product delivery available to purchasers.
+       * @param delivery_details The details of product delivery variants.
+       * @param delivery_prices The price for each variant of delivery.
+       * @param final_bid_time No more bids will be accepted after this time. Concealed bids must be revealed before completion time.
+       * @param completion_time Time that the auction will select the winning bidder, or end if no bids.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction            product_auction_sale(
+         string signatory,
+         string account,
+         string auction_id,
+         string auction_type,
+         string name,
+         string url,
+         string json,
+         string product_details,
+         vector< string > product_images,
+         asset reserve_bid,
+         asset maximum_bid,
+         vector< string > delivery_variants,
+         vector< string > delivery_details,
+         vector< asset > delivery_prices,
+         time_point final_bid_time,
+         time_point completion_time,
+         bool broadcast = false );
+
+
+      /**
+       * Requests a purchase of a specifed quantity of a product.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param buyer The Buyer of the product.
+       * @param bid_id uuidv4 referring to the auction bid.
+       * @param seller The Seller of the product.
+       * @param auction_id uuidv4 referring to the product.
+       * @param bid_price_commitment Concealed value of the bid price amount.
+       * @param blinding_factor Factor to blind the bid price.
+       * @param public_bid_amount Set to 0 initially for concealed bid, revealed to match commitment. Revealed in initial bid if open.
+       * @param memo The memo for the transaction, encryption on the memo is advised.
+       * @param json Additional JSON object attribute details.
+       * @param shipping_address The shipping address requested, encrypted with the secure key of the seller.
+       * @param delivery_variant The type of product delivery selected.
+       * @param delivery_details The Description details of the delivery.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction            product_auction_bid(
+         string signatory,
+         string buyer,
+         string bid_id,
+         string seller,
+         string auction_id,
+         commitment_type bid_price_commitment,
+         blind_factor_type blinding_factor,
+         share_type public_bid_amount,
+         string memo,
+         string json,
+         string shipping_address,
+         string delivery_variant,
+         string delivery_details,
          bool broadcast = false );
 
 
@@ -3605,7 +3709,7 @@ class wallet_api
        * @param acceptance_time Time that the escrow proposal must be approved before.
        * @param escrow_expiration Time after which balance can be claimed by FROM or TO freely.
        * @param memo The memo for the transaction, encryption on the memo is advised.
-       * @param json Additonal JSON object attribute details.
+       * @param json Additional JSON object attribute details.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            escrow_transfer(
@@ -4561,9 +4665,6 @@ FC_API( node::wallet::wallet_api,
          (get_keychains)
          (lookup_accounts)
          (get_account_count)
-         (get_owner_history)
-         (get_recovery_request)
-         (get_account_bandwidth)
          (get_assets)
          (get_escrow)
          (get_communities)
@@ -4593,7 +4694,8 @@ FC_API( node::wallet::wallet_api,
          (get_market_state)
          (get_account_ads)
          (get_interface_audience_bids)
-         (get_product)
+         (get_product_sale)
+         (get_product_auction_sale)
          (get_account_products)
          (get_graph_query)
          (get_graph_node_properties)
@@ -4607,10 +4709,7 @@ FC_API( node::wallet::wallet_api,
          (get_ops_in_block)
          (get_transaction)
          (get_transaction_id)
-         (get_active_votes)
-         (get_active_views)
-         (get_active_shares)
-         (get_active_mod_tags)
+         (get_comment_interactions)
          (get_account_votes)
          (get_account_views)
          (get_account_shares)
@@ -4684,6 +4783,9 @@ FC_API( node::wallet::wallet_api,
          (view)
          (share)
          (moderation_tag)
+         (list)
+         (poll)
+         (poll_vote)
          (community_create)
          (community_update)
          (community_add_mod)
@@ -4724,8 +4826,10 @@ FC_API( node::wallet::wallet_api,
          (transfer_to_savings)
          (transfer_from_savings)
          (delegate_asset)
-         (product_update)
+         (product_sale)
          (product_purchase)
+         (product_auction_sale)
+         (product_auction_bid)
          (escrow_transfer)
          (escrow_approve)
          (escrow_dispute)

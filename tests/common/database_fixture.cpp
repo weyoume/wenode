@@ -207,6 +207,10 @@ const account_object& database_fixture::account_create(
    const public_key_type& owner_key,
    const public_key_type& active_key,
    const public_key_type& posting_key,
+   const public_key_type& secure_key,
+   const public_key_type& connection_key,
+   const public_key_type& friend_key,
+   const public_key_type& companion_key,
    const string& details,
    const string& url,
    const string& json
@@ -230,10 +234,10 @@ const account_object& database_fixture::account_create(
       op.owner_auth = authority( 1, owner_key, 1 );
       op.active_auth = authority( 1, active_key, 1 );
       op.posting_auth = authority( 1, posting_key, 1 );
-      op.secure_public_key = string( posting_key );
-      op.connection_public_key = string( posting_key );
-      op.friend_public_key = string( posting_key );
-      op.companion_public_key = string( posting_key );
+      op.secure_public_key = string( secure_key );
+      op.connection_public_key = string( connection_key );
+      op.friend_public_key = string( friend_key );
+      op.companion_public_key = string( companion_key );
       op.fee = asset( fee, SYMBOL_COIN );
       op.delegation = asset( 0, SYMBOL_COIN );
       
@@ -257,7 +261,11 @@ const account_object& database_fixture::account_create(
    const string& name,
    const public_key_type& owner_key,
    const public_key_type& active_key,
-   const public_key_type& posting_key )
+   const public_key_type& posting_key,
+   const public_key_type& secure_key,
+   const public_key_type& connection_key,
+   const public_key_type& friend_key,
+   const public_key_type& companion_key )
 {
    try
    {
@@ -266,10 +274,14 @@ const account_object& database_fixture::account_create(
          INIT_ACCOUNT,
          INIT_ACCOUNT,
          init_account_priv_key,
-         std::max( db.get_median_chain_properties().account_creation_fee.amount, share_type( 100 ) ),
+         std::max( db.get_median_chain_properties().account_creation_fee.amount, BLOCKCHAIN_PRECISION ),
          owner_key,
          active_key,
          posting_key,
+         secure_key,
+         connection_key,
+         friend_key,
+         companion_key,
          "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.",
          "https://en.wikipedia.org/wiki/Loch_Ness_Monster",
          "{\"cookie_price\":\"3.50 MUSD\"}" );
@@ -282,7 +294,7 @@ const account_object& database_fixture::account_create(
    const public_key_type& key
 )
 {
-   return account_create( name, key, key, key );
+   return account_create( name, key, key, key, key, key, key, key );
 }
 
 const community_object& database_fixture::community_create(
@@ -561,6 +573,88 @@ void database_fixture::validate_database( void )
    }
    FC_LOG_AND_RETHROW();
 }
+
+
+string database_fixture::get_encrypted_message( 
+   string from_private_key, 
+   string from_public_key, 
+   string to_public_key, 
+   string message ) const
+{
+   if( message.size() > 0 && message[0] == '#' )
+   {
+      encrypted_message_data m;
+
+      m.from = public_key_type( from_public_key );
+      m.to = public_key_type( to_public_key );
+      m.nonce = fc::time_point::now().time_since_epoch().count();
+      fc::optional< fc::ecc::private_key > privkey = graphene::utilities::wif_to_key( from_private_key );
+
+      if( privkey.valid() )
+      {
+         fc::sha512 shared_secret = privkey->get_shared_secret( m.to );
+         fc::sha512::encoder enc;
+         fc::raw::pack( enc, m.nonce );
+         fc::raw::pack( enc, shared_secret );
+         fc::sha512 encrypt_key = enc.result();
+
+         m.encrypted = fc::aes_encrypt( encrypt_key, fc::raw::pack( message.substr(1) ) );
+
+         m.check = fc::sha256::hash( encrypt_key )._hash[0];
+
+         return m;
+      }
+      else 
+      {
+         return message;
+      }
+   }
+   else 
+   {
+      return message;
+   }
+}
+
+string database_fixture::get_encrypted_message( 
+   private_key_type from_private_key, 
+   public_key_type from_public_key, 
+   public_key_type to_public_key, 
+   string message ) const
+{
+   if( message.size() > 0 && message[0] == '#' )
+   {
+      encrypted_message_data m;
+
+      m.from = from_public_key;
+      m.to = to_public_key;
+      m.nonce = fc::time_point::now().time_since_epoch().count();
+      fc::optional< fc::ecc::private_key > privkey = from_private_key;
+
+      if( privkey.valid() )
+      {
+         fc::sha512 shared_secret = privkey->get_shared_secret( m.to );
+         fc::sha512::encoder enc;
+         fc::raw::pack( enc, m.nonce );
+         fc::raw::pack( enc, shared_secret );
+         fc::sha512 encrypt_key = enc.result();
+
+         m.encrypted = fc::aes_encrypt( encrypt_key, fc::raw::pack( message.substr(1) ) );
+
+         m.check = fc::sha256::hash( encrypt_key )._hash[0];
+
+         return m;
+      }
+      else 
+      {
+         return message;
+      }
+   }
+   else 
+   {
+      return message;
+   }
+}
+
 
 namespace test {
 

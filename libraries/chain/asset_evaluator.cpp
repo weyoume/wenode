@@ -95,6 +95,20 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
    asset liquid_coin = _db.get_liquid_balance( o.issuer, SYMBOL_COIN );
    asset liquid_usd = _db.get_liquid_balance( o.issuer, SYMBOL_USD );
 
+   size_t asset_length = o.symbol.size();
+   asset coin_liq = median_props.asset_coin_liquidity;
+   asset usd_liq = median_props.asset_usd_liquidity;
+
+   if( is_premium_account_name( o.symbol ) )    // Double fee per character less than 8 characters.
+   {
+      coin_liq.amount = share_type( coin_liq.amount.value << uint16_t( 8 - asset_length ) );
+      usd_liq.amount = share_type( usd_liq.amount.value << uint16_t( 8 - asset_length ) );
+   }
+
+   FC_ASSERT( o.coin_liquidity >= coin_liq, 
+      "Asset has insufficient initial COIN liquidity." );
+   FC_ASSERT( o.usd_liquidity >= usd_liq, 
+      "Asset has insufficient initial USD liquidity." );
    FC_ASSERT( liquid_coin >= o.coin_liquidity, 
       "Issuer has insufficient coin balance to provide specified initial liquidity." );
    FC_ASSERT( liquid_usd >= o.usd_liquidity, 
@@ -449,7 +463,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
    
    // Create the new asset object.
 
-   _db.create< asset_object >( [&]( asset_object& a )
+   const asset_object new_asset = _db.create< asset_object >( [&]( asset_object& a )
    {
       a.symbol = o.symbol;
       a.asset_type = asset_property;
@@ -493,207 +507,209 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       a.symbol = o.symbol;
    });
 
-   asset_symbol_type core_liq_symbol = string( LIQUIDITY_ASSET_PREFIX )+ string( SYMBOL_COIN )+"."+ string( o.symbol );
-   
-   _db.create< asset_object >( [&]( asset_object& a )
-   {
-      a.issuer = o.issuer;
-      a.symbol = core_liq_symbol;
-      a.asset_type = asset_property_type::LIQUIDITY_POOL_ASSET;    // Create the core liquidity pool for the new asset.
-      from_string( a.display_symbol, core_liq_symbol );
-      from_string( a.details, o.options.details );
-      from_string( a.json, o.options.json );
-      from_string( a.url, o.options.url );
-      a.max_supply = o.options.max_supply;
-      a.stake_intervals = o.options.stake_intervals;
-      a.unstake_intervals = o.options.unstake_intervals;
-      a.market_fee_percent = o.options.market_fee_percent;
-      a.market_fee_share_percent = o.options.market_fee_share_percent;
-      a.issuer_permissions = o.options.issuer_permissions;
-      a.flags = o.options.flags;
-
-      for( account_name_type auth : o.options.whitelist_authorities )
-      {
-         a.whitelist_authorities.insert( auth );
-      }
-      for( account_name_type auth : o.options.blacklist_authorities )
-      {
-         a.blacklist_authorities.insert( auth );
-      }
-      for( asset_symbol_type mar : o.options.whitelist_markets )
-      {
-         a.whitelist_markets.insert( mar );
-      }
-      for( asset_symbol_type mar : o.options.blacklist_markets )
-      {
-         a.blacklist_markets.insert( mar );
-      }
-
-      a.created = now;
-      a.last_updated = now;
-   });
-
-   _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
-   {
-      a.issuer = o.issuer;
-      a.symbol = core_liq_symbol;
-   });
-
-   asset init_new_asset = asset( o.coin_liquidity.amount, o.symbol );              // Creates initial new asset supply equivalent to core liquidity. 
-   asset init_liquid_asset = asset( o.coin_liquidity.amount, core_liq_symbol );    // Creates equivalent supply of the liquidity pool asset for liquidity injection.
-      
-   _db.create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
-   {   
-      a.issuer = o.issuer;
-      a.symbol_a = SYMBOL_COIN;
-      a.symbol_b = o.symbol;
-      a.balance_a = o.coin_liquidity;
-      a.balance_b = init_new_asset;
-      a.hour_median_price = price( a.balance_a, a.balance_b );
-      a.day_median_price = price( a.balance_a, a.balance_b );
-      a.price_history.push_back( price( a.balance_a, a.balance_b ) );
-      a.balance_liquid = init_liquid_asset;
-   });
-
-   _db.adjust_liquid_balance( o.issuer, -o.coin_liquidity );
-   _db.adjust_liquid_balance( o.issuer, init_liquid_asset );
-   _db.adjust_pending_supply( init_new_asset );
-
-   asset_symbol_type usd_liq_symbol = string( LIQUIDITY_ASSET_PREFIX )+ string( SYMBOL_USD )+ "." + string( o.symbol );
-   
-   _db.create< asset_object >( [&]( asset_object& a )
-   {
-      a.issuer = o.issuer;
-      a.symbol = usd_liq_symbol;
-      a.asset_type = asset_property_type::LIQUIDITY_POOL_ASSET;    // Create the USD liquidity pool for the new asset.
-      from_string( a.display_symbol, usd_liq_symbol );
-      from_string( a.details, o.options.details );
-      from_string( a.json, o.options.json );
-      from_string( a.url, o.options.url );
-      a.max_supply = o.options.max_supply;
-      a.stake_intervals = o.options.stake_intervals;
-      a.unstake_intervals = o.options.unstake_intervals;
-      a.market_fee_percent = o.options.market_fee_percent;
-      a.market_fee_share_percent = o.options.market_fee_share_percent;
-      a.issuer_permissions = o.options.issuer_permissions;
-      a.flags = o.options.flags;
-
-      for( account_name_type auth : o.options.whitelist_authorities )
-      {
-         a.whitelist_authorities.insert( auth );
-      }
-      for( account_name_type auth : o.options.blacklist_authorities )
-      {
-         a.blacklist_authorities.insert( auth );
-      }
-      for( asset_symbol_type mar : o.options.whitelist_markets )
-      {
-         a.whitelist_markets.insert( mar );
-      }
-      for( asset_symbol_type mar : o.options.blacklist_markets )
-      {
-         a.blacklist_markets.insert( mar );
-      }
-
-      a.created = now;
-      a.last_updated = now;
-   });
-
-   _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
-   {
-      a.issuer = o.issuer;
-      a.symbol = usd_liq_symbol;
-   });
-
-   init_new_asset = asset( o.usd_liquidity.amount, o.symbol );           // Creates initial new asset supply equivalent to core liquidity. 
-   init_liquid_asset = asset( o.usd_liquidity.amount, usd_liq_symbol);   // Creates equivalent supply of the liquidity pool asset for liquidity injection.
-      
-   _db.create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
-   {   
-      a.issuer = o.issuer;
-      a.symbol_a = SYMBOL_USD;
-      a.symbol_b = o.symbol;
-      a.balance_a = o.usd_liquidity;
-      a.balance_b = init_new_asset;
-      a.hour_median_price = price( a.balance_a, a.balance_b );
-      a.day_median_price = price( a.balance_a, a.balance_b );
-      a.price_history.push_back( price( a.balance_a, a.balance_b ) );
-      a.balance_liquid = init_liquid_asset;
-   });
-
-   _db.adjust_liquid_balance( o.issuer, -o.usd_liquidity );
-   _db.adjust_liquid_balance( o.issuer, init_liquid_asset );
-   _db.adjust_pending_supply( init_new_asset );
-
-   asset_symbol_type credit_asset_symbol = string( CREDIT_ASSET_PREFIX ) + string( o.symbol );
-   
-   _db.create< asset_object >( [&]( asset_object& a )
-   {
-      a.issuer = o.issuer;
-      a.symbol = credit_asset_symbol;
-      a.asset_type = asset_property_type::CREDIT_POOL_ASSET; // Create the asset credit pool for the new asset.
-      from_string( a.display_symbol, credit_asset_symbol );
-      from_string( a.details, o.options.details );
-      from_string( a.json, o.options.json );
-      from_string( a.url, o.options.url );
-      a.max_supply = o.options.max_supply;
-      a.stake_intervals = o.options.stake_intervals;
-      a.unstake_intervals = o.options.unstake_intervals;
-      a.market_fee_percent = o.options.market_fee_percent;
-      a.market_fee_share_percent = o.options.market_fee_share_percent;
-      a.issuer_permissions = o.options.issuer_permissions;
-      a.flags = o.options.flags;
-
-      for( account_name_type auth : o.options.whitelist_authorities )
-      {
-         a.whitelist_authorities.insert( auth );
-      }
-      for( account_name_type auth : o.options.blacklist_authorities )
-      {
-         a.blacklist_authorities.insert( auth );
-      }
-      for( asset_symbol_type mar : o.options.whitelist_markets )
-      {
-         a.whitelist_markets.insert( mar );
-      }
-      for( asset_symbol_type mar : o.options.blacklist_markets )
-      {
-         a.blacklist_markets.insert( mar );
-      }
-
-      a.created = now;
-      a.last_updated = now;
-   });
-
-   _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
-   {
-      a.issuer = o.issuer;
-      a.symbol = credit_asset_symbol;
-   });
-
-   asset init_lent_asset = asset( o.credit_liquidity.amount, o.symbol );                       // Creates and lends equivalent new assets to the credit pool.
-   asset init_credit_asset = asset( o.credit_liquidity.amount * 100, credit_asset_symbol );    // Creates equivalent credit pool assets and passes to issuer. 
-   price init_credit_price = price( init_lent_asset, init_credit_asset );                      // Starts the initial credit asset exchange rate at 100:1.
-
-   _db.create< asset_credit_pool_object >( [&]( asset_credit_pool_object& a )
-   {
-      a.issuer = o.issuer;
-      a.base_symbol = o.symbol;   
-      a.credit_symbol = credit_asset_symbol; 
-      a.base_balance = init_lent_asset;
-      a.borrowed_balance = asset( 0, o.symbol );
-      a.credit_balance = init_credit_asset;
-      a.last_price = init_credit_price;     // Initializes credit pool price with a ratio of 100:1
-   });
-   
-   _db.adjust_pending_supply( init_lent_asset );           
-   _db.adjust_liquid_balance( o.issuer, init_credit_asset );
-
    _db.modify( issuer, [&]( account_object& a )
    {
       a.last_asset_created = now;
    });
 
+   if( new_asset.is_credit_enabled() )
+   {
+      asset_symbol_type core_liq_symbol = string( LIQUIDITY_ASSET_PREFIX )+ string( SYMBOL_COIN )+"."+ string( o.symbol );
+      
+      _db.create< asset_object >( [&]( asset_object& a )
+      {
+         a.issuer = o.issuer;
+         a.symbol = core_liq_symbol;
+         a.asset_type = asset_property_type::LIQUIDITY_POOL_ASSET;    // Create the core liquidity pool for the new asset.
+         from_string( a.display_symbol, core_liq_symbol );
+         from_string( a.details, o.options.details );
+         from_string( a.json, o.options.json );
+         from_string( a.url, o.options.url );
+         a.max_supply = o.options.max_supply;
+         a.stake_intervals = o.options.stake_intervals;
+         a.unstake_intervals = o.options.unstake_intervals;
+         a.market_fee_percent = o.options.market_fee_percent;
+         a.market_fee_share_percent = o.options.market_fee_share_percent;
+         a.issuer_permissions = o.options.issuer_permissions;
+         a.flags = o.options.flags;
+
+         for( account_name_type auth : o.options.whitelist_authorities )
+         {
+            a.whitelist_authorities.insert( auth );
+         }
+         for( account_name_type auth : o.options.blacklist_authorities )
+         {
+            a.blacklist_authorities.insert( auth );
+         }
+         for( asset_symbol_type mar : o.options.whitelist_markets )
+         {
+            a.whitelist_markets.insert( mar );
+         }
+         for( asset_symbol_type mar : o.options.blacklist_markets )
+         {
+            a.blacklist_markets.insert( mar );
+         }
+
+         a.created = now;
+         a.last_updated = now;
+      });
+
+      _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+      {
+         a.issuer = o.issuer;
+         a.symbol = core_liq_symbol;
+      });
+
+      asset init_new_asset = asset( o.coin_liquidity.amount, o.symbol );              // Creates initial new asset supply equivalent to core liquidity. 
+      asset init_liquid_asset = asset( o.coin_liquidity.amount, core_liq_symbol );    // Creates equivalent supply of the liquidity pool asset for liquidity injection.
+         
+      _db.create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
+      {
+         a.issuer = o.issuer;
+         a.symbol_a = SYMBOL_COIN;
+         a.symbol_b = o.symbol;
+         a.balance_a = o.coin_liquidity;
+         a.balance_b = init_new_asset;
+         a.hour_median_price = price( a.balance_a, a.balance_b );
+         a.day_median_price = price( a.balance_a, a.balance_b );
+         a.price_history.push_back( price( a.balance_a, a.balance_b ) );
+         a.balance_liquid = init_liquid_asset;
+      });
+
+      _db.adjust_liquid_balance( o.issuer, -o.coin_liquidity );
+      _db.adjust_liquid_balance( o.issuer, init_liquid_asset );
+      _db.adjust_pending_supply( init_new_asset );
+
+      asset_symbol_type usd_liq_symbol = string( LIQUIDITY_ASSET_PREFIX )+ string( SYMBOL_USD )+ "." + string( o.symbol );
+      
+      _db.create< asset_object >( [&]( asset_object& a )
+      {
+         a.issuer = o.issuer;
+         a.symbol = usd_liq_symbol;
+         a.asset_type = asset_property_type::LIQUIDITY_POOL_ASSET;    // Create the USD liquidity pool for the new asset.
+         from_string( a.display_symbol, usd_liq_symbol );
+         from_string( a.details, o.options.details );
+         from_string( a.json, o.options.json );
+         from_string( a.url, o.options.url );
+         a.max_supply = o.options.max_supply;
+         a.stake_intervals = o.options.stake_intervals;
+         a.unstake_intervals = o.options.unstake_intervals;
+         a.market_fee_percent = o.options.market_fee_percent;
+         a.market_fee_share_percent = o.options.market_fee_share_percent;
+         a.issuer_permissions = o.options.issuer_permissions;
+         a.flags = o.options.flags;
+
+         for( account_name_type auth : o.options.whitelist_authorities )
+         {
+            a.whitelist_authorities.insert( auth );
+         }
+         for( account_name_type auth : o.options.blacklist_authorities )
+         {
+            a.blacklist_authorities.insert( auth );
+         }
+         for( asset_symbol_type mar : o.options.whitelist_markets )
+         {
+            a.whitelist_markets.insert( mar );
+         }
+         for( asset_symbol_type mar : o.options.blacklist_markets )
+         {
+            a.blacklist_markets.insert( mar );
+         }
+
+         a.created = now;
+         a.last_updated = now;
+      });
+
+      _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+      {
+         a.issuer = o.issuer;
+         a.symbol = usd_liq_symbol;
+      });
+
+      init_new_asset = asset( o.usd_liquidity.amount, o.symbol );           // Creates initial new asset supply equivalent to core liquidity. 
+      init_liquid_asset = asset( o.usd_liquidity.amount, usd_liq_symbol);   // Creates equivalent supply of the liquidity pool asset for liquidity injection.
+         
+      _db.create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
+      {   
+         a.issuer = o.issuer;
+         a.symbol_a = SYMBOL_USD;
+         a.symbol_b = o.symbol;
+         a.balance_a = o.usd_liquidity;
+         a.balance_b = init_new_asset;
+         a.hour_median_price = price( a.balance_a, a.balance_b );
+         a.day_median_price = price( a.balance_a, a.balance_b );
+         a.price_history.push_back( price( a.balance_a, a.balance_b ) );
+         a.balance_liquid = init_liquid_asset;
+      });
+
+      _db.adjust_liquid_balance( o.issuer, -o.usd_liquidity );
+      _db.adjust_liquid_balance( o.issuer, init_liquid_asset );
+      _db.adjust_pending_supply( init_new_asset );
+
+      asset_symbol_type credit_asset_symbol = string( CREDIT_ASSET_PREFIX ) + string( o.symbol );
+      
+      _db.create< asset_object >( [&]( asset_object& a )
+      {
+         a.issuer = o.issuer;
+         a.symbol = credit_asset_symbol;
+         a.asset_type = asset_property_type::CREDIT_POOL_ASSET; // Create the asset credit pool for the new asset.
+         from_string( a.display_symbol, credit_asset_symbol );
+         from_string( a.details, o.options.details );
+         from_string( a.json, o.options.json );
+         from_string( a.url, o.options.url );
+         a.max_supply = o.options.max_supply;
+         a.stake_intervals = o.options.stake_intervals;
+         a.unstake_intervals = o.options.unstake_intervals;
+         a.market_fee_percent = o.options.market_fee_percent;
+         a.market_fee_share_percent = o.options.market_fee_share_percent;
+         a.issuer_permissions = o.options.issuer_permissions;
+         a.flags = o.options.flags;
+
+         for( account_name_type auth : o.options.whitelist_authorities )
+         {
+            a.whitelist_authorities.insert( auth );
+         }
+         for( account_name_type auth : o.options.blacklist_authorities )
+         {
+            a.blacklist_authorities.insert( auth );
+         }
+         for( asset_symbol_type mar : o.options.whitelist_markets )
+         {
+            a.whitelist_markets.insert( mar );
+         }
+         for( asset_symbol_type mar : o.options.blacklist_markets )
+         {
+            a.blacklist_markets.insert( mar );
+         }
+
+         a.created = now;
+         a.last_updated = now;
+      });
+
+      _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+      {
+         a.issuer = o.issuer;
+         a.symbol = credit_asset_symbol;
+      });
+
+      asset init_lent_asset = asset( o.credit_liquidity.amount, o.symbol );                       // Creates and lends equivalent new assets to the credit pool.
+      asset init_credit_asset = asset( o.credit_liquidity.amount * 100, credit_asset_symbol );    // Creates equivalent credit pool assets and passes to issuer. 
+      price init_credit_price = price( init_lent_asset, init_credit_asset );                      // Starts the initial credit asset exchange rate at 100:1.
+
+      _db.create< asset_credit_pool_object >( [&]( asset_credit_pool_object& a )
+      {
+         a.issuer = o.issuer;
+         a.base_symbol = o.symbol;   
+         a.credit_symbol = credit_asset_symbol; 
+         a.base_balance = init_lent_asset;
+         a.borrowed_balance = asset( 0, o.symbol );
+         a.credit_balance = init_credit_asset;
+         a.last_price = init_credit_price;     // Initializes credit pool price with a ratio of 100:1
+      });
+      
+      _db.adjust_pending_supply( init_lent_asset );
+      _db.adjust_liquid_balance( o.issuer, init_credit_asset );
+   }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 

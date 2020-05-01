@@ -71,45 +71,33 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
       {
          const comment_object& creative_obj = _db.get_comment( o.author, o.objective );
          FC_ASSERT( creative_obj.root_comment == true,
-            "Creative comment must be a root comment" );
+            "Creative post must be a root comment" );
          FC_ASSERT( creative_obj.deleted == false,
-            "Creative comment has been deleted." );
+            "Creative post has been deleted." );
          FC_ASSERT( !creative_obj.is_encrypted(),
-            "Creative comment must be public." );
+            "Creative post must be public." );
          FC_ASSERT( creative_obj.premium_price.amount == 0,
-            "Creative comment must not be a premium post." );
-         FC_ASSERT( creative_obj.post_type != post_format_type::PRODUCT_POST,
-            "Creative comment must not be a product post" );
+            "Creative post must not be a premium post." );
       }
       break;
       case ad_format_type::PREMIUM_FORMAT:
       {
          const comment_object& creative_obj = _db.get_comment( o.author, o.objective );
          FC_ASSERT( creative_obj.root_comment == true,
-            "Creative comment must be a root comment" );
+            "Creative premium post must be a root comment" );
          FC_ASSERT( creative_obj.deleted == false,
-            "Creative comment has been deleted." );
-         FC_ASSERT( !creative_obj.is_encrypted(),
-            "Creative comment must be public." );
-         FC_ASSERT( creative_obj.premium_price.amount != 0,
-            "Creative comment must be a premium post." );
-         FC_ASSERT( creative_obj.post_type != post_format_type::PRODUCT_POST,
-            "Creative comment must not be a product post" );
+            "Creative premium post has been deleted." );
+         FC_ASSERT( creative_obj.is_encrypted(),
+            "Creative premium post must be encrypted." );
+         FC_ASSERT( creative_obj.premium_price.amount > 0,
+            "Creative post must be a premium post." );
       }
       break;
       case ad_format_type::PRODUCT_FORMAT:
       {
-         const comment_object& creative_obj = _db.get_comment( o.author, o.objective );     // TODO: Product object selection
-         FC_ASSERT( creative_obj.root_comment == true,
-            "Creative comment must be a root comment" );
-         FC_ASSERT( creative_obj.deleted == false,
-            "Creative comment has been deleted." );
-         FC_ASSERT( !creative_obj.is_encrypted(),
-            "Creative comment must be public." );
-         FC_ASSERT( creative_obj.premium_price.amount == 0,
-            "Creative comment must not be a premium post." );
-         FC_ASSERT( creative_obj.post_type == post_format_type::PRODUCT_POST,
-            "Creative comment must be a product post" );
+         const product_sale_object& creative_obj = _db.get_product_sale( o.author, o.objective );
+         FC_ASSERT( creative_obj.active,
+            "Creative product has been deleted." );
       }
       break;
       case ad_format_type::LINK_FORMAT:

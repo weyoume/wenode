@@ -144,8 +144,8 @@
 #define GENESIS_ACCOUNT_COIN                      (1 * BLOCKCHAIN_PRECISION)
 #define DPOS_VOTING_PRODUCERS                     (50)    // The Top 50 Highest voted producers are selected for block production each round
 #define POW_MINING_PRODUCERS                      (50)    // The top 50 Highest producing miners are selected for block production each round
-#define DPOS_VOTING_ADDITIONAL_PRODUCERS          (10)    // 10 Additonal producers are randomly selected for block production each round, according to stake voting weight
-#define POW_MINING_ADDITIONAL_PRODUCERS           (10)    // 10 Additonal miners are selected for block production each round, according to proof of work weight
+#define DPOS_VOTING_ADDITIONAL_PRODUCERS          (10)    // 10 Additional producers are randomly selected for block production each round, according to stake voting weight
+#define POW_MINING_ADDITIONAL_PRODUCERS           (10)    // 10 Additional miners are selected for block production each round, according to proof of work weight
 
 #define HARDFORK_REQUIRED_PRODUCERS     ((GENESIS_PRODUCER_AMOUNT/4)*3) // 3 Quarters of producers required for hardfork version upgrade acceptance.
 #define MAX_TIME_UNTIL_EXPIRATION       (60*60)            // seconds,  aka: 1 hour
@@ -173,7 +173,11 @@
 #define MAX_COMMENT_DEPTH                    0xffff // 64k
 #define SOFT_MAX_COMMENT_DEPTH               0xff // 255
 #define MAX_RESERVE_RATIO                    (20000)
+
 #define MIN_ACCOUNT_CREATION_FEE             asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN )
+#define MIN_ASSET_COIN_LIQUIDITY             asset( 10*BLOCKCHAIN_PRECISION, SYMBOL_COIN )
+#define MIN_ASSET_USD_LIQUIDITY              asset( 10*BLOCKCHAIN_PRECISION, SYMBOL_USD )
+
 #define CREATE_ACCOUNT_DELEGATION_RATIO      2
 #define CREATE_ACCOUNT_DELEGATION_TIME       fc::days(1)
 #define EQUIHASH_N                           140

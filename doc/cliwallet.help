@@ -31,7 +31,6 @@ variant_object about()
 							vector<applied_operation> get_ops_in_block(uint64_t block_num, bool only_virtual)
 														order_book get_order_book(uint32_t limit)
 				vector<extended_message_object> get_outbox(string account, fc::time_point newest, uint32_t limit)
-vector<owner_authority_history_api_obj> get_owner_history(string account)
 																string get_private_key(public_key_type pubkey)
 					pair<public_key_type, string> get_private_key_from_password(string account, string role, string password)
 																				get_private_key_from_password account owner password

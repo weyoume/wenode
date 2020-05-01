@@ -100,59 +100,49 @@ namespace node { namespace chain {
             return !( flags & int( community_permission_flags::disable_messages ) );
          }
 
-         bool enable_text_posts()const                                            ///< True if text posts are enabled
+         bool enable_text_posts()const                                          ///< True if text posts are enabled
          { 
             return !( flags & int( community_permission_flags::disable_text_posts ) );
          }
 
-         bool enable_image_posts()const                                            ///< True if image posts are enabled
+         bool enable_image_posts()const                                         ///< True if image posts are enabled
          { 
             return !( flags & int( community_permission_flags::disable_image_posts ) );
          }
 
-         bool enable_video_posts()const                                            ///< True if video posts are enabled
+         bool enable_gif_posts()const                                           ///< True if gif posts are enabled
+         { 
+            return !( flags & int( community_permission_flags::disable_gif_posts ) );
+         }
+
+         bool enable_video_posts()const                                         ///< True if video posts are enabled
          { 
             return !( flags & int( community_permission_flags::disable_video_posts ) );
          }
 
-         bool enable_link_posts()const                                            ///< True if link posts are enabled
+         bool enable_link_posts()const                                          ///< True if link posts are enabled
          { 
             return !( flags & int( community_permission_flags::disable_link_posts ) );
          }
 
-         bool enable_article_posts()const                                            ///< True if article posts are enabled
+         bool enable_article_posts()const                                       ///< True if article posts are enabled
          { 
             return !( flags & int( community_permission_flags::disable_article_posts ) );
          }
 
-         bool enable_audio_posts()const                                            ///< True if audio posts are enabled
+         bool enable_audio_posts()const                                         ///< True if audio posts are enabled
          { 
             return !( flags & int( community_permission_flags::disable_audio_posts ) );
          }
 
-         bool enable_file_posts()const                                            ///< True if file posts are enabled
+         bool enable_file_posts()const                                          ///< True if file posts are enabled
          { 
             return !( flags & int( community_permission_flags::disable_file_posts ) );
          }
 
-         bool enable_poll_posts()const                                            ///< True if poll posts are enabled
-         { 
-            return !( flags & int( community_permission_flags::disable_poll_posts ) );
-         }
-
-         bool enable_livestream_posts()const                                            ///< True if livestream posts are enabled
+         bool enable_livestream_posts()const                                    ///< True if livestream posts are enabled
          { 
             return !( flags & int( community_permission_flags::disable_livestream_posts ) );
-         }
-
-         bool enable_product_posts()const                                            ///< True if product posts are enabled
-         { 
-            return !( flags & int( community_permission_flags::disable_product_posts ) );
-         }
-
-         bool enable_list_posts()const                                            ///< True if list posts are enabled
-         { 
-            return !( flags & int( community_permission_flags::disable_list_posts ) );
          }
    };
 

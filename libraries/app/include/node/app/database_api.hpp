@@ -304,6 +304,14 @@ class database_api
 
       vector< message_state >                         get_messages( vector< string > names )const;
 
+      list_state                                      get_list( string name, string list_id )const;
+
+      vector< account_list_state >                    get_account_lists( vector< string > names )const;
+
+      poll_state                                      get_poll( string name, string poll_id )const;
+
+      vector< account_poll_state >                    get_account_polls( vector< string > names )const;
+
       vector< balance_state >                         get_balances( vector< string > names )const;
 
       vector< confidential_balance_api_obj >          get_confidential_balances( const confidential_query& query )const;
@@ -313,12 +321,6 @@ class database_api
       set< string >                                   lookup_accounts( string lower_bound_name, uint32_t limit )const;
 
       uint64_t                                        get_account_count()const;
-
-      vector< owner_authority_history_api_obj >       get_owner_history( string account )const;
-
-      optional< account_recovery_request_api_obj >    get_recovery_request( string account )const;
-
-      optional< account_bandwidth_api_obj >           get_account_bandwidth( string account, producer::bandwidth_type type )const;
 
 
       //================//
@@ -414,7 +416,9 @@ class database_api
       //==================//
 
 
-      product_api_obj                                 get_product( string seller, string product_id )const;
+      product_sale_api_obj                            get_product_sale( string seller, string product_id )const;
+
+      product_auction_sale_api_obj                    get_product_auction_sale( string seller, string auction_id )const;
 
       vector< account_product_state >                 get_account_products( vector< string > names )const;
 
@@ -468,13 +472,7 @@ class database_api
       //======================//
 
 
-      vector< vote_state >                            get_active_votes( string author, string permlink )const;
-
-      vector< view_state >                            get_active_views( string author, string permlink )const;
-
-      vector< share_state >                           get_active_shares( string author, string permlink )const;
-
-      vector< moderation_state >                      get_active_mod_tags( string author, string permlink )const;
+      comment_interaction_state                       get_comment_interactions( string author, string permlink )const;
 
       vector< account_vote >                          get_account_votes( string account, string from_author, string from_permlink, uint32_t limit )const;
 
@@ -680,7 +678,7 @@ FC_REFLECT( node::app::confidential_query,
 
 FC_API( node::app::database_api,
 
-         // Globals
+         // === Globals === //
 
          (get_config)
          (get_dynamic_global_properties)
@@ -689,7 +687,7 @@ FC_API( node::app::database_api,
          (get_hardfork_version)
          (get_next_scheduled_hardfork)
 
-         // Accounts
+         // === Accounts === //
 
          (get_accounts)
          (get_accounts_by_followers)
@@ -697,26 +695,27 @@ FC_API( node::app::database_api,
          (get_full_accounts)
          (get_account_history)
          (get_messages)
+         (get_list)
+         (get_account_lists)
+         (get_poll)
+         (get_account_polls)
          (get_balances)
          (get_confidential_balances)
          (get_keychains)
          (lookup_accounts)
          (get_account_count)
-         (get_owner_history)
-         (get_recovery_request)
-         (get_account_bandwidth)
 
-         // Assets
+         // === Assets === //
 
          (get_assets)
          (get_escrow)
 
-         // Communities
+         // === Communities === //
 
          (get_communities)
          (get_communities_by_subscribers)
 
-         // Network
+         // === Network === //
 
          (get_account_network_state)
          (get_active_producers)
@@ -731,8 +730,7 @@ FC_API( node::app::database_api,
          (get_governance_accounts_by_subscriber_power)
          (get_enterprise_by_voting_power)
          
-         
-         // Market
+         // === Market === //
 
          (get_open_orders)
          (get_limit_orders)
@@ -746,27 +744,28 @@ FC_API( node::app::database_api,
          (get_option_pools)
          (get_market_state)
 
-         // Ads
+         // === Ads === //
 
          (get_account_ads)
          (get_interface_audience_bids)
 
-         // Products
+         // === Products === //
 
-         (get_product)
+         (get_product_sale)
+         (get_product_auction_sale)
          (get_account_products)
 
-         // Graph
+         // === Graph === //
          
          (get_graph_query)
          (get_graph_node_properties)
          (get_graph_edge_properties)
 
-         // Search 
+         // === Search === //
 
          (get_search_query)
 
-         // Blocks and transactions
+         // === Blocks and transactions === //
 
          (get_block_header)
          (get_block)
@@ -778,12 +777,9 @@ FC_API( node::app::database_api,
          (verify_authority)
          (verify_account_authority)
 
-         // Posts + Tags
+         // === Posts + Tags === //
 
-         (get_active_votes)
-         (get_active_views)
-         (get_active_shares)
-         (get_active_mod_tags)
+         (get_comment_interactions)
          (get_account_votes)
          (get_account_views)
          (get_account_shares)
@@ -792,7 +788,7 @@ FC_API( node::app::database_api,
          (get_top_tags)
          (get_tags_used_by_author)
 
-         // Discussions
+         // === Discussions === //
 
          (get_content)
          (get_content_replies)
@@ -818,11 +814,11 @@ FC_API( node::app::database_api,
          (get_discussions_by_share_power)
          (get_discussions_by_comment_power)
          
-         // State 
+         // === State === //
 
          (get_state)
 
-         // Subscriptions
+         // === Subscriptions === //
 
          (set_block_applied_callback)
 

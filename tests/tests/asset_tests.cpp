@@ -84,6 +84,8 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       fund_stake( "jayme", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund( "jayme", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       fund_stake( "jayme", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+
+      time_point now = db.head_block_time();
       
       signed_transaction tx;
 
@@ -103,7 +105,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.validate();
 
       tx.operations.push_back( asset_create );
-      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -115,8 +117,8 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       BOOST_REQUIRE( alice_asset.issuer == asset_create.issuer );
       BOOST_REQUIRE( alice_asset.symbol == asset_create.symbol );
       BOOST_REQUIRE( alice_asset.asset_type == asset_property_type::STANDARD_ASSET );
-      BOOST_REQUIRE( alice_asset.created == now() );
-      BOOST_REQUIRE( alice_asset.last_updated == now() );
+      BOOST_REQUIRE( alice_asset.created == now );
+      BOOST_REQUIRE( alice_asset.last_updated == now );
 
       const asset_credit_pool_object& alice_credit_pool = db.get_credit_pool( "ALICECOIN", false );
 
@@ -161,7 +163,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       BOOST_REQUIRE( to_string( alice_asset.details ) == asset_update.new_options.details );
       BOOST_REQUIRE( to_string( alice_asset.json ) == asset_update.new_options.json );
       BOOST_REQUIRE( to_string( alice_asset.url ) == asset_update.new_options.url );
-      BOOST_REQUIRE( alice_asset.last_updated == now() );
+      BOOST_REQUIRE( alice_asset.last_updated == now );
 
       validate_database();
 
@@ -194,8 +196,8 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       BOOST_REQUIRE( bob_asset.issuer == NULL_ACCOUNT );
       BOOST_REQUIRE( bob_asset.symbol == asset_create.symbol );
       BOOST_REQUIRE( bob_asset.asset_type == asset_property_type::CURRENCY_ASSET );
-      BOOST_REQUIRE( bob_asset.created == now() );
-      BOOST_REQUIRE( bob_asset.last_updated == now() );
+      BOOST_REQUIRE( bob_asset.created == now );
+      BOOST_REQUIRE( bob_asset.last_updated == now );
 
       const asset_credit_pool_object& bob_credit_pool = db.get_credit_pool( "BOBCOIN", false );
 
@@ -293,8 +295,8 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       BOOST_REQUIRE( candice_asset.issuer == asset_create.issuer );
       BOOST_REQUIRE( candice_asset.symbol == asset_create.symbol );
       BOOST_REQUIRE( candice_asset.asset_type == asset_property_type::EQUITY_ASSET );
-      BOOST_REQUIRE( candice_asset.created == now() );
-      BOOST_REQUIRE( candice_asset.last_updated == now() );
+      BOOST_REQUIRE( candice_asset.created == now );
+      BOOST_REQUIRE( candice_asset.last_updated == now );
 
       const asset_equity_data_object& candice_equity = db.get_equity_data( "TROPICO" );
 
@@ -345,7 +347,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       BOOST_REQUIRE( to_string( candice_asset.details ) == asset_update.new_options.details );
       BOOST_REQUIRE( to_string( candice_asset.json ) == asset_update.new_options.json );
       BOOST_REQUIRE( to_string( candice_asset.url ) == asset_update.new_options.url );
-      BOOST_REQUIRE( candice_asset.last_updated == now() );
+      BOOST_REQUIRE( candice_asset.last_updated == now );
 
       BOOST_REQUIRE( candice_equity.dividend_share_percent == asset_update.new_options.dividend_share_percent );
       BOOST_REQUIRE( candice_equity.liquid_dividend_percent == asset_update.new_options.liquid_dividend_percent );
@@ -355,6 +357,127 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Update equity asset" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Create bond asset" );
+
+      account_create.signatory = "dan";
+      account_create.registrar = "dan";
+      account_create.new_account_name = "blocktwo";
+      account_create.referrer = INIT_ACCOUNT;
+      account_create.proxy = INIT_ACCOUNT;
+      account_create.governance_account = INIT_ACCOUNT;
+      account_create.recovery_account = INIT_ACCOUNT;
+      account_create.reset_account = INIT_ACCOUNT;
+      account_create.details = "My Details";
+      account_create.url = "www.url.com";
+      account_create.json = "{\"json\":\"valid\"}";
+      account_create.json_private = "{\"json\":\"valid\"}";
+      account_create.owner_auth = authority( 1, dan_private_owner_key.get_public_key(), 1 );
+      account_create.active_auth = authority( 1, dan_private_active_key.get_public_key(), 1 );
+      account_create.posting_auth = authority( 1, dan_private_posting_key.get_public_key(), 1 );
+      account_create.secure_public_key = string( public_key_type( dan_private_posting_key.get_public_key() ) );
+      account_create.connection_public_key = string( public_key_type( dan_private_posting_key.get_public_key() ) );
+      account_create.friend_public_key = string( public_key_type( dan_private_posting_key.get_public_key() ) );
+      account_create.companion_public_key = string( public_key_type( dan_private_posting_key.get_public_key() ) );
+      account_create.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      account_create.validate();
+
+      tx.operations.push_back( account_create );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      
+      date_type today = date_type( now + fc::days( 30 ) );
+
+      asset_create.signatory = "blocktwo";
+      asset_create.issuer = "blocktwo";
+      asset_create.symbol = "BLOCKBOND";
+      asset_create.asset_type = "boond";
+      asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "BLOCKBOND" );
+      asset_create.options.display_symbol = "Block Two Bonds";
+      asset_create.options.details = "Details";
+      asset_create.options.json = "{\"json\":\"valid\"}";
+      asset_create.options.url = "www.url.com";
+      asset_create.options.value = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      asset_create.options.collateralization = 20 * PERCENT_1;
+      asset_create.options.coupon_rate_percent = 5 * PERCENT_1;
+      asset_create.options.maturity_date = date_type( 1, today.month, today.year );
+
+      asset_create.validate();
+
+      tx.operations.push_back( asset_create );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const asset_object& dan_bond_asset = db.get_asset( "BLOCKBOND" );
+
+      BOOST_REQUIRE( dan_bond_asset.issuer == asset_create.issuer );
+      BOOST_REQUIRE( dan_bond_asset.symbol == asset_create.symbol );
+      BOOST_REQUIRE( dan_bond_asset.asset_type == asset_property_type::BOND_ASSET );
+      BOOST_REQUIRE( dan_bond_asset.created == now );
+      BOOST_REQUIRE( dan_bond_asset.last_updated == now );
+
+      const asset_bond_data_object& bond_data = db.get_bond_data( "BLOCKBOND" );
+
+      BOOST_REQUIRE( bond_data.business_account == asset_create.issuer );
+      BOOST_REQUIRE( bond_data.value == asset_create.options.value );
+      BOOST_REQUIRE( bond_data.collateralization == asset_create.options.collateralization );
+      BOOST_REQUIRE( bond_data.coupon_rate_percent == asset_create.options.coupon_rate_percent );
+      BOOST_REQUIRE( bond_data.maturity_date == asset_create.options.maturity_date );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Create bond asset" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Update bond asset" );
+
+      asset_update.signatory = "blocktwo";
+      asset_update.issuer = "blocktwo";
+      asset_update.asset_to_update = "BLOCKBOND";
+      asset_update.new_options.display_symbol = "Block Two Bonds";
+      asset_update.new_options.details = "New Details";
+      asset_update.new_options.json = "{\"json\":\"supervalid\"}";
+      asset_update.new_options.url = "www.newurl.com";
+      asset_update.new_options.value = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      asset_update.new_options.collateralization = 25 * PERCENT_1;
+      asset_update.new_options.coupon_rate_percent = 6 * PERCENT_1;
+      asset_update.new_options.maturity_date = date_type( 1, today.month , today.year );
+
+      asset_update.validate();
+
+      tx.operations.push_back( asset_update );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      BOOST_REQUIRE( dan_bond_asset.issuer == asset_update.issuer );
+      BOOST_REQUIRE( dan_bond_asset.symbol == asset_update.asset_to_update );
+      BOOST_REQUIRE( dan_bond_asset.asset_type == asset_property_type::BOND_ASSET );
+      BOOST_REQUIRE( to_string( dan_bond_asset.display_symbol ) == asset_update.new_options.display_symbol );
+      BOOST_REQUIRE( to_string( dan_bond_asset.details ) == asset_update.new_options.details );
+      BOOST_REQUIRE( to_string( dan_bond_asset.json ) == asset_update.new_options.json );
+      BOOST_REQUIRE( to_string( dan_bond_asset.url ) == asset_update.new_options.url );
+      BOOST_REQUIRE( dan_bond_asset.last_updated == now );
+
+      BOOST_REQUIRE( bond_data.business_account == asset_update.issuer );
+      BOOST_REQUIRE( bond_data.value == asset_update.new_options.value );
+      BOOST_REQUIRE( bond_data.collateralization == asset_update.new_options.collateralization );
+      BOOST_REQUIRE( bond_data.coupon_rate_percent == asset_update.new_options.coupon_rate_percent );
+      BOOST_REQUIRE( bond_data.maturity_date == asset_update.new_options.maturity_date );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Update bond asset" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Create credit asset" );
 
@@ -412,8 +535,8 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       BOOST_REQUIRE( dan_asset.issuer == asset_create.issuer );
       BOOST_REQUIRE( dan_asset.symbol == asset_create.symbol );
       BOOST_REQUIRE( dan_asset.asset_type == asset_property_type::CREDIT_ASSET );
-      BOOST_REQUIRE( dan_asset.created == now() );
-      BOOST_REQUIRE( dan_asset.last_updated == now() );
+      BOOST_REQUIRE( dan_asset.created == now );
+      BOOST_REQUIRE( dan_asset.last_updated == now );
 
       const asset_credit_data_object& dan_credit = db.get_credit_data( "BLOCKTWO" );
 
@@ -470,7 +593,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       BOOST_REQUIRE( to_string( dan_asset.details ) == asset_update.new_options.details );
       BOOST_REQUIRE( to_string( dan_asset.json ) == asset_update.new_options.json );
       BOOST_REQUIRE( to_string( dan_asset.url ) == asset_update.new_options.url );
-      BOOST_REQUIRE( dan_asset.last_updated == now() );
+      BOOST_REQUIRE( dan_asset.last_updated == now );
 
       BOOST_REQUIRE( dan_credit.buyback_share_percent == asset_update.new_options.buyback_share_percent );
       BOOST_REQUIRE( dan_credit.liquid_fixed_interest_rate == asset_update.new_options.liquid_fixed_interest_rate );
@@ -512,8 +635,8 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       BOOST_REQUIRE( elon_asset.issuer == asset_create.issuer );
       BOOST_REQUIRE( elon_asset.symbol == asset_create.symbol );
       BOOST_REQUIRE( elon_asset.asset_type == asset_property_type::STABLECOIN_ASSET );
-      BOOST_REQUIRE( elon_asset.created == now() );
-      BOOST_REQUIRE( elon_asset.last_updated == now() );
+      BOOST_REQUIRE( elon_asset.created == now );
+      BOOST_REQUIRE( elon_asset.last_updated == now );
 
       const asset_stablecoin_data_object& elon_stablecoin = db.get_stablecoin_data( "TSLA" );
 
@@ -566,7 +689,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       BOOST_REQUIRE( to_string( elon_asset.details ) == asset_update.new_options.details );
       BOOST_REQUIRE( to_string( elon_asset.json ) == asset_update.new_options.json );
       BOOST_REQUIRE( to_string( elon_asset.url ) == asset_update.new_options.url );
-      BOOST_REQUIRE( elon_asset.last_updated == now() );
+      BOOST_REQUIRE( elon_asset.last_updated == now );
 
       BOOST_REQUIRE( elon_stablecoin.backing_asset == asset_update.new_options.backing_asset );
       BOOST_REQUIRE( elon_stablecoin.feed_lifetime == asset_update.new_options.feed_lifetime );
@@ -578,6 +701,86 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Update stablecoin" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Create stimulus asset" );
+
+      asset_create.signatory = "elon";
+      asset_create.issuer = "elon";
+      asset_create.symbol = "STIM";
+      asset_create.asset_type = "stimulus";
+      asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "STIM" );
+      asset_create.options.display_symbol = "StimCoin";
+      asset_create.options.details = "Details";
+      asset_create.options.json = "{\"json\":\"valid\"}";
+      asset_create.options.url = "www.url.com";
+      asset_create.options.redemption_asset = SYMBOL_USD;
+      asset_create.options.redemption_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, "STIM" ) );
+      asset_create.options.distribution_list = { "alice", "bob", "candice" };
+      asset_create.options.redemption_list = { "tropico" };
+      asset_create.options.distribution_amount = asset( 10 * BLOCKCHAIN_PRECISION, "STIM" );
+
+      asset_create.validate();
+
+      tx.operations.push_back( asset_create );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const asset_object& elon_stim_asset = db.get_asset( "STIM" );
+
+      BOOST_REQUIRE( elon_stim_asset.issuer == asset_create.issuer );
+      BOOST_REQUIRE( elon_stim_asset.symbol == asset_create.symbol );
+      BOOST_REQUIRE( elon_stim_asset.asset_type == asset_property_type::STIMULUS_ASSET );
+      BOOST_REQUIRE( elon_stim_asset.created == now );
+      BOOST_REQUIRE( elon_stim_asset.last_updated == now );
+
+      const asset_stimulus_data_object& elon_stimulus = db.get_stimulus_data( "STIM" );
+
+      BOOST_REQUIRE( elon_stimulus.business_account == asset_create.issuer );
+      BOOST_REQUIRE( elon_stimulus.redemption_asset == SYMBOL_USD );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Create stimulus asset" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Update stimulus asset" );
+
+      asset_update.signatory = "elon";
+      asset_update.issuer = "elon";
+      asset_update.asset_to_update = "STIM";
+      asset_update.new_options.display_symbol = "StimCoin";
+      asset_update.new_options.details = "New Details";
+      asset_update.new_options.json = "{\"json\":\"supervalid\"}";
+      asset_update.new_options.url = "www.newurl.com";
+      asset_create.options.redemption_asset = SYMBOL_USD;
+      asset_create.options.redemption_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, "STIM" ) );
+      asset_create.options.distribution_list = { "alice", "bob", "candice", "elon" };
+      asset_create.options.redemption_list = { "blocktwo", "tropico" };
+      asset_create.options.distribution_amount = asset( 20 * BLOCKCHAIN_PRECISION, "STIM" );
+
+      tx.operations.push_back( asset_update );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      BOOST_REQUIRE( elon_stim_asset.issuer == asset_create.issuer );
+      BOOST_REQUIRE( elon_stim_asset.symbol == asset_create.symbol );
+      BOOST_REQUIRE( elon_stim_asset.asset_type == asset_property_type::STIMULUS_ASSET );
+      BOOST_REQUIRE( to_string( elon_stim_asset.display_symbol ) == asset_update.new_options.display_symbol );
+      BOOST_REQUIRE( to_string( elon_stim_asset.details ) == asset_update.new_options.details );
+      BOOST_REQUIRE( to_string( elon_stim_asset.json ) == asset_update.new_options.json );
+      BOOST_REQUIRE( to_string( elon_stim_asset.url ) == asset_update.new_options.url );
+      BOOST_REQUIRE( elon_stim_asset.last_updated == now );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Update stimulus asset" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Issue Standard asset" );
 
@@ -609,6 +812,32 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Issue Standard asset" );
 
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Reserve Standard asset" );
+
+      asset_reserve_operation asset_reserve;
+
+      asset_reserve.signatory = "alice";
+      asset_reserve.payer = "alice";
+      asset_reserve.amount_to_reserve = asset( 500 * BLOCKCHAIN_PRECISION, "ALICECOIN" );
+      asset_reserve.validate();
+
+      tx.operations.push_back( asset_reserve );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      alice_liquid = db.get_liquid_balance( "alice", "ALICECOIN" );
+
+      BOOST_REQUIRE( alice_liquid == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
+      BOOST_REQUIRE( alice_dyn_data.total_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
+      BOOST_REQUIRE( alice_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Reserve Standard asset" );
+
       BOOST_TEST_MESSAGE( "│   ├── Testing: Issue Equity asset" );
 
       asset_issue.signatory = "tropico";
@@ -637,60 +866,6 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Issue Equity asset" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: Issue Credit asset" );
-
-      asset_issue.signatory = "blocktwo";
-      asset_issue.issuer = "blocktwo";
-      asset_issue.asset_to_issue = asset( 1000 * BLOCKCHAIN_PRECISION, "BLOCKTWO" );
-      asset_issue.issue_to_account = "dan";
-      asset_issue.memo = "Hello";
-      asset_issue.validate();
-
-      tx.operations.push_back( asset_issue );
-      tx.sign( dan_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      asset dan_liquid = db.get_liquid_balance( "dan", "BLOCKTWO" );
-
-      const asset_dynamic_data_object& dan_dyn_data = db.get_dynamic_data( "BLOCKTWO" );
-
-      BOOST_REQUIRE( dan_liquid == asset_issue.asset_to_issue );
-      BOOST_REQUIRE( dan_dyn_data.total_supply == asset_issue.asset_to_issue.amount );
-      BOOST_REQUIRE( dan_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount );
-
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: Issue Credit asset" );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: Reserve Standard asset" );
-
-      asset_reserve_operation asset_reserve;
-
-      asset_reserve.signatory = "alice";
-      asset_reserve.payer = "alice";
-      asset_reserve.amount_to_reserve = asset( 500 * BLOCKCHAIN_PRECISION, "ALICECOIN" );
-      asset_reserve.validate();
-
-      tx.operations.push_back( asset_reserve );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      alice_liquid = db.get_liquid_balance( "alice", "ALICECOIN" );
-
-      BOOST_REQUIRE( alice_liquid == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
-      BOOST_REQUIRE( alice_dyn_data.total_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
-      BOOST_REQUIRE( alice_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
-
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: Reserve Standard asset" );
-
       BOOST_TEST_MESSAGE( "│   ├── Testing: Reserve Equity asset" );
 
       asset_reserve.signatory = "candice";
@@ -714,6 +889,85 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Reserve Equity asset" );
 
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Issue Bond asset" );
+
+      asset_issue.signatory = "blocktwo";
+      asset_issue.issuer = "blocktwo";
+      asset_issue.asset_to_issue = asset( 1000 * BLOCKCHAIN_PRECISION, "BLOCKBOND" );
+      asset_issue.issue_to_account = "dan";
+      asset_issue.memo = "Hello";
+      asset_issue.validate();
+
+      tx.operations.push_back( asset_issue );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      asset dan_liquid = db.get_liquid_balance( "dan", "BLOCKBOND" );
+
+      const asset_dynamic_data_object& dan_bond_dyn_data = db.get_dynamic_data( "BLOCKBOND" );
+
+      BOOST_REQUIRE( dan_liquid == asset_issue.asset_to_issue );
+      BOOST_REQUIRE( dan_bond_dyn_data.total_supply == asset_issue.asset_to_issue.amount );
+      BOOST_REQUIRE( dan_bond_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Issue Bond asset" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Reserve Bond asset" );
+
+      asset_reserve.signatory = "dan";
+      asset_reserve.payer = "dan";
+      asset_reserve.amount_to_reserve = asset( 500 * BLOCKCHAIN_PRECISION, "BLOCKBOND" );
+
+      tx.operations.push_back( asset_reserve );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      dan_liquid = db.get_liquid_balance( "dan", "BLOCKBOND" );
+
+      BOOST_REQUIRE( dan_liquid == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
+      BOOST_REQUIRE( dan_bond_dyn_data.total_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
+      BOOST_REQUIRE( dan_bond_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Reserve Bond asset" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Issue Credit asset" );
+
+      asset_issue.signatory = "blocktwo";
+      asset_issue.issuer = "blocktwo";
+      asset_issue.asset_to_issue = asset( 1000 * BLOCKCHAIN_PRECISION, "BLOCKTWO" );
+      asset_issue.issue_to_account = "dan";
+      asset_issue.memo = "Hello";
+      asset_issue.validate();
+
+      tx.operations.push_back( asset_issue );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      dan_liquid = db.get_liquid_balance( "dan", "BLOCKTWO" );
+
+      const asset_dynamic_data_object& dan_credit_dyn_data = db.get_dynamic_data( "BLOCKTWO" );
+
+      BOOST_REQUIRE( dan_liquid == asset_issue.asset_to_issue );
+      BOOST_REQUIRE( dan_credit_dyn_data.total_supply == asset_issue.asset_to_issue.amount );
+      BOOST_REQUIRE( dan_credit_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Issue Credit asset" );
+
       BOOST_TEST_MESSAGE( "│   ├── Testing: Reserve Credit asset" );
 
       asset_reserve.signatory = "dan";
@@ -730,8 +984,8 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       dan_liquid = db.get_liquid_balance( "dan", "BLOCKTWO" );
 
       BOOST_REQUIRE( dan_liquid == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
-      BOOST_REQUIRE( dan_dyn_data.total_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
-      BOOST_REQUIRE( dan_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
+      BOOST_REQUIRE( dan_credit_dyn_data.total_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
+      BOOST_REQUIRE( dan_credit_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
 
       validate_database();
 
@@ -804,7 +1058,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_REQUIRE( elon_asset.last_updated == now() );
+      BOOST_REQUIRE( elon_asset.last_updated == now );
 
       for( auto f : update_feed.new_feed_producers )
       {
@@ -951,8 +1205,8 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       const asset_settlement_object& fred_settlement = db.get_asset_settlement( "fred", "TSLA" );
 
       BOOST_REQUIRE( fred_settlement.balance == settle.amount );
-      BOOST_REQUIRE( fred_settlement.last_updated == now() );
-      BOOST_REQUIRE( fred_settlement.created == now() );
+      BOOST_REQUIRE( fred_settlement.last_updated == now );
+      BOOST_REQUIRE( fred_settlement.created == now );
 
       generate_blocks( fred_settlement.settlement_date + BLOCK_INTERVAL );
 

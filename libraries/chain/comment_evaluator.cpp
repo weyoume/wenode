@@ -31,6 +31,7 @@ namespace node { namespace chain {
  * 
  * TEXT_POST,        ///< A post containing a maxmium of 300 characters of text.
  * IMAGE_POST,       ///< A post containing an IPFS media file of an image, and up to 1000 characters of description text.
+ * GIF_POST,         ///< A post containing an IPFS media file of a GIF, and up to 1000 characters of description text.
  * VIDEO_POST,       ///< A post containing a title, an IPFS media file or bittorrent magent link of a video, and up to 1000 characters of description tex.
  * LINK_POST,        ///< A post containing a URL link, link title, and up to 1000 characters of description text.
  * ARTICLE_POST,     ///< A post containing a title, a header image, and an unlimited amount of body text with embedded images.
@@ -38,7 +39,6 @@ namespace node { namespace chain {
  * FILE_POST,        ///< A post containing a title, either an IPFS link to a file, or a magnet link to a bittorrent swarm for a file, and up to 1000 characters of description text.
  * POLL_POST,        ///< A post containing a title, at least 2 voting options, and up to 1000 characters of description text.
  * LIVESTREAM_POST,  ///< A post containing a title, a link to a livestreaming video, and up to 1000 characters of description text.
- * PRODUCT_POST,     ///< A post containing a product title, at least 1 IPFS image of the product, and purchase details to create an escrow order.
  * LIST_POST         ///< A post containing a list of at least 2 other posts, a title, and up to 1000 characters of description text
  */
 
@@ -228,7 +228,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
             "Comment rejected: Should not include title in text post." );
          if( community_ptr != nullptr )
          {
-            FC_ASSERT( community_ptr->enable_text_posts(), 
+            FC_ASSERT( community_ptr->enable_text_posts(),
                "Community Name: ${b} does not enable Text Posts.", ("b", o.community ));
          }
       }
@@ -241,6 +241,17 @@ void comment_evaluator::do_apply( const comment_operation& o )
          {
             FC_ASSERT( community_ptr->enable_image_posts(), 
                "Community Name: ${b} does not enable Image Posts.", ("b", o.community ));
+         }
+      }
+      break;
+      case post_format_type::GIF_POST:
+      {
+         FC_ASSERT( o.ipfs.size() >= 1,
+            "Comment rejected: Image post must contain at least one IPFS referenced gif file." );
+         if( community_ptr != nullptr )
+         {
+            FC_ASSERT( community_ptr->enable_gif_posts(), 
+               "Community Name: ${b} does not enable GIF Posts.", ("b", o.community ));
          }
       }
       break;
@@ -309,39 +320,12 @@ void comment_evaluator::do_apply( const comment_operation& o )
          }
       }
       break;
-      case post_format_type::POLL_POST:
-      {
-         if( community_ptr != nullptr )
-         {
-            FC_ASSERT( community_ptr->enable_poll_posts(), 
-               "Community Name: ${b} does not enable Poll Posts.", ("b", o.community ));
-         }
-      }
-      break;
       case post_format_type::LIVESTREAM_POST:
       {
          if( community_ptr != nullptr )
          {
             FC_ASSERT( community_ptr->enable_livestream_posts(), 
                "Community Name: ${b} does not enable Livestream Posts.", ("b", o.community ));
-         }
-      }
-      break;
-      case post_format_type::PRODUCT_POST:
-      {
-         if( community_ptr != nullptr )
-         {
-            FC_ASSERT( community_ptr->enable_product_posts(), 
-               "Community Name: ${b} does not enable Product Posts.", ("b", o.community ));
-         }
-      }
-      break;
-      case post_format_type::LIST_POST:
-      {
-         if( community_ptr != nullptr )
-         {
-            FC_ASSERT( community_ptr->enable_list_posts(), 
-               "Community Name: ${b} does not enable List Posts.", ("b", o.community ));
          }
       }
       break;
@@ -1767,12 +1751,6 @@ void share_evaluator::do_apply( const share_operation& o )
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
-/**
- * Moderation tags enable interface providers to coordinate moderation efforts
- * on-chain and provides a method for discretion to be provided
- * to displaying content, based on the governance addresses subscribed to by the 
- * viewing user.
- */
 void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
 { try {
    const account_name_type& signed_for = o.moderator;
@@ -1844,7 +1822,7 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
    auto mod_itr = mod_idx.find( boost::make_tuple( o.moderator, comment.id ) );
    time_point now = _db.head_block_time();
 
-   if( mod_itr != mod_idx.end() )     // Creating new moderation tag.
+   if( mod_itr == mod_idx.end() )     // Creating new moderation tag.
    {
       FC_ASSERT( o.applied,
          "Moderation tag does not exist, Applied should be set to true to create new moderation tag." );
@@ -1895,6 +1873,283 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
       {
          _db.remove( *mod_itr );
       }
+   }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
+
+
+void list_evaluator::do_apply( const list_operation& o )
+{ try {
+   const account_name_type& signed_for = o.creator;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+   
+   const account_object& creator = _db.get_account( o.creator );
+   time_point now = _db.head_block_time();
+
+   FC_ASSERT( creator.active, 
+      "Creator: ${s} must be active to broadcast transaction.",("s", o.creator) );
+   
+   const auto& list_idx = _db.get_index< list_index >().indices().get< by_list_id >();
+   auto list_itr = list_idx.find( boost::make_tuple( o.creator, o.list_id ) );
+   
+   if( list_itr == list_idx.end() )
+   {
+      _db.create< list_object >( [&]( list_object& l )
+      {
+         l.creator = o.creator;
+         from_string( l.list_id, o.list_id );
+         from_string( l.name, o.name );
+
+         for( int64_t id : o.accounts )
+         {
+            l.accounts.insert( account_id_type( id ) );
+         }
+         for( int64_t id : o.comments )
+         {
+            l.comments.insert( comment_id_type( id ) );
+         }
+         for( int64_t id : o.communities )
+         {
+            l.communities.insert( community_id_type( id ) );
+         }
+         for( int64_t id : o.assets )
+         {
+            l.assets.insert( asset_id_type( id ) );
+         }
+         for( int64_t id : o.products )
+         {
+            l.products.insert( product_sale_id_type( id ) );
+         }
+         for( int64_t id : o.auctions )
+         {
+            l.auctions.insert( product_auction_sale_id_type( id ) );
+         }
+         for( int64_t id : o.nodes )
+         {
+            l.nodes.insert( graph_node_id_type( id ) );
+         }
+         for( int64_t id : o.edges )
+         {
+            l.edges.insert( graph_edge_id_type( id ) );
+         }
+         for( int64_t id : o.node_types )
+         {
+            l.node_types.insert( graph_node_property_id_type( id ) );
+         }
+         for( int64_t id : o.edge_types )
+         {
+            l.edge_types.insert( graph_edge_property_id_type( id ) );
+         }
+
+         l.last_updated = now;
+         l.created = now;
+      });
+   }
+   else    
+   {
+      const list_object& list = *list_itr;
+
+      _db.modify( list, [&]( list_object& l )
+      {
+         from_string( l.name, o.name );
+
+         l.accounts.clear();
+         l.comments.clear();
+         l.communities.clear();
+         l.assets.clear();
+         l.products.clear();
+         l.auctions.clear();
+         l.nodes.clear();
+         l.edges.clear();
+         l.node_types.clear();
+         l.edge_types.clear();
+
+         for( int64_t id : o.accounts )
+         {
+            l.accounts.insert( account_id_type( id ) );
+         }
+         for( int64_t id : o.comments )
+         {
+            l.comments.insert( comment_id_type( id ) );
+         }
+         for( int64_t id : o.communities )
+         {
+            l.communities.insert( community_id_type( id ) );
+         }
+         for( int64_t id : o.assets )
+         {
+            l.assets.insert( asset_id_type( id ) );
+         }
+         for( int64_t id : o.products )
+         {
+            l.products.insert( product_sale_id_type( id ) );
+         }
+         for( int64_t id : o.auctions )
+         {
+            l.auctions.insert( product_auction_sale_id_type( id ) );
+         }
+         for( int64_t id : o.nodes )
+         {
+            l.nodes.insert( graph_node_id_type( id ) );
+         }
+         for( int64_t id : o.edges )
+         {
+            l.edges.insert( graph_edge_id_type( id ) );
+         }
+         for( int64_t id : o.node_types )
+         {
+            l.node_types.insert( graph_node_property_id_type( id ) );
+         }
+         for( int64_t id : o.edge_types )
+         {
+            l.edge_types.insert( graph_edge_property_id_type( id ) );
+         }
+
+         l.last_updated = now;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
+
+
+void poll_evaluator::do_apply( const poll_operation& o )
+{ try {
+   const account_name_type& signed_for = o.creator;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+   
+   const account_object& creator = _db.get_account( o.creator );
+   time_point now = _db.head_block_time();
+
+   FC_ASSERT( creator.active, 
+      "Creator: ${s} must be active to broadcast transaction.",("s", o.creator) );
+   
+   const auto& poll_idx = _db.get_index< poll_index >().indices().get< by_poll_id >();
+   auto poll_itr = poll_idx.find( boost::make_tuple( o.creator, o.poll_id ) );
+   
+   if( poll_itr == poll_idx.end() )
+   {
+      _db.create< poll_object >( [&]( poll_object& p )
+      {
+         p.creator = o.creator;
+         from_string( p.poll_id, o.poll_id );
+         from_string( p.details, o.details );
+
+         p.poll_options.reserve( o.poll_options.size() );
+         for( size_t i = 0; i < o.poll_options.size(); i++ )
+         {
+            from_string( p.poll_options[ i ], o.poll_options[ i ] );
+         }
+
+         p.completion_time = o.completion_time;
+         p.last_updated = now;
+         p.created = now;
+      });
+   }
+   else    
+   {
+      const poll_object& poll = *poll_itr;
+
+      _db.modify( poll, [&]( poll_object& p )
+      {
+         from_string( p.details, o.details );
+
+         p.poll_options.reserve( o.poll_options.size() );
+         for( size_t i = 0; i < o.poll_options.size(); i++ )
+         {
+            from_string( p.poll_options[ i ], o.poll_options[ i ] );
+         }
+         
+         p.last_updated = now;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
+
+
+void poll_vote_evaluator::do_apply( const poll_vote_operation& o )
+{ try {
+   const account_name_type& signed_for = o.voter;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+   
+   const account_object& creator = _db.get_account( o.creator );
+   time_point now = _db.head_block_time();
+
+   FC_ASSERT( creator.active, 
+      "Creator: ${s} must be active to broadcast transaction.",("s", o.creator) );
+
+   const poll_object& poll = _db.get_poll( o.creator, o.poll_id );
+
+   FC_ASSERT( poll.completion_time > now, 
+      "Poll has passed its completion time and is not accepting any more votes." );
+
+   bool found = false;
+
+   for( size_t i = 0; i < poll.poll_options.size(); i++ )
+   {
+      if( to_string( poll.poll_options[ i ] ) == o.poll_option )
+      {
+         found = true;
+         break;
+      }
+   }
+
+   FC_ASSERT( found, 
+      "Poll Option must be an available option from the poll." );
+
+   const auto& vote_idx = _db.get_index< poll_vote_index >().indices().get< by_voter_creator_poll_id >();
+   auto vote_itr = vote_idx.find( boost::make_tuple( o.voter, o.creator, o.poll_id ) );
+   
+   if( vote_itr == vote_idx.end() )
+   {
+      _db.create< poll_vote_object >( [&]( poll_vote_object& p )
+      {
+         p.voter = o.voter;
+         p.creator = o.creator;
+         from_string( p.poll_id, o.poll_id );
+         from_string( p.poll_option, o.poll_option );
+         p.last_updated = now;
+         p.created = now;
+      });
+   }
+   else    
+   {
+      const poll_vote_object& vote = *vote_itr;
+
+      _db.modify( vote, [&]( poll_vote_object& p )
+      {
+         from_string( p.poll_option, o.poll_option );
+         p.last_updated = now;
+      });
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 

@@ -222,24 +222,22 @@ namespace node {
       };
 
       /**
-       * Types of Product sale varying the price of the item being sold.
+       * Types of Product Auction sale, varying the mechanism of determining the bidding prices of the item being sold.
        */
-      enum class product_sale_type : int
+      enum class product_auction_type : int
       {
-         FIXED_PRICE_SALE,         ///< Product is for sale at a fixed price.
-         WHOLESALE_PRICE_SALE,     ///< Product is for sale at decreasing prices when bulk quantity thesholds are purchased.
-         OPEN_AUCTION_SALE,        ///< Product is for sale to the highest bidder. Bids are open.
-         REVERSE_AUCTION_SALE,     ///< Product is for sale at a linearly decreasing price to the first purchaser. 
-         SECRET_AUCTION_SALE       ///< Product is for sale at the price of the second highest bidder to the highest bidder. Bids are secret using commit and reveal process. 
+         OPEN_AUCTION,                    ///< Product is for sale to the highest bidder. Bids are open and visible publicly.
+         REVERSE_AUCTION,                 ///< Product is for sale at a linearly decreasing price to the first purchaser.
+         CONCEALED_FIRST_PRICE_AUCTION,   ///< Product is for sale at the price of the highest bidder. Bids are secret using commit and reveal process. 
+         CONCEALED_SECOND_PRICE_AUCTION   ///< Product is for sale at the price of the second highest bidder. Bids are secret using commit and reveal process. 
       };
 
-      const static vector< string > product_sale_values =
+      const static vector< string > product_auction_values =
       {
-         "fixed_price",
-         "wholesale_price",
-         "open_auction",
-         "reverse_auction",
-         "secret_auction"
+         "open",
+         "reverse",
+         "concealed_first_price",
+         "concealed_second_price"
       };
 
       /**
@@ -310,31 +308,27 @@ namespace node {
       enum class post_format_type : int 
       {
          TEXT_POST,        ///< A post containing a maxmium of 300 characters of text.
-         IMAGE_POST,       ///< A post containing an IPFS media file of an image, and up to 1000 characters of description text
-         VIDEO_POST,       ///< A post containing a title, an IPFS media file or bittorrent magent link of a video, and up to 1000 characters of description text
-         LINK_POST,        ///< A post containing a URL link, link title, and up to 1000 characters of description text
-         ARTICLE_POST,     ///< A post containing a title, a header image, and an unlimited amount of body text with embedded images
-         AUDIO_POST,       ///< A post containing a title, an IPFS link to an audio file, and up to 1000 characters of description text
-         FILE_POST,        ///< A post containing a title, either an IPFS link to a file, or a magnet link to a bittorrent swarm for a file, and up to 1000 characters of description text
-         POLL_POST,        ///< A post containing a title, at least 2 voting options, and up to 1000 characters of description text
-         LIVESTREAM_POST,  ///< A post containing a title, a link to a livestreaming video, and up to 1000 characters of description text
-         PRODUCT_POST,     ///< A post containing a product title, at least 1 IPFS image of the product, and purchase details to create an escrow order
-         LIST_POST         ///< A post containing a list of at least 2 other posts, a title, and up to 1000 characters of description text
+         IMAGE_POST,       ///< A post containing an IPFS media file of an image, and up to 1000 characters of description text.
+         GIF_POST,         ///< A post containing an IPFS media file of a GIF, and up to 1000 characters of description text.
+         VIDEO_POST,       ///< A post containing a title, an IPFS media file or bittorrent magent link of a video, and up to 1000 characters of description text.
+         LINK_POST,        ///< A post containing a URL link, link title, and up to 1000 characters of description text.
+         ARTICLE_POST,     ///< A post containing a title, a header image, and an unlimited amount of body text with embedded images.
+         AUDIO_POST,       ///< A post containing a title, an IPFS link to an audio file, and up to 1000 characters of description text.
+         FILE_POST,        ///< A post containing a title, either an IPFS link to a file, or a magnet link to a bittorrent swarm for a file, and up to 1000 characters of description text.
+         LIVESTREAM_POST,  ///< A post containing a title, a link to a livestreaming video, and up to 1000 characters of description text.
       };
 
       const static vector< string > post_format_values =
       {
          "text",
          "image",
+         "gif"
          "video",
          "link",
          "article",
          "audio",
          "file",
-         "poll",
-         "livestream",
-         "product",
-         "list"
+         "livestream"
       };
 
       /**
@@ -571,21 +565,19 @@ namespace node {
 
       enum class community_permission_flags : int
       {
-         member_whitelist            = 1,       ///< Accounts must be whitelisted by the founder to request membership or be invited.
-         require_profile             = 2,       ///< Accounts must have a valid profile data to request membership or be invited. 
-         require_verified            = 4,       ///< Accounts must have a valid verification from an existing member to request membership or be invited.
-         disable_messages            = 8,       ///< Accounts cannot send community messages.
-         disable_text_posts          = 16,      ///< Community does not allow text type posts.
-         disable_image_posts         = 32,      ///< Community does not allow image type posts.
-         disable_video_posts         = 64,      ///< Community does not allow video type posts.
-         disable_link_posts          = 128,     ///< Community does not allow link type posts.
-         disable_article_posts       = 256,     ///< Community does not allow article type posts.
-         disable_audio_posts         = 512,     ///< Community does not allow audio type posts.
-         disable_file_posts          = 1024,    ///< Community does not allow file type posts.
-         disable_poll_posts          = 2048,    ///< Community does not allow poll type posts.
-         disable_livestream_posts    = 4096,    ///< Community does not allow livestream type posts.
-         disable_product_posts       = 8192,    ///< Community does not allow product type posts.
-         disable_list_posts          = 16384    ///< Community does not allow list type posts.
+         member_whitelist            = 1,        ///< Accounts must be whitelisted by the founder to request membership or be invited.
+         require_profile             = 2,        ///< Accounts must have a valid profile data to request membership or be invited. 
+         require_verified            = 4,        ///< Accounts must have a valid verification from an existing member to request membership or be invited.
+         disable_messages            = 8,        ///< Accounts cannot send community messages.
+         disable_text_posts          = 16,       ///< Community does not allow text type posts.
+         disable_image_posts         = 32,       ///< Community does not allow image type posts.
+         disable_gif_posts           = 64,       ///< Community does not allow image type posts.
+         disable_video_posts         = 128,      ///< Community does not allow video type posts.
+         disable_link_posts          = 256,      ///< Community does not allow link type posts.
+         disable_article_posts       = 512,      ///< Community does not allow article type posts.
+         disable_audio_posts         = 1024,     ///< Community does not allow audio type posts.
+         disable_file_posts          = 2048,     ///< Community does not allow file type posts.
+         disable_livestream_posts    = 4096     ///< Community does not allow livestream type posts.
       };
 
       const static uint32_t COMMUNITY_PERMISSION_MASK =
@@ -595,15 +587,13 @@ namespace node {
          | int( community_permission_flags::disable_messages )
          | int( community_permission_flags::disable_text_posts )
          | int( community_permission_flags::disable_image_posts )
+         | int( community_permission_flags::disable_gif_posts )
          | int( community_permission_flags::disable_video_posts )
          | int( community_permission_flags::disable_link_posts )
          | int( community_permission_flags::disable_article_posts )
          | int( community_permission_flags::disable_audio_posts )
          | int( community_permission_flags::disable_file_posts )
-         | int( community_permission_flags::disable_poll_posts )
-         | int( community_permission_flags::disable_livestream_posts )
-         | int( community_permission_flags::disable_product_posts )
-         | int( community_permission_flags::disable_list_posts );
+         | int( community_permission_flags::disable_livestream_posts );
 
       struct public_key_type
       {
@@ -810,12 +800,11 @@ FC_REFLECT_ENUM( node::protocol::proposal_distribution_type,
          (INVESTMENT)
          );
 
-FC_REFLECT_ENUM( node::protocol::product_sale_type,
-         (FIXED_PRICE_SALE)
-         (WHOLESALE_PRICE_SALE)
-         (OPEN_AUCTION_SALE)
-         (REVERSE_AUCTION_SALE)
-         (SECRET_AUCTION_SALE)
+FC_REFLECT_ENUM( node::protocol::product_auction_type,
+         (OPEN_AUCTION)
+         (REVERSE_AUCTION)
+         (CONCEALED_FIRST_PRICE_AUCTION)
+         (CONCEALED_SECOND_PRICE_AUCTION)
          );
 
 FC_REFLECT_ENUM( node::protocol::asset_property_type,
@@ -847,15 +836,13 @@ FC_REFLECT_ENUM( node::protocol::ad_format_type,
 FC_REFLECT_ENUM( node::protocol::post_format_type,
          (TEXT_POST)
          (IMAGE_POST)
+         (GIF_POST)
          (VIDEO_POST)
          (LINK_POST)
          (ARTICLE_POST)
          (AUDIO_POST)
          (FILE_POST)
-         (POLL_POST)
          (LIVESTREAM_POST)
-         (PRODUCT_POST)
-         (LIST_POST)
          );
 
 FC_REFLECT_ENUM( node::protocol::ad_metric_type,
@@ -952,15 +939,13 @@ FC_REFLECT_ENUM( node::protocol::community_permission_flags,
          (disable_messages)
          (disable_text_posts)
          (disable_image_posts)
+         (disable_gif_posts)
          (disable_video_posts)
          (disable_link_posts)
          (disable_article_posts)
          (disable_audio_posts)
          (disable_file_posts)
-         (disable_poll_posts)
          (disable_livestream_posts)
-         (disable_product_posts)
-         (disable_list_posts)
          );
 
 FC_REFLECT( node::protocol::public_key_type, 

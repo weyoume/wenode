@@ -83,37 +83,37 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
    
    const account_object& registrar = _db.get_account( o.registrar );   // Ensure all referenced accounts exist
    FC_ASSERT( registrar.active,
-      "Account: ${s} is not active, plase select a different registrar account.",("s", o.registrar) );
+      "Account: ${s} is not active, please select a different registrar account.",("s", o.registrar) );
 
    if( o.recovery_account.size() )
    {
       const account_object& recovery_account = _db.get_account( o.recovery_account );
       FC_ASSERT( recovery_account.active,
-         "Account: ${s} is not active, plase select a different recovery account.",("s", o.recovery_account) );
+         "Account: ${s} is not active, please select a different recovery account.",("s", o.recovery_account) );
    }
    if( o.reset_account.size() )
    {
       const account_object& reset_account = _db.get_account( o.reset_account );
       FC_ASSERT( reset_account.active,
-         "Account: ${s} is not active, plase select a different reset account.",("s", o.reset_account) );
+         "Account: ${s} is not active, please select a different reset account.",("s", o.reset_account) );
    }
    if( o.referrer.size() )
    {
       const account_object& referrer = _db.get_account( o.referrer );
       FC_ASSERT( referrer.active,
-         "Account: ${s} is not active, plase select a different referrer account.",("s", o.referrer) );
+         "Account: ${s} is not active, please select a different referrer account.",("s", o.referrer) );
    }
    if( o.proxy.size() )
    {
       const account_object& proxy = _db.get_account( o.proxy );
       FC_ASSERT( proxy.active,
-         "Account: ${s} is not active, plase select a different proxy account.",("s", o.proxy) );
+         "Account: ${s} is not active, please select a different proxy account.",("s", o.proxy) );
    }
    if( o.governance_account.size() )
    {
       const governance_account_object& governance_account = _db.get_governance_account( o.governance_account );
       FC_ASSERT( governance_account.active,
-         "Governance account: ${a} is not active, plase select a different governance account.",("a", o.governance_account) );
+         "Governance account: ${a} is not active, please select a different governance account.",("a", o.governance_account) );
    }
    
    for( auto& a : o.owner_auth.account_auths )
@@ -439,9 +439,7 @@ void account_profile_evaluator::do_apply( const account_profile_operation& o )
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
-/**
- * TODO: Check image signature against profile public key 
- */
+
 void account_verification_evaluator::do_apply( const account_verification_operation& o )
 { try {
    const account_name_type& signed_for = o.verifier_account;
@@ -467,6 +465,14 @@ void account_verification_evaluator::do_apply( const account_verification_operat
 
    const auto& verification_idx = _db.get_index< account_verification_index >().indices().get< by_verifier_verified >();
    auto verification_itr = verification_idx.find( boost::make_tuple( o.verifier_account, o.verified_account ) );
+
+   digest_type::encoder enc;
+   fc::raw::pack( enc, o.shared_image );
+
+   public_key_type recovered_pub_key = fc::ecc::public_key( o.image_signature, enc.result() );
+
+   FC_ASSERT( profile.profile_public_key == recovered_pub_key,
+      "Shared Image must be signed with the profile key of the Verified account." );
 
    if( verification_itr == verification_idx.end() )
    {

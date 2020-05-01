@@ -18,12 +18,6 @@ enum producer_plugin_object_type
    reserve_ratio_object_type      = ( PRODUCER_SPACE_ID << 8 ) + 2
 };
 
-enum bandwidth_type
-{
-   post,    ///< Rate limiting posting reward eligibility over time
-   forum,   ///< Rate limiting for all forum related actins
-   market   ///< Rate limiting for all other actions
-};
 
 class account_bandwidth_object : public object< account_bandwidth_object_type, account_bandwidth_object >
 {
@@ -39,8 +33,6 @@ class account_bandwidth_object : public object< account_bandwidth_object_type, a
       id_type                id;
 
       account_name_type      account;
-
-      bandwidth_type         type;
 
       share_type             average_bandwidth;
 
@@ -119,24 +111,18 @@ class reserve_ratio_object : public object< reserve_ratio_object_type, reserve_r
 typedef oid< reserve_ratio_object > reserve_ratio_id_type;
 
 
-struct by_account_bandwidth_type;
+struct by_account;
 
 typedef multi_index_container <
    account_bandwidth_object,
    indexed_by <
       ordered_unique< tag< by_id >,
          member< account_bandwidth_object, account_bandwidth_id_type, &account_bandwidth_object::id > >,
-      ordered_unique< tag< by_account_bandwidth_type >,
-         composite_key< account_bandwidth_object,
-            member< account_bandwidth_object, account_name_type, &account_bandwidth_object::account >,
-            member< account_bandwidth_object, bandwidth_type, &account_bandwidth_object::type >
-         >
-      >
+      ordered_unique< tag< by_account >,
+         member< account_bandwidth_object, account_name_type, &account_bandwidth_object::account > >
    >,
    allocator< account_bandwidth_object >
 > account_bandwidth_index;
-
-struct by_account;
 
 typedef multi_index_container <
    content_edit_lock_object,
@@ -160,16 +146,10 @@ typedef multi_index_container <
 
 } } // node::producer
 
-FC_REFLECT_ENUM( node::producer::bandwidth_type, 
-         (post)
-         (forum)
-         (market)
-         );
 
 FC_REFLECT( node::producer::account_bandwidth_object,
          (id)
          (account)
-         (type)
          (average_bandwidth)
          (lifetime_bandwidth)
          (last_bandwidth_update)

@@ -67,6 +67,8 @@ struct median_chain_property_api_obj
    median_chain_property_api_obj( const chain::median_chain_property_object& o ) :
       id( o.id ),
       account_creation_fee( o.account_creation_fee ),
+      asset_coin_liquidity( o.asset_coin_liquidity ),
+      asset_usd_liquidity( o.asset_usd_liquidity ),
       maximum_block_size( o.maximum_block_size ),
       pow_target_time( o.pow_target_time ),
       pow_decay_time( o.pow_decay_time ),
@@ -114,53 +116,55 @@ struct median_chain_property_api_obj
 
    median_chain_property_api_obj(){}
 
-   median_chain_property_id_type       id;
-   asset                  account_creation_fee;                 ///< Minimum fee required to create a new account by staking.
-   uint64_t               maximum_block_size;                   ///< The maximum block size of the network in bytes. No Upper bound on block size limit.
-   fc::microseconds       pow_target_time;                      ///< The targeted time for each proof of work
-   fc::microseconds       pow_decay_time;                       ///< Time over which proof of work output is averaged over
-   fc::microseconds       txn_stake_decay_time;                 ///< Time over which transaction stake is averaged over
-   uint16_t               escrow_bond_percent;                  ///< Percentage of an escrow transfer that is deposited for dispute resolution
-   uint16_t               credit_interest_rate;                 ///< The credit interest rate paid to holders of network credit assets.
-   uint16_t               credit_open_ratio;                    ///< The minimum required collateralization ratio for a credit loan to be opened. 
-   uint16_t               credit_liquidation_ratio;             ///< The minimum permissible collateralization ratio before a loan is liquidated. 
-   uint16_t               credit_min_interest;                  ///< The minimum component of credit pool interest rates. 
-   uint16_t               credit_variable_interest;             ///< The variable component of credit pool interest rates, applied at equal base and borrowed balances.
-   uint16_t               market_max_credit_ratio;              ///< The maximum percentage of core asset liquidity balances that can be loaned.
-   uint16_t               margin_open_ratio;                    ///< The minimum required collateralization ratio for a credit loan to be opened. 
-   uint16_t               margin_liquidation_ratio;             ///< The minimum permissible collateralization ratio before a loan is liquidated. 
-   uint16_t               maximum_asset_feed_publishers;        ///< The maximum number of accounts that can publish price feeds for a stablecoin.
-   asset                  membership_base_price;                ///< The price for standard membership per month.
-   asset                  membership_mid_price;                 ///< The price for Mezzanine membership per month.
-   asset                  membership_top_price;                 ///< The price for top level membership per month.
-   uint32_t               author_reward_percent;                ///< The percentage of content rewards distributed to post authors.
-   uint32_t               vote_reward_percent;                  ///< The percentage of content rewards distributed to post voters.
-   uint32_t               view_reward_percent;                  ///< The percentage of content rewards distributed to post viewers.
-   uint32_t               share_reward_percent;                 ///< The percentage of content rewards distributed to post sharers.
-   uint32_t               comment_reward_percent;               ///< The percentage of content rewards distributed to post commenters.
-   uint32_t               storage_reward_percent;               ///< The percentage of content rewards distributed to viewing supernodes.
-   uint32_t               moderator_reward_percent;             ///< The percentage of content rewards distributed to community moderators.
-   fc::microseconds       content_reward_decay_rate;            ///< The time over which content rewards are distributed
-   fc::microseconds       content_reward_interval;              ///< Time taken per distribution of content rewards.
-   uint32_t               vote_reserve_rate;                    ///< The number of votes regenerated per day.
-   uint32_t               view_reserve_rate;                    ///< The number of views regenerated per day.
-   uint32_t               share_reserve_rate;                   ///< The number of shares regenerated per day.
-   uint32_t               comment_reserve_rate;                 ///< The number of comments regenerated per day.
-   fc::microseconds       vote_recharge_time;                   ///< Time taken to fully recharge voting power.
-   fc::microseconds       view_recharge_time;                   ///< Time taken to fully recharge viewing power.
-   fc::microseconds       share_recharge_time;                  ///< Time taken to fully recharge sharing power.
-   fc::microseconds       comment_recharge_time;                ///< Time taken to fully recharge commenting power.
-   fc::microseconds       curation_auction_decay_time;          ///< time of curation reward decay after a post is created. 
-   double                 vote_curation_decay;                  ///< Number of votes for the half life of voting curation reward decay.
-   double                 view_curation_decay;                  ///< Number of views for the half life of viewer curation reward decay.
-   double                 share_curation_decay;                 ///< Number of shares for the half life of sharing curation reward decay.
-   double                 comment_curation_decay;               ///< Number of comments for the half life of comment curation reward decay.
-   fc::microseconds       supernode_decay_time;                 ///< Amount of time to average the supernode file weight over. 
-   uint16_t               enterprise_vote_percent_required;     ///< Percentage of total voting power required to approve enterprise milestones. 
-   uint64_t               maximum_asset_whitelist_authorities;  ///< The maximum amount of whitelisted or blacklisted authorities for user issued assets 
-   uint8_t                max_stake_intervals;                  ///< Maximum weeks that an asset can stake over.
-   uint8_t                max_unstake_intervals;                ///< Maximum weeks that an asset can unstake over.
-   asset                  max_exec_budget;                      ///< Maximum budget that an executive board can claim.
+   median_chain_property_id_type         id;
+   asset                                 account_creation_fee;                 ///< Minimum fee required to create a new account by staking.
+   asset                                 asset_coin_liquidity;                 ///< Coin liquidity required to create a new asset.
+   asset                                 asset_usd_liquidity;                  ///< USD liquidity required to create a new asset.
+   uint64_t                              maximum_block_size;                   ///< The maximum block size of the network in bytes. No Upper bound on block size limit.
+   fc::microseconds                      pow_target_time;                      ///< The targeted time for each proof of work
+   fc::microseconds                      pow_decay_time;                       ///< Time over which proof of work output is averaged over
+   fc::microseconds                      txn_stake_decay_time;                 ///< Time over which transaction stake is averaged over
+   uint16_t                              escrow_bond_percent;                  ///< Percentage of an escrow transfer that is deposited for dispute resolution
+   uint16_t                              credit_interest_rate;                 ///< The credit interest rate paid to holders of network credit assets.
+   uint16_t                              credit_open_ratio;                    ///< The minimum required collateralization ratio for a credit loan to be opened. 
+   uint16_t                              credit_liquidation_ratio;             ///< The minimum permissible collateralization ratio before a loan is liquidated. 
+   uint16_t                              credit_min_interest;                  ///< The minimum component of credit pool interest rates. 
+   uint16_t                              credit_variable_interest;             ///< The variable component of credit pool interest rates, applied at equal base and borrowed balances.
+   uint16_t                              market_max_credit_ratio;              ///< The maximum percentage of core asset liquidity balances that can be loaned.
+   uint16_t                              margin_open_ratio;                    ///< The minimum required collateralization ratio for a credit loan to be opened. 
+   uint16_t                              margin_liquidation_ratio;             ///< The minimum permissible collateralization ratio before a loan is liquidated. 
+   uint16_t                              maximum_asset_feed_publishers;        ///< The maximum number of accounts that can publish price feeds for a stablecoin.
+   asset                                 membership_base_price;                ///< The price for standard membership per month.
+   asset                                 membership_mid_price;                 ///< The price for Mezzanine membership per month.
+   asset                                 membership_top_price;                 ///< The price for top level membership per month.
+   uint32_t                              author_reward_percent;                ///< The percentage of content rewards distributed to post authors.
+   uint32_t                              vote_reward_percent;                  ///< The percentage of content rewards distributed to post voters.
+   uint32_t                              view_reward_percent;                  ///< The percentage of content rewards distributed to post viewers.
+   uint32_t                              share_reward_percent;                 ///< The percentage of content rewards distributed to post sharers.
+   uint32_t                              comment_reward_percent;               ///< The percentage of content rewards distributed to post commenters.
+   uint32_t                              storage_reward_percent;               ///< The percentage of content rewards distributed to viewing supernodes.
+   uint32_t                              moderator_reward_percent;             ///< The percentage of content rewards distributed to community moderators.
+   fc::microseconds                      content_reward_decay_rate;            ///< The time over which content rewards are distributed
+   fc::microseconds                      content_reward_interval;              ///< Time taken per distribution of content rewards.
+   uint32_t                              vote_reserve_rate;                    ///< The number of votes regenerated per day.
+   uint32_t                              view_reserve_rate;                    ///< The number of views regenerated per day.
+   uint32_t                              share_reserve_rate;                   ///< The number of shares regenerated per day.
+   uint32_t                              comment_reserve_rate;                 ///< The number of comments regenerated per day.
+   fc::microseconds                      vote_recharge_time;                   ///< Time taken to fully recharge voting power.
+   fc::microseconds                      view_recharge_time;                   ///< Time taken to fully recharge viewing power.
+   fc::microseconds                      share_recharge_time;                  ///< Time taken to fully recharge sharing power.
+   fc::microseconds                      comment_recharge_time;                ///< Time taken to fully recharge commenting power.
+   fc::microseconds                      curation_auction_decay_time;          ///< time of curation reward decay after a post is created. 
+   double                                vote_curation_decay;                  ///< Number of votes for the half life of voting curation reward decay.
+   double                                view_curation_decay;                  ///< Number of views for the half life of viewer curation reward decay.
+   double                                share_curation_decay;                 ///< Number of shares for the half life of sharing curation reward decay.
+   double                                comment_curation_decay;               ///< Number of comments for the half life of comment curation reward decay.
+   fc::microseconds                      supernode_decay_time;                 ///< Amount of time to average the supernode file weight over. 
+   uint16_t                              enterprise_vote_percent_required;     ///< Percentage of total voting power required to approve enterprise milestones. 
+   uint64_t                              maximum_asset_whitelist_authorities;  ///< The maximum amount of whitelisted or blacklisted authorities for user issued assets 
+   uint8_t                               max_stake_intervals;                  ///< Maximum weeks that an asset can stake over.
+   uint8_t                               max_unstake_intervals;                ///< Maximum weeks that an asset can unstake over.
+   asset                                 max_exec_budget;                      ///< Maximum budget that an executive board can claim.
 };
 
 
@@ -302,23 +306,15 @@ struct account_api_obj
 
          if( db.has_index< producer::account_bandwidth_index >() )
          {
-            auto forum_bandwidth = db.find< producer::account_bandwidth_object, producer::by_account_bandwidth_type >( boost::make_tuple( name, producer::bandwidth_type::forum ) );
+            auto bandwidth_ptr = db.find< producer::account_bandwidth_object, producer::by_account >( name );
 
-            if( forum_bandwidth != nullptr )
+            if( bandwidth_ptr != nullptr )
             {
-               average_bandwidth = (forum_bandwidth->average_bandwidth).value;
-               lifetime_bandwidth = (forum_bandwidth->lifetime_bandwidth).value;
-               last_bandwidth_update = forum_bandwidth->last_bandwidth_update;
+               average_bandwidth = (bandwidth_ptr->average_bandwidth).value;
+               lifetime_bandwidth = (bandwidth_ptr->lifetime_bandwidth).value;
+               last_bandwidth_update = bandwidth_ptr->last_bandwidth_update;
             }
 
-            auto market_bandwidth = db.find< producer::account_bandwidth_object, producer::by_account_bandwidth_type >( boost::make_tuple( name, producer::bandwidth_type::market ) );
-
-            if( market_bandwidth != nullptr )
-            {
-               average_market_bandwidth = (market_bandwidth->average_bandwidth).value;
-               lifetime_market_bandwidth = (market_bandwidth->lifetime_bandwidth).value;
-               last_market_bandwidth_update = market_bandwidth->last_bandwidth_update;
-            }
          }
          for( auto name : a.proxied )
          {
@@ -393,9 +389,6 @@ struct account_api_obj
    int64_t                          average_bandwidth;
    int64_t                          lifetime_bandwidth;
    time_point                       last_bandwidth_update;
-   int64_t                          average_market_bandwidth;
-   int64_t                          lifetime_market_bandwidth;
-   time_point                       last_market_bandwidth_update;
    bool                             mined;
    bool                             revenue_share;
    bool                             can_vote;
@@ -1150,7 +1143,7 @@ struct supernode_api_obj
    string                  auth_api_endpoint;           ///< The Transaction signing authentication API endpoint of the supernode.
    string                  ipfs_endpoint;               ///< The IPFS file storage API endpoint of the supernode.
    string                  bittorrent_endpoint;         ///< The Bittorrent Seed Box endpoint URL of the Supernode. 
-   string                  json;                        ///< Json metadata of the supernode, including additonal outside of consensus APIs and services. 
+   string                  json;                        ///< Json metadata of the supernode, including additional outside of consensus APIs and services. 
    time_point              created;                     ///< The time the supernode was created.
    asset                   storage_rewards;             ///< Amount of core asset earned from storage.
    uint64_t                daily_active_users;          ///< The average number of accounts (X percent 100) that have used files from the node in the prior 24h.
@@ -1182,7 +1175,7 @@ struct interface_api_obj
    bool                    active;                      ///< True if the interface is active, set false to deactivate.
    string                  details;                     ///< The interface's details description. 
    string                  url;                         ///< The interface's reference URL. 
-   string                  json;                        ///< Json metadata of the interface, including additonal outside of consensus APIs and services. 
+   string                  json;                        ///< Json metadata of the interface, including additional outside of consensus APIs and services. 
    time_point              created;                     ///< The time the interface was created.
    uint64_t                daily_active_users;          ///< The average number of accounts (X percent 100) that have used files from the node in the prior 24h.
    uint64_t                monthly_active_users;        ///< The average number of accounts (X percent 100) that have used files from the node in the prior 30 days.
@@ -1213,7 +1206,7 @@ struct mediator_api_obj
    bool                    active;                      ///< True if the mediator is active, set false to deactivate.
    string                  details;                     ///< The mediator's details description. 
    string                  url;                         ///< The mediator's reference URL. 
-   string                  json;                        ///< Json metadata of the mediator, including additonal outside of consensus APIs and services. 
+   string                  json;                        ///< Json metadata of the mediator, including additional outside of consensus APIs and services. 
    asset                   mediator_bond;               ///< Core Asset staked in mediation bond for selection.
    uint128_t               mediation_virtual_position;  ///< Quantitative ranking of selection for mediation.
    account_name_type       last_escrow_from;            ///< The sender of the most recently allocated escrow
@@ -1597,6 +1590,132 @@ struct message_api_obj
    string                  uuid;                     ///< uuidv4 uniquely identifying the message for local storage.
    time_point              last_updated;             ///< Time the message was last changed, used to reload encrypted message storage.
    time_point              created;                  ///< Time the message was sent.
+};
+
+
+struct list_api_obj
+{
+   list_api_obj( const chain::list_object& o ) :
+      id( o.id ),
+      creator( o.creator ),
+      list_id( to_string( o.list_id ) ),
+      name( to_string( o.name ) ),
+      last_updated( o.last_updated ),
+      created( o.created )
+      {
+         for( auto id : o.accounts )
+         {
+            accounts.insert( id._id );
+         }
+         for( auto id : o.comments )
+         {
+            comments.insert( id._id );
+         }
+         for( auto id : o.communities )
+         {
+            communities.insert( id._id );
+         }
+         for( auto id : o.assets )
+         {
+            assets.insert( id._id );
+         }
+         for( auto id : o.products )
+         {
+            products.insert( id._id );
+         }
+         for( auto id : o.auctions )
+         {
+            auctions.insert( id._id );
+         }
+         for( auto id : o.nodes )
+         {
+            nodes.insert( id._id );
+         }
+         for( auto id : o.edges )
+         {
+            edges.insert( id._id );
+         }
+         for( auto id : o.node_types )
+         {
+            node_types.insert( id._id );
+         }
+         for( auto id : o.edge_types )
+         {
+            edge_types.insert( id._id );
+         }
+      }
+
+   list_api_obj(){}
+
+   list_id_type                   id;
+   account_name_type              creator;             ///< Name of the account that created the list.
+   string                         list_id;             ///< uuidv4 referring to the list.
+   string                         name;                ///< Name of the list, unique for each account.
+   set< int64_t >                 accounts;            ///< Account IDs within the list.
+   set< int64_t >                 comments;            ///< Comment IDs within the list.
+   set< int64_t >                 communities;         ///< Community IDs within the list.
+   set< int64_t >                 assets;              ///< Asset IDs within the list.
+   set< int64_t >                 products;            ///< Product IDs within the list.
+   set< int64_t >                 auctions;            ///< Auction IDs within the list.
+   set< int64_t >                 nodes;               ///< Graph node IDs within the list.
+   set< int64_t >                 edges;               ///< Graph edge IDs within the list.
+   set< int64_t >                 node_types;          ///< Graph node property IDs within the list.
+   set< int64_t >                 edge_types;          ///< Graph edge property IDs within the list.
+   time_point                     last_updated;        ///< Time the list was last edited by the creator.
+   time_point                     created;             ///< Time that the comment tag was created.
+};
+
+
+struct poll_api_obj
+{
+   poll_api_obj( const chain::poll_object& o ) :
+      id( o.id ),
+      creator( o.creator ),
+      poll_id( to_string( o.poll_id ) ),
+      details( to_string( o.details ) ),
+      completion_time( o.completion_time ),
+      last_updated( o.last_updated ),
+      created( o.created )
+      {
+         for( auto p : o.poll_options )
+         {
+            poll_options.push_back( to_string( p ) );
+         }
+      }
+
+   poll_api_obj(){}
+
+   poll_id_type                   id;
+   account_name_type              creator;             ///< Name of the account that created the poll.
+   string                         poll_id;             ///< uuidv4 referring to the list.
+   string                         details;             ///< Text describing the question being asked.
+   vector< string >               poll_options;        ///< Available poll voting options.
+   time_point                     completion_time;     ///< Time the poll voting completes.
+   time_point                     last_updated;        ///< Time the list was last edited by the creator.
+   time_point                     created;             ///< Time that the comment tag was created.
+};
+
+
+struct poll_vote_api_obj
+{
+   poll_vote_api_obj( const chain::poll_vote_object& o ) :
+      id( o.id ),
+      voter( o.voter ),
+      creator( o.creator ),
+      poll_id( to_string( o.poll_id ) ),
+      poll_option( to_string( o.poll_option ) ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
+
+   poll_vote_api_obj(){}
+
+   poll_vote_id_type           id;
+   account_name_type           voter;               ///< Name of the account that created the vote.
+   account_name_type           creator;             ///< Name of the account that created the poll.
+   string                      poll_id;             ///< uuidv4 referring to the poll.
+   string                      poll_option;         ///< Poll option chosen.
+   time_point                  last_updated;        ///< Time the vote was last edited by the voter.
+   time_point                  created;             ///< Time that the vote was created.
 };
 
 
@@ -2379,18 +2498,18 @@ struct confidential_balance_api_obj
 //=====================================//
 
 
-struct product_api_obj
+struct product_sale_api_obj
 {
-   product_api_obj( const chain::product_object& o ) :
+   product_sale_api_obj( const chain::product_sale_object& o ) :
       id( o.id ),
       account( o.account ),
       product_id( to_string( o.product_id ) ),
       name( to_string( o.name ) ),
-      sale_type( product_sale_values[ int( o.sale_type ) ] ),
       url( to_string( o.url ) ),
       json( to_string( o.json ) ),
       created( o.created ),
-      last_updated( o.last_updated )
+      last_updated( o.last_updated ),
+      active( o.active )
       {
          for( auto s : o.product_variants )
          {
@@ -2407,6 +2526,10 @@ struct product_api_obj
          for( auto s : o.product_prices )
          {
             product_prices.push_back( s );
+         }
+         for( auto s : o.wholesale_discount )
+         {
+            wholesale_discount[ s.first ] = s.second;
          }
          for( auto s : o.stock_available )
          {
@@ -2426,31 +2549,32 @@ struct product_api_obj
          }
       }
 
-   product_api_obj(){}
+   product_sale_api_obj(){}
 
-   product_id_type                       id;
+   product_sale_id_type                  id;
    account_name_type                     account;                ///< The Seller of the product.
    string                                product_id;             ///< The name of the product. Unique for each account.
    string                                name;                   ///< The name of the product.
-   string                                sale_type;              ///< The type of sale to be used for the product.
    string                                url;                    ///< Reference URL of the product or seller.
    string                                json;                   ///< JSON metadata attributes of the product.
    vector< string >                      product_variants;       ///< The collection of product variants. Each map must have a key for each variant.
    vector< string >                      product_details;        ///< The Description details of each variant of the product.
    vector< string >                      product_images;         ///< IPFS references to images of each product variant.
    vector< asset >                       product_prices;         ///< The price (or min auction price) for each variant of the product.
+   map< uint32_t, uint16_t >             wholesale_discount;     ///< Discount percentages that are applied when quantity is above a given size.
    vector< uint32_t >                    stock_available;        ///< The available stock of each variant of the product.
    vector< string >                      delivery_variants;      ///< The types of product delivery available to purchasers.
    vector< string >                      delivery_details;       ///< The Description details of each variant of the delivery.
    vector< asset >                       delivery_prices;        ///< The price for each variant of delivery.
    time_point                            created;                ///< Time that the order was created.
    time_point                            last_updated;           ///< Time that the order was last updated, approved, or disputed.
+   bool                                  active;                 ///< True when the product is active and able to be sold, false when discontinued.
 };
 
 
-struct purchase_order_api_obj
+struct product_purchase_api_obj
 {
-   purchase_order_api_obj( const chain::purchase_order_object& o ) :
+   product_purchase_api_obj( const chain::product_purchase_object& o ) :
       id( o.id ),
       buyer( o.buyer ),
       order_id( to_string( o.order_id ) ),
@@ -2458,13 +2582,13 @@ struct purchase_order_api_obj
       product_id( to_string( o.product_id ) ),
       memo( to_string( o.memo ) ),
       json( to_string( o.json ) ),
+      purchase_public_key( o.purchase_public_key ),
       shipping_address( to_string( o.shipping_address ) ),
       delivery_variant( to_string( o.delivery_variant ) ),
       delivery_details( to_string( o.delivery_details ) ),
       order_value( o.order_value ),
       created( o.created ),
-      last_updated( o.last_updated ),
-      completed( o.completed )
+      last_updated( o.last_updated )
       {
          for( auto v : o.order_variants )
          {
@@ -2476,9 +2600,9 @@ struct purchase_order_api_obj
          }
       }
 
-   purchase_order_api_obj(){}
+   product_purchase_api_obj(){}
 
-   purchase_order_id_type            id;
+   product_purchase_id_type          id;
    account_name_type                 buyer;                  ///< The Buyer of the product.
    string                            order_id;               ///< uuidv4 referring to the purchase order.
    account_name_type                 seller;                 ///< The Seller of the product.
@@ -2486,14 +2610,124 @@ struct purchase_order_api_obj
    vector< string >                  order_variants;         ///< Variants of product ordered in the purchase.
    vector< uint32_t >                order_size;             ///< The number of each product variant ordered. 
    string                            memo;                   ///< The memo for the transaction, encryption on the memo is advised.
-   string                            json;                   ///< Additonal JSON object attribute details.
+   string                            json;                   ///< Additional JSON object attribute details.
+   public_key_type                   purchase_public_key;    ///< the Public key used to encrypt the memo and shipping address. 
    string                            shipping_address;       ///< The shipping address requested, encrypted with the secure key of the seller.
    string                            delivery_variant;       ///< The type of product delivery selected.
    string                            delivery_details;       ///< The Description details of the delivery.
    asset                             order_value;            ///< The total value of the order.
    time_point                        created;                ///< Time that the order was created.
    time_point                        last_updated;           ///< Time that the order was last updated, approved, or disputed.
-   bool                              completed;              ///< True when the purchase order has been completed, false when outstanding. 
+};
+
+
+struct product_auction_sale_api_obj
+{
+   product_auction_sale_api_obj( const chain::product_auction_sale_object& o ) :
+      id( o.id ),
+      account( o.account ),
+      auction_id( to_string( o.auction_id ) ),
+      auction_type( product_auction_values[ int( o.auction_type ) ] ),
+      name( to_string( o.name ) ),
+      url( to_string( o.url ) ),
+      json( to_string( o.json ) ),
+      product_details( to_string( o.product_details ) ),
+      reserve_bid( o.reserve_bid ),
+      maximum_bid( o.maximum_bid ),
+      final_bid_time( o.final_bid_time ),
+      completion_time( o.completion_time ),
+      winning_bid( o.winning_bid ),
+      created( o.created ),
+      last_updated( o.last_updated )
+      {
+         for( auto s : o.product_images )
+         {
+            product_images.push_back( to_string( s ) );
+         }
+         for( auto s : o.delivery_variants )
+         {
+            delivery_variants.push_back( to_string( s ) );
+         }
+         for( auto s : o.delivery_details )
+         {
+            delivery_details.push_back( to_string( s ) );
+         }
+         for( auto s : o.delivery_prices )
+         {
+            delivery_prices.push_back( s );
+         }
+      }
+
+   product_auction_sale_api_obj(){}
+
+   product_auction_sale_id_type          id;
+   account_name_type                     account;                ///< The Seller of the product.
+   string                                auction_id;             ///< The uuidv4 identifying the auction.
+   string                                auction_type;           ///< The type of sale to be used for the product.
+   string                                name;                   ///< The name of the product. Unique for each account.
+   string                                url;                    ///< Reference URL of the product or seller.
+   string                                json;                   ///< JSON metadata attributes of the product.
+   string                                product_details;        ///< The Description details of each variant of the product.
+   vector< string >                      product_images;         ///< IPFS references to images of each product variant.
+   asset                                 reserve_bid;            ///< The min auction bid, or minimum price of a reverse auction at final bid time.
+   asset                                 maximum_bid;            ///< The max auction bid. Auction will immediately conclude if this price is bidded. Starting price of reverse auction.
+   vector< string >                      delivery_variants;      ///< The types of product delivery available to purchasers.
+   vector< string >                      delivery_details;       ///< The Description details of each variant of the delivery.
+   vector< asset >                       delivery_prices;        ///< The price for each variant of delivery.
+   time_point                            final_bid_time;         ///< No more bids will be accepted after this time. Concealed bids must be revealed before completion time.
+   time_point                            completion_time;        ///< Time that the auction will select the winning bidder, or end if no bids.
+   product_auction_bid_id_type           winning_bid;            ///< ID of the winning bid after completion time.
+   time_point                            created;                ///< Time that the order was created.
+   time_point                            last_updated;           ///< Time that the order was last updated.
+};
+
+
+struct product_auction_bid_api_obj
+{
+   product_auction_bid_api_obj( const chain::product_auction_bid_object& o ) :
+      id( o.id ),
+      buyer( o.buyer ),
+      bid_id( to_string( o.bid_id ) ),
+      seller( o.seller ),
+      auction_id( to_string( o.auction_id ) ),
+      bid_asset( o.bid_asset ),
+      bid_price_commitment( o.bid_price_commitment ),
+      blinding_factor( o.blinding_factor ),
+      public_bid_amount( o.public_bid_amount ),
+      memo( to_string( o.memo ) ),
+      json( to_string( o.json ) ),
+      bid_public_key( o.bid_public_key ),
+      shipping_address( to_string( o.shipping_address ) ),
+      delivery_variant( to_string( o.delivery_variant ) ),
+      delivery_details( to_string( o.delivery_details ) ),
+      delivery_value( o.delivery_value ),
+      created( o.created ),
+      last_updated( o.last_updated ),
+      completion_time( o.completion_time ),
+      winning_bid( o.winning_bid ){}
+
+   product_auction_bid_api_obj(){}
+
+   product_auction_bid_id_type       id;
+   account_name_type                 buyer;                  ///< The Buyer of the product.
+   string                            bid_id;                 ///< uuidv4 referring to the auction bid.
+   account_name_type                 seller;                 ///< The Seller of the product.
+   string                            auction_id;             ///< The uuidv4 identifying the auction.
+   asset_symbol_type                 bid_asset;              ///< The Symbol of the asset being bidded.
+   commitment_type                   bid_price_commitment;   ///< Concealed value of the bid price amount.
+   blind_factor_type                 blinding_factor;        ///< Factor to blind the bid price.
+   share_type                        public_bid_amount;      ///< Set to 0 initially for concealed bid, revealed to match commitment. Revealed in initial bid if open.
+   string                            memo;                   ///< The memo for the transaction, encryption on the memo is advised.
+   string                            json;                   ///< Additional JSON object attribute details.
+   public_key_type                   bid_public_key;         ///< the Public key used to encrypt the memo and shipping address. 
+   string                            shipping_address;       ///< The shipping address requested, encrypted with the secure key of the seller.
+   string                            delivery_variant;       ///< The type of product delivery selected.
+   string                            delivery_details;       ///< The Description details of the delivery.
+   asset                             delivery_value;         ///< The cost of the delivery if the bid is successful.
+   time_point                        created;                ///< Time that the order was created.
+   time_point                        last_updated;           ///< Time that the order was last updated, approved, or disputed.
+   time_point                        completion_time;        ///< Time that the auction will select the winning bidder, or end if no bids.
+   bool                              winning_bid;            ///< True when the bid wins its auction, false otherwise.
 };
 
 
@@ -2542,7 +2776,7 @@ struct escrow_api_obj
    asset                                     balance;                ///< Current funds deposited in the escrow.
    string                                    escrow_id;              ///< uuidv4 referring to the escrow payment.
    string                                    memo;                   ///< Details of the transaction for reference. 
-   string                                    json;                   ///< Additonal JSON object attribute details.
+   string                                    json;                   ///< Additional JSON object attribute details.
    time_point                                acceptance_time;        ///< time that the transfer must be approved by.
    time_point                                escrow_expiration;      ///< Time that the escrow is able to be claimed by either TO or FROM.
    time_point                                dispute_release_time;   ///< Time that the balance is distributed to median release percentage.
@@ -3715,6 +3949,8 @@ FC_REFLECT_DERIVED( node::app::dynamic_global_property_api_obj, (node::chain::dy
 FC_REFLECT( node::app::median_chain_property_api_obj,
          (id)
          (account_creation_fee)
+         (asset_coin_liquidity)
+         (asset_usd_liquidity)
          (maximum_block_size)
          (pow_target_time)
          (pow_decay_time)
@@ -3793,6 +4029,7 @@ FC_REFLECT( node::app::reward_fund_api_obj,
 //=================================//
 
 
+
 FC_REFLECT( node::app::account_api_obj,
          (id)
          (name)
@@ -3851,6 +4088,10 @@ FC_REFLECT( node::app::account_api_obj,
          (last_account_recovery)
          (last_community_created)
          (last_asset_created)
+         (last_owner_update)
+         (average_bandwidth)
+         (lifetime_bandwidth)
+         (last_bandwidth_update)
          (mined)
          (revenue_share)
          (can_vote)
@@ -4318,6 +4559,46 @@ FC_REFLECT( node::app::message_api_obj,
          (created)
          );
 
+FC_REFLECT( node::app::list_api_obj,
+         (id)
+         (creator)
+         (list_id)
+         (name)
+         (accounts)
+         (comments)
+         (communities)
+         (assets)
+         (products)
+         (auctions)
+         (nodes)
+         (edges)
+         (node_types)
+         (edge_types)
+         (last_updated)
+         (created)
+         );
+
+FC_REFLECT( node::app::poll_api_obj,
+         (id)
+         (creator)
+         (poll_id)
+         (details)
+         (poll_options)
+         (completion_time)
+         (last_updated)
+         (created)
+         );
+
+FC_REFLECT( node::app::poll_vote_api_obj,
+         (id)
+         (voter)
+         (creator)
+         (poll_id)
+         (poll_option)
+         (last_updated)
+         (created)
+         );
+
 FC_REFLECT( node::app::blog_api_obj,
          (id)
          (account)
@@ -4638,16 +4919,17 @@ FC_REFLECT( node::app::confidential_balance_api_obj,
          (created)
          );
 
+
 //=====================================//
 // ===== Marketplace API Objects ===== //
 //=====================================//
 
-FC_REFLECT( node::app::product_api_obj,
+
+FC_REFLECT( node::app::product_sale_api_obj,
          (id)
          (account)
          (product_id)
          (name)
-         (sale_type)
          (url)
          (json)
          (product_variants)
@@ -4660,9 +4942,10 @@ FC_REFLECT( node::app::product_api_obj,
          (delivery_prices)
          (created)
          (last_updated)
+         (active)
          );
 
-FC_REFLECT( node::app::purchase_order_api_obj,
+FC_REFLECT( node::app::product_purchase_api_obj,
          (id)
          (buyer)
          (order_id)
@@ -4672,13 +4955,58 @@ FC_REFLECT( node::app::purchase_order_api_obj,
          (order_size)
          (memo)
          (json)
+         (purchase_public_key)
          (shipping_address)
          (delivery_variant)
          (delivery_details)
          (order_value)
          (created)
          (last_updated)
-         (completed)
+         );
+
+FC_REFLECT( node::app::product_auction_sale_api_obj,
+         (id)
+         (account)
+         (auction_id)
+         (auction_type)
+         (name)
+         (url)
+         (json)
+         (product_details)
+         (product_images)
+         (reserve_bid)
+         (maximum_bid)
+         (delivery_variants)
+         (delivery_details)
+         (delivery_prices)
+         (final_bid_time)
+         (completion_time)
+         (winning_bid)
+         (created)
+         (last_updated)
+         );
+
+FC_REFLECT( node::app::product_auction_bid_api_obj,
+         (id)
+         (buyer)
+         (bid_id)
+         (seller)
+         (auction_id)
+         (bid_asset)
+         (bid_price_commitment)
+         (blinding_factor)
+         (public_bid_amount)
+         (memo)
+         (json)
+         (bid_public_key)
+         (shipping_address)
+         (delivery_variant)
+         (delivery_details)
+         (delivery_value)
+         (created)
+         (last_updated)
+         (completion_time)
+         (winning_bid)
          );
 
 FC_REFLECT( node::app::escrow_api_obj,

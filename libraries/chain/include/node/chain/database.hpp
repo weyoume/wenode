@@ -180,7 +180,10 @@ namespace node { namespace chain {
 
          const account_profile_object& get_account_profile( const account_name_type& name )const;
          const account_profile_object* find_account_profile( const account_name_type& name )const;
-         
+
+         const account_verification_object& get_account_verification( const account_name_type& verifier_account, const account_name_type& verified_account )const;
+         const account_verification_object* find_account_verification( const account_name_type& verifier_account, const account_name_type& verified_account )const;
+
          const account_following_object& get_account_following( const account_name_type& account )const;
          const account_following_object* find_account_following( const account_name_type& account )const;
 
@@ -295,6 +298,18 @@ namespace node { namespace chain {
          const comment_share_object& get_comment_share( const account_name_type& sharer, const comment_id_type& share_id )const;
          const comment_share_object* find_comment_share( const account_name_type& sharer, const comment_id_type& share_id )const;
 
+         const list_object& get_list( const account_name_type& creator, const shared_string& list_id )const;
+         const list_object* find_list( const account_name_type& creator, const shared_string& list_id )const;
+         
+         const list_object& get_list( const account_name_type& creator, const string& list_id )const;
+         const list_object* find_list( const account_name_type& creator, const string& list_id )const;
+         
+         const poll_object& get_poll( const account_name_type& creator, const shared_string& poll_id )const;
+         const poll_object* find_poll( const account_name_type& creator, const shared_string& poll_id )const;
+
+         const poll_object& get_poll( const account_name_type& creator, const string& poll_id )const;
+         const poll_object* find_poll( const account_name_type& creator, const string& poll_id )const;
+      
          const ad_creative_object& get_ad_creative( const account_name_type& account, const shared_string& creative_id )const;
          const ad_creative_object* find_ad_creative( const account_name_type& account, const shared_string& creative_id )const;
 
@@ -373,17 +388,29 @@ namespace node { namespace chain {
          const asset_prediction_pool_resolution_object& get_prediction_pool_resolution( const account_name_type& name, const asset_symbol_type& symbol )const;
          const asset_prediction_pool_resolution_object* find_prediction_pool_resolution( const account_name_type& name, const asset_symbol_type& symbol )const;
 
-         const product_object& get_product( const account_name_type& name, const shared_string& product_id )const;
-         const product_object* find_product( const account_name_type& name, const shared_string& product_id )const;
+         const product_sale_object& get_product_sale( const account_name_type& name, const shared_string& product_id )const;
+         const product_sale_object* find_product_sale( const account_name_type& name, const shared_string& product_id )const;
 
-         const product_object& get_product( const account_name_type& name, const string& product_id )const;
-         const product_object* find_product( const account_name_type& name, const string& product_id )const;
+         const product_sale_object& get_product_sale( const account_name_type& name, const string& product_id )const;
+         const product_sale_object* find_product_sale( const account_name_type& name, const string& product_id )const;
 
-         const purchase_order_object& get_purchase_order( const account_name_type& name, const shared_string& order_id )const;
-         const purchase_order_object* find_purchase_order( const account_name_type& name, const shared_string& order_id )const;
+         const product_purchase_object& get_product_purchase( const account_name_type& name, const shared_string& order_id )const;
+         const product_purchase_object* find_product_purchase( const account_name_type& name, const shared_string& order_id )const;
 
-         const purchase_order_object& get_purchase_order( const account_name_type& name, const string& order_id )const;
-         const purchase_order_object* find_purchase_order( const account_name_type& name, const string& order_id )const;
+         const product_purchase_object& get_product_purchase( const account_name_type& name, const string& order_id )const;
+         const product_purchase_object* find_product_purchase( const account_name_type& name, const string& order_id )const;
+
+         const product_auction_sale_object& get_product_auction_sale( const account_name_type& name, const shared_string& auction_id )const;
+         const product_auction_sale_object* find_product_auction_sale( const account_name_type& name, const shared_string& auction_id )const;
+
+         const product_auction_sale_object& get_product_auction_sale( const account_name_type& name, const string& auction_id )const;
+         const product_auction_sale_object* find_product_auction_sale( const account_name_type& name, const string& auction_id )const;
+
+         const product_auction_bid_object& get_product_auction_bid( const account_name_type& name, const shared_string& bid_id )const;
+         const product_auction_bid_object* find_product_auction_bid( const account_name_type& name, const shared_string& bid_id )const;
+
+         const product_auction_bid_object& get_product_auction_bid( const account_name_type& name, const string& bid_id )const;
+         const product_auction_bid_object* find_product_auction_bid( const account_name_type& name, const string& bid_id )const;
 
          const escrow_object& get_escrow( const account_name_type& name, const shared_string& escrow_id )const;
          const escrow_object* find_escrow( const account_name_type& name, const shared_string& escrow_id )const;
@@ -672,6 +699,8 @@ namespace node { namespace chain {
 
          void update_governance_account( const governance_account_object& network_officer, 
             const producer_schedule_object& pso, const dynamic_global_property_object& props );
+
+         void process_product_auctions();
 
          share_type get_equity_shares( const account_balance_object& balance, const asset_equity_data_object& equity );
 

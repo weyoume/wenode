@@ -1019,6 +1019,138 @@ namespace node { namespace protocol {
          "Details are too long." );
    }
 
+   void list_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( creator );
+
+      FC_ASSERT( list_id.size(),
+         "List has no list ID." );
+      FC_ASSERT( list_id.size() <= MAX_STRING_LENGTH,
+         "List ID is too long." );
+      FC_ASSERT( fc::is_utf8( list_id ),
+         "List ID must be UTF-8" );
+
+      validate_uuidv4( list_id );
+
+      FC_ASSERT( name.size(),
+         "List has no name." );
+      FC_ASSERT( name.size() <= MAX_STRING_LENGTH,
+         "Name is too long." );
+      FC_ASSERT( fc::is_utf8( name ),
+         "Name must be UTF-8" );
+      
+      for( int64_t a : accounts )
+      {
+         FC_ASSERT( a >= 0, 
+            "IDs must be greater than or equal to 0.");
+      }
+      for( int64_t a : comments )
+      {
+         FC_ASSERT( a >= 0, 
+            "IDs must be greater than or equal to 0.");
+      }
+      for( int64_t a : communities )
+      {
+         FC_ASSERT( a >= 0, 
+            "IDs must be greater than or equal to 0.");
+      }
+      for( int64_t a : assets )
+      {
+         FC_ASSERT( a >= 0, 
+            "IDs must be greater than or equal to 0.");
+      }
+      for( int64_t a : products )
+      {
+         FC_ASSERT( a >= 0, 
+            "IDs must be greater than or equal to 0.");
+      }
+      for( int64_t a : auctions )
+      {
+         FC_ASSERT( a >= 0, 
+            "IDs must be greater than or equal to 0.");
+      }
+      for( int64_t a : nodes )
+      {
+         FC_ASSERT( a >= 0, 
+            "IDs must be greater than or equal to 0.");
+      }
+      for( int64_t a : edges )
+      {
+         FC_ASSERT( a >= 0, 
+            "IDs must be greater than or equal to 0.");
+      }
+      for( int64_t a : node_types )
+      {
+         FC_ASSERT( a >= 0, 
+            "IDs must be greater than or equal to 0.");
+      }
+      for( int64_t a : edge_types )
+      {
+         FC_ASSERT( a >= 0, 
+            "IDs must be greater than or equal to 0.");
+      }
+   }
+
+   void poll_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( creator );
+
+      FC_ASSERT( poll_id.size(),
+         "Poll has no list ID." );
+      FC_ASSERT( poll_id.size() <= MAX_STRING_LENGTH,
+         "Poll ID is too long." );
+      FC_ASSERT( fc::is_utf8( poll_id ),
+         "Poll ID must be UTF-8" );
+
+      validate_uuidv4( poll_id );
+
+      FC_ASSERT( details.size(),
+         "Poll has no name." );
+      FC_ASSERT( details.size() <= MAX_STRING_LENGTH,
+         "Details are too long." );
+      FC_ASSERT( fc::is_utf8( details ),
+         "Details must be UTF-8" );
+
+      
+      for( auto option : poll_options )
+      {
+         FC_ASSERT( option.size(),
+         "Poll has no name." );
+         FC_ASSERT( option.size() <= MAX_STRING_LENGTH,
+            "Option are too long." );
+         FC_ASSERT( fc::is_utf8( option ),
+            "Option must be UTF-8" );
+      }
+
+      FC_ASSERT( completion_time > GENESIS_TIME,
+         "Completion time must be after Genesis time." );
+   }
+
+   void poll_vote_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( voter );
+      validate_account_name( creator );
+
+      FC_ASSERT( poll_id.size(),
+         "Poll has no list ID." );
+      FC_ASSERT( poll_id.size() <= MAX_STRING_LENGTH,
+         "Poll ID is too long." );
+      FC_ASSERT( fc::is_utf8( poll_id ),
+         "Poll ID must be UTF-8" );
+
+      validate_uuidv4( poll_id );
+
+      FC_ASSERT( poll_option.size(),
+      "Poll has no name." );
+      FC_ASSERT( poll_option.size() <= MAX_STRING_LENGTH,
+         "Poll Option are too long." );
+      FC_ASSERT( fc::is_utf8( poll_option ),
+         "Poll Option must be UTF-8" );
+   }
+
 
    //==============================//
    // === Community Operations === //
@@ -2094,7 +2226,7 @@ namespace node { namespace protocol {
 
 
 
-   void product_update_operation::validate()const
+   void product_sale_operation::validate()const
    {
       validate_account_name( signatory );
       validate_account_name( account );
@@ -2115,10 +2247,12 @@ namespace node { namespace protocol {
       FC_ASSERT( fc::is_utf8( name ),
          "Product Name is not UTF8" );
 
-      FC_ASSERT( sale_type.size() < MAX_URL_LENGTH,
-         "Sale Type is invalid." );
-      FC_ASSERT( fc::is_utf8( sale_type ),
-         "Sale Type is invalid." );
+      FC_ASSERT( product_variants.size() == product_details.size(),
+         "Product details must be the same length as the product variants." );
+      FC_ASSERT( product_variants.size() == product_prices.size(),
+         "Product prices must be the same length as the product variants." );
+      FC_ASSERT( product_variants.size() == stock_available.size(),
+         "Stock Available must be the same length as the product variants." );
 
       for( auto a : product_variants )
       {
@@ -2152,6 +2286,12 @@ namespace node { namespace protocol {
             "Product Price symbol is not valid symbol" );
          FC_ASSERT( a.amount >= 0,
             "Product Price must be positive amount" );
+      }
+
+      for( auto a : wholesale_discount )
+      {
+         FC_ASSERT( a.second >= 0 && a.second <= PERCENT_100,
+            "Wholesale Discount must be a percentage between 0 and PERCENT_100." );
       }
 
       for( auto a : stock_available )
@@ -2257,6 +2397,166 @@ namespace node { namespace protocol {
          FC_ASSERT( fc::json::is_valid(json),
             "JSON Metadata not valid JSON" );
       }
+   }
+
+
+   void product_auction_sale_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+
+      FC_ASSERT( auction_id.size() < MAX_STRING_LENGTH,
+         "Auction ID is too long." );
+      FC_ASSERT( auction_id.size() > 0,
+         "Auction ID is required." );
+      FC_ASSERT( fc::is_utf8( auction_id ), 
+         "Auction ID is not UTF8" );
+
+      validate_uuidv4( auction_id );
+
+      FC_ASSERT( auction_type.size() < MAX_URL_LENGTH,
+         "Auction type is too long." );
+      FC_ASSERT( auction_type.size() > 0,
+         "Auction type is required." );
+      FC_ASSERT( fc::is_utf8( auction_type ), 
+         "Auction type is not UTF8" );
+      
+      FC_ASSERT( name.size() < MAX_STRING_LENGTH,
+         "Product name is too long" );
+      FC_ASSERT( name.size() > 0,
+         "Product name is required." );
+      FC_ASSERT( fc::is_utf8( name ),
+         "Product Name is not UTF8" );
+
+      if( json.size() )
+      {
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8" );
+         FC_ASSERT( fc::json::is_valid( json ),
+            "JSON Metadata not valid JSON" );
+      }
+
+      if( url.size() > 0 )
+      {
+         validate_url( url );
+         FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL is too long" );
+         FC_ASSERT( fc::is_utf8( url ),
+            "URL is not UTF8" );
+      }
+
+      FC_ASSERT( product_details.size() < MAX_STRING_LENGTH,
+         "Product details is too long" );
+      FC_ASSERT( fc::is_utf8( product_details ),
+         "Product details is not UTF8" );
+
+      for( auto a : product_images )
+      {
+         FC_ASSERT( a.size() < MAX_STRING_LENGTH,
+            "Image is too long" );
+         FC_ASSERT( fc::is_utf8( a ),
+            "Image is not UTF8" );
+         FC_ASSERT( a.size() == 46 && a[0] == 'Q' && a[1] == 'm',
+            "Image IPFS string should be 46 characters long and begin with 'Qm'." );
+      }
+
+      FC_ASSERT( is_valid_symbol( reserve_bid.symbol ),
+         "Reserve Bid symbol is not valid symbol" );
+      FC_ASSERT( reserve_bid.amount >= 0,
+         "Reserve Bid must be positive amount." );
+      FC_ASSERT( is_valid_symbol( maximum_bid.symbol ),
+         "Maximum Bid symbol is not valid symbol" );
+      FC_ASSERT( maximum_bid.amount >= 0,
+         "Maximum Bid must be positive amount." );
+      
+      for( auto a : delivery_variants )
+      {
+         FC_ASSERT( a.size() < MAX_STRING_LENGTH,
+            "Delivery variant is too long" );
+         FC_ASSERT( fc::is_utf8( a ),
+            "Delivery variant is not UTF8" );
+      }
+
+      for( auto a : delivery_details )
+      {
+         FC_ASSERT( a.size() < MAX_STRING_LENGTH,
+            "Delivery variant is too long" );
+         FC_ASSERT( fc::is_utf8( a ),
+            "Delivery variant is not UTF8" );
+      }
+
+      for( auto a : delivery_prices )
+      {
+         FC_ASSERT( is_valid_symbol( a.symbol ),
+            "Delivery Price symbol is not valid symbol." );
+         FC_ASSERT( a.amount >= 0,
+            "Delivery Price must be greater than or equal to 0" );
+      }
+
+      FC_ASSERT( final_bid_time > GENESIS_TIME,
+         "Final Bid time must be after genesis time." );
+      FC_ASSERT( completion_time > GENESIS_TIME,
+         "Completion time must be after genesis time." );
+   }
+
+
+   void product_auction_bid_operation::validate()const
+   {
+      validate_account_name( signatory );
+      validate_account_name( buyer );
+      validate_account_name( seller );
+
+      FC_ASSERT( bid_id.size() < MAX_STRING_LENGTH,
+         "Bid ID is too long." );
+      FC_ASSERT( bid_id.size() > 0,
+         "Bid ID is required." );
+      FC_ASSERT( fc::is_utf8( bid_id ), 
+         "Bid ID is not UTF8" );
+
+      validate_uuidv4( bid_id );
+
+      FC_ASSERT( auction_id.size() < MAX_STRING_LENGTH,
+         "Auction ID is too long." );
+      FC_ASSERT( auction_id.size() > 0,
+         "Auction ID is required." );
+      FC_ASSERT( fc::is_utf8( auction_id ), 
+         "Auction ID is not UTF8" );
+
+      validate_uuidv4( auction_id );
+
+      FC_ASSERT( memo.size() < MAX_MEMO_SIZE,
+         "Memo is too large" );
+      FC_ASSERT( fc::is_utf8( memo ),
+         "Memo is not UTF8" );
+
+      if( json.size() )
+      {
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8" );
+         FC_ASSERT( fc::json::is_valid( json ),
+            "JSON Metadata not valid JSON" );
+      }
+
+      FC_ASSERT( shipping_address.size() < MAX_STRING_LENGTH,
+         "Shipping Address is too long" );
+      FC_ASSERT( shipping_address.size() > 0,
+         "Shipping Address is required." );
+      FC_ASSERT( fc::is_utf8( shipping_address ),
+         "Shipping Address is not UTF8" );
+      
+      FC_ASSERT( delivery_variant.size() < MAX_STRING_LENGTH,
+         "Delivery variant is too long" );
+      FC_ASSERT( delivery_variant.size() > 0,
+         "Delivery variant is required." );
+      FC_ASSERT( fc::is_utf8( delivery_variant ),
+         "Delivery variant is not UTF8" );
+
+      FC_ASSERT( delivery_details.size() < MAX_STRING_LENGTH,
+         "Delivery details is too long" );
+      FC_ASSERT( delivery_details.size() > 0,
+         "Delivery details is required." );
+      FC_ASSERT( fc::is_utf8( delivery_details ),
+         "Delivery details is not UTF8" );
    }
 
 
@@ -2964,12 +3264,8 @@ namespace node { namespace protocol {
          "Credit Liquidity must be greater than zero." );
       FC_ASSERT( coin_liquidity.symbol == SYMBOL_COIN, 
          "Asset must have initial liquidity in the COIN asset." );
-      FC_ASSERT( coin_liquidity.amount >= 10 * BLOCKCHAIN_PRECISION, 
-         "Asset must have at least 10 COIN asset of initial liquidity." );
       FC_ASSERT( usd_liquidity.symbol == SYMBOL_USD, 
          "Asset must have initial liquidity in the USD asset." );
-      FC_ASSERT( usd_liquidity.amount >= 10 * BLOCKCHAIN_PRECISION, 
-         "Asset must have at least 10 USD asset of initial liquidity." );
       FC_ASSERT( asset_type.size() < MAX_URL_LENGTH,
          "Asset Type is invalid." );
       FC_ASSERT( fc::is_utf8( asset_type ),

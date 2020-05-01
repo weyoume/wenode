@@ -479,6 +479,129 @@ namespace node { namespace chain {
    };
 
 
+   /**
+    * Lists contain a curated group of accounts, comments, communities and other objects.
+    * 
+    * Used to collect a group of objects for reference and browsing.
+    */
+   class list_object : public object < list_object_type, list_object >
+   {
+      list_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         list_object( Constructor&& c, allocator< Allocator > a ) :
+         list_id(a),
+         name(a)
+         {
+            c( *this );
+         }
+
+         id_type                                     id;
+
+         account_name_type                           creator;          ///< Name of the account that created the list.
+
+         shared_string                               list_id;          ///< uuidv4 referring to the list.
+         
+         shared_string                               name;             ///< Name of the list, unique for each account.
+
+         flat_set< account_id_type >                 accounts;         ///< Account IDs within the list.
+
+         flat_set< comment_id_type >                 comments;         ///< Comment IDs within the list.
+
+         flat_set< community_id_type >               communities;      ///< Community IDs within the list.
+
+         flat_set< asset_id_type >                   assets;           ///< Asset IDs within the list.
+
+         flat_set< product_sale_id_type >            products;         ///< Product IDs within the list.
+
+         flat_set< product_auction_sale_id_type >    auctions;         ///< Auction IDs within the list.
+
+         flat_set< graph_node_id_type >              nodes;            ///< Graph node IDs within the list.
+
+         flat_set< graph_edge_id_type >              edges;            ///< Graph edge IDs within the list.
+
+         flat_set< graph_node_property_id_type >     node_types;       ///< Graph node property IDs within the list.
+
+         flat_set< graph_edge_property_id_type >     edge_types;       ///< Graph edge property IDs within the list.
+
+         time_point                                  last_updated;     ///< Time the list was last edited by the creator.
+
+         time_point                                  created;          ///< Time that the list was created.
+   };
+
+
+   /**
+    * Polls enable accounts to vote on a series of options.
+    * 
+    * Polls have a fixed duration, and determine the winning option.
+    */
+   class poll_object : public object < poll_object_type, poll_object >
+   {
+      poll_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         poll_object( Constructor&& c, allocator< Allocator > a ) :
+         poll_id(a),
+         details(a),
+         poll_options( a.get_segment_manager() )
+         {
+            c( *this );
+         }
+
+         id_type                                     id;
+
+         account_name_type                           creator;             ///< Name of the account that created the poll.
+
+         shared_string                               poll_id;             ///< uuidv4 referring to the poll.
+
+         shared_string                               details;             ///< Text describing the question being asked.
+
+         shared_vector< shared_string >              poll_options;        ///< Available poll voting options.
+
+         time_point                                  completion_time;     ///< Time the poll voting completes.
+
+         time_point                                  last_updated;        ///< Time the poll was last edited by the creator.
+
+         time_point                                  created;             ///< Time that the poll was created.
+   };
+
+
+   /**
+    * Poll Vote for a specified option.
+    * 
+    * Polls have a fixed duration, and determine the winning option.
+    */
+   class poll_vote_object : public object < poll_vote_object_type, poll_vote_object >
+   {
+      poll_vote_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         poll_vote_object( Constructor&& c, allocator< Allocator > a ) :
+         poll_id(a),
+         poll_option(a)
+         {
+            c( *this );
+         }
+
+         id_type                                     id;
+
+         account_name_type                           voter;               ///< Name of the account that created the vote.
+
+         account_name_type                           creator;             ///< Name of the account that created the poll.
+
+         shared_string                               poll_id;             ///< uuidv4 referring to the poll.
+
+         shared_string                               poll_option;         ///< Poll option chosen.
+
+         time_point                                  last_updated;        ///< Time the vote was last edited by the voter.
+
+         time_point                                  created;             ///< Time that the vote was created.
+   };
+
+
    /** 
     * Encrypted Private messages are sent between users following this specification:
     * 
@@ -651,22 +774,22 @@ namespace node { namespace chain {
          ordered_unique< tag< by_id >, member< comment_view_object, comment_view_id_type, &comment_view_object::id > >,
          ordered_unique< tag< by_comment_viewer >,
             composite_key< comment_view_object,
-               member< comment_view_object, comment_id_type, &comment_view_object::comment>,
-               member< comment_view_object, account_name_type, &comment_view_object::viewer>
+               member< comment_view_object, comment_id_type, &comment_view_object::comment >,
+               member< comment_view_object, account_name_type, &comment_view_object::viewer >
             >
          >,
          ordered_unique< tag< by_viewer_comment >,
             composite_key< comment_view_object,
-               member< comment_view_object, account_name_type, &comment_view_object::viewer>,
-               member< comment_view_object, comment_id_type, &comment_view_object::comment>
+               member< comment_view_object, account_name_type, &comment_view_object::viewer >,
+               member< comment_view_object, comment_id_type, &comment_view_object::comment >
             >
          >,
          ordered_unique< tag< by_interface_viewer >,
             composite_key< comment_view_object,
-               member< comment_view_object, account_name_type, &comment_view_object::interface>,
-               member< comment_view_object, account_name_type, &comment_view_object::viewer>,
-               member< comment_view_object, time_point, &comment_view_object::created>,
-               member< comment_view_object, comment_id_type, &comment_view_object::comment>
+               member< comment_view_object, account_name_type, &comment_view_object::interface >,
+               member< comment_view_object, account_name_type, &comment_view_object::viewer >,
+               member< comment_view_object, time_point, &comment_view_object::created >,
+               member< comment_view_object, comment_id_type, &comment_view_object::comment >
             >,
             composite_key_compare< 
                std::less< account_name_type >, 
@@ -677,10 +800,10 @@ namespace node { namespace chain {
          >,
          ordered_unique< tag< by_supernode_viewer >,
             composite_key< comment_view_object,
-               member< comment_view_object, account_name_type, &comment_view_object::supernode>,
-               member< comment_view_object, account_name_type, &comment_view_object::viewer>,
-               member< comment_view_object, time_point, &comment_view_object::created>,
-               member< comment_view_object, comment_id_type, &comment_view_object::comment>
+               member< comment_view_object, account_name_type, &comment_view_object::supernode >,
+               member< comment_view_object, account_name_type, &comment_view_object::viewer >,
+               member< comment_view_object, time_point, &comment_view_object::created >,
+               member< comment_view_object, comment_id_type, &comment_view_object::comment >
             >,
             composite_key_compare< 
                std::less< account_name_type >, 
@@ -691,9 +814,9 @@ namespace node { namespace chain {
          >,
          ordered_unique< tag< by_comment_weight_viewer >,
             composite_key< comment_view_object,
-               member< comment_view_object, comment_id_type, &comment_view_object::comment>,
-               member< comment_view_object, uint128_t, &comment_view_object::weight>,
-               member< comment_view_object, account_name_type, &comment_view_object::viewer>
+               member< comment_view_object, comment_id_type, &comment_view_object::comment >,
+               member< comment_view_object, uint128_t, &comment_view_object::weight >,
+               member< comment_view_object, account_name_type, &comment_view_object::viewer >
             >,
             composite_key_compare< 
                std::less< comment_id_type >, 
@@ -716,21 +839,21 @@ namespace node { namespace chain {
          ordered_unique< tag< by_id >, member< comment_share_object, comment_share_id_type, &comment_share_object::id > >,
          ordered_unique< tag< by_comment_sharer >,
             composite_key< comment_share_object,
-               member< comment_share_object, comment_id_type, &comment_share_object::comment>,
-               member< comment_share_object, account_name_type, &comment_share_object::sharer>
+               member< comment_share_object, comment_id_type, &comment_share_object::comment >,
+               member< comment_share_object, account_name_type, &comment_share_object::sharer >
             >
          >,
          ordered_unique< tag< by_sharer_comment >,
             composite_key< comment_share_object,
-               member< comment_share_object, account_name_type, &comment_share_object::sharer>,
-               member< comment_share_object, comment_id_type, &comment_share_object::comment>
+               member< comment_share_object, account_name_type, &comment_share_object::sharer >,
+               member< comment_share_object, comment_id_type, &comment_share_object::comment >
             >
          >,
          ordered_unique< tag< by_comment_weight_sharer >,
             composite_key< comment_share_object,
-               member< comment_share_object, comment_id_type, &comment_share_object::comment>,
-               member< comment_share_object, uint128_t, &comment_share_object::weight>,
-               member< comment_share_object, account_name_type, &comment_share_object::sharer>
+               member< comment_share_object, comment_id_type, &comment_share_object::comment >,
+               member< comment_share_object, uint128_t, &comment_share_object::weight >,
+               member< comment_share_object, account_name_type, &comment_share_object::sharer >
             >,
             composite_key_compare< 
                std::less< comment_id_type >, 
@@ -833,6 +956,7 @@ namespace node { namespace chain {
       allocator< feed_object >
    > feed_index;
 
+
    struct by_new_account_blog;
    struct by_old_account_blog;
    struct by_new_community_blog;
@@ -842,6 +966,7 @@ namespace node { namespace chain {
    struct by_comment_account;
    struct by_comment_community;
    struct by_comment_tag;
+
 
    typedef multi_index_container<
       blog_object,
@@ -1004,7 +1129,7 @@ namespace node { namespace chain {
          ordered_unique< tag< by_currency_cashout_time >,
             composite_key< comment_object,
                member< comment_object, asset_symbol_type, &comment_object::reward_currency >,
-               member< comment_object, time_point, &comment_object::cashout_time>,
+               member< comment_object, time_point, &comment_object::cashout_time >,
                member< comment_object, comment_id_type, &comment_object::id >
             >,
             composite_key_compare< 
@@ -1032,7 +1157,7 @@ namespace node { namespace chain {
          ordered_unique< tag< by_root_weight >,
             composite_key< comment_object,
                member< comment_object, comment_id_type, &comment_object::root_comment >,
-               member< comment_object, uint128_t, &comment_object::weight>,
+               member< comment_object, uint128_t, &comment_object::weight >,
                member< comment_object, comment_id_type, &comment_object::id >
             >,
             composite_key_compare< 
@@ -1122,14 +1247,21 @@ namespace node { namespace chain {
                member< message_object, account_name_type, &message_object::recipient >,
                member< message_object, message_id_type, &message_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< account_name_type >, std::less< message_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< account_name_type >, 
+               std::less< message_id_type > 
+            >
          >,
          ordered_unique< tag< by_sender_uuid >,
             composite_key< message_object,
                member< message_object, account_name_type, &message_object::sender >,
                member< message_object, shared_string, &message_object::uuid >
             >,
-            composite_key_compare< std::less< account_name_type >, strcmp_less >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               strcmp_less 
+            >
          >,
          ordered_unique< tag< by_account_inbox >,
             composite_key< message_object,
@@ -1137,7 +1269,11 @@ namespace node { namespace chain {
                member< message_object, time_point, &message_object::created >,
                member< message_object, message_id_type, &message_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::greater< time_point >, std::less< message_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::greater< time_point >, 
+               std::less< message_id_type > 
+            >
          >,
          ordered_unique< tag< by_account_outbox >,
             composite_key< message_object,
@@ -1145,7 +1281,11 @@ namespace node { namespace chain {
                member< message_object, time_point, &message_object::created >,
                member< message_object, message_id_type, &message_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::greater< time_point >, std::less< message_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::greater< time_point >, 
+               std::less< message_id_type > 
+            >
          >
       >,
       allocator< message_object >
@@ -1171,7 +1311,11 @@ namespace node { namespace chain {
                member< moderation_tag_object, time_point, &moderation_tag_object::last_updated >,
                member< moderation_tag_object, moderation_tag_id_type , &moderation_tag_object::id >
             >,
-            composite_key_compare< std::less< comment_id_type >, std::greater< time_point >, std::less< moderation_tag_id_type > >
+            composite_key_compare< 
+               std::less< comment_id_type >, 
+               std::greater< time_point >, 
+               std::less< moderation_tag_id_type > 
+            >
          >,
          ordered_unique< tag< by_moderator_comment >,
             composite_key< moderation_tag_object,
@@ -1182,6 +1326,81 @@ namespace node { namespace chain {
       >,
       allocator< moderation_tag_object >
    > moderation_tag_index;
+
+   struct by_list_id;
+
+   typedef multi_index_container<
+      list_object,
+      indexed_by<
+         ordered_unique< tag< by_id >, member< list_object, list_id_type, &list_object::id > >,
+         ordered_unique< tag< by_list_id >,
+            composite_key< list_object,
+               member< list_object, account_name_type, &list_object::creator >,
+               member< list_object, shared_string, &list_object::list_id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               strcmp_less 
+            >
+         >
+      >,
+      allocator< list_object >
+   > list_index;
+
+   struct by_poll_id;
+
+   typedef multi_index_container<
+      poll_object,
+      indexed_by<
+         ordered_unique< tag< by_id >, member< poll_object, poll_id_type, &poll_object::id > >,
+         ordered_unique< tag< by_poll_id >,
+            composite_key< poll_object,
+               member< poll_object, account_name_type, &poll_object::creator >,
+               member< poll_object, shared_string, &poll_object::poll_id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               strcmp_less 
+            >
+         >
+      >,
+      allocator< poll_object >
+   > poll_index;
+
+   struct by_voter_creator_poll_id;
+
+   typedef multi_index_container<
+      poll_vote_object,
+      indexed_by<
+         ordered_unique< tag< by_id >, member< poll_vote_object, poll_vote_id_type, &poll_vote_object::id > >,
+         ordered_unique< tag< by_voter_creator_poll_id >,
+            composite_key< poll_vote_object,
+               member< poll_vote_object, account_name_type, &poll_vote_object::voter >,
+               member< poll_vote_object, account_name_type, &poll_vote_object::creator >,
+               member< poll_vote_object, shared_string, &poll_vote_object::poll_id >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::less< account_name_type >,
+               strcmp_less
+            >
+         >,
+         ordered_unique< tag< by_poll_id >,
+            composite_key< poll_vote_object,
+               member< poll_vote_object, account_name_type, &poll_vote_object::creator >,
+               member< poll_vote_object, shared_string, &poll_vote_object::poll_id >,
+               member< poll_vote_object, poll_vote_id_type, &poll_vote_object::id >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               strcmp_less,
+               std::less< poll_vote_id_type >
+            >
+         >
+      >,
+      allocator< poll_vote_object >
+   > poll_vote_index;
+
 
    typedef multi_index_container<
       comment_metrics_object,
@@ -1357,6 +1576,52 @@ FC_REFLECT( node::chain::moderation_tag_object,
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::moderation_tag_object, node::chain::moderation_tag_index );
+
+FC_REFLECT( node::chain::list_object,
+         (id)
+         (creator)
+         (list_id)
+         (name)
+         (accounts)
+         (comments)
+         (communities)
+         (assets)
+         (products)
+         (auctions)
+         (nodes)
+         (edges)
+         (node_types)
+         (edge_types)
+         (last_updated)
+         (created)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::list_object, node::chain::list_index );
+
+FC_REFLECT( node::chain::poll_object,
+         (id)
+         (creator)
+         (poll_id)
+         (details)
+         (poll_options)
+         (completion_time)
+         (last_updated)
+         (created)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::poll_object, node::chain::poll_index );
+
+FC_REFLECT( node::chain::poll_vote_object,
+         (id)
+         (voter)
+         (creator)
+         (poll_id)
+         (poll_option)
+         (last_updated)
+         (created)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::poll_vote_object, node::chain::poll_vote_index );
 
 FC_REFLECT( node::chain::message_object,
          (id)

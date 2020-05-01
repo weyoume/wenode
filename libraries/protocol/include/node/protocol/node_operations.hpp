@@ -425,7 +425,7 @@ namespace node { namespace protocol {
     * accounts, and giving individuals delegated control over account
     * transaction signatory authority. 
     * 
-    * Able to issue additonal assets
+    * Able to issue additional assets
     * that distribute portions of incoming revenue.
     * Options for control structures that offer different 
     * authority dynamics, from most permissive to most restrictive.
@@ -716,7 +716,7 @@ namespace node { namespace protocol {
     * Updates the Proxy account for a specified account.
     * 
     * Proxy is able to vote for producers, network officers and 
-    * additonal network functionalities on behalf of the account.
+    * additional network functionalities on behalf of the account.
     */
    struct account_update_proxy_operation : public base_operation
    {
@@ -934,7 +934,8 @@ namespace node { namespace protocol {
    /**
     * Requests that a connection be created between two accounts.
     * 
-    * Used for the purposes of exchanging encrypted connection keys that can be used to decrypt
+    * Used for the purposes of exchanging encrypted 
+    * connection keys that can be used to decrypt
     * private posts made by the account, and enables the creation of private 
     * message transactions between the two accounts. 
     * 
@@ -1107,7 +1108,7 @@ namespace node { namespace protocol {
 
       string                        url;               ///< The officers's description URL explaining their details. 
 
-      string                        json;              ///< Additonal information about the officer.
+      string                        json;              ///< Additional information about the officer.
 
       bool                          active = true;     ///< Set true to activate the officer, false to deactivate. 
          
@@ -1221,7 +1222,7 @@ namespace node { namespace protocol {
 
       string                        url;               ///< The teams's description URL explaining their details. 
 
-      string                        json;              ///< Additonal information about the executive board.
+      string                        json;              ///< Additional information about the executive board.
 
       bool                          active = true;     ///< Set true to activate the board, false to deactivate. 
          
@@ -1268,7 +1269,7 @@ namespace node { namespace protocol {
 
       string                         url;               ///< The governance account's description URL explaining their details. 
 
-      string                         json;              ///< Additonal information about the governance account policies.
+      string                         json;              ///< Additional information about the governance account policies.
 
       bool                           active = true;     ///< Set true to activate governance account, false to deactivate. 
          
@@ -1347,7 +1348,7 @@ namespace node { namespace protocol {
 
       string                         bittorrent_endpoint;         ///< The Bittorrent Seed Box endpoint URL of the Supernode. 
 
-      string                         json;                        ///< Additonal information about the Supernode.
+      string                         json;                        ///< Additional information about the Supernode.
 
       bool                           active = true;               ///< Set true to activate the supernode, false to deactivate. 
          
@@ -1375,7 +1376,7 @@ namespace node { namespace protocol {
 
       string                         url;               ///< The interfaces's URL.
 
-      string                         json;              ///< Additonal information about the interface.
+      string                         json;              ///< Additional information about the interface.
 
       bool                           active = true;     ///< Set true to activate the interface, false to deactivate. 
          
@@ -1403,7 +1404,7 @@ namespace node { namespace protocol {
 
       string                         url;               ///< The mediator's reference URL.
 
-      string                         json;              ///< Additonal information about the mediator.
+      string                         json;              ///< Additional information about the mediator.
 
       asset                          mediator_bond;     ///< Amount of Core asset to stake in the mediation pool. 
 
@@ -1772,10 +1773,18 @@ namespace node { namespace protocol {
    /**
     * Applies a set of tags to a post for filtering from interfaces.
     * 
+    * Moderation tags enable interface providers to coordinate 
+    * moderation efforts on-chain and provides a method for 
+    * discretion to be provided to displaying content, 
+    * based on the governance addresses subscribed to by the 
+    * viewing user.
+    * 
     * Tags should be based on the content included in the post. 
-    * Accounts that list the moderator account as a community moderator or
-    * governance account apply the tag to the post for content management.
-    * They additionally can suggest a higher rating level if the rating selected
+    * Accounts that list the moderator account as a 
+    * community moderator or governance account apply the 
+    * tag to the post for content management.
+    * 
+    * They can suggest a higher rating level if the rating selected
     * by the author was inaccurate. 
     */
    struct moderation_tag_operation : public base_operation
@@ -1803,6 +1812,95 @@ namespace node { namespace protocol {
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       void                           get_creator_name( account_name_type a )const{ a = moderator; }
+   };
+
+
+   /**
+    * Lists contain a curated group of accounts, comments, communities and other objects.
+    * 
+    * Used to collect a group of objects for reference and browsing.
+    */
+   struct list_operation : public base_operation
+   {
+      account_name_type              signatory;
+
+      account_name_type              creator;             ///< Name of the account that created the list.
+
+      string                         list_id;             ///< uuidv4 referring to the list.
+
+      string                         name;                ///< Name of the list, unique for each account.
+
+      flat_set< int64_t >            accounts;            ///< Account IDs within the list.
+
+      flat_set< int64_t >            comments;            ///< Comment IDs within the list.
+
+      flat_set< int64_t >            communities;         ///< Community IDs within the list.
+
+      flat_set< int64_t >            assets;              ///< Asset IDs within the list.
+
+      flat_set< int64_t >            products;            ///< Product IDs within the list.
+
+      flat_set< int64_t >            auctions;            ///< Auction IDs within the list.
+
+      flat_set< int64_t >            nodes;               ///< Graph node IDs within the list.
+
+      flat_set< int64_t >            edges;               ///< Graph edge IDs within the list.
+
+      flat_set< int64_t >            node_types;          ///< Graph node property IDs within the list.
+
+      flat_set< int64_t >            edge_types;          ///< Graph edge property IDs within the list.
+
+      void                           validate()const;
+      void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      void                           get_creator_name( account_name_type a )const{ a = creator; }
+   };
+
+
+   /**
+    * Polls enable accounts to vote on a series of options.
+    * 
+    * Polls have a fixed duration, and determine the winning option.
+    */
+   struct poll_operation : public base_operation
+   {
+      account_name_type              signatory;
+
+      account_name_type              creator;             ///< Name of the account that created the poll.
+
+      string                         poll_id;             ///< uuidv4 referring to the poll.
+
+      string                         details;             ///< Text describing the question being asked.
+
+      vector< string >               poll_options;        ///< Available poll voting options.
+
+      time_point                     completion_time;     ///< Time the poll voting completes.
+
+      void                           validate()const;
+      void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      void                           get_creator_name( account_name_type a )const{ a = creator; }
+   };
+
+
+   /**
+    * Poll Vote for a specified poll option.
+    * 
+    * Polls have a fixed duration, and determine the winning option.
+    */
+   struct poll_vote_operation : public base_operation
+   {
+      account_name_type              signatory;
+
+      account_name_type              voter;               ///< Name of the account that created the vote.
+
+      account_name_type              creator;             ///< Name of the account that created the poll.
+
+      string                         poll_id;             ///< uuidv4 referring to the poll.
+
+      string                         poll_option;         ///< Poll option chosen.
+
+      void                           validate()const;
+      void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      void                           get_creator_name( account_name_type a )const{ a = voter; }
    };
 
 
@@ -3096,41 +3194,43 @@ namespace node { namespace protocol {
    /**
     * Creates or updates a product item for marketplace purchasing with escrow transfers.
     */
-   struct product_update_operation : public base_operation
+   struct product_sale_operation : public base_operation
    {
-      account_name_type              signatory;
+      account_name_type                  signatory;
 
-      account_name_type              account;                ///< The Seller of the product.
+      account_name_type                  account;                ///< The Seller of the product.
 
-      string                         product_id;             ///< uuidv4 referring to the product.
+      string                             product_id;             ///< uuidv4 referring to the product.
 
-      string                         name;                   ///< The descriptive name of the product.
+      string                             name;                   ///< The descriptive name of the product.
 
-      string                         sale_type;              ///< The type of sale to be used for the product.
+      string                             url;                    ///< Reference URL of the product or seller.
 
-      string                         url;                    ///< Reference URL of the product or seller.
+      string                             json;                   ///< JSON metadata attributes of the product.
 
-      string                         json;                   ///< JSON metadata attributes of the product.
+      vector< string >                   product_variants;       ///< The collection of product variants. Each map must have a key for each variant.
 
-      vector< string >               product_variants;       ///< The collection of product variants. Each map must have a key for each variant.
+      vector< string >                   product_details;        ///< The Description details of each variant of the product.
 
-      vector< string >               product_details;        ///< The Description details of each variant of the product.
+      vector< string >                   product_images;         ///< IPFS references to images of each product variant.
 
-      vector< string >               product_images;         ///< IPFS references to images of each product variant.
+      vector< asset >                    product_prices;         ///< The price for each variant of the product.
 
-      vector< asset >                product_prices;         ///< The price (or min auction price) for each variant of the product.
+      flat_map< uint32_t, uint16_t >     wholesale_discount;     ///< Discount percentages that are applied when quantity is above a given size.
 
-      vector< uint32_t >             stock_available;        ///< The available stock of each variant of the product.
+      vector< uint32_t >                 stock_available;        ///< The available stock of each variant of the product.
 
-      vector< string >               delivery_variants;      ///< The types of product delivery available to purchasers.
+      vector< string >                   delivery_variants;      ///< The types of product delivery available to purchasers.
 
-      vector< string >               delivery_details;       ///< The details of product delivery variants.
+      vector< string >                   delivery_details;       ///< The details of product delivery variants.
 
-      vector< asset >                delivery_prices;        ///< The price for each variant of delivery.
+      vector< asset >                    delivery_prices;        ///< The price for each variant of delivery.
 
-      void                           get_required_active_authorities( flat_set< account_name_type >& a ) const { a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
-      void                           validate() const;
+      bool                               active = true;          ///< True when the product is active and able to be sold, false when discontinued.
+
+      void                               get_required_active_authorities( flat_set< account_name_type >& a ) const { a.insert( signatory ); }
+      void                               get_creator_name( account_name_type a )const{ a = account; }
+      void                               validate() const;
    };
 
 
@@ -3150,7 +3250,7 @@ namespace node { namespace protocol {
 
       account_name_type              seller;              ///< The Seller of the product.
 
-      string                         product_id;          ///< uuidv4 refrring to the product.
+      string                         product_id;          ///< uuidv4 referring to the product.
 
       vector< string >               order_variants;      ///< Variants of product ordered in the purchase.
 
@@ -3158,7 +3258,7 @@ namespace node { namespace protocol {
 
       string                         memo;                ///< The memo for the transaction, encryption on the memo is advised.
 
-      string                         json;                ///< Additonal JSON object attribute details.
+      string                         json;                ///< Additional JSON object attribute details.
 
       string                         shipping_address;    ///< The shipping address requested, encrypted with the secure key of the seller.
 
@@ -3170,7 +3270,105 @@ namespace node { namespace protocol {
 
       time_point                     escrow_expiration;   ///< Time after which balance can be claimed by FROM or TO freely.
 
-      bool                           completed = false;   ///< False when order is pending, true when completed. 
+      void                           get_required_active_authorities( flat_set< account_name_type >& a ) const { a.insert( signatory ); }
+      void                           get_creator_name( account_name_type a )const{ a = buyer; }
+      void                           validate() const;
+   };
+
+
+   /**
+    * Creates or updates a product auction sale. 
+    * 
+    * Auction items are purchased by auction bidders, 
+    * according to the auction type.
+    * 
+    * The marketplace generates an escrow transfer between 
+    * the seller and the winning bidder
+    * at the auction completion time.
+    */
+   struct product_auction_sale_operation : public base_operation
+   {
+      account_name_type                  signatory;
+
+      account_name_type                  account;                ///< The Seller of the auction product.
+
+      string                             auction_id;             ///< uuidv4 referring to the auction product.
+
+      string                             auction_type;           ///< The Auction price selection mechanism.
+
+      string                             name;                   ///< The descriptive name of the product.
+
+      string                             url;                    ///< Reference URL of the product or seller.
+
+      string                             json;                   ///< JSON metadata attributes of the product.
+
+      string                             product_details;        ///< The Description details of the product for auction.
+
+      vector< string >                   product_images;         ///< IPFS references to images of the product for auction.
+
+      asset                              reserve_bid;            ///< The min auction bid, or minimum price of a reverse auction at final bid time.
+
+      asset                              maximum_bid;            ///< The max auction bid. Auction will immediately conclude if this price is bidded. Starting price of reverse auction.
+
+      vector< string >                   delivery_variants;      ///< The types of product delivery available to purchasers.
+
+      vector< string >                   delivery_details;       ///< The details of product delivery variants.
+
+      vector< asset >                    delivery_prices;        ///< The price for each variant of delivery.
+
+      time_point                         final_bid_time;         ///< No more bids will be accepted after this time. Concealed bids must be revealed before completion time.
+
+      time_point                         completion_time;        ///< Time that the auction will select the winning bidder, or end if no bids.
+
+      void                               get_required_active_authorities( flat_set< account_name_type >& a ) const { a.insert( signatory ); }
+      void                               get_creator_name( account_name_type a )const{ a = account; }
+      void                               validate() const;
+   };
+
+
+   /**
+    * Creates or updates a bid on a product auction sale.
+    * 
+    * - Open auctions enable the bidders to publicly 
+    * declare the amountthat they are willing to pay, 
+    * and bump their bids until completion time.
+    * 
+    * - Reverse Auctions start the bidding at a maximum
+    * price and decrease linearly until a bid is made.
+    * 
+    * - Concealed Auctions enable bidders to bid privately 
+    * by commiting their bid amount,
+    * and revealing it after the auction is closed.
+    * Either the first or second highest revealed price
+    * is used when the auction is completed.
+    */
+   struct product_auction_bid_operation : public base_operation
+   {
+      account_name_type              signatory;
+
+      account_name_type              buyer;                  ///< The Buyer of the product.
+
+      string                         bid_id;                 ///< uuidv4 referring to the auction bid.
+
+      account_name_type              seller;                 ///< The Seller of the product.
+
+      string                         auction_id;             ///< uuidv4 referring to the auction.
+
+      commitment_type                bid_price_commitment;   ///< Concealed value of the bid price amount.
+
+      blind_factor_type              blinding_factor;        ///< Factor to blind the bid price.
+
+      share_type                     public_bid_amount;      ///< Set to 0 initially for concealed bid, revealed to match commitment. Revealed in initial bid if open.
+
+      string                         memo;                   ///< The memo for the transaction, encryption on the memo is advised.
+
+      string                         json;                   ///< Additional JSON object attribute details.
+
+      string                         shipping_address;       ///< The shipping address requested, encrypted with the secure key of the seller.
+
+      string                         delivery_variant;       ///< The type of product delivery selected.
+
+      string                         delivery_details;       ///< The Description details of the delivery.
 
       void                           get_required_active_authorities( flat_set< account_name_type >& a ) const { a.insert( signatory ); }
       void                           get_creator_name( account_name_type a )const{ a = buyer; }
@@ -3234,7 +3432,7 @@ namespace node { namespace protocol {
 
       string                   memo;                    ///< The memo for the transaction, encryption on the memo is advised.
 
-      string                   json;                    ///< Additonal JSON object attribute details.
+      string                   json;                    ///< Additional JSON object attribute details.
 
       void                     validate()const;
       void                     get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -3591,7 +3789,7 @@ namespace node { namespace protocol {
     * Exchanges an asset directly from liquidity pools.
     * 
     * The asset is traded with the core asset's liquidity pool, and then
-    * the proceeds are trading with the receive asset's liquidty pool for the 
+    * the proceeds are trading with the receive asset's liquidity pool for the 
     * best liquidity.
     * 
     * Design Inspired by Bancor Protocol:
@@ -3764,7 +3962,7 @@ namespace node { namespace protocol {
     * Withdraws an asset from the specified credit pool.
     * 
     * Redeems a credit pool asset for its underlying credit reserves, 
-    * plus additonal interest earned from borrowers.
+    * plus additional interest earned from borrowers.
     * 
     * Design inspired by Compound Protocol:
     * https://compound.finance/documents/Compound.Whitepaper.pdf
@@ -4527,6 +4725,10 @@ namespace node { namespace protocol {
    {
       asset                  account_creation_fee = MIN_ACCOUNT_CREATION_FEE;               ///< Minimum fee required to create a new account by staking.
 
+      asset                  asset_coin_liquidity = MIN_ASSET_COIN_LIQUIDITY;               ///< Minimum COIN required to create a new asset.
+
+      asset                  asset_usd_liquidity = MIN_ASSET_USD_LIQUIDITY;                 ///< Minimum USD required to create a new asset.
+
       uint64_t               maximum_block_size = MAX_BLOCK_SIZE;                           ///< The maximum block size of the network in bytes. No Upper bound on block size limit.
 
       fc::microseconds       pow_target_time = POW_TARGET_TIME;                             ///< The targeted time for each proof of work
@@ -4623,6 +4825,14 @@ namespace node { namespace protocol {
             "Acccount creation fee must be in the core asset." );
          FC_ASSERT( account_creation_fee >= MIN_ACCOUNT_CREATION_FEE,
             "Account creation fee must be at least 1 Unit of core asset." );
+         FC_ASSERT( asset_coin_liquidity.symbol == SYMBOL_COIN,
+            "Asset COIN liquidity must be in the core asset." );
+         FC_ASSERT( asset_coin_liquidity >= MIN_ASSET_COIN_LIQUIDITY,
+            "Asset COIN liquidity must be at least 10 units of COIN." );
+         FC_ASSERT( asset_usd_liquidity.symbol == SYMBOL_USD,
+            "Asset USD liquidity must be in the USD asset." );
+         FC_ASSERT( asset_usd_liquidity >= MIN_ASSET_USD_LIQUIDITY,
+            "Asset USD liquidity must be at least 10 units of USD." );
          FC_ASSERT( maximum_block_size >= MIN_BLOCK_SIZE_LIMIT,
             "Maximum blocksize must be greater than minimum limit requirement." );
          FC_ASSERT( pow_target_time >= fc::minutes(1) && pow_target_time <= fc::hours(1),
@@ -5529,6 +5739,41 @@ FC_REFLECT( node::protocol::moderation_tag_operation,
          (applied)
          );
 
+FC_REFLECT( node::protocol::list_operation,
+         (signatory)
+         (creator)
+         (list_id)
+         (name)
+         (accounts)
+         (comments)
+         (communities)
+         (assets)
+         (products)
+         (auctions)
+         (nodes)
+         (edges)
+         (node_types)
+         (edge_types)
+         );
+
+FC_REFLECT( node::protocol::poll_operation,
+         (signatory)
+         (creator)
+         (poll_id)
+         (details)
+         (poll_options)
+         (completion_time)
+         );
+
+FC_REFLECT( node::protocol::poll_vote_operation,
+         (signatory)
+         (voter)
+         (creator)
+         (poll_id)
+         (poll_option)
+         );
+
+
    //==============================//
    //==== Community Operations ====//
    //==============================//
@@ -6008,22 +6253,23 @@ FC_REFLECT( node::protocol::delegate_asset_operation,
    //================================//
 
 
-FC_REFLECT( node::protocol::product_update_operation, 
+FC_REFLECT( node::protocol::product_sale_operation, 
          (signatory)
          (account)
          (product_id)
          (name)
-         (sale_type)
          (url)
          (json)
          (product_variants)
          (product_details)
          (product_images)
          (product_prices)
+         (wholesale_discount)
          (stock_available)
          (delivery_variants)
          (delivery_details)
          (delivery_prices)
+         (active)
          );
 
 FC_REFLECT( node::protocol::product_purchase_operation, 
@@ -6041,7 +6287,40 @@ FC_REFLECT( node::protocol::product_purchase_operation,
          (delivery_details)
          (acceptance_time)
          (escrow_expiration)
-         (completed)
+         );
+
+FC_REFLECT( node::protocol::product_auction_sale_operation, 
+         (signatory)
+         (account)
+         (auction_id)
+         (auction_type)
+         (name)
+         (url)
+         (json)
+         (product_details)
+         (product_images)
+         (reserve_bid)
+         (maximum_bid)
+         (delivery_variants)
+         (delivery_details)
+         (delivery_prices)
+         (final_bid_time)
+         (completion_time)
+         );
+
+FC_REFLECT( node::protocol::product_auction_bid_operation, 
+         (signatory)
+         (buyer)
+         (bid_id)
+         (seller)
+         (auction_id)
+         (bid_price_commitment)
+         (public_bid_amount)
+         (memo)
+         (json)
+         (shipping_address)
+         (delivery_variant)
+         (delivery_details)
          );
 
 FC_REFLECT( node::protocol::escrow_transfer_operation, 
@@ -6444,14 +6723,16 @@ FC_REFLECT( node::protocol::asset_collateral_bid_operation,
          (debt)
          );
 
+
    //=====================================//
    //==== Block Production Operations ====//
    //=====================================//
 
 
-
 FC_REFLECT( node::protocol::chain_properties,
          (account_creation_fee)
+         (asset_coin_liquidity)
+         (asset_usd_liquidity)
          (maximum_block_size)
          (pow_target_time)
          (pow_decay_time)

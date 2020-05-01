@@ -1503,24 +1503,6 @@ uint64_t                          wallet_api::get_account_count()const
 }
 
 
-vector< owner_authority_history_api_obj > wallet_api::get_owner_history( string account )const
-{
-   return my->_remote_db->get_owner_history( account );
-}
-
-
-optional< account_recovery_request_api_obj >  wallet_api::get_recovery_request( string account )const
-{
-   return my->_remote_db->get_recovery_request( account );
-}
-
-
-optional< account_bandwidth_api_obj >   wallet_api::get_account_bandwidth( string account, producer::bandwidth_type type )const
-{
-   return my->_remote_db->get_account_bandwidth( account, type );
-}
-
-
 
       //===================//
       // === Asset API === //
@@ -1727,13 +1709,19 @@ vector< ad_bid_state >            wallet_api::get_interface_audience_bids( const
 
 
 
-product_api_obj                   wallet_api::get_product( string seller, string product_id )const
+product_sale_api_obj                   wallet_api::get_product_sale( string seller, string product_id )const
 {
-   return my->_remote_db->get_product( seller, product_id );
+   return my->_remote_db->get_product_sale( seller, product_id );
 }
 
 
-vector< account_product_state >   wallet_api::get_account_products( vector< string > names )const
+product_auction_sale_api_obj           wallet_api::get_product_auction_sale( string seller, string auction_id )const
+{
+   return my->_remote_db->get_product_auction_sale( seller, auction_id );
+}
+
+
+vector< account_product_state >        wallet_api::get_account_products( vector< string > names )const
 {
    return my->_remote_db->get_account_products( names );
 }
@@ -1834,27 +1822,9 @@ transaction_id_type               wallet_api::get_transaction_id( const signed_t
 
 
 
-vector< vote_state >              wallet_api::get_active_votes( string author, string permlink )const
+comment_interaction_state         wallet_api::get_comment_interactions( string author, string permlink )const
 {
-   return my->_remote_db->get_active_votes( author, permlink );
-}
-
-
-vector< view_state >              wallet_api::get_active_views( string author, string permlink )const
-{
-   return my->_remote_db->get_active_views( author, permlink );
-}
-
-
-vector< share_state >             wallet_api::get_active_shares( string author, string permlink )const
-{
-   return my->_remote_db->get_active_shares( author, permlink );
-}
-
-
-vector< moderation_state >        wallet_api::get_active_mod_tags( string author, string permlink )const
-{
-   return my->_remote_db->get_active_mod_tags( author, permlink );
+   return my->_remote_db->get_comment_interactions( author, permlink );
 }
 
 
@@ -3791,6 +3761,118 @@ annotated_signed_transaction      wallet_api::moderation_tag(
 
 
 
+annotated_signed_transaction      wallet_api::list(
+   string signatory,
+   string creator,
+   string list_id,
+   string name,
+   flat_set< int64_t > accounts,
+   flat_set< int64_t > comments,
+   flat_set< int64_t > communities,
+   flat_set< int64_t > assets,
+   flat_set< int64_t > products,
+   flat_set< int64_t > auctions,
+   flat_set< int64_t > nodes,
+   flat_set< int64_t > edges,
+   flat_set< int64_t > node_types,
+   flat_set< int64_t > edge_types,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   list_operation op;
+
+   op.signatory = signatory;
+   op.creator = creator;
+   op.list_id = list_id;
+   op.name = name;
+   op.accounts = accounts;
+   op.comments = comments;
+   op.communities = communities;
+   op.assets = assets;
+   op.products = products;
+   op.auctions = auctions;
+   op.nodes = nodes;
+   op.edges = edges;
+   op.node_types = node_types;
+   op.edge_types = edge_types;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::poll(
+   string signatory,
+   string creator,
+   string poll_id,
+   string details,
+   vector< string > poll_options,
+   time_point completion_time,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   poll_operation op;
+
+   op.signatory = signatory;
+   op.creator = creator;
+   op.poll_id = poll_id;
+
+   set< string > o_set;
+
+   for( string p : poll_options )
+   {
+      o_set.insert( p );
+   }
+
+   op.poll_options.reserve( o_set.size() );
+
+   for( string p : o_set )
+   {
+      op.poll_options.push_back( p );
+   }
+
+   op.completion_time = completion_time;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::poll_vote(
+   string signatory,
+   string voter,
+   string creator,
+   string poll_id,
+   string poll_option,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   poll_vote_operation op;
+
+   op.signatory = signatory;
+   op.voter = voter;
+   op.creator = creator;
+   op.poll_id = poll_id;
+   op.poll_option = poll_option;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+
       //================================//
       // === Community Transactions === //
       //================================//
@@ -5185,43 +5267,45 @@ annotated_signed_transaction       wallet_api::delegate_asset(
 
 
 
-annotated_signed_transaction       wallet_api::product_update(
+annotated_signed_transaction       wallet_api::product_sale(
    string signatory,
    string account,
    string product_id,
    string name,
-   string sale_type,
    string url,
    string json,
    vector< string > product_variants,
    vector< string > product_details,
    vector< string > product_images,
    vector< asset > product_prices,
+   flat_map< uint32_t, uint16_t > wholesale_discount,
    vector< uint32_t > stock_available,
    vector< string > delivery_variants,
    vector< string > delivery_details,
    vector< asset > delivery_prices,
+   bool active,
    bool broadcast)
 { try {
    FC_ASSERT( !is_locked() );
 
-   product_update_operation op;
+   product_sale_operation op;
 
    op.signatory = signatory;
    op.account = account;
    op.product_id = product_id;
    op.name = name;
-   op.sale_type = sale_type;
    op.url = url;
    op.json = json;
    op.product_variants = product_variants;
    op.product_details = product_details;
    op.product_images = product_images;
    op.product_prices = product_prices;
+   op.wholesale_discount = wholesale_discount;
    op.stock_available = stock_available;
    op.delivery_variants = delivery_variants;
    op.delivery_details = delivery_details;
    op.delivery_prices = delivery_prices;
+   op.active = active;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -5246,7 +5330,6 @@ annotated_signed_transaction       wallet_api::product_purchase(
    string delivery_details,
    time_point acceptance_time,
    time_point escrow_expiration,
-   bool completed,
    bool broadcast)
 { try {
    FC_ASSERT( !is_locked() );
@@ -5267,7 +5350,6 @@ annotated_signed_transaction       wallet_api::product_purchase(
    op.delivery_details = delivery_details;
    op.acceptance_time = acceptance_time;
    op.escrow_expiration = escrow_expiration;
-   op.completed = completed;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -5276,6 +5358,95 @@ annotated_signed_transaction       wallet_api::product_purchase(
    return my->sign_transaction( tx, broadcast );
 } FC_CAPTURE_AND_RETHROW() }
 
+
+annotated_signed_transaction       wallet_api::product_auction_sale(
+   string signatory,
+   string account,
+   string auction_id,
+   string auction_type,
+   string name,
+   string url,
+   string json,
+   string product_details,
+   vector< string > product_images,
+   asset reserve_bid,
+   asset maximum_bid,
+   vector< string > delivery_variants,
+   vector< string > delivery_details,
+   vector< asset > delivery_prices,
+   time_point final_bid_time,
+   time_point completion_time,
+   bool broadcast)
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   product_auction_sale_operation op;
+
+   op.signatory = signatory;
+   op.account = account;
+   op.auction_id = auction_id;
+   op.auction_type = auction_type;
+   op.name = name;
+   op.url = url;
+   op.json = json;
+   op.product_details = product_details;
+   op.product_images = product_images;
+   op.reserve_bid = reserve_bid;
+   op.maximum_bid = maximum_bid;
+   op.delivery_variants = delivery_variants;
+   op.delivery_details = delivery_details;
+   op.delivery_prices = delivery_prices;
+   op.final_bid_time = final_bid_time;
+   op.completion_time = completion_time;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction       wallet_api::product_auction_bid(
+   string signatory,
+   string buyer,
+   string bid_id,
+   string seller,
+   string auction_id,
+   commitment_type bid_price_commitment,
+   blind_factor_type blinding_factor,
+   share_type public_bid_amount,
+   string memo,
+   string json,
+   string shipping_address,
+   string delivery_variant,
+   string delivery_details,
+   bool broadcast)
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   product_auction_bid_operation op;
+
+   op.signatory = signatory;
+   op.buyer = buyer;
+   op.bid_id = bid_id;
+   op.seller = seller;
+   op.auction_id = auction_id;
+   op.bid_price_commitment = bid_price_commitment;
+   op.blinding_factor = blinding_factor;
+   op.public_bid_amount = public_bid_amount;
+   op.memo = memo;
+   op.json = json;
+   op.shipping_address = shipping_address;
+   op.delivery_variant = delivery_variant;
+   op.delivery_details = delivery_details;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
 
 
 annotated_signed_transaction      wallet_api::escrow_transfer(

@@ -60,6 +60,9 @@ DEFINE_EVALUATOR( vote )
 DEFINE_EVALUATOR( view )
 DEFINE_EVALUATOR( share )
 DEFINE_EVALUATOR( moderation_tag )
+DEFINE_EVALUATOR( list )
+DEFINE_EVALUATOR( poll )
+DEFINE_EVALUATOR( poll_vote )
 
 // Community Evaluators
 
@@ -118,8 +121,10 @@ DEFINE_EVALUATOR( delegate_asset )
 
 // Marketplace Evaluators
 
-DEFINE_EVALUATOR( product_update )
+DEFINE_EVALUATOR( product_sale )
 DEFINE_EVALUATOR( product_purchase )
+DEFINE_EVALUATOR( product_auction_sale )
+DEFINE_EVALUATOR( product_auction_bid )
 DEFINE_EVALUATOR( escrow_transfer )
 DEFINE_EVALUATOR( escrow_approve )
 DEFINE_EVALUATOR( escrow_dispute )

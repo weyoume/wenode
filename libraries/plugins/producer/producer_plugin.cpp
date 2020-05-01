@@ -100,7 +100,7 @@ namespace detail
          void post_operation( const chain::operation_notification& note );
          void on_block( const signed_block& b );
 
-         void update_account_bandwidth( const account_object& a, uint32_t trx_size, const bandwidth_type type );
+         void update_account_bandwidth( const account_object& a, uint32_t trx_size );
 
          producer_plugin& _self;
          std::shared_ptr< generic_custom_operation_interpreter< producer_plugin_operation > > _custom_operation_interpreter;
@@ -268,16 +268,7 @@ namespace detail
       {
          const auto& acnt = _db.get_account( auth );
 
-         update_account_bandwidth( acnt, trx_size, bandwidth_type::forum );
-
-         for( const auto& op : trx.operations )
-         {
-            if( is_market_operation( op ) )
-            {
-               update_account_bandwidth( acnt, trx_size * 10, bandwidth_type::market );
-               break;
-            }
-         }
+         update_account_bandwidth( acnt, trx_size );
       }
    }
 
@@ -399,7 +390,7 @@ namespace detail
       _dupe_customs.clear();
    }
 
-   void producer_plugin_impl::update_account_bandwidth( const account_object& a, uint32_t trx_size, const bandwidth_type type )
+   void producer_plugin_impl::update_account_bandwidth( const account_object& a, uint32_t trx_size )
    {
       database& _db = _self.database();
       const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
@@ -407,15 +398,13 @@ namespace detail
 
       if( props.total_voting_power > 0 )
       {
-         auto band = _db.find< account_bandwidth_object, by_account_bandwidth_type >( boost::make_tuple( a.name, type ) );
+         auto band = _db.find< account_bandwidth_object, by_account >( a.name );
 
          if( band == nullptr )
          {
             band = &_db.create< account_bandwidth_object >( [&]( account_bandwidth_object& b )
             {
                b.account = a.name;
-               b.type = type;
-
             });
          }
 

@@ -70,6 +70,14 @@ namespace node { namespace app {
       time_point                 time;
    };
 
+   struct comment_interaction_state
+   {
+      vector< vote_state >            votes;
+      vector< view_state >            views;
+      vector< share_state >           shares;
+      vector< moderation_state >      moderation;
+   };
+
    struct account_vote
    {
       string         author;
@@ -107,6 +115,14 @@ namespace node { namespace app {
       string                     details;          // Explanation as to what rule the post is in contravention of and why it was tagged.
       bool                       filter;           // True if the post should be filtered by the community or governance address subscribers.
       time_point                 time;
+   };
+
+   struct account_interaction_state
+   {
+      vector< account_vote >            votes;
+      vector< account_view >            views;
+      vector< account_share >           shares;
+      vector< account_moderation >      moderation;
    };
 
    struct order_state
@@ -174,12 +190,16 @@ namespace node { namespace app {
       map< uint64_t, applied_operation >    moderation_history;
       map< uint64_t, applied_operation >    community_history;
       map< uint64_t, applied_operation >    ad_history;
+      map< uint64_t, applied_operation >    graph_history;
       map< uint64_t, applied_operation >    transfer_history;
       map< uint64_t, applied_operation >    balance_history;
+      map< uint64_t, applied_operation >    product_history;
       map< uint64_t, applied_operation >    escrow_history;
       map< uint64_t, applied_operation >    trading_history;
       map< uint64_t, applied_operation >    liquidity_history;
       map< uint64_t, applied_operation >    credit_history;
+      map< uint64_t, applied_operation >    option_history;
+      map< uint64_t, applied_operation >    prediction_history;
       map< uint64_t, applied_operation >    asset_history;
       map< uint64_t, applied_operation >    network_history;
       map< uint64_t, applied_operation >    other_history;
@@ -291,6 +311,47 @@ namespace node { namespace app {
       feed_api_obj                  feed;                      // Details injected if using get_discussions_by_feed.
    };
 
+
+   struct list_state
+   {
+      account_name_type                         creator;             ///< Name of the account that created the list.
+      string                                    list_id;             ///< uuidv4 referring to the list.
+      string                                    name;                ///< Name of the list, unique for each account.
+      vector< account_api_obj >                 accounts;            ///< Account within the list.
+      vector< comment_api_obj >                 comments;            ///< Comment within the list.
+      vector< community_api_obj >               communities;         ///< Community within the list.
+      vector< asset_api_obj >                   assets;              ///< Asset within the list.
+      vector< product_sale_api_obj >            products;            ///< Product within the list.
+      vector< product_auction_sale_api_obj >    auctions;            ///< Auction within the list.
+      vector< graph_node_api_obj >              nodes;               ///< Graph node within the list.
+      vector< graph_edge_api_obj >              edges;               ///< Graph edge within the list.
+      vector< graph_node_property_api_obj >     node_types;          ///< Graph node property within the list.
+      vector< graph_edge_property_api_obj >     edge_types;          ///< Graph edge property within the list.
+   };
+
+
+   struct account_list_state
+   {
+      vector< list_state >                        lists;
+   };
+
+
+   struct poll_state : public poll_api_obj
+   {
+      poll_state( const poll_object& a ):poll_api_obj( a ){}
+      poll_state(){}
+
+      map< string, uint32_t >                 vote_count;
+      vector< poll_vote_api_obj >             votes;
+   };
+
+
+   struct account_poll_state
+   {
+      vector< poll_state >                    polls;
+   };
+
+
    struct ad_bid_state : public ad_bid_api_obj
    {
       ad_bid_state( const ad_bid_object& a ):ad_bid_api_obj( a ){}
@@ -316,10 +377,15 @@ namespace node { namespace app {
 
    struct account_product_state
    {
-      vector< product_api_obj >               seller_products;
-      vector< purchase_order_api_obj >        seller_orders;
-      vector< product_api_obj >               buyer_products;
-      vector< purchase_order_api_obj >        buyer_orders;
+      vector< product_sale_api_obj >            seller_products;
+      vector< product_purchase_api_obj >        seller_orders;
+      vector< product_auction_sale_api_obj >    seller_auctions;
+      vector< product_auction_bid_api_obj >     seller_bids;
+
+      vector< product_sale_api_obj >            buyer_products;
+      vector< product_purchase_api_obj >        buyer_orders;
+      vector< product_auction_sale_api_obj >    buyer_auctions;
+      vector< product_auction_bid_api_obj >     buyer_bids;
    };
 
    struct graph_data_state
@@ -356,6 +422,8 @@ namespace node { namespace app {
       vector< pair< account_name_type, uint32_t > >     top_shared;
       account_permission_api_obj                        permissions;
       vector< pair< tag_name_type, uint32_t > >         tags_usage;
+      account_recovery_request_api_obj                  recovery;
+      vector< owner_authority_history_api_obj >         owner_history;
       operation_state                                   operations;
    };
 
@@ -423,7 +491,7 @@ namespace node { namespace app {
 
    struct market_auction_orders
    {
-      vector< auction_order_api_obj >         auction_bids;
+      vector< auction_order_api_obj >         product_auction_bids;
       vector< auction_order_api_obj >         auction_asks;
    };
 
@@ -545,6 +613,13 @@ FC_REFLECT( node::app::moderation_state,
          (time) 
          );
 
+FC_REFLECT( node::app::comment_interaction_state,
+         (votes)
+         (views)
+         (shares)
+         (moderation)
+         );
+
 FC_REFLECT( node::app::account_vote,
          (author)
          (permlink)
@@ -578,6 +653,13 @@ FC_REFLECT( node::app::account_moderation,
          (details)
          (filter)
          (time)
+         );
+
+FC_REFLECT( node::app::account_interaction_state,
+         (votes)
+         (views)
+         (shares)
+         (moderation)
          );
 
 FC_REFLECT( node::app::order_state,
@@ -796,7 +878,7 @@ FC_REFLECT( node::app::market_margin_orders,
          );
 
 FC_REFLECT( node::app::market_auction_orders,
-         (auction_bids)
+         (product_auction_bids)
          (auction_asks)
          );
 
@@ -841,8 +923,12 @@ FC_REFLECT( node::app::account_ad_state,
 FC_REFLECT( node::app::account_product_state,
          (seller_products)
          (seller_orders)
+         (seller_auctions)
+         (seller_bids)
          (buyer_products)
          (buyer_orders)
+         (buyer_auctions)
+         (buyer_bids)
          );
 
 FC_REFLECT( node::app::graph_data_state,
@@ -856,6 +942,35 @@ FC_REFLECT( node::app::search_result_state,
          (tags)
          (assets)
          (posts)
+         );
+
+FC_REFLECT( node::app::list_state,
+         (creator)
+         (list_id)
+         (name)
+         (accounts)
+         (comments)
+         (communities)
+         (assets)
+         (products)
+         (auctions)
+         (nodes)
+         (edges)
+         (node_types)
+         (edge_types)
+         );
+
+FC_REFLECT( node::app::account_list_state,
+         (lists)
+         );
+
+FC_REFLECT_DERIVED( node::app::poll_state, ( node::app::poll_api_obj ),
+         (vote_count)
+         (votes)
+         );
+
+FC_REFLECT( node::app::account_poll_state,
+         (polls)
          );
 
 FC_REFLECT_DERIVED( node::app::ad_bid_state, ( node::app::ad_bid_api_obj ),

@@ -75,6 +75,18 @@ void update_median_producer_props( database& db )
          return a->props.account_creation_fee.amount < b->props.account_creation_fee.amount;
       });
       mcpo.account_creation_fee = active[ offset ]->props.account_creation_fee;
+
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.asset_coin_liquidity.amount < b->props.asset_coin_liquidity.amount;
+      });
+      mcpo.asset_coin_liquidity = active[ offset ]->props.asset_coin_liquidity;
+
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.asset_usd_liquidity.amount < b->props.asset_usd_liquidity.amount;
+      });
+      mcpo.asset_usd_liquidity = active[ offset ]->props.asset_usd_liquidity;
       
       std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
       {

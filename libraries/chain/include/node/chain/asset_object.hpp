@@ -146,8 +146,10 @@ namespace node { namespace chain {
          {
             switch( asset_type )
             {
+               case asset_property_type::BOND_ASSET:
                case asset_property_type::PREDICTION_ASSET:
                case asset_property_type::OPTION_ASSET:
+               case asset_property_type::STIMULUS_ASSET:
                {
                   return true;
                }

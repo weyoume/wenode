@@ -3,8 +3,12 @@
 #include <node/app/application.hpp>
 #include <node/chain/database.hpp>
 #include <node/protocol/node_operations.hpp>
+#include <graphene/utilities/key_conversion.hpp>
 #include <fc/io/json.hpp>
 #include <fc/smart_ref_impl.hpp>
+#include <fc/crypto/base58.hpp>
+#include <fc/crypto/elliptic.hpp>
+#include <fc/crypto/aes.hpp>
 
 #include <node/plugins/debug_node/debug_node_plugin.hpp>
 
@@ -109,20 +113,27 @@ extern fc::time_point TESTING_GENESIS_TIMESTAMP;
 #define INVOKE(test) ((struct test*)this)->test_method(); trx.clear()
 
 #define PREP_ACTOR(name) \
-   fc::ecc::private_key name ## _private_owner_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "ownerpassword" );     \
-   fc::ecc::private_key name ## _private_active_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "activepassword" );   \
-   fc::ecc::private_key name ## _private_posting_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "postingpassword" ); \
-   public_key_type name ## _public_owner_key = name ## _private_owner_key.get_public_key();      \
-   public_key_type name ## _public_active_key = name ## _private_active_key.get_public_key();    \
-   public_key_type name ## _public_posting_key = name ## _private_posting_key.get_public_key(); 
+   fc::ecc::private_key name ## _private_owner_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "ownerpassword" );             \
+   fc::ecc::private_key name ## _private_active_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "activepassword" );           \
+   fc::ecc::private_key name ## _private_posting_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "postingpassword" );         \
+   fc::ecc::private_key name ## _private_secure_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "securepassword" );           \
+   fc::ecc::private_key name ## _private_connection_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "connectionpassword" );   \
+   fc::ecc::private_key name ## _private_friend_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "friendpassword" );           \
+   fc::ecc::private_key name ## _private_companion_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "companionpassword" );     \
+   public_key_type name ## _public_owner_key = name ## _private_owner_key.get_public_key();                                                                  \
+   public_key_type name ## _public_active_key = name ## _private_active_key.get_public_key();                                                                \
+   public_key_type name ## _public_posting_key = name ## _private_posting_key.get_public_key();                                                              \
+   public_key_type name ## _public_secure_key = name ## _private_secure_key.get_public_key();                                                                \
+   public_key_type name ## _public_connection_key = name ## _private_connection_key.get_public_key();                                                        \
+   public_key_type name ## _public_friend_key = name ## _private_friend_key.get_public_key();                                                                \
+   public_key_type name ## _public_companion_key = name ## _private_companion_key.get_public_key();                                                          
 
 #define ACTOR(name) \
    PREP_ACTOR(name) \
-   const auto& name = account_create( BOOST_PP_STRINGIZE(name), name ## _public_owner_key, name ## _public_active_key, name ## _public_posting_key ); \
+   const auto& name = account_create( BOOST_PP_STRINGIZE(name), name ## _public_owner_key, name ## _public_active_key, name ## _public_posting_key, name ## _public_secure_key, name ## _public_connection_key, name ## _public_friend_key, name ## _public_companion_key ); \
    account_id_type name ## _id = name.id; (void)name ## _id;
 
 #define GET_ACTOR(name) \
-   fc::ecc::private_key name ## _private_key = protocol::generate_private_key(BOOST_PP_STRINGIZE(name)); \
    const account_object& name = get_account(BOOST_PP_STRINGIZE(name)); \
    account_id_type name ## _id = name.id; \
    (void)name ##_id
@@ -203,6 +214,10 @@ struct database_fixture {
       const public_key_type& owner_key,
       const public_key_type& active_key,
       const public_key_type& posting_key,
+      const public_key_type& secure_key,
+      const public_key_type& connection_key,
+      const public_key_type& friend_key,
+      const public_key_type& companion_key,
       const string& details,
       const string& url,
       const string& json
@@ -212,7 +227,11 @@ struct database_fixture {
       const string& name,
       const public_key_type& owner_key,
       const public_key_type& active_key,
-      const public_key_type& posting_key
+      const public_key_type& posting_key,
+      const public_key_type& secure_key,
+      const public_key_type& connection_key,
+      const public_key_type& friend_key,
+      const public_key_type& companion_key
    );
 
    const account_object& account_create(
@@ -279,6 +298,47 @@ struct database_fixture {
    vector< operation > get_last_operations( uint32_t ops );
 
    void validate_database( void );
+
+   string get_encrypted_message( string from_private_key, string from_public_key, string to_public_key, string message ) const;
+
+   string get_encrypted_message( private_key_type from_private_key, public_key_type from_public_key, public_key_type to_public_key, string message ) const;
+
+   struct encrypted_message_data 
+   {
+      static optional< encrypted_message_data > from_string( string str ) 
+      {
+         try 
+         {
+            if( str.size() > sizeof( encrypted_message_data ) && str[0] == '#') 
+            {
+               auto data = fc::from_base58( str.substr(1) );
+               auto m  = fc::raw::unpack< encrypted_message_data >( data );
+               FC_ASSERT( string( m ) == str );
+               return m;
+            }
+         } 
+         catch ( ... ) {}
+
+         return optional< encrypted_message_data >();
+      }
+
+      public_key_type          from;          ///< Public key of sending account.
+
+      public_key_type          to;            ///< Public key of the receiving account.
+
+      uint64_t                 nonce = 0;     ///< Iterated value derived from the time of encryption.
+
+      uint32_t                 check = 0;     ///< Hash checksum of the plaintext.
+
+      vector< char >           encrypted;     ///< Raw encrypted data of the message.
+
+      operator string()const                  ///< Returns the base58 Hash-prefixed compressed object.
+      {
+         auto data = fc::raw::pack( *this );
+         auto base58 = fc::to_base58( data );
+         return '#'+base58;
+      }
+   };
 };
 
 struct clean_database_fixture : public database_fixture
@@ -304,3 +364,11 @@ namespace test
 }
 
 } }
+
+FC_REFLECT( node::chain::database_fixture::encrypted_message_data, 
+         (from)
+         (to)
+         (nonce)
+         (check)
+         (encrypted)
+         );

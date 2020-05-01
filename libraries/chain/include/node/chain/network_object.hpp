@@ -224,7 +224,7 @@ namespace node { namespace chain {
 
          shared_string                  bittorrent_endpoint;              ///< The Bittorrent Seed Box endpoint URL of the Supernode. 
 
-         shared_string                  json;                             ///< Json metadata of the supernode, including additonal outside of consensus APIs and services. 
+         shared_string                  json;                             ///< Json metadata of the supernode, including additional outside of consensus APIs and services. 
          
          time_point                     created;                          ///< The time the supernode was created.
          

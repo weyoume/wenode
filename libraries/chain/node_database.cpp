@@ -1452,6 +1452,16 @@ const account_profile_object* database::find_account_profile( const account_name
    return find< account_profile_object, by_account >( name );
 }
 
+const account_verification_object& database::get_account_verification( const account_name_type& verifier_account, const account_name_type& verified_account )const
+{ try {
+	return get< account_verification_object, by_verifier_verified >( boost::make_tuple( verifier_account, verified_account ) );
+} FC_CAPTURE_AND_RETHROW( (verifier_account)(verified_account) ) }
+
+const account_verification_object* database::find_account_verification( const account_name_type& verifier_account, const account_name_type& verified_account )const
+{
+   return find< account_verification_object, by_verifier_verified >( boost::make_tuple( verifier_account, verified_account ) );
+}
+
 const account_following_object& database::get_account_following( const account_name_type& account )const
 { try {
 	return get< account_following_object, by_account >( account );
@@ -1832,6 +1842,46 @@ const comment_share_object* database::find_comment_share( const account_name_typ
    return find< comment_share_object, by_sharer_comment >( boost::make_tuple( sharer, share_id ) );
 }
 
+const list_object& database::get_list( const account_name_type& creator, const shared_string& list_id )const
+{ try {
+   return get< list_object, by_list_id >( boost::make_tuple( creator, list_id ) );
+} FC_CAPTURE_AND_RETHROW( (creator)(list_id) ) }
+
+const list_object* database::find_list( const account_name_type& creator, const shared_string& list_id )const
+{
+   return find< list_object, by_list_id >( boost::make_tuple( creator, list_id ) );
+}
+
+const list_object& database::get_list( const account_name_type& creator, const string& list_id )const
+{ try {
+   return get< list_object, by_list_id >( boost::make_tuple( creator, list_id ) );
+} FC_CAPTURE_AND_RETHROW( (creator)(list_id) ) }
+
+const list_object* database::find_list( const account_name_type& creator, const string& list_id )const
+{
+   return find< list_object, by_list_id >( boost::make_tuple( creator, list_id ) );
+}
+
+const poll_object& database::get_poll( const account_name_type& creator, const shared_string& poll_id )const
+{ try {
+   return get< poll_object, by_poll_id >( boost::make_tuple( creator, poll_id ) );
+} FC_CAPTURE_AND_RETHROW( (creator)(poll_id) ) }
+
+const poll_object* database::find_poll( const account_name_type& creator, const shared_string& poll_id )const
+{
+   return find< poll_object, by_poll_id >( boost::make_tuple( creator, poll_id ) );
+}
+
+const poll_object& database::get_poll( const account_name_type& creator, const string& poll_id )const
+{ try {
+   return get< poll_object, by_poll_id >( boost::make_tuple( creator, poll_id ) );
+} FC_CAPTURE_AND_RETHROW( (creator)(poll_id) ) }
+
+const poll_object* database::find_poll( const account_name_type& creator, const string& poll_id )const
+{
+   return find< poll_object, by_poll_id >( boost::make_tuple( creator, poll_id ) );
+}
+
 const ad_creative_object& database::get_ad_creative( const account_name_type& account, const shared_string& creative_id )const
 { try {
    return get< ad_creative_object, by_creative_id >( boost::make_tuple( account, creative_id ) );
@@ -2106,44 +2156,84 @@ const asset_prediction_pool_resolution_object* database::find_prediction_pool_re
    return find< asset_prediction_pool_resolution_object, by_account >( boost::make_tuple( name, symbol ) );
 }
 
-const product_object& database::get_product( const account_name_type& name, const shared_string& product_id )const
+const product_sale_object& database::get_product_sale( const account_name_type& name, const shared_string& product_id )const
 { try {
-   return get< product_object, by_product_id >( boost::make_tuple( name, product_id ) );
+   return get< product_sale_object, by_product_id >( boost::make_tuple( name, product_id ) );
 } FC_CAPTURE_AND_RETHROW( (name)(product_id) ) }
 
-const product_object* database::find_product( const account_name_type& name, const shared_string& product_id )const
+const product_sale_object* database::find_product_sale( const account_name_type& name, const shared_string& product_id )const
 {
-   return find< product_object, by_product_id >( boost::make_tuple( name, product_id ) );
+   return find< product_sale_object, by_product_id >( boost::make_tuple( name, product_id ) );
 }
 
-const product_object& database::get_product( const account_name_type& name, const string& product_id )const
+const product_sale_object& database::get_product_sale( const account_name_type& name, const string& product_id )const
 { try {
-   return get< product_object, by_product_id >( boost::make_tuple( name, product_id ) );
+   return get< product_sale_object, by_product_id >( boost::make_tuple( name, product_id ) );
 } FC_CAPTURE_AND_RETHROW( (name)(product_id) ) }
 
-const product_object* database::find_product( const account_name_type& name, const string& product_id )const
+const product_sale_object* database::find_product_sale( const account_name_type& name, const string& product_id )const
 {
-   return find< product_object, by_product_id >( boost::make_tuple( name, product_id ) );
+   return find< product_sale_object, by_product_id >( boost::make_tuple( name, product_id ) );
 }
 
-const purchase_order_object& database::get_purchase_order( const account_name_type& name, const shared_string& order_id )const
+const product_purchase_object& database::get_product_purchase( const account_name_type& name, const shared_string& order_id )const
 { try {
-   return get< purchase_order_object, by_order_id >( boost::make_tuple( name, order_id ) );
+   return get< product_purchase_object, by_order_id >( boost::make_tuple( name, order_id ) );
 } FC_CAPTURE_AND_RETHROW( (name)(order_id) ) }
 
-const purchase_order_object* database::find_purchase_order( const account_name_type& name, const shared_string& order_id )const
+const product_purchase_object* database::find_product_purchase( const account_name_type& name, const shared_string& order_id )const
 {
-   return find< purchase_order_object, by_order_id >( boost::make_tuple( name, order_id ) );
+   return find< product_purchase_object, by_order_id >( boost::make_tuple( name, order_id ) );
 }
 
-const purchase_order_object& database::get_purchase_order( const account_name_type& name, const string& order_id )const
+const product_purchase_object& database::get_product_purchase( const account_name_type& name, const string& order_id )const
 { try {
-   return get< purchase_order_object, by_order_id >( boost::make_tuple( name, order_id ) );
+   return get< product_purchase_object, by_order_id >( boost::make_tuple( name, order_id ) );
 } FC_CAPTURE_AND_RETHROW( (name)(order_id) ) }
 
-const purchase_order_object* database::find_purchase_order( const account_name_type& name, const string& order_id )const
+const product_purchase_object* database::find_product_purchase( const account_name_type& name, const string& order_id )const
 {
-   return find< purchase_order_object, by_order_id >( boost::make_tuple( name, order_id ) );
+   return find< product_purchase_object, by_order_id >( boost::make_tuple( name, order_id ) );
+}
+
+const product_auction_sale_object& database::get_product_auction_sale( const account_name_type& name, const shared_string& auction_id )const
+{ try {
+   return get< product_auction_sale_object, by_auction_id >( boost::make_tuple( name, auction_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(auction_id) ) }
+
+const product_auction_sale_object* database::find_product_auction_sale( const account_name_type& name, const shared_string& auction_id )const
+{
+   return find< product_auction_sale_object, by_auction_id >( boost::make_tuple( name, auction_id ) );
+}
+
+const product_auction_sale_object& database::get_product_auction_sale( const account_name_type& name, const string& auction_id )const
+{ try {
+   return get< product_auction_sale_object, by_auction_id >( boost::make_tuple( name, auction_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(auction_id) ) }
+
+const product_auction_sale_object* database::find_product_auction_sale( const account_name_type& name, const string& auction_id )const
+{
+   return find< product_auction_sale_object, by_auction_id >( boost::make_tuple( name, auction_id ) );
+}
+
+const product_auction_bid_object& database::get_product_auction_bid( const account_name_type& name, const shared_string& bid_id )const
+{ try {
+   return get< product_auction_bid_object, by_bid_id >( boost::make_tuple( name, bid_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(bid_id) ) }
+
+const product_auction_bid_object* database::find_product_auction_bid( const account_name_type& name, const shared_string& bid_id )const
+{
+   return find< product_auction_bid_object, by_bid_id >( boost::make_tuple( name, bid_id ) );
+}
+
+const product_auction_bid_object& database::get_product_auction_bid( const account_name_type& name, const string& bid_id )const
+{ try {
+   return get< product_auction_bid_object, by_bid_id >( boost::make_tuple( name, bid_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(bid_id) ) }
+
+const product_auction_bid_object* database::find_product_auction_bid( const account_name_type& name, const string& bid_id )const
+{
+   return find< product_auction_bid_object, by_bid_id >( boost::make_tuple( name, bid_id ) );
 }
 
 const escrow_object& database::get_escrow( const account_name_type& name, const shared_string& escrow_id )const
@@ -4550,6 +4640,84 @@ void database::adjust_interface_users( const interface_object& interface, bool a
 } FC_CAPTURE_AND_RETHROW() }
 
 
+void database::process_product_auctions()
+{ try {
+   time_point now = head_block_time();
+
+   const auto& auction_idx = get_index< product_auction_sale_index >().indices().get< by_completion_time >();
+   auto auction_itr = auction_idx.begin();
+   const auto& bid_idx = get_index< product_auction_bid_index >().indices().get< by_highest_bid >();
+
+   while( auction_itr != auction_idx.end() &&
+      auction_itr->completion_time >= now )
+   {
+      const product_auction_sale_object& auction = *auction_itr;
+
+      auto bid_itr = bid_idx.lower_bound( boost::make_tuple( auction.account, auction.auction_id ) );
+
+      product_auction_bid_id_type winning_bid = product_auction_bid_id_type();
+      asset bid_price = auction.reserve_bid;
+      
+      if( bid_itr != bid_idx.end() && 
+         bid_itr->seller == auction.account &&
+         bid_itr->auction_id == auction.auction_id )
+      {
+         bid_price = asset( bid_itr->public_bid_amount, auction.bid_asset() );
+         winning_bid = bid_itr->id;
+
+         ++bid_itr;
+
+         if( auction.auction_type == product_auction_type::CONCEALED_SECOND_PRICE_AUCTION &&
+            bid_itr != bid_idx.end() && 
+            bid_itr->seller == auction.account &&
+            bid_itr->auction_id == auction.auction_id )
+         {
+            bid_price = asset( bid_itr->public_bid_amount, auction.bid_asset() );
+         }
+      }
+
+      if( winning_bid != product_auction_bid_id_type() )
+      {
+         const product_auction_bid_object& bid = get( winning_bid );
+
+         create< escrow_object >([&]( escrow_object& esc )
+         {
+            esc.from = bid.buyer;
+            esc.to = bid.seller;
+            esc.from_mediator = account_name_type();
+            esc.to_mediator = account_name_type();
+            esc.payment = bid_price + bid.delivery_value;
+            esc.balance = asset( 0, bid.bid_asset );
+            esc.escrow_id = bid.bid_id;
+            esc.memo = bid.memo;
+            esc.json = bid.json;
+            esc.acceptance_time = now + fc::days(7);
+            esc.escrow_expiration = now + fc::days(14);
+            esc.dispute_release_time = time_point::maximum();
+            esc.approvals[ bid.buyer ] = false;
+            esc.approvals[ bid.seller ] = false;
+            esc.created = now;
+            esc.last_updated = now;
+         });
+
+         modify( bid, [&]( product_auction_bid_object& pabo )
+         {
+            pabo.winning_bid = true;
+            pabo.last_updated = now;
+         });
+      }
+
+      modify( auction, [&]( product_auction_sale_object& paso )
+      {
+         paso.winning_bid = winning_bid;
+         paso.last_updated = now;
+      });
+
+      ++auction_itr;
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+
 /**
  * Distributes currency issuance of all currency assets.
  * Pays out Staked and liquid Currency assets, including MEC, every block to all network contributors.
@@ -4699,6 +4867,9 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< view_evaluator                           >();
    _my->_evaluator_registry.register_evaluator< share_evaluator                          >();
    _my->_evaluator_registry.register_evaluator< moderation_tag_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< list_evaluator                           >();
+   _my->_evaluator_registry.register_evaluator< poll_evaluator                           >();
+   _my->_evaluator_registry.register_evaluator< poll_vote_evaluator                      >();
 
    // Community Evaluators
 
@@ -4757,8 +4928,10 @@ void database::initialize_evaluators()
    
    // Marketplace Evaluators
    
-   _my->_evaluator_registry.register_evaluator< product_update_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< product_sale_evaluator                   >();
    _my->_evaluator_registry.register_evaluator< product_purchase_evaluator               >();
+   _my->_evaluator_registry.register_evaluator< product_auction_sale_evaluator           >();
+   _my->_evaluator_registry.register_evaluator< product_auction_bid_evaluator            >();
    _my->_evaluator_registry.register_evaluator< escrow_transfer_evaluator                >();
    _my->_evaluator_registry.register_evaluator< escrow_approve_evaluator                 >();
    _my->_evaluator_registry.register_evaluator< escrow_dispute_evaluator                 >();
@@ -4894,6 +5067,9 @@ void database::initialize_indexes()
    add_core_index< moderation_tag_index                    >(*this);
    add_core_index< comment_metrics_index                   >(*this);
    add_core_index< message_index                           >(*this);
+   add_core_index< list_index                              >(*this);
+   add_core_index< poll_index                              >(*this);
+   add_core_index< poll_vote_index                         >(*this);
    add_core_index< blog_index                              >(*this);
    add_core_index< feed_index                              >(*this);
 
@@ -4938,8 +5114,10 @@ void database::initialize_indexes()
 
    // Marketplace Indexes
 
-   add_core_index< product_index                           >(*this);
-   add_core_index< purchase_order_index                    >(*this);
+   add_core_index< product_sale_index                      >(*this);
+   add_core_index< product_purchase_index                  >(*this);
+   add_core_index< product_auction_sale_index              >(*this);
+   add_core_index< product_auction_bid_index               >(*this);
    add_core_index< escrow_index                            >(*this);
 
    // Trading Indexes
@@ -5227,6 +5405,7 @@ void database::_apply_block( const signed_block& next_block )
    process_prediction_assets();
    process_unique_assets();
    process_asset_distribution();
+   process_product_auctions();
 
    process_membership_updates();
    process_txn_stake_rewards();

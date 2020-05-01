@@ -49,7 +49,7 @@ using node::protocol::membership_tier_type;
 using node::protocol::network_officer_role_type;
 using node::protocol::executive_role_type;
 using node::protocol::proposal_distribution_type;
-using node::protocol::product_sale_type;
+using node::protocol::product_auction_type;
 using node::protocol::asset_property_type;
 using node::protocol::ad_format_type;
 using node::protocol::post_format_type;
@@ -132,6 +132,9 @@ enum object_type
    moderation_tag_object_type,
    comment_metrics_object_type,
    message_object_type,
+   list_object_type,
+   poll_object_type,
+   poll_vote_object_type,
    blog_object_type,
    feed_object_type,
 
@@ -176,8 +179,10 @@ enum object_type
    
    // Marketplace Objects
 
-   product_object_type,
-   purchase_order_object_type,
+   product_sale_object_type,
+   product_purchase_object_type,
+   product_auction_sale_object_type,
+   product_auction_bid_object_type,
    escrow_object_type,
 
    // Trading Objects
@@ -285,6 +290,9 @@ class comment_share_object;
 class moderation_tag_object;
 class comment_metrics_object;
 class message_object;
+class list_object;
+class poll_object;
+class poll_vote_object;
 class blog_object;
 class feed_object;
 
@@ -329,8 +337,10 @@ class confidential_balance_object;
 
 // Marketplace Objects
 
-class product_object;
-class purchase_order_object;
+class product_sale_object;
+class product_purchase_object;
+class product_auction_sale_object;
+class product_auction_bid_object;
 class escrow_object;
 
 // Trading Objects
@@ -437,6 +447,9 @@ typedef oid< comment_share_object                       > comment_share_id_type;
 typedef oid< moderation_tag_object                      > moderation_tag_id_type;
 typedef oid< comment_metrics_object                     > comment_metrics_id_type;
 typedef oid< message_object                             > message_id_type;
+typedef oid< list_object                                > list_id_type;
+typedef oid< poll_object                                > poll_id_type;
+typedef oid< poll_vote_object                           > poll_vote_id_type;
 typedef oid< blog_object                                > blog_id_type;
 typedef oid< feed_object                                > feed_id_type;
 
@@ -481,8 +494,10 @@ typedef oid< confidential_balance_object                > confidential_balance_i
 
 // Marketplace Objects
 
-typedef oid< product_object                             > product_id_type;
-typedef oid< purchase_order_object                      > purchase_order_id_type;
+typedef oid< product_sale_object                        > product_sale_id_type;
+typedef oid< product_purchase_object                    > product_purchase_id_type;
+typedef oid< product_auction_sale_object                > product_auction_sale_id_type;
+typedef oid< product_auction_bid_object                 > product_auction_bid_id_type;
 typedef oid< escrow_object                              > escrow_id_type;
 
 // Trading Objects
@@ -527,12 +542,6 @@ typedef oid< producer_vote_object                       > producer_vote_id_type;
 typedef oid< block_validation_object                    > block_validation_id_type;
 typedef oid< commit_violation_object                    > commit_violation_id_type;
 
-enum bandwidth_type
-{
-   post,    // Rate limiting posting reward eligibility over time
-   forum,   // Rate limiting for all forum related actins
-   market   // Rate limiting for all other actions
-};
 
 } } //node::chain
 
@@ -663,6 +672,9 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (moderation_tag_object_type)
          (comment_metrics_object_type)
          (message_object_type)
+         (list_object_type)
+         (poll_object_type)
+         (poll_vote_object_type)
          (blog_object_type)
          (feed_object_type)
 
@@ -707,8 +719,10 @@ FC_REFLECT_ENUM( node::chain::object_type,
 
          // Marketplace Objects
 
-         (product_object_type)
-         (purchase_order_object_type)
+         (product_sale_object_type)
+         (product_purchase_object_type)
+         (product_auction_sale_object_type)
+         (product_auction_bid_object_type)
          (escrow_object_type)
 
          // Trading Objects
@@ -756,5 +770,3 @@ FC_REFLECT_ENUM( node::chain::object_type,
 
 FC_REFLECT_TYPENAME( node::chain::shared_string );
 FC_REFLECT_TYPENAME( node::chain::buffer_type );
-
-FC_REFLECT_ENUM( node::chain::bandwidth_type, (post)(forum)(market) );

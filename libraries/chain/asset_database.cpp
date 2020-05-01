@@ -2343,13 +2343,15 @@ void database::dispute_escrow( const escrow_object& escrow )
 
 } FC_CAPTURE_AND_RETHROW() }
 
+
 /**
- * Selects the median release percentage in the escrow
- * and divides the payment between the TO and FROM accounts.
+ * Selects the median release percentage in the escrow and divides the payment between the TO and FROM accounts.
+ * 
  * Fofeits security bonds based on the difference between median
  * and individual votes to create an incentive to reach 
  * cooperative consensus between the mediators about the
- * escrow details. 
+ * escrow details.
+ * 
  * All voters receive a split of all forfeited bonds, distributing funds
  * as a net profit to accounts the voted closest to the median.
  */

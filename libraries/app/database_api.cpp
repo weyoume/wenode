@@ -86,6 +86,14 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       vector< message_state >                         get_messages( vector< string > names )const;
 
+      list_state                                      get_list( string name, string list_id )const;
+
+      vector< account_list_state >                    get_account_lists( vector< string > names )const;
+
+      poll_state                                      get_poll( string name, string poll_id )const;
+
+      vector< account_poll_state >                    get_account_polls( vector< string > names )const;
+
       vector< balance_state >                         get_balances( vector< string > names )const;
 
       vector< confidential_balance_api_obj >          get_confidential_balances( const confidential_query& query )const;
@@ -95,12 +103,6 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       set< string >                                   lookup_accounts( string lower_bound_name, uint32_t limit )const;
 
       uint64_t                                        get_account_count()const;
-
-      vector< owner_authority_history_api_obj >       get_owner_history( string account )const;
-
-      optional< account_recovery_request_api_obj >    get_recovery_request( string account )const;
-
-      optional< account_bandwidth_api_obj >           get_account_bandwidth( string account, producer::bandwidth_type type )const;
 
 
       //================//
@@ -196,7 +198,9 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       //==================//
 
 
-      product_api_obj                                 get_product( string seller, string product_id )const;
+      product_sale_api_obj                            get_product_sale( string seller, string product_id )const;
+
+      product_auction_sale_api_obj                    get_product_auction_sale( string seller, string auction_id )const;
 
       vector< account_product_state >                 get_account_products( vector< string > names )const;
 
@@ -249,14 +253,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
       // === Posts + Tags === //
       //======================//
 
-
-      vector< vote_state >                            get_active_votes( string author, string permlink )const;
-
-      vector< view_state >                            get_active_views( string author, string permlink )const;
-
-      vector< share_state >                           get_active_shares( string author, string permlink )const;
-
-      vector< moderation_state >                      get_active_mod_tags( string author, string permlink )const;
+      comment_interaction_state                       get_comment_interactions( string author, string permlink )const;
 
       vector< account_vote >                          get_account_votes( string account, string from_author, string from_permlink, uint32_t limit )const;
 
@@ -690,6 +687,9 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
    const auto& outgoing_subscription_idx = _db.get_index< governance_subscription_index >().indices().get< by_account_rank >();
    const auto& outgoing_enterprise_vote_idx = _db.get_index< enterprise_approval_index >().indices().get< by_account_rank >();
    const auto& outgoing_commit_violation_idx = _db.get_index< commit_violation_index >().indices().get< by_reporter_height >();
+
+   const auto& owner_history_idx = _db.get_index< owner_authority_history_index >().indices().get< by_account >();
+   const auto& recovery_idx = _db.get_index< account_recovery_request_index >().indices().get< by_account >();
 
    const auto& history_idx = _db.get_index< account_history_index >().indices().get< by_account >();
 
@@ -1283,6 +1283,22 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             ++history_itr;
          }
 
+         auto owner_history_itr = owner_history_idx.lower_bound( name );
+
+         while( owner_history_itr != owner_history_idx.end() && 
+            owner_history_itr->account == name )
+         {
+            results.back().owner_history.push_back( owner_authority_history_api_obj( *owner_history_itr ) );
+            ++owner_history_itr;
+         }
+
+         auto recovery_itr = recovery_idx.find( name );
+
+         if( recovery_itr != recovery_idx.end() )
+         {
+            results.back().recovery = account_recovery_request_api_obj( *recovery_itr );
+         }
+
          for( auto& item : operation_history )
          {
             switch( item.second.op.which() )
@@ -1327,8 +1343,12 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                break;
                case operation::tag<comment_operation>::value:
                case operation::tag<author_reward_operation>::value:
+               case operation::tag<content_reward_operation>::value:
                case operation::tag<comment_reward_operation>::value:
                case operation::tag<comment_benefactor_reward_operation>::value:
+               case operation::tag<list_operation>::value:
+               case operation::tag<poll_operation>::value:
+               case operation::tag<poll_vote_operation>::value:
                {
                   results.back().operations.post_history[ item.first ] = item.second;
                }
@@ -1375,6 +1395,8 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                case operation::tag<community_remove_member_operation>::value:
                case operation::tag<community_blacklist_operation>::value:
                case operation::tag<community_subscribe_operation>::value:
+               case operation::tag<community_event_operation>::value:
+               case operation::tag<community_event_attend_operation>::value:
                {
                   results.back().operations.community_history[ item.first ] = item.second;
                }
@@ -1388,12 +1410,23 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                   results.back().operations.ad_history[ item.first ] = item.second;
                }
                break;
+               case operation::tag<graph_node_operation>::value:
+               case operation::tag<graph_edge_operation>::value:
+               case operation::tag<graph_node_property_operation>::value:
+               case operation::tag<graph_edge_property_operation>::value:
+               {
+                  results.back().operations.graph_history[ item.first ] = item.second;
+               }
+               break;
                case operation::tag<transfer_operation>::value:
                case operation::tag<transfer_request_operation>::value:
                case operation::tag<transfer_accept_operation>::value:
                case operation::tag<transfer_recurring_operation>::value:
                case operation::tag<transfer_recurring_request_operation>::value:
                case operation::tag<transfer_recurring_accept_operation>::value:
+               case operation::tag<transfer_confidential_operation>::value:
+               case operation::tag<transfer_to_confidential_operation>::value:
+               case operation::tag<transfer_from_confidential_operation>::value:
                {
                   results.back().operations.transfer_history[ item.first ] = item.second;
                }
@@ -1408,6 +1441,14 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                   results.back().operations.balance_history[ item.first ] = item.second;
                }
                break;
+               case operation::tag<product_sale_operation>::value:
+               case operation::tag<product_purchase_operation>::value:
+               case operation::tag<product_auction_sale_operation>::value:
+               case operation::tag<product_auction_bid_operation>::value:
+               {
+                  results.back().operations.product_history[ item.first ] = item.second;
+               }
+               break;
                case operation::tag<escrow_transfer_operation>::value:
                case operation::tag<escrow_approve_operation>::value:
                case operation::tag<escrow_dispute_operation>::value:
@@ -1418,6 +1459,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                break;
                case operation::tag<limit_order_operation>::value:
                case operation::tag<margin_order_operation>::value:
+               case operation::tag<auction_order_operation>::value:
                case operation::tag<call_order_operation>::value:
                case operation::tag<fill_order_operation>::value:
                {
@@ -1440,15 +1482,33 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                   results.back().operations.credit_history[ item.first ] = item.second;
                }
                break;
-               case operation::tag<asset_create_operation>::value:          
+               case operation::tag<option_order_operation>::value:
+               case operation::tag<option_pool_create_operation>::value:
+               case operation::tag<asset_option_exercise_operation>::value:
+               {
+                  results.back().operations.option_history[ item.first ] = item.second;
+               }
+               break;
+               case operation::tag<prediction_pool_create_operation>::value:
+               case operation::tag<prediction_pool_exchange_operation>::value:
+               case operation::tag<prediction_pool_resolve_operation>::value:
+               {
+                  results.back().operations.prediction_history[ item.first ] = item.second;
+               }
+               break;
+               case operation::tag<asset_create_operation>::value:
                case operation::tag<asset_update_operation>::value:
-               case operation::tag<asset_issue_operation>::value: 
-               case operation::tag<asset_reserve_operation>::value: 
-               case operation::tag<asset_update_issuer_operation>::value:        
-               case operation::tag<asset_update_feed_producers_operation>::value:         
-               case operation::tag<asset_publish_feed_operation>::value: 
-               case operation::tag<asset_settle_operation>::value:  
+               case operation::tag<asset_issue_operation>::value:
+               case operation::tag<asset_reserve_operation>::value:
+               case operation::tag<asset_update_issuer_operation>::value:
+               case operation::tag<asset_distribution_operation>::value:
+               case operation::tag<asset_distribution_fund_operation>::value:
+               case operation::tag<asset_stimulus_fund_operation>::value:
+               case operation::tag<asset_update_feed_producers_operation>::value:
+               case operation::tag<asset_publish_feed_operation>::value:
+               case operation::tag<asset_settle_operation>::value:
                case operation::tag<asset_global_settle_operation>::value:
+               case operation::tag<asset_collateral_bid_operation>::value:
                {
                   results.back().operations.asset_history[ item.first ] = item.second;
                }
@@ -1754,6 +1814,255 @@ vector< message_state > database_api_impl::get_messages( vector< string > names 
    return results;
 }
 
+
+list_state database_api::get_list( string name, string list_id )const
+{
+   return my->_db.with_read_lock( [&]()
+   {
+      return my->get_list( name, list_id );
+   });
+}
+
+
+list_state database_api_impl::get_list( string name, string list_id )const
+{
+   const auto& list_idx = _db.get_index< list_index >().indices().get< by_list_id >();
+
+   list_state lstate;
+   
+   auto list_itr = list_idx.find( boost::make_tuple( name, list_id ) );
+
+   if( list_itr != list_idx.end() )
+   {
+      const list_object& list = *list_itr;
+
+      lstate.creator = list.creator;
+      lstate.list_id = to_string( list.list_id );
+      lstate.name = to_string( list.name );
+
+      for( account_id_type id : list.accounts )
+      {
+         lstate.accounts.push_back( account_api_obj( _db.get( id ), _db ) );
+      }
+      for( comment_id_type id : list.comments )
+      {
+         lstate.comments.push_back( comment_api_obj( _db.get( id ) ) );
+      }
+      for( community_id_type id : list.communities )
+      {
+         lstate.communities.push_back( community_api_obj( _db.get( id ) ) );
+      }
+      for( asset_id_type id : list.assets )
+      {
+         lstate.assets.push_back( asset_api_obj( _db.get( id ) ) );
+      }
+      for( product_sale_id_type id : list.products )
+      {
+         lstate.products.push_back( product_sale_api_obj( _db.get( id ) ) );
+      }
+      for( product_auction_sale_id_type id : list.auctions )
+      {
+         lstate.auctions.push_back( product_auction_sale_api_obj( _db.get( id ) ) );
+      }
+      for( graph_node_id_type id : list.nodes )
+      {
+         lstate.nodes.push_back( graph_node_api_obj( _db.get( id ) ) );
+      }
+      for( graph_edge_id_type id : list.edges )
+      {
+         lstate.edges.push_back( graph_edge_api_obj( _db.get( id ) ) );
+      }
+      for( graph_node_property_id_type id : list.node_types )
+      {
+         lstate.node_types.push_back( graph_node_property_api_obj( _db.get( id ) ) );
+      }
+      for( graph_edge_property_id_type id : list.edge_types )
+      {
+         lstate.edge_types.push_back( graph_edge_property_api_obj( _db.get( id ) ) );
+      }
+   }
+
+   return lstate;
+}
+
+
+vector< account_list_state > database_api::get_account_lists( vector< string > names )const
+{
+   return my->_db.with_read_lock( [&]()
+   {
+      return my->get_account_lists( names );
+   });
+}
+
+
+vector< account_list_state > database_api_impl::get_account_lists( vector< string > names )const
+{
+   const auto& list_idx = _db.get_index< list_index >().indices().get< by_list_id >();
+   auto list_itr = list_idx.begin();
+   
+   vector< account_list_state > results;
+
+   for( auto name : names )
+   {
+      list_itr = list_idx.lower_bound( name );
+
+      account_list_state account_lstate;
+
+      while( list_itr != list_idx.end() &&
+         list_itr->creator == name )
+      {
+         const list_object& list = *list_itr;
+
+         list_state lstate;
+
+         lstate.creator = list.creator;
+         lstate.list_id = to_string( list.list_id );
+         lstate.name = to_string( list.name );
+
+         for( account_id_type id : list.accounts )
+         {
+            lstate.accounts.push_back( account_api_obj( _db.get( id ), _db ) );
+         }
+         for( comment_id_type id : list.comments )
+         {
+            lstate.comments.push_back( comment_api_obj( _db.get( id ) ) );
+         }
+         for( community_id_type id : list.communities )
+         {
+            lstate.communities.push_back( community_api_obj( _db.get( id ) ) );
+         }
+         for( asset_id_type id : list.assets )
+         {
+            lstate.assets.push_back( asset_api_obj( _db.get( id ) ) );
+         }
+         for( product_sale_id_type id : list.products )
+         {
+            lstate.products.push_back( product_sale_api_obj( _db.get( id ) ) );
+         }
+         for( product_auction_sale_id_type id : list.auctions )
+         {
+            lstate.auctions.push_back( product_auction_sale_api_obj( _db.get( id ) ) );
+         }
+         for( graph_node_id_type id : list.nodes )
+         {
+            lstate.nodes.push_back( graph_node_api_obj( _db.get( id ) ) );
+         }
+         for( graph_edge_id_type id : list.edges )
+         {
+            lstate.edges.push_back( graph_edge_api_obj( _db.get( id ) ) );
+         }
+         for( graph_node_property_id_type id : list.node_types )
+         {
+            lstate.node_types.push_back( graph_node_property_api_obj( _db.get( id ) ) );
+         }
+         for( graph_edge_property_id_type id : list.edge_types )
+         {
+            lstate.edge_types.push_back( graph_edge_property_api_obj( _db.get( id ) ) );
+         }
+
+         account_lstate.lists.push_back( lstate );
+
+         ++list_itr;
+      }
+
+      results.push_back( account_lstate );
+   }
+
+   return results;
+}
+
+
+poll_state database_api::get_poll( string name, string poll_id )const
+{
+   return my->_db.with_read_lock( [&]()
+   {
+      return my->get_poll( name, poll_id );
+   });
+}
+
+
+poll_state database_api_impl::get_poll( string name, string poll_id )const
+{
+   const auto& poll_idx = _db.get_index< poll_index >().indices().get< by_poll_id >();
+   const auto& vote_idx = _db.get_index< poll_vote_index >().indices().get< by_poll_id >();
+   
+   poll_state pstate;
+   
+   auto poll_itr = poll_idx.find( boost::make_tuple( name, poll_id ) );
+   auto vote_itr = vote_idx.begin();
+
+   if( poll_itr != poll_idx.end() )
+   {
+      const poll_object& poll = *poll_itr;
+      pstate = poll_state( poll );
+
+      vote_itr = vote_idx.lower_bound( boost::make_tuple( name, poll_id ) );
+
+      while( vote_itr != vote_idx.end() &&
+         vote_itr->creator == name &&
+         to_string( vote_itr->poll_id ) == poll_id )
+      {
+         pstate.vote_count[ to_string( vote_itr->poll_option ) ]++;
+         pstate.votes.push_back( *vote_itr );
+         ++vote_itr;
+      }
+   }
+
+   return pstate;
+}
+
+
+vector< account_poll_state > database_api::get_account_polls( vector< string > names )const
+{
+   return my->_db.with_read_lock( [&]()
+   {
+      return my->get_account_polls( names );
+   });
+}
+
+
+vector< account_poll_state > database_api_impl::get_account_polls( vector< string > names )const
+{
+   const auto& poll_idx = _db.get_index< poll_index >().indices().get< by_poll_id >();
+   const auto& vote_idx = _db.get_index< poll_vote_index >().indices().get< by_poll_id >();
+   
+   vector< account_poll_state > results;
+
+   for( auto name : names )
+   {
+      auto poll_itr = poll_idx.lower_bound( name );
+
+      account_poll_state account_pstate;
+
+      while( poll_itr != poll_idx.end() &&
+         poll_itr->creator == name )
+      {
+         const poll_object& poll = *poll_itr;
+         poll_state pstate = poll_state( poll );
+
+         auto vote_itr = vote_idx.lower_bound( boost::make_tuple( name, poll.poll_id ) );
+
+         while( vote_itr != vote_idx.end() &&
+            vote_itr->creator == name &&
+            vote_itr->poll_id == poll.poll_id )
+         {
+            pstate.vote_count[ to_string( vote_itr->poll_option ) ] += 1;
+            pstate.votes.push_back( *vote_itr );
+            ++vote_itr;
+         }
+
+         account_pstate.polls.push_back( pstate );
+
+         ++poll_itr;
+      }
+
+      results.push_back( account_pstate );
+   }
+
+   return results;
+}
+
+
 vector< key_state > database_api::get_keychains( vector< string > names )const
 {
    return my->_db.with_read_lock( [&]()
@@ -1761,6 +2070,7 @@ vector< key_state > database_api::get_keychains( vector< string > names )const
       return my->get_keychains( names );
    });
 }
+
 
 vector< key_state > database_api_impl::get_keychains( vector< string > names )const
 {
@@ -1881,75 +2191,6 @@ uint64_t database_api::get_account_count()const
 uint64_t database_api_impl::get_account_count()const
 {
    return _db.get_index< account_index >().indices().size();
-}
-
-vector< owner_authority_history_api_obj > database_api::get_owner_history( string account )const
-{
-   return my->_db.with_read_lock( [&]()
-   {
-      return my->get_owner_history( account );
-   });
-}
-
-vector< owner_authority_history_api_obj > database_api_impl::get_owner_history( string account )const
-{
-   vector< owner_authority_history_api_obj > results;
-
-   const auto& hist_idx = _db.get_index< owner_authority_history_index >().indices().get< by_account >();
-   auto itr = hist_idx.lower_bound( account );
-
-   while( itr != hist_idx.end() && itr->account == account )
-   {
-      results.push_back( owner_authority_history_api_obj( *itr ) );
-      ++itr;
-   }
-
-   return results;
-}
-
-optional< account_recovery_request_api_obj > database_api::get_recovery_request( string account )const
-{
-   return my->_db.with_read_lock( [&]()
-   {
-      return my->get_recovery_request( account );
-   });
-}
-
-optional< account_recovery_request_api_obj > database_api_impl::get_recovery_request( string account )const
-{
-   optional< account_recovery_request_api_obj > results;
-
-   const auto& rec_idx = _db.get_index< account_recovery_request_index >().indices().get< by_account >();
-   auto req = rec_idx.find( account );
-
-   if( req != rec_idx.end() )
-   {
-      results = account_recovery_request_api_obj( *req );
-   }
-
-   return results;
-}
-
-optional< account_bandwidth_api_obj > database_api::get_account_bandwidth( string account, producer::bandwidth_type type )const
-{
-   return my->_db.with_read_lock( [&]()
-   {
-      return my->get_account_bandwidth( account, type );
-   });
-}
-
-optional< account_bandwidth_api_obj > database_api_impl::get_account_bandwidth( string account, producer::bandwidth_type type )const
-{
-   optional< account_bandwidth_api_obj > results;
-   if( _db.has_index< producer::account_bandwidth_index >() )
-   {
-      auto band = _db.find< producer::account_bandwidth_object, producer::by_account_bandwidth_type >( boost::make_tuple( account, type ) );
-      if( band != nullptr )
-      {
-         results = *band;
-      }  
-   }
-   return results;
 }
 
 
@@ -3173,9 +3414,9 @@ market_auction_orders database_api_impl::get_auction_orders( string buy_symbol, 
 
    while( auction_sell_itr != auction_end &&
       auction_sell_itr->sell_asset() == asset_symbol_type( sell_symbol ) &&
-      results.auction_bids.size() < limit )
+      results.product_auction_bids.size() < limit )
    {
-      results.auction_bids.push_back( auction_order_api_obj( *auction_sell_itr ) );
+      results.product_auction_bids.push_back( auction_order_api_obj( *auction_sell_itr ) );
       ++auction_sell_itr;
    }
    while( auction_buy_itr != auction_end && 
@@ -3696,11 +3937,11 @@ vector< ad_bid_state > database_api_impl::get_interface_audience_bids( const ad_
    //==================//
 
 
-product_api_obj database_api::get_product( string seller, string product_id )const
+product_sale_api_obj database_api::get_product_sale( string seller, string product_id )const
 {
    return my->_db.with_read_lock( [&]()
    {
-      return my->get_product( seller, product_id );
+      return my->get_product_sale( seller, product_id );
    });
 }
 
@@ -3708,16 +3949,41 @@ product_api_obj database_api::get_product( string seller, string product_id )con
 /**
  * Retrieves a list of products and their purchase orders by ID.
  */
-product_api_obj database_api_impl::get_product( string seller, string product_id )const
+product_sale_api_obj database_api_impl::get_product_sale( string seller, string product_id )const
 {
-   product_api_obj results;
+   product_sale_api_obj results;
    
-   const auto& product_idx = _db.get_index< product_index >().indices().get< by_product_id >();
+   const auto& product_idx = _db.get_index< product_sale_index >().indices().get< by_product_id >();
    
    auto product_itr = product_idx.find( boost::make_tuple( seller, product_id ) );
    if( product_itr != product_idx.end() )
    {
-      results = product_api_obj( *product_itr );
+      results = product_sale_api_obj( *product_itr );
+   }
+
+   return results;
+}
+
+
+product_auction_sale_api_obj database_api::get_product_auction_sale( string seller, string auction_id )const
+{
+   return my->_db.with_read_lock( [&]()
+   {
+      return my->get_product_auction_sale( seller, auction_id );
+   });
+}
+
+
+product_auction_sale_api_obj database_api_impl::get_product_auction_sale( string seller, string auction_id )const
+{
+   product_auction_sale_api_obj results;
+   
+   const auto& product_idx = _db.get_index< product_auction_sale_index >().indices().get< by_auction_id >();
+   
+   auto product_itr = product_idx.find( boost::make_tuple( seller, auction_id ) );
+   if( product_itr != product_idx.end() )
+   {
+      results = product_auction_sale_api_obj( *product_itr );
    }
 
    return results;
@@ -3740,12 +4006,21 @@ vector< account_product_state > database_api_impl::get_account_products( vector<
 {
    vector< account_product_state > results;
    
-   const auto& product_idx = _db.get_index< product_index >().indices().get< by_product_id >();
-   const auto& seller_purchase_idx = _db.get_index< purchase_order_index >().indices().get< by_product_id >();
-   const auto& buyer_purchase_idx = _db.get_index< purchase_order_index >().indices().get< by_order_id >();
+   const auto& product_idx = _db.get_index< product_sale_index >().indices().get< by_product_id >();
+   const auto& seller_purchase_idx = _db.get_index< product_purchase_index >().indices().get< by_product_id >();
+   const auto& buyer_purchase_idx = _db.get_index< product_purchase_index >().indices().get< by_order_id >();
+
+   const auto& auction_idx = _db.get_index< product_auction_sale_index >().indices().get< by_auction_id >();
+   const auto& seller_bid_idx = _db.get_index< product_auction_bid_index >().indices().get< by_auction_id >();
+   const auto& buyer_bid_idx = _db.get_index< product_auction_bid_index >().indices().get< by_bid_id >();
+   
    auto product_itr = product_idx.begin();
    auto buyer_purchase_itr = buyer_purchase_idx.begin();
    auto seller_purchase_itr = seller_purchase_idx.begin();
+
+   auto auction_itr = auction_idx.begin();
+   auto seller_bid_itr = seller_bid_idx.begin();
+   auto buyer_bid_itr = buyer_bid_idx.begin();
 
    for( auto acc : names )
    {
@@ -3755,7 +4030,7 @@ vector< account_product_state > database_api_impl::get_account_products( vector<
       while( product_itr != product_idx.end() && 
          product_itr->account == acc )
       {
-         pstate.seller_products.push_back( product_api_obj( *product_itr ) );
+         pstate.seller_products.push_back( product_sale_api_obj( *product_itr ) );
          ++product_itr;
       }
 
@@ -3764,7 +4039,7 @@ vector< account_product_state > database_api_impl::get_account_products( vector<
       while( seller_purchase_itr != seller_purchase_idx.end() && 
          seller_purchase_itr->seller == acc )
       {
-         pstate.seller_orders.push_back( purchase_order_api_obj( *seller_purchase_itr ) );
+         pstate.seller_orders.push_back( product_purchase_api_obj( *seller_purchase_itr ) );
          ++seller_purchase_itr;
       }
 
@@ -3773,7 +4048,7 @@ vector< account_product_state > database_api_impl::get_account_products( vector<
       while( buyer_purchase_itr != buyer_purchase_idx.end() && 
          buyer_purchase_itr->buyer == acc )
       {
-         pstate.buyer_orders.push_back( purchase_order_api_obj( *buyer_purchase_itr ) );
+         pstate.buyer_orders.push_back( product_purchase_api_obj( *buyer_purchase_itr ) );
          ++buyer_purchase_itr;
       }
 
@@ -3789,7 +4064,50 @@ vector< account_product_state > database_api_impl::get_account_products( vector<
          product_itr = product_idx.find( boost::make_tuple( product.first, product.second ) );
          if( product_itr != product_idx.end() )
          {
-            pstate.buyer_products.push_back( product_api_obj( *product_itr ) );
+            pstate.buyer_products.push_back( product_sale_api_obj( *product_itr ) );
+         }
+      }
+
+      auction_itr = auction_idx.lower_bound( acc );
+
+      while( auction_itr != auction_idx.end() && 
+         auction_itr->account == acc )
+      {
+         pstate.seller_auctions.push_back( product_auction_sale_api_obj( *auction_itr ) );
+         ++auction_itr;
+      }
+
+      seller_bid_itr = seller_bid_idx.lower_bound( acc );
+
+      while( seller_bid_itr != seller_bid_idx.end() && 
+         seller_bid_itr->seller == acc )
+      {
+         pstate.seller_bids.push_back( product_auction_bid_api_obj( *seller_bid_itr ) );
+         ++seller_bid_itr;
+      }
+
+      buyer_bid_itr = buyer_bid_idx.lower_bound( acc );
+
+      while( buyer_bid_itr != buyer_bid_idx.end() && 
+         buyer_bid_itr->buyer == acc )
+      {
+         pstate.buyer_bids.push_back( product_auction_bid_api_obj( *buyer_bid_itr ) );
+         ++buyer_bid_itr;
+      }
+
+      flat_set< pair < account_name_type, string > > buyer_auctions;
+
+      for( auto bid : pstate.buyer_bids )
+      {
+         buyer_auctions.insert( std::make_pair( bid.seller, bid.bid_id ) );
+      }
+
+      for( auto auction : buyer_auctions )
+      {
+         auction_itr = auction_idx.find( boost::make_tuple( auction.first, auction.second ) );
+         if( auction_itr != auction_idx.end() )
+         {
+            pstate.buyer_auctions.push_back( product_auction_sale_api_obj( *auction_itr ) );
          }
       }
 
@@ -4683,124 +5001,95 @@ bool database_api_impl::verify_account_authority( const string& name, const flat
    //======================//
 
 
-vector< vote_state > database_api::get_active_votes( string author, string permlink )const
+
+comment_interaction_state database_api::get_comment_interactions( string author, string permlink )const
 {
    return my->_db.with_read_lock( [&]()
    {
-      return my->get_active_votes( author, permlink );
+      return my->get_comment_interactions( author, permlink );
    });
 }
 
-vector< vote_state > database_api_impl::get_active_votes( string author, string permlink )const
+comment_interaction_state database_api_impl::get_comment_interactions( string author, string permlink )const
 {
-   vector< vote_state > results;
+   comment_interaction_state results;
+
    const comment_object& comment = _db.get_comment( author, permlink );
-   const auto& idx = _db.get_index< comment_vote_index >().indices().get< by_comment_voter >();
+
+   const auto& vote_idx = _db.get_index< comment_vote_index >().indices().get< by_comment_voter >();
+   const auto& view_idx = _db.get_index< comment_view_index >().indices().get< by_comment_viewer >();
+   const auto& share_idx = _db.get_index< comment_share_index >().indices().get< by_comment_sharer >();
+   const auto& moderation_idx = _db.get_index< moderation_tag_index >().indices().get< by_comment_moderator >();
+
    comment_id_type cid(comment.id);
-   auto itr = idx.lower_bound( cid );
-   while( itr != idx.end() && itr->comment == cid )
+
+   auto vote_itr = vote_idx.lower_bound( cid );
+
+   while( vote_itr != vote_idx.end() && 
+      vote_itr->comment == cid )
    {
       vote_state vstate;
-      vstate.voter = itr->voter;
-      vstate.weight = itr->weight;
-      vstate.reward = itr->reward.value;
-      vstate.percent = itr->vote_percent;
-      vstate.time = itr->last_updated;
-      results.push_back( vstate );
-      ++itr;
+
+      vstate.voter = vote_itr->voter;
+      vstate.weight = vote_itr->weight;
+      vstate.reward = vote_itr->reward.value;
+      vstate.percent = vote_itr->vote_percent;
+      vstate.time = vote_itr->last_updated;
+      results.votes.push_back( vstate );
+      ++vote_itr;
    }
-   return results;
-}
 
-vector< view_state > database_api::get_active_views( string author, string permlink )const
-{
-   return my->_db.with_read_lock( [&]()
-   {
-      return my->get_active_views( author, permlink );
-   });
-}
-
-vector< view_state > database_api_impl::get_active_views( string author, string permlink )const
-{
-   vector< view_state > results;
-   const comment_object& comment = _db.get_comment( author, permlink );
-   const auto& idx = _db.get_index< comment_view_index >().indices().get< by_comment_viewer >();
-   comment_id_type cid(comment.id);
-   auto itr = idx.lower_bound( cid );
-   while( itr != idx.end() && itr->comment == cid )
+   auto view_itr = view_idx.lower_bound( cid );
+   
+   while( view_itr != view_idx.end() && 
+      view_itr->comment == cid )
    {
       view_state vstate;
-      vstate.viewer = itr->viewer;
-      vstate.weight = itr->weight;
-      vstate.reward = itr->reward.value;
-      vstate.time = itr->created;
-      results.push_back( vstate );
-      ++itr;
+
+      vstate.viewer = view_itr->viewer;
+      vstate.weight = view_itr->weight;
+      vstate.reward = view_itr->reward.value;
+      vstate.time = view_itr->created;
+      results.views.push_back( vstate );
+      ++view_itr;
    }
-   return results;
-}
+   
+   auto share_itr = share_idx.lower_bound( cid );
 
-vector< share_state > database_api::get_active_shares( string author, string permlink )const
-{
-   return my->_db.with_read_lock( [&]()
-   {
-      return my->get_active_shares( author, permlink );
-   });
-}
-
-vector< share_state > database_api_impl::get_active_shares( string author, string permlink )const
-{
-   vector< share_state > results;
-   const comment_object& comment = _db.get_comment( author, permlink );
-   const auto& idx = _db.get_index< comment_share_index >().indices().get< by_comment_sharer >();
-   comment_id_type cid(comment.id);
-   auto itr = idx.lower_bound( cid );
-   while( itr != idx.end() && itr->comment == cid )
+   while( share_itr != share_idx.end() && 
+      share_itr->comment == cid )
    {
       share_state sstate;
-      sstate.sharer = itr->sharer;
-      sstate.weight = itr->weight;
-      sstate.reward = itr->reward.value;
-      sstate.time = itr->created;
 
-      results.push_back( sstate );
-      ++itr;
+      sstate.sharer = share_itr->sharer;
+      sstate.weight = share_itr->weight;
+      sstate.reward = share_itr->reward.value;
+      sstate.time = share_itr->created;
+
+      results.shares.push_back( sstate );
+      ++share_itr;
    }
-   return results;
-}
+  
+   auto moderation_itr = moderation_idx.lower_bound( cid );
 
-vector< moderation_state > database_api::get_active_mod_tags( string author, string permlink )const
-{
-   return my->_db.with_read_lock( [&]()
-   {
-      return my->get_active_mod_tags( author, permlink );
-   });
-}
-
-vector< moderation_state > database_api_impl::get_active_mod_tags( string author, string permlink )const
-{
-   vector< moderation_state > results;
-   const comment_object& comment = _db.get_comment( author, permlink );
-   const auto& idx = _db.get_index< moderation_tag_index >().indices().get< by_comment_moderator >();
-   comment_id_type cid(comment.id);
-   auto itr = idx.lower_bound( cid );
-
-   while( itr != idx.end() && itr->comment == cid )
+   while( moderation_itr != moderation_idx.end() && 
+      moderation_itr->comment == cid )
    {
       moderation_state mstate;
-      mstate.moderator = itr->moderator;
-      for( auto tag : itr->tags )
+      mstate.moderator = moderation_itr->moderator;
+      for( auto tag : moderation_itr->tags )
       {
          mstate.tags.push_back( tag );
       }
-      mstate.rating = itr->rating;
-      mstate.details = to_string( itr->details );
-      mstate.filter = itr->filter;
-      mstate.time = itr->last_updated;
+      mstate.rating = moderation_itr->rating;
+      mstate.details = to_string( moderation_itr->details );
+      mstate.filter = moderation_itr->filter;
+      mstate.time = moderation_itr->last_updated;
 
-      results.push_back( mstate );
-      ++itr;
+      results.moderation.push_back( mstate );
+      ++moderation_itr;
    }
+
    return results;
 }
 
@@ -5102,10 +5391,12 @@ discussion database_api_impl::get_content( string author, string permlink )const
    if( itr != by_permlink_idx.end() )
    {
       discussion results(*itr);
-      results.active_votes = get_active_votes( author, permlink );
-      results.active_views = get_active_views( author, permlink );
-      results.active_shares = get_active_shares( author, permlink );
-      results.active_mod_tags = get_active_mod_tags( author, permlink );
+
+      comment_interaction_state cstate = get_comment_interactions( author, permlink );
+      results.active_votes = cstate.votes;
+      results.active_views = cstate.views;
+      results.active_shares = cstate.shares;
+      results.active_mod_tags = cstate.moderation;
       return results;
    }
    else
@@ -5152,28 +5443,30 @@ vector< discussion > database_api_impl::get_replies_by_last_update( account_name
    vector< discussion > results;
 
    limit = std::min( limit, uint32_t( 1000 ) );
-   const auto& last_update_idx = _db.get_index< comment_index >().indices().get< by_last_update >();
-   auto itr = last_update_idx.begin();
+   const auto& comment_idx = _db.get_index< comment_index >().indices().get< by_last_update >();
+   auto comment_itr = comment_idx.begin();
    const account_name_type* parent_author = &start_parent_author;
 
    if( start_permlink.size() )
    {
       const comment_object& comment = _db.get_comment( start_parent_author, start_permlink );
-      itr = last_update_idx.iterator_to( comment );
+      comment_itr = comment_idx.iterator_to( comment );
       parent_author = &comment.parent_author;
    }
    else if( start_parent_author.size() )
    {
-      itr = last_update_idx.lower_bound( start_parent_author );
+      comment_itr = comment_idx.lower_bound( start_parent_author );
    }
 
    results.reserve( limit );
 
-   while( itr != last_update_idx.end() && results.size() < limit && itr->parent_author == *parent_author )
+   while( comment_itr != comment_idx.end() && 
+      results.size() < limit && 
+      comment_itr->parent_author == *parent_author )
    {
-      results.push_back( *itr );
-      results.back().active_votes = get_active_votes( itr->author, to_string( itr->permlink ) );
-      ++itr;
+      discussion d = get_discussion( comment_itr->id, false );
+      results.push_back( d );
+      ++comment_itr;
    }
    
    return results;
@@ -5198,11 +5491,13 @@ discussion database_api_impl::get_discussion( comment_id_type id, uint32_t trunc
    {
       d.url += "#@" + d.author + "/" + d.permlink;
    }
+
+   comment_interaction_state cstate = get_comment_interactions( d.author, d.permlink );
    
-   d.active_votes = get_active_votes( d.author, d.permlink );
-   d.active_views = get_active_views( d.author, d.permlink );
-   d.active_shares = get_active_shares( d.author, d.permlink );
-   d.active_mod_tags = get_active_mod_tags( d.author, d.permlink );
+   d.active_votes = cstate.votes;
+   d.active_views = cstate.views;
+   d.active_shares = cstate.shares;
+   d.active_mod_tags = cstate.moderation;
    d.body_length = d.body.size();
    
    if( truncate_body )
@@ -7844,10 +8139,13 @@ state database_api_impl::get_state( string path )const
       }
       for( auto& d : _state.content ) 
       {
-         d.second.active_votes = get_active_votes( d.second.author, d.second.permlink );
-         d.second.active_views = get_active_views( d.second.author, d.second.permlink );
-         d.second.active_shares = get_active_shares( d.second.author, d.second.permlink );
-         d.second.active_mod_tags = get_active_mod_tags( d.second.author, d.second.permlink );
+         comment_interaction_state cstate = get_comment_interactions( d.second.author, d.second.permlink );
+
+         d.second.active_votes = cstate.votes;
+         d.second.active_views = cstate.views;
+         d.second.active_shares = cstate.shares;
+         d.second.active_mod_tags = cstate.moderation;
+         d.second.body_length = d.second.body.size();
       }
 
       _state.producer_schedule = _db.get_producer_schedule();

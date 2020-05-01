@@ -282,10 +282,9 @@ namespace node { namespace chain {
    };
 
 
-
    /**
-    * Creates an object that holds a debt position to issue
-    * a market issued asset backed by collateral.
+    * Order that holds a collateralized debt position to issue a market issued asset.
+    * 
     * Enables a market issued asset to access the call order as a 
     * repurchase order if the call price falls below the 
     * market collateralization requirement.

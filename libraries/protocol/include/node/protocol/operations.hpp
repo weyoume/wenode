@@ -64,6 +64,9 @@ namespace node { namespace protocol {
             view_operation,
             share_operation,
             moderation_tag_operation,
+            list_operation,
+            poll_operation,
+            poll_vote_operation,
 
             // Community Operations
 
@@ -122,8 +125,10 @@ namespace node { namespace protocol {
 
             // Marketplace Operations
 
-            product_update_operation,
+            product_sale_operation,
             product_purchase_operation,
+            product_auction_sale_operation,
+            product_auction_bid_operation,
             escrow_transfer_operation,
             escrow_approve_operation,
             escrow_dispute_operation,
