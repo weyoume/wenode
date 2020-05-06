@@ -76,6 +76,10 @@ namespace node { namespace chain {
 
          shared_string                     category;                            ///< Permlink of root post that this comment is applied to.
 
+         double                            latitude;                            ///< Latitude co-ordinates of the comment.
+
+         double                            longitude;                           ///< Longitude co-ordinates of the comment.
+
          asset                             comment_price;                       ///< The price paid to create a comment.
 
          asset                             reply_price;                         ///< The price paid to the root comment author when the root author replies to the comment.
@@ -1435,6 +1439,8 @@ FC_REFLECT( node::chain::comment_object,
          (parent_permlink)
          (json)
          (category)
+         (latitude)
+         (longitude)
          (comment_price)
          (reply_price)
          (premium_price)

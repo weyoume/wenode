@@ -68,6 +68,8 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       comment.parent_author = "";
       comment.parent_permlink = "adcreativepermlink";
       comment.json = "{\"json\":\"valid\"}";
+      comment.latitude = 37.8136;
+      comment.longitude = 144.9631;
       comment.comment_price = asset( 0, SYMBOL_COIN );
       comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );

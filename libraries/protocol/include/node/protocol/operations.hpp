@@ -15,7 +15,6 @@ namespace node { namespace protocol {
 
             account_create_operation,
             account_update_operation,
-            account_profile_operation,
             account_verification_operation,
             account_business_operation,
             account_membership_operation,
@@ -202,6 +201,7 @@ namespace node { namespace protocol {
             interest_operation,
             fill_order_operation,
             execute_bid_operation,
+            update_featured_feed_operation,
             shutdown_producer_operation,
             fill_transfer_from_savings_operation,
             hardfork_operation,

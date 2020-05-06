@@ -64,6 +64,8 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       comment.parent_author = "";
       comment.parent_permlink = "ipsum";
       comment.json = "{\"foo\":\"bar\"}";
+      comment.latitude = 37.8136;
+      comment.longitude = 144.9631;
       comment.comment_price = asset( 0, SYMBOL_COIN );
       comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
@@ -181,9 +183,9 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( alice_comment.root == true );
       BOOST_REQUIRE( alice_comment.deleted == false );
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: Success posting a root comment" );
-
       validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Success posting a root comment" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when posting a comment on a non-existent comment" );
 
@@ -793,6 +795,8 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
       comment.parent_author = "";
       comment.parent_permlink = "ipsum";
       comment.json = "{\"json\":\"valid\"}";
+      comment.latitude = 37.8136;
+      comment.longitude = 144.9631;
       comment.comment_price = asset( 0, SYMBOL_COIN );
       comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
@@ -1002,6 +1006,8 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
       comment.parent_author = "";
       comment.parent_permlink = "ipsum";
       comment.json = "{\"json\":\"valid\"}";
+      comment.latitude = 37.8136;
+      comment.longitude = 144.9631;
       comment.comment_price = asset( 0, SYMBOL_COIN );
       comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
@@ -1143,6 +1149,8 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
       comment.parent_author = "";
       comment.parent_permlink = "ipsum";
       comment.json = "{\"json\":\"valid\"}";
+      comment.latitude = 37.8136;
+      comment.longitude = 144.9631;
       comment.comment_price = asset( 0, SYMBOL_COIN );
       comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
@@ -1279,6 +1287,8 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       comment.parent_author = "";
       comment.parent_permlink = "ipsum";
       comment.json = "{\"json\":\"valid\"}";
+      comment.latitude = 37.8136;
+      comment.longitude = 144.9631;
       comment.comment_price = asset( 0, SYMBOL_COIN );
       comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
@@ -1421,6 +1431,195 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       BOOST_TEST_MESSAGE( "│   ├── Passed: removing moderation tag" );
 
       BOOST_TEST_MESSAGE( "├── Passed: MODERATION TAG OPERATION" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+
+BOOST_AUTO_TEST_CASE( list_operation_test )
+{ 
+   try 
+   {
+      BOOST_TEST_MESSAGE( "├── Passed: LIST OPERATION" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Creating new List" );
+
+      ACTORS( (alice)(bob)(candice)(dan) );
+
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      signed_transaction tx;
+
+      comment_operation comment;
+
+      comment.signatory = "alice";
+      comment.author = "alice";
+      comment.permlink = "lorem";
+      comment.title = "Lorem Ipsum";
+      comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+      comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
+      comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+      comment.url = "www.url.com";
+      comment.community = INIT_COMMUNITY;
+      comment.tags.push_back( "test" );
+      comment.interface = INIT_ACCOUNT;
+      comment.language = "en";
+      comment.parent_author = "";
+      comment.parent_permlink = "ipsum";
+      comment.json = "{\"foo\":\"bar\"}";
+      comment.latitude = 37.8136;
+      comment.longitude = 144.9631;
+      comment.comment_price = asset( 0, SYMBOL_COIN );
+      comment.reply_price = asset( 0, SYMBOL_COIN );
+      comment.premium_price = asset( 0, SYMBOL_COIN );
+
+      comment_options options;
+
+      options.post_type = "article";
+      options.reach = "tag";
+      options.rating = 1;
+      comment.options = options;
+      comment.validate();
+
+      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( comment );
+
+      const comment_object alice_comment = db.get_comment( "alice", string( "lorem" ) );
+
+      list_operation list;
+
+      list.signatory = "alice";
+      list.creator = "alice";
+      list.list_id = "8a5c4916-6008-4d40-a1f2-3d50b44ac535";
+      list.name = "Alice's Favourites";
+      list.accounts.insert( bob_id._id );
+      list.comments.insert( alice_comment.id._id );
+      list.validate();
+
+      tx.operations.push_back( list );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      const list_object& alice_list = db.get_list( "alice", string( "8a5c4916-6008-4d40-a1f2-3d50b44ac535" ) );
+
+      BOOST_REQUIRE( list.creator == alice_list.creator );
+      BOOST_REQUIRE( list.list_id == to_string( alice_list.list_id ) );
+      BOOST_REQUIRE( list.name == to_string( alice_list.name ) );
+      BOOST_REQUIRE( *list.accounts.begin() == *alice_list.accounts.begin() );
+      BOOST_REQUIRE( *list.comments.begin() == *alice_list.comments.begin() );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Creating new List" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: LIST OPERATION" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+
+
+BOOST_AUTO_TEST_CASE( poll_operation_test )
+{ 
+   try 
+   {
+      BOOST_TEST_MESSAGE( "├── Passed: POLL OPERATION" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Creating new Poll" );
+
+      ACTORS( (alice)(bob)(candice)(dan) );
+
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      signed_transaction tx;
+
+      poll_operation poll;
+
+      poll.signatory = "alice";
+      poll.creator = "alice";
+      poll.poll_id = "2aafe6cf-8d37-4467-a8ce-d55d12a3f492";
+      poll.details = "Would you rather fight 100 duck sized horses, or 1 horse sized duck?";
+      poll.poll_options = { "100 Duck sized horses", "1 Horse sized duck" };
+      poll.completion_time = now() + fc::days(3);
+      poll.validate();
+
+      tx.operations.push_back( poll );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      const poll_object& alice_poll = db.get_poll( "alice", string( "2aafe6cf-8d37-4467-a8ce-d55d12a3f492" ) );
+
+      BOOST_REQUIRE( poll.creator == alice_poll.creator );
+      BOOST_REQUIRE( poll.poll_id == to_string( alice_poll.poll_id ) );
+      BOOST_REQUIRE( poll.details == to_string( alice_poll.details ) );
+
+      for( size_t i = 0; i < poll.poll_options.size(); i++ )
+      {
+         BOOST_REQUIRE( poll.poll_options[i] == to_string( alice_poll.poll_options[i] ) );
+      }
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Creating new Poll" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Creating Poll vote" );
+
+      poll_vote_operation vote;
+
+      vote.signatory = "bob";
+      vote.voter = "bob";
+      vote.creator = "alice";
+      vote.poll_id = "2aafe6cf-8d37-4467-a8ce-d55d12a3f492";
+      vote.poll_option = 1;
+      vote.validate();
+
+      tx.operations.push_back( vote );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      const poll_vote_object& bob_vote = db.get_poll_vote( "bob", "alice", string( "2aafe6cf-8d37-4467-a8ce-d55d12a3f492" ) );
+
+      BOOST_REQUIRE( vote.creator == bob_vote.creator );
+      BOOST_REQUIRE( vote.voter == bob_vote.creator );
+      BOOST_REQUIRE( vote.poll_id == to_string( bob_vote.poll_id ) );
+      BOOST_REQUIRE( to_string( alice_poll.poll_options[ vote.poll_option ] ) == to_string( bob_vote.poll_option ) );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Creating Poll vote" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: POLL OPERATION" );
    }
    FC_LOG_AND_RETHROW()
 }

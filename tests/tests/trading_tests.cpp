@@ -588,6 +588,191 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
 
 
 
+BOOST_AUTO_TEST_CASE( auction_order_operation_test )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: AUCTION ORDER" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Creation sequence of auction orderbook" );
+
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
+
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+
+      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      
+      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+
+      fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+
+      fund( "elon", asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "elon", asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "elon", asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "elon", asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund( "elon", asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+      
+      signed_transaction tx;
+
+      auction_order_operation auction;
+
+      auction.signatory = "alice";
+      auction.owner = "alice";
+      auction.order_id = "7390e715-56df-4d70-bd6b-13e3f6867b51";
+      auction.amount_to_sell = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      auction.limit_close_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ), asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      auction.interface = INIT_ACCOUNT;
+      auction.expiration = now() + fc::days(30);
+      auction.opened = true;
+      auction.validate();
+
+      tx.operations.push_back( auction );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const auction_order_object& alice_order = db.get_auction_order( "alice", string( "7390e715-56df-4d70-bd6b-13e3f6867b51" ) );
+
+      BOOST_REQUIRE( alice_order.owner == auction.owner );
+      BOOST_REQUIRE( to_string( alice_order.order_id ) == auction.order_id );
+      BOOST_REQUIRE( alice_order.amount_to_sell == auction.amount_to_sell );
+      BOOST_REQUIRE( alice_order.limit_close_price == auction.limit_close_price );
+      BOOST_REQUIRE( alice_order.interface == auction.interface );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      auction.signatory = "bob";
+      auction.owner = "bob";
+      auction.order_id = "9498ad7d-31bb-4b74-a49e-27f7e6b85620";
+      auction.amount_to_sell = asset( 200 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      auction.limit_close_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ), asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      auction.validate();
+
+      tx.operations.push_back( auction );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const auction_order_object& bob_order = db.get_auction_order( "bob", string( "9498ad7d-31bb-4b74-a49e-27f7e6b85620" ) );
+
+      BOOST_REQUIRE( bob_order.owner == auction.owner );
+      BOOST_REQUIRE( to_string( bob_order.order_id ) == auction.order_id );
+      BOOST_REQUIRE( bob_order.amount_to_sell == auction.amount_to_sell );
+      BOOST_REQUIRE( bob_order.limit_close_price == auction.limit_close_price );
+      BOOST_REQUIRE( bob_order.interface == auction.interface );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      auction.signatory = "candice";
+      auction.owner = "candice";
+      auction.order_id = "cb8d0249-7ebb-4574-8596-2cc2447ccbcc";
+      auction.amount_to_sell = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      auction.limit_close_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      auction.validate();
+
+      tx.operations.push_back( auction );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const auction_order_object& candice_order = db.get_auction_order( "candice", string( "cb8d0249-7ebb-4574-8596-2cc2447ccbcc" ) );
+
+      BOOST_REQUIRE( candice_order.owner == auction.owner );
+      BOOST_REQUIRE( to_string( candice_order.order_id ) == auction.order_id );
+      BOOST_REQUIRE( candice_order.amount_to_sell == auction.amount_to_sell );
+      BOOST_REQUIRE( candice_order.limit_close_price == auction.limit_close_price );
+      BOOST_REQUIRE( candice_order.interface == auction.interface );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      auction.signatory = "dan";
+      auction.owner = "dan";
+      auction.order_id = "9743506a-0d99-47e5-9ca2-bad5a95c0055";
+      auction.amount_to_sell = asset( 200 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      auction.limit_close_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      auction.validate();
+
+      tx.operations.push_back( auction );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const auction_order_object& dan_order = db.get_auction_order( "dan", string( "9743506a-0d99-47e5-9ca2-bad5a95c0055" ) );
+
+      BOOST_REQUIRE( dan_order.owner == auction.owner );
+      BOOST_REQUIRE( to_string( dan_order.order_id ) == auction.order_id );
+      BOOST_REQUIRE( dan_order.amount_to_sell == auction.amount_to_sell );
+      BOOST_REQUIRE( dan_order.limit_close_price == auction.limit_close_price );
+      BOOST_REQUIRE( dan_order.interface == auction.interface );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Creation sequence of auction orderbook" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when account does not have required underlying funds" );
+
+      auction.signatory = "alice";
+      auction.owner = "alice";
+      auction.order_id = "7390e715-56df-4d70-bd6b-13e3f6867b51";
+      auction.amount_to_sell = asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      auction.limit_close_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ), asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      
+      tx.operations.push_back( auction );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when account does not have required underlying funds" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Auction processing" );
+
+      asset init_alice_liquid_usd = get_liquid_balance( "alice", SYMBOL_USD );
+      asset init_bob_liquid_usd = get_liquid_balance( "bob", SYMBOL_USD );
+      asset init_candice_liquid_coin = get_liquid_balance( "candice", SYMBOL_COIN );
+      asset init_dan_liquid_coin = get_liquid_balance( "dan", SYMBOL_COIN );
+
+      generate_blocks( AUCTION_INTERVAL_BLOCKS + 1 );
+      
+      asset alice_liquid_usd = get_liquid_balance( "alice", SYMBOL_USD );
+      asset bob_liquid_usd = get_liquid_balance( "bob", SYMBOL_USD );
+      asset candice_liquid_coin = get_liquid_balance( "candice", SYMBOL_COIN );
+      asset dan_liquid_coin = get_liquid_balance( "dan", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_usd == init_alice_liquid_usd + asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      BOOST_REQUIRE( bob_liquid_usd == init_bob_liquid_usd + asset( 200 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+
+      BOOST_REQUIRE( candice_liquid_coin == init_candice_liquid_coin + asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      BOOST_REQUIRE( dan_liquid_coin == init_dan_liquid_coin + asset( 200 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Auction processing" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: AUCTION ORDER" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+
 BOOST_AUTO_TEST_CASE( call_order_operation_test )
 {
    try
@@ -882,13 +1067,13 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
 
 
 
-BOOST_AUTO_TEST_CASE( asset_collateral_bid_operation_test )
+BOOST_AUTO_TEST_CASE( option_order_operation_test )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "├── Testing: BID COLLATERAL" );
+      BOOST_TEST_MESSAGE( "├── Testing: OPTION ORDER" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: creation of collateral bid after black swan event" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Creation sequence of option order" );
 
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
@@ -896,202 +1081,70 @@ BOOST_AUTO_TEST_CASE( asset_collateral_bid_operation_test )
       fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      producer_create( "alice", alice_private_owner_key, alice_public_owner_key );
 
       fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      producer_create( "bob", bob_private_owner_key, bob_public_owner_key );
       
       fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      producer_create( "candice", candice_private_owner_key, candice_public_owner_key );
 
       fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      producer_create( "dan", dan_private_owner_key, dan_public_owner_key );
+
+      fund( "elon", asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "elon", asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "elon", asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "elon", asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       
       signed_transaction tx;
 
-      asset_publish_feed_operation feed;     // Begin by triggering a black swan event on the USD asset
+      option_order_operation option;
 
-      feed.signatory = "alice";
-      feed.publisher = "alice";
-      feed.symbol = SYMBOL_USD;
-      feed.feed.settlement_price = price( asset(1,SYMBOL_USD),asset(1,SYMBOL_COIN) );   // init settlement price of 1:1
-      feed.validate();
+      date_type today = date_type( now() + fc::days(60) );
 
-      tx.operations.push_back( feed );
+      option.signatory = "alice";
+      option.owner = "alice";
+      option.order_id = "f0ed4510-b852-43ae-a383-3a9940a1f14b";
+      option_strike strike = option_strike( price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) ), true, 100, date_type( 1, today.month, today.year ) );
+      option.options_issued = asset( 10 * BLOCKCHAIN_PRECISION, strike.option_symbol() );
+      option.interface = INIT_ACCOUNT;
+      option.validate();
+
+      tx.operations.push_back( option );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      feed.signatory = "bob";
-      feed.publisher = "bob";
-
-      tx.operations.push_back( feed );
-      tx.sign( bob_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      feed.signatory = "candice";
-      feed.publisher = "candice";
-
-      tx.operations.push_back( feed );
-      tx.sign( candice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      feed.signatory = "dan";
-      feed.publisher = "dan";
-
-      tx.operations.push_back( feed );
-      tx.sign( dan_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      call_order_operation call;    // Spread of collateralized call orders
-
-      call.signatory = "alice";
-      call.owner = "alice";
-      call.collateral = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );  // 2x collateralization
-      call.debt = asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
-      call.interface = INIT_ACCOUNT;
-      call.validate();
-
-      tx.operations.push_back( call );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
       tx.operations.clear();
       tx.signatures.clear();
 
-      call.signatory = "bob";
-      call.owner = "bob";
-      call.collateral = asset( 15000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );   // 3x collateralization
-      call.debt = asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      const option_order_object& alice_order = db.get_option_order( "alice", string( "f0ed4510-b852-43ae-a383-3a9940a1f14b" ) );
 
-      tx.operations.push_back( call );
-      tx.sign( bob_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      call.signatory = "candice";
-      call.owner = "candice";
-      call.collateral = asset( 20000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );  // 4x collateralization
-      call.debt = asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
-
-      tx.operations.push_back( call );
-      tx.sign( candice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      call.signatory = "dan";
-      call.owner = "dan";
-      call.collateral = asset( 25000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );  // 5x collateralization
-      call.debt = asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
-
-      tx.operations.push_back( call );
-      tx.sign( dan_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      feed.signatory = "alice";
-      feed.publisher = "alice";
-      feed.feed.settlement_price = price( asset(1,SYMBOL_USD),asset(2,SYMBOL_COIN) );   // New settlement price of 1:2
-
-      tx.operations.push_back( feed );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      feed.signatory = "bob";
-      feed.publisher = "bob";
-
-      tx.operations.push_back( feed );
-      tx.sign( bob_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      feed.signatory = "candice";
-      feed.publisher = "candice";
-
-      tx.operations.push_back( feed );
-      tx.sign( candice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      feed.signatory = "dan";
-      feed.publisher = "dan";
-
-      tx.operations.push_back( feed );
-      tx.sign( dan_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      limit_order_operation limit;
-
-      limit.signatory = "alice";
-      limit.owner = "alice";
-      limit.order_id = "88d551cd-0dc2-46f1-a09c-7d0cd477b550";
-      limit.amount_to_sell = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
-      limit.exchange_rate = price( asset( 1, SYMBOL_USD ), asset( 3, SYMBOL_COIN ) );   // USD sell order at 1:3, within SQR
-      limit.expiration = now() + fc::days( 30 );
-      limit.interface = INIT_ACCOUNT;
-      limit.fill_or_kill = false;
-      limit.opened = true;
-
-      tx.operations.push_back( limit );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      const asset_stablecoin_data_object& stablecoin = db.get_stablecoin_data( SYMBOL_USD );
-
-      BOOST_REQUIRE( stablecoin.has_settlement() );     // Stablecoin has now undergone a black swan event
-
-      asset_collateral_bid_operation bid;
-
-      bid.signatory = "alice";
-      bid.bidder = "alice";
-      bid.collateral = asset( 20000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      bid.debt = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
-      bid.validate();
-
-      tx.operations.push_back( bid );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      const asset_collateral_bid_object& alice_col_bid = db.get_asset_collateral_bid( "alice", SYMBOL_USD );
-
-      BOOST_REQUIRE( alice_col_bid.bidder == bid.bidder );
-      BOOST_REQUIRE( alice_col_bid.collateral == bid.collateral );
-      BOOST_REQUIRE( alice_col_bid.debt == bid.debt );
-      BOOST_REQUIRE( alice_col_bid.created == now() );
-      BOOST_REQUIRE( alice_col_bid.last_updated == now() );
+      BOOST_REQUIRE( alice_order.owner == option.owner );
+      BOOST_REQUIRE( to_string( alice_order.order_id ) == option.order_id );
+      BOOST_REQUIRE( alice_order.option_position == option.options_issued );
+      BOOST_REQUIRE( alice_order.interface == option.interface );
+      BOOST_REQUIRE( alice_order.underlying_amount == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      BOOST_REQUIRE( alice_order.exercise_amount == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      BOOST_REQUIRE( alice_order.created == now() );
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: creation of collateral bid after black swan event" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Creation of option order" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when account does not have required funds" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when account does not have required underlying funds" );
 
-      bid.signatory = "bob";
-      bid.bidder = "bob";
-      bid.collateral = asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      bid.debt = asset( 20000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      option.order_id = "f0ed4510-b852-43ae-a383-3a9940a1f14b";
+      option.options_issued = asset( 1000000 * BLOCKCHAIN_PRECISION, strike.option_symbol() );
       
-      tx.operations.push_back( bid );
-      tx.sign( bob_private_active_key, db.get_chain_id() );
+      tx.operations.push_back( option );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       tx.operations.clear();
@@ -1099,110 +1152,96 @@ BOOST_AUTO_TEST_CASE( asset_collateral_bid_operation_test )
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when account does not have required funds" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when account does not have required underlying funds" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when collateral is 0" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Exercising Option assets" );
 
-      bid.signatory = "bob";
-      bid.bidder = "bob";
-      bid.collateral = asset( 0, SYMBOL_COIN );
-      bid.debt = asset( 20000, SYMBOL_USD );
-      
-      tx.operations.push_back( bid );
-      tx.sign( bob_private_active_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+      asset init_alice_liquid_usd = get_liquid_balance( "alice", SYMBOL_USD );
+      asset init_alice_liquid_coin = get_liquid_balance( "alice", SYMBOL_COIN );
 
-      tx.operations.clear();
-      tx.signatures.clear();
+      asset init_bob_liquid_usd = get_liquid_balance( "bob", SYMBOL_USD );
+      asset init_bob_liquid_coin = get_liquid_balance( "bob", SYMBOL_COIN );
 
-      validate_database();
+      transfer_operation transfer;
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when collateral is 0" );
+      transfer.signatory = "alice";
+      transfer.from = "alice";
+      transfer.to = "bob";
+      transfer.amount = asset( 5 * BLOCKCHAIN_PRECISION, strike.option_symbol() );
+      transfer.memo = "Hello";
+      transfer.validate();
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when debt and collateral amount is 0" );
-
-      bid.signatory = "bob";
-      bid.bidder = "bob";
-      bid.collateral = asset( 0, SYMBOL_COIN );
-      bid.debt = asset( 0, SYMBOL_USD );
-      
-      tx.operations.push_back( bid );
-      tx.sign( bob_private_active_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when debt and collateral amount is 0" );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: Reviving asset with additional collateral bids" );
-
-      bid.signatory = "bob";
-      bid.bidder = "bob";
-      bid.collateral = asset( 20000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      bid.debt = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
-
-      tx.operations.push_back( bid );
+      tx.operations.push_back( transfer );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      const asset_collateral_bid_object& bob_col_bid = db.get_asset_collateral_bid( "bob", SYMBOL_USD );
+      asset_option_exercise_operation exercise;
 
-      BOOST_REQUIRE( bob_col_bid.bidder == bid.bidder );
-      BOOST_REQUIRE( bob_col_bid.collateral == bid.collateral );
-      BOOST_REQUIRE( bob_col_bid.debt == bid.debt );
-      BOOST_REQUIRE( bob_col_bid.created == now() );
-      BOOST_REQUIRE( bob_col_bid.last_updated == now() );
+      exercise.signatory = "bob";
+      exercise.account = "bob";
+      exercise.amount = asset( 5 * BLOCKCHAIN_PRECISION, strike.option_symbol() );
+      exercise.validate();
+
+      tx.operations.push_back( exercise );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      asset bob_liquid_usd = get_liquid_balance( "bob", SYMBOL_USD );
+      asset bob_liquid_coin = get_liquid_balance( "bob", SYMBOL_COIN );
+      asset bob_liquid_option = get_liquid_balance( "bob", strike.option_symbol() );
+
+      asset alice_liquid_usd = get_liquid_balance( "alice", SYMBOL_USD );
+      asset alice_liquid_coin = get_liquid_balance( "alice", SYMBOL_COIN );
+      asset alice_liquid_option = get_liquid_balance( "alice", strike.option_symbol() );
+
+      BOOST_REQUIRE( bob_liquid_usd == init_bob_liquid_usd - asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      BOOST_REQUIRE( bob_liquid_coin == init_bob_liquid_coin + asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      BOOST_REQUIRE( bob_liquid_option.amount == 0 );
+
+      BOOST_REQUIRE( alice_liquid_usd == init_alice_liquid_usd + asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      BOOST_REQUIRE( alice_liquid_option == asset( 5 * BLOCKCHAIN_PRECISION, strike.option_symbol() ) );
+
+      BOOST_REQUIRE( alice_order.option_position == asset( 5 * BLOCKCHAIN_PRECISION, strike.option_symbol() ) );
+      BOOST_REQUIRE( alice_order.underlying_amount == asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      BOOST_REQUIRE( alice_order.exercise_amount == asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      BOOST_REQUIRE( alice_order.created == now() );
       
-      generate_blocks( STABLECOIN_BLOCK_INTERVAL + 1 );
+      validate_database();
 
-      BOOST_REQUIRE( stablecoin.has_settlement() );  // Requires price feed before revival
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Exercising Option assets" );
 
-      generate_blocks( STABLECOIN_BLOCK_INTERVAL - 1 );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Close option position" );
 
-      feed.signatory = "alice";
-      feed.publisher = "alice";
-      feed.feed.settlement_price = price( asset(1,SYMBOL_USD),asset(2,SYMBOL_COIN) );   // New settlement price of 1:2 Collateral value falls 50%
-
-      tx.operations.push_back( feed );
+      option.order_id = "f0ed4510-b852-43ae-a383-3a9940a1f14b";
+      option.options_issued = asset( 0, strike.option_symbol() );
+      
+      tx.operations.push_back( option );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      feed.signatory = "bob";
-      feed.publisher = "bob";
+      tx.operations.clear();
+      tx.signatures.clear();
 
-      tx.operations.push_back( feed );
-      tx.sign( bob_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
+      alice_liquid_coin = get_liquid_balance( "alice", SYMBOL_COIN );
+      alice_liquid_option = get_liquid_balance( "alice", strike.option_symbol() );
 
-      feed.signatory = "candice";
-      feed.publisher = "candice";
+      const option_order_object* alice_order_ptr = db.find_option_order( "alice", string( "f0ed4510-b852-43ae-a383-3a9940a1f14b" ) );
 
-      tx.operations.push_back( feed );
-      tx.sign( candice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      feed.signatory = "dan";
-      feed.publisher = "dan";
-
-      tx.operations.push_back( feed );
-      tx.sign( dan_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      generate_block();
-
-      BOOST_REQUIRE( !stablecoin.has_settlement() );  // Asset is now revived.
+      BOOST_REQUIRE( alice_order_ptr == nullptr );
+      BOOST_REQUIRE( alice_liquid_coin == init_alice_liquid_coin + asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      BOOST_REQUIRE( alice_liquid_option.amount == 0 );
 
       validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: Reviving asset with additional collateral bids" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Close option position" );
 
-      BOOST_TEST_MESSAGE( "├── Testing: BID COLLATERAL" );
+      BOOST_TEST_MESSAGE( "├── Passed: OPTION ORDER" );
    }
    FC_LOG_AND_RETHROW()
 }

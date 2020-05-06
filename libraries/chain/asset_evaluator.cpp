@@ -412,6 +412,13 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          FC_ASSERT( o.options.max_supply == BLOCKCHAIN_PRECISION,
             "Unique assets must have a maximum supply of exactly one unit." );
 
+         if( o.options.ownership_asset != o.symbol )
+         {
+            const asset_object ownership_asset = _db.get_asset( o.options.ownership_asset );
+            FC_ASSERT( ownership_asset.is_credit_enabled(),
+               "Ownership asset must be a Credit enabled asset type" );
+         }
+         
          _db.create< asset_unique_data_object >( [&]( asset_unique_data_object& audo )
          {
             audo.symbol = o.symbol;
@@ -1270,6 +1277,17 @@ void asset_issue_evaluator::do_apply( const asset_issue_operation& o )
          abdo.collateral_pool += bond_collateral;
       });
    }
+   else if( asset_obj.asset_type == asset_property_type::UNIQUE_ASSET )
+   {
+      FC_ASSERT( o.asset_to_issue.amount == BLOCKCHAIN_PRECISION,
+         "Unique asset must be issued as a single unit asset." );
+      const asset_unique_data_object& unique = _db.get_unique_data( asset_obj.symbol );
+
+      _db.modify( unique, [&]( asset_unique_data_object& audo )
+      {
+         audo.controlling_owner = o.issue_to_account;
+      });
+   }
 
    _db.adjust_liquid_balance( o.issue_to_account, o.asset_to_issue );
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -1402,6 +1420,8 @@ void asset_distribution_evaluator::do_apply( const asset_distribution_operation&
          ado.max_unit_ratio = o.max_unit_ratio;
          ado.min_input_balance_units = o.min_input_balance_units;
          ado.max_input_balance_units = o.max_input_balance_units;
+         ado.total_distributed = asset( 0, o.distribution_asset );
+         ado.total_funded = asset( 0, o.fund_asset );
          ado.begin_time = o.begin_time;
          ado.next_round_time = ado.begin_time + fc::days( ado.distribution_interval_days );
          ado.created = now;

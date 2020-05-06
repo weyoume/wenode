@@ -26,7 +26,7 @@ BOOST_FIXTURE_TEST_SUITE( community_operation_tests, clean_database_fixture );
    //=========================//
 
 
-   
+
 BOOST_AUTO_TEST_CASE( community_create_operation_test )
 { 
    try 
@@ -320,6 +320,8 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       comment.parent_author = "";
       comment.parent_permlink = "ipsum";
       comment.json = "{\"json\":\"valid\"}";
+      comment.latitude = 37.8136;
+      comment.longitude = 144.9631;
       comment.comment_price = asset( 0, SYMBOL_COIN );
       comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
@@ -1498,6 +1500,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.parent_author = "";
       comment.parent_permlink = "lorem";
       comment.json = "{\"json\":\"valid\"}";
+      comment.latitude = 37.8136;
+      comment.longitude = 144.9631;
       comment.comment_price = asset( 0, SYMBOL_COIN );
       comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
@@ -2722,6 +2726,66 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: transfer community ownership" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Create community event" );
+
+      community_event_operation event;
+
+      event.signatory = "alice";
+      event.account = "alice";
+      event.community = "aliceopencommunity";
+      event.event_name = "Alice's Party";
+      event.location = "Alice's House";
+      event.latitude = 37.8136;
+      event.longitude = 144.9631;
+      event.details = "Open house - BYO drinks";
+      event.url = "www.staggeringbeauty.com";
+      event.json = "{\"json\":\"valid\"}";
+      event.event_start_time = now() + fc::days(1);
+      event.event_end_time = now() + fc::days(1) + fc::hours(8);
+      event.validate();
+
+      tx.operations.push_back( event );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const community_event_object& alice_event = db.get_community_event( "aliceopencommunity" );
+
+      BOOST_REQUIRE( event.account == alice_event.account );
+      BOOST_REQUIRE( event.community == alice_event.community );
+      BOOST_REQUIRE( event.event_name == to_string( alice_event.event_name ) );
+      BOOST_REQUIRE( event.location == to_string( alice_event.location ) );
+      BOOST_REQUIRE( event.latitude == alice_event.latitude );
+      BOOST_REQUIRE( event.longitude == alice_event.longitude );
+      BOOST_REQUIRE( event.details == to_string( alice_event.details ) );
+      BOOST_REQUIRE( event.url == to_string( alice_event.url ) );
+      BOOST_REQUIRE( event.json == to_string( alice_event.json ) );
+      BOOST_REQUIRE( event.event_start_time == alice_event.event_start_time );
+      BOOST_REQUIRE( event.event_end_time == alice_event.event_end_time );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Create community event" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Attend community event" );
+
+      community_event_attend_operation attend;
+
+      attend.signatory = "george";
+      attend.account = "george";
+      attend.community = "aliceopencommunity";
+      attend.interested = true;
+      attend.attending = true;
+      attend.not_attending = true;
+      attend.validate();
+
+      tx.operations.push_back( attend );
+      tx.sign( george_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      BOOST_REQUIRE( alice_event.is_interested( "george" ) );
+      BOOST_REQUIRE( alice_event.is_attending( "george" ) );
+      BOOST_REQUIRE( !alice_event.is_not_attending( "george" ) );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Attend community event" );
 
       BOOST_TEST_MESSAGE( "├── Passed: COMMUNITY MANAGEMENT OPERATION SEQUENCE" );
    }

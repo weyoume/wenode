@@ -178,9 +178,6 @@ namespace node { namespace chain {
          const account_object& get_account(  const account_name_type& name )const;
          const account_object* find_account( const account_name_type& name )const;
 
-         const account_profile_object& get_account_profile( const account_name_type& name )const;
-         const account_profile_object* find_account_profile( const account_name_type& name )const;
-
          const account_verification_object& get_account_verification( const account_name_type& verifier_account, const account_name_type& verified_account )const;
          const account_verification_object* find_account_verification( const account_name_type& verifier_account, const account_name_type& verified_account )const;
 
@@ -277,11 +274,8 @@ namespace node { namespace chain {
          const community_member_key_object& get_community_member_key( const account_name_type& member, const community_name_type& community )const;
          const community_member_key_object* find_community_member_key( const account_name_type& member, const community_name_type& community )const;
 
-         const community_event_object& get_community_event( const community_name_type& community, const shared_string& event_name )const;
-         const community_event_object* find_community_event( const community_name_type& community, const shared_string& event_name )const;
-         
-         const community_event_object& get_community_event( const community_name_type& community, const string& event_name )const;
-         const community_event_object* find_community_event( const community_name_type& community, const string& event_name )const;
+         const community_event_object& get_community_event( const community_name_type& community )const;
+         const community_event_object* find_community_event( const community_name_type& community )const;
          
          const comment_object& get_comment(  const account_name_type& author, const shared_string& permlink )const;
          const comment_object* find_comment( const account_name_type& author, const shared_string& permlink )const;
@@ -309,6 +303,12 @@ namespace node { namespace chain {
 
          const poll_object& get_poll( const account_name_type& creator, const string& poll_id )const;
          const poll_object* find_poll( const account_name_type& creator, const string& poll_id )const;
+
+         const poll_vote_object& get_poll_vote( const account_name_type& voter, const account_name_type& creator, const shared_string& poll_id )const;
+         const poll_vote_object* find_poll_vote( const account_name_type& voter, const account_name_type& creator, const shared_string& poll_id )const;
+         
+         const poll_vote_object& get_poll_vote( const account_name_type& voter, const account_name_type& creator, const string& poll_id )const;
+         const poll_vote_object* find_poll_vote( const account_name_type& voter, const account_name_type& creator, const string& poll_id )const;
       
          const ad_creative_object& get_ad_creative( const account_name_type& account, const shared_string& creative_id )const;
          const ad_creative_object* find_ad_creative( const account_name_type& account, const shared_string& creative_id )const;

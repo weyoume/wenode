@@ -46,7 +46,10 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          asset_object( Constructor&& c, allocator< Allocator > a ) :
-         display_symbol(a), details(a), json(a), url(a)
+         display_symbol(a), 
+         details(a), 
+         json(a), 
+         url(a)
          {
             c( *this );
          }
@@ -87,7 +90,7 @@ namespace node { namespace chain {
 
          flat_set< account_name_type >   blacklist_authorities;     ///< Accounts which cannot transfer or receive this asset.
 
-         flat_set< asset_symbol_type >   whitelist_markets;         ///< The assets that this asset may be traded against in the market
+         flat_set< asset_symbol_type >   whitelist_markets;         ///< The assets that this asset may be traded against in the market.
 
          flat_set< asset_symbol_type >   blacklist_markets;         ///< The assets that this asset may not be traded against in the market.
 
@@ -1619,6 +1622,10 @@ namespace node { namespace chain {
 
          share_type                                 max_input_balance_units;               ///< Maximum fund units that each sender can contribute in an individual balance.
          
+         asset                                      total_distributed;                     ///< Amount of distirbution asset generated and distributed to all fund balances.
+
+         asset                                      total_funded;                          ///< Amount of fund asset funded by all incoming fund balances.
+         
          time_point                                 begin_time;                            ///< Time to begin the first distribution.
 
          time_point                                 next_round_time;                       ///< Time of the next distribution round.
@@ -2392,6 +2399,8 @@ FC_REFLECT( node::chain::asset_distribution_object,
          (max_unit_ratio)
          (min_input_balance_units)
          (max_input_balance_units)
+         (total_distributed)
+         (total_funded)
          (begin_time)
          (next_round_time)
          (created)

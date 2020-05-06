@@ -287,6 +287,8 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       vector< discussion >                            get_discussions_by_blog( const discussion_query& query )const;
 
+      vector< discussion >                            get_discussions_by_featured( const discussion_query& query )const;
+
       vector< discussion >                            get_discussions_by_recommended( const discussion_query& query )const;
 
       vector< discussion >                            get_discussions_by_comments( const discussion_query& query )const;
@@ -617,7 +619,6 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
    const auto& account_idx  = _db.get_index< account_index >().indices().get< by_name >();
    const auto& balance_idx = _db.get_index< account_balance_index >().indices().get< by_owner >();
 
-   const auto& profile_idx = _db.get_index< account_profile_index >().indices().get< by_account >();
    const auto& verified_verifier_idx = _db.get_index< account_verification_index >().indices().get< by_verified_verifier >();
    const auto& verifier_verified_idx = _db.get_index< account_verification_index >().indices().get< by_verifier_verified >();
 
@@ -1014,28 +1015,6 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             ++bus_inv_itr;
          }
 
-         auto profile_itr = profile_idx.find( name );
-         if( profile_itr != profile_idx.end() )
-         {
-            results.back().profile = profile_account_state( *profile_itr );
-         }
-
-         auto verifier_verified_itr = verifier_verified_idx.lower_bound( name );
-         while( verifier_verified_itr != verifier_verified_idx.end() &&
-            verifier_verified_itr->verifier_account == name )
-         {
-            results.back().profile.outgoing_verifications[ verifier_verified_itr->verified_account ] = account_verification_api_obj( *verifier_verified_itr );
-            ++verifier_verified_itr;
-         }
-
-         auto verified_verifier_itr = verified_verifier_idx.lower_bound( name );
-         while( verified_verifier_itr != verified_verifier_idx.end() &&
-            verified_verifier_itr->verified_account == name )
-         {
-            results.back().profile.incoming_verifications[ verified_verifier_itr->verifier_account ] = account_verification_api_obj( *verified_verifier_itr );
-            ++verified_verifier_itr;
-         }
-
          auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::CONNECTION ) );
          auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::CONNECTION ) );
          while( connection_a_itr != connection_a_idx.end() && 
@@ -1108,6 +1087,22 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
          {
             results.back().connections.outgoing_requests[ connection_acc_itr->requested_account ] = connection_request_api_obj( *connection_acc_itr );
             ++connection_acc_itr;
+         }
+
+         auto verifier_verified_itr = verifier_verified_idx.lower_bound( name );
+         while( verifier_verified_itr != verifier_verified_idx.end() &&
+            verifier_verified_itr->verifier_account == name )
+         {
+            results.back().connections.outgoing_verifications[ verifier_verified_itr->verified_account ] = account_verification_api_obj( *verifier_verified_itr );
+            ++verifier_verified_itr;
+         }
+
+         auto verified_verifier_itr = verified_verifier_idx.lower_bound( name );
+         while( verified_verifier_itr != verified_verifier_idx.end() &&
+            verified_verifier_itr->verified_account == name )
+         {
+            results.back().connections.incoming_verifications[ verified_verifier_itr->verifier_account ] = account_verification_api_obj( *verified_verifier_itr );
+            ++verified_verifier_itr;
          }
 
          auto community_itr = community_member_idx.begin();
@@ -2404,7 +2399,7 @@ vector< extended_community > database_api_impl::get_communities( vector< string 
    const auto& community_mem_idx = _db.get_index< community_member_index >().indices().get< by_name >();
    const auto& community_inv_idx = _db.get_index< community_join_invite_index >().indices().get< by_community >();
    const auto& community_req_idx = _db.get_index< community_join_request_index >().indices().get< by_community_account >();
-   const auto& community_event_idx = _db.get_index< community_event_index >().indices().get< by_community_event_name >();
+   const auto& community_event_idx = _db.get_index< community_event_index >().indices().get< by_community >();
 
    for( string community : communities )
    {
@@ -2440,27 +2435,27 @@ vector< extended_community > database_api_impl::get_communities( vector< string 
          }
          results.back().total_mod_weight = community_mem_itr->total_mod_weight.value;
       }
+      
+      auto community_event_itr = community_event_idx.find( community );
+      if( community_event_itr != community_event_idx.end() && 
+         community_event_itr->community == community )
+      {
+         results.back().event = community_event_api_obj( *community_event_itr );
+      }
 
       auto community_inv_itr = community_inv_idx.lower_bound( community );
-      auto community_req_itr = community_req_idx.lower_bound( community );
-      auto community_event_itr = community_event_idx.lower_bound( community );
-
       while( community_inv_itr != community_inv_idx.end() && community_inv_itr->community == community )
       {
          results.back().invites[ community_inv_itr->member ] = community_invite_api_obj( *community_inv_itr );
          ++community_inv_itr;
       }
 
+      auto community_req_itr = community_req_idx.lower_bound( community );
+
       while( community_req_itr != community_req_idx.end() && community_req_itr->community == community )
       {
          results.back().requests[ community_inv_itr->account ] = community_request_api_obj( *community_req_itr );
          ++community_req_itr;
-      }
-
-      while( community_event_itr != community_event_idx.end() && community_event_itr->community == community )
-      {
-         results.back().events[ to_string( community_event_itr->event_name ) ] = community_event_api_obj( *community_event_itr );
-         ++community_event_itr;
       }
    }
    return results;
@@ -2485,7 +2480,7 @@ vector< extended_community > database_api_impl::get_communities_by_subscribers( 
    const auto& community_mem_idx = _db.get_index< community_member_index >().indices().get< by_name >();
    const auto& community_inv_idx = _db.get_index< community_join_invite_index >().indices().get< by_community >();
    const auto& community_req_idx = _db.get_index< community_join_request_index >().indices().get< by_community_account >();
-   const auto& community_event_idx = _db.get_index< community_event_index >().indices().get< by_community_event_name >();
+   const auto& community_event_idx = _db.get_index< community_event_index >().indices().get< by_community >();
 
    auto community_itr = community_idx.begin();
   
@@ -2531,26 +2526,27 @@ vector< extended_community > database_api_impl::get_communities_by_subscribers( 
          results.back().total_mod_weight = community_mem_itr->total_mod_weight.value;
       }
 
-      auto community_inv_itr = community_inv_idx.lower_bound( community );
-      auto community_req_itr = community_req_idx.lower_bound( community );
-      auto community_event_itr = community_event_idx.lower_bound( community );
+      auto community_event_itr = community_event_idx.find( community );
+      if( community_event_itr != community_event_idx.end() && 
+         community_event_itr->community == community )
+      {
+         results.back().event = community_event_api_obj( *community_event_itr );
+      }
 
-      while( community_inv_itr != community_inv_idx.end() && community_inv_itr->community == community )
+      auto community_inv_itr = community_inv_idx.lower_bound( community );
+      while( community_inv_itr != community_inv_idx.end() && 
+         community_inv_itr->community == community )
       {
          results.back().invites[ community_inv_itr->member ] = community_invite_api_obj( *community_inv_itr );
          ++community_inv_itr;
       }
 
-      while( community_req_itr != community_req_idx.end() && community_req_itr->community == community )
+      auto community_req_itr = community_req_idx.lower_bound( community );
+      while( community_req_itr != community_req_idx.end() && 
+         community_req_itr->community == community )
       {
          results.back().requests[ community_inv_itr->account ] = community_request_api_obj( *community_req_itr );
          ++community_req_itr;
-      }
-
-      while( community_event_itr != community_event_idx.end() && community_event_itr->community == community )
-      {
-         results.back().events[ to_string( community_event_itr->event_name ) ] = community_event_api_obj( *community_event_itr );
-         ++community_event_itr;
       }
    }
    return results;
@@ -7153,6 +7149,34 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
 
    return results;
 }
+
+
+vector< discussion > database_api::get_discussions_by_featured( const discussion_query& query )const
+{
+   return my->_db.with_read_lock( [&]()
+   {
+      return my->get_discussions_by_featured( query );
+   });
+}
+
+vector< discussion > database_api_impl::get_discussions_by_featured( const discussion_query& query )const
+{
+   if( !_db.has_index< tags::tag_index >() )
+   {
+      return vector< discussion >();
+   }
+
+   query.validate();
+   string community = fc::to_lower( query.community );
+   string tag = fc::to_lower( query.tag );
+   comment_id_type parent = get_parent( query );
+
+   const auto& tidx = _db.get_index<tags::tag_index>().indices().get<tags::by_parent_featured>();
+   auto tidx_itr = tidx.lower_bound( boost::make_tuple( community, tag, parent, fc::time_point::maximum() ) );
+
+   return get_discussions( query, community, tag, parent, tidx, tidx_itr, query.truncate_body, filter_default, exit_default, tag_exit_default, false );
+}
+
 
 vector< discussion > database_api::get_discussions_by_recommended( const discussion_query& query )const
 {

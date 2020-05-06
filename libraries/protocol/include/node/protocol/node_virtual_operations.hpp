@@ -414,7 +414,6 @@ namespace node { namespace protocol {
 
    struct execute_bid_operation : public virtual_operation
    {
-      
       execute_bid_operation(){}
       execute_bid_operation( 
          account_name_type a, 
@@ -431,6 +430,18 @@ namespace node { namespace protocol {
       asset               collateral;
 
       void get_creator_name( account_name_type a )const{ a = bidder; }
+   };
+
+   struct update_featured_feed_operation : public virtual_operation
+   {
+      update_featured_feed_operation() {}
+      update_featured_feed_operation( 
+         time_point featured_time ) : 
+         featured_time( featured_time ) {}
+
+      time_point       featured_time;
+
+      void get_creator_name( account_name_type a )const{ a = account_name_type( NULL_ACCOUNT ); }
    };
 
 
@@ -549,4 +560,8 @@ FC_REFLECT( node::protocol::execute_bid_operation,
          (bidder)
          (debt)
          (collateral)
+         );
+
+FC_REFLECT( node::protocol::update_featured_feed_operation,
+         (featured_time)
          );

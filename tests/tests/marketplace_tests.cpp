@@ -640,7 +640,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       create.signatory = "alice";
       create.registrar = "alice";
       create.new_account_name = "newuser";
-      create.governance_account = INIT_ACCOUNT;
       create.owner_auth = authority( 1, alice_public_owner_key, 1 );
       create.active_auth = authority( 1, alice_public_active_key, 1 );
       create.posting_auth = authority( 1, alice_public_posting_key, 1 );
@@ -977,7 +976,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 }
 
 
-
 BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
 {
    try
@@ -1211,10 +1209,10 @@ BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
       const escrow_object& bob_escrow = db.get_escrow( "bob", string( "cfebe3a5-4b06-4dcb-916c-d8737f600701" ) );
       asset escrow_bond = asset( ( bob_purchase.order_value.amount * median_props.escrow_bond_percent ) / PERCENT_100, bob_escrow.payment.symbol );
 
-      BOOST_REQUIRE( bob_escrow.to == "bob" );
-      BOOST_REQUIRE( bob_escrow.from == "alice" );
-      BOOST_REQUIRE( bob_escrow.to_mediator == "dan" );
-      BOOST_REQUIRE( bob_escrow.from_mediator == "candice" );
+      BOOST_REQUIRE( bob_escrow.to == "alice" );
+      BOOST_REQUIRE( bob_escrow.from == "bob" );
+      BOOST_REQUIRE( bob_escrow.to_mediator == "candice" );
+      BOOST_REQUIRE( bob_escrow.from_mediator == "dan" );
       BOOST_REQUIRE( bob_escrow.payment == bob_purchase.order_value );
       BOOST_REQUIRE( bob_escrow.acceptance_time == purchase.acceptance_time );
       BOOST_REQUIRE( bob_escrow.escrow_expiration == purchase.escrow_expiration );
@@ -1281,6 +1279,318 @@ BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
       BOOST_TEST_MESSAGE( "│   ├── Passed: Release of escrow funds by FROM account" );
 
       BOOST_TEST_MESSAGE( "├── Passed: ESCROW TRANSFER OPERATION SEQUENCE" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+
+BOOST_AUTO_TEST_CASE( auction_operation_sequence_tests )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: AUCTION OPERATION SEQUENCE" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: creation of product auction" );
+
+      const median_chain_property_object& median_props = db.get_median_chain_properties();
+
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
+
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      
+      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      
+      signed_transaction tx;
+
+      product_auction_sale_operation auction;
+
+      auction.signatory = "alice";
+      auction.account = "alice";
+      auction.auction_id = "b65388d9-a99a-49a8-9f2e-761246a1d777";
+      auction.auction_type = "open";
+      auction.name = "Artisanal Widget";
+      auction.url = "www.url.com";
+      auction.json = "{\"json\":\"valid\"}";
+      auction.product_details = "Red Coloured Widget, Extremely Artisanal.";
+      auction.product_images = { "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" };
+      auction.reserve_bid = asset( 25 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      auction.maximum_bid = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      auction.delivery_variants = { "Standard", "Express" };
+      auction.delivery_details = { "Shipped within 3 working days.", "Shipped next day." };
+      auction.delivery_prices = { asset( 2 * BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( 5 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) };
+      auction.final_bid_time = now() + fc::days(7);
+      auction.completion_time = now() + fc::days(7);
+      auction.validate();
+
+      tx.operations.push_back( auction );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const product_auction_sale_object& alice_auction = db.get_product_auction_sale( "alice", string( "b65388d9-a99a-49a8-9f2e-761246a1d777" ) );
+
+      BOOST_REQUIRE( auction.account == alice_auction.account );
+      BOOST_REQUIRE( auction.auction_id == to_string( alice_auction.auction_id ) );
+      BOOST_REQUIRE( auction.name == to_string( alice_auction.name ) );
+      BOOST_REQUIRE( auction.url == to_string( alice_auction.url ) );
+      BOOST_REQUIRE( auction.json == to_string( alice_auction.json ) );
+      BOOST_REQUIRE( auction.product_details == to_string( alice_auction.product_details ) );
+      BOOST_REQUIRE( auction.reserve_bid == alice_auction.reserve_bid );
+      BOOST_REQUIRE( auction.maximum_bid == alice_auction.maximum_bid );
+      BOOST_REQUIRE( auction.final_bid_time == alice_auction.final_bid_time );
+      BOOST_REQUIRE( auction.completion_time == alice_auction.completion_time );
+
+      for( size_t i = 0; i < auction.product_images.size(); i++ )
+      {
+         BOOST_REQUIRE( auction.product_images[i] == to_string( alice_auction.product_images[i] ) );
+      }
+
+      for( size_t i = 0; i < auction.delivery_variants.size(); i++ )
+      {
+         BOOST_REQUIRE( auction.delivery_variants[i] == to_string( alice_auction.delivery_variants[i] ) );
+         BOOST_REQUIRE( auction.delivery_details[i] == to_string( alice_auction.delivery_details[i] ) );
+         BOOST_REQUIRE( auction.delivery_prices[i] == alice_auction.delivery_prices[i] );
+      }
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Creation of auction" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Bid on auction" );
+
+      product_auction_bid_operation bid;
+
+      bid.signatory = "bob";
+      bid.buyer = "bob";
+      bid.bid_id = "4cf6928b-32be-4a77-a900-bbb8e97d1cb8";
+      bid.seller = "alice";
+      bid.auction_id = "b65388d9-a99a-49a8-9f2e-761246a1d777";
+      bid.bid_price_commitment = commitment_type();
+      bid.blinding_factor = blind_factor_type();
+      bid.public_bid_amount = 25 * BLOCKCHAIN_PRECISION;
+      bid.memo = "Delivery memo";
+      bid.json = "{\"json\":\"valid\"}";
+      bid.shipping_address = "1 Flinders Street Melbourne 3000 VIC";
+      bid.delivery_variant = "Standard";
+      bid.delivery_details = "Leave Widget on doorstep.";
+      bid.validate();
+
+      tx.operations.push_back( bid );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const product_auction_bid_object& bob_bid = db.get_product_auction_bid( "bob", string( "4cf6928b-32be-4a77-a900-bbb8e97d1cb8" ) );
+
+      BOOST_REQUIRE( bid.buyer == bob_bid.buyer );
+      BOOST_REQUIRE( bid.bid_id == to_string( bob_bid.bid_id ) );
+      BOOST_REQUIRE( bid.seller == bob_bid.seller );
+      BOOST_REQUIRE( bid.auction_id == to_string( bob_bid.auction_id ) );
+      BOOST_REQUIRE( bid.bid_price_commitment == bob_bid.bid_price_commitment );
+      BOOST_REQUIRE( bid.blinding_factor == bob_bid.blinding_factor );
+      BOOST_REQUIRE( bid.public_bid_amount == bob_bid.public_bid_amount );
+      BOOST_REQUIRE( bid.memo == to_string( bob_bid.memo ) );
+      BOOST_REQUIRE( bid.json == to_string( bob_bid.json ) );
+      BOOST_REQUIRE( bid.shipping_address == to_string( bob_bid.shipping_address ) );
+      BOOST_REQUIRE( bid.delivery_variant == to_string( bob_bid.delivery_variant ) );
+      BOOST_REQUIRE( bid.delivery_details == to_string( bob_bid.delivery_details ) );
+
+      account_membership_operation member;
+
+      member.signatory = "candice";
+      member.account = "candice";
+      member.membership_type = "top";
+      member.months = 1;
+      member.validate();
+
+      tx.operations.push_back( member );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      update_mediator_operation mediator;
+      
+      mediator.signatory = "candice";
+      mediator.account = "candice";
+      mediator.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
+      mediator.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
+      mediator.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
+      mediator.mediator_bond = asset( 100*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      mediator.validate();
+
+      tx.operations.push_back( mediator );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      member.signatory = "dan";
+      member.account = "dan";
+
+      tx.operations.push_back( member );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+      
+      mediator.signatory = "dan";
+      mediator.account = "dan";
+
+      tx.operations.push_back( mediator );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const mediator_object& candice_mediator = db.get_mediator( "candice" );
+      const mediator_object& dan_mediator = db.get_mediator( "dan" );
+
+      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_USD );
+      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_USD );
+      asset candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_USD );
+      asset dan_init_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_USD );
+
+      generate_blocks( auction.completion_time + fc::minutes(5) );
+
+      escrow_approve_operation approve;
+
+      approve.signatory = "alice";
+      approve.account = "alice";
+      approve.mediator = "candice";
+      approve.escrow_from = "bob";
+      approve.escrow_id = "b65388d9-a99a-49a8-9f2e-761246a1d777";
+      approve.approved = true;
+      approve.validate();
+
+      tx.operations.push_back( approve );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "bob";
+      approve.account = "bob";
+      approve.mediator = "dan";
+
+      tx.operations.push_back( approve );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "candice";
+      approve.account = "candice";
+      approve.mediator = "candice";
+
+      tx.operations.push_back( approve );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "dan";
+      approve.account = "dan";
+      approve.mediator = "dan";
+
+      tx.operations.push_back( approve );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const escrow_object& bob_escrow = db.get_escrow( "bob", string( "b65388d9-a99a-49a8-9f2e-761246a1d777" ) );
+      asset escrow_bond = asset( ( bob_bid.order_value().amount * median_props.escrow_bond_percent ) / PERCENT_100, bob_escrow.payment.symbol );
+
+      BOOST_REQUIRE( bob_escrow.to == "alice" );
+      BOOST_REQUIRE( bob_escrow.from == "bob" );
+      BOOST_REQUIRE( bob_escrow.to_mediator == "candice" );
+      BOOST_REQUIRE( bob_escrow.from_mediator == "dan" );
+      BOOST_REQUIRE( bob_escrow.payment == bob_bid.order_value() );
+      BOOST_REQUIRE( bob_escrow.balance == bob_escrow.payment + 4 * escrow_bond );
+      BOOST_REQUIRE( bob_escrow.from_approved() == true );
+      BOOST_REQUIRE( bob_escrow.to_approved() == true );
+      BOOST_REQUIRE( bob_escrow.from_mediator_approved() == true );
+      BOOST_REQUIRE( bob_escrow.to_mediator_approved() == true );
+      BOOST_REQUIRE( bob_escrow.is_approved() == true );
+
+      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_USD );
+      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_USD );
+      asset candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_USD );
+      asset dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_USD );
+
+      BOOST_REQUIRE( alice_liquid_balance == ( alice_init_liquid_balance - escrow_bond ) );
+      BOOST_REQUIRE( bob_liquid_balance == ( bob_init_liquid_balance - ( bob_bid.order_value() + escrow_bond ) ) );
+      BOOST_REQUIRE( candice_liquid_balance == ( candice_init_liquid_balance - escrow_bond ) );
+      BOOST_REQUIRE( dan_liquid_balance == ( dan_init_liquid_balance - escrow_bond ) );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: approval of escrow transfer proposal" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Release of escrow funds by FROM account" );
+
+      escrow_release_operation release;
+
+      release.signatory = "bob";
+      release.account = "bob";
+      release.escrow_from = "bob";
+      release.escrow_id = "b65388d9-a99a-49a8-9f2e-761246a1d777";
+      release.release_percent = PERCENT_100;
+      release.validate();
+
+      tx.operations.push_back( release );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_USD );
+      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_USD );
+      candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_USD );
+      dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_USD );
+
+      BOOST_REQUIRE( alice_liquid_balance == ( alice_init_liquid_balance - bob_bid.order_value() ) );
+      BOOST_REQUIRE( bob_liquid_balance == ( bob_init_liquid_balance + bob_bid.order_value() ) );
+      BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance );
+      BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance );
+
+      const auto& escrow_idx = db.get_index< escrow_index >().indices().get< by_from_id >();
+      auto escrow_itr = escrow_idx.find( std::make_tuple( "bob", string( "b65388d9-a99a-49a8-9f2e-761246a1d777" ) ) );
+
+      BOOST_REQUIRE( escrow_itr == escrow_idx.end() );
+      BOOST_REQUIRE( candice_mediator.last_escrow_from == release.escrow_from );
+      BOOST_REQUIRE( to_string( candice_mediator.last_escrow_id ) == release.escrow_id );
+      BOOST_REQUIRE( dan_mediator.last_escrow_from == release.escrow_from );
+      BOOST_REQUIRE( to_string( dan_mediator.last_escrow_id ) == release.escrow_id );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Release of escrow funds by FROM account" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: AUCTION OPERATION SEQUENCE" );
    }
    FC_LOG_AND_RETHROW()
 }

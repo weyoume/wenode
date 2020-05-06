@@ -193,7 +193,8 @@ void community_update_evaluator::do_apply( const community_update_operation& o )
 
       if( pinned_post_ptr != nullptr )
       {
-         co.pinned_post = pinned_post_ptr->id;
+         co.pinned_author = o.pinned_author;
+         from_string( co.pinned_permlink, o.pinned_permlink );
       }
    });
 } FC_CAPTURE_AND_RETHROW( ( o )) }
@@ -923,21 +924,12 @@ void community_event_evaluator::do_apply( const community_event_operation& o )
    const community_member_object& community_member = _db.get_community_member( o.community );
 
    FC_ASSERT( community_member.is_administrator( o.account ),
-      "Only administrators of the community can create and update events within it." );
-
-   flat_set< account_name_type > inv;
-
-   for( account_name_type name : o.invited )
-   {
-      FC_ASSERT( community_member.is_member( name ),
-         "Only members of the community can be invited to events within it." );
-      inv.insert( name );
-   }
+      "Only administrators of the community can create and update the event within it." );
    
    time_point now = _db.head_block_time();
 
-   const auto& event_idx = _db.get_index< community_event_index >().indices().get< by_community_event_name >();
-   auto event_itr = event_idx.find( boost::make_tuple( o.community, o.event_name ) );
+   const auto& event_idx = _db.get_index< community_event_index >().indices().get< by_community >();
+   auto event_itr = event_idx.find( o.community );
 
    if( event_itr == event_idx.end() )
    {
@@ -947,10 +939,11 @@ void community_event_evaluator::do_apply( const community_event_operation& o )
          ceo.community = o.community;
          from_string( ceo.event_name, o.event_name );
          from_string( ceo.location, o.location );
+         ceo.latitude = o.latitude;
+         ceo.longitude = o.longitude;
          from_string( ceo.details, o.details );
          from_string( ceo.url, o.url );
          from_string( ceo.json, o.json );
-         ceo.invited = inv;
          ceo.event_start_time = o.event_start_time;
          ceo.event_end_time = o.event_end_time;
          ceo.last_updated = now;
@@ -963,14 +956,16 @@ void community_event_evaluator::do_apply( const community_event_operation& o )
 
       _db.modify( event, [&]( community_event_object& ceo )
       {
+         from_string( ceo.event_name, o.event_name );
          from_string( ceo.location, o.location );
+         ceo.latitude = o.latitude;
+         ceo.longitude = o.longitude;
          from_string( ceo.details, o.details );
          from_string( ceo.url, o.url );
          from_string( ceo.json, o.json );
          ceo.event_start_time = o.event_start_time;
          ceo.event_end_time = o.event_end_time;
          ceo.last_updated = now;
-         ceo.invited = inv;
       });
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -992,7 +987,7 @@ void community_event_attend_evaluator::do_apply( const community_event_attend_op
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   const community_event_object& event = _db.get_community_event( o.community, o.event_name );
+   const community_event_object& event = _db.get_community_event( o.community );
    const community_object& community = _db.get_community( o.community );
 
    FC_ASSERT( community.active, 

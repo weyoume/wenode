@@ -571,6 +571,8 @@ void comment_evaluator::do_apply( const comment_operation& o )
          com.author_reputation = auth.author_reputation;
          com.comment_price = o.comment_price;
          com.premium_price = o.premium_price;
+         com.latitude = o.latitude;
+         com.longitude = o.longitude;
          com.public_key = public_key_type( o.public_key );
          
          if( o.interface.size() )
@@ -700,6 +702,10 @@ void comment_evaluator::do_apply( const comment_operation& o )
             "Comment must not have been voted on before specifying beneficiaries." );
       }
       
+      FC_ASSERT( comment.comment_price.symbol == o.comment_price.symbol,
+         "Comment price asset symbol cannot be altered." );
+      FC_ASSERT( comment.premium_price.symbol == o.premium_price.symbol,
+         "Premium price asset symbol cannot be altered." );
       FC_ASSERT( comment.allow_curation_rewards >= options.allow_curation_rewards,
          "Curation rewards cannot be re-enabled." );
       FC_ASSERT( comment.allow_replies >= options.allow_replies,
@@ -726,6 +732,11 @@ void comment_evaluator::do_apply( const comment_operation& o )
             com.rating = options.rating;
             com.community = o.community;
             com.reach = reach_type;
+            com.author_reputation = auth.author_reputation;
+            com.latitude = o.latitude;
+            com.longitude = o.longitude;
+            com.comment_price = o.comment_price;
+            com.premium_price = o.premium_price;
             com.reply_connection = reply_connection;
             com.reward_currency = options.reward_currency;
             com.max_accepted_payout = options.max_accepted_payout;
@@ -783,6 +794,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
             {
                com.public_key = public_key_type( o.public_key );
             }
+            
             if( o.body.size() )
             {  
                if( !fc::is_utf8( o.body ) )
@@ -2111,20 +2123,8 @@ void poll_vote_evaluator::do_apply( const poll_vote_operation& o )
 
    FC_ASSERT( poll.completion_time > now, 
       "Poll has passed its completion time and is not accepting any more votes." );
-
-   bool found = false;
-
-   for( size_t i = 0; i < poll.poll_options.size(); i++ )
-   {
-      if( to_string( poll.poll_options[ i ] ) == o.poll_option )
-      {
-         found = true;
-         break;
-      }
-   }
-
-   FC_ASSERT( found, 
-      "Poll Option must be an available option from the poll." );
+   FC_ASSERT( o.poll_option < poll.poll_options.size(), 
+      "Poll Option selection not found." );
 
    const auto& vote_idx = _db.get_index< poll_vote_index >().indices().get< by_voter_creator_poll_id >();
    auto vote_itr = vote_idx.find( boost::make_tuple( o.voter, o.creator, o.poll_id ) );
@@ -2136,18 +2136,18 @@ void poll_vote_evaluator::do_apply( const poll_vote_operation& o )
          p.voter = o.voter;
          p.creator = o.creator;
          from_string( p.poll_id, o.poll_id );
-         from_string( p.poll_option, o.poll_option );
+         from_string( p.poll_option, to_string( poll.poll_options[ o.poll_option ] ) );
          p.last_updated = now;
          p.created = now;
       });
    }
-   else    
+   else
    {
       const poll_vote_object& vote = *vote_itr;
 
       _db.modify( vote, [&]( poll_vote_object& p )
       {
-         from_string( p.poll_option, o.poll_option );
+         from_string( p.poll_option, to_string( poll.poll_options[ o.poll_option ] ) );
          p.last_updated = now;
       });
    }

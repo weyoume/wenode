@@ -1163,6 +1163,8 @@ void database::process_asset_distribution()
       share_type total_input_units = 0;
       share_type max_output_units = distribution.max_output_distribution_units();
       share_type input_unit_amount = distribution.input_unit_amount();
+      asset total_distributed = asset( 0, distribution.distribution_asset );
+      asset total_funded = asset( 0, distribution.fund_asset );
       
       balance_itr = balance_idx.lower_bound( distribution.distribution_asset );
 
@@ -1205,6 +1207,7 @@ void database::process_asset_distribution()
 
             input_units = balance.amount.amount / input_unit_amount;
             output_units = input_units * unit_ratio;
+            
             account_name_type input_account;
             account_name_type output_account;
             account_balance_type balance_type = account_balance_type::LIQUID_BALANCE;
@@ -1267,11 +1270,13 @@ void database::process_asset_distribution()
                      break;
                   }
                }
+
+               total_funded += balance.amount;
             }
 
             for( asset_unit u : output_distribution_unit )     // Pay newly distirbuted assets to the asset output unit accounts
             {
-              output_account = u.name;
+               output_account = u.name;
 
                if( u.name == ASSET_UNIT_SENDER )
                {
@@ -1328,6 +1333,8 @@ void database::process_asset_distribution()
                      break;
                   }
                }
+               
+               total_distributed += asset( output_units * u.units, distribution.distribution_asset );
             }
 
             remove( balance );
@@ -1347,6 +1354,8 @@ void database::process_asset_distribution()
             ado.intervals_missed++;
          }
          ado.next_round_time += fc::days( ado.distribution_interval_days );
+         ado.total_distributed += total_distributed;
+         ado.total_funded += total_funded;
       });
 
       // If the distribution has reached its final round, or missed its final max missed amount, refund all existing balances.

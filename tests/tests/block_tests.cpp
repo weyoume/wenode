@@ -545,9 +545,9 @@ BOOST_FIXTURE_TEST_CASE( pop_block_twice, clean_database_fixture )
 
       generate_block(skip_flags);
 
-      account_create( "candice", alice_public_owner_key );
+      account_create( "candice", alice_private_secure_key, alice_public_owner_key );
       generate_block(skip_flags);
-      account_create( "dave", alice_public_owner_key );
+      account_create( "dave", alice_private_secure_key, alice_public_owner_key );
       generate_block(skip_flags);
 
       db.pop_block();

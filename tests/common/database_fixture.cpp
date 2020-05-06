@@ -200,51 +200,50 @@ void database_fixture::generate_blocks(fc::time_point timestamp, bool miss_inter
 
 const account_object& database_fixture::account_create(
    const string& name,
-   const string& registrar,
-   const string& governance_account,
-   const private_key_type& registrar_key,
-   const share_type& fee,
-   const public_key_type& owner_key,
-   const public_key_type& active_key,
-   const public_key_type& posting_key,
-   const public_key_type& secure_key,
-   const public_key_type& connection_key,
-   const public_key_type& friend_key,
-   const public_key_type& companion_key,
-   const string& details,
-   const string& url,
-   const string& json
-   )
+   const private_key_type& private_secure_key,
+   const public_key_type& public_owner_key,
+   const public_key_type& public_active_key,
+   const public_key_type& public_posting_key,
+   const public_key_type& public_secure_key,
+   const public_key_type& public_connection_key,
+   const public_key_type& public_friend_key,
+   const public_key_type& public_companion_key )
 {
    try
    {
       account_create_operation op;
 
-      op.signatory = registrar;
-      op.registrar = registrar;
+      op.signatory = INIT_ACCOUNT;
+      op.registrar = INIT_ACCOUNT;
       op.new_account_name = name;
-      op.referrer = registrar;
-      op.proxy = governance_account;
-      op.governance_account = governance_account;
-      op.recovery_account = governance_account;
-      op.details = details;
-      op.url = url;
-      op.json = json;
-      op.json_private = json;
-      op.owner_auth = authority( 1, owner_key, 1 );
-      op.active_auth = authority( 1, active_key, 1 );
-      op.posting_auth = authority( 1, posting_key, 1 );
-      op.secure_public_key = string( secure_key );
-      op.connection_public_key = string( connection_key );
-      op.friend_public_key = string( friend_key );
-      op.companion_public_key = string( companion_key );
-      op.fee = asset( fee, SYMBOL_COIN );
+      op.referrer = INIT_ACCOUNT;
+      op.proxy = INIT_ACCOUNT;
+      op.recovery_account = INIT_ACCOUNT;
+      op.details = "Account Details";
+      op.url = "www.url.com";
+      op.json = "{\"json\":\"valid\"}";
+      op.json_private = get_encrypted_message( private_secure_key, public_secure_key, public_connection_key, string( "#{\"json\":\"valid\"}" ) ) ;
+      op.first_name = get_encrypted_message( private_secure_key, public_secure_key, public_connection_key, string( "#First" ) );
+      op.last_name = get_encrypted_message( private_secure_key, public_secure_key, public_connection_key, string( "#Name" ) );
+      op.gender = get_encrypted_message( private_secure_key, public_secure_key, public_connection_key, string( "#Male" ) );
+      op.date_of_birth = get_encrypted_message( private_secure_key, public_secure_key, public_connection_key, string( "#14-03-1980" ) );
+      op.email = get_encrypted_message( private_secure_key, public_secure_key, public_connection_key, string( "#firstname.lastname@email.com" ) );
+      op.phone = get_encrypted_message( private_secure_key, public_secure_key, public_connection_key, string( "#0400111222" ) );
+      op.nationality = get_encrypted_message( private_secure_key, public_secure_key, public_connection_key, string( "#Australia" ) );
+      op.owner_auth = authority( 1, public_owner_key, 1 );
+      op.active_auth = authority( 1, public_active_key, 1 );
+      op.posting_auth = authority( 1, public_posting_key, 1 );
+      op.secure_public_key = string( public_secure_key );
+      op.connection_public_key = string( public_connection_key );
+      op.friend_public_key = string( public_friend_key );
+      op.companion_public_key = string( public_companion_key );
+      op.fee = asset( std::max( db.get_median_chain_properties().account_creation_fee.amount, BLOCKCHAIN_PRECISION ), SYMBOL_COIN );
       op.delegation = asset( 0, SYMBOL_COIN );
       
       trx.operations.push_back( op );
       
       trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      trx.sign( registrar_key, db.get_chain_id() );
+      trx.sign( init_account_priv_key, db.get_chain_id() );
       trx.validate();
       db.push_transaction( trx, 0 );
       trx.operations.clear();
@@ -254,47 +253,15 @@ const account_object& database_fixture::account_create(
 
       return acct;
    }
-   FC_CAPTURE_AND_RETHROW( (name)(registrar) )
+   FC_CAPTURE_AND_RETHROW( (name) )
 }
 
 const account_object& database_fixture::account_create(
    const string& name,
-   const public_key_type& owner_key,
-   const public_key_type& active_key,
-   const public_key_type& posting_key,
-   const public_key_type& secure_key,
-   const public_key_type& connection_key,
-   const public_key_type& friend_key,
-   const public_key_type& companion_key )
+   const private_key_type& private_secure_key,
+   const public_key_type& key )
 {
-   try
-   {
-      return account_create(
-         name,
-         INIT_ACCOUNT,
-         INIT_ACCOUNT,
-         init_account_priv_key,
-         std::max( db.get_median_chain_properties().account_creation_fee.amount, BLOCKCHAIN_PRECISION ),
-         owner_key,
-         active_key,
-         posting_key,
-         secure_key,
-         connection_key,
-         friend_key,
-         companion_key,
-         "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.",
-         "https://en.wikipedia.org/wiki/Loch_Ness_Monster",
-         "{\"cookie_price\":\"3.50 MUSD\"}" );
-   }
-   FC_CAPTURE_AND_RETHROW( (name) );
-}
-
-const account_object& database_fixture::account_create(
-   const string& name,
-   const public_key_type& key
-)
-{
-   return account_create( name, key, key, key, key, key, key, key );
+   return account_create( name, private_secure_key, key, key, key, key, key, key, key );
 }
 
 const community_object& database_fixture::community_create(

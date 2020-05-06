@@ -1442,16 +1442,6 @@ const account_object* database::find_account( const account_name_type& name )con
    return find< account_object, by_name >( name );
 }
 
-const account_profile_object& database::get_account_profile( const account_name_type& name )const
-{ try {
-	return get< account_profile_object, by_account >( name );
-} FC_CAPTURE_AND_RETHROW( (name) ) }
-
-const account_profile_object* database::find_account_profile( const account_name_type& name )const
-{
-   return find< account_profile_object, by_account >( name );
-}
-
 const account_verification_object& database::get_account_verification( const account_name_type& verifier_account, const account_name_type& verified_account )const
 { try {
 	return get< account_verification_object, by_verifier_verified >( boost::make_tuple( verifier_account, verified_account ) );
@@ -1772,24 +1762,14 @@ const community_member_key_object* database::find_community_member_key( const ac
    return find< community_member_key_object, by_member_community >( boost::make_tuple( member, community) );
 }
 
-const community_event_object& database::get_community_event( const community_name_type& community, const shared_string& event_name )const
+const community_event_object& database::get_community_event( const community_name_type& community )const
 { try {
-	return get< community_event_object, by_community_event_name >( boost::make_tuple( community, event_name ) );
-} FC_CAPTURE_AND_RETHROW( (community)(event_name) ) }
+	return get< community_event_object, by_community >( community );
+} FC_CAPTURE_AND_RETHROW( (community) ) }
 
-const community_event_object* database::find_community_event( const community_name_type& community, const shared_string& event_name )const
+const community_event_object* database::find_community_event( const community_name_type& community )const
 {
-   return find< community_event_object, by_community_event_name >( boost::make_tuple( community, event_name ) );
-}
-
-const community_event_object& database::get_community_event( const community_name_type& community, const string& event_name )const
-{ try {
-	return get< community_event_object, by_community_event_name >( boost::make_tuple( community, event_name ) );
-} FC_CAPTURE_AND_RETHROW( (community)(event_name) ) }
-
-const community_event_object* database::find_community_event( const community_name_type& community, const string& event_name )const
-{
-   return find< community_event_object, by_community_event_name >( boost::make_tuple( community, event_name ) );
+   return find< community_event_object, by_community >( community );
 }
 
 const comment_object& database::get_comment( const account_name_type& author, const shared_string& permlink )const
@@ -1880,6 +1860,26 @@ const poll_object& database::get_poll( const account_name_type& creator, const s
 const poll_object* database::find_poll( const account_name_type& creator, const string& poll_id )const
 {
    return find< poll_object, by_poll_id >( boost::make_tuple( creator, poll_id ) );
+}
+
+const poll_vote_object& database::get_poll_vote( const account_name_type& voter, const account_name_type& creator, const shared_string& poll_id )const
+{ try {
+   return get< poll_vote_object, by_voter_creator_poll_id >( boost::make_tuple( voter, creator, poll_id ) );
+} FC_CAPTURE_AND_RETHROW( (voter)(creator)(poll_id) ) }
+
+const poll_vote_object* database::find_poll_vote( const account_name_type& voter, const account_name_type& creator, const shared_string& poll_id )const
+{
+   return find< poll_vote_object, by_voter_creator_poll_id >( boost::make_tuple( voter, creator, poll_id ) );
+}
+
+const poll_vote_object& database::get_poll_vote( const account_name_type& voter, const account_name_type& creator, const string& poll_id )const
+{ try {
+   return get< poll_vote_object, by_voter_creator_poll_id >( boost::make_tuple( voter, creator, poll_id ) );
+} FC_CAPTURE_AND_RETHROW( (voter)(creator)(poll_id) ) }
+
+const poll_vote_object* database::find_poll_vote( const account_name_type& voter, const account_name_type& creator, const string& poll_id )const
+{
+   return find< poll_vote_object, by_voter_creator_poll_id >( boost::make_tuple( voter, creator, poll_id ) );
 }
 
 const ad_creative_object& database::get_ad_creative( const account_name_type& account, const shared_string& creative_id )const
@@ -4818,7 +4818,6 @@ void database::initialize_evaluators()
 
    _my->_evaluator_registry.register_evaluator< account_create_evaluator                 >();
    _my->_evaluator_registry.register_evaluator< account_update_evaluator                 >();
-   _my->_evaluator_registry.register_evaluator< account_profile_evaluator                >();
    _my->_evaluator_registry.register_evaluator< account_verification_evaluator           >();
    _my->_evaluator_registry.register_evaluator< account_business_evaluator               >();
    _my->_evaluator_registry.register_evaluator< account_membership_evaluator             >();
@@ -5022,7 +5021,6 @@ void database::initialize_indexes()
    // Account Indexes
 
    add_core_index< account_index                           >(*this);
-   add_core_index< account_profile_index                   >(*this);
    add_core_index< account_verification_index              >(*this);
    add_core_index< account_business_index                  >(*this);
    add_core_index< account_executive_vote_index            >(*this);

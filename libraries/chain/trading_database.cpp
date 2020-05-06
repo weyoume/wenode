@@ -1121,7 +1121,8 @@ bool database::fill_margin_order( const margin_order_object& order, const asset&
 /**
  * Executes an option exercise order against an outstanding option underlying balance.
  */
-bool database::fill_option_order( const option_order_object& order, const asset& pays, const asset& receives, const asset& opt, const price& fill_price )
+bool database::fill_option_order( const option_order_object& order, const asset& pays, 
+   const asset& receives, const asset& opt, const price& fill_price )
 { try {
    FC_ASSERT( pays.symbol != receives.symbol,
       "Pays symbol and Receives symbol must not be the same." );
@@ -1138,6 +1139,7 @@ bool database::fill_option_order( const option_order_object& order, const asset&
       modify( order, [&]( option_order_object& ooo )
       {
          ooo.underlying_amount -= receives;
+         ooo.exercise_amount -= pays;
          ooo.option_position -= opt;
          ooo.last_updated = now;
       });
@@ -1159,7 +1161,7 @@ bool database::fill_option_order( const option_order_object& order, const asset&
 
    return filled;
 
-} FC_CAPTURE_AND_RETHROW( (order)(pays)(receives) ) }
+} FC_CAPTURE_AND_RETHROW( (order)(pays)(receives)(opt) ) }
 
 
 /**

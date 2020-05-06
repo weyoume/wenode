@@ -232,6 +232,7 @@ void graph_edge_evaluator::do_apply( const graph_edge_operation& o )
       {
          attribute_set.insert( to_string( att ) );
       }
+
       for( graph_node_name_type node_type : from_node.node_types )
       {
          FC_ASSERT( std::find( edge_property.from_node_types.begin(), edge_property.from_node_types.end(), node_type ) != edge_property.from_node_types.end(),
@@ -242,6 +243,7 @@ void graph_edge_evaluator::do_apply( const graph_edge_operation& o )
             edge_permission = node_property.edge_permission;
          }
       }
+
       for( graph_node_name_type node_type : to_node.node_types )
       {
          FC_ASSERT( std::find( edge_property.to_node_types.begin(), edge_property.to_node_types.end(), node_type ) != edge_property.to_node_types.end(),
@@ -252,10 +254,12 @@ void graph_edge_evaluator::do_apply( const graph_edge_operation& o )
             edge_permission = node_property.edge_permission;
          }
       }
+
       if( edge_property.graph_privacy > graph_privacy )
       {
          graph_privacy = edge_property.graph_privacy;
       }
+      
       if( edge_property.edge_permission > edge_permission )
       {
          edge_permission = edge_property.edge_permission;

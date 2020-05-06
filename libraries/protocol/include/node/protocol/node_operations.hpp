@@ -256,8 +256,6 @@ namespace node { namespace protocol {
 
       account_name_type             proxy;                         ///< Account that the new account will delegate its voting power to.
 
-      account_name_type             governance_account;            ///< Account that will be the governance account of the new account. Required for business and profile accounts.
-
       account_name_type             recovery_account;              ///< Account that can execute a recovery operation, in the event that the owner key is compromised. 
 
       account_name_type             reset_account;                 ///< Account that has the ability to execute a reset operation after 60 days of inactivity.
@@ -270,7 +268,21 @@ namespace node { namespace protocol {
 
       string                        json;                          ///< The JSON string of public profile information.
 
-      string                        json_private;                  ///< The JSON string of encrypted profile information.
+      string                        json_private;                  ///< The JSON string of encrypted profile information. Encrypted with connection key.
+
+      string                        first_name;                    ///< Encrypted First name of the user. Encrypted with connection key.
+
+      string                        last_name;                     ///< Encrypted Last name of the user. Encrypted with connection key.
+
+      string                        gender;                        ///< Encrypted Gender of the user. Encrypted with connection key.
+
+      string                        date_of_birth;                 ///< Encrypted Date of birth of the user. Format: DD-MM-YYYY. Encrypted with connection key.
+
+      string                        email;                         ///< Encrypted Email address of the user. Encrypted with connection key.
+
+      string                        phone;                         ///< Encrypted Phone Number of the user. Encrypted with connection key.
+
+      string                        nationality;                   ///< Encrypted Country of user's residence. Encrypted with connection key.
 
       authority                     owner_auth;                    ///< The account authority required for changing the active and posting authorities.
 
@@ -305,6 +317,30 @@ namespace node { namespace protocol {
 
       account_name_type             account;                       ///< Name of the account to update.
 
+      string                        details;                       ///< The account's Public details string.
+
+      string                        url;                           ///< The account's Public personal URL.
+
+      string                        image;                         ///< IPFS Reference of the Public profile image of the account.
+
+      string                        json;                          ///< The JSON string of additional Public profile information.
+
+      string                        json_private;                  ///< The JSON string of additional encrypted profile information. Encrypted with connection key.
+
+      string                        first_name;                    ///< Encrypted First name of the user. Encrypted with connection key.
+
+      string                        last_name;                     ///< Encrypted Last name of the user. Encrypted with connection key.
+
+      string                        gender;                        ///< Encrypted Gender of the user. Encrypted with connection key.
+
+      string                        date_of_birth;                 ///< Encrypted Date of birth of the user. Format: DD-MM-YYYY. Encrypted with connection key.
+
+      string                        email;                         ///< Encrypted Email address of the user. Encrypted with connection key.
+
+      string                        phone;                         ///< Encrypted Phone Number of the user. Encrypted with connection key.
+
+      string                        nationality;                   ///< Encrypted Country of user's residence. Encrypted with connection key.
+
       authority                     owner_auth;                    ///< Creates a new owner authority for the account, changing the key and account auths required to sign transactions.
 
       authority                     active_auth;                   ///< Creates a new active authority for the account, changing the key and account auths required to sign transactions.
@@ -319,16 +355,6 @@ namespace node { namespace protocol {
 
       string                        companion_public_key;          ///< The connection public key used for encrypting Companion level content.
 
-      string                        details;                       ///< The account's details string.
-
-      string                        url;                           ///< The account's selected personal URL.
-
-      string                        image;                         ///< IPFS Reference of the profile image of the account. 
-
-      string                        json;                          ///< The JSON string of public profile information.
-
-      string                        json_private;                  ///< The JSON string of encrypted profile information.
-
       string                        pinned_permlink;               ///< Permlink of the users pinned post.
 
       bool                          active = true;                 ///< True when account is active. False to set account as inactive.
@@ -340,63 +366,14 @@ namespace node { namespace protocol {
 
 
    /**
-    * Creates or updates an Account's Profile Identity Data.
-    * 
-    * The operation is completed by a governance account 
-    * on behalf of an account and is subject to the validation
-    * policies of each governance account. 
-    * 
-    * Contains a range of encrypted information for 
-    * searching and discovering the account, and linking it to
-    * a specific personal identity. Contains encrypted profile 
-    * information available to connections.
-    * 
-    * The Governance address has access to 
-    * plaintext information by way of profile key decryption.
-    */
-   struct account_profile_operation : public base_operation
-   {
-      account_name_type             signatory;
-
-      account_name_type             account;                ///< Name of the Account with the profile.
-
-      account_name_type             governance_account;     ///< Governance account administrating and attesting to the accuracy the profile data.
-      
-      string                        profile_public_key;     ///< Public key of the profile data for encryption and decryption.
-
-      string                        first_name;             ///< First name of the user.
-
-      string                        last_name;              ///< Last name of the user.
-
-      string                        gender;                 ///< Gender of the user.
-
-      string                        date_of_birth;          ///< Date of birth of the user. Format: DD-MM-YYYY.
-
-      string                        email;                  ///< Email address of the user.
-
-      string                        phone;                  ///< Phone Number of the user.
-
-      string                        nationality;            ///< Country of user's residence.
-
-      string                        address;                ///< Place of residence of the user. Format: 123 Main Street, Suburb, 1234, STATE.
-
-      void                          validate()const;
-      void                          get_required_owner_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = account; }
-   };
-
-
-   /**
     * Enables the verification of an account by another account.
     * 
-    * Accounts must have a profile object before they can begin the verification process.
+    * The verifier account declares that in their view,
+    * the owner of the verified account is a unique human person.
     * 
-    * The verifier account proves that they have 
-    * access to the profile data of the verified account
-    * by signing an image of both people in the same picture, 
+    * They upload an image of both people in the same picture, 
     * holding a hand writen note containing both account names
-    * and a recent head_block_id of the blockchain using the private key
-    * corresponding to the verified account's profile public key.
+    * and a recent head_block_id of the blockchain.
     */
    struct account_verification_operation : public base_operation
    {
@@ -406,15 +383,14 @@ namespace node { namespace protocol {
 
       account_name_type             verified_account;      ///< Name of the account being verifed.
 
-      string                        shared_image;          ///< IPFS reference to an image containing both people and the current.
+      string                        shared_image;          ///< IPFS reference to an image containing both people and a recent head block id.
 
-      signature_type                image_signature;       ///< Signature of shared_image, that validates to verified_profile_public_key.
+      bool                          verified = true;       ///< True to verify the account, false to remove verification.
 
       void                          validate()const;
       void                          get_required_owner_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
       void                          get_creator_name( account_name_type a )const{ a = verifier_account; }
    };
-
 
 
    /**
@@ -435,8 +411,6 @@ namespace node { namespace protocol {
       account_name_type             signatory;
 
       account_name_type             account;                  ///< Name of the business account to update.
-
-      account_name_type             governance_account;       ///< Name of the governance account that the business account is registered with.
 
       account_name_type             init_ceo_account;         ///< Name of the account that should become the initial Chief Executive Officer.
 
@@ -1637,6 +1611,10 @@ namespace node { namespace protocol {
 
       account_name_type              interface;            ///< Name of the interface application that broadcasted the transaction.
 
+      double                         latitude;             ///< Latitude co-ordinates of the comment. 
+
+      double                         longitude;            ///< Longitude co-ordinates of the comment.
+
       asset                          comment_price;        ///< Price that is required to comment on the post.
 
       asset                          reply_price;          ///< Price that is paid to the comment root author when the root author replies.
@@ -1896,7 +1874,7 @@ namespace node { namespace protocol {
 
       string                         poll_id;             ///< uuidv4 referring to the poll.
 
-      string                         poll_option;         ///< Poll option chosen.
+      uint16_t                       poll_option;         ///< Poll option chosen.
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -2270,7 +2248,14 @@ namespace node { namespace protocol {
 
 
    /**
-    * Creates or updates an event within a community.
+    * Creates or updates the event details within a community.
+    * 
+    * Events are created within Communities, 
+    * and the membership of the community
+    * is invited to the event.
+    * 
+    * Invite an account to join the community to
+    * invite them to the event.
     */
    struct community_event_operation : public base_operation
    {
@@ -2278,19 +2263,21 @@ namespace node { namespace protocol {
 
       account_name_type              account;                ///< Account that created the event.
 
-      community_name_type            community;              ///< Community being invited to join.
+      community_name_type            community;              ///< Community that the event is within.
 
-      string                         event_name;             ///< The Name of the event. Unique within each community.
+      string                         event_name;             ///< The Name of the event.
 
       string                         location;               ///< Address of the location of the event.
+
+      double                         latitude;               ///< Latitude co-ordinates of the event.
+
+      double                         longitude;              ///< Longitude co-ordinates of the event.
 
       string                         details;                ///< Event details describing the purpose of the event.
 
       string                         url;                    ///< Link containining additional event information.
 
       string                         json;                   ///< Additional Event JSON data.
-
-      vector< account_name_type >    invited;                ///< Members that are invited to the event, all community members if empty.
 
       time_point                     event_start_time;       ///< Time that the Event will begin.
 
@@ -2303,6 +2290,8 @@ namespace node { namespace protocol {
 
 
    /**
+    * Responds to an event invitation.
+    * 
     * Denotes the status of an account attending an event.
     */
    struct community_event_attend_operation : public base_operation
@@ -2312,8 +2301,6 @@ namespace node { namespace protocol {
       account_name_type              account;                ///< Account that is attending the event.
 
       community_name_type            community;              ///< Community that the event is within.
-
-      string                         event_name;             ///< The Name of the event.
 
       bool                           interested = true;      ///< True to set interested in the event, and receive notifications about it, false to remove interedt status.
 
@@ -2325,7 +2312,6 @@ namespace node { namespace protocol {
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       void                           get_creator_name( account_name_type a )const{ a = account; }
    };
-
 
 
    //================================//
@@ -4039,7 +4025,7 @@ namespace node { namespace protocol {
 
       asset_symbol_type                  collateral_symbol;        ///< Symbol of the collateral asset backing the prediction market.
 
-      vector< asset_symbol_type >        outcome_assets;           ///< Symbols for each outcome of the prediction market.
+      vector< asset_symbol_type >        outcome_assets;           ///< Symbol Suffixes for each outcome of the prediction market.
 
       vector< string >                   outcome_details;          ///< Description of each outcome and the resolution conditions for each asset.
 
@@ -5245,12 +5231,20 @@ FC_REFLECT( node::protocol::account_create_operation,
          (new_account_name)
          (referrer)
          (proxy)
-         (governance_account)
          (recovery_account)
+         (reset_account)
          (details)
          (url)
+         (image)
          (json)
          (json_private)
+         (first_name)
+         (last_name)
+         (gender)
+         (date_of_birth)
+         (email)
+         (phone)
+         (nationality)
          (owner_auth)
          (active_auth)
          (posting_auth)
@@ -5265,26 +5259,11 @@ FC_REFLECT( node::protocol::account_create_operation,
 FC_REFLECT( node::protocol::account_update_operation,
          (signatory)
          (account)
-         (owner_auth)
-         (active_auth)
-         (posting_auth)
-         (secure_public_key)
-         (connection_public_key)
-         (friend_public_key)
-         (companion_public_key)
          (details)
          (url)
+         (image)
          (json)
          (json_private)
-         (pinned_permlink)
-         (active)
-         );
-
-FC_REFLECT( node::protocol::account_profile_operation,
-         (signatory)
-         (account)
-         (governance_account)
-         (profile_public_key)
          (first_name)
          (last_name)
          (gender)
@@ -5292,7 +5271,15 @@ FC_REFLECT( node::protocol::account_profile_operation,
          (email)
          (phone)
          (nationality)
-         (address)
+         (owner_auth)
+         (active_auth)
+         (posting_auth)
+         (secure_public_key)
+         (connection_public_key)
+         (friend_public_key)
+         (companion_public_key)
+         (pinned_permlink)
+         (active)
          );
 
 FC_REFLECT( node::protocol::account_verification_operation,
@@ -5300,13 +5287,12 @@ FC_REFLECT( node::protocol::account_verification_operation,
          (verifier_account)
          (verified_account)
          (shared_image)
-         (image_signature)
+         (verified)
          );
 
 FC_REFLECT( node::protocol::account_business_operation,
          (signatory)
          (account)
-         (governance_account)
          (init_ceo_account)
          (business_type)
          (officer_vote_threshold)
@@ -5642,6 +5628,7 @@ FC_REFLECT( node::protocol::approve_enterprise_milestone_operation,
 FC_REFLECT( node::protocol::comment_options, 
          (post_type)
          (reach)
+         (reply_connection)
          (rating)
          (reward_currency)
          (max_accepted_payout)
@@ -5667,6 +5654,8 @@ FC_REFLECT( node::protocol::comment_operation,
          (community)
          (public_key)
          (interface)
+         (latitude)
+         (longitude)
          (comment_price)
          (reply_price)
          (premium_price)
@@ -5900,10 +5889,11 @@ FC_REFLECT( node::protocol::community_event_operation,
          (community)
          (event_name)
          (location)
+         (latitude)
+         (longitude)
          (details)
          (url)
          (json)
-         (invited)
          (event_start_time)
          (event_end_time)
          );
@@ -5912,17 +5902,14 @@ FC_REFLECT( node::protocol::community_event_attend_operation,
          (signatory)
          (account)
          (community)
-         (event_name)
          (attending)
          (not_attending)
          );
 
 
-
    //================================//
    //==== Advertising Operations ====//
    //================================//
-
 
 
 FC_REFLECT( node::protocol::ad_creative_operation,

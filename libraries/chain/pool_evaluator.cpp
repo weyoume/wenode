@@ -796,11 +796,29 @@ void prediction_pool_create_evaluator::do_apply( const prediction_pool_create_op
    FC_ASSERT( collateral_asset.is_credit_enabled(), 
       "Cannot make a prediction pool using the collateral asset: ${s}.",("s",o.collateral_symbol) );
 
+   const asset_object* asset_ptr = _db.find_asset( o.prediction_symbol );
+   FC_ASSERT( asset_ptr == nullptr, 
+      "Asset already exists with the specified prediction symbol: ${s}.",("s",o.prediction_symbol) );
+
+   asset liquid = _db.get_liquid_balance( o.account, o.prediction_bond.symbol );
+
+   FC_ASSERT( liquid >= o.prediction_bond, 
+      "Insufficient liquid balance for prediction bond." );
+   FC_ASSERT( o.outcome_time >= now + fc::days(7),
+      "Outcome time must be at least 7 days in the future." );
+
    const auto& pool_idx = _db.get_index< asset_prediction_pool_index >().indices().get< by_prediction_symbol >();
    auto pool_itr = pool_idx.find( o.prediction_symbol );
 
    FC_ASSERT( pool_itr == pool_idx.end(), 
       "As pool pair already exists for this asset pair. Use the Option Order operation to issue option assets." );
+
+   // Add Invalid outcome asset 
+
+   vector< asset_symbol_type > outcome_assets = o.outcome_assets;
+   outcome_assets.push_back( INVALID_OUTCOME_SYMBOL );
+   vector< string > outcome_details = o.outcome_details;
+   outcome_details.push_back( INVALID_OUTCOME_DETAILS );
    
    _db.create< asset_object >( [&]( asset_object& a )
    {
@@ -838,14 +856,14 @@ void prediction_pool_create_evaluator::do_apply( const prediction_pool_create_op
       appo.prediction_symbol = o.prediction_symbol;
       appo.collateral_symbol = o.collateral_symbol;
       appo.collateral_pool = asset( 0, o.collateral_symbol );
+      appo.outcome_assets.reserve( outcome_assets.size() );
+      appo.outcome_details.reserve( outcome_details.size() );
 
-      appo.outcome_assets.reserve( o.outcome_assets.size() );
-      appo.outcome_details.reserve( o.outcome_details.size() );
-
-      for( size_t i = 0; i < o.outcome_assets.size(); i++ )
+      for( size_t i = 0; i < outcome_assets.size(); i++ )
       {
-         appo.outcome_assets.push_back( o.outcome_assets[ i ] );
-         from_string( appo.outcome_details[ i ], o.outcome_details[ i ] );
+         asset_symbol_type combined = o.prediction_symbol+"."+outcome_assets[ i ];
+         appo.outcome_assets.push_back( combined );
+         from_string( appo.outcome_details[ i ], outcome_details[ i ] );
       }
 
       from_string( appo.json, o.json );
@@ -856,10 +874,10 @@ void prediction_pool_create_evaluator::do_apply( const prediction_pool_create_op
       appo.prediction_bond_pool = o.prediction_bond;
    });
 
-   for( size_t i = 0; i < o.outcome_assets.size(); i++ )
+   for( size_t i = 0; i < outcome_assets.size(); i++ )
    {
-      asset_symbol_type s = o.outcome_assets[i];
-      string d = o.outcome_details[i];
+      asset_symbol_type s = outcome_assets[i];
+      string d = outcome_details[i];
 
       _db.create< asset_object >( [&]( asset_object& a )
       {
@@ -1035,7 +1053,7 @@ void prediction_pool_resolve_evaluator::do_apply( const prediction_pool_resolve_
    FC_ASSERT( prediction_pool.is_outcome( outcome_asset.symbol ),
       "Resolution outcome must be a valid outcome within the prediction market." );
    FC_ASSERT( now >= prediction_pool.outcome_time,
-      "Resolution outcome must be a valid outcome within the prediction market." );
+      "Cannot Resolve market before outcome time." );
    
    const auto& resolution_idx = _db.get_index< asset_prediction_pool_resolution_index >().indices().get< by_account >();
    auto resolution_itr = resolution_idx.find( boost::make_tuple( o.account, prediction_asset.symbol ) );

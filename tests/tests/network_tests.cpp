@@ -569,7 +569,6 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       business_create.business_type = "public";
       business_create.officer_vote_threshold = BLOCKCHAIN_PRECISION;
       business_create.business_public_key = string( alice_public_posting_key );
-      business_create.governance_account = INIT_ACCOUNT;
       business_create.init_ceo_account = "alice";
       business_create.validate();
 
@@ -810,7 +809,6 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       create.signatory = "alice";
       create.registrar = "execboard";
       create.new_account_name = "newuser";
-      create.governance_account = "execboard";
       create.owner_auth = authority( 1, alice_public_owner_key, 1 );
       create.active_auth = authority( 2, alice_public_active_key, 2 );
       create.posting_auth = authority( 1, alice_public_posting_key, 1 );
@@ -1396,10 +1394,8 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
       create.signatory = "alice";
       create.registrar = "alice";
       create.new_account_name = "govaccount";
-      create.governance_account = INIT_ACCOUNT;
       create.referrer = INIT_ACCOUNT;
       create.proxy = INIT_ACCOUNT;
-      create.governance_account = INIT_ACCOUNT;
       create.recovery_account = INIT_ACCOUNT;
       create.reset_account = INIT_ACCOUNT;
       create.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";

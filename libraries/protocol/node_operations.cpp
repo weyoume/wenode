@@ -28,10 +28,6 @@ namespace node { namespace protocol {
       {
          validate_account_name( proxy );
       }
-      if( governance_account.size() )
-      {
-         validate_account_name( governance_account );
-      }
       if( recovery_account.size() )
       {
          validate_account_name( recovery_account );
@@ -50,6 +46,33 @@ namespace node { namespace protocol {
       active_auth.validate();
       posting_auth.validate();
 
+      if( details.size() > 0 )
+      {
+         FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+            "Details are too long." );
+         FC_ASSERT( fc::is_utf8( details ), 
+            "Details are not formatted in UTF8." );
+      }
+
+      if( url.size() > 0 )
+      {
+         FC_ASSERT( url.size() < MAX_URL_LENGTH,
+            "URL is too long." );
+         FC_ASSERT( fc::is_utf8( url ),
+            "URL is not formatted in UTF8." );
+         validate_url( url );
+      }
+      
+      if( image.size() > 0 )
+      {
+         FC_ASSERT( image.size() < MAX_STRING_LENGTH,
+         "Image is too long." );
+         FC_ASSERT( fc::is_utf8( image ), 
+            "Image is not formatted in UTF8." );
+         FC_ASSERT( image.size() == 46 && image[0] == 'Q' && image[1] == 'm',
+            "Image rejected: IPFS string should be 46 characters long and begin with 'Qm'." );
+      }
+
       if( json.size() > 0 )
       {
          FC_ASSERT( fc::is_utf8( json ), 
@@ -57,6 +80,7 @@ namespace node { namespace protocol {
          FC_ASSERT( fc::json::is_valid( json ), 
             "JSON Metadata not valid JSON." );
       }
+
       if( json_private.size() > 0 )
       {
          FC_ASSERT( fc::is_utf8( json_private ), 
@@ -65,17 +89,60 @@ namespace node { namespace protocol {
             "JSON Metadata not valid JSON." );
       }
 
-      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
-         "Details are too long." );
-      FC_ASSERT( fc::is_utf8( details ), 
-         "Details are not formatted in UTF8." );
-      FC_ASSERT( url.size() < MAX_URL_LENGTH,
-         "URL is too long." );
-      FC_ASSERT( fc::is_utf8( url ),
-         "URL is not formatted in UTF8." );
-      if( url.size() > 0 )
+      if( first_name.size() > 0 )
       {
-         validate_url( url );
+         FC_ASSERT( first_name.size() < MAX_STRING_LENGTH,
+            "First name is too long." );
+         FC_ASSERT( fc::is_utf8( first_name ), 
+            "First name is not formatted in UTF8." );
+      }
+
+      if( last_name.size() > 0 )
+      {
+         FC_ASSERT( last_name.size() < MAX_STRING_LENGTH,
+            "Last name is too long." );
+         FC_ASSERT( fc::is_utf8( last_name ), 
+            "Last name is not formatted in UTF8." );
+      }
+
+      if( gender.size() > 0 )
+      {
+         FC_ASSERT( gender.size() < MAX_STRING_LENGTH,
+            "Gender is too long." );
+         FC_ASSERT( fc::is_utf8( gender ), 
+            "Gender is not formatted in UTF8." );
+      }
+
+      if( date_of_birth.size() > 0 )
+      {
+         FC_ASSERT( date_of_birth.size() < MAX_STRING_LENGTH,
+            "Date of Birth is too long." );
+         FC_ASSERT( fc::is_utf8( date_of_birth ), 
+            "Date of Birth is not formatted in UTF8." );
+      }
+
+      if( email.size() > 0 )
+      {
+         FC_ASSERT( email.size() < MAX_STRING_LENGTH,
+            "Email is too long." );
+         FC_ASSERT( fc::is_utf8( email ), 
+            "Email is not formatted in UTF8." );
+      }
+
+      if( phone.size() > 0 )
+      {
+         FC_ASSERT( phone.size() < MAX_STRING_LENGTH,
+            "Phone is too long." );
+         FC_ASSERT( fc::is_utf8( phone ), 
+            "Phone is not formatted in UTF8." );
+      }
+
+      if( nationality.size() > 0 )
+      { 
+         FC_ASSERT( nationality.size() < MAX_STRING_LENGTH,
+            "Nationality is too long." );
+         FC_ASSERT( fc::is_utf8( nationality ), 
+            "Nationality is not formatted in UTF8." );
       }
 
       validate_public_key( secure_public_key );
@@ -96,6 +163,33 @@ namespace node { namespace protocol {
       active_auth.validate();
       posting_auth.validate();
       
+      if( details.size() > 0 )
+      {
+         FC_ASSERT( details.size() < MAX_STRING_LENGTH,
+            "Details are too long." );
+         FC_ASSERT( fc::is_utf8( details ), 
+            "Details are not formatted in UTF8." );
+      }
+
+      if( url.size() > 0 )
+      {
+         FC_ASSERT( url.size() < MAX_URL_LENGTH,
+            "URL is too long." );
+         FC_ASSERT( fc::is_utf8( url ),
+            "URL is not formatted in UTF8." );
+         validate_url( url );
+      }
+      
+      if( image.size() > 0 )
+      {
+         FC_ASSERT( image.size() < MAX_STRING_LENGTH,
+         "Image is too long." );
+         FC_ASSERT( fc::is_utf8( image ), 
+            "Image is not formatted in UTF8." );
+         FC_ASSERT( image.size() == 46 && image[0] == 'Q' && image[1] == 'm',
+            "Image rejected: IPFS string should be 46 characters long and begin with 'Qm'." );
+      }
+
       if( json.size() > 0 )
       {
          FC_ASSERT( fc::is_utf8( json ), 
@@ -103,6 +197,7 @@ namespace node { namespace protocol {
          FC_ASSERT( fc::json::is_valid( json ), 
             "JSON Metadata not valid JSON." );
       }
+
       if( json_private.size() > 0 )
       {
          FC_ASSERT( fc::is_utf8( json_private ), 
@@ -111,17 +206,60 @@ namespace node { namespace protocol {
             "JSON Metadata not valid JSON." );
       }
 
-      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
-         "Details are too long." );
-      FC_ASSERT( fc::is_utf8( details ), 
-         "Details are not formatted in UTF8." );
-      FC_ASSERT( url.size() < MAX_URL_LENGTH,
-         "URL is too long." );
-      FC_ASSERT( fc::is_utf8( url ),
-         "URL is not formatted in UTF8." );
-      if( url.size() > 0 )
+      if( first_name.size() > 0 )
       {
-         validate_url( url );
+         FC_ASSERT( first_name.size() < MAX_STRING_LENGTH,
+            "First name is too long." );
+         FC_ASSERT( fc::is_utf8( first_name ), 
+            "First name is not formatted in UTF8." );
+      }
+
+      if( last_name.size() > 0 )
+      {
+         FC_ASSERT( last_name.size() < MAX_STRING_LENGTH,
+            "Last name is too long." );
+         FC_ASSERT( fc::is_utf8( last_name ), 
+            "Last name is not formatted in UTF8." );
+      }
+
+      if( gender.size() > 0 )
+      {
+         FC_ASSERT( gender.size() < MAX_STRING_LENGTH,
+            "Gender is too long." );
+         FC_ASSERT( fc::is_utf8( gender ), 
+            "Gender is not formatted in UTF8." );
+      }
+
+      if( date_of_birth.size() > 0 )
+      {
+         FC_ASSERT( date_of_birth.size() < MAX_STRING_LENGTH,
+            "Date of Birth is too long." );
+         FC_ASSERT( fc::is_utf8( date_of_birth ), 
+            "Date of Birth is not formatted in UTF8." );
+      }
+
+      if( email.size() > 0 )
+      {
+         FC_ASSERT( email.size() < MAX_STRING_LENGTH,
+            "Email is too long." );
+         FC_ASSERT( fc::is_utf8( email ), 
+            "Email is not formatted in UTF8." );
+      }
+
+      if( phone.size() > 0 )
+      {
+         FC_ASSERT( phone.size() < MAX_STRING_LENGTH,
+            "Phone is too long." );
+         FC_ASSERT( fc::is_utf8( phone ), 
+            "Phone is not formatted in UTF8." );
+      }
+
+      if( nationality.size() > 0 )
+      { 
+         FC_ASSERT( nationality.size() < MAX_STRING_LENGTH,
+            "Nationality is too long." );
+         FC_ASSERT( fc::is_utf8( nationality ), 
+            "Nationality is not formatted in UTF8." );
       }
 
       validate_public_key( secure_public_key );
@@ -130,53 +268,6 @@ namespace node { namespace protocol {
       validate_public_key( companion_public_key );
    }
 
-   void account_profile_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      validate_account_name( governance_account );
-      validate_public_key( profile_public_key );
-
-      FC_ASSERT( first_name.size() < MAX_STRING_LENGTH,
-         "First name is too long." );
-      FC_ASSERT( fc::is_utf8( first_name ), 
-         "First name is not formatted in UTF8." );
-
-      FC_ASSERT( last_name.size() < MAX_STRING_LENGTH,
-         "Last name is too long." );
-      FC_ASSERT( fc::is_utf8( last_name ), 
-         "Last name is not formatted in UTF8." );
-
-      FC_ASSERT( gender.size() < MAX_STRING_LENGTH,
-         "Gender is too long." );
-      FC_ASSERT( fc::is_utf8( gender ), 
-         "Gender is not formatted in UTF8." );
-
-      FC_ASSERT( date_of_birth.size() < MAX_STRING_LENGTH,
-         "Date of Birth is too long." );
-      FC_ASSERT( fc::is_utf8( date_of_birth ), 
-         "Date of Birth is not formatted in UTF8." );
-      
-      FC_ASSERT( email.size() < MAX_STRING_LENGTH,
-         "Email is too long." );
-      FC_ASSERT( fc::is_utf8( email ), 
-         "Email is not formatted in UTF8." );
-
-      FC_ASSERT( phone.size() < MAX_STRING_LENGTH,
-         "Phone is too long." );
-      FC_ASSERT( fc::is_utf8( phone ), 
-         "Phone is not formatted in UTF8." );
-      
-      FC_ASSERT( nationality.size() < MAX_STRING_LENGTH,
-         "Nationality is too long." );
-      FC_ASSERT( fc::is_utf8( nationality ), 
-         "Nationality is not formatted in UTF8." );
-
-      FC_ASSERT( address.size() < MAX_STRING_LENGTH,
-         "Address is too long." );
-      FC_ASSERT( fc::is_utf8( address ), 
-         "Address is not formatted in UTF8." );
-   }
 
    void account_verification_operation::validate() const
    {
@@ -185,9 +276,9 @@ namespace node { namespace protocol {
       validate_account_name( verified_account );
       
       FC_ASSERT( shared_image.size() < MAX_STRING_LENGTH,
-         "First name is too long." );
+         "Shared Image is too long." );
       FC_ASSERT( fc::is_utf8( shared_image ), 
-         "First name is not formatted in UTF8." );
+         "Shared Image is not formatted in UTF8." );
       FC_ASSERT( shared_image.size() == 46 && shared_image[0] == 'Q' && shared_image[1] == 'm',
          "Image rejected: IPFS string should be 46 characters long and begin with 'Qm'." );
    }
@@ -196,7 +287,6 @@ namespace node { namespace protocol {
    {
       validate_account_name( signatory );
       validate_account_name( account );
-      validate_account_name( governance_account );
       validate_account_name( init_ceo_account );
 
       FC_ASSERT( business_type.size() < MAX_URL_LENGTH,
@@ -923,6 +1013,10 @@ namespace node { namespace protocol {
 
       FC_ASSERT( public_key.size() < MAX_STRING_LENGTH,
          "Comment rejected: Title size is too large." );
+      FC_ASSERT( latitude <= 90 && latitude >= -90,
+         "Latitude must be between +-90 degrees." );
+      FC_ASSERT( longitude <= 180 && longitude >= -180,
+         "Latitude must be between +-180 degrees." );
       FC_ASSERT( comment_price.amount >= 0,
          "Comment price cannot be negative." );
       FC_ASSERT( reply_price.amount >= 0,
@@ -1143,12 +1237,8 @@ namespace node { namespace protocol {
 
       validate_uuidv4( poll_id );
 
-      FC_ASSERT( poll_option.size(),
-      "Poll has no name." );
-      FC_ASSERT( poll_option.size() <= MAX_STRING_LENGTH,
-         "Poll Option are too long." );
-      FC_ASSERT( fc::is_utf8( poll_option ),
-         "Poll Option must be UTF-8" );
+      FC_ASSERT( poll_option >= 0,
+      "Poll option must be greater than 0." );
    }
 
 
@@ -1373,11 +1463,6 @@ namespace node { namespace protocol {
             "JSON Metadata not valid JSON." );
       }
 
-      for( auto a : invited )
-      {
-         validate_account_name( a );
-      }
-
       FC_ASSERT( event_start_time > GENESIS_TIME,
          "Begin time must be after genesis time." );
       FC_ASSERT( event_end_time > GENESIS_TIME,
@@ -1391,11 +1476,6 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( account );
       validate_community_name( community );
-
-      FC_ASSERT( event_name.size() < MAX_STRING_LENGTH,
-         "Event Name is too long." );
-      FC_ASSERT( fc::is_utf8( event_name ),
-         "Event Name is not formatted in UTF8." );
 
       FC_ASSERT( !( attending && not_attending ),
          "Cannot select to both attend and not attend the same event." );
@@ -1798,14 +1878,20 @@ namespace node { namespace protocol {
       FC_ASSERT( fc::is_utf8( graph_privacy ),
          "Graph Privacy Type is invalid." );
 
+      FC_ASSERT( from_node_types.size() > 0,
+         "Graph From node types are required." );
+
       for( auto a : from_node_types )
       {
-         validate_account_name( a );
+         is_valid_symbol( a );
       }
+
+      FC_ASSERT( to_node_types.size() > 0,
+         "Graph To node types are required." );
 
       for( auto a : to_node_types )
       {
-         validate_account_name( a );
+         is_valid_symbol( a );
       }
 
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
@@ -2938,11 +3024,20 @@ namespace node { namespace protocol {
       FC_ASSERT( is_valid_symbol( collateral_symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", collateral_symbol) );
 
+      flat_set< asset_symbol_type > asset_set;
+
       for( asset_symbol_type a : outcome_assets )
       {
          FC_ASSERT( is_valid_symbol( a ),
             "Symbol ${symbol} is not a valid symbol", ("symbol", a) );
+         asset_set.insert( a );
+         FC_ASSERT( a != INVALID_OUTCOME_SYMBOL,
+            "Symbol ${symbol} is not a valid symbol", ("symbol", a) );
       }
+
+      FC_ASSERT( asset_set.size() == outcome_assets.size(),
+         "Outcome assets should not contain any duplicates." );
+
       for( string s : outcome_details )
       {
          FC_ASSERT( s.size() < MAX_STRING_LENGTH,

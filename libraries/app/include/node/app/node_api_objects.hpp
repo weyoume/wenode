@@ -239,15 +239,23 @@ struct account_api_obj
       id( a.id ),
       name( a.name ),
       details( to_string( a.details ) ),
+      url( to_string( a.url ) ),
+      image( to_string( a.image ) ),
       json( to_string( a.json ) ),
       json_private( to_string( a.json_private ) ),
-      url( to_string( a.url ) ),
+      first_name( to_string( a.first_name ) ),
+      last_name( to_string( a.last_name ) ),
+      gender( to_string( a.json_private ) ),
+      date_of_birth( to_string( a.date_of_birth ) ),
+      email( to_string( a.email ) ),
+      phone( to_string( a.phone ) ),
+      nationality( to_string( a.nationality ) ),
+      pinned_permlink( to_string( a.pinned_permlink ) ),
       membership( membership_tier_values[ int( a.membership ) ] ),
       secure_public_key( a.secure_public_key ),
       connection_public_key( a.connection_public_key ),
       friend_public_key( a.friend_public_key ),
       companion_public_key( a.companion_public_key ),
-      pinned_post( a.pinned_post ),
       proxy( a.proxy ),
       registrar( a.registrar ),
       referrer( a.referrer ),
@@ -326,10 +334,19 @@ struct account_api_obj
 
    account_id_type                  id;
    account_name_type                name;                                  ///< Username of the account, lowercase letter and numbers and hyphens only.
-   string                           details;                               ///< User's account details.
-   string                           json;                                  ///< Public plaintext json information.
-   string                           json_private;                          ///< Private ciphertext json information.
-   string                           url;                                   ///< Account's external reference URL.
+   string                           details;                               ///< The account's Public details string.
+   string                           url;                                   ///< The account's Public personal URL.
+   string                           image;                                 ///< IPFS Reference of the Public profile image of the account.
+   string                           json;                                  ///< The JSON string of additional Public profile information.
+   string                           json_private;                          ///< The JSON string of additional encrypted profile information. Encrypted with connection key.
+   string                           first_name;                            ///< Encrypted First name of the user. Encrypted with connection key.
+   string                           last_name;                             ///< Encrypted Last name of the user. Encrypted with connection key.
+   string                           gender;                                ///< Encrypted Gender of the user. Encrypted with connection key.
+   string                           date_of_birth;                         ///< Encrypted Date of birth of the user. Format: DD-MM-YYYY. Encrypted with connection key.
+   string                           email;                                 ///< Encrypted Email address of the user. Encrypted with connection key.
+   string                           phone;                                 ///< Encrypted Phone Number of the user. Encrypted with connection key.
+   string                           nationality;                           ///< Encrypted Country of user's residence. Encrypted with connection key.
+   string                           pinned_permlink;                       ///< Post pinned to the top of the account's profile. 
    string                           membership;                            ///< Level of account membership.
    public_key_type                  secure_public_key;                     ///< Key used for receiving incoming encrypted direct messages and key exchanges.
    public_key_type                  connection_public_key;                 ///< Key used for encrypting posts for connection level visibility. 
@@ -338,7 +355,6 @@ struct account_api_obj
    authority                        owner_auth;
    authority                        active_auth;
    authority                        posting_auth;
-   comment_id_type                  pinned_post;                           ///< Post pinned to the top of the account's profile. 
    account_name_type                proxy;                                 ///< Account that votes on behalf of this account
    vector< account_name_type>       proxied;                               ///< Accounts that have set this account to be their proxy voter.
    account_name_type                registrar;                             ///< The name of the account that created the account;
@@ -403,78 +419,28 @@ struct account_concise_api_obj
       id( a.id ),
       name( a.name ),
       details( to_string( a.details ) ),
-      json( to_string( a.json ) ),
-      json_private( to_string( a.json_private ) ),
-      url( to_string( a.url ) ),
+      image( to_string( a.image ) ),
       membership( membership_tier_values[ int( a.membership ) ] ),
-      secure_public_key( a.secure_public_key ),
-      connection_public_key( a.connection_public_key ),
-      friend_public_key( a.friend_public_key ),
-      companion_public_key( a.companion_public_key ),
-      pinned_post( a.pinned_post ),
       follower_count( a.follower_count ),
       following_count( a.following_count ),
       total_rewards( a.total_rewards.value ),
       author_reputation( a.author_reputation.value ),
-      created( a.created ){}
+      created( a.created ),
+      active( a.active ){}
       
    account_concise_api_obj(){}
 
    account_id_type                  id;
    account_name_type                name;                                  ///< Username of the account, lowercase letter and numbers and hyphens only.
    string                           details;                               ///< User's account details.
-   string                           json;                                  ///< Public plaintext json information.
-   string                           json_private;                          ///< Private ciphertext json information.
-   string                           url;                                   ///< Account's external reference URL.
+   string                           image;                                 ///< Account's public profile image IPFS reference.
    string                           membership;                            ///< Level of account membership.
-   public_key_type                  secure_public_key;                     ///< Key used for receiving incoming encrypted direct messages and key exchanges.
-   public_key_type                  connection_public_key;                 ///< Key used for encrypting posts for connection level visibility. 
-   public_key_type                  friend_public_key;                     ///< Key used for encrypting posts for friend level visibility.
-   public_key_type                  companion_public_key;                  ///< Key used for encrypting posts for companion level visibility.
-   comment_id_type                  pinned_post;                           ///< Post pinned to the top of the account's profile. 
    uint32_t                         follower_count;                        ///< Number of account followers.
    uint32_t                         following_count;                       ///< Number of accounts that the account follows. 
    int64_t                          total_rewards;                         ///< Rewards in core asset earned from all reward sources.
    int64_t                          author_reputation;                     ///< 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
    time_point                       created;                               ///< Time that the account was created.
-};
-
-
-
-struct account_profile_api_obj
-{
-   account_profile_api_obj( const chain::account_profile_object& a ):
-      id( a.id ),
-      account( a.account ),
-      governance_account( a.governance_account ),
-      profile_public_key( a.profile_public_key ),
-      first_name( to_string( a.first_name ) ),
-      last_name( to_string( a.last_name ) ),
-      gender( to_string( a.gender ) ),
-      date_of_birth( to_string( a.date_of_birth ) ),
-      email( to_string( a.email ) ),
-      phone( to_string( a.phone ) ),
-      nationality( to_string( a.nationality ) ),
-      address( to_string( a.address ) ),
-      created( a.created ),
-      last_updated( a.last_updated ){}
-      
-   account_profile_api_obj(){}
-
-   account_profile_id_type          id;
-   account_name_type                account;             ///< Name of the Account with the profile.
-   account_name_type                governance_account;  ///< Governance account administrating and attesting to the accuracy the profile data.
-   public_key_type                  profile_public_key;  ///< Public key of the profile data for encryption and decryption. 
-   string                           first_name;          ///< First name of the user.
-   string                           last_name;           ///< Last name of the user.
-   string                           gender;              ///< Gender of the user.
-   string                           date_of_birth;       ///< Date of birth of the user. Format: DD-MM-YYYY.
-   string                           email;               ///< Email address of the user.
-   string                           phone;               ///< Phone Number of the user.
-   string                           nationality;         ///< Country of user's residence.
-   string                           address;             ///< Place of residence of the user. Format: 123 Main Street, Suburb, 1234, STATE.
-   time_point                       created;             ///< Time that the profile was created.
-   time_point                       last_updated;        ///< Time that the profile was last updated.
+   bool                             active;
 };
 
 
@@ -484,9 +450,7 @@ struct account_verification_api_obj
       id( a.id ),
       verifier_account( a.verifier_account ),
       verified_account( a.verified_account ),
-      verified_profile_public_key( a.verified_profile_public_key ),
       shared_image( to_string( a.shared_image ) ),
-      image_signature( a.image_signature ),
       created( a.created ),
       last_updated( a.last_updated ){}
       
@@ -495,8 +459,7 @@ struct account_verification_api_obj
    account_verification_id_type          id;
    account_name_type                     verifier_account;              ///< Name of the Account with the profile.
    account_name_type                     verified_account;              ///< Name of the account being verifed.
-   public_key_type                       verified_profile_public_key;   ///< Public key of the profile data of the verified account.
-   string                                shared_image;                  ///< IPFS reference to an image containing both people and the current.
+   string                                shared_image;                  ///< IPFS reference to an image containing both people and the current
    signature_type                        image_signature;               ///< Signature of shared_image, that validates to verified_profile_public_key.
    time_point                            created;                       ///< Time of verification.
    time_point                            last_updated;                  ///< Time that the verifcation was last updated. 
@@ -1378,6 +1341,8 @@ struct comment_api_obj
       parent_permlink( to_string( o.parent_permlink ) ),
       json( to_string( o.json ) ),    
       category( to_string( o.category ) ),
+      latitude( o.latitude ),
+      longitude( o.longitude ),
       comment_price( o.comment_price ),
       reply_price( o.reply_price ),
       premium_price( o.premium_price ),
@@ -1475,6 +1440,8 @@ struct comment_api_obj
    string                         parent_permlink;              ///< permlink of the post this post is replying to, empty if root post. 
    string                         json;                         ///< IPFS link to file containing - Json metadata of the Title, Link, and additional interface specific data relating to the post.
    string                         category;
+   double                         latitude;                     ///< Latitude co-ordinates of the comment.
+   double                         longitude;                    ///< Longitude co-ordinates of the comment.
    asset                          comment_price;                ///< The price paid to create a comment
    asset                          reply_price;                  ///< Price paid to create a reply to the post
    asset                          premium_price;                ///< Price paid to unlock premium post. 
@@ -1816,7 +1783,8 @@ struct community_api_obj
       community_public_key( b.community_public_key ),
       json( to_string( b.json ) ),
       json_private( to_string( b.json_private ) ),
-      pinned_post( b.pinned_post ),
+      pinned_author( b.pinned_author ),
+      pinned_permlink( to_string( b.pinned_permlink ) ),
       subscriber_count( b.subscriber_count ),
       post_count( b.post_count ),
       comment_count( b.comment_count ),
@@ -1839,7 +1807,8 @@ struct community_api_obj
    public_key_type                    community_public_key;       ///< Key used for encrypting and decrypting posts. Private key shared with accepted members.
    string                             json;                       ///< Public plaintext json information about the community, its topic and rules.
    string                             json_private;               ///< Private ciphertext json information about the community.
-   comment_id_type                    pinned_post;                ///< Post pinned to the top of the community's page. 
+   account_name_type                  pinned_author;              ///< Author of the Post pinned to the top of the community's page. 
+   string                             pinned_permlink;            ///< Permlink of the Post pinned to the top of the community's page. 
    uint32_t                           subscriber_count;           ///< number of accounts that are subscribed to the community
    uint32_t                           post_count;                 ///< number of posts created in the community
    uint32_t                           comment_count;              ///< number of comments on posts in the community
@@ -1903,6 +1872,8 @@ struct community_event_api_obj
       community( o.community),
       event_name( to_string( o.event_name ) ),
       location( to_string( o.location ) ),
+      latitude( o.latitude ),
+      longitude( o.longitude ),
       details( to_string( o.details ) ),
       url( to_string( o.url ) ),
       json( to_string( o.json ) ),
@@ -1911,10 +1882,6 @@ struct community_event_api_obj
       last_updated( o.last_updated ),
       created( o.created )
       {
-         for( auto name : o.invited )
-         {
-            invited.push_back( name );
-         }
          for( auto name : o.interested )
          {
             interested.push_back( name );
@@ -1936,6 +1903,8 @@ struct community_event_api_obj
    community_name_type                   community;              ///< Community being invited to join.
    string                                event_name;             ///< The Name of the event.
    string                                location;               ///< Address location of the event.
+   double                                latitude;               ///< Latitude co-ordinates of the event.
+   double                                longitude;              ///< Longitude co-ordinates of the event.
    string                                details;                ///< Event details describing the purpose of the event.
    string                                url;                    ///< Reference URL for the event.
    string                                json;                   ///< Additional Event JSON data.
@@ -3592,6 +3561,8 @@ struct distribution_api_obj
       max_unit_ratio( p.max_unit_ratio.value ),
       min_input_balance_units( p.min_input_balance_units.value ),
       max_input_balance_units( p.max_input_balance_units.value ),
+      total_distributed( p.total_distributed ),
+      total_funded( p.total_funded ),
       begin_time( p.begin_time ),
       next_round_time( p.next_round_time ),
       created( p.created ),
@@ -3629,6 +3600,8 @@ struct distribution_api_obj
    int64_t                                    max_unit_ratio;                        ///< The highest possible initial value of unit ratio between input and output units.
    int64_t                                    min_input_balance_units;               ///< Minimum fund units that each sender can contribute in an individual balance.
    int64_t                                    max_input_balance_units;               ///< Maximum fund units that each sender can contribute in an individual balance.
+   asset                                      total_distributed;                     ///< Amount of distirbution asset generated and distributed to all fund balances.
+   asset                                      total_funded;                          ///< Amount of fund asset funded by all incoming fund balances.
    time_point                                 begin_time;                            ///< Time to begin the first distribution.
    time_point                                 next_round_time;                       ///< Time of the next distribution round.
    time_point                                 created;                               ///< Time that the distribution was created.
@@ -4037,12 +4010,19 @@ FC_REFLECT( node::app::account_api_obj,
          (json)
          (json_private)
          (url)
+         (first_name)
+         (last_name)
+         (gender)
+         (date_of_birth)
+         (email)
+         (phone)
+         (nationality)
+         (pinned_permlink)
          (membership)
          (secure_public_key)
          (connection_public_key)
          (friend_public_key)
          (companion_public_key)
-         (pinned_post)
          (proxy)
          (proxied)
          (registrar)
@@ -4102,46 +4082,21 @@ FC_REFLECT( node::app::account_concise_api_obj,
          (id)
          (name)
          (details)
-         (json)
-         (json_private)
-         (url)
+         (image)
          (membership)
-         (secure_public_key)
-         (connection_public_key)
-         (friend_public_key)
-         (companion_public_key)
-         (pinned_post)
          (follower_count)
          (following_count)
          (total_rewards)
          (author_reputation)
          (created)
-         );
-
-FC_REFLECT( node::app::account_profile_api_obj,
-         (id)
-         (account)
-         (governance_account)
-         (profile_public_key)
-         (first_name)
-         (last_name)
-         (gender)
-         (date_of_birth)
-         (email)
-         (phone)
-         (nationality)
-         (address)
-         (created)
-         (last_updated)
+         (active)
          );
 
 FC_REFLECT( node::app::account_verification_api_obj,
          (id)
          (verifier_account)
          (verified_account)
-         (verified_profile_public_key)
          (shared_image)
-         (image_signature)
          (created)
          (last_updated)
          );
@@ -4482,6 +4437,8 @@ FC_REFLECT( node::app::comment_api_obj,
          (parent_permlink)
          (json)
          (category)
+         (latitude)
+         (longitude)
          (comment_price)
          (reply_price)
          (premium_price)
@@ -4639,7 +4596,8 @@ FC_REFLECT( node::app::community_api_obj,
          (community_public_key)
          (json)
          (json_private)
-         (pinned_post)
+         (pinned_author)
+         (pinned_permlink)
          (subscriber_count)
          (post_count)
          (comment_count)
@@ -4677,6 +4635,8 @@ FC_REFLECT( node::app::community_event_api_obj,
          (community)
          (event_name)
          (location)
+         (latitude)
+         (longitude)
          (details)
          (url)
          (json)
@@ -5363,6 +5323,8 @@ FC_REFLECT( node::app::distribution_api_obj,
          (max_unit_ratio)
          (min_input_balance_units)
          (max_input_balance_units)
+         (total_distributed)
+         (total_funded)
          (begin_time)
          (next_round_time)
          (created)

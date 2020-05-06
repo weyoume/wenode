@@ -173,11 +173,14 @@ struct operation_visitor
             obj.encrypted         = comment.is_encrypted();
             obj.author_reputation = comment.author_reputation;
             obj.cashout           = _db.calculate_discussion_payout_time( comment );
+            obj.cashouts_received = comment.cashouts_received;
+
             obj.net_reward        = comment.net_reward;
             obj.net_votes         = comment.net_votes;
             obj.view_count        = comment.view_count;
             obj.share_count       = comment.share_count;
             obj.children          = comment.children;
+
             obj.vote_power        = comment.vote_power;
             obj.view_power        = comment.view_power;
             obj.share_power       = comment.share_power;
@@ -217,7 +220,9 @@ struct operation_visitor
          obj.parent            = parent_id;
          obj.created           = comment.created;
          obj.active            = comment.active;
+         obj.featured          = time_point::min();
          obj.cashout           = comment.cashout_time;
+         obj.cashouts_received = comment.cashouts_received;
 
          obj.net_votes         = comment.net_votes;
          obj.view_count        = comment.view_count;
@@ -1008,6 +1013,16 @@ struct operation_visitor
    {
       return calculate_total_post_score< 90, 50, 50, 10, 75, 10, 10, 75 >( c, m );
    }
+
+   /**
+    * Finds an evenly balanced ranking that favours posts with a combination of votes, views, shares and comments
+    * Weights time with a very high latency peference, favouring older posts, with no activity boost.
+    * No Equalization or reputation boost.
+    */
+   inline double calculate_featured( const comment_object& c, const comment_metrics_object& m )const 
+   {
+      return calculate_total_post_score< 100, 0, 0, 0, 100, 100, 100, 100 >( c, m );
+   }
    
    
    /**
@@ -1110,6 +1125,8 @@ struct operation_visitor
       sort.discourse.standard    = calculate_discourse_standard( c, m );
       sort.discourse.top         = calculate_discourse_top( c, m );
       sort.discourse.elite       = calculate_discourse_elite( c, m );
+
+      sort.featured              = calculate_featured( c, m );
 
       return sort;
    }
@@ -2345,6 +2362,43 @@ struct operation_visitor
       }
    }
 
+
+   /**
+    * Updates the featured posts to add a new post to the 
+    * top of the featured feed.
+    */
+   void update_featured( time_point now )const
+   {
+      const auto& new_featured_idx = _db.get_index< tag_featured_sort_index >().indices().get< by_parent_featured >();
+      auto new_featured_itr = new_featured_idx.begin();
+
+      while( new_featured_itr != new_featured_idx.end() &&
+         new_featured_itr->community == community_name_type() &&
+         new_featured_itr->tag == tag_name_type() && 
+         new_featured_itr->parent == comment_id_type() &&
+         new_featured_itr->cashouts_received == 0 )
+      {
+         const tag_object& tag = *new_featured_itr;
+         
+         if( ( now - tag.created ) <= fc::days(1) && 
+            tag.featured == time_point::min() )
+         {
+            const account_object& author = _db.get_account( tag.author );
+
+            if( author.membership == membership_tier_type::MID_MEMBERSHIP ||
+               author.membership == membership_tier_type::TOP_MEMBERSHIP )
+            {
+               _db.modify( tag, [&]( tag_object& t )
+               {
+                  t.featured = now;
+               });
+
+               break;
+            }
+         }
+      }
+   }
+
    void operator()( const comment_operation& op )const
    {
       update_tags( _db.get_comment( op.author, op.permlink ), _db.get_comment_metrics(), true );
@@ -2446,6 +2500,11 @@ struct operation_visitor
       update_tags( c, _db.get_comment_metrics(), false );
    }
 
+   void operator()( const update_featured_feed_operation& op )const
+   {
+      update_featured( op.featured_time );
+   }
+
    template<typename Op>
    void operator()( Op&& )const{} /// ignore all other ops
 };
@@ -2486,11 +2545,12 @@ tags_plugin::tags_plugin( application* app )
    add_plugin_index< tag_prominent_sort_index         >(db);
    add_plugin_index< tag_conversation_sort_index      >(db);
    add_plugin_index< tag_discourse_sort_index         >(db);
+   add_plugin_index< tag_featured_sort_index          >(db);
    add_plugin_index< tag_stats_index                  >(db);
    add_plugin_index< peer_stats_index                 >(db);
    add_plugin_index< account_curation_metrics_index   >(db);
    add_plugin_index< account_adjacency_index          >(db);
-   add_plugin_index< community_adjacency_index            >(db);
+   add_plugin_index< community_adjacency_index        >(db);
    add_plugin_index< tag_adjacency_index              >(db);
    add_plugin_index< account_recommendations_index    >(db);
    add_plugin_index< author_tag_stats_index           >(db);

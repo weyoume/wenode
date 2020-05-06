@@ -87,7 +87,6 @@ enum object_type
    // Account Objects
 
    account_object_type,
-   account_profile_object_type,
    account_verification_object_type,
    account_business_object_type,
    account_executive_vote_object_type,
@@ -245,7 +244,6 @@ class hardfork_property_object;
 // Account Objects
 
 class account_object;
-class account_profile_object;
 class account_verification_object;
 class account_business_object;
 class account_executive_vote_object;
@@ -402,7 +400,6 @@ typedef oid< hardfork_property_object                   > hardfork_property_id_t
 // Account Objects
 
 typedef oid< account_object                             > account_id_type;
-typedef oid< account_profile_object                     > account_profile_id_type;
 typedef oid< account_verification_object                > account_verification_id_type;
 typedef oid< account_business_object                    > account_business_id_type;
 typedef oid< account_executive_vote_object              > account_executive_vote_id_type;
@@ -627,7 +624,6 @@ FC_REFLECT_ENUM( node::chain::object_type,
          // Account Objects
 
          (account_object_type)
-         (account_profile_object_type)
          (account_verification_object_type)
          (account_business_object_type)
          (account_executive_vote_object_type)

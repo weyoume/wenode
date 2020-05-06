@@ -374,14 +374,15 @@ asset database::distribute_comment_reward( util::comment_reward_context& ctx, co
 
    modify( c, [&]( comment_object& com )
    {
-      if( com.cashouts_received < ( ctx.decay_rate.to_seconds() / ctx.reward_interval.to_seconds() ) )
+      if( com.cashouts_received < ( ctx.decay_rate.to_seconds() / ctx.reward_interval.to_seconds() ) &&
+        ( now - com.created ) < ctx.reward_interval )
       {
          if( com.net_reward > 0 )   // A payout is only made for positive reward.
          {
             com.cashouts_received++;
             com.last_payout = now;
          }
-         com.cashout_time += ctx.reward_interval;     // Bump reward interval to next time
+         com.cashout_time += ctx.reward_interval;     // Bump reward interval to next time.
       }
       else
       {
@@ -488,6 +489,9 @@ void database::process_comment_cashout()
  * of all posts in the network in the prior 30 days. Used for determining sorting 
  * equalization, content rewards, activty reward eligibility and more.
  * Updates every hour.
+ * 
+ * Adds a new top ranked post to the featured feed for 
+ * network wide distribution.
  */
 void database::update_comment_metrics() 
 { try {
@@ -648,6 +652,8 @@ void database::update_comment_metrics()
          cmo.vote_share_ratio = vote_share_ratio;
          cmo.vote_comment_ratio = vote_comment_ratio;
       });
+
+      push_virtual_operation( update_featured_feed_operation( now ) );
    }
 } FC_CAPTURE_AND_RETHROW() }
 

@@ -19,7 +19,19 @@ namespace node { namespace chain {
       public:
          template<typename Constructor, typename Allocator>
          account_object( Constructor&& c, allocator< Allocator > a ) : 
-         details(a), json(a), json_private(a), url(a), image(a)
+         details(a), 
+         url(a),
+         image(a),
+         json(a), 
+         json_private(a),
+         first_name(a), 
+         last_name(a), 
+         gender(a), 
+         date_of_birth(a), 
+         email(a), 
+         phone(a), 
+         nationality(a),
+         pinned_permlink(a)
          {
             c(*this);
          };
@@ -28,16 +40,32 @@ namespace node { namespace chain {
 
          account_name_type                name;                                  ///< Username of the account, lowercase letter and numbers and hyphens only.
 
-         shared_string                    details;                               ///< User's account details.
+         shared_string                    details;                               ///< The account's Public details string.
 
-         shared_string                    json;                                  ///< Public plaintext JSON information.
+         shared_string                    url;                                   ///< The account's Public personal URL.
 
-         shared_string                    json_private;                          ///< Private ciphertext JSON information.
+         shared_string                    image;                                 ///< IPFS Reference of the Public profile image of the account.
 
-         shared_string                    url;                                   ///< Account's external reference URL.
+         shared_string                    json;                                  ///< The JSON string of additional Public profile information.
 
-         shared_string                    image;                                 ///< User's Public profile image IPFS Reference.
+         shared_string                    json_private;                          ///< The JSON string of additional encrypted profile information. Encrypted with connection key.
 
+         shared_string                    first_name;                            ///< Encrypted First name of the user. Encrypted with connection key.
+
+         shared_string                    last_name;                             ///< Encrypted Last name of the user. Encrypted with connection key.
+
+         shared_string                    gender;                                ///< Encrypted Gender of the user. Encrypted with connection key.
+
+         shared_string                    date_of_birth;                         ///< Encrypted Date of birth of the user. Format: DD-MM-YYYY. Encrypted with connection key.
+
+         shared_string                    email;                                 ///< Encrypted Email address of the user. Encrypted with connection key.
+
+         shared_string                    phone;                                 ///< Encrypted Phone Number of the user. Encrypted with connection key.
+
+         shared_string                    nationality;                           ///< Encrypted Country of user's residence. Encrypted with connection key.
+
+         shared_string                    pinned_permlink;                       ///< Post permlink pinned to the top of the account's profile. 
+         
          membership_tier_type             membership;                            ///< Level of account membership.
 
          public_key_type                  secure_public_key;                     ///< Key used for receiving incoming encrypted direct messages and key exchanges.
@@ -48,8 +76,6 @@ namespace node { namespace chain {
 
          public_key_type                  companion_public_key;                  ///< Key used for encrypting posts for companion level visibility.
 
-         comment_id_type                  pinned_post;                           ///< Post pinned to the top of the account's profile. 
-
          account_name_type                proxy;                                 ///< Account that votes on behalf of this account
 
          flat_set< account_name_type >    proxied;                               ///< Accounts that have set this account to be their proxy voter.
@@ -58,9 +84,9 @@ namespace node { namespace chain {
 
          account_name_type                referrer;                              ///< The name of the account that originally referred the account to be created;
 
-         account_name_type                recovery_account = NULL_ACCOUNT;       ///< Account that can request recovery using a recent owner key if compromised.  
+         account_name_type                recovery_account;                      ///< Account that can request recovery using a recent owner key if compromised.  
 
-         account_name_type                reset_account = NULL_ACCOUNT;          ///< Account that has the ability to reset owner authority after specified days of inactivity.
+         account_name_type                reset_account;                         ///< Account that has the ability to reset owner authority after specified days of inactivity.
 
          account_name_type                membership_interface = NULL_ACCOUNT;   ///< Account of the last interface to sell a membership to the account.
 
@@ -151,59 +177,6 @@ namespace node { namespace chain {
          bool                             active = true;
    };
 
-   /**
-    * Encrypted profile information of an account.
-    * 
-    * Enables details to be decrypted by accounts that have access to the decryption key.
-    */
-   class account_profile_object : public object< account_profile_object_type, account_profile_object >
-   {
-      account_profile_object() = delete;
-
-      public:
-         template<typename Constructor, typename Allocator>
-         account_profile_object( Constructor&& c, allocator< Allocator > a ) :
-         first_name(a), 
-         last_name(a), 
-         gender(a), 
-         date_of_birth(a), 
-         email(a), 
-         phone(a), 
-         nationality(a), 
-         address(a)
-         {
-            c(*this);
-         };
-
-         id_type                 id;
-
-         account_name_type       account;             ///< Name of the Account with the profile.
-
-         account_name_type       governance_account;  ///< Governance account administrating and attesting to the accuracy the profile data.
-
-         public_key_type         profile_public_key;  ///< Public key of the profile data for encryption and decryption. 
-
-         shared_string           first_name;          ///< First name of the user.
-
-         shared_string           last_name;           ///< Last name of the user.
-
-         shared_string           gender;              ///< Gender of the user.
-
-         shared_string           date_of_birth;       ///< Date of birth of the user. Format: DD-MM-YYYY.
-
-         shared_string           email;               ///< Email address of the user.
-
-         shared_string           phone;               ///< Phone Number of the user.
-
-         shared_string           nationality;         ///< Country of user's residence.
-
-         shared_string           address;             ///< Place of residence of the user. Format: 123 Main Street, Suburb, 1234, STATE.
-
-         time_point              created;             ///< Time that the profile was created.
-
-         time_point              last_updated;        ///< Time that the profile was last updated.
-   };
-
 
    /**
     * Describes the process and details of the verification of an account by another account.
@@ -235,11 +208,7 @@ namespace node { namespace chain {
 
          account_name_type         verified_account;              ///< Name of the account being verifed.
 
-         public_key_type           verified_profile_public_key;   ///< Public key of the profile data of the verified account.
-
          shared_string             shared_image;                  ///< IPFS reference to an image containing both people and the current.
-
-         signature_type            image_signature;               ///< Signature of shared_image, that validates to verified_profile_public_key.
 
          time_point                created;                       ///< Time of verification.
 
@@ -407,8 +376,6 @@ namespace node { namespace chain {
          id_type                                         id;
 
          account_name_type                               account;                    ///< Username of the business account, lowercase letters only.
-
-         account_name_type                               governance_account;         ///< Name of the governance account that the business account is registered with.
 
          business_structure_type                         business_type;              ///< Type of business account, controls authorizations for transactions of different types.
 
@@ -1742,19 +1709,6 @@ namespace node { namespace chain {
    > owner_authority_history_index;
 
 
-   typedef multi_index_container<
-      account_profile_object,
-      indexed_by<
-         ordered_unique< tag< by_id >,
-            member< account_profile_object, account_profile_id_type, &account_profile_object::id > 
-         >,
-         ordered_unique< tag< by_account >,
-            member< account_profile_object, account_name_type, &account_profile_object::account > 
-         >
-      >,
-      allocator< account_profile_object >
-   > account_profile_index;
-
    struct by_verifier_verified;
    struct by_verified_verifier;
 
@@ -2481,12 +2435,19 @@ FC_REFLECT( node::chain::account_object,
          (json_private)
          (url)
          (image)
+         (first_name)
+         (last_name)
+         (gender)
+         (date_of_birth)
+         (email)
+         (phone)
+         (nationality)
+         (pinned_permlink)
          (membership)
          (secure_public_key)
          (connection_public_key)
          (friend_public_key)
          (companion_public_key)
-         (pinned_post)
          (proxy)
          (proxied)
          (registrar)
@@ -2541,32 +2502,11 @@ FC_REFLECT( node::chain::account_object,
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::account_object, node::chain::account_index );
 
-FC_REFLECT( node::chain::account_profile_object,
-         (id)
-         (account)
-         (governance_account)
-         (profile_public_key)
-         (first_name)
-         (last_name)
-         (gender)
-         (date_of_birth)
-         (email)
-         (phone)
-         (nationality)
-         (address)
-         (created)
-         (last_updated)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::account_profile_object, node::chain::account_profile_index );
-
 FC_REFLECT( node::chain::account_verification_object,
          (id)
          (verifier_account)
          (verified_account)
-         (verified_profile_public_key)
          (shared_image)
-         (image_signature)
          (created)
          (last_updated)
          );
@@ -2576,7 +2516,6 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::account_verification_object, node::chain:
 FC_REFLECT( node::chain::account_business_object,
          (id)
          (account)
-         (governance_account)
          (business_type)
          (business_public_key)
          (executive_board)

@@ -105,7 +105,8 @@ namespace detail {
          const sort_set& discussion, 
          const sort_set& prominent,
          const sort_set& conversation, 
-         const sort_set& discourse ):
+         const sort_set& discourse,
+         double featured ):
          quality(quality),
          votes(votes),
          views(views),
@@ -116,7 +117,8 @@ namespace detail {
          discussion(discussion),
          prominent(prominent),
          conversation(conversation),
-         discourse(discourse){}
+         discourse(discourse),
+         featured(featured){}
       
       sort_options(){}
 
@@ -141,21 +143,24 @@ namespace detail {
       sort_set conversation = sort_set();
 
       sort_set discourse = sort_set();
+
+      double   featured = 0;     ///< Ranking for Featured sort, Updated hourly with days best posts
    };
    
 }    // ::detail
 
 
 /**
- *  The purpose of the tag object is to allow the generation and listing of
- *  all top level posts by a string tag.  The desired sort orders include:
+ * The purpose of the tag object is to allow the generation and listing of
+ * all top level posts by a string tag.  The desired sort orders include:
  *
- *  1. created - time of creation
- *  2. maturing - about to receive a payout
- *  3. active - last reply the post or any child of the post
- *  4. netvotes - individual accounts voting for post minus accounts voting against it
+ * 1. created - time of creation.
+ * 2. maturing - about to receive a payout.
+ * 3. active - last reply the post or any child of the post.
+ * 4. netvotes - individual accounts voting for post minus accounts voting against it.
+ * 5. featured - time that the post was featured.
  *
- *  When ever a comment is modified, all tag_objects for that comment are updated to match.
+ * When ever a comment is modified, all tag_objects for that comment are updated to match.
  */
 class tag_object : public object< tag_object_type, tag_object >
 {
@@ -182,11 +187,13 @@ class tag_object : public object< tag_object_type, tag_object >
 
       comment_id_type            comment;                      ///< ID of the comment that the tag is referring to.
 
-      time_point                 created;                      ///< Time the post was created. 
+      time_point                 created;                      ///< Time the post was created.
 
       time_point                 active;                       ///< Time that a new comment on the post was last created.
 
-      time_point                 cashout;                      ///< Time of the next content reward cashout due for the post. 
+      time_point                 featured;                     ///< Time that a comment was placed in the featured feed, else min time.
+
+      time_point                 cashout;                      ///< Time of the next content reward cashout due for the post.
 
       bool                       encrypted;                    ///< True if the post is encrypted.
 
@@ -195,6 +202,8 @@ class tag_object : public object< tag_object_type, tag_object >
       string                     language;                     ///< Two letter language string for the language of the content.
 
       share_type                 author_reputation;            ///< Reputation of the author, from 0 to BLOCKCHAIN_PRECISION.
+
+      uint32_t                   cashouts_received = 0;        ///< Number of times that the comment has received content rewards.
 
       uint32_t                   children = 0;                 ///< The total number of children, grandchildren, posts with this as root comment.
 
@@ -325,6 +334,8 @@ class tag_object : public object< tag_object_type, tag_object >
       double                     discourse_top()const { return sort.discourse.top; }
 
       double                     discourse_elite()const { return sort.discourse.elite; }
+
+      double                     featured_rank()const { return sort.featured; }
 };
 
 typedef oid< tag_object > tag_id_type;
@@ -334,7 +345,7 @@ struct by_net_reward;             // all comments regardless of depth
 struct by_comment;
 struct by_parent_created;
 struct by_parent_active;
-
+struct by_parent_featured;
 struct by_parent_net_reward;      // all top level posts by direct pending payout
 
 struct by_parent_net_votes;       
@@ -347,12 +358,12 @@ struct by_parent_view_power;
 struct by_parent_share_power;    
 struct by_parent_comment_power;    
 
-struct by_author_parent_created;
 struct by_author_net_votes;
 struct by_author_view_count;
 struct by_author_share_count;
 struct by_author_children;
 struct by_reward_fund_net_reward;
+
 
 //========== Sorting Indexes ==========// 
 
@@ -450,6 +461,16 @@ typedef multi_index_container<
                member< tag_object, tag_name_type, &tag_object::tag >,
                member< tag_object, comment_id_type, &tag_object::parent >,
                member< tag_object, time_point, &tag_object::active >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< community_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< time_point >, std::less< tag_id_type > >
+      >,
+      ordered_unique< tag< by_parent_featured >,
+            composite_key< tag_object,
+               member< tag_object, community_name_type, &tag_object::community >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, time_point, &tag_object::featured >,
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< community_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::greater< time_point >, std::less< tag_id_type > >
@@ -552,16 +573,6 @@ typedef multi_index_container<
                member< tag_object, tag_id_type, &tag_object::id >
             >,
             composite_key_compare< std::less< community_name_type >, std::less<tag_name_type>, std::greater< share_type >, std::less< tag_id_type > >
-      >,
-      ordered_unique< tag< by_author_parent_created >,
-            composite_key< tag_object,
-               member< tag_object, community_name_type, &tag_object::community >,
-               member< tag_object, tag_name_type, &tag_object::tag >,
-               member< tag_object, account_name_type, &tag_object::author >,
-               member< tag_object, time_point, &tag_object::created >,
-               member< tag_object, tag_id_type, &tag_object::id >
-            >,
-            composite_key_compare< std::less< community_name_type >, std::less<tag_name_type>, std::less<account_name_type>, std::greater< time_point >, std::less< tag_id_type > >
       >,
       ordered_unique< tag< by_author_net_votes >,
             composite_key< tag_object,
@@ -1277,11 +1288,32 @@ typedef multi_index_container<
    allocator< tag_object >
 > tag_discourse_sort_index;
 
+// =========== Featured Index ========== //
+
+typedef multi_index_container<
+   tag_object,
+   indexed_by<
+      ordered_unique< tag< by_id >, member< tag_object, tag_id_type, &tag_object::id > >,
+      ordered_unique< tag< by_parent_featured >,
+            composite_key< tag_object,
+               member< tag_object, community_name_type, &tag_object::community >,
+               member< tag_object, tag_name_type, &tag_object::tag >,
+               member< tag_object, comment_id_type, &tag_object::parent >,
+               member< tag_object, uint32_t, &tag_object::cashouts_received >,
+               const_mem_fun< tag_object, double, &tag_object::featured_rank >,
+               member< tag_object, tag_id_type, &tag_object::id >
+            >,
+            composite_key_compare< std::less< community_name_type >, std::less<tag_name_type>, std::less<comment_id_type>, std::less< uint32_t >, std::greater< double >, std::less< tag_id_type > >
+      >
+   >,
+   allocator< tag_object >
+> tag_featured_sort_index;
+
 
 /**
- *  The purpose of this index is to quickly identify how popular various
- *  tags by maintaining various sums over
- *  all posts under a particular tag.
+ * The purpose of this index is to quickly identify how popular various
+ * tags by maintaining various sums over
+ * all posts under a particular tag.
  */
 class tag_stats_object : public object< tag_stats_object_type, tag_stats_object >
 {
@@ -1396,19 +1428,19 @@ class account_curation_metrics_object : public object< account_curation_metrics_
 
       flat_map< account_name_type, uint32_t >      author_votes;
 
-      flat_map< community_name_type, uint32_t >        community_votes;
+      flat_map< community_name_type, uint32_t >    community_votes;
 
       flat_map< tag_name_type, uint32_t >          tag_votes;
 
       flat_map< account_name_type, uint32_t >      author_views;
 
-      flat_map< community_name_type, uint32_t >        community_views;
+      flat_map< community_name_type, uint32_t >    community_views;
 
       flat_map< tag_name_type, uint32_t >          tag_views;
 
       flat_map< account_name_type, uint32_t >      author_shares;
 
-      flat_map< community_name_type, uint32_t >        community_shares;
+      flat_map< community_name_type, uint32_t >    community_shares;
 
       flat_map< tag_name_type, uint32_t >          tag_shares;
 };
@@ -1514,9 +1546,9 @@ class community_adjacency_object : public object< community_adjacency_object_typ
 
       id_type                                      id;
 
-      community_name_type                              community_a;
+      community_name_type                          community_a;
 
-      community_name_type                              community_b;
+      community_name_type                          community_b;
 
       share_type                                   adjacency;
 
@@ -1743,14 +1775,21 @@ typedef multi_index_container<
             member< peer_stats_object, float, &peer_stats_object::rank >,
             member< peer_stats_object, account_name_type, &peer_stats_object::peer >
          >,
-         composite_key_compare< std::less< account_name_type >, std::greater< float >, std::less< account_name_type > >
+         composite_key_compare< 
+            std::less< account_name_type >, 
+            std::greater< float >, 
+            std::less< account_name_type >
+         >
       >,
       ordered_unique< tag< by_voter_peer >,
          composite_key< peer_stats_object,
             member< peer_stats_object, account_name_type, &peer_stats_object::voter >,
             member< peer_stats_object, account_name_type, &peer_stats_object::peer >
          >,
-         composite_key_compare< std::less< account_name_type >,  std::less< account_name_type > >
+         composite_key_compare< 
+            std::less< account_name_type >, 
+            std::less< account_name_type > 
+         >
       >
    >,
    allocator< peer_stats_object >
@@ -1893,6 +1932,7 @@ FC_REFLECT( node::tags::tag_object,
          (comment)
          (created)
          (active)
+         (featured)
          (cashout)
          (encrypted)
          (rating)

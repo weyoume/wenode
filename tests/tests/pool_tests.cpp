@@ -972,4 +972,211 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
    FC_LOG_AND_RETHROW()
 }
 
+
+BOOST_AUTO_TEST_CASE( prediction_pool_operation_sequence_test )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: PREDICTION POOL OPERATION SEQUENCE" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Create prediction pool" );
+
+      ACTORS( (alice)(bob)(candice)(dan) );
+
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+
+      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      
+      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+
+      fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      
+      signed_transaction tx;
+
+      prediction_pool_create_operation create;
+
+      create.signatory = "alice";
+      create.account = "alice";
+      create.prediction_symbol = "PREDICTION";
+      create.collateral_symbol = SYMBOL_COIN;
+      create.outcome_assets = { "YES", "NO" };
+      create.outcome_details = { "The predicted event will happen.", "The predicted event will not happen." };
+      create.display_symbol = "Prediction market asset success.";
+      create.json = "{\"json\":\"valid\"}";
+      create.url = "www.url.com";
+      create.details = "Details";
+      create.outcome_time = now() + fc::days(8);
+      create.prediction_bond = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      create.validate();
+
+      tx.operations.push_back( create );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      const asset_prediction_pool_object& prediction = db.get_prediction_pool( "PREDICTION" );
+      const asset_object& prediction_asset = db.get_asset( "PREDICTION" );
+
+      BOOST_REQUIRE( create.account == prediction.issuer );
+      BOOST_REQUIRE( create.prediction_symbol == prediction.prediction_symbol );
+      BOOST_REQUIRE( create.collateral_symbol == prediction.collateral_symbol );
+
+      for( size_t i = 0; i < prediction.outcome_assets.size(); i++ )
+      {
+         BOOST_REQUIRE( create.outcome_assets[i] == prediction.outcome_assets[i] );
+         BOOST_REQUIRE( create.outcome_details[i] == to_string( prediction.outcome_details[i] ) );
+      }
+
+      BOOST_REQUIRE( create.display_symbol == to_string( prediction_asset.display_symbol ) );
+      BOOST_REQUIRE( create.json == to_string( prediction.json ) );
+      BOOST_REQUIRE( create.url == to_string( prediction.url ) );
+      BOOST_REQUIRE( create.details == to_string( prediction.details ) );
+      BOOST_REQUIRE( create.outcome_time == prediction.outcome_time );
+      BOOST_REQUIRE( create.prediction_bond == prediction.prediction_bond_pool );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Create prediction position" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when making a prediction pool bond without sufficient balance" );
+
+      create.signatory = "alice";
+      create.account = "alice";
+      create.prediction_symbol = "PREDICTIONB";
+      create.collateral_symbol = SYMBOL_COIN;
+      create.outcome_assets = { "YES", "NO" };
+      create.outcome_assets = { "The predicted event will happen.", "The predicted event will not happen." };
+      create.display_symbol = "Prediction market asset failure.";
+      create.json = "{\"json\":\"valid\"}";
+      create.url = "www.url.com";
+      create.details = "Details";
+      create.outcome_time = now() + fc::days(30);
+      create.prediction_bond = asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      create.validate();
+
+      tx.operations.push_back( create );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when making a prediction pool bond without sufficient balance" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Exchange funds with prediction pool" );
+
+      prediction_pool_exchange_operation exchange;
+
+      exchange.signatory = "bob";
+      exchange.account = "bob";
+      exchange.amount = asset( 2000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      exchange.prediction_asset = "PREDICTION";
+      exchange.exchange_base = false;
+      exchange.withdraw = false;
+      exchange.validate();
+
+      tx.operations.push_back( exchange );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      exchange.signatory = "bob";
+      exchange.account = "bob";
+      exchange.amount = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      exchange.prediction_asset = "PREDICTION";
+      exchange.exchange_base = false;
+      exchange.withdraw = true;
+      exchange.validate();
+
+      tx.operations.push_back( exchange );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      transfer_operation transfer;
+
+      transfer.signatory = "bob";
+      transfer.from = "bob";
+      transfer.to = "candice";
+      transfer.amount = asset( 1000 * BLOCKCHAIN_PRECISION, "PREDICTION.NO" );
+      transfer.memo = "Outcome asset";
+      transfer.validate();
+
+      BOOST_REQUIRE( prediction.collateral_pool == exchange.amount );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Exchange funds with prediction pool" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Resolve Prediction Pool" );
+
+      asset init_alice_liquid_coin = get_liquid_balance( "alice", SYMBOL_COIN );
+
+      generate_blocks( prediction.outcome_time + fc::minutes(1) );
+
+      prediction_pool_resolve_operation resolve;
+
+      resolve.signatory = "alice";
+      resolve.account = "alice";
+      resolve.amount = asset( 100 * BLOCKCHAIN_PRECISION, "PREDICTION" );
+      resolve.resolution_outcome = "PREDICTION.YES";
+      resolve.validate();
+      
+      tx.operations.push_back( resolve );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const asset_prediction_pool_resolution_object& resolution = db.get_prediction_pool_resolution( "alice", "PREDICTION" );
+
+      BOOST_REQUIRE( resolution.account == resolve.account );
+      BOOST_REQUIRE( resolution.amount == resolve.amount );
+      BOOST_REQUIRE( resolution.prediction_symbol == resolve.amount.symbol );
+      BOOST_REQUIRE( resolution.resolution_outcome == resolve.resolution_outcome );
+
+      validate_database();
+
+      generate_blocks( prediction.resolution_time + fc::minutes(1) );
+
+      asset alice_liquid_coin = get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_prediction = get_liquid_balance( "bob", "PREDICTION.YES" );
+      asset candice_liquid_prediction = get_liquid_balance( "candice", "PREDICTION.NO" );
+
+      const asset_prediction_pool_object* pool_ptr = db.find_prediction_pool( "PREDICTION" );
+      const asset_prediction_pool_resolution_object* resolution_ptr = db.find_prediction_pool_resolution( "alice", "PREDICTION" );
+      
+      BOOST_REQUIRE( pool_ptr == nullptr );
+      BOOST_REQUIRE( resolution_ptr == nullptr );
+      BOOST_REQUIRE( alice_liquid_coin == init_alice_liquid_coin + asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      BOOST_REQUIRE( bob_liquid_prediction.amount == 0 );
+      BOOST_REQUIRE( candice_liquid_prediction.amount == 0 );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Resolve Prediction Pool" );
+
+      BOOST_TEST_MESSAGE( "├── Testing: PREDICTION POOL OPERATION SEQUENCE" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
 BOOST_AUTO_TEST_SUITE_END()

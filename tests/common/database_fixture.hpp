@@ -130,7 +130,9 @@ extern fc::time_point TESTING_GENESIS_TIMESTAMP;
 
 #define ACTOR(name) \
    PREP_ACTOR(name) \
-   const auto& name = account_create( BOOST_PP_STRINGIZE(name), name ## _public_owner_key, name ## _public_active_key, name ## _public_posting_key, name ## _public_secure_key, name ## _public_connection_key, name ## _public_friend_key, name ## _public_companion_key ); \
+   const auto& name = account_create( BOOST_PP_STRINGIZE(name), name ## _private_secure_key, name ## _public_owner_key, \
+   name ## _public_active_key, name ## _public_posting_key, name ## _public_secure_key, name ## _public_connection_key, \
+   name ## _public_friend_key, name ## _public_companion_key ); \
    account_id_type name ## _id = name.id; (void)name ## _id;
 
 #define GET_ACTOR(name) \
@@ -207,35 +209,19 @@ struct database_fixture {
 
    const account_object& account_create(
       const string& name,
-      const string& registrar,
-      const string& governance_account,
-      const private_key_type& registrar_key,
-      const share_type& fee,
-      const public_key_type& owner_key,
-      const public_key_type& active_key,
-      const public_key_type& posting_key,
-      const public_key_type& secure_key,
-      const public_key_type& connection_key,
-      const public_key_type& friend_key,
-      const public_key_type& companion_key,
-      const string& details,
-      const string& url,
-      const string& json
+      const private_key_type& private_secure_key,
+      const public_key_type& public_owner_key,
+      const public_key_type& public_active_key,
+      const public_key_type& public_posting_key,
+      const public_key_type& public_secure_key,
+      const public_key_type& public_connection_key,
+      const public_key_type& public_friend_key,
+      const public_key_type& public_companion_key
    );
 
    const account_object& account_create(
       const string& name,
-      const public_key_type& owner_key,
-      const public_key_type& active_key,
-      const public_key_type& posting_key,
-      const public_key_type& secure_key,
-      const public_key_type& connection_key,
-      const public_key_type& friend_key,
-      const public_key_type& companion_key
-   );
-
-   const account_object& account_create(
-      const string& name,
+      const private_key_type& private_secure_key,
       const public_key_type& key
    );
 

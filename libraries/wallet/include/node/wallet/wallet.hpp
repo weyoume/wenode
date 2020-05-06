@@ -1232,6 +1232,18 @@ class wallet_api
 
 
       /**
+       * Retrieves the Discussion information from posts that are featured.
+       * 
+       * Featured posts include a stream of posts made by member account authors
+       * that are highly voted, shared, viewed and commented on in a 24 hour period.
+       * 
+       * @param query The details of the posts to return, and sorting options used. 
+       * @returns The Discussion information from the posts.
+       */
+      vector< discussion >                 get_discussions_by_featured( const discussion_query& query )const;
+
+
+      /**
        * Retrieves the Discussion information from posts that are recommended for an account.
        * 
        * Recommended posts include a randomized selection of not yet viewed posts from authors, communities and tags
@@ -1401,13 +1413,20 @@ class wallet_api
        * @param new_account_name The name of the new account.
        * @param referrer The name of the account that lead to the creation of the account.
        * @param proxy Account that is able to vote on behalf of the account.
-       * @param governance_account Account that is able to provide governance moderation and verification.
        * @param recovery_account Account able to create recovery requests if the key is compromised.
        * @param reset_account Account able to reset the owner key after inactivity.
        * @param details The account's details string.
        * @param url The account's selected personal URL.
+       * @param image The account's Public profile image.
        * @param json The JSON string of public profile information.
        * @param json_private The JSON string of encrypted profile information.
+       * @param first_name The user's Encrypted first name. 
+       * @param last_name The user's Encrypted last name. 
+       * @param gender The user's Encrypted specified gender.
+       * @param date_of_birth The user's Encrypted date of birth.
+       * @param email The user's Encrypted email address.
+       * @param phone The user's Encrypted phone number.
+       * @param nationality The user's Encrypted country of residence.
        * @param owner The account authority required for changing the active and posting authorities.
        * @param active The account authority required for sending payments and trading.
        * @param posting The account authority required for posting content and voting.
@@ -1415,9 +1434,6 @@ class wallet_api
        * @param connection_public_key The connection public key used for encrypting Connection level content.
        * @param friend_public_key The connection public key used for encrypting Friend level content.
        * @param companion_public_key The connection public key used for encrypting Companion level content.
-       * @param business_type The type of business account being created.
-       * @param officer_vote_threshold The voting power required to be an active officer.
-       * @param business_public_key The public key used for encrypted business content.
        * @param fee Account creation fee for stake on the new account.
        * @param delegation Initial amount delegated to the new account.
        * @param generate_keys Set True to use keys generated locally by this wallet.
@@ -1430,13 +1446,20 @@ class wallet_api
          string new_account_name,
          string referrer,
          string proxy,
-         string governance_account,
          string recovery_account,
          string reset_account,
          string details,
          string url,
+         string image,
          string json,
          string json_private,
+         string first_name,
+         string last_name,
+         string gender,
+         string date_of_birth,
+         string email,
+         string phone,
+         string nationality,
          authority owner,
          authority active,
          authority posting,
@@ -1444,9 +1467,6 @@ class wallet_api
          string connection_public_key,
          string friend_public_key,
          string companion_public_key,
-         string business_type,
-         share_type officer_vote_threshold,
-         string business_public_key,
          asset fee,
          asset delegation,
          bool generate_keys,
@@ -1461,20 +1481,25 @@ class wallet_api
        * @param account The name of the new account.
        * @param details The account's details string.
        * @param url The account's selected personal URL.
+       * @param image The account's Public profile image.
        * @param json The JSON string of public profile information.
        * @param json_private The JSON string of encrypted profile information.
-       * @param pinned_permlink The permlink of the pinned comment of the author's blog. 
-       * @param owner The account authority required for changing the active and posting authorities.
-       * @param active The account authority required for sending payments and trading.
-       * @param posting The account authority required for posting content and voting.
+       * @param first_name The user's Encrypted first name. 
+       * @param last_name The user's Encrypted last name. 
+       * @param gender The user's Encrypted specified gender.
+       * @param date_of_birth The user's Encrypted date of birth.
+       * @param email The user's Encrypted email address.
+       * @param phone The user's Encrypted phone number.
+       * @param nationality The user's Encrypted country of residence.
+       * @param pinned_permlink The permlink of the pinned comment of the author's blog.
+       * @param owner_auth The account authority required for changing the active and posting authorities.
+       * @param active_auth The account authority required for sending payments and trading.
+       * @param posting_auth The account authority required for posting content and voting.
        * @param secure_public_key The secure encryption key for content only visible to this account.
        * @param connection_public_key The connection public key used for encrypting Connection level content.
        * @param friend_public_key The connection public key used for encrypting Friend level content.
        * @param companion_public_key The connection public key used for encrypting Companion level content.
-       * @param business_type The type of business account being created.
-       * @param officer_vote_threshold The voting power required to be an active officer.
-       * @param business_public_key The public key used for encrypted business content.
-       * @param deleted Set to True to Delete Account.
+       * @param active True when account is active, false to deactivate.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           account_update( 
@@ -1482,45 +1507,9 @@ class wallet_api
          string account,
          string details,
          string url,
+         string image,
          string json,
          string json_private,
-         string pinned_permlink,
-         authority owner,
-         authority active,
-         authority posting,
-         string secure_public_key,
-         string connection_public_key,
-         string friend_public_key,
-         string companion_public_key,
-         string business_type,
-         share_type officer_vote_threshold,
-         string business_public_key,
-         bool deleted,
-         bool broadcast );
-
-
-      /**
-       * Update the encrypted profile account details of an existing account.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account The name of the profile account.
-       * @param governance_account The account's governance account to assign the profile.
-       * @param profile_public_key The public encryption key of the profile data.
-       * @param first_name The user's first name. 
-       * @param last_name The user's last name. 
-       * @param gender The user's specified gender.
-       * @param date_of_birth The user's date of birth.
-       * @param email The user's email address.
-       * @param phone The user's phone number.
-       * @param nationality The user's country of residence.
-       * @param address The user's place of residence.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           account_profile( 
-         string signatory,
-         string account,
-         string governance_account,
-         string profile_public_key,
          string first_name,
          string last_name,
          string gender,
@@ -1528,7 +1517,15 @@ class wallet_api
          string email,
          string phone,
          string nationality,
-         string address,
+         string pinned_permlink,
+         authority owner_auth,
+         authority active_auth,
+         authority posting_auth,
+         string secure_public_key,
+         string connection_public_key,
+         string friend_public_key,
+         string companion_public_key,
+         bool active,
          bool broadcast );
 
 
@@ -1536,10 +1533,10 @@ class wallet_api
        * Create or Update an account verification between two accounts.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param verifier_account The name of the account creating the verification
+       * @param verifier_account The name of the account creating the verification.
        * @param verified_account The account being verified.
-       * @param shared_image IPFS reference to the image being signed of both account owners.
-       * @param image_signature The signature of the shared image with the profile key of the verified account.
+       * @param shared_image IPFS reference to the image of both account owners.
+       * @param verified True when the verification is active, false to remove.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           account_verification( 
@@ -1547,7 +1544,7 @@ class wallet_api
          string verifier_account,
          string verified_account,
          string shared_image,
-         signature_type image_signature,
+         bool verified,
          bool broadcast );
 
 
@@ -1555,7 +1552,7 @@ class wallet_api
        * Create or Update the business account details of an existing account.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param governance_account Name of the governance account that the business account is registered with.
+       * @param account The Account to be made into a business account
        * @param init_ceo_account Name of the account that should become the initial Chief Executive Officer.
        * @param business_type The type of business account being created.
        * @param officer_vote_threshold The voting power required to be an active officer.
@@ -1564,7 +1561,7 @@ class wallet_api
        */
       annotated_signed_transaction           account_business( 
          string signatory,
-         string governance_account,
+         string account,
          string init_ceo_account,
          string business_type,
          int64_t officer_vote_threshold,
@@ -1580,7 +1577,7 @@ class wallet_api
        * @param membership_type The level of membership to activate on the account.
        * @param months Number of months to purchase membership for.
        * @param interface Name of the interface application facilitating the transaction.
-       * @param recurring True for membership to automatically recur each month from liquid balance. 
+       * @param recurring True for membership to automatically recur each month from liquid balance.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           account_membership(
@@ -2322,6 +2319,8 @@ class wallet_api
        * @param community The name of the community to which the post is uploaded to.
        * @param public_key The public key used to encrypt the post, holders of the private key may decrypt.
        * @param interface Name of the interface application that broadcasted the transaction.
+       * @param latitude Latitude co-ordinates of the comment.
+       * @param longitude Longitude co-ordinates of the comment.
        * @param comment_price Price that is required to comment on the post.
        * @param reply_price Price that is paid to the root comment author when the root author replies.
        * @param premium_price Price that is required to unlock premium content.
@@ -2346,6 +2345,8 @@ class wallet_api
          string community,
          string public_key,
          string interface,
+         double latitude,
+         double longitude,
          asset comment_price,
          asset reply_price,
          asset premium_price,
@@ -2550,7 +2551,7 @@ class wallet_api
          string voter,
          string creator,
          string poll_id,
-         string poll_option,
+         uint16_t poll_option,
          bool broadcast );
 
 
@@ -2856,10 +2857,11 @@ class wallet_api
        * @param community Community being invited to join.
        * @param event_name The Name of the event. Unique within each community.
        * @param location Address of the location of the event.
+       * @param latitude Latitude co-ordinates of the event.
+       * @param longitude Longitude co-ordinates of the event.
        * @param details Event details describing the purpose of the event.
        * @param url Link containining additional event information.
        * @param json Additional Event JSON data.
-       * @param invited Members that are invited to the event, all community members if empty.
        * @param event_start_time Time that the Event will begin.
        * @param event_end_time Time that the event will end.
        * @param broadcast Set True to broadcast transaction.
@@ -2870,10 +2872,11 @@ class wallet_api
          string community,
          string event_name,
          string location,
+         double latitude,
+         double longitude,
          string details,
          string url,
          string json,
-         vector< string > invited,
          time_point event_start_time,
          time_point event_end_time,
          bool broadcast );
@@ -2885,7 +2888,6 @@ class wallet_api
        * @param signatory The name of the account signing the transaction.
        * @param account Account that is attending the event.
        * @param community Community that the event is within.
-       * @param event_name The Name of the event.
        * @param interested True to set interested in the event, and receive notifications about it, false to remove interedt status.
        * @param attending True to attend the event, false to remove attending status.
        * @param not_attending True to state not attending the event, false to remove not attending status.
@@ -2895,7 +2897,6 @@ class wallet_api
          string signatory,
          string account,
          string community,
-         string event_name,
          bool interested,
          bool attending,
          bool not_attending,
@@ -4723,6 +4724,7 @@ FC_API( node::wallet::wallet_api,
          (get_discussions_by_sort_rank)
          (get_discussions_by_feed)
          (get_discussions_by_blog)
+         (get_discussions_by_featured)
          (get_discussions_by_recommended)
          (get_discussions_by_comments)
          (get_discussions_by_payout)
@@ -4741,7 +4743,6 @@ FC_API( node::wallet::wallet_api,
          (get_state)
          (account_create)
          (account_update)
-         (account_profile)
          (account_verification)
          (account_membership)
          (account_vote_executive)

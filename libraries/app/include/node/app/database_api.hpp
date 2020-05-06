@@ -506,6 +506,8 @@ class database_api
 
       vector< discussion >                            get_discussions_by_blog( const discussion_query& query )const;
 
+      vector< discussion >                            get_discussions_by_featured( const discussion_query& query )const;
+
       vector< discussion >                            get_discussions_by_recommended( const discussion_query& query )const;
 
       vector< discussion >                            get_discussions_by_comments( const discussion_query& query )const;
@@ -796,6 +798,7 @@ FC_API( node::app::database_api,
          (get_discussions_by_sort_rank)
          (get_discussions_by_feed)
          (get_discussions_by_blog)
+         (get_discussions_by_featured)
          (get_discussions_by_recommended)
          (get_discussions_by_comments)
 

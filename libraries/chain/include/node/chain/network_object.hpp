@@ -140,7 +140,9 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          governance_account_object( Constructor&& c, allocator< Allocator > a ) :
-         details(a), url(a), json(a)
+         details(a), 
+         url(a), 
+         json(a)
          {
             c( *this );
          }

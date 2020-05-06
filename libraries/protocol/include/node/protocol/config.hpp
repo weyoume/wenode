@@ -389,6 +389,8 @@
 #define MAX_UNDO_HISTORY                       10000
 #define MAX_INSTANCE_ID                        (uint64_t(-1)>>16)
 #define VIRTUAL_SCHEDULE_LAP_LENGTH            fc::uint128::max_value()
+#define INVALID_OUTCOME_SYMBOL                 "INVALID"
+#define INVALID_OUTCOME_DETAILS                "The market is invalid."
 
 /**
  *  Reserved Account IDs with special meaning

@@ -25,7 +25,11 @@ namespace node { namespace chain {
       public:
          template<typename Constructor, typename Allocator>
          community_object( Constructor&& c, allocator< Allocator > a ) :
-         details(a), url(a), json(a), json_private(a)
+         details(a),
+         url(a),
+         json(a),
+         json_private(a),
+         pinned_permlink(a)
          {
             c(*this);
          };
@@ -48,8 +52,10 @@ namespace node { namespace chain {
 
          shared_string                      json_private;                       ///< Private ciphertext json information about the community.
 
-         comment_id_type                    pinned_post;                        ///< Post pinned to the top of the community's page.
+         account_name_type                  pinned_author;                      ///< Author of Post pinned to the top of the community's page.
 
+         shared_string                      pinned_permlink;                    ///< Permlink of Post pinned to the top of the community's page.
+         
          uint16_t                           max_rating;                         ///< Highest severity rating that posts in the community can have.
 
          uint32_t                           flags;                              ///< The currently active flags on the community for content settings.
@@ -657,13 +663,15 @@ namespace node { namespace chain {
 
          shared_string                         location;               ///< Address location of the event.
 
+         double                                latitude;               ///< Latitude co-ordinates of the event.
+
+         double                                longitude;              ///< Longitude co-ordinates of the event.
+
          shared_string                         details;                ///< Event details describing the purpose of the event.
 
          shared_string                         url;                    ///< Reference URL for the event.
 
          shared_string                         json;                   ///< Additional Event JSON data.
-
-         flat_set< account_name_type >         invited;                ///< Members that are invited to the event, all members if empty.
 
          flat_set< account_name_type >         interested;             ///< Members that are interested in the event.
 
@@ -678,6 +686,21 @@ namespace node { namespace chain {
          time_point                            last_updated;           ///< Time that the event was last updated.
 
          time_point                            created;                ///< Time that the event was created.
+
+         bool                                  is_interested( const account_name_type& account )const
+         {
+            return std::find( interested.begin(), interested.end(), account ) != interested.end();
+         };
+
+         bool                                  is_attending( const account_name_type& account )const
+         {
+            return std::find( attending.begin(), attending.end(), account ) != attending.end();
+         };
+
+         bool                                  is_not_attending( const account_name_type& account )const
+         {
+            return std::find( not_attending.begin(), not_attending.end(), account ) != not_attending.end();
+         };
    };
 
    struct by_name;
@@ -898,7 +921,7 @@ namespace node { namespace chain {
    struct by_start_time;
    struct by_end_time;
    struct by_last_updated;
-   struct by_community_event_name;
+   struct by_community;
 
 
    typedef multi_index_container<
@@ -906,22 +929,14 @@ namespace node { namespace chain {
       indexed_by<
          ordered_unique< tag< by_id >,
             member< community_event_object, community_event_id_type, &community_event_object::id > >,
+         ordered_unique< tag< by_community >,
+            member< community_event_object, community_name_type, &community_event_object::community > >,
          ordered_non_unique< tag< by_start_time >,
             member< community_event_object, time_point, &community_event_object::event_start_time > >,
          ordered_non_unique< tag< by_end_time >,
             member< community_event_object, time_point, &community_event_object::event_end_time > >,
          ordered_non_unique< tag< by_last_updated >,
-            member< community_event_object, time_point, &community_event_object::last_updated > >,
-         ordered_unique< tag< by_community_event_name >,
-            composite_key< community_event_object,
-               member< community_event_object, community_name_type, &community_event_object::community >,
-               member< community_event_object, shared_string, &community_event_object::event_name >
-            >,
-            composite_key_compare< 
-               std::less< community_name_type >,
-               strcmp_less
-            >
-         > 
+            member< community_event_object, time_point, &community_event_object::last_updated > >
       >,
       allocator< community_event_object >
    > community_event_index;
@@ -937,7 +952,8 @@ FC_REFLECT( node::chain::community_object,
          (community_public_key)
          (json)
          (json_private)
-         (pinned_post)
+         (pinned_author)
+         (pinned_permlink)
          (subscriber_count)
          (post_count)
          (comment_count)
@@ -1018,10 +1034,11 @@ FC_REFLECT( node::chain::community_event_object,
          (community)
          (event_name)
          (location)
+         (latitude)
+         (longitude)
          (details)
          (url)
          (json)
-         (invited)
          (interested)
          (attending)
          (not_attending)

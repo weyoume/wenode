@@ -109,12 +109,6 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       FC_ASSERT( proxy.active,
          "Account: ${s} is not active, please select a different proxy account.",("s", o.proxy) );
    }
-   if( o.governance_account.size() )
-   {
-      const governance_account_object& governance_account = _db.get_governance_account( o.governance_account );
-      FC_ASSERT( governance_account.active,
-         "Governance account: ${a} is not active, please select a different governance account.",("a", o.governance_account) );
-   }
    
    for( auto& a : o.owner_auth.account_auths )
    {
@@ -156,12 +150,19 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
          a.proxy = o.proxy;
       }
 
-      from_string( a.json, o.json );
-      from_string( a.json_private, o.json_private );
       from_string( a.details, o.details );
       from_string( a.url, o.url );
       from_string( a.image, o.image );
-
+      from_string( a.json, o.json );
+      from_string( a.json_private, o.json_private );
+      from_string( a.first_name, o.first_name );
+      from_string( a.last_name, o.last_name );
+      from_string( a.gender, o.gender );
+      from_string( a.date_of_birth, o.date_of_birth );
+      from_string( a.email, o.email );
+      from_string( a.phone, o.phone );
+      from_string( a.nationality, o.nationality );
+      
       a.membership = membership_tier_type::NONE;
 
       a.secure_public_key = public_key_type( o.secure_public_key );
@@ -213,20 +214,6 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       afo.account = o.new_account_name;
       afo.last_updated = now;
    }); 
-
-   if( o.governance_account.size() )
-   {
-      _db.create< governance_subscription_object >( [&]( governance_subscription_object& gso )
-      {
-         gso.governance_account = o.governance_account;
-         gso.account = o.new_account_name;
-      });
-
-      _db.modify( new_account, [&]( account_object& a )
-      {
-         a.governance_subscriptions++;
-      });
-   }
 
    if( _db.find_network_officer( o.registrar ) != nullptr )
    {
@@ -344,99 +331,67 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
 
       a.last_account_update = now;
 
-      if ( o.json.size() > 0 )
-      {
-         from_string( a.json, o.json );
-      }
-      if ( o.details.size() > 0 )
+      if( o.details.size() > 0 )
       {
          from_string( a.details, o.details );
       }
-      if ( o.url.size() > 0 )
+      if( o.url.size() > 0 )
       {
          from_string( a.url, o.url );
       }
-      if ( o.json_private.size() > 0 )
+      if( o.image.size() > 0 )
+      {
+         from_string( a.image, o.image );
+      }
+      if( o.json.size() > 0 )
+      {
+         from_string( a.json, o.json );
+      }
+      if( o.json_private.size() > 0 )
       {
          from_string( a.json_private, o.json_private );
       }
-      if( pinned_post_ptr != nullptr )
+      if( o.first_name.size() > 0 )
       {
-         a.pinned_post = pinned_post_ptr->id;
+         from_string( a.first_name, o.first_name );
+      }
+      if( o.last_name.size() > 0 )
+      {
+         from_string( a.last_name, o.last_name );
+      }
+      if( o.gender.size() > 0 )
+      {
+         from_string( a.gender, o.gender );
+      }
+      if( o.date_of_birth.size() > 0 )
+      {
+         from_string( a.date_of_birth, o.date_of_birth );
+      }
+      if( o.email.size() > 0 )
+      {
+         from_string( a.email, o.email );
+      }
+      if( o.phone.size() > 0 )
+      {
+         from_string( a.phone, o.phone );
+      }
+      if( o.nationality.size() > 0 )
+      {
+         from_string( a.nationality, o.nationality );
+      }
+      if( o.pinned_permlink.size() > 0 )
+      {
+         from_string( a.pinned_permlink, o.pinned_permlink );
       }
       a.active = o.active;
    });
 
    _db.modify( account_auth, [&]( account_authority_object& auth )
    {
+      auth.owner_auth = o.owner_auth;
       auth.active_auth = o.active_auth;
       auth.posting_auth = o.posting_auth;
    });
-} FC_CAPTURE_AND_RETHROW( ( o ) ) }
-
-
-void account_profile_evaluator::do_apply( const account_profile_operation& o )
-{ try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_chief( o.signatory ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
-   time_point now = _db.head_block_time();
-   const account_object& gov_account = _db.get_account( o.governance_account );
-   FC_ASSERT( gov_account.active, 
-      "Governance Account: ${s} must be active.",("s", o.governance_account) );
-
-   const auto& profile_idx = _db.get_index< account_profile_index >().indices().get< by_account >();
-   auto profile_itr = profile_idx.find( o.account );
-
-   if( profile_itr == profile_idx.end() )    // New profile 
-   {
-      _db.create< account_profile_object >( [&]( account_profile_object& apo )
-      {
-         apo.account = o.account;
-         apo.governance_account = o.governance_account;
-         apo.profile_public_key = public_key_type( o.profile_public_key );
-         from_string( apo.first_name, o.first_name );
-         from_string( apo.last_name, o.last_name );
-         from_string( apo.gender, o.gender );
-         from_string( apo.date_of_birth, o.date_of_birth );
-         from_string( apo.email, o.email );
-         from_string( apo.phone, o.phone );
-         from_string( apo.nationality, o.nationality );
-         from_string( apo.address, o.address );
-         apo.last_updated = now;
-         apo.created = now;
-      });
-   }
-   else
-   {
-      const account_profile_object& profile = *profile_itr;
-
-      _db.modify( profile, [&]( account_profile_object& apo )
-      {
-         apo.governance_account = o.governance_account;
-         apo.profile_public_key = public_key_type( o.profile_public_key );
-         from_string( apo.first_name, o.first_name );
-         from_string( apo.last_name, o.last_name );
-         from_string( apo.gender, o.gender );
-         from_string( apo.date_of_birth, o.date_of_birth );
-         from_string( apo.email, o.email );
-         from_string( apo.phone, o.phone );
-         from_string( apo.nationality, o.nationality );
-         from_string( apo.address, o.address );
-         apo.last_updated = now;
-      });
-   }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -458,31 +413,44 @@ void account_verification_evaluator::do_apply( const account_verification_operat
 
    time_point now = _db.head_block_time();
    const account_object& verified_account = _db.get_account( o.verified_account );
+   const account_object& verifier_account = _db.get_account( o.verifier_account );
+   
    FC_ASSERT( verified_account.active, 
       "Account: ${s} must be active.",("s", o.verified_account) );
-
-   const account_profile_object& profile = _db.get_account_profile( o.verified_account );
 
    const auto& verification_idx = _db.get_index< account_verification_index >().indices().get< by_verifier_verified >();
    auto verification_itr = verification_idx.find( boost::make_tuple( o.verifier_account, o.verified_account ) );
 
-   digest_type::encoder enc;
-   fc::raw::pack( enc, o.shared_image );
+   account_name_type account_a_name;
+   account_name_type account_b_name;
 
-   public_key_type recovered_pub_key = fc::ecc::public_key( o.image_signature, enc.result() );
+   if( verified_account.id < verifier_account.id )      // Connection objects are sorted with lowest ID is account A. 
+   {
+      account_a_name = verified_account.name;
+      account_b_name = verifier_account.name;
+   }
+   else
+   {
+      account_b_name = verified_account.name;
+      account_a_name = verifier_account.name;
+   }
 
-   FC_ASSERT( profile.profile_public_key == recovered_pub_key,
-      "Shared Image must be signed with the profile key of the Verified account." );
+   const auto& con_idx = _db.get_index< connection_index >().indices().get< by_accounts >();
+   auto con_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::CONNECTION ) );
+
+   FC_ASSERT( con_itr != con_idx.end(),
+      "Accounts must be connected before verification." );
 
    if( verification_itr == verification_idx.end() )
    {
+      FC_ASSERT( o.verified, 
+         "Cannot remove, no verification found." );
+
       _db.create< account_verification_object >( [&]( account_verification_object& avo )
       {
          avo.verifier_account = o.verifier_account;
          avo.verified_account = o.verified_account;
-         avo.verified_profile_public_key = profile.profile_public_key;
          from_string( avo.shared_image, o.shared_image );
-         avo.image_signature = o.image_signature;
          avo.last_updated = now;
          avo.created = now;
       });
@@ -491,13 +459,18 @@ void account_verification_evaluator::do_apply( const account_verification_operat
    {
       const account_verification_object& verification = *verification_itr;
 
-      _db.modify( verification, [&]( account_verification_object& avo )
+      if( o.verified )
       {
-         avo.verified_profile_public_key = profile.profile_public_key;
-         from_string( avo.shared_image, o.shared_image );
-         avo.image_signature = o.image_signature;
-         avo.last_updated = now;
-      });
+         _db.modify( verification, [&]( account_verification_object& avo )
+         {
+            from_string( avo.shared_image, o.shared_image );
+            avo.last_updated = now;
+         });
+      }
+      else
+      {
+         _db.remove( verification );
+      }
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -519,9 +492,10 @@ void account_business_evaluator::do_apply( const account_business_operation& o )
    }
 
    time_point now = _db.head_block_time();
-   const account_object& gov_account = _db.get_account( o.governance_account );
-   FC_ASSERT( gov_account.active, 
-      "Governance Account: ${s} must be active.",("s", o.governance_account) );
+
+   const account_object& init_ceo_account = _db.get_account( o.init_ceo_account );
+   FC_ASSERT( init_ceo_account.active, 
+      "Initial CEO Account: ${s} must be active.",("s", o.init_ceo_account) );
 
    business_structure_type business_structure = business_structure_type::PUBLIC_BUSINESS;
 
@@ -537,12 +511,11 @@ void account_business_evaluator::do_apply( const account_business_operation& o )
    const auto& business_idx = _db.get_index< account_business_index >().indices().get< by_account >();
    auto business_itr = business_idx.find( o.account );
 
-   if( business_itr == business_idx.end() )    // New business 
+   if( business_itr == business_idx.end() )
    {
       const account_business_object& business = _db.create< account_business_object >( [&]( account_business_object& abo )
       {
          abo.account = o.account;
-         abo.governance_account = o.governance_account;
          abo.business_type = business_structure;
          abo.business_public_key = public_key_type( o.business_public_key );
          abo.executive_board.CHIEF_EXECUTIVE_OFFICER = o.init_ceo_account;
@@ -574,7 +547,6 @@ void account_business_evaluator::do_apply( const account_business_operation& o )
 
       _db.modify( business, [&]( account_business_object& abo )
       {
-         abo.governance_account = o.governance_account;
          abo.business_public_key = public_key_type( o.business_public_key );
          abo.officer_vote_threshold = o.officer_vote_threshold;
          abo.last_updated = now;

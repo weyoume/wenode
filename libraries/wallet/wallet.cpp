@@ -1973,6 +1973,22 @@ vector< discussion >              wallet_api::get_discussions_by_blog( const dis
    return results;
 }
 
+vector< discussion >              wallet_api::get_discussions_by_featured( const discussion_query& query )const
+{
+   vector< discussion > results = my->_remote_db->get_discussions_by_featured( query );
+
+   if( query.include_private )
+   {
+      for( auto& d : results )
+      {
+         if( d.encrypted )
+         {
+            d.body = get_decrypted_message( d.body );
+         }
+      }
+   }
+   return results;
+}
 
 vector< discussion >              wallet_api::get_discussions_by_recommended( const discussion_query& query )const
 {
@@ -2280,13 +2296,20 @@ annotated_signed_transaction      wallet_api::account_create(
    string new_account_name,
    string referrer,
    string proxy,
-   string governance_account,
    string recovery_account,
    string reset_account,
    string details,
    string url,
+   string image,
    string json,
    string json_private,
+   string first_name,
+   string last_name,
+   string gender,
+   string date_of_birth,
+   string email,
+   string phone,
+   string nationality,
    authority owner_auth,
    authority active_auth,
    authority posting_auth,
@@ -2294,9 +2317,6 @@ annotated_signed_transaction      wallet_api::account_create(
    string connection_public_key,
    string friend_public_key,
    string companion_public_key,
-   string business_type,
-   share_type officer_vote_threshold,
-   string business_public_key,
    asset fee,
    asset delegation,
    bool generate_keys,
@@ -2313,13 +2333,20 @@ annotated_signed_transaction      wallet_api::account_create(
    op.new_account_name = new_account_name;
    op.referrer = referrer;
    op.proxy = proxy;
-   op.governance_account = governance_account;
    op.recovery_account = recovery_account,
    op.reset_account = reset_account;
    op.details = details;
    op.url = url;
+   op.image = image;
    op.json = json;
    op.json_private = json_private;
+   op.first_name = first_name;
+   op.last_name = last_name;
+   op.gender = gender;
+   op.date_of_birth = date_of_birth;
+   op.email = email;
+   op.phone = phone;
+   op.nationality = nationality;
    op.fee = fee;
    op.delegation = delegation;
 
@@ -2396,8 +2423,16 @@ annotated_signed_transaction      wallet_api::account_update(
    string account,
    string details,
    string url,
+   string image,
    string json,
    string json_private,
+   string first_name,
+   string last_name,
+   string gender,
+   string date_of_birth,
+   string email,
+   string phone,
+   string nationality,
    string pinned_permlink,
    authority owner_auth,
    authority active_auth,
@@ -2406,9 +2441,6 @@ annotated_signed_transaction      wallet_api::account_update(
    string connection_public_key,
    string friend_public_key,
    string companion_public_key,
-   string business_type,
-   share_type officer_vote_threshold,
-   string business_public_key,
    bool active,
    bool broadcast )
 { try {
@@ -2420,8 +2452,16 @@ annotated_signed_transaction      wallet_api::account_update(
    op.account = account;
    op.details = details;
    op.url = url;
+   op.image = image;
    op.json = json;
    op.json_private = json_private;
+   op.first_name = first_name;
+   op.last_name = last_name;
+   op.gender = gender;
+   op.date_of_birth = date_of_birth;
+   op.email = email;
+   op.phone = phone;
+   op.nationality = nationality;
    op.pinned_permlink = pinned_permlink;
    op.owner_auth = owner_auth;
    op.active_auth = active_auth;
@@ -2430,46 +2470,7 @@ annotated_signed_transaction      wallet_api::account_update(
    op.connection_public_key = connection_public_key;
    op.friend_public_key = friend_public_key;
    op.companion_public_key = companion_public_key;
-   
-   signed_transaction tx;
-   tx.operations.push_back(op);
-   tx.validate();
-
-   return my->sign_transaction( tx, broadcast );
-
-} FC_CAPTURE_AND_RETHROW() }
-
-annotated_signed_transaction      wallet_api::account_profile(
-   string signatory,
-   string account,
-   string governance_account,
-   string profile_public_key,
-   string first_name,
-   string last_name,
-   string gender,
-   string date_of_birth,
-   string email,
-   string phone,
-   string nationality,
-   string address,
-   bool broadcast )
-{ try {
-   FC_ASSERT( !is_locked() );
-
-   account_profile_operation op;
-
-   op.signatory = signatory;
-   op.account = account;
-   op.governance_account = governance_account;
-   op.profile_public_key = profile_public_key;
-   op.first_name = first_name;
-   op.last_name = last_name;
-   op.gender = gender;
-   op.date_of_birth = date_of_birth;
-   op.email = email;
-   op.phone = phone;
-   op.nationality = nationality;
-   op.address = address;
+   op.active = active;
    
    signed_transaction tx;
    tx.operations.push_back(op);
@@ -2485,7 +2486,7 @@ annotated_signed_transaction      wallet_api::account_verification(
    string verifier_account,
    string verified_account,
    string shared_image,
-   signature_type image_signature,
+   bool verified,
    bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
@@ -2496,7 +2497,7 @@ annotated_signed_transaction      wallet_api::account_verification(
    op.verifier_account = verifier_account;
    op.verified_account = verified_account;
    op.shared_image = shared_image;
-   op.image_signature = image_signature;
+   op.verified = verified;
    
    signed_transaction tx;
    tx.operations.push_back(op);
@@ -2509,7 +2510,7 @@ annotated_signed_transaction      wallet_api::account_verification(
 
 annotated_signed_transaction      wallet_api::account_business(
    string signatory,
-   string governance_account,
+   string account,
    string init_ceo_account,
    string business_type,
    int64_t officer_vote_threshold,
@@ -2521,7 +2522,7 @@ annotated_signed_transaction      wallet_api::account_business(
    account_business_operation op;
 
    op.signatory = signatory;
-   op.governance_account = governance_account;
+   op.account = account;
    op.init_ceo_account = init_ceo_account;
    op.business_type = business_type;
    op.officer_vote_threshold = officer_vote_threshold;
@@ -3518,6 +3519,8 @@ annotated_signed_transaction      wallet_api::comment(
    string community,
    string public_key,
    string interface,
+   double latitude,
+   double longitude,
    asset comment_price,
    asset reply_price,
    asset premium_price,
@@ -3556,6 +3559,8 @@ annotated_signed_transaction      wallet_api::comment(
    op.community = community;
    op.public_key = public_key;
    op.interface = interface;
+   op.latitude = latitude;
+   op.longitude = longitude;
    op.comment_price = comment_price;
    op.reply_price = reply_price;
    op.premium_price = premium_price;
@@ -3851,7 +3856,7 @@ annotated_signed_transaction      wallet_api::poll_vote(
    string voter,
    string creator,
    string poll_id,
-   string poll_option,
+   uint16_t poll_option,
    bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
@@ -4262,10 +4267,11 @@ annotated_signed_transaction      wallet_api::community_event(
    string community,
    string event_name,
    string location,
+   double latitude,
+   double longitude,
    string details,
    string url,
    string json,
-   vector< string > invited,
    time_point event_start_time,
    time_point event_end_time,
    bool broadcast )
@@ -4279,24 +4285,11 @@ annotated_signed_transaction      wallet_api::community_event(
    op.community = community;
    op.event_name = event_name;
    op.location = location;
+   op.latitude = latitude;
+   op.longitude = longitude;
    op.details = details;
    op.url = url;
    op.json = json;
-
-   set< account_name_type > inv;
-   
-   for( auto a : invited )
-   {
-      inv.insert( account_name_type( a ) );
-   }
-
-   op.invited.reserve( inv.size() );
-
-   for( auto a : inv )
-   {
-      op.invited.push_back( a );
-   }
-
    op.event_start_time = event_start_time;
    op.event_end_time = event_end_time;
 
@@ -4312,7 +4305,6 @@ annotated_signed_transaction      wallet_api::community_event_attend(
    string signatory,
    string account,
    string community,
-   string event_name,
    bool interested,
    bool attending,
    bool not_attending,
@@ -4325,7 +4317,6 @@ annotated_signed_transaction      wallet_api::community_event_attend(
    op.signatory = signatory;
    op.account = account;
    op.community = community;
-   op.event_name = event_name;
    op.interested = interested;
    op.attending = attending;
    op.not_attending = not_attending;

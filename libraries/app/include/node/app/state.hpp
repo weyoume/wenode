@@ -236,6 +236,8 @@ namespace node { namespace app {
       map< account_name_type, connection_api_obj >                         companions;
       map< account_name_type, connection_request_api_obj >                 incoming_requests;
       map< account_name_type, connection_request_api_obj >                 outgoing_requests;
+      map< account_name_type, account_verification_api_obj >               incoming_verifications;
+      map< account_name_type, account_verification_api_obj >               outgoing_verifications;
    };
 
    struct business_account_state : public account_business_api_obj
@@ -258,14 +260,6 @@ namespace node { namespace app {
       map< account_name_type, map< account_name_type, account_officer_vote_api_obj > >           outgoing_officer_votes;
    };
 
-   struct profile_account_state : public account_profile_api_obj
-   {
-      profile_account_state(){}
-      profile_account_state( const account_profile_object& a ):account_profile_api_obj( a ){}
-      
-      map< account_name_type, account_verification_api_obj >               incoming_verifications;
-      map< account_name_type, account_verification_api_obj >               outgoing_verifications;
-   };
 
    struct account_network_state
    {
@@ -277,6 +271,8 @@ namespace node { namespace app {
       governance_account_api_obj                                           governance_account;
       vector< community_enterprise_api_obj >                               enterprise_proposals;
       vector< block_validation_api_obj >                                   block_validations;
+
+      
 
       map< account_name_type, producer_vote_api_obj >                      incoming_producer_votes;
       map< account_name_type, network_officer_vote_api_obj >               incoming_network_officer_votes;
@@ -409,7 +405,6 @@ namespace node { namespace app {
       account_following_api_obj                         following;
       connection_state                                  connections;
       business_account_state                            business;
-      profile_account_state                             profile;
       balance_state                                     balances;
       order_state                                       orders;
       key_state                                         keychain;
@@ -419,6 +414,7 @@ namespace node { namespace app {
       account_network_state                             network;
       account_ad_state                                  ads;
       account_product_state                             products;
+      
       vector< pair< account_name_type, uint32_t > >     top_shared;
       account_permission_api_obj                        permissions;
       vector< pair< tag_name_type, uint32_t > >         tags_usage;
@@ -432,16 +428,16 @@ namespace node { namespace app {
       extended_community( const community_object& b ):community_api_obj( b ){}
       extended_community(){}
 
+      community_event_api_obj                                 event;                       // Event Details for the community.
       vector< account_name_type >                             subscribers;                 // List of accounts that subscribe to the posts made in the community.
       vector< account_name_type >                             members;                     // List of accounts that are permitted to post in the community. Can invite and accept on public communities
       vector< account_name_type >                             moderators;                  // Accounts able to filter posts. Can invite and accept on private communities.
       vector< account_name_type >                             administrators;              // Accounts able to add and remove moderators and update community details. Can invite and accept on Exclusive communities. 
       vector< account_name_type >                             blacklist;                   // Accounts that are not able to post in this community, or request to join.
       map< account_name_type, int64_t >                       mod_weight;                  // Map of all moderator voting weights for distributing rewards. 
-      int64_t                                                 total_mod_weight = 0;        // Total of all moderator weights. 
-      map< account_name_type, community_request_api_obj >     requests;
-      map< account_name_type, community_invite_api_obj >      invites;
-      map< string, community_event_api_obj >                  events;
+      int64_t                                                 total_mod_weight;            // Total of all moderator weights.
+      map< account_name_type, community_request_api_obj >     requests;                    // Requests to join the community.
+      map< account_name_type, community_invite_api_obj >      invites;                     // Invitations to join the community.
    };
 
    struct extended_asset : public asset_api_obj
@@ -754,11 +750,6 @@ FC_REFLECT( node::app::business_account_state,
          (outgoing_invites)
          );
 
-FC_REFLECT( node::app::profile_account_state,
-         (incoming_verifications)
-         (outgoing_verifications)
-         );
-
 FC_REFLECT( node::app::account_network_state,
          (producer)
          (network_officer)
@@ -800,7 +791,6 @@ FC_REFLECT_DERIVED( node::app::extended_account, ( node::app::account_api_obj ),
          (following)
          (connections)
          (business)
-         (profile)
          (balances)
          (orders)
          (keychain)
@@ -817,6 +807,7 @@ FC_REFLECT_DERIVED( node::app::extended_account, ( node::app::account_api_obj ),
          );
 
 FC_REFLECT_DERIVED( node::app::extended_community, ( node::app::community_api_obj ),
+         (event)
          (subscribers)
          (members)
          (moderators)

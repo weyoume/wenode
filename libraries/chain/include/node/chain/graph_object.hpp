@@ -160,7 +160,8 @@ namespace node { namespace chain {
 
 
    /**
-    * A Specification of the properties of a type of node that can be instantiated within the graph.
+    * A Specification of the properties of a type of
+    * node that can be instantiated within the graph.
     */
    class graph_node_property_object : public object< graph_node_property_object_type, graph_node_property_object >
    {
@@ -204,7 +205,8 @@ namespace node { namespace chain {
 
 
    /**
-    * A Specification of the properties of a type of edge that can be instantiated within the graph.
+    * A Specification of the properties of a type of
+    * edge that can be instantiated within the graph.
     */
    class graph_edge_property_object : public object< graph_edge_property_object_type, graph_edge_property_object >
    {
@@ -231,11 +233,11 @@ namespace node { namespace chain {
 
          connection_tier_type                      graph_privacy;               ///< Encryption level of the edge attribute data.
 
-         connection_tier_type                      edge_permission;             ///< The Level of connection required to create an edge of this type. 
+         connection_tier_type                      edge_permission;             ///< The Level of connection required to create an edge of this type.
 
-         shared_vector< graph_node_name_type >     from_node_types;             ///< Types of node that the edge can connect from. Empty for all types. 
+         shared_vector< graph_node_name_type >     from_node_types;             ///< Types of node that the edge can connect from.
 
-         shared_vector< graph_node_name_type >     to_node_types;               ///< Types of node that the edge can connect to. Empty for all types.
+         shared_vector< graph_node_name_type >     to_node_types;               ///< Types of node that the edge can connect to.
 
          shared_string                             details;                     ///< Describes the additional details of the node.
 

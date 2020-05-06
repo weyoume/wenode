@@ -331,7 +331,7 @@ namespace node { namespace protocol {
    {
       asset_unit( 
          account_name_type name = account_name_type(), 
-         uint16_t units = 0,
+         share_type units = 0,
          string balance_type = account_balance_values[ 0 ],
          time_point vesting_time = GENESIS_TIME ) : 
          name(name),
