@@ -44,12 +44,15 @@ using boost::container::flat_set;
  */
 void database::process_membership_updates()
 { try {
+   // ilog( "Process Membership Updates");
+
    const median_chain_property_object& median_props = get_median_chain_properties();
    time_point now = head_block_time();
    const auto& account_idx = get_index< account_index >().indices().get< by_membership_expiration >();
    auto account_itr = account_idx.begin();
    
-   while( account_itr != account_idx.end() && account_itr->membership_expiration >= now )
+   while( account_itr != account_idx.end() && 
+      account_itr->membership_expiration >= now )
    {
       const account_object& member = *account_itr;
 
@@ -120,6 +123,8 @@ void database::process_membership_updates()
             a.membership_interface = NULL_ACCOUNT;
          });
       }
+
+      ++account_itr;
    }
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -144,7 +149,7 @@ asset database::pay_membership_fees( const account_object& member, const asset& 
    asset partners_fees = ( membership_fee * PARTNERS_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
 
    asset network_paid = pay_network_fees( member, network_fees );
-   asset interface_paid = pay_fee_share( interface, interface_fees );
+   asset interface_paid = pay_fee_share( interface, interface_fees, true );
 
    asset total_fees = network_paid + interface_paid + partners_fees;
    adjust_liquid_balance( member.name, -total_fees );
@@ -200,6 +205,8 @@ void database::update_account_reputations()
 { try {
    if( (head_block_num() % REP_UPDATE_BLOCK_INTERVAL) != 0 )    // Runs once per day
       return;
+
+   ilog( "Update Account Reputations");
    
    const auto& account_idx = get_index< account_index >().indices().get< by_total_rewards >();
    auto account_itr = account_idx.begin();
@@ -379,7 +386,8 @@ void database::update_producer_votes( const account_object& account, const accou
 
    uint16_t new_vote_rank = 1;
 
-   while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
+   while( vote_itr != vote_idx.end() && 
+      vote_itr->account == account.name )
    {
       const producer_vote_object& vote = *vote_itr;
       if( vote.vote_rank == input_vote_rank )

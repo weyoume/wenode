@@ -557,14 +557,39 @@ namespace fc
    }
 
    template<typename T>
-   void to_variant( const chainbase::oid<T>& var,  variant& vo )
+   void to_variant( const chainbase::oid<T>& var, variant& vo )
    {
       vo = var._id;
    }
+
    template<typename T>
    void from_variant( const variant& vo, chainbase::oid<T>& var )
    {
       var._id = vo.as_int64();
+   }
+
+   template<typename T>
+   inline void to_variant( const chainbase::shared_vector<T>& var, variant& vo )
+   {
+      chainbase::shared_vector< variant > vars;
+      vars.resize( var.size() );
+      for( size_t i = 0; i < var.size(); ++i )
+      {
+         vars[i] = variant( var[i] );
+      }
+      vo = std::move( vars );
+   }
+
+   template<typename T>
+   inline void from_variant( const variant& vo, chainbase::shared_vector<T>& var )
+   {
+      const variants& vars = vo.get_array();
+      var.clear();
+      var.resize( vars.size() );
+      for( auto itr = vars.begin(); itr != vars.end(); ++itr )
+      {
+         var.push_back( itr->as<T>() );
+      }
    }
 
    namespace raw {

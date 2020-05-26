@@ -55,7 +55,6 @@ fc::variant_object get_config()
 
    result["MILLION"] = MILLION;
    result["BILLION"] = BILLION;
-   result["TRILLION"] = TRILLION;
    result["PERCENT_100"] = PERCENT_100;
    result["PERCENT_1"] = PERCENT_1;
    result["PERCENT_10_OF_PERCENT_1"] = PERCENT_10_OF_PERCENT_1;

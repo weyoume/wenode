@@ -33,6 +33,8 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Create standard asset" );
 
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme) );
 
       fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -98,8 +100,8 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "ALICECOIN" );
       asset_create.options.display_symbol = "Alice Coin";
       asset_create.options.details = "Details";
-      asset_create.options.json = "{\"json\":\"valid\"}";
-      asset_create.options.url = "www.url.com";
+      asset_create.options.json = "{ \"valid\": true }";
+      asset_create.options.url = "https://www.url.com";
       asset_create.validate();
 
       tx.operations.push_back( asset_create );
@@ -144,7 +146,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_update.new_options.display_symbol = "AliceCoin";
       asset_update.new_options.details = "New Details";
       asset_update.new_options.json = "{\"json\":\"supervalid\"}";
-      asset_update.new_options.url = "www.newurl.com";
+      asset_update.new_options.url = "https://www.newurl.com";
       asset_update.validate();
 
       tx.operations.push_back( asset_update );
@@ -178,8 +180,8 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "BOBCOIN" );
       asset_create.options.display_symbol = "Bob Coin";
       asset_create.options.details = "Details";
-      asset_create.options.json = "{\"json\":\"valid\"}";
-      asset_create.options.url = "www.url.com";
+      asset_create.options.json = "{ \"valid\": true }";
+      asset_create.options.url = "https://www.url.com";
       asset_create.validate();
 
       tx.operations.push_back( asset_create );
@@ -221,7 +223,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_update.new_options.display_symbol = "BobCoin";
       asset_update.new_options.details = "New Details";
       asset_update.new_options.json = "{\"json\":\"supervalid\"}";
-      asset_update.new_options.url = "www.newurl.com";
+      asset_update.new_options.url = "https://www.newurl.com";
       asset_update.validate();
 
       tx.operations.push_back( asset_update );
@@ -247,9 +249,9 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       account_create.recovery_account = INIT_ACCOUNT;
       account_create.reset_account = INIT_ACCOUNT;
       account_create.details = "My Details";
-      account_create.url = "www.url.com";
-      account_create.json = "{\"json\":\"valid\"}";
-      account_create.json_private = "{\"json\":\"valid\"}";
+      account_create.url = "https://www.url.com";
+      account_create.json = "{ \"valid\": true }";
+      account_create.json_private = "{ \"valid\": true }";
       account_create.owner_auth = authority( 1, candice_public_owner_key, 1 );
       account_create.active_auth = authority( 1, candice_public_active_key, 1 );
       account_create.posting_auth = authority( 1, candice_public_posting_key, 1 );
@@ -261,7 +263,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       account_create.validate();
 
       tx.operations.push_back( account_create );
-      tx.sign( candice_private_active_key, db.get_chain_id() );
+      tx.sign( candice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       account_business_operation account_business;
@@ -296,8 +298,8 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "TROPICO" );
       asset_create.options.display_symbol = "Tropico";
       asset_create.options.details = "Details";
-      asset_create.options.json = "{\"json\":\"valid\"}";
-      asset_create.options.url = "www.url.com";
+      asset_create.options.json = "{ \"valid\": true }";
+      asset_create.options.url = "https://www.url.com";
       asset_create.validate();
 
       tx.operations.push_back( asset_create );
@@ -343,7 +345,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_update.new_options.display_symbol = "Tropico Equity";
       asset_update.new_options.details = "New Details";
       asset_update.new_options.json = "{\"json\":\"supervalid\"}";
-      asset_update.new_options.url = "www.newurl.com";
+      asset_update.new_options.url = "https://www.newurl.com";
       asset_update.new_options.dividend_share_percent = 10 * PERCENT_1;
       asset_update.new_options.liquid_dividend_percent = 20 * PERCENT_1;
       asset_update.new_options.savings_dividend_percent = 20 * PERCENT_1;
@@ -385,9 +387,9 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       account_create.recovery_account = INIT_ACCOUNT;
       account_create.reset_account = INIT_ACCOUNT;
       account_create.details = "My Details";
-      account_create.url = "www.url.com";
-      account_create.json = "{\"json\":\"valid\"}";
-      account_create.json_private = "{\"json\":\"valid\"}";
+      account_create.url = "https://www.url.com";
+      account_create.json = "{ \"valid\": true }";
+      account_create.json_private = "{ \"valid\": true }";
       account_create.owner_auth = authority( 1, dan_private_owner_key.get_public_key(), 1 );
       account_create.active_auth = authority( 1, dan_private_active_key.get_public_key(), 1 );
       account_create.posting_auth = authority( 1, dan_private_posting_key.get_public_key(), 1 );
@@ -399,7 +401,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       account_create.validate();
 
       tx.operations.push_back( account_create );
-      tx.sign( dan_private_active_key, db.get_chain_id() );
+      tx.sign( dan_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -437,8 +439,8 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "BLOCKBOND" );
       asset_create.options.display_symbol = "Block Two Bonds";
       asset_create.options.details = "Details";
-      asset_create.options.json = "{\"json\":\"valid\"}";
-      asset_create.options.url = "www.url.com";
+      asset_create.options.json = "{ \"valid\": true }";
+      asset_create.options.url = "https://www.url.com";
       asset_create.options.value = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.options.collateralization = 20 * PERCENT_1;
       asset_create.options.coupon_rate_percent = 5 * PERCENT_1;
@@ -480,7 +482,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_update.new_options.display_symbol = "Block Two Bonds";
       asset_update.new_options.details = "New Details";
       asset_update.new_options.json = "{\"json\":\"supervalid\"}";
-      asset_update.new_options.url = "www.newurl.com";
+      asset_update.new_options.url = "https://www.newurl.com";
       asset_update.new_options.value = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_update.new_options.collateralization = 25 * PERCENT_1;
       asset_update.new_options.coupon_rate_percent = 6 * PERCENT_1;
@@ -523,9 +525,9 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       account_create.recovery_account = INIT_ACCOUNT;
       account_create.reset_account = INIT_ACCOUNT;
       account_create.details = "My Details";
-      account_create.url = "www.url.com";
-      account_create.json = "{\"json\":\"valid\"}";
-      account_create.json_private = "{\"json\":\"valid\"}";
+      account_create.url = "https://www.url.com";
+      account_create.json = "{ \"valid\": true }";
+      account_create.json_private = "{ \"valid\": true }";
       account_create.owner_auth = authority( 1, dan_private_owner_key.get_public_key(), 1 );
       account_create.active_auth = authority( 1, dan_private_active_key.get_public_key(), 1 );
       account_create.posting_auth = authority( 1, dan_private_posting_key.get_public_key(), 1 );
@@ -537,7 +539,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       account_create.validate();
 
       tx.operations.push_back( account_create );
-      tx.sign( dan_private_active_key, db.get_chain_id() );
+      tx.sign( dan_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -552,8 +554,8 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "BLOCKTWO" );
       asset_create.options.display_symbol = "Block Two";
       asset_create.options.details = "Details";
-      asset_create.options.json = "{\"json\":\"valid\"}";
-      asset_create.options.url = "www.url.com";
+      asset_create.options.json = "{ \"valid\": true }";
+      asset_create.options.url = "https://www.url.com";
       asset_create.validate();
 
       tx.operations.push_back( asset_create );
@@ -601,7 +603,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_update.new_options.display_symbol = "Block Two Equity";
       asset_update.new_options.details = "New Details";
       asset_update.new_options.json = "{\"json\":\"supervalid\"}";
-      asset_update.new_options.url = "www.newurl.com";
+      asset_update.new_options.url = "https://www.newurl.com";
       asset_update.new_options.buyback_share_percent = 10 * PERCENT_1;
       asset_update.new_options.liquid_fixed_interest_rate = 2 * PERCENT_1;
       asset_update.new_options.liquid_variable_interest_rate = 3 * PERCENT_1;
@@ -652,8 +654,8 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "TSLA" );
       asset_create.options.display_symbol = "Tesla";
       asset_create.options.details = "Details";
-      asset_create.options.json = "{\"json\":\"valid\"}";
-      asset_create.options.url = "www.url.com";
+      asset_create.options.json = "{ \"valid\": true }";
+      asset_create.options.url = "https://www.url.com";
       asset_create.validate();
 
       tx.operations.push_back( asset_create );
@@ -700,7 +702,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_update.new_options.display_symbol = "Tesla";
       asset_update.new_options.details = "New Details";
       asset_update.new_options.json = "{\"json\":\"supervalid\"}";
-      asset_update.new_options.url = "www.newurl.com";
+      asset_update.new_options.url = "https://www.newurl.com";
       asset_update.new_options.backing_asset = SYMBOL_COIN;
       asset_update.new_options.feed_lifetime = fc::days(2);
       asset_update.new_options.minimum_feeds = 3;
@@ -746,8 +748,8 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "STIM" );
       asset_create.options.display_symbol = "StimCoin";
       asset_create.options.details = "Details";
-      asset_create.options.json = "{\"json\":\"valid\"}";
-      asset_create.options.url = "www.url.com";
+      asset_create.options.json = "{ \"valid\": true }";
+      asset_create.options.url = "https://www.url.com";
       asset_create.options.redemption_asset = SYMBOL_USD;
       asset_create.options.redemption_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, "STIM" ) );
       asset_create.options.distribution_list = { "alice", "bob", "candice" };
@@ -788,7 +790,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_update.new_options.display_symbol = "StimCoin";
       asset_update.new_options.details = "New Details";
       asset_update.new_options.json = "{\"json\":\"supervalid\"}";
-      asset_update.new_options.url = "www.newurl.com";
+      asset_update.new_options.url = "https://www.newurl.com";
       asset_update.new_options.redemption_asset = SYMBOL_USD;
       asset_update.new_options.redemption_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, "STIM" ) );
       asset_update.new_options.distribution_list = { "alice", "bob", "candice", "elon" };
@@ -826,8 +828,8 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_create.credit_liquidity = asset( 0 * BLOCKCHAIN_PRECISION, "MANSION" );
       asset_create.options.display_symbol = "Title Deed of The Tropico Mansion Resort";
       asset_create.options.details = "Access list enables entry to Tropico Mansion Resort.";
-      asset_create.options.json = "{\"json\":\"valid\"}";
-      asset_create.options.url = "www.url.com";
+      asset_create.options.json = "{ \"valid\": true }";
+      asset_create.options.url = "https://www.url.com";
       asset_create.options.ownership_asset = "TROPICO";
       asset_create.options.control_list = { "candice", "tropico" };
       asset_create.options.access_list = { "alice", "bob" };
@@ -867,7 +869,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       asset_update.new_options.display_symbol = "StimCoin";
       asset_update.new_options.details = "Title Deed of The Tropico Mansion Resort Complex";
       asset_update.new_options.json = "{\"json\":\"supervalid\"}";
-      asset_update.new_options.url = "www.newurl.com";
+      asset_update.new_options.url = "https://www.newurl.com";
       asset_update.new_options.ownership_asset = "TROPICO";
       asset_update.new_options.control_list = { "candice", "tropico" };
       asset_update.new_options.access_list = { "alice", "bob", "dan", "elon" };
@@ -917,7 +919,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       const asset_dynamic_data_object& alice_dyn_data = db.get_dynamic_data( "ALICECOIN" );
 
       BOOST_REQUIRE( alice_liquid == asset_issue.asset_to_issue );
-      BOOST_REQUIRE( alice_dyn_data.total_supply == asset_issue.asset_to_issue.amount );
+      BOOST_REQUIRE( alice_dyn_data.get_total_supply().amount == asset_issue.asset_to_issue.amount );
       BOOST_REQUIRE( alice_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount );
 
       validate_database();
@@ -943,7 +945,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       alice_liquid = db.get_liquid_balance( "alice", "ALICECOIN" );
 
       BOOST_REQUIRE( alice_liquid == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
-      BOOST_REQUIRE( alice_dyn_data.total_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
+      BOOST_REQUIRE( alice_dyn_data.get_total_supply().amount == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
       BOOST_REQUIRE( alice_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
 
       validate_database();
@@ -971,7 +973,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       const asset_dynamic_data_object& candice_dyn_data = db.get_dynamic_data( "TROPICO" );
 
       BOOST_REQUIRE( candice_liquid == asset_issue.asset_to_issue );
-      BOOST_REQUIRE( candice_dyn_data.total_supply == asset_issue.asset_to_issue.amount );
+      BOOST_REQUIRE( candice_dyn_data.get_total_supply().amount == asset_issue.asset_to_issue.amount );
       BOOST_REQUIRE( candice_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount );
 
       validate_database();
@@ -994,7 +996,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       candice_liquid = db.get_liquid_balance( "candice", "TROPICO" );
 
       BOOST_REQUIRE( candice_liquid == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
-      BOOST_REQUIRE( candice_dyn_data.total_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
+      BOOST_REQUIRE( candice_dyn_data.get_total_supply().amount == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
       BOOST_REQUIRE( candice_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
 
       validate_database();
@@ -1022,7 +1024,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       const asset_dynamic_data_object& mansion_dyn_data = db.get_dynamic_data( "MANSION" );
 
       BOOST_REQUIRE( mansion_liquid == asset_issue.asset_to_issue );
-      BOOST_REQUIRE( mansion_dyn_data.total_supply == asset_issue.asset_to_issue.amount );
+      BOOST_REQUIRE( mansion_dyn_data.get_total_supply().amount == asset_issue.asset_to_issue.amount );
       BOOST_REQUIRE( mansion_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount );
       BOOST_REQUIRE( mansion_unique_data.controlling_owner == asset_issue.issue_to_account );
 
@@ -1046,7 +1048,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       candice_liquid = db.get_liquid_balance( "candice", "TROPICO" );
 
       BOOST_REQUIRE( candice_liquid == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
-      BOOST_REQUIRE( candice_dyn_data.total_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
+      BOOST_REQUIRE( candice_dyn_data.get_total_supply().amount == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
       BOOST_REQUIRE( candice_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
 
       validate_database();
@@ -1074,7 +1076,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       const asset_dynamic_data_object& dan_bond_dyn_data = db.get_dynamic_data( "BLOCKBOND" );
 
       BOOST_REQUIRE( dan_liquid == asset_issue.asset_to_issue );
-      BOOST_REQUIRE( dan_bond_dyn_data.total_supply == asset_issue.asset_to_issue.amount );
+      BOOST_REQUIRE( dan_bond_dyn_data.get_total_supply().amount == asset_issue.asset_to_issue.amount );
       BOOST_REQUIRE( dan_bond_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount );
 
       validate_database();
@@ -1097,7 +1099,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       dan_liquid = db.get_liquid_balance( "dan", "BLOCKBOND" );
 
       BOOST_REQUIRE( dan_liquid == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
-      BOOST_REQUIRE( dan_bond_dyn_data.total_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
+      BOOST_REQUIRE( dan_bond_dyn_data.get_total_supply().amount == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
       BOOST_REQUIRE( dan_bond_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
 
       validate_database();
@@ -1125,7 +1127,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       const asset_dynamic_data_object& dan_credit_dyn_data = db.get_dynamic_data( "BLOCKTWO" );
 
       BOOST_REQUIRE( dan_liquid == asset_issue.asset_to_issue );
-      BOOST_REQUIRE( dan_credit_dyn_data.total_supply == asset_issue.asset_to_issue.amount );
+      BOOST_REQUIRE( dan_credit_dyn_data.get_total_supply().amount == asset_issue.asset_to_issue.amount );
       BOOST_REQUIRE( dan_credit_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount );
 
       validate_database();
@@ -1148,7 +1150,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       dan_liquid = db.get_liquid_balance( "dan", "BLOCKTWO" );
 
       BOOST_REQUIRE( dan_liquid == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
-      BOOST_REQUIRE( dan_credit_dyn_data.total_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
+      BOOST_REQUIRE( dan_credit_dyn_data.get_total_supply().amount == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
       BOOST_REQUIRE( dan_credit_dyn_data.liquid_supply == asset_issue.asset_to_issue.amount - asset_reserve.amount_to_reserve.amount );
 
       validate_database();
@@ -1164,8 +1166,8 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       distribution.distribution_asset = "ALICECOIN";
       distribution.fund_asset = SYMBOL_USD;
       distribution.details = "Details";
-      distribution.url = "www.url.com";
-      distribution.json = "{\"json\":\"valid\"}";
+      distribution.url = "https://www.url.com";
+      distribution.json = "{ \"valid\": true }";
       distribution.distribution_rounds = 4;
       distribution.distribution_interval_days = 7;
       distribution.max_intervals_missed = 4;
@@ -1183,7 +1185,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       distribution.validate();
 
       tx.operations.push_back( distribution );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1530,6 +1532,8 @@ BOOST_AUTO_TEST_CASE( asset_collateral_bid_operation_test )
       BOOST_TEST_MESSAGE( "├── Testing: BID COLLATERAL" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: creation of collateral bid after black swan event" );
+
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 

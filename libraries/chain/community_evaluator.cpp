@@ -58,8 +58,9 @@ void community_create_evaluator::do_apply( const community_create_operation& o )
 
    const account_object& founder = _db.get_account( o.founder );
    time_point now = _db.head_block_time();
-   FC_ASSERT( now > founder.last_community_created + MIN_COMMUNITY_CREATE_INTERVAL,
-      "Founders can only create one community per day." );
+   FC_ASSERT( now >= founder.last_community_created + MIN_COMMUNITY_CREATE_INTERVAL,
+      "Founder: ${f} can only create one community per day, try again after: ${t}.",
+      ("f",o.founder)("t", founder.last_community_created + MIN_COMMUNITY_CREATE_INTERVAL) );
    const community_object* community_ptr = _db.find_community( o.name );
    FC_ASSERT( community_ptr == nullptr,
       "Community with the name: ${n} already exists. Please select another name.", ("n", o.name) );
@@ -78,7 +79,7 @@ void community_create_evaluator::do_apply( const community_create_operation& o )
       }
    }
 
-   _db.create< community_object >( [&]( community_object& co )
+   const community_object& new_community = _db.create< community_object >( [&]( community_object& co )
    {
       co.name = o.name;
       co.founder = founder.name;
@@ -93,7 +94,7 @@ void community_create_evaluator::do_apply( const community_create_operation& o )
       co.permissions = o.permissions;
       co.reward_currency = o.reward_currency;
       co.created = now;
-      co.last_community_update = now;
+      co.last_updated = now;
       co.last_post = now;
       co.last_root_post = now;
       co.active = true;
@@ -124,6 +125,8 @@ void community_create_evaluator::do_apply( const community_create_operation& o )
 
    _db.update_community_moderators( new_community_member );
 
+   ilog( "Founder: ${f} created new Community: \n ${c} \n",("f", o.founder)("c", new_community) );
+
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
@@ -146,7 +149,7 @@ void community_update_evaluator::do_apply( const community_update_operation& o )
    const community_object& community = _db.get_community( o.community );
    time_point now = _db.head_block_time();
 
-   FC_ASSERT( now > ( community.last_community_update + MIN_COMMUNITY_UPDATE_INTERVAL ),
+   FC_ASSERT( now >= ( community.last_updated + MIN_COMMUNITY_UPDATE_INTERVAL ),
       "Communities can only be updated once per 10 minutes." );
 
    const community_member_object& community_member = _db.get_community_member( o.community );
@@ -159,12 +162,14 @@ void community_update_evaluator::do_apply( const community_update_operation& o )
    if( o.pinned_author.size() || o.pinned_permlink.size() )
    {
       pinned_post_ptr = _db.find_comment( o.pinned_author, o.pinned_permlink );
-      FC_ASSERT( pinned_post_ptr != nullptr,
-         "Cannot find valid Pinned Post." );
-      FC_ASSERT( pinned_post_ptr->root == true,
-         "Pinned post must be a root comment." );
-      FC_ASSERT( pinned_post_ptr->community == o.community,
-         "Pinned post must be contained within the community." );
+
+      if( pinned_post_ptr != nullptr )
+      {
+         FC_ASSERT( pinned_post_ptr->root == true,
+            "Pinned post must be a root comment." );
+         FC_ASSERT( pinned_post_ptr->community == o.community,
+            "Pinned post must be contained within the community." );
+      }
    }
 
    // New permissions must be subset of old permissions.
@@ -188,7 +193,7 @@ void community_update_evaluator::do_apply( const community_update_operation& o )
       co.flags = o.flags;
       co.permissions = o.permissions;
       co.reward_currency = o.reward_currency;
-      co.last_community_update = now;
+      co.last_updated = now;
       co.active = o.active;
 
       if( pinned_post_ptr != nullptr )
@@ -197,6 +202,9 @@ void community_update_evaluator::do_apply( const community_update_operation& o )
          from_string( co.pinned_permlink, o.pinned_permlink );
       }
    });
+
+   ilog( "Account: ${f} updated community: \n ${c} \n",("f", o.account)("c",community) );
+
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
@@ -448,7 +456,7 @@ void community_transfer_ownership_evaluator::do_apply( const community_transfer_
 
    FC_ASSERT( community.founder == account.name && community_member.founder == account.name,
       "Only the founder of the community can transfer ownership." );
-   FC_ASSERT( now > community.last_community_update + MIN_COMMUNITY_UPDATE_INTERVAL, 
+   FC_ASSERT( now > community.last_updated + MIN_COMMUNITY_UPDATE_INTERVAL, 
       "Communities can only be updated once per 10 minutes." );
 
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.new_founder );
@@ -462,7 +470,7 @@ void community_transfer_ownership_evaluator::do_apply( const community_transfer_
    _db.modify( community, [&]( community_object& co )
    {
       co.founder = o.new_founder;
-      co.last_community_update = now;
+      co.last_updated = now;
    });
 
    _db.modify( community_member, [&]( community_member_object& cmo )

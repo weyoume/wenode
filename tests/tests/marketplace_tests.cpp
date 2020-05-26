@@ -34,6 +34,8 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       const median_chain_property_object& median_props = db.get_median_chain_properties();
 
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
       fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -58,7 +60,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       transfer.to = "bob";
       transfer.amount = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       transfer.escrow_id = "6b3b3da0-660a-41a1-b6a2-221a71c0cc17";
-      transfer.json = "{\"json\":\"valid\"}";
+      transfer.json = "{ \"valid\": true }";
       transfer.memo = "Hello";
       transfer.acceptance_time = now() + fc::days(1);
       transfer.escrow_expiration = now() + fc::days(8);
@@ -647,7 +649,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       create.connection_public_key = string( alice_public_posting_key );
       create.friend_public_key = string( alice_public_posting_key );
       create.companion_public_key = string( alice_public_posting_key );
-      create.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      create.fee = asset( 4 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       create.validate();
 
       for( auto i = 0; i < 100; i++ )
@@ -986,6 +988,8 @@ BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
 
       const median_chain_property_object& median_props = db.get_median_chain_properties();
 
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
       fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -1008,8 +1012,8 @@ BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
       product.account = "alice";
       product.product_id = "98a65f5a-85e7-4c53-8d64-1ce393a5ae8c";
       product.name = "Artisanal Widget";
-      product.url = "www.url.com";
-      product.json = "{\"json\":\"valid\"}";
+      product.url = "https://www.url.com";
+      product.json = "{ \"valid\": true }";
       product.product_variants = { "Red Widget", "Blue Widget" };
       product.product_details = { "Red Coloured Widget, Extremely Artisanal.", "Blue Coloured Widget, Extremely Artisanal." };
       product.product_images = { "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB", "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" };
@@ -1069,7 +1073,7 @@ BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
       purchase.order_variants = { "Red Widget" };
       purchase.order_size = { 1 };
       purchase.memo = "Delivery memo";
-      purchase.json = "{\"json\":\"valid\"}";
+      purchase.json = "{ \"valid\": true }";
       purchase.shipping_address = "1 Flinders Street Melbourne 3000 VIC";
       purchase.delivery_variant = "Standard";
       purchase.acceptance_time = now() + fc::days(1);
@@ -1294,6 +1298,8 @@ BOOST_AUTO_TEST_CASE( auction_operation_sequence_tests )
 
       const median_chain_property_object& median_props = db.get_median_chain_properties();
 
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
       fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -1317,8 +1323,8 @@ BOOST_AUTO_TEST_CASE( auction_operation_sequence_tests )
       auction.auction_id = "b65388d9-a99a-49a8-9f2e-761246a1d777";
       auction.auction_type = "open";
       auction.name = "Artisanal Widget";
-      auction.url = "www.url.com";
-      auction.json = "{\"json\":\"valid\"}";
+      auction.url = "https://www.url.com";
+      auction.json = "{ \"valid\": true }";
       auction.product_details = "Red Coloured Widget, Extremely Artisanal.";
       auction.product_images = { "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" };
       auction.reserve_bid = asset( 25 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -1380,7 +1386,7 @@ BOOST_AUTO_TEST_CASE( auction_operation_sequence_tests )
       bid.blinding_factor = blind_factor_type();
       bid.public_bid_amount = 25 * BLOCKCHAIN_PRECISION;
       bid.memo = "Delivery memo";
-      bid.json = "{\"json\":\"valid\"}";
+      bid.json = "{ \"valid\": true }";
       bid.shipping_address = "1 Flinders Street Melbourne 3000 VIC";
       bid.delivery_variant = "Standard";
       bid.delivery_details = "Leave Widget on doorstep.";

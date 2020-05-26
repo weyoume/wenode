@@ -56,9 +56,9 @@ namespace node { namespace chain {
 
          shared_string                      pinned_permlink;                    ///< Permlink of Post pinned to the top of the community's page.
          
-         uint16_t                           max_rating;                         ///< Highest severity rating that posts in the community can have.
+         uint16_t                           max_rating = 9;                     ///< Highest severity rating that posts in the community can have.
 
-         uint32_t                           flags;                              ///< The currently active flags on the community for content settings.
+         uint32_t                           flags = 0;                          ///< The currently active flags on the community for content settings.
 
          uint32_t                           permissions;                        ///< The flag permissions that can be activated on the community for content settings. 
 
@@ -78,7 +78,7 @@ namespace node { namespace chain {
 
          time_point                         created;                            ///< Time that the community was created.
 
-         time_point                         last_community_update;              ///< Time that the community's details were last updated.
+         time_point                         last_updated;                       ///< Time that the community's details were last updated.
 
          time_point                         last_post;                          ///< Time that the user most recently created a comment.
 
@@ -588,7 +588,7 @@ namespace node { namespace chain {
 
          account_name_type              moderator;       ///< The name of the moderator being voted for.
 
-         uint16_t                       vote_rank;       ///< The rank of the vote for the community moderator
+         uint16_t                       vote_rank = 1;   ///< The rank of the vote for the community moderator.
    };
 
    class community_join_request_object : public object< community_join_request_object_type, community_join_request_object >
@@ -962,7 +962,7 @@ FC_REFLECT( node::chain::community_object,
          (share_count)
          (reward_currency)
          (created)
-         (last_community_update)
+         (last_updated)
          (last_post)
          (last_root_post)
          (active)

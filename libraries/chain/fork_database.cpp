@@ -1,6 +1,7 @@
 #include <node/chain/fork_database.hpp>
 
 #include <node/chain/database_exceptions.hpp>
+#include <fc/io/json.hpp>
 
 namespace node { namespace chain {
 
@@ -15,13 +16,17 @@ void fork_database::reset()
 
 void fork_database::pop_block()
 {
-   FC_ASSERT( _head, "cannot pop an empty fork database" );
-   auto prev = _head->prev.lock();
-   FC_ASSERT( prev, "popping head block would leave fork DB empty" );
+   FC_ASSERT( _head, "Cannot pop an empty fork database" );
+
+   item_ptr prev = _head->prev.lock();
+
+   FC_ASSERT( prev,
+      "Popping head block would leave fork DB empty: \n ${h} \n",
+      ("h", _head->data ) );
    _head = prev;
 }
 
-void     fork_database::start_block(signed_block b)
+void fork_database::start_block( signed_block b )
 {
    auto item = std::make_shared<fork_item>(std::move(b));
    _index.insert(item);
@@ -29,16 +34,17 @@ void     fork_database::start_block(signed_block b)
 }
 
 /**
- * Pushes the block into the fork database and caches it if it doesn't link
- *
+ * Pushes the block into the fork database and caches it if it doesn't link.
  */
-shared_ptr<fork_item>  fork_database::push_block(const signed_block& b)
+shared_ptr< fork_item > fork_database::push_block( const signed_block& b )
 {
-   auto item = std::make_shared<fork_item>(b);
-   try {
-      _push_block(item);
+   item_ptr item = std::make_shared< fork_item >(b);
+
+   try 
+   {
+      _push_block( item );
    }
-   catch ( const unlinkable_block_exception& e )
+   catch( const unlinkable_block_exception& e )
    {
       wlog( "Pushing block to fork database that failed to link: ${id}, ${num}", ("id",b.id())("num",b.block_num()) );
       wlog( "Head: ${num}, ${id}", ("num",_head->data.block_num())("id",_head->data.id()) );
@@ -48,11 +54,11 @@ shared_ptr<fork_item>  fork_database::push_block(const signed_block& b)
    return _head;
 }
 
-void  fork_database::_push_block(const item_ptr& item)
+void fork_database::_push_block( const item_ptr& item )
 {
    if( _head ) // make sure the block is within the range that we are caching
    {
-      FC_ASSERT( item->num > std::max<int64_t>( 0, int64_t(_head->num) - (_max_size) ),
+      FC_ASSERT( int64_t( item->num ) > std::max<int64_t>( 0, int64_t(_head->num) - (_max_size) ),
                  "attempting to push a block that is too old",
                  ("item->num",item->num)("head",_head->num)("max_size",_max_size));
    }
@@ -61,20 +67,26 @@ void  fork_database::_push_block(const item_ptr& item)
    {
       auto& index = _index.get<block_id>();
       auto itr = index.find(item->previous_id());
-      ASSERT(itr != index.end(), unlinkable_block_exception, "block does not link to known chain");
+      ASSERT(itr != index.end(), unlinkable_block_exception, "Block does not link to known chain");
       FC_ASSERT(!(*itr)->invalid);
       item->prev = *itr;
    }
 
    _index.insert(item);
-   if( !_head || item->num > _head->num ) _head = item;
+
+   if( !_head || item->num > _head->num )
+   {
+      _head = item;
+   }
+
+   ilog( "Pushed Block to Fork DB at Block Number: ${n} \n ${i} \n", ("i", item->data)("n", item->num) );
 }
 
 /**
- *  Iterate through the unlinked cache and insert anything that
- *  links to the newly inserted item.  This will start a recursive
- *  set of calls performing a depth-first insertion of pending blocks as
- *  _push_next(..) calls _push_block(...) which will in turn call _push_next
+ * Iterate through the unlinked cache and insert anything that
+ * links to the newly inserted item. This will start a recursive
+ * set of calls performing a depth-first insertion of pending blocks as
+ * _push_next(..) calls _push_block(...) which will in turn call _push_next
  */
 void fork_database::_push_next( const item_ptr& new_item )
 {
@@ -101,7 +113,7 @@ void fork_database::set_max_size( uint32_t s )
       auto itr = by_num_idx.begin();
       while( itr != by_num_idx.end() )
       {
-         if( (*itr)->num < std::max(int64_t(0),int64_t(_head->num) - _max_size) )
+         if( int64_t( (*itr)->num ) < std::max(int64_t(0),int64_t(_head->num) - _max_size) )
             by_num_idx.erase(itr);
          else
             break;
@@ -113,7 +125,7 @@ void fork_database::set_max_size( uint32_t s )
       auto itr = by_num_idx.begin();
       while( itr != by_num_idx.end() )
       {
-         if( (*itr)->num < std::max(int64_t(0),int64_t(_head->num) - _max_size) )
+         if( int64_t( (*itr)->num ) < std::max(int64_t(0),int64_t(_head->num) - _max_size) )
             by_num_idx.erase(itr);
          else
             break;
@@ -146,21 +158,27 @@ item_ptr fork_database::fetch_block(const block_id_type& id)const
    return item_ptr();
 }
 
-vector<item_ptr> fork_database::fetch_block_by_number(uint32_t num)const
+vector< item_ptr > fork_database::fetch_block_by_number( uint64_t num )const
 {
    try
    {
-   vector<item_ptr> result;
-   auto itr = _index.get<block_num>().find(num);
-   while( itr != _index.get<block_num>().end() )
-   {
-      if( (*itr)->num == num )
-         result.push_back( *itr );
-      else
-         break;
-      ++itr;
-   }
-   return result;
+      vector< item_ptr > result;
+      auto itr = _index.get< block_num >().find( num );
+
+      while( itr != _index.get< block_num >().end() )
+      {
+         if( (*itr)->num == num )
+         {
+            result.push_back( *itr );
+         } 
+         else
+         {
+            break;
+         }
+            
+         ++itr;
+      }
+      return result;
    }
    FC_LOG_AND_RETHROW()
 }

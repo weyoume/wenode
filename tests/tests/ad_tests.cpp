@@ -32,6 +32,8 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful ad creative creation" );
 
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
       fund_stake( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
@@ -60,14 +62,14 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
       comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
       comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
-      comment.url = "www.url.com";
+      comment.url = "https://www.url.com";
       comment.community = INIT_COMMUNITY;
       comment.tags.push_back( "test" );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
       comment.parent_author = "";
       comment.parent_permlink = "adcreativepermlink";
-      comment.json = "{\"json\":\"valid\"}";
+      comment.json = "{ \"valid\": true }";
       comment.latitude = 37.8136;
       comment.longitude = 144.9631;
       comment.comment_price = asset( 0, SYMBOL_COIN );
@@ -98,7 +100,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       creative.creative_id = "8638f626-7c6e-4440-9a67-43ab48939870";
       creative.objective = "creativepermlink";
       creative.creative = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
-      creative.json = "{\"json\":\"valid\"}";
+      creative.json = "{ \"valid\": true }";
       creative.active = true;
       creative.validate();
 
@@ -131,7 +133,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       campaign.budget = asset( 100*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       campaign.begin = now();
       campaign.end = ( now() + fc::days(7) );
-      campaign.json = "{\"json\":\"valid\"}";
+      campaign.json = "{ \"valid\": true }";
       campaign.interface = INIT_ACCOUNT;
       campaign.active = true;
       campaign.validate();
@@ -162,7 +164,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       audience.signatory = "bob";
       audience.account = "bob";
       audience.audience_id = "0ffe6be9-dcf8-436e-9296-49c83e3d0786";
-      audience.json = "{\"json\":\"valid\"}";
+      audience.json = "{ \"valid\": true }";
       audience.audience.push_back( "candice" );
       audience.audience.push_back( "dan" );
       audience.audience.push_back( "elon" );
@@ -198,7 +200,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       inventory.inventory_id = "19ebee83-fc57-404b-a85e-aa8e7f6bbb66";
       inventory.audience_id = "0ffe6be9-dcf8-436e-9296-49c83e3d0786";
       inventory.metric = "view";
-      inventory.json = "{\"json\":\"valid\"}";
+      inventory.json = "{ \"valid\": true }";
       inventory.min_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       inventory.inventory = 100;
       inventory.active = true;
@@ -222,8 +224,8 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       interface.signatory = "bob";
       interface.account = "bob";
       interface.details = "details";
-      interface.url = "www.url.com";
-      interface.json = "{\"json\":\"valid\"}";
+      interface.url = "https://www.url.com";
+      interface.json = "{ \"valid\": true }";
       interface.validate();
 
       tx.operations.push_back( interface );
@@ -238,7 +240,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       inventory.inventory_id = "19ebee83-fc57-404b-a85e-aa8e7f6bbb66";
       inventory.audience_id = "0ffe6be9-dcf8-436e-9296-49c83e3d0786";
       inventory.metric = "view";
-      inventory.json = "{\"json\":\"valid\"}";
+      inventory.json = "{ \"valid\": true }";
       inventory.min_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       inventory.inventory = 100;
       inventory.active = true;
@@ -278,7 +280,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       bid.inventory_id = "19ebee83-fc57-404b-a85e-aa8e7f6bbb66";
       bid.bid_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       bid.requested = 101;
-      bid.json = "{\"json\":\"valid\"}";
+      bid.json = "{ \"valid\": true }";
       bid.expiration = ( now() + fc::days(30) );
       bid.active = true;
       bid.validate();
@@ -307,7 +309,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: sucessful ad bid creation" );
 
-       BOOST_TEST_MESSAGE( "│   ├── Testing: sucessful partial ad delivery" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: sucessful partial ad delivery" );
 
       account_create_operation create;
 
@@ -321,7 +323,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       create.connection_public_key = string( alice_public_posting_key );
       create.friend_public_key = string( alice_public_posting_key );
       create.companion_public_key = string( alice_public_posting_key );
-      create.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      create.fee = asset( 8 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       create.validate();
 
       for( auto i = 0; i < 100; i++ )

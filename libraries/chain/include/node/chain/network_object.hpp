@@ -16,7 +16,9 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          network_officer_object( Constructor&& c, allocator< Allocator > a ) :
-         details(a), url(a), json(a)
+         details(a), 
+         url(a), 
+         json(a)
          {
             c( *this );
          }
@@ -68,7 +70,7 @@ namespace node { namespace chain {
 
          network_officer_role_type      officer_type;               ///< the type of network officer that is being voted for.
 
-         uint16_t                       vote_rank;                  ///< the ranking of the vote for the officer.
+         uint16_t                       vote_rank = 1;                  ///< the ranking of the vote for the officer.
    };
 
 
@@ -129,7 +131,7 @@ namespace node { namespace chain {
 
          account_name_type              executive_board;            ///< The name of the executive board being voted for.
 
-         uint16_t                       vote_rank;                  ///< The rank the rank of the vote for the executive board. 
+         uint16_t                       vote_rank = 1;              ///< The rank the rank of the vote for the executive board. 
    };
 
 
@@ -190,7 +192,7 @@ namespace node { namespace chain {
 
          account_name_type              governance_account;         ///< The name of the governance account being subscribed to.
 
-         uint16_t                       vote_rank;                  ///< The preference rank of subscription for fee splitting. 
+         uint16_t                       vote_rank = 1;              ///< The preference rank of subscription for fee splitting. 
    };
 
 
@@ -370,7 +372,7 @@ namespace node { namespace chain {
 
          int16_t                                     claimed_milestones;                              ///< Number of milestones claimed for release.  
 
-         fc::optional < asset_symbol_type >          investment;                                      ///< Symbol of the asset to be purchased with the funding if the proposal is investment type. 
+         fc::optional< asset_symbol_type >           investment;                                      ///< Symbol of the asset to be purchased with the funding if the proposal is investment type. 
 
          shared_string                               details;                                         ///< The proposals's details description.
 
@@ -465,7 +467,7 @@ namespace node { namespace chain {
 
          shared_string                  enterprise_id;             ///< UUIDv4 referring to the proposal being claimed.
 
-         uint16_t                       vote_rank;                 ///< The vote rank of the approval for enterprise.
+         uint16_t                       vote_rank = 1;                 ///< The vote rank of the approval for enterprise.
 
          int16_t                        milestone;                 ///< Number of the milestone being approved for release.
    };
@@ -1074,7 +1076,7 @@ FC_REFLECT( node::chain::mediator_object,
          (last_updated)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::chain::mediator_object, node::chain::mediator_index );
+CHAINBASE_SET_INDEX_TYPE( node::chain::mediator_object, node::chain::mediator_index );   
 
 FC_REFLECT( node::chain::community_enterprise_object,
          (id)
@@ -1108,6 +1110,7 @@ FC_REFLECT( node::chain::community_enterprise_object,
          (current_voting_power)
          (current_producer_approvals)
          (current_producer_voting_power)
+         (last_updated)
          (created)
          );
 

@@ -28,7 +28,7 @@ namespace node { namespace chain {
 
          id_type                id;
 
-         uint64_t               head_block_number = 0;                                    ///< Number of the current highest block in the network that the node has processed. 
+         uint64_t               head_block_number = 0;                                    ///< Number of the current highest block in the network that the node has processed.
 
          block_id_type          head_block_id;                                            ///< The block id of the most recently produced block.
 
@@ -46,17 +46,17 @@ namespace node { namespace chain {
 
          asset                  accumulated_network_revenue = asset(0, SYMBOL_COIN);      ///< Counter for the total of all core assets burned as network revenue.        
 
-         price                  current_median_equity_price = price(asset(1,SYMBOL_EQUITY),asset(1,SYMBOL_COIN));  ///< The current price of Equity Asset in Coin asset.
+         price                  current_median_equity_price = price(asset(BLOCKCHAIN_PRECISION,SYMBOL_EQUITY),asset(BLOCKCHAIN_PRECISION,SYMBOL_COIN));  ///< The current price of Equity Asset in Coin asset.
 
-         price                  current_median_usd_price = price(asset(1,SYMBOL_USD),asset(1,SYMBOL_COIN));        ///< The current price of the USD asset in the Coin asset.
+         price                  current_median_usd_price = price(asset(BLOCKCHAIN_PRECISION,SYMBOL_USD),asset(BLOCKCHAIN_PRECISION,SYMBOL_COIN));        ///< The current price of the USD asset in the Coin asset.
 
-         uint128_t              total_voting_power;                                       ///< Current outstanding supply of voting power in both equity and staked coin balances.
+         uint128_t              total_voting_power = 0;                                   ///< Current outstanding supply of voting power in both equity and staked coin balances.
 
          uint128_t              total_pow = 0;                                            ///< The total POW accumulated
 
          uint64_t               current_aslot = 0;                                        ///< The current absolute slot number. Equal to the total number of slots since genesis.
 
-         uint128_t              recent_slots_filled;                                      ///< parameter used to compute producer participation.
+         uint128_t              recent_slots_filled = 0;                                  ///< parameter used to compute producer participation.
 
          uint8_t                participation_count = 0;                                  ///< Divide by 128 to compute participation percentage
    };

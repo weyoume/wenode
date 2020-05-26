@@ -2220,7 +2220,7 @@ vector< extended_asset > database_api_impl::get_assets( vector< string > assets 
       auto asset_dyn_itr = asset_dyn_idx.find( asset );
       if( asset_dyn_itr != asset_dyn_idx.end() )
       {
-         results.back().total_supply = asset_dyn_itr->total_supply.value;
+         results.back().total_supply = asset_dyn_itr->get_total_supply().amount.value;
          results.back().liquid_supply = asset_dyn_itr->liquid_supply.value;
          results.back().reward_supply = asset_dyn_itr->reward_supply.value;
          results.back().savings_supply = asset_dyn_itr->savings_supply.value;
@@ -2769,9 +2769,10 @@ vector< account_name_type > database_api_impl::get_active_producers()const
    size_t n = pso.current_shuffled_producers.size();
    vector< account_name_type > results;
    results.reserve( n );
+   
    for( size_t i=0; i<n; i++ )
    {
-      results.push_back( pso.current_shuffled_producers[i] );
+      results.push_back( pso.current_shuffled_producers[ i ] );
    }
       
    return results;
@@ -4866,6 +4867,7 @@ annotated_signed_transaction database_api::get_transaction( transaction_id_type 
 
 annotated_signed_transaction database_api_impl::get_transaction( transaction_id_type id )const
 {
+   #ifndef SKIP_BY_TX_ID
    const auto& idx = _db.get_index< operation_index >().indices().get< by_transaction_id >();
    auto itr = idx.lower_bound( id );
 
@@ -4881,10 +4883,10 @@ annotated_signed_transaction database_api_impl::get_transaction( transaction_id_
       results.transaction_num = itr->trx_in_block;
       return results;
    }
-   else
-   {
-      FC_ASSERT( false, "Unknown Transaction ${t}", ("t",id));
-   }
+
+   #endif
+
+   FC_ASSERT( false, "Unknown Transaction ${t}", ("t",id));
 }
 
 set< public_key_type > database_api::get_required_signatures( const signed_transaction& trx, const flat_set< public_key_type >& available_keys )const

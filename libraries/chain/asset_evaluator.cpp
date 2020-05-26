@@ -84,7 +84,6 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
    FC_ASSERT( ( issuer.last_asset_created + MIN_ASSET_CREATE_INTERVAL ) <= now, 
       "Can only create one asset per day. Please try again tomorrow." );
 
-   const account_business_object* bus_acc_ptr = _db.find_account_business( o.issuer );
    account_name_type issuer_account_name = o.issuer;
    auto& asset_indx =_db.get_index< asset_index >().indices().get< by_symbol >();
    auto asset_symbol_itr = asset_indx.find( o.symbol );
@@ -214,11 +213,11 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          FC_ASSERT( abo.account == o.issuer, 
             "Account: ${s} must be a business account to create an equity asset.",("s", o.issuer) );
          uint16_t revenue_share_sum = o.options.dividend_share_percent;
-         for( auto share : bus_acc_ptr->equity_revenue_shares )
+         for( auto share : abo.equity_revenue_shares )
          {
             revenue_share_sum += share.second;
          }
-         for( auto share : bus_acc_ptr->credit_revenue_shares )
+         for( auto share : abo.credit_revenue_shares )
          {
             revenue_share_sum += share.second;
          }
@@ -251,9 +250,10 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             a.revenue_share = true;
          });
 
-         _db.modify( *bus_acc_ptr, [&]( account_business_object& a )
+         _db.modify( abo, [&]( account_business_object& a )
          {
             a.equity_revenue_shares[ o.symbol ] = o.options.dividend_share_percent;
+            a.equity_assets.insert( o.symbol );
          });
       }
       break;
@@ -261,9 +261,9 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       {
          const account_business_object& abo = _db.get_account_business( o.issuer );
          FC_ASSERT( abo.account == o.issuer, 
-            "Account: ${s} must be a business account to create a credit asset.",("s", o.issuer) );
+            "Account: ${s} must be a business account to create a bond asset.",("s", o.issuer) );
          FC_ASSERT( time_point( o.options.maturity_date ) > ( now + fc::days(30) ),
-            "Maturity must be at least 30 days in the future." );
+            "Bond Maturity date must be at least 30 days in the future." );
          
          const asset_object& value_asset = _db.get_asset( o.options.value.symbol );
          FC_ASSERT( value_asset.asset_type == asset_property_type::CURRENCY_ASSET || 
@@ -301,11 +301,11 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
 
          uint16_t revenue_share_sum = o.options.buyback_share_percent;
 
-         for( auto share : bus_acc_ptr->equity_revenue_shares )
+         for( auto share : abo.equity_revenue_shares )
          {
             revenue_share_sum += share.second;
          }
-         for( auto share : bus_acc_ptr->credit_revenue_shares )
+         for( auto share : abo.credit_revenue_shares )
          {
             revenue_share_sum += share.second;
          }
@@ -335,9 +335,10 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             a.revenue_share = true;
          });
 
-         _db.modify( *bus_acc_ptr, [&]( account_business_object& a )
+         _db.modify( abo, [&]( account_business_object& a )
          {
             a.credit_revenue_shares[ o.symbol ] = o.options.buyback_share_percent;
+            a.credit_assets.insert( o.symbol );
          });
       }
       break;
@@ -717,6 +718,8 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       _db.adjust_pending_supply( init_lent_asset );
       _db.adjust_liquid_balance( o.issuer, init_credit_asset );
    }
+
+   ilog( "Created Asset: ${a}",("a",new_asset) );
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -844,7 +847,7 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
       "Can only update asset once per 10 minutes." );
    const asset_dynamic_data_object& dyn_data = _db.get_dynamic_data( o.asset_to_update );
 
-   if( ( dyn_data.total_supply != 0 ) )      // new issuer_permissions must be subset of old issuer permissions
+   if( ( dyn_data.get_total_supply().amount != 0 ) )      // new issuer_permissions must be subset of old issuer permissions
    {
       FC_ASSERT(!( o.new_options.issuer_permissions & ~asset_obj.issuer_permissions ), 
          "Cannot reinstate previously revoked issuer permissions on an asset.");
@@ -1023,7 +1026,7 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
          const asset_dynamic_data_object& bond_dyn_data = _db.get_dynamic_data( o.asset_to_update );
          const asset_bond_data_object& bond_obj = _db.get_bond_data( o.asset_to_update );
 
-         if( bond_dyn_data.total_supply == 0 )     // Only edit bond economics if no supply has been issued.
+         if( bond_dyn_data.get_total_supply().amount == 0 )     // Only edit bond economics if no supply has been issued.
          {
             _db.modify( bond_obj, [&]( asset_bond_data_object& a )
             {
@@ -1259,7 +1262,7 @@ void asset_issue_evaluator::do_apply( const asset_issue_operation& o )
       ("s", o.asset_to_issue.symbol) );
    FC_ASSERT( to_account_permissions.is_authorized_transfer( o.issue_to_account, asset_obj ),
       "The recipient account is not authorized to receive the asset being issued.");
-   FC_ASSERT( ( asset_dyn_data.total_supply + o.asset_to_issue.amount ) <= asset_obj.max_supply,
+   FC_ASSERT( ( asset_dyn_data.get_total_supply().amount + o.asset_to_issue.amount ) <= asset_obj.max_supply,
       "Issuing this amount would exceed the asset's maximum supply. Please raise the maximum supply, or reduce issuance amount." );
 
    if( asset_obj.asset_type == asset_property_type::BOND_ASSET )
@@ -1319,7 +1322,7 @@ void asset_reserve_evaluator::do_apply( const asset_reserve_operation& o )
       ("s",o.amount_to_reserve.symbol) );
    FC_ASSERT( from_account_permissions.is_authorized_transfer( o.payer, asset_obj ),
       "The recipient account is not authorized to reserve the asset.");
-   FC_ASSERT( ( asset_dyn_data.total_supply - o.amount_to_reserve.amount ) >= 0,
+   FC_ASSERT( ( asset_dyn_data.get_total_supply().amount - o.amount_to_reserve.amount ) >= 0,
       "Cannot reserve more of an asset than its current total supply." );
 
    _db.adjust_liquid_balance( from_account, -o.amount_to_reserve );
@@ -1725,10 +1728,10 @@ void asset_publish_feed_evaluator::do_apply( const asset_publish_feed_operation&
 
    price_feed old_feed =  stablecoin.current_feed;    // Store medians for this asset.
    
-   _db.modify( stablecoin , [&o,now]( asset_stablecoin_data_object& abdo )
+   _db.modify( stablecoin, [&o,now]( asset_stablecoin_data_object& asdo )
    {
-      abdo.feeds[ o.publisher ] = make_pair( now, o.feed );
-      abdo.update_median_feeds( now );
+      asdo.feeds[ o.publisher ] = make_pair( now, o.feed );
+      asdo.update_median_feeds( now );
    });
 
    if( !( old_feed == stablecoin.current_feed ) )
@@ -1738,7 +1741,7 @@ void asset_publish_feed_evaluator::do_apply( const asset_publish_feed_operation&
       {
          bool should_revive = false;
          const asset_dynamic_data_object& mia_dyn = _db.get_dynamic_data( base.symbol );
-         if( mia_dyn.total_supply == 0 ) // If current supply is zero, revive the asset
+         if( mia_dyn.get_total_supply().amount == 0 ) // If current supply is zero, revive the asset
          {
             should_revive = true;
          }

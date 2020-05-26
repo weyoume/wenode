@@ -82,9 +82,9 @@ namespace node {
       typedef fixed_string_32                   asset_symbol_type;
       typedef fixed_string_32                   graph_node_name_type;
       typedef fixed_string_32                   graph_edge_name_type;
-      typedef fc::ripemd160                     block_id_type;
+      typedef fc::sha256                        block_id_type;
       typedef fc::ripemd160                     checksum_type;
-      typedef fc::ripemd160                     transaction_id_type;
+      typedef fc::sha256                        transaction_id_type;
       typedef fc::sha256                        digest_type;
       typedef fc::ecc::compact_signature        signature_type;
       typedef safe<int64_t>                     share_type;
@@ -676,9 +676,11 @@ namespace node {
          encrypted_keypair_type();
          encrypted_keypair_type( const public_key_type& secure_key, const public_key_type& public_key, const std::string& encrypted_private_key );
 
-         public_key_type   secure_key;                 ///< The public key used to encrypt the encrypted key.
-         public_key_type   public_key;                 ///< The public key of the private encrypted key.
-         string            encrypted_private_key;      ///< The encrypted private key of the public key.
+         public_key_type          secure_key;                 ///< The public key used to encrypt the encrypted key.
+
+         public_key_type          public_key;                 ///< The public key of the private encrypted key.
+
+         string                   encrypted_private_key;      ///< The encrypted private key of the public key.
          
          friend bool operator == ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 );
          friend bool operator < ( const encrypted_keypair_type& p1, const encrypted_keypair_type& p2 );

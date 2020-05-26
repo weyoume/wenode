@@ -290,7 +290,7 @@ struct account_api_obj
       recurring_membership( a.recurring_membership ),
       created( a.created ),
       membership_expiration( a.membership_expiration ),
-      last_account_update( a.last_account_update ),
+      last_updated( a.last_updated ),
       last_vote_time( a.last_vote_time ),
       last_view_time( a.last_view_time ),
       last_share_time( a.last_share_time ),
@@ -390,7 +390,7 @@ struct account_api_obj
    uint16_t                         recurring_membership;                  ///< Amount of months membership should be automatically renewed for on expiration
    time_point                       created;                               ///< Time that the account was created.
    time_point                       membership_expiration;                 ///< Time that the account has its current membership subscription until.
-   time_point                       last_account_update;                   ///< Time that the account's details were last updated.
+   time_point                       last_updated;                   ///< Time that the account's details were last updated.
    time_point                       last_vote_time;                        ///< Time that the account last voted on a comment.
    time_point                       last_view_time;                        ///< Time that the account last viewed a post.
    time_point                       last_share_time;                       ///< Time that the account last viewed a post.
@@ -686,7 +686,7 @@ struct account_balance_api_obj
       savings_balance( b.savings_balance.value ),
       delegated_balance( b.delegated_balance.value ),
       receiving_balance( b.receiving_balance.value ),
-      total_balance( b.total_balance.value ),
+      total_balance( b.get_total_balance().amount.value ),
       stake_rate( b.stake_rate.value ),
       next_stake_time( b.next_stake_time ),
       to_stake( b.to_stake.value ),
@@ -1793,7 +1793,7 @@ struct community_api_obj
       share_count( b.share_count ),
       reward_currency( b.reward_currency ),
       created( b.created ),
-      last_community_update( b.last_community_update ),
+      last_updated( b.last_updated ),
       last_post( b.last_post ),
       last_root_post( b.last_root_post ),
       active( b.active ){}
@@ -1817,7 +1817,7 @@ struct community_api_obj
    uint32_t                           share_count;                ///< accumulated number of shares on posts in the community 
    asset_symbol_type                  reward_currency;            ///< The Currency asset used for content rewards in the community. 
    time_point                         created;                    ///< Time that the community was created.
-   time_point                         last_community_update;      ///< Time that the community's details were last updated.
+   time_point                         last_updated;      ///< Time that the community's details were last updated.
    time_point                         last_post;                  ///< Time that the user most recently created a comment.
    time_point                         last_root_post;             ///< Time that the community last created a post. 
    bool                               active;                     ///< True when community is active.
@@ -3018,7 +3018,7 @@ struct asset_dynamic_data_api_obj
       id( a.id ),
       symbol( a.symbol ),
       issuer( a.issuer ),
-      total_supply( a.total_supply.value ),
+      total_supply( a.get_total_supply().amount.value ),
       liquid_supply( a.liquid_supply.value ),
       staked_supply( a.staked_supply.value ),
       reward_supply( a.reward_supply.value ),
@@ -4057,7 +4057,7 @@ FC_REFLECT( node::app::account_api_obj,
          (recurring_membership)
          (created)
          (membership_expiration)
-         (last_account_update)
+         (last_updated)
          (last_vote_time)
          (last_view_time)
          (last_share_time)
@@ -4606,7 +4606,7 @@ FC_REFLECT( node::app::community_api_obj,
          (share_count)
          (reward_currency)
          (created)
-         (last_community_update)
+         (last_updated)
          (last_post)
          (last_root_post)
          (active)

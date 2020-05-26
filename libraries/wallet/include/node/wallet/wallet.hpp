@@ -995,7 +995,7 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        * @return The signed version of the transaction.
        */
-      annotated_signed_transaction                    sign_transaction( signed_transaction tx, bool broadcast = false );
+      annotated_signed_transaction                    sign_transaction( signed_transaction tx, bool broadcast );
 
       /** 
        * Returns an uninitialized object representing a given blockchain operation.
@@ -3218,7 +3218,7 @@ class wallet_api
          string to,
          asset amount,
          string memo,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -3243,7 +3243,7 @@ class wallet_api
          string request_id,
          time_point expiration,
          bool requested,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -3262,7 +3262,7 @@ class wallet_api
          string to,
          string request_id,
          bool accepted,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -3295,7 +3295,7 @@ class wallet_api
          bool extensible,
          bool fill_or_kill,
          bool active,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -3330,7 +3330,7 @@ class wallet_api
          bool extensible,
          bool fill_or_kill,
          bool requested,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -3349,7 +3349,7 @@ class wallet_api
          string to,
          string request_id,
          bool accepted,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -3364,7 +3364,7 @@ class wallet_api
          vector< confidential_input > inputs,
          vector< confidential_output > outputs,
          asset fee,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -3385,7 +3385,7 @@ class wallet_api
          blind_factor_type blinding_factor,
          vector< confidential_output > outputs,
          asset fee,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -3404,7 +3404,7 @@ class wallet_api
          blind_factor_type blinding_factor,
          vector< confidential_input > inputs,
          asset fee,
-         bool broadcast = false );
+         bool broadcast );
 
 
 
@@ -3442,7 +3442,7 @@ class wallet_api
          string from,
          string to,
          asset amount,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -3459,7 +3459,7 @@ class wallet_api
          string from,
          string to,
          asset amount,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -3478,7 +3478,7 @@ class wallet_api
          string to, 
          uint16_t percent, 
          bool auto_stake, 
-         bool broadcast = false );
+         bool broadcast );
 
       /**
        * Transfer liquid funds balance into savings for security.
@@ -3496,7 +3496,7 @@ class wallet_api
          string to,
          asset amount,
          string memo,
-         bool broadcast = false );
+         bool broadcast );
 
       /**
        * Withdraws a specified balance from savings after a time duration.
@@ -3518,7 +3518,7 @@ class wallet_api
          string request_id,
          string memo,
          bool transferred,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -3582,7 +3582,7 @@ class wallet_api
          vector< string > delivery_details,
          vector< asset > delivery_prices,
          bool active,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -3619,7 +3619,7 @@ class wallet_api
          string delivery_details,
          time_point acceptance_time,
          time_point escrow_expiration,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -3660,7 +3660,7 @@ class wallet_api
          vector< asset > delivery_prices,
          time_point final_bid_time,
          time_point completion_time,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -3695,7 +3695,7 @@ class wallet_api
          string shipping_address,
          string delivery_variant,
          string delivery_details,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -3724,7 +3724,7 @@ class wallet_api
          time_point escrow_expiration,
          string memo,
          string json,
-         bool broadcast = false );
+         bool broadcast );
 
       /**
        * Approves an escrow transfer, causing it to be locked in.
@@ -3744,7 +3744,7 @@ class wallet_api
          string escrow_from,
          string escrow_id,
          bool approved,
-         bool broadcast = false
+         bool broadcast
       );
 
       /**
@@ -3761,7 +3761,7 @@ class wallet_api
          string account,
          string escrow_from,
          string escrow_id,
-         bool broadcast = false );
+         bool broadcast );
 
       /**
        * Raise a dispute on the escrow transfer before it expires
@@ -3779,7 +3779,7 @@ class wallet_api
          string escrow_from,
          string escrow_id,
          uint16_t release_percent,
-         bool broadcast = false );
+         bool broadcast );
 
 
 
@@ -4466,7 +4466,7 @@ class wallet_api
          string block_signing_key,
          chain_properties props,
          bool active,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -4481,7 +4481,7 @@ class wallet_api
          proof_of_work_type work,
          string new_owner_key,
          chain_properties props,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -4496,7 +4496,7 @@ class wallet_api
          string signatory,
          string producer,
          string block_id,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -4515,7 +4515,7 @@ class wallet_api
          string block_id,
          flat_set< transaction_id_type > verifications,
          asset commitment_stake,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -4532,7 +4532,7 @@ class wallet_api
          string reporter,
          vector< char > first_trx,
          vector< char > second_trx,
-         bool broadcast = false );
+         bool broadcast );
 
 
 
@@ -4553,7 +4553,7 @@ class wallet_api
          flat_set< account_name_type > required_auths,
          uint16_t id,
          vector< char > data,
-         bool broadcast = false );
+         bool broadcast );
 
 
       /**
@@ -4570,7 +4570,7 @@ class wallet_api
          flat_set< account_name_type > required_posting_auths,
          string id,
          string json,
-         bool broadcast = false );
+         bool broadcast );
 
       /**
        * @}

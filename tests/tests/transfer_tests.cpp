@@ -33,6 +33,8 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful transfer" );
 
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
       ACTORS( (alice)(bob)(candice)(dan)(elon)(corp) );
 
       fund_stake( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
@@ -293,6 +295,8 @@ BOOST_AUTO_TEST_CASE( transfer_request_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful transfer request" );
 
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
       ACTORS( (alice)(bob)(candice)(dan)(elon)(corp) );
 
       fund_stake( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
@@ -449,6 +453,8 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
       BOOST_TEST_MESSAGE( "├── Testing: TRANSFER RECURRING OPERATION" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful recurring transfer creation and completion" );
+
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       ACTORS( (alice)(bob)(candice)(dan)(elon)(corp) );
 
@@ -811,6 +817,8 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
       BOOST_TEST_MESSAGE( "├── Testing: TRANSFER RECURRING REQUEST OPERATION SEQUENCE" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful recurring transfer request" );
+
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       ACTORS( (alice)(bob)(candice)(dan)(elon)(corp) );
 

@@ -294,7 +294,7 @@ namespace detail {
             {
                try
                {
-                  _chain_db->open(_data_dir / "blockchain", _shared_dir, _shared_file_size, chainbase::database::read_write, INIT_PUBLIC_KEY );
+                  _chain_db->open(_data_dir / "blockchain", _shared_dir, _shared_file_size, chainbase::database::read_write );
                }
                catch( fc::assert_exception& )
                {
@@ -307,7 +307,7 @@ namespace detail {
                   catch( chain::block_log_exception& )
                   {
                      wlog( "Error opening block log. Having to resync from network..." );
-                     _chain_db->open( _data_dir / "blockchain", _shared_dir, _shared_file_size, chainbase::database::read_write, INIT_PUBLIC_KEY );
+                     _chain_db->open( _data_dir / "blockchain", _shared_dir, _shared_file_size, chainbase::database::read_write );
                   }
                }
             }
@@ -321,7 +321,7 @@ namespace detail {
          else
          {
             ilog( "Starting WeYouMe node in read mode." );
-            _chain_db->open( _data_dir / "blockchain", _shared_dir, _shared_file_size, chainbase::database::read_only, INIT_PUBLIC_KEY );
+            _chain_db->open( _data_dir / "blockchain", _shared_dir, _shared_file_size, chainbase::database::read_only );
 
             if( _options->count( "read-forward-rpc" ) )
             {
@@ -445,7 +445,7 @@ namespace detail {
        * @throws exception if error validating the item, otherwise the item is safe to broadcast on.
        */
       virtual bool handle_block(const graphene::net::block_message& blk_msg, bool sync_mode,
-                                std::vector<fc::uint160_t>& contained_transaction_message_ids) override
+                                std::vector<fc::sha256>& contained_transaction_message_ids) override
       { try {
          if( _running )
          {
@@ -829,7 +829,7 @@ namespace detail {
         // any status reports to GUI go here
       }
 
-      virtual uint32_t get_block_number(const item_hash_t& block_id) override
+      virtual uint64_t get_block_number(const item_hash_t& block_id) override
       { try {
          return block_header::num_from_id(block_id);
       } FC_CAPTURE_AND_RETHROW( (block_id) ) }

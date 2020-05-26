@@ -1513,7 +1513,7 @@ void database::liquid_exchange( const asset& input, const account_object& accoun
    
    adjust_liquid_balance( account.name, -input );
    pay_network_fees( account, network_fees );
-   pay_fee_share( int_account, interface_fees );
+   pay_fee_share( int_account, interface_fees, true );
 
    modify( pool, [&]( asset_liquidity_pool_object& p )
    {
@@ -1750,7 +1750,7 @@ void database::liquid_acquire( const asset& receive, const account_object& accou
    adjust_liquid_balance( account.name, -input_asset );
 
    pay_network_fees( account, network_fees );
-   pay_fee_share( int_account, interface_fees );
+   pay_fee_share( int_account, interface_fees, true );
    
    modify( pool, [&]( asset_liquidity_pool_object& p )
    {
@@ -2021,7 +2021,7 @@ void database::liquid_limit_exchange( const asset& input, const price& limit_pri
       });
 
       pay_network_fees( account, network_fees );
-      pay_fee_share( int_account, interface_fees );
+      pay_fee_share( int_account, interface_fees, true );
 
       adjust_liquid_balance( account.name , return_asset );    
    }
@@ -2688,6 +2688,7 @@ void database::liquidate_credit_loan( const credit_loan_object& loan )
  */
 asset database::network_credit_acquisition( const asset& amount, bool execute )
 { try {
+   ilog( "Network Credit Acquisition: ${a}", ("a", amount) );
    asset coin_acquired;
    asset credit_acquired;
 
@@ -2723,6 +2724,8 @@ asset database::network_credit_acquisition( const asset& amount, bool execute )
  */
 void database::clear_expired_transactions()
 {
+   // ilog( "Clear Expired Transactions." );
+
    auto& transaction_idx = get_index< transaction_index >();
    const auto& dedupe_index = transaction_idx.indices().get< by_expiration >();
    while( ( !dedupe_index.empty() ) && ( head_block_time() > dedupe_index.begin()->expiration ) )
@@ -2852,7 +2855,7 @@ void database::globally_settle_asset( const asset_object& mia, const price& sett
    const asset_symbol_type& backing_asset = stablecoin.backing_asset;
    asset collateral_gathered = asset( 0, backing_asset );
    const asset_dynamic_data_object& mia_dyn = get_dynamic_data( mia.symbol );
-   auto original_mia_supply = mia_dyn.total_supply;
+   auto original_mia_supply = mia_dyn.get_total_supply().amount;
 
    const auto& call_price_index = get_index< call_order_index >().indices().get< by_high_price >();
 
@@ -2898,16 +2901,16 @@ void database::revive_stablecoin( const asset_object& stablecoin )
    FC_ASSERT( !bad.current_feed.settlement_price.is_null(),
       "Settlement price cannot be null to revive asset." );
 
-   if( bdd.total_supply > 0 )    // Create + execute a "bid" with 0 additional collateral
+   if( bdd.get_total_supply().amount > 0 )    // Create + execute a "bid" with 0 additional collateral
    {
       const asset_collateral_bid_object& pseudo_bid = create< asset_collateral_bid_object >([&]( asset_collateral_bid_object& bid )
       {
          bid.bidder = stablecoin.issuer;
          bid.collateral = asset( 0, bad.backing_asset );
-         bid.debt = asset( bdd.total_supply, stablecoin.symbol );
+         bid.debt = asset( bdd.get_total_supply().amount, stablecoin.symbol );
       });
 
-      execute_bid( pseudo_bid, bdd.total_supply, bad.settlement_fund, bad.current_feed );
+      execute_bid( pseudo_bid, bdd.get_total_supply().amount, bad.settlement_fund, bad.current_feed );
    } 
    else
    {
@@ -3182,8 +3185,8 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
    auto limit_index = get_index < limit_order_index >();
    const auto& limit_price_index = limit_index.indices().get< by_high_price >();
 
-   auto max_price = price::max( mia.symbol, stablecoin.backing_asset );      // looking for limit orders selling the most USD for the least CORE
-   auto min_price = stablecoin.current_feed.max_short_squeeze_price();       // stop when limit orders are selling too little USD for too much CORE
+   price max_price = price::max( mia.symbol, stablecoin.backing_asset );      // looking for limit orders selling the most USD for the least CORE
+   price min_price = stablecoin.current_feed.max_short_squeeze_price();       // stop when limit orders are selling too little USD for too much CORE
 
    auto limit_itr = limit_price_index.lower_bound( max_price );            // limit_price_index is sorted from greatest to least
    auto limit_end = limit_price_index.upper_bound( min_price );
@@ -3195,8 +3198,8 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
 
    const auto& call_collateral_index = get_index< call_order_index >().indices().get< by_collateral >();
 
-   auto call_min = price::min( stablecoin.backing_asset, mia.symbol );
-   auto call_max = price::max( stablecoin.backing_asset, mia.symbol );
+   price call_min = price::min( stablecoin.backing_asset, mia.symbol );
+   price call_max = price::max( stablecoin.backing_asset, mia.symbol );
 
    auto call_collateral_itr = call_collateral_index.begin();
    auto call_collateral_end = call_collateral_itr;

@@ -32,6 +32,8 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Successful graph node property creation" );
 
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
       ACTORS( (alice)(bob) );
 
       fund_stake( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
@@ -50,8 +52,8 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
       node_property.graph_privacy = "connection";
       node_property.edge_permission = "connection";
       node_property.details = "Details";
-      node_property.url = "www.url.com";
-      node_property.json = "{\"json\":\"valid\"}";
+      node_property.url = "https://www.url.com";
+      node_property.json = "{ \"valid\": true }";
       node_property.attributes = { "age", "relationship_status" };
       node_property.interface = INIT_ACCOUNT;
       node_property.validate();
@@ -90,8 +92,8 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
       edge_property.from_node_types = { "person" };
       edge_property.to_node_types = { "person" };
       edge_property.details = "Details";
-      edge_property.url = "www.url.com";
-      edge_property.json = "{\"json\":\"valid\"}";
+      edge_property.url = "https://www.url.com";
+      edge_property.json = "{ \"valid\": true }";
       edge_property.attributes = { "relationship" };
       edge_property.interface = INIT_ACCOUNT;
       edge_property.validate();
@@ -131,7 +133,7 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
       node.details = "Details";
       node.attributes = { "age", "relationship_status" };
       node.attribute_values = { "24", "in_relationship" };
-      node.json = "{\"json\":\"valid\"}";
+      node.json = "{ \"valid\": true }";
       node.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_connection_key, string( "#{\"json\":\"valid\"}" ) );
       node.node_public_key = string( alice_public_connection_key );
       node.interface = INIT_ACCOUNT;
@@ -178,8 +180,8 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
       node.details = "Details";
       node.attributes = { "age", "relationship_status" };
       node.attribute_values = { "24", "in_relationship" };
-      node.json = "{\"json\":\"valid\"}";
-      node.json_private = "{\"json\":\"valid\"}";
+      node.json = "{ \"valid\": true }";
+      node.json_private = "{ \"valid\": true }";
       node.node_public_key = string( bob_public_connection_key );
       node.interface = INIT_ACCOUNT;
       node.validate();
@@ -235,7 +237,7 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
       edge.details = "Alice and Bob are family members";
       edge.attributes = { "relationship" };
       edge.attribute_values = { "wife" };
-      edge.json = "{\"json\":\"valid\"}";
+      edge.json = "{ \"valid\": true }";
       edge.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_connection_key, string( "#{\"json\":\"valid\"}" ) );
       edge.edge_public_key = string( alice_public_connection_key );
       edge.interface = INIT_ACCOUNT;

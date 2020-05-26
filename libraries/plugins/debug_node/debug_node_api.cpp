@@ -28,12 +28,12 @@ class debug_private_key_storage : public private_key_storage
 
       virtual void maybe_get_private_key(
          fc::optional< fc::ecc::private_key >& result,
-         const node::chain::public_key_type& pubkey,
+         const node::protocol::public_key_type& pubkey,
          const std::string& account_name
          ) override;
 
       std::string                dev_key_prefix;
-      std::map< node::chain::public_key_type, fc::ecc::private_key > key_table;
+      std::map< node::protocol::public_key_type, fc::ecc::private_key > key_table;
 };
 
 class debug_node_api_impl
@@ -42,8 +42,8 @@ class debug_node_api_impl
       debug_node_api_impl( node::app::application& _app );
 
       uint32_t debug_push_blocks( const std::string& src_filename, uint32_t count, bool skip_validate_invariants );
-      uint32_t debug_generate_blocks( const std::string& debug_key, uint32_t count );
-      uint32_t debug_generate_blocks_until( const std::string& debug_key, const fc::time_point& head_block_time, bool generate_sparsely );
+      uint32_t debug_generate_blocks( uint32_t count );
+      uint32_t debug_generate_blocks_until( const fc::time_point& head_block_time, bool generate_sparsely );
       fc::optional< node::chain::signed_block > debug_pop_block();
       //void debug_push_block( const node::chain::signed_block& block );
       node::chain::producer_schedule_object debug_get_producer_schedule();
@@ -68,7 +68,7 @@ class debug_node_api_impl
 
 void debug_private_key_storage::maybe_get_private_key(
    fc::optional< fc::ecc::private_key >& result,
-   const node::chain::public_key_type& pubkey,
+   const node::protocol::public_key_type& pubkey,
    const std::string& account_name
 )
 {
@@ -81,7 +81,7 @@ void debug_private_key_storage::maybe_get_private_key(
    fc::ecc::private_key gen_priv = fc::ecc::private_key::regenerate( fc::sha256::hash( dev_key_prefix + account_name ) );
    chain::public_key_type gen_pub = gen_priv.get_public_key();
    key_table[ gen_pub ] = gen_priv;
-   if( (pubkey == node::chain::public_key_type()) || (gen_pub == pubkey) )
+   if( (pubkey == node::protocol::public_key_type()) || (gen_pub == pubkey) )
    {
       result = gen_priv;
       return;
@@ -97,6 +97,43 @@ debug_node_api_impl::debug_node_api_impl( node::app::application& _app ) : app( 
    fc::ecc::private_key init_key = INIT_PRIVATE_KEY;
    key_storage.key_table[ init_key.get_public_key() ] = init_key;
 #endif
+
+   std::shared_ptr< chain::database > db = app.chain_database();
+
+   const auto& acct_idx = db->get_index< chain::account_index >().indices().get< chain::by_name >();
+   auto acct_itr = acct_idx.begin();
+
+   while( acct_itr != acct_idx.end() )     // Inject all Accounts to have init password keys added.
+   {
+      node::protocol::private_key_type private_owner_key = node::protocol::get_private_key( acct_itr->name, "owner", INIT_ACCOUNT_PASSWORD );
+      node::protocol::private_key_type private_active_key = node::protocol::get_private_key( acct_itr->name, "active", INIT_ACCOUNT_PASSWORD );
+      node::protocol::private_key_type private_posting_key = node::protocol::get_private_key( acct_itr->name, "posting", INIT_ACCOUNT_PASSWORD );
+      node::protocol::private_key_type private_secure_key = node::protocol::get_private_key( acct_itr->name, "secure", INIT_ACCOUNT_PASSWORD );
+      node::protocol::private_key_type private_connection_key = node::protocol::get_private_key( acct_itr->name, "connection", INIT_ACCOUNT_PASSWORD );
+      node::protocol::private_key_type private_friend_key = node::protocol::get_private_key( acct_itr->name, "friend", INIT_ACCOUNT_PASSWORD );
+      node::protocol::private_key_type private_companion_key = node::protocol::get_private_key( acct_itr->name, "companion", INIT_ACCOUNT_PASSWORD );
+      node::protocol::private_key_type private_producer_key = node::protocol::get_private_key( acct_itr->name, "producer", INIT_ACCOUNT_PASSWORD );
+
+      node::protocol::public_key_type public_owner_key = private_owner_key.get_public_key();
+      node::protocol::public_key_type public_active_key = private_active_key.get_public_key();
+      node::protocol::public_key_type public_posting_key = private_posting_key.get_public_key();
+      node::protocol::public_key_type public_secure_key = private_secure_key.get_public_key();
+      node::protocol::public_key_type public_connection_key = private_connection_key.get_public_key();
+      node::protocol::public_key_type public_friend_key = private_friend_key.get_public_key();
+      node::protocol::public_key_type public_companion_key = private_companion_key.get_public_key();
+      node::protocol::public_key_type public_producer_key = private_producer_key.get_public_key();
+
+      key_storage.key_table[ public_owner_key ] = private_owner_key;
+      key_storage.key_table[ public_active_key ] = private_active_key;
+      key_storage.key_table[ public_posting_key ] = private_posting_key;
+      key_storage.key_table[ public_secure_key ] = private_secure_key;
+      key_storage.key_table[ public_connection_key ] = private_connection_key;
+      key_storage.key_table[ public_friend_key ] = private_friend_key;
+      key_storage.key_table[ public_companion_key ] = private_companion_key;
+      key_storage.key_table[ public_producer_key ] = private_producer_key;
+
+      ilog( "Added Debug Account keys: ${a}",("a",acct_itr->name ) );
+   }
 }
 
 void debug_node_api_impl::debug_set_dev_key_prefix( std::string prefix )
@@ -230,14 +267,14 @@ uint32_t debug_node_api_impl::debug_push_blocks( const std::string& src_filename
    return 0;
 }
 
-uint32_t debug_node_api_impl::debug_generate_blocks( const std::string& debug_key, uint32_t count )
+uint32_t debug_node_api_impl::debug_generate_blocks( uint32_t count )
 {
-   return get_plugin()->debug_generate_blocks( debug_key, count, node::chain::database::skip_nothing, 0, &key_storage );
+   return get_plugin()->debug_generate_blocks( count, node::chain::database::skip_nothing, 0, &key_storage );
 }
 
-uint32_t debug_node_api_impl::debug_generate_blocks_until( const std::string& debug_key, const fc::time_point& head_block_time, bool generate_sparsely )
+uint32_t debug_node_api_impl::debug_generate_blocks_until( const fc::time_point& head_block_time, bool generate_sparsely )
 {
-   return get_plugin()->debug_generate_blocks_until( debug_key, head_block_time, generate_sparsely, node::chain::database::skip_nothing, &key_storage );
+   return get_plugin()->debug_generate_blocks_until( head_block_time, generate_sparsely, node::chain::database::skip_nothing, &key_storage );
 }
 
 fc::optional< node::chain::signed_block > debug_node_api_impl::debug_pop_block()
@@ -330,14 +367,14 @@ uint32_t debug_node_api::debug_push_blocks( std::string source_filename, uint32_
    return my->debug_push_blocks( source_filename, count, skip_validate_invariants );
 }
 
-uint32_t debug_node_api::debug_generate_blocks( std::string debug_key, uint32_t count )
+uint32_t debug_node_api::debug_generate_blocks( uint32_t count )
 {
-   return my->debug_generate_blocks( debug_key, count );
+   return my->debug_generate_blocks( count );
 }
 
-uint32_t debug_node_api::debug_generate_blocks_until( std::string debug_key, fc::time_point head_block_time, bool generate_sparsely )
+uint32_t debug_node_api::debug_generate_blocks_until( fc::time_point head_block_time, bool generate_sparsely )
 {
-   return my->debug_generate_blocks_until( debug_key, head_block_time, generate_sparsely );
+   return my->debug_generate_blocks_until( head_block_time, generate_sparsely );
 }
 
 fc::optional< node::chain::signed_block > debug_node_api::debug_pop_block()

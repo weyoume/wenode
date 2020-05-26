@@ -522,9 +522,9 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
 
    if( call_itr == call_idx.end() )    // creating new debt position
    {
-      FC_ASSERT( debt_dynamic_data.total_supply + o.debt.amount <= debt_asset.max_supply,
+      FC_ASSERT( debt_dynamic_data.get_total_supply().amount + o.debt.amount <= debt_asset.max_supply,
          "Borrowing this quantity would exceed the asset's Maximum supply." );
-      FC_ASSERT( debt_dynamic_data.total_supply + o.debt.amount >= 0,
+      FC_ASSERT( debt_dynamic_data.get_total_supply().amount + o.debt.amount >= 0,
          "This transaction would bring current supply below zero." );
       FC_ASSERT( liquid_collateral >= o.collateral,
          "Account does not have sufficient liquid collateral asset funds for Call order." );

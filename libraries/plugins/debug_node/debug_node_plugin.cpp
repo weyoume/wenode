@@ -271,76 +271,67 @@ void debug_apply_update( chain::database& db, const fc::variant_object& vo, bool
 */
 
 uint32_t debug_node_plugin::debug_generate_blocks(
-   const std::string& debug_key,
    uint32_t count,
    uint32_t skip,
    uint32_t miss_blocks,
-   private_key_storage* key_storage
-)
+   private_key_storage* key_storage )
 {
    if( count == 0 )
-      return 0;
-
-   fc::optional<fc::ecc::private_key> debug_private_key;
-   node::chain::public_key_type debug_public_key;
-   if( debug_key != "" )
    {
-      debug_private_key = graphene::utilities::wif_to_key( debug_key );
-      FC_ASSERT( debug_private_key.valid() );
-      debug_public_key = debug_private_key->get_public_key();
+      return 0;
    }
 
+   fc::optional< fc::ecc::private_key > producer_private_key;
+   node::chain::public_key_type producer_public_key;
    node::chain::database& db = database();
-   uint32_t slot = miss_blocks+1, produced = 0;
+   uint64_t slot = miss_blocks+1;
+   uint64_t produced = 0;
+
    while( produced < count )
    {
-      uint32_t new_slot = miss_blocks+1;
       std::string scheduled_producer_name = db.get_scheduled_producer( slot );
       fc::time_point scheduled_time = db.get_slot_time( slot );
       const chain::producer_object& scheduled_producer = db.get_producer( scheduled_producer_name );
       node::chain::public_key_type scheduled_key = scheduled_producer.signing_key;
-      if( debug_key != "" )
+
+      producer_private_key = node::protocol::get_private_key( scheduled_producer_name, "producer", INIT_ACCOUNT_PASSWORD );
+   
+      FC_ASSERT( producer_private_key.valid(), 
+         "Producer private key invalid." );
+      producer_public_key = producer_private_key->get_public_key();
+
+      // ilog( "Scheduled Key is: ${sk} Producer Key is: ${pk}", ("sk", scheduled_key)("pk", producer_public_key) );
+      
+      if( scheduled_key != producer_public_key )
       {
-         if( logging ) wlog( "scheduled key is: ${sk}   dbg key is: ${dk}", ("sk", scheduled_key)("dk", debug_public_key) );
-         if( scheduled_key != debug_public_key )
-         {
-            if( logging ) wlog( "Modified key for producer ${w}", ("w", scheduled_producer_name) );
-            debug_update( [=]( chain::database& db )
-            {
-               db.modify( db.get_producer( scheduled_producer_name ), [&]( chain::producer_object& p )
-               {
-                  p.signing_key = debug_public_key;
-               });
-            }, skip );
-         }
-      }
-      else
-      {
-         debug_private_key.reset();
+         producer_private_key.reset();
+
          if( key_storage != nullptr )
-            key_storage->maybe_get_private_key( debug_private_key, scheduled_key, scheduled_producer_name );
-         if( !debug_private_key.valid() )
          {
-            if( logging ) elog( "Skipping ${wit} because I don't know the private key", ("wit", scheduled_producer_name) );
-            new_slot = slot+1;
-            FC_ASSERT( slot < miss_blocks+50 );
+            key_storage->maybe_get_private_key( producer_private_key, scheduled_key, scheduled_producer_name );
+         }
+
+         if( !producer_private_key.valid() )
+         {
+            elog( "Skipping ${wit} because I don't know the private key", ("wit", scheduled_producer_name) );
+            FC_ASSERT( slot < miss_blocks+120 );
+            
+            continue;
          }
       }
-      db.generate_block( scheduled_time, scheduled_producer_name, *debug_private_key, skip );
+
+      db.generate_block( scheduled_time, scheduled_producer_name, *producer_private_key, skip );
       ++produced;
-      slot = new_slot;
    }
 
    return count;
 }
 
 uint32_t debug_node_plugin::debug_generate_blocks_until(
-   const std::string& debug_key,
    const fc::time_point& head_block_time,
    bool generate_sparsely,
    uint32_t skip,
-   private_key_storage* key_storage
-)
+   private_key_storage* key_storage )
 {
    node::chain::database& db = database();
 
@@ -351,18 +342,18 @@ uint32_t debug_node_plugin::debug_generate_blocks_until(
 
    if( generate_sparsely )
    {
-      new_blocks += debug_generate_blocks( debug_key, 1, skip );
+      new_blocks += debug_generate_blocks( 1, skip );
       auto slots_to_miss = db.get_slot_at_time( head_block_time );
       if( slots_to_miss > 1 )
       {
          slots_to_miss--;
-         new_blocks += debug_generate_blocks( debug_key, 1, skip, slots_to_miss, key_storage );
+         new_blocks += debug_generate_blocks( 1, skip, slots_to_miss, key_storage );
       }
    }
    else
    {
       while( db.head_block_time() < head_block_time )
-         new_blocks += debug_generate_blocks( debug_key, 1 );
+         new_blocks += debug_generate_blocks( 1 );
    }
 
    return new_blocks;

@@ -32,7 +32,7 @@ RUN \
         nginx \
         fcgiwrap \
         awscli \
-				nano \
+		nano \
         jq \
         wget \
         gdb \
@@ -56,12 +56,12 @@ RUN \
         -DSKIP_BY_TX_ID=ON \
         .. && \
     make -j$(nproc) chain_test test_fixed_string && \
-    # ./tests/chain_test && \
-    # ./programs/util/test_fixed_string && \
-    # cd /usr/local/src/node && \
-    # doxygen && \
-    # programs/build_helpers/check_reflect.py && \
-    # programs/build_helpers/get_config_check.sh && \
+    ./tests/chain_test && \
+    ./programs/util/test_fixed_string && \
+    cd /usr/local/src/node && \
+    doxygen && \
+    programs/build_helpers/check_reflect.py && \
+    programs/build_helpers/get_config_check.sh && \
     rm -rf /usr/local/src/node/build
 
 # RUN \

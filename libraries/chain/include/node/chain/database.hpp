@@ -76,14 +76,13 @@ namespace node { namespace chain {
             const fc::path& data_dir, 
             const fc::path& shared_mem_dir, 
             uint64_t shared_file_size, 
-            uint32_t chainbase_flags, 
-            const public_key_type& init_public_key );
+            uint32_t chainbase_flags );
 
 
          /**
           * Begins a new blockchain and creates initial objects for the network using a specified initial public key.
           */
-         void init_genesis( const public_key_type& init_public_key );
+         void init_genesis();
 
          /**
           * @brief Rebuild object graph from block history and open detabase
@@ -722,9 +721,9 @@ namespace node { namespace chain {
          asset pay_advertising_delivery( const account_object& provider, const account_object& demand, 
             const account_object& audience, const asset& value );
 
-         asset pay_fee_share( const account_object& payee, const asset& amount );
+         asset pay_fee_share( const account_object& payee, const asset& amount, bool recursive );
 
-         asset pay_multi_fee_share( flat_set< const account_object* > payees, const asset& amount );
+         asset pay_multi_fee_share( flat_set< const account_object* > payees, const asset& amount, bool recursive );
 
          void deliver_ad_bid( const ad_bid_object& bid, const account_object& viewer );
 

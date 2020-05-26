@@ -64,7 +64,8 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       "Insufficient Fee: ${f} required, ${p} provided.", ("f", acc_fee )("p", o.fee) );
    const auto& registrar_balance = _db.get_account_balance( o.registrar, SYMBOL_COIN );
    FC_ASSERT( registrar_balance.get_liquid_balance() >= o.fee, 
-      "Insufficient balance to create account.", ( "registrar balance", registrar_balance.liquid_balance )( "required", o.fee ) );
+      "Insufficient balance: ${b} of registrar ${r} to create account: ${a} with fee: ${f}.", 
+      ( "b", registrar_balance.liquid_balance )("r", o.registrar)("a", o.new_account_name)("f", o.fee) );
 
    FC_ASSERT( registrar_balance.staked_balance - registrar_balance.delegated_balance - registrar_balance.to_unstake + registrar_balance.total_unstaked >= o.delegation.amount, 
       "Insufficient Stake to delegate to new account.",
@@ -83,13 +84,15 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
    
    const account_object& registrar = _db.get_account( o.registrar );   // Ensure all referenced accounts exist
    FC_ASSERT( registrar.active,
-      "Account: ${s} is not active, please select a different registrar account.",("s", o.registrar) );
+      "Account: ${s} is not active, please select a different registrar account.",
+      ("s", o.registrar) );
 
    if( o.recovery_account.size() )
    {
       const account_object& recovery_account = _db.get_account( o.recovery_account );
       FC_ASSERT( recovery_account.active,
-         "Account: ${s} is not active, please select a different recovery account.",("s", o.recovery_account) );
+         "Account: ${s} is not active, please select a different recovery account.",
+         ("s", o.recovery_account) );
    }
    if( o.reset_account.size() )
    {
@@ -165,23 +168,40 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       
       a.membership = membership_tier_type::NONE;
 
-      a.secure_public_key = public_key_type( o.secure_public_key );
-      a.connection_public_key = public_key_type( o.connection_public_key );
-      a.friend_public_key = public_key_type( o.friend_public_key );
-      a.companion_public_key = public_key_type( o.companion_public_key );
+      if( o.secure_public_key.size() )
+      {
+         a.secure_public_key = public_key_type( o.secure_public_key );
+      }
+      if( o.connection_public_key.size() )
+      {  
+         a.connection_public_key = public_key_type( o.connection_public_key );
+      }
+      if( o.friend_public_key.size() )
+      {
+         a.friend_public_key = public_key_type( o.friend_public_key );
+      }
+      if( o.companion_public_key.size() )
+      {
+         a.companion_public_key = public_key_type( o.companion_public_key );
+      }
 
       a.created = now;
-      a.last_account_update = now;
-      a.last_vote_time = now;
-      a.last_post = now;
-      a.last_root_post = now;
-      a.last_transfer_time = now;
-      a.last_activity_reward = now;
-      a.last_account_recovery = now;
-      a.last_community_created = now;
-      a.last_asset_created = now;
+      a.last_updated = now;
+      a.last_vote_time = time_point::min();
+      a.last_view_time = time_point::min();
+      a.last_share_time = time_point::min();
+      a.last_post = time_point::min();
+      a.last_root_post = time_point::min();
+      a.last_transfer_time = time_point::min();
+      a.last_activity_reward = time_point::min();
+      a.last_account_recovery = time_point::min();
+      a.last_community_created = time_point::min();
+      a.last_asset_created = time_point::min();
       a.membership_expiration = time_point::min();
       a.mined = false;
+      a.can_vote = true;
+      a.revenue_share = false;
+      a.active = true;
    });
 
    if( o.fee.amount > 0 )
@@ -213,7 +233,12 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
    {
       afo.account = o.new_account_name;
       afo.last_updated = now;
-   }); 
+   });
+
+   _db.create< account_permission_object >( [&]( account_permission_object& aao )
+   {
+      aao.account = o.new_account_name;
+   });
 
    if( _db.find_network_officer( o.registrar ) != nullptr )
    {
@@ -280,7 +305,7 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
    const account_object& account = _db.get_account( o.account );
    const account_authority_object& account_auth = _db.get< account_authority_object, by_account >( o.account );
    
-   FC_ASSERT( now - account_auth.last_owner_update > OWNER_UPDATE_LIMIT,
+   FC_ASSERT( ( now - account_auth.last_owner_update ) >= OWNER_UPDATE_LIMIT,
       "Owner authority can only be updated once an hour." );
 
    for( auto a: o.owner_auth.account_auths )
@@ -329,7 +354,7 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
          a.companion_public_key = public_key_type( o.companion_public_key );
       }
 
-      a.last_account_update = now;
+      a.last_updated = now;
 
       if( o.details.size() > 0 )
       {
@@ -511,7 +536,7 @@ void account_business_evaluator::do_apply( const account_business_operation& o )
    const auto& business_idx = _db.get_index< account_business_index >().indices().get< by_account >();
    auto business_itr = business_idx.find( o.account );
 
-   if( business_itr == business_idx.end() )
+   if( business_itr == business_idx.end() )    // New business account
    {
       const account_business_object& business = _db.create< account_business_object >( [&]( account_business_object& abo )
       {
@@ -519,6 +544,9 @@ void account_business_evaluator::do_apply( const account_business_operation& o )
          abo.business_type = business_structure;
          abo.business_public_key = public_key_type( o.business_public_key );
          abo.executive_board.CHIEF_EXECUTIVE_OFFICER = o.init_ceo_account;
+         abo.members.insert( o.init_ceo_account );
+         abo.officers.insert( o.init_ceo_account );
+         abo.executives.insert( o.init_ceo_account );
          abo.officer_vote_threshold = o.officer_vote_threshold;
          abo.last_updated = now;
          abo.created = now;
@@ -529,6 +557,7 @@ void account_business_evaluator::do_apply( const account_business_operation& o )
          aovo.account = o.init_ceo_account;
          aovo.business_account = o.account;
          aovo.officer_account = o.init_ceo_account;
+         aovo.vote_rank = 1;
       });
 
       _db.create< account_executive_vote_object >( [&]( account_executive_vote_object& aevo )
@@ -537,6 +566,7 @@ void account_business_evaluator::do_apply( const account_business_operation& o )
          aevo.business_account = o.account;
          aevo.executive_account = o.init_ceo_account;
          aevo.role = executive_role_type::CHIEF_EXECUTIVE_OFFICER;
+         aevo.vote_rank = 1;
       });
 
       _db.update_business_account( business );
@@ -585,9 +615,11 @@ void account_membership_evaluator::do_apply( const account_membership_operation&
    }
    
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
+   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    time_point now = _db.head_block_time();
    asset liquid = _db.get_liquid_balance( o.account, SYMBOL_COIN );
    asset monthly_fee = asset( 0, SYMBOL_USD );
+   price usd_coin_price = props.current_median_usd_price;
 
    membership_tier_type mem_tier = membership_tier_type::STANDARD_MEMBERSHIP;
 
@@ -631,47 +663,53 @@ void account_membership_evaluator::do_apply( const account_membership_operation&
    }
 
    asset carried_fees = asset( 0, SYMBOL_USD );
-   fc::microseconds remaining = account.membership_expiration - now;
 
-   switch( account.membership )
+   if( account.membership_expiration >= now )     // If existing membership is active.
    {
-      case membership_tier_type::NONE:
+      fc::microseconds remaining = account.membership_expiration - now;
+
+      switch( account.membership )
       {
-          
+         case membership_tier_type::NONE:
+         {
+            
+         }
+         break;
+         case membership_tier_type::STANDARD_MEMBERSHIP:
+         {
+            carried_fees = asset( ( median_props.membership_base_price.amount * remaining.count() ) / fc::days( 30 ).count(), SYMBOL_USD );
+         }
+         break;
+         case membership_tier_type::MID_MEMBERSHIP:
+         {
+            carried_fees = asset( ( median_props.membership_mid_price.amount * remaining.count() ) / fc::days( 30 ).count(), SYMBOL_USD );
+         }
+         break;
+         case membership_tier_type::TOP_MEMBERSHIP:
+         {
+            carried_fees = asset( ( median_props.membership_top_price.amount * remaining.count() ) / fc::days( 30 ).count(), SYMBOL_USD );
+         }
+         break;
+         default:
+         {
+            FC_ASSERT( false, "Membership type Invalid: ${m}.", ("m", account.membership ) );
+         }
+         break;
       }
-      break;
-      case membership_tier_type::STANDARD_MEMBERSHIP:
-      {
-         carried_fees = asset( ( median_props.membership_base_price.amount * remaining.count() ) / fc::days( 30 ).count(), SYMBOL_USD );
-      }
-      break;
-      case membership_tier_type::MID_MEMBERSHIP:
-      {
-         carried_fees = asset( ( median_props.membership_mid_price.amount * remaining.count() ) / fc::days( 30 ).count(), SYMBOL_USD );
-      }
-      break;
-      case membership_tier_type::TOP_MEMBERSHIP:
-      {
-         carried_fees = asset( ( median_props.membership_top_price.amount * remaining.count() ) / fc::days( 30 ).count(), SYMBOL_USD );
-      }
-      break;
-      default:
-      {
-         FC_ASSERT( false, "Membership type Invalid: ${m}.", ("m", account.membership ) );
-      }
-      break;
    }
 
-   asset total_fees = std::max( asset( 0, SYMBOL_USD ), monthly_fee * o.months - carried_fees);   // Applies a discount on new membership if an existing membership is still active.
+   asset total_fees = std::max( asset( 0, SYMBOL_USD ), monthly_fee * o.months - carried_fees );       // Applies a discount on new membership if an existing membership is still active.
+   asset fee_coin_value = total_fees * usd_coin_price;
 
-   FC_ASSERT( liquid >= total_fees, 
-      "Account has insufficent liquid balance to pay for the requested membership duration." );
+   FC_ASSERT( liquid >= fee_coin_value,
+      "Account: ${a} has insufficent liquid balance: ${b} to pay for the requested membership duration fees: ${f} with USD price of: ${p}.",
+      ("a",o.account)("b", liquid)("f", fee_coin_value)("p", usd_coin_price) );
 
    if( total_fees.amount > 0 )
    {
       if( int_account_ptr != nullptr )
       {
-         _db.pay_membership_fees( account, total_fees, *int_account_ptr );      // Pays splits to interface, premium partners, and network
+         _db.pay_membership_fees( account, total_fees, *int_account_ptr );      // Pays splits to interface, premium partners, and network.
       }
       else
       {
@@ -726,7 +764,8 @@ void account_vote_executive_evaluator::do_apply( const account_vote_executive_op
    share_type voting_power = _db.get_equity_voting_power( o.account, bus_acc );
 
    FC_ASSERT( voting_power > 0,
-      "Account must hold a balance of voting power in the equity assets of the business account in order to vote for executives." );
+      "Account: ${a} must hold a balance of voting power in the equity assets of the business account: ${b} in order to vote for executives.",
+      ("a", o.account)("b", bus_acc) );
 
    if( o.approved )
    {
@@ -764,6 +803,7 @@ void account_vote_executive_evaluator::do_apply( const account_vote_executive_op
             v.account = voter.name;
             v.vote_rank = o.vote_rank;
             v.executive_account = o.executive_account;
+            v.business_account = o.business_account;
             v.role = exec_role;
          });
          
@@ -854,8 +894,9 @@ void account_vote_officer_evaluator::do_apply( const account_vote_officer_operat
          _db.create< account_officer_vote_object>( [&]( account_officer_vote_object& v )
          {
             v.account = voter.name;
-            v.vote_rank = o.vote_rank;
             v.officer_account = o.officer_account;
+            v.business_account = o.business_account;
+            v.vote_rank = o.vote_rank;
          });
          
          _db.update_account_officer_votes( voter, o.business_account );
@@ -1379,7 +1420,7 @@ void account_update_proxy_evaluator::do_apply( const account_update_proxy_operat
 
    if( o.proxy.size() ) 
    {
-      const auto& new_proxy = _db.get_account( o.proxy );
+      const account_object& new_proxy = _db.get_account( o.proxy );
       flat_set< account_id_type > proxy_chain( { account.id, new_proxy.id } );
       proxy_chain.reserve( MAX_PROXY_RECURSION_DEPTH + 1 );
 
@@ -1409,12 +1450,15 @@ void account_update_proxy_evaluator::do_apply( const account_update_proxy_operat
    } 
    else 
    {        
-      const account_object& old_proxy = _db.get_account( account.proxy );
-
       _db.modify( account, [&]( account_object& a )
       {
-         a.proxy = o.proxy;      // we are clearing the proxy which means we simply update the accounts
+         a.proxy = PROXY_TO_SELF_ACCOUNT;
       });
+   }
+
+   if( account.proxy.size() )
+   {
+      const account_object& old_proxy = _db.get_account( account.proxy );
 
       _db.modify( old_proxy, [&]( account_object& a )
       {

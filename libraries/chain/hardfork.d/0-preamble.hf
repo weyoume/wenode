@@ -58,4 +58,4 @@ FC_REFLECT( node::chain::hardfork_property_object,
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::hardfork_property_object, node::chain::hardfork_property_index );
 
-#define NUM_HARDFORKS 19
+#define NUM_HARDFORKS 1

@@ -5,6 +5,8 @@
 
 #include <node/protocol/config.hpp>
 
+#include <fc/io/json.hpp>
+
 namespace node { namespace chain {
 
 void reset_voting_virtual_schedule_time( database& db )
@@ -49,7 +51,8 @@ void reset_mining_virtual_schedule_time( database& db )
 }
 
 /**
- * Update the median producer properties, according to the producer chain properties
+ * Update the median producer properties, 
+ * according to the producer chain properties
  * median values for each variable.
  */
 void update_median_producer_props( database& db )
@@ -61,7 +64,7 @@ void update_median_producer_props( database& db )
 
    for( int i = 0; i < pso.num_scheduled_producers; i++ )
    {
-      active.push_back( db.find_producer( pso.current_shuffled_producers[i] ) );      // Fetch producer object pointers.
+      active.push_back( db.find_producer( pso.current_shuffled_producers[ i ] ) );      // Fetch producer object pointers.
    }
 
    const median_chain_property_object& median_props = db.get_median_chain_properties();
@@ -363,9 +366,10 @@ void update_median_producer_props( database& db )
 
 void update_producer_schedule( database& db )
 {
-   if( (db.head_block_num() % TOTAL_PRODUCERS) == 0 ) //  pso.next_shuffle_block_num 
+   if( ( db.head_block_num() % TOTAL_PRODUCERS ) == 0 ) //  pso.next_shuffle_block_num
    {
       const producer_schedule_object& pso = db.get_producer_schedule();
+
       fc::uint128 new_voting_virtual_time = pso.current_voting_virtual_time;
       fc::uint128 new_mining_virtual_time = pso.current_mining_virtual_time;
 
@@ -389,7 +393,8 @@ void update_producer_schedule( database& db )
                  
       const auto& voting_power_producer_idx = db.get_index< producer_index >().indices().get< by_voting_power >();
       for( auto voting_power_itr = voting_power_producer_idx.begin();
-         voting_power_itr != voting_power_producer_idx.end() && top_voting_producers.size() < max_voting_producers;
+         voting_power_itr != voting_power_producer_idx.end() && 
+         top_voting_producers.size() < max_voting_producers;
          ++voting_power_itr )
       {
          if( voting_power_itr->signing_key == public_key_type() )
@@ -408,9 +413,10 @@ void update_producer_schedule( database& db )
       flat_set< producer_id_type > top_mining_producers;
       top_mining_producers.reserve( pso.pow_producers );
 
-      const auto& mining_power_producer_idx = db.get_index<producer_index>().indices().get<by_mining_power>();
+      const auto& mining_power_producer_idx = db.get_index< producer_index >().indices().get< by_mining_power >();
       auto mining_power_itr = mining_power_producer_idx.begin();
-      while( mining_power_itr != mining_power_producer_idx.end() && top_mining_producers.size() < max_mining_producers )
+      while( mining_power_itr != mining_power_producer_idx.end() && 
+         top_mining_producers.size() < max_mining_producers )
       {
          if( top_voting_producers.find(mining_power_itr->id) == top_voting_producers.end() ) // Only consider a miner who is not a top voting producer
          {
@@ -441,7 +447,8 @@ void update_producer_schedule( database& db )
       vector<decltype(avp_itr)> processed_voting_producers;
 
       for( auto voting_producer_count = num_top_voting_producers;
-         avp_itr != voting_producer_schedule_idx.end() && voting_producer_count < max_voting_producers;
+         avp_itr != voting_producer_schedule_idx.end() && 
+         voting_producer_count < max_voting_producers;
          ++avp_itr )
       {
          new_voting_virtual_time = avp_itr->voting_virtual_scheduled_time; /// everyone advances to at least this time
@@ -475,7 +482,8 @@ void update_producer_schedule( database& db )
       vector<decltype(amp_itr)> processed_mining_producers;
 
       for( auto mining_producer_count = num_top_mining_producers;
-         amp_itr != mining_producer_schedule_idx.end() && mining_producer_count < max_mining_producers;
+         amp_itr != mining_producer_schedule_idx.end() && 
+         mining_producer_count < max_mining_producers;
          ++amp_itr )
       {
          new_mining_virtual_time = amp_itr->mining_virtual_scheduled_time;    // everyone advances to at least this time
@@ -568,9 +576,10 @@ void update_producer_schedule( database& db )
       flat_map< version, uint32_t, std::greater< version > > producer_versions;
       flat_map< std::tuple< hardfork_version, time_point >, uint32_t > hardfork_version_votes;
 
-      for( uint32_t i = 0; i < pso.num_scheduled_producers; i++ )
+      for( size_t i = 0; i < pso.current_shuffled_producers.size(); i++ )
       {
-         auto producer = db.get_producer( pso.current_shuffled_producers[ i ] );
+         const producer_object& producer = db.get_producer( pso.current_shuffled_producers[ i ] );
+
          if( producer_versions.find( producer.running_version ) == producer_versions.end() )
          {
             producer_versions[ producer.running_version ] = 1;
@@ -640,35 +649,43 @@ void update_producer_schedule( database& db )
 
       vector< account_name_type > shuffled_voting_producers = db.shuffle_accounts( active_voting_producers );     // Shuffle the active voting_producers
       vector< account_name_type > shuffled_mining_producers = db.shuffle_accounts( active_mining_producers );     // Shuffle the active mining_producers
-      expected_active_producers = std::min( size_t( TOTAL_PRODUCERS ), voting_power_producer_idx.size()+ mining_power_producer_idx.size() );
+
+      shuffled_voting_producers.reserve( max_voting_producers );
+      shuffled_mining_producers.reserve( max_mining_producers );
+
+      expected_active_producers = std::min( size_t( TOTAL_PRODUCERS ), voting_power_producer_idx.size() + mining_power_producer_idx.size() );
 
       for( size_t i = shuffled_voting_producers.size(); i < max_voting_producers; i++ )
       {
-         shuffled_voting_producers[i] = account_name_type(); // Fills empty positions with empty account name
+         shuffled_voting_producers.push_back( account_name_type() );      // Fills empty positions with empty account name
       }
       
       for( size_t i = shuffled_mining_producers.size(); i < max_mining_producers; i++ )
       {
-         shuffled_mining_producers[i] = account_name_type(); // Fills empty positions with empty account name
+         shuffled_mining_producers.push_back( account_name_type() );      // Fills empty positions with empty account name
       }
 
       size_t min_producers = std::min( shuffled_voting_producers.size(), shuffled_mining_producers.size() );
 
-      db.modify( pso, [&]( producer_schedule_object& w )
+      db.modify( pso, [&]( producer_schedule_object& pso )
       {
+         pso.current_shuffled_producers.clear();
+         pso.current_shuffled_producers.reserve( size_t( TOTAL_PRODUCERS ) );
+         
          for( size_t i = 0; i < min_producers; i++ )
          {
-            w.current_shuffled_producers[2 * i] = shuffled_voting_producers[i]; // Adds a shuffled producer for every even number position
-            w.current_shuffled_producers[2 * i + 1] = shuffled_mining_producers[i]; // Adds a shuffled miner for every odd position. 
+            pso.current_shuffled_producers.push_back( shuffled_voting_producers[ i ] );     // Adds a shuffled producer for every even number position.
+            pso.current_shuffled_producers.push_back( shuffled_mining_producers[ i ] );     // Adds a shuffled miner for every odd position. 
          }
-         w.top_voting_producers = top_voting_producer_set;
-         w.top_mining_producers = top_mining_producer_set;
+         
+         pso.top_voting_producers = top_voting_producer_set;
+         pso.top_mining_producers = top_mining_producer_set;
 
-         w.num_scheduled_producers = std::max< uint8_t >( w.current_shuffled_producers.size(), 1 );
-         w.current_voting_virtual_time = new_voting_virtual_time;
-         w.current_mining_virtual_time = new_mining_virtual_time;
-         w.next_shuffle_block_num = db.head_block_num() + w.num_scheduled_producers;
-         w.majority_version = majority_version;
+         pso.num_scheduled_producers = std::max< uint8_t >( pso.current_shuffled_producers.size(), 1 );
+         pso.current_voting_virtual_time = new_voting_virtual_time;
+         pso.current_mining_virtual_time = new_mining_virtual_time;
+         pso.next_shuffle_block_num = db.head_block_num() + pso.num_scheduled_producers;
+         pso.majority_version = majority_version;
       });
 
       const account_authority_object& producer_auth = db.get_account_authority( PRODUCER_ACCOUNT );
@@ -686,6 +703,8 @@ void update_producer_schedule( database& db )
       });
 
       update_median_producer_props( db );
+
+      ilog( "Updating Producer Schedule: ${p}", ("p", pso ) );
    }
 }
 

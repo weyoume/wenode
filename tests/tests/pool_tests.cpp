@@ -33,6 +33,8 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Creation of a new liquidity pool" );
 
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
       fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -68,8 +70,8 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
       asset_create.credit_liquidity = asset( 100 * BLOCKCHAIN_PRECISION, "ALICECOIN" );
       asset_create.options.display_symbol = "Alice Coin";
       asset_create.options.details = "Details";
-      asset_create.options.json = "{\"json\":\"valid\"}";
-      asset_create.options.url = "www.url.com";
+      asset_create.options.json = "{ \"valid\": true }";
+      asset_create.options.url = "https://www.url.com";
       asset_create.validate();
 
       tx.operations.push_back( asset_create );
@@ -89,8 +91,8 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
       asset_create.credit_liquidity = asset( 100 * BLOCKCHAIN_PRECISION, "BOBCOIN" );
       asset_create.options.display_symbol = "Bob Coin";
       asset_create.options.details = "Details";
-      asset_create.options.json = "{\"json\":\"valid\"}";
-      asset_create.options.url = "www.url.com";
+      asset_create.options.json = "{ \"valid\": true }";
+      asset_create.options.url = "https://www.url.com";
       asset_create.validate();
 
       tx.operations.push_back( asset_create );
@@ -374,6 +376,8 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Create credit collateral position" );
 
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
       fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -420,12 +424,10 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       liquidity_pool_fund_operation fund;
 
-      asset_symbol_type coin_usd_symbol = string(LIQUIDITY_ASSET_PREFIX)+string(SYMBOL_COIN)+string(".")+string(SYMBOL_USD);
-
       fund.signatory = "elon";
       fund.account = "elon";
       fund.amount = asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      fund.pair_asset = coin_usd_symbol;
+      fund.pair_asset = SYMBOL_USD;
       fund.validate();
 
       tx.operations.push_back( fund );
@@ -445,10 +447,8 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      asset_symbol_type coin_credit_symbol = string(LIQUIDITY_ASSET_PREFIX)+string(SYMBOL_COIN)+string(".")+string(SYMBOL_CREDIT);
-
       fund.amount = asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      fund.pair_asset = coin_credit_symbol;
+      fund.pair_asset = SYMBOL_CREDIT;
 
       tx.operations.push_back( fund );
       tx.sign( elon_private_active_key, db.get_chain_id() );
@@ -471,7 +471,7 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       feed.signatory = "alice";
       feed.publisher = "alice";
       feed.symbol = SYMBOL_USD;
-      feed.feed.settlement_price = price( asset(1,SYMBOL_USD),asset(1,SYMBOL_COIN) );
+      feed.feed.settlement_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       feed.validate();
 
       tx.operations.push_back( feed );
@@ -981,6 +981,8 @@ BOOST_AUTO_TEST_CASE( prediction_pool_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Create prediction pool" );
 
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
       ACTORS( (alice)(bob)(candice)(dan) );
 
       fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -1014,8 +1016,8 @@ BOOST_AUTO_TEST_CASE( prediction_pool_operation_sequence_test )
       create.outcome_assets = { "YES", "NO" };
       create.outcome_details = { "The predicted event will happen.", "The predicted event will not happen." };
       create.display_symbol = "Prediction market asset success.";
-      create.json = "{\"json\":\"valid\"}";
-      create.url = "www.url.com";
+      create.json = "{ \"valid\": true }";
+      create.url = "https://www.url.com";
       create.details = "Details";
       create.outcome_time = now() + fc::days(8);
       create.prediction_bond = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -1062,8 +1064,8 @@ BOOST_AUTO_TEST_CASE( prediction_pool_operation_sequence_test )
       create.outcome_assets = { "YES", "NO" };
       create.outcome_assets = { "The predicted event will happen.", "The predicted event will not happen." };
       create.display_symbol = "Prediction market asset failure.";
-      create.json = "{\"json\":\"valid\"}";
-      create.url = "www.url.com";
+      create.json = "{ \"valid\": true }";
+      create.url = "https://www.url.com";
       create.details = "Details";
       create.outcome_time = now() + fc::days(30);
       create.prediction_bond = asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );

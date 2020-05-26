@@ -55,7 +55,7 @@ namespace graphene { namespace net {
           *          safe to broadcast on.
           */
          virtual bool handle_block( const graphene::net::block_message& blk_msg, bool sync_mode,
-                                    std::vector<fc::uint160_t>& contained_transaction_message_ids ) = 0;
+                                    std::vector<fc::sha256>& contained_transaction_message_ids ) = 0;
 
          /**
           *  @brief Called when a new transaction comes in from the network
@@ -125,7 +125,7 @@ namespace graphene { namespace net {
           */
          virtual void     connection_count_changed( uint32_t c ) = 0;
 
-         virtual uint32_t get_block_number(const item_hash_t& block_id) = 0;
+         virtual uint64_t get_block_number(const item_hash_t& block_id) = 0;
 
          /**
           * Returns the time a block was produced (if block_id = 0, returns genesis time).

@@ -82,33 +82,33 @@ namespace node { namespace chain {
 
          public_key_type              signing_key;                           ///< The key used to sign blocks on behalf of this producer.
 
-         uint64_t                     last_commit_height = 0;                ///< Block height that has been most recently committed by the producer
+         uint64_t                     last_commit_height;                    ///< Block height that has been most recently committed by the producer
 
          block_id_type                last_commit_id = block_id_type();      ///< Block ID of the height that was most recently committed by the producer. 
 
-         uint32_t                     total_blocks = 0;                      ///< Accumulated number of blocks produced.
+         uint32_t                     total_blocks;                          ///< Accumulated number of blocks produced.
 
-         share_type                   voting_power = 0;                      ///< The total weighted voting power that supports the producer. 
+         share_type                   voting_power;                          ///< The total weighted voting power that supports the producer. 
 
-         uint32_t                     vote_count = 0;                        ///< The number of accounts that have voted for the producer.
+         uint32_t                     vote_count;                            ///< The number of accounts that have voted for the producer.
 
-         share_type                   mining_power = 0;                      ///< The amount of proof of work difficulty accumulated by the miner over the prior 7 days.
+         share_type                   mining_power;                          ///< The amount of proof of work difficulty accumulated by the miner over the prior 7 days.
 
-         uint32_t                     mining_count = 0;                      ///< Accumulated number of proofs of work published.
+         uint32_t                     mining_count;                          ///< Accumulated number of proofs of work published.
 
          time_point                   last_mining_update;                    ///< Time that the account last updated its mining power.
 
          time_point                   last_pow_time;                         ///< Time that the miner last created a proof of work.
 
-         uint128_t                    recent_txn_stake_weight = 0;           ///< Rolling average Amount of transaction stake weight contained that the producer has included in blocks over the prior 7 days.
+         uint128_t                    recent_txn_stake_weight;               ///< Rolling average Amount of transaction stake weight contained that the producer has included in blocks over the prior 7 days.
 
          time_point                   last_txn_stake_weight_update;          ///< Time that the recent bandwith and txn stake were last updated.
 
-         uint128_t                    accumulated_activity_stake = 0;        ///< Recent amount of activity reward stake for the prime producer. 
+         uint128_t                    accumulated_activity_stake;            ///< Recent amount of activity reward stake for the prime producer. 
 
-         uint32_t                     total_missed = 0;                      ///< Number of blocks missed recently.
+         uint32_t                     total_missed;                          ///< Number of blocks missed recently.
 
-         uint64_t                     last_aslot = 0;                        ///< Last absolute slot that the producer was assigned to produce a block.
+         uint64_t                     last_aslot;                            ///< Last absolute slot that the producer was assigned to produce a block.
 
          chain_properties             props;                                 ///< The chain properties object that the producer currently proposes for global network variables
          
@@ -157,11 +157,11 @@ namespace node { namespace chain {
 
          id_type                id;
 
-         account_name_type      producer;
+         account_name_type      producer;             ///< The Producer account voted for.
 
-         account_name_type      account;
+         account_name_type      account;              ///< The account creating the producer vote.
 
-         uint16_t               vote_rank;        ///< the ordered rank to which the producer is supported, with 1 being the highest voted producer, and increasing for others.
+         uint16_t               vote_rank = 1;        ///< Ordered rank to which the producer is supported.
    };
 
 
@@ -184,7 +184,7 @@ namespace node { namespace chain {
 
          uint64_t                                          next_shuffle_block_num = 1;              ///< The block of the next reshuffling of producers.
 
-         fc::array< account_name_type, TOTAL_PRODUCERS >   current_shuffled_producers;              ///< Currently active block producers to be includes in the next production round.
+         vector< account_name_type >                       current_shuffled_producers;              ///< Currently active block producers to be includes in the next production round.
 
          uint128_t                                         total_producer_voting_power;             ///< Total sum of all voting power that is voting for producers.
 
@@ -192,7 +192,7 @@ namespace node { namespace chain {
 
          vector< account_name_type >                       top_mining_producers;                    ///< Ordered list of the highest mining producers.
 
-         uint8_t                                           num_scheduled_producers = 1;
+         uint8_t                                           num_scheduled_producers = TOTAL_PRODUCERS;
 
          uint128_t                                         pow_target_difficulty = uint128_t::max_value();           ///< Proof of work summary value target, must be lower than this value.
 

@@ -19,6 +19,8 @@ BOOST_AUTO_TEST_CASE( market_history_test )
       boost::program_options::variables_map options;
       mh_plugin->plugin_initialize( options );
 
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
       ACTORS( (alice)(bob)(candice)(dan) );
 
       fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );

@@ -10,32 +10,36 @@
 	#define GEN_PRIVATE_KEY 							1
 #endif
 
-#ifdef IS_TEST_NET
-	#define INIT_PRIVATE_KEY                (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("init_key"))))
-	#define INIT_PUBLIC_KEY_STR             (std::string( node::protocol::public_key_type(INIT_PRIVATE_KEY.get_public_key()) ))
-	#define CHAIN_ID                        (fc::sha256::hash("testnet"))
-
-	#define ADDRESS_PREFIX                  "TWYM"
-
-	#define OWNER_AUTH_RECOVERY_PERIOD                  fc::seconds(60)
-	#define ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD  fc::seconds(12)
-	#define OWNER_UPDATE_LIMIT                          fc::seconds(0)
-	#define OWNER_AUTH_HISTORY_TRACKING_START_BLOCK_NUM 1
-
-#endif // IS LIVE NETWORK
-	
-	#if GEN_PRIVATE_KEY
-		#define INIT_PRIVATE_KEY            (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("accountNameownerpassword")))) // accountName + permission + password
-		#define INIT_PUBLIC_KEY_STR         (std::string( node::protocol::public_key_type(INIT_PRIVATE_KEY.get_public_key()) ))
-	#else
-		#define INIT_PUBLIC_KEY_STR             "WYM7sbABVQcfuGVS6bXrnt8DRKi58YUWKWM7bVLTj8xvfZBVKfhoU"
-	#endif
-	
 
 // WeYouMe
 
-#define CHAIN_ID                        (fc::sha256::hash("WeYouMe"))
-#define ADDRESS_PREFIX                  "WYM"
+#ifdef IS_TEST_NET
+
+	#define INIT_PRIVATE_KEY                                 (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("init_key"))))
+	#define INIT_PUBLIC_KEY_STR                              (std::string( node::protocol::public_key_type(INIT_PRIVATE_KEY.get_public_key()) ))
+	#define CHAIN_ID                                         (fc::sha256::hash("testnet"))
+	#define ADDRESS_PREFIX                                   "TWYM"
+	#define OWNER_AUTH_RECOVERY_PERIOD                       fc::seconds(60)
+	#define ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD       fc::seconds(12)
+	#define OWNER_UPDATE_LIMIT                               fc::seconds(0)
+
+#else // IS LIVE NETWORK
+
+	#if GEN_PRIVATE_KEY
+		#define INIT_PRIVATE_KEY                             (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("accountNameownerpassword")))) // accountName + permission + password
+		#define INIT_PUBLIC_KEY_STR                          (std::string( node::protocol::public_key_type(INIT_PRIVATE_KEY.get_public_key() ) ) )
+	#else
+		#define INIT_PUBLIC_KEY_STR                         "WYM7sbABVQcfuGVS6bXrnt8DRKi58YUWKWM7bVLTj8xvfZBVKfhoU"
+	#endif
+	
+	#define CHAIN_ID                                        (fc::sha256::hash("WeYouMe"))
+	#define ADDRESS_PREFIX                                  "WYM"
+	#define OWNER_AUTH_RECOVERY_PERIOD                       fc::days(30)
+	#define ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD       fc::days(1)
+	#define OWNER_UPDATE_LIMIT                               fc::minutes(60)
+	
+#endif
+
 
 #define BLOCKCHAIN_PRECISION            share_type( 100000000 )        // 100 Million integer units per currency unit
 #define BLOCKCHAIN_PRECISION_DIGITS     8
@@ -44,40 +48,45 @@
 #define WEYOUME_SYMBOL                  "WYM"
 #define MEUSD_SYMBOL                    "MUSD"
 #define MECREDIT_SYMBOL                 "MCR"
+
 #define LIQUIDITY_ASSET_PREFIX          "LIQUID."
 #define CREDIT_ASSET_PREFIX             "CREDIT."
 #define OPTION_ASSET_PREFIX             "OPT"
 #define OPTION_ASSET_CALL               "CALL"
 #define OPTION_ASSET_PUT                "PUT"
 
-#define SYMBOL_COIN  				    MECOIN_SYMBOL                   // [MEC: MeCoin - Cryptocurrency of the WeYouMe Blockchain]
-#define SYMBOL_EQUITY  					WEYOUME_SYMBOL                  // [WYM: WeYouMe - CryptoEquity of the WeYouMe Blockchain]
-#define SYMBOL_USD    					MEUSD_SYMBOL                    // [MUSD: MeUSD - Stablecoin collateralized by MeCoin with value pegged to $1.00 USD]
-#define SYMBOL_CREDIT 					MECREDIT_SYMBOL                 // [MCR: MeCredit - Interest bearing CryptoCredit issued by the WeYouMe blockchain]
+#define SYMBOL_COIN  				    MECOIN_SYMBOL
+#define SYMBOL_EQUITY  					WEYOUME_SYMBOL
+#define SYMBOL_USD    					MEUSD_SYMBOL
+#define SYMBOL_CREDIT 					MECREDIT_SYMBOL
+
+#define COIN_DETAILS                    "MeCoin: Currency of the WeYouMe Blockchain. Earned by Network contributors. Used for stake voting and network fees."
+#define EQUITY_DETAILS                  "WeYouMe: Equity of the WeYouMe Blockchain. Earns Dividend from network revenue. Used for stake voting."
+#define USD_DETAILS                     "MeUSD: Stablecoin of the WeYouMe Blockchain. Backed by Network collateral. Value Tracks the United States Dollar."
+#define CREDIT_DETAILS                  "MeCredit: Credit of the WeYouMe Blockchain. Backed by Network Revenue Repurchase. Value represents interest bearing network debt."
 
 #define MILLION                         (1000000)                       // 1 Million integer
 #define BILLION                         (1000000000)                    // 1 Billion Integer
-#define TRILLION                        (1000000000000)                 // 1 Trillion integer
 #define PERCENT_100                     (10000)                         // Uses 5 decimal place integer to enable percentages to 2 decimal places of precision
 #define PERCENT_1                       (PERCENT_100/100)               // 1% as percentage integer
 #define PERCENT_10_OF_PERCENT_1         (PERCENT_100/1000)              // 0.1% as percentage integer
 
-#define GENESIS_TIME                    fc::time_point(fc::microseconds(1590242400000000))    // 24th May 2020 network launch time
-#define MINING_TIME                     fc::time_point(fc::microseconds(1590242400000000))    // 24th May 2020 network launch time
+#define GENESIS_TIME                    fc::time_point(fc::microseconds(1588839092000000))    // 7th May 2020 network launch time 1588839092000000
+#define MINING_TIME                     fc::time_point(fc::microseconds(1588839092000000))    // 7th May 2020 network launch time
 
 #define INIT_COIN_SUPPLY                (0)                                                  // Zero MeCoin preissuance
-#define INIT_EQUITY_SUPPLY              share_type( 10 * MILLION * BLOCKCHAIN_PRECISION )    // 10 Million Supply of WYM.
-#define MAX_ASSET_SUPPLY                share_type( TRILLION * BLOCKCHAIN_PRECISION )        // 1 Trillion max asset supply.
+#define INIT_EQUITY_SUPPLY              share_type( 10000000 * BLOCKCHAIN_PRECISION )        // 10 Million Supply of WYM.
+#define MAX_ASSET_SUPPLY                share_type( 50000000000 * BLOCKCHAIN_PRECISION )     // 50 Billion max asset supply.
 
 #define BLOCK_INTERVAL                  fc::microseconds(788400)                                     // 0.7884 Seconds per block, resulting in exactly 40 Million blocks per year.
-#define BLOCKS_PER_YEAR                 uint64_t(40 * MILLION)                                       // 40 Million blocks per year.
+#define BLOCKS_PER_YEAR                 uint64_t(40000000)                                           // 40 Million blocks per year.
 #define BLOCKS_PER_DAY                  uint64_t(fc::days(1).count() / BLOCK_INTERVAL.count())       // Approximately 109,589 Blocks per day.
 #define BLOCKS_PER_HOUR                 uint64_t(fc::hours(1).count() / BLOCK_INTERVAL.count())      // Approximately 4,466 Blocks per hour.
 #define BLOCKS_PER_MINUTE               uint64_t(fc::minutes(1).count() / BLOCK_INTERVAL.count())    // Approximately 76 Blocks per minute.
 
 #define ANNUAL_COIN_ISSUANCE            asset( 1 * BILLION * BLOCKCHAIN_PRECISION, SYMBOL_COIN)      // 1 Billion MEC issued per year
-#define BLOCK_REWARD                    (ANNUAL_COIN_ISSUANCE / BLOCKS_PER_YEAR)                     // 25 MeCoin issued per block
-#define MAX_ACCEPTED_PAYOUT             asset( BILLION * BLOCKCHAIN_PRECISION, SYMBOL_USD );         // Maximum amount accepted as a content reward payout
+#define BLOCK_REWARD                    (ANNUAL_COIN_ISSUANCE / BLOCKS_PER_YEAR)                     // 50 MeCoin issued per block
+#define MAX_ACCEPTED_PAYOUT             asset( BILLION * BLOCKCHAIN_PRECISION, SYMBOL_USD )          // Maximum amount accepted as a content reward payout
 
 #define PRODUCER_TICK_INTERVAL                fc::microseconds(197100)  // Time taken between block producer ticks, at which they check for producer new blocks
 #define MINING_TICK_INTERVAL                  fc::seconds(5)            // Time taken between mining ticks, updates the recent block after this time
@@ -127,11 +136,8 @@
 #define SHARE_CURATION_DECAY            (50)                  // Curation reward decays by 50% per 50 shares.
 #define COMMENT_CURATION_DECAY          (100)                 // Curation reward decays by 50% per 100 comments.
 
-#define OWNER_AUTH_RECOVERY_PERIOD                       fc::days(30)
-#define ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD       fc::days(1)
-#define DECLINE_VOTING_RIGHTS_DURATION                   fc::days(3)
-#define OWNER_UPDATE_LIMIT                               fc::minutes(60)
 #define OWNER_AUTH_HISTORY_TRACKING_START_BLOCK_NUM      1
+#define DECLINE_VOTING_RIGHTS_DURATION                   fc::days(3)
 #define MIN_COMMUNITY_CREATE_INTERVAL                    fc::days(1)
 #define MIN_ASSET_CREATE_INTERVAL                        fc::days(1)
 #define MIN_COMMUNITY_UPDATE_INTERVAL                    fc::minutes(10)

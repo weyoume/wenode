@@ -12,15 +12,18 @@ namespace node { namespace protocol {
 
    uint64_t block_header::num_from_id(const block_id_type& id)
    {
-      return fc::endian_reverse_u64(id._hash[0]);
+      return fc::endian_reverse_u64( id._hash[0] );
    }
 
    block_id_type signed_block_header::id()const
    {
-      auto tmp = fc::sha224::hash( *this );
-      tmp._hash[0] = fc::endian_reverse_u64(block_num());
-      static_assert( sizeof(tmp._hash[0]) == 4, "should be 4 bytes" );
+      fc::sha256 tmp = fc::sha256::hash( *this );
+      uint64_t block_number = fc::endian_reverse_u64( block_num() );
+      tmp._hash[0] = block_number;
+      static_assert( sizeof(tmp._hash[0]) == 8, "Should be 8 bytes" );
+
       block_id_type result;
+
       memcpy(result._hash, tmp._hash, std::min(sizeof(result), sizeof(tmp)));
       return result;
    }

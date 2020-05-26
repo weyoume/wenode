@@ -28,9 +28,15 @@ namespace node { namespace protocol {
       {
          validate_account_name( proxy );
       }
+
       if( recovery_account.size() )
       {
          validate_account_name( recovery_account );
+      }
+
+      if( reset_account.size() )
+      {
+         validate_account_name( reset_account );
       }
 
       FC_ASSERT( is_asset_type( fee, SYMBOL_COIN ), 
@@ -85,8 +91,6 @@ namespace node { namespace protocol {
       {
          FC_ASSERT( fc::is_utf8( json_private ), 
             "JSON Metadata not formatted in UTF8." );
-         FC_ASSERT( fc::json::is_valid( json_private ), 
-            "JSON Metadata not valid JSON." );
       }
 
       if( first_name.size() > 0 )
@@ -145,9 +149,20 @@ namespace node { namespace protocol {
             "Nationality is not formatted in UTF8." );
       }
 
+      FC_ASSERT( secure_public_key.size() < MAX_URL_LENGTH,
+         "Secure Public key is too long." );
       validate_public_key( secure_public_key );
+
+      FC_ASSERT( connection_public_key.size() < MAX_URL_LENGTH,
+         "Connection Public key is too long." );
       validate_public_key( connection_public_key );
+
+      FC_ASSERT( friend_public_key.size() < MAX_URL_LENGTH,
+         "Friend Public key is too long." );
       validate_public_key( friend_public_key );
+
+      FC_ASSERT( companion_public_key.size() < MAX_URL_LENGTH,
+         "Companion Public key is too long." );
       validate_public_key( companion_public_key );
    }
 
@@ -202,8 +217,6 @@ namespace node { namespace protocol {
       {
          FC_ASSERT( fc::is_utf8( json_private ), 
             "JSON Metadata not formatted in UTF8." );
-         FC_ASSERT( fc::json::is_valid( json_private ), 
-            "JSON Metadata not valid JSON." );
       }
 
       if( first_name.size() > 0 )
@@ -262,10 +275,33 @@ namespace node { namespace protocol {
             "Nationality is not formatted in UTF8." );
       }
 
-      validate_public_key( secure_public_key );
-      validate_public_key( connection_public_key );
-      validate_public_key( friend_public_key );
-      validate_public_key( companion_public_key );
+      if( secure_public_key.size() )
+      {
+         FC_ASSERT( secure_public_key.size() < MAX_URL_LENGTH,
+            "Secure Public key is too long." );
+         validate_public_key( secure_public_key );
+      }
+      
+      if( connection_public_key.size() )
+      {
+         FC_ASSERT( connection_public_key.size() < MAX_URL_LENGTH,
+            "Connection Public key is too long." );
+         validate_public_key( connection_public_key );
+      }
+
+      if( friend_public_key.size() )
+      {
+         FC_ASSERT( friend_public_key.size() < MAX_URL_LENGTH,
+            "Friend ublic key is too long." );
+         validate_public_key( friend_public_key );
+      }
+
+      if( companion_public_key.size() )
+      {
+         FC_ASSERT( companion_public_key.size() < MAX_URL_LENGTH,
+            "Companion Public key is too long." );
+         validate_public_key( companion_public_key );
+      }
    }
 
 
@@ -297,6 +333,8 @@ namespace node { namespace protocol {
       FC_ASSERT( officer_vote_threshold > 0, 
          "Officer vote threshold must be greater than 0.");
 
+      FC_ASSERT( business_public_key.size() < MAX_URL_LENGTH,
+         "Business Public key is too long." );
       validate_public_key( business_public_key );
    }
 
@@ -304,7 +342,11 @@ namespace node { namespace protocol {
    {
       validate_account_name( signatory );
       validate_account_name( account );
-      validate_account_name( interface );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
 
       FC_ASSERT( membership_type.size() < MAX_URL_LENGTH,
          "Membership Type is invalid." );
@@ -530,7 +572,10 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( follower );
       validate_account_name( following );
-      validate_account_name( interface );
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
       FC_ASSERT( follower != following, 
       "Account cannot follow itself." );
    }
@@ -540,14 +585,20 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( follower );
       validate_tag_name( tag );
-      validate_account_name( interface );
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
    }
 
    void activity_reward_operation::validate() const
    {
       validate_account_name( signatory );
       validate_account_name( account );
-      validate_account_name( interface );
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
       validate_permlink( permlink );
    }
 
@@ -925,10 +976,8 @@ namespace node { namespace protocol {
 
       uint32_t sum = 0;
 
-      FC_ASSERT( beneficiaries.size(), 
-         "Must specify at least one beneficiary" );
       FC_ASSERT( beneficiaries.size() < 128, 
-         "Cannot specify more than 127 beneficiaries." ); // Require size serializtion fits in one byte.
+         "Cannot specify more than 127 beneficiaries." ); // Require size serialization fits in one byte.
 
       for( size_t i = 1; i < beneficiaries.size(); i++ )
       {
@@ -947,7 +996,6 @@ namespace node { namespace protocol {
    {
       validate_account_name( signatory );
       validate_account_name( author );
-      validate_account_name( interface );
       validate_permlink( parent_permlink );
       validate_permlink( permlink );
       options.validate();
@@ -955,6 +1003,11 @@ namespace node { namespace protocol {
       if( community.size() )
       {
          validate_community_name( community );
+      }
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
       }
 
       FC_ASSERT( fc::is_utf8( body ),
@@ -980,39 +1033,44 @@ namespace node { namespace protocol {
             "Comment rejected: Magnet size is too large." );
       }
 
-      FC_ASSERT( url.size() < MAX_URL_LENGTH,
-         "URL is too long." );
-      FC_ASSERT( fc::is_utf8( url ),
-         "URL is not formatted in UTF8." );
-      if( url.size() > 0 )
+      if( url.size() )
       {
+         FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL is too long." );
+         FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
          validate_url( url );
       }
 
       for( auto item : tags )
       {
-         FC_ASSERT( item.size() < MAX_BODY_SIZE,
-            "Comment rejected: Tags size is too large." );
+         FC_ASSERT( item.size() < MAX_URL_LENGTH,
+            "Tag: ${t} is too long.",("t", item) );
+         validate_tag_name( item );
       }
-      
-      FC_ASSERT( json.size() < MAX_BODY_SIZE, 
-         "Comment rejected: JSON size is too large." );
-
-      FC_ASSERT( fc::is_utf8( json ), 
-         "Comment rejected: JSON is not valid UTF8" );
 
       if( parent_author.size() )
       {
          validate_account_name( parent_author );
       }
 
-      if( json.size() > 0 )
+      if( json.size() )
       {
-         FC_ASSERT( fc::json::is_valid(json), "JSON Metadata not valid JSON" );
+         FC_ASSERT( json.size() < MAX_BODY_SIZE, 
+         "Comment rejected: JSON size is too large." );
+         FC_ASSERT( fc::is_utf8( json ), 
+         "Comment rejected: JSON is not valid UTF8" );
+         FC_ASSERT( fc::json::is_valid(json), 
+         "JSON Metadata not valid JSON" );
       }
 
-      FC_ASSERT( public_key.size() < MAX_STRING_LENGTH,
-         "Comment rejected: Title size is too large." );
+      if( public_key.size() )
+      {
+         FC_ASSERT( public_key.size() < MAX_URL_LENGTH,
+         "Comment Public key is too long." );
+         validate_public_key( public_key );
+      }
+
       FC_ASSERT( latitude <= 90 && latitude >= -90,
          "Latitude must be between +-90 degrees." );
       FC_ASSERT( longitude <= 180 && longitude >= -180,
@@ -1059,7 +1117,12 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( voter );
       validate_account_name( author );
-      validate_account_name( interface );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
       FC_ASSERT( abs(weight) <= PERCENT_100, 
          "Weight is not a valid percentage (0 - 10000)" );
       validate_permlink( permlink );
@@ -1070,7 +1133,12 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( viewer );
       validate_account_name( author );
-      validate_account_name( interface );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
       validate_account_name( supernode );
       validate_permlink( permlink );
    }
@@ -1080,7 +1148,12 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( sharer );
       validate_account_name( author );
-      validate_account_name( interface );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
       if( community.valid() )
       {
          validate_community_name( *community );
@@ -1270,8 +1343,6 @@ namespace node { namespace protocol {
       {
          FC_ASSERT( fc::is_utf8( json_private ),
             "JSON Metadata not formatted in UTF8." );
-         FC_ASSERT( fc::json::is_valid( json_private ),
-            "JSON Metadata not valid JSON." );
       }
 
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
@@ -1282,12 +1353,16 @@ namespace node { namespace protocol {
          "URL is too long." );
       FC_ASSERT( fc::is_utf8( url ),
          "URL is not formatted in UTF8." );
+
       if( url.size() > 0 )
       {
          validate_url( url );
       }
-      FC_ASSERT( community_public_key.size() < MAX_STRING_LENGTH,
-         "Community public key is too long." );
+
+      FC_ASSERT( community_public_key.size() < MAX_URL_LENGTH,
+         "Community Public key is too long." );
+      validate_public_key( community_public_key );
+      
       FC_ASSERT( max_rating >= 1 && max_rating <= 9, 
          "Post Max Rating level should be between 1 and 9" );
    }
@@ -1310,8 +1385,6 @@ namespace node { namespace protocol {
       {
          FC_ASSERT( fc::is_utf8( json_private ),
             "JSON Metadata not formatted in UTF8." );
-         FC_ASSERT( fc::json::is_valid( json_private ),
-            "JSON Metadata not valid JSON." );
       }
 
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
@@ -1326,6 +1399,9 @@ namespace node { namespace protocol {
       {
          validate_url( url );
       }
+
+      FC_ASSERT( community_public_key.size() < MAX_URL_LENGTH,
+         "Community public key is too long." );
       validate_public_key( community_public_key );
    }
 
@@ -1430,7 +1506,12 @@ namespace node { namespace protocol {
    {
       validate_account_name( signatory );
       validate_account_name( account );
-      validate_account_name( interface );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
       validate_community_name( community );
    }
 
@@ -1536,7 +1617,12 @@ namespace node { namespace protocol {
    {
       validate_account_name( signatory );
       validate_account_name( account );
-      validate_account_name( interface );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
       FC_ASSERT( campaign_id.size() < MAX_STRING_LENGTH,
          "Campaign ID is too long." );
       FC_ASSERT( campaign_id.size() > 0,
@@ -1726,7 +1812,14 @@ namespace node { namespace protocol {
    {
       validate_account_name( signatory );
       validate_account_name( account );
-      validate_account_name( interface );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
+      FC_ASSERT( node_public_key.size() < MAX_URL_LENGTH,
+         "Community public key is too long." );
       validate_public_key( node_public_key );
 
       for( auto n : node_types )
@@ -1764,8 +1857,6 @@ namespace node { namespace protocol {
       {
          FC_ASSERT( fc::is_utf8( json_private ),
             "JSON Metadata not formatted in UTF8." );
-         FC_ASSERT( fc::json::is_valid( json_private ),
-            "JSON Metadata not valid JSON." );
       }
    }
 
@@ -1776,7 +1867,14 @@ namespace node { namespace protocol {
       validate_account_name( account );
       validate_account_name( from_node_account );
       validate_account_name( to_node_account );
-      validate_account_name( interface );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
+      FC_ASSERT( edge_public_key.size() < MAX_URL_LENGTH,
+         "Community public key is too long." );
       validate_public_key( edge_public_key );
 
       for( auto n : edge_types )
@@ -1825,8 +1923,6 @@ namespace node { namespace protocol {
       {
          FC_ASSERT( fc::is_utf8( json_private ),
             "JSON Metadata not formatted in UTF8." );
-         FC_ASSERT( fc::json::is_valid( json_private ),
-            "JSON Metadata not valid JSON." );
       }
    }
 
@@ -1834,7 +1930,12 @@ namespace node { namespace protocol {
    {
       validate_account_name( signatory );
       validate_account_name( account );
-      validate_account_name( interface );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
       validate_account_name( node_type );
 
       FC_ASSERT( graph_privacy.size() < MAX_URL_LENGTH,
@@ -1870,7 +1971,12 @@ namespace node { namespace protocol {
    {
       validate_account_name( signatory );
       validate_account_name( account );
-      validate_account_name( interface );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
       validate_account_name( edge_type );
 
       FC_ASSERT( graph_privacy.size() < MAX_URL_LENGTH,
@@ -2751,7 +2857,12 @@ namespace node { namespace protocol {
    void limit_order_operation::validate()const
    {
       validate_account_name( signatory );
-      validate_account_name( interface );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
       validate_account_name( owner );
 
       FC_ASSERT( amount_to_sell.symbol == exchange_rate.base.symbol,
@@ -2773,7 +2884,12 @@ namespace node { namespace protocol {
    void margin_order_operation::validate()const
    {
       validate_account_name( signatory );
-      validate_account_name( interface );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
       validate_account_name( owner );
       
       FC_ASSERT( amount_to_borrow.amount > 0, 
@@ -2831,7 +2947,11 @@ namespace node { namespace protocol {
    {
       validate_account_name( signatory );
       validate_account_name( owner );
-      validate_account_name( interface );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
 
       FC_ASSERT( amount_to_sell.symbol == limit_close_price.base.symbol,
          "Sell asset must be the base of the price" );
@@ -2853,7 +2973,12 @@ namespace node { namespace protocol {
    void call_order_operation::validate()const
    {
       validate_account_name( signatory );
-      validate_account_name( interface );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
       validate_account_name( owner );
 
       FC_ASSERT( is_valid_symbol( collateral.symbol ),
@@ -2872,7 +2997,11 @@ namespace node { namespace protocol {
    {
       validate_account_name( signatory );
       validate_account_name( owner );
-      validate_account_name( interface );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
 
       FC_ASSERT( order_id.size() < MAX_STRING_LENGTH,
          "Order ID is too long." );
@@ -2914,7 +3043,11 @@ namespace node { namespace protocol {
    {
       validate_account_name( signatory );
       validate_account_name( account );
-      validate_account_name( interface );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
 
       FC_ASSERT( amount.amount >= 0,
          "Amount must be greater than or equal to zero." );
@@ -3028,11 +3161,11 @@ namespace node { namespace protocol {
 
       for( asset_symbol_type a : outcome_assets )
       {
-         FC_ASSERT( is_valid_symbol( a ),
-            "Symbol ${symbol} is not a valid symbol", ("symbol", a) );
-         asset_set.insert( a );
          FC_ASSERT( a != INVALID_OUTCOME_SYMBOL,
-            "Symbol ${symbol} is not a valid symbol", ("symbol", a) );
+            "Symbol ${symbol} is not a valid symbol", ("symbol", prediction_symbol+"."+a) );
+         FC_ASSERT( is_valid_symbol( prediction_symbol+"."+a ),
+            "Symbol ${symbol} is not a valid symbol", ("symbol", prediction_symbol+"."+a) );
+         asset_set.insert( prediction_symbol+"."+a );
       }
 
       FC_ASSERT( asset_set.size() == outcome_assets.size(),
@@ -3198,11 +3331,11 @@ namespace node { namespace protocol {
 
       FC_ASSERT( is_valid_symbol( block_reward.symbol ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", block_reward.symbol) );
-      FC_ASSERT( block_reward.amount > 0,
-         "Block reward must be greater than zero." );
+      FC_ASSERT( block_reward.amount >= 0,
+         "Block reward must be greater than or equal to zero." );
       FC_ASSERT( block_reward_reduction_percent <= PERCENT_100,
          "Block Reward reduction percent must be between 0 and 100%." );
-      FC_ASSERT( block_reward_reduction_days > 0,
+      FC_ASSERT( block_reward_reduction_days >= 0,
          "Block Reward reduction days must be greater than 0." );
       FC_ASSERT( content_reward_percent <= PERCENT_100,
          "Content reward percent must be between 0 and 100%." );
@@ -3241,8 +3374,8 @@ namespace node { namespace protocol {
 
       FC_ASSERT( feed_lifetime >= MIN_FEED_LIFETIME,
          "Feed lifetime must be greater than network minimum." );
-      FC_ASSERT( minimum_feeds > 0,
-         "Minimum Feeds must be greater than 0." );
+      FC_ASSERT( minimum_feeds >= 0,
+         "Minimum Feeds must be greater than or equal to 0." );
       FC_ASSERT( asset_settlement_delay >= MIN_SETTLEMENT_DELAY,
          "Force Settlement delay must be greater than network minimum." );
       FC_ASSERT( asset_settlement_offset_percent <= PERCENT_100,

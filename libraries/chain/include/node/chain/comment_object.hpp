@@ -98,7 +98,7 @@ namespace node { namespace chain {
 
          time_point                        last_payout;                         ///< The last time that the post received a content reward payout
 
-         share_type                        author_reputation;                   ///< Used to measure author lifetime rewards, relative to other accounts.
+         share_type                        author_reputation = 0;               ///< Used to measure author lifetime rewards, relative to other accounts.
 
          uint16_t                          depth = 0;                           ///< Used to track max nested depth
 

@@ -56,34 +56,36 @@ class debug_node_plugin : public node::app::plugin
          // this was a method on database in Graphene
          chain::database& db = database();
          chain::block_id_type head_id = db.head_block_id();
-         auto it = _debug_updates.find( head_id );
-         if( it == _debug_updates.end() )
-            it = _debug_updates.emplace( head_id, std::vector< std::function< void( chain::database& ) > >() ).first;
-         it->second.emplace_back( callback );
+
+         auto itr = _debug_updates.find( head_id );
+
+         if( itr == _debug_updates.end() )
+         {
+            itr = _debug_updates.emplace( head_id, std::vector< std::function< void( chain::database& ) > >() ).first;
+         }
+            
+         itr->second.emplace_back( callback );
 
          fc::optional<chain::signed_block> head_block = db.fetch_block_by_id( head_id );
-         FC_ASSERT( head_block.valid() );
+         FC_ASSERT( head_block.valid(), 
+            "Head Block is not valid: ${b}", ("b",head_block) );
 
          // What the last block does has been changed by adding to node_property_object, so we have to re-apply it
          db.pop_block();
          db.push_block( *head_block, skip );
       }
 
-
       uint32_t debug_generate_blocks(
-         const std::string& debug_key,
          uint32_t count,
          uint32_t skip = node::chain::database::skip_nothing,
          uint32_t miss_blocks = 0,
-         private_key_storage* key_storage = nullptr
-         );
+         private_key_storage* key_storage = nullptr );
+
       uint32_t debug_generate_blocks_until(
-         const std::string& debug_key,
          const fc::time_point& head_block_time,
          bool generate_sparsely,
          uint32_t skip = node::chain::database::skip_nothing,
-         private_key_storage* key_storage = nullptr
-         );
+         private_key_storage* key_storage = nullptr );
 
       void set_json_object_stream( const std::string& filename );
       void flush_json_object_stream();

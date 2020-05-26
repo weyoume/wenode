@@ -229,14 +229,15 @@ namespace node { namespace chain {
    {
       try
       {
-      optional< signed_block > b;
-      uint64_t pos = get_block_pos( block_num );
-      if( pos != npos )
-      {
-         b = read_block( pos ).first;
-         FC_ASSERT( b->block_num() == block_num , "Wrong block was read from block log.", ( "returned", b->block_num() )( "expected", block_num ));
-      }
-      return b;
+         optional< signed_block > b;
+         uint64_t pos = get_block_pos( block_num );
+         if( pos != npos )
+         {
+            b = read_block( pos ).first;
+            FC_ASSERT( b->block_num() == block_num, 
+               "Wrong block was read from block log.", ( "returned", b->block_num() )( "expected", block_num ));
+         }
+         return b;
       }
       FC_LOG_AND_RETHROW()
    }

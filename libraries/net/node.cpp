@@ -117,13 +117,13 @@ namespace graphene { namespace net {
 
         // for network performance stats
         message_propagation_data propagation_data;
-        fc::uint160_t     message_contents_hash; // hash of whatever the message contains (if it's a transaction, this is the transaction id, if it's a block, it's the block_id)
+        fc::sha256     message_contents_hash; // hash of whatever the message contains (if it's a transaction, this is the transaction id, if it's a block, it's the block_id)
 
         message_info( const message_hash_type& message_hash,
                       const message&           message_body,
                       uint32_t                 block_clock_when_received,
                       const message_propagation_data& propagation_data,
-                      fc::uint160_t            message_contents_hash ) :
+                      fc::sha256            message_contents_hash ) :
           message_hash( message_hash ),
           message_body( message_body ),
           block_clock_when_received( block_clock_when_received ),
@@ -136,7 +136,7 @@ namespace graphene { namespace net {
             bmi::indexed_by< bmi::ordered_unique< bmi::tag<message_hash_index>,
                                                   bmi::member<message_info, message_hash_type, &message_info::message_hash> >,
                              bmi::ordered_non_unique< bmi::tag<message_contents_hash_index>,
-                                                      bmi::member<message_info, fc::uint160_t, &message_info::message_contents_hash> >,
+                                                      bmi::member<message_info, fc::sha256, &message_info::message_contents_hash> >,
                              bmi::ordered_non_unique< bmi::tag<block_clock_index>,
                                                       bmi::member<message_info, uint32_t, &message_info::block_clock_when_received> > >
         > message_cache_container;
@@ -151,9 +151,9 @@ namespace graphene { namespace net {
       {}
       void block_accepted();
       void cache_message( const message& message_to_cache, const message_hash_type& hash_of_message_to_cache,
-                        const message_propagation_data& propagation_data, const fc::uint160_t& message_content_hash );
+                        const message_propagation_data& propagation_data, const fc::sha256& message_content_hash );
       message get_message( const message_hash_type& hash_of_message_to_lookup );
-      message_propagation_data get_message_propagation_data( const fc::uint160_t& hash_of_message_contents_to_lookup ) const;
+      message_propagation_data get_message_propagation_data( const fc::sha256& hash_of_message_contents_to_lookup ) const;
       size_t size() const { return _message_cache.size(); }
     };
 
@@ -168,7 +168,7 @@ namespace graphene { namespace net {
     void blockchain_tied_message_cache::cache_message( const message& message_to_cache,
                                                      const message_hash_type& hash_of_message_to_cache,
                                                      const message_propagation_data& propagation_data,
-                                                     const fc::uint160_t& message_content_hash )
+                                                     const fc::sha256& message_content_hash )
     {
       _message_cache.insert( message_info(hash_of_message_to_cache,
                                          message_to_cache,
@@ -186,9 +186,9 @@ namespace graphene { namespace net {
       FC_THROW_EXCEPTION(  fc::key_not_found_exception, "Requested message not in cache" );
     }
 
-    message_propagation_data blockchain_tied_message_cache::get_message_propagation_data( const fc::uint160_t& hash_of_message_contents_to_lookup ) const
+    message_propagation_data blockchain_tied_message_cache::get_message_propagation_data( const fc::sha256& hash_of_message_contents_to_lookup ) const
     {
-      if( hash_of_message_contents_to_lookup != fc::uint160_t() )
+      if( hash_of_message_contents_to_lookup != fc::sha256() )
       {
         message_cache_container::index<message_contents_hash_index>::type::const_iterator iter =
            _message_cache.get<message_contents_hash_index>().find(hash_of_message_contents_to_lookup );
@@ -358,7 +358,7 @@ namespace graphene { namespace net { namespace detail {
 
       bool has_item( const net::item_id& id ) override;
       void handle_message( const message& ) override;
-      bool handle_block( const graphene::net::block_message& block_message, bool sync_mode, std::vector<fc::uint160_t>& contained_transaction_message_ids ) override;
+      bool handle_block( const graphene::net::block_message& block_message, bool sync_mode, std::vector<fc::sha256>& contained_transaction_message_ids ) override;
       void handle_transaction( const graphene::net::trx_message& transaction_message ) override;
       std::vector<item_hash_t> get_block_ids(const std::vector<item_hash_t>& blockchain_synopsis,
                                              uint32_t& remaining_item_count,
@@ -368,7 +368,7 @@ namespace graphene { namespace net { namespace detail {
                                                        uint32_t number_of_blocks_after_reference_point) override;
       void     sync_status( uint32_t item_type, uint32_t item_count ) override;
       void     connection_count_changed( uint32_t c ) override;
-      uint32_t get_block_number(const item_hash_t& block_id) override;
+      uint64_t get_block_number(const item_hash_t& block_id) override;
       fc::time_point get_block_time(const item_hash_t& block_id) override;
       fc::time_point get_blockchain_now() override;
       item_hash_t get_head_block_id() const override;
@@ -3054,7 +3054,7 @@ namespace graphene { namespace net { namespace detail {
 
       try
       {
-        std::vector<fc::uint160_t> contained_transaction_message_ids;
+        std::vector<fc::sha256> contained_transaction_message_ids;
         fc_ilog(fc::logger::get("sync"),
                 "p2p pushing sync block #${block_num} ${block_hash}",
                 ("block_num", block_message_to_send.block.block_num())
@@ -3412,7 +3412,7 @@ namespace graphene { namespace net { namespace detail {
         if (std::find(_most_recent_blocks_accepted.begin(), _most_recent_blocks_accepted.end(),
                       block_message_to_process.block_id) == _most_recent_blocks_accepted.end())
         {
-          std::vector<fc::uint160_t> contained_transaction_message_ids;
+          std::vector<fc::sha256> contained_transaction_message_ids;
           _message_ids_currently_being_processed.insert(message_hash);
           fc_ilog(fc::logger::get("sync"),
                   "p2p pushing block #${block_num} ${block_hash} from ${peer} (message_id was ${id})",
@@ -4978,7 +4978,7 @@ namespace graphene { namespace net { namespace detail {
     void node_impl::broadcast( const message& item_to_broadcast, const message_propagation_data& propagation_data )
     {
       VERIFY_CORRECT_THREAD();
-      fc::uint160_t hash_of_message_contents;
+      fc::sha256 hash_of_message_contents;
       if( item_to_broadcast.msg_type == graphene::net::block_message_type )
       {
         graphene::net::block_message block_message_to_broadcast = item_to_broadcast.as<graphene::net::block_message>();
@@ -5376,7 +5376,7 @@ namespace graphene { namespace net { namespace detail {
           destination_node->delegate->handle_transaction(message_to_deliver.as<trx_message>());
         else if (message_to_deliver.msg_type == block_message_type)
         {
-          std::vector<fc::uint160_t> contained_transaction_message_ids;
+          std::vector<fc::sha256> contained_transaction_message_ids;
           destination_node->delegate->handle_block(message_to_deliver.as<block_message>(), false, contained_transaction_message_ids);
         }
         else
@@ -5523,7 +5523,7 @@ namespace graphene { namespace net { namespace detail {
       INVOKE_AND_COLLECT_STATISTICS(handle_message, message_to_handle);
     }
 
-    bool statistics_gathering_node_delegate_wrapper::handle_block( const graphene::net::block_message& block_message, bool sync_mode, std::vector<fc::uint160_t>& contained_transaction_message_ids)
+    bool statistics_gathering_node_delegate_wrapper::handle_block( const graphene::net::block_message& block_message, bool sync_mode, std::vector<fc::sha256>& contained_transaction_message_ids)
     {
       INVOKE_AND_COLLECT_STATISTICS(handle_block, block_message, sync_mode, contained_transaction_message_ids);
     }
@@ -5560,7 +5560,7 @@ namespace graphene { namespace net { namespace detail {
       INVOKE_AND_COLLECT_STATISTICS(connection_count_changed, c);
     }
 
-    uint32_t statistics_gathering_node_delegate_wrapper::get_block_number(const item_hash_t& block_id)
+    uint64_t statistics_gathering_node_delegate_wrapper::get_block_number(const item_hash_t& block_id)
     {
       // this function doesn't need to block,
       ASSERT_TASK_NOT_PREEMPTED();

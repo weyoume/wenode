@@ -288,8 +288,6 @@ namespace node { namespace chain {
 
          account_name_type              issuer;                        ///< The asset issuing account. 
 
-         share_type                     total_supply = 0;              ///< The total outstanding supply of the asset.
-
          share_type                     liquid_supply = 0;             ///< The current liquid supply of the asset.
 
          share_type                     staked_supply = 0;             ///< The current staked supply of the asset.
@@ -326,56 +324,43 @@ namespace node { namespace chain {
 
          asset                          get_confidential_supply()const { return asset( confidential_supply, symbol ); }
 
-         asset                          get_total_supply()const { return asset( total_supply, symbol ); }
+         asset                          get_total_supply()const { return asset( ( liquid_supply + reward_supply + staked_supply + savings_supply + vesting_supply + pending_supply + confidential_supply ), symbol ); }
+
+         asset                          get_account_balance_supply()const { return asset( ( liquid_supply + reward_supply + staked_supply + savings_supply ), symbol ); }
 
          void                           adjust_liquid_supply( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             liquid_supply += delta.amount;
-            total_supply += delta.amount;
             FC_ASSERT( liquid_supply >= 0 );
-            FC_ASSERT( total_supply >= 0 );
-
          } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
          void                          adjust_staked_supply( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             staked_supply += delta.amount;
-            total_supply += delta.amount;
             FC_ASSERT( staked_supply >= 0 );
-            FC_ASSERT( total_supply >= 0 );
-            
          } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
          void                          adjust_reward_supply( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             reward_supply += delta.amount;
-            total_supply += delta.amount;
             FC_ASSERT( reward_supply >= 0 );
-            FC_ASSERT( total_supply >= 0 );
-            
          } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
          void                          adjust_savings_supply( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             savings_supply += delta.amount;
-            total_supply += delta.amount;
             FC_ASSERT( savings_supply >= 0 );
-            FC_ASSERT( total_supply >= 0 );
-            
          } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
          void                          adjust_vesting_supply( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             vesting_supply += delta.amount;
-            total_supply += delta.amount;
             FC_ASSERT( vesting_supply >= 0 );
-            FC_ASSERT( total_supply >= 0 );
-            
          } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
          void                          adjust_delegated_supply( const asset& delta )    ///< Not included in total supply
@@ -383,7 +368,6 @@ namespace node { namespace chain {
             FC_ASSERT( delta.symbol == symbol );
             delegated_supply += delta.amount;
             FC_ASSERT( delegated_supply >= 0 );
-            
          } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
          void                          adjust_receiving_supply( const asset& delta )    ///< Not included in total supply
@@ -391,32 +375,24 @@ namespace node { namespace chain {
             FC_ASSERT( delta.symbol == symbol );
             receiving_supply += delta.amount;
             FC_ASSERT( receiving_supply >= 0 );
-            
          } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
          void                          adjust_pending_supply( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             pending_supply += delta.amount;
-            total_supply += delta.amount;
             FC_ASSERT( pending_supply >= 0 );
-            FC_ASSERT( total_supply >= 0 );
-            
          } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
          void                          adjust_confidential_supply( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             confidential_supply += delta.amount;
-            total_supply += delta.amount;
             FC_ASSERT( confidential_supply >= 0 );
-            FC_ASSERT( total_supply >= 0 );
-            
          } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
 
          void                          clear_supply()     ///< Clears the entire asset supply, used for expiring assets - options, prediction assets
          {
-            total_supply = 0;
             liquid_supply = 0;
             staked_supply = 0;
             reward_supply = 0;
@@ -2140,11 +2116,11 @@ FC_REFLECT( node::chain::asset_dynamic_data_object,
          (id)
          (symbol)
          (issuer)
-         (total_supply)
          (liquid_supply)
          (staked_supply)
          (reward_supply)
          (savings_supply)
+         (vesting_supply)
          (delegated_supply)
          (receiving_supply)
          (pending_supply)

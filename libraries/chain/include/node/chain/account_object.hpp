@@ -76,17 +76,17 @@ namespace node { namespace chain {
 
          public_key_type                  companion_public_key;                  ///< Key used for encrypting posts for companion level visibility.
 
-         account_name_type                proxy;                                 ///< Account that votes on behalf of this account
+         account_name_type                proxy = PROXY_TO_SELF_ACCOUNT;         ///< Account that votes on behalf of this account.
 
          flat_set< account_name_type >    proxied;                               ///< Accounts that have set this account to be their proxy voter.
 
-         account_name_type                registrar;                             ///< The name of the account that created the account;
+         account_name_type                registrar;                             ///< The name of the account that created the account.
 
-         account_name_type                referrer;                              ///< The name of the account that originally referred the account to be created;
+         account_name_type                referrer;                              ///< The name of the account that originally referred the account to be created.
 
-         account_name_type                recovery_account;                      ///< Account that can request recovery using a recent owner key if compromised.  
+         account_name_type                recovery_account = NULL_ACCOUNT;       ///< Account that can request recovery using a recent owner key if compromised.  
 
-         account_name_type                reset_account;                         ///< Account that has the ability to reset owner authority after specified days of inactivity.
+         account_name_type                reset_account = NULL_ACCOUNT;          ///< Account that has the ability to reset owner authority after specified days of inactivity.
 
          account_name_type                membership_interface = NULL_ACCOUNT;   ///< Account of the last interface to sell a membership to the account.
 
@@ -146,7 +146,7 @@ namespace node { namespace chain {
 
          time_point                       membership_expiration;                 ///< Time that the account has its current membership subscription until.
 
-         time_point                       last_account_update;                   ///< Time that the account's details were last updated.
+         time_point                       last_updated;                          ///< Time that the account's details were last updated.
 
          time_point                       last_vote_time;                        ///< Time that the account last voted on a comment.
 
@@ -162,19 +162,19 @@ namespace node { namespace chain {
 
          time_point                       last_activity_reward;                  ///< Time that the account last claimed an activity reward. 
 
-         time_point                       last_account_recovery;
+         time_point                       last_account_recovery;                 ///< Time that the account was last recovered.
 
-         time_point                       last_community_created;
+         time_point                       last_community_created;                ///< Time that the account last created a community.
 
-         time_point                       last_asset_created;
+         time_point                       last_asset_created;                    ///< Time that the account last created an asset.
 
-         bool                             mined = true;
+         bool                             mined;                                 ///< True if the account was mined by a mining producer.
 
-         bool                             revenue_share = false;
+         bool                             revenue_share;                         ///< True if the account is sharing revenue.
 
-         bool                             can_vote = true;
+         bool                             can_vote;                              ///< True if the account can vote, false if voting has been declined.
 
-         bool                             active = true;
+         bool                             active;                                ///< True when the account is active, false to deactivate account.
    };
 
 
@@ -403,9 +403,9 @@ namespace node { namespace chain {
 
          flat_map< asset_symbol_type, uint16_t >         credit_revenue_shares;      ///< Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
 
-         time_point                                      created;                    ///< Time of verification.
+         time_point                                      created;                    ///< Time that business account object was created.
 
-         time_point                                      last_updated;               ///< Time that the verifcation was last updated. 
+         time_point                                      last_updated;               ///< Time that the business account object was last updated. 
 
          bool is_authorized_request( const account_name_type& account, const account_permission_object& obj )const      ///< Determines Permission to request to join.
          {
@@ -767,15 +767,15 @@ namespace node { namespace chain {
 
          id_type                   id;
 
-         account_name_type         account;               ///< Username of the account, voting for the executive
+         account_name_type         account;               ///< Username of the account, voting for the executive.
          
          account_name_type         business_account;      ///< Name of the referred business account.
 
-         account_name_type         executive_account;     ///< Name of the executive account 
+         account_name_type         executive_account;     ///< Name of the executive account.
 
          executive_role_type       role;                  ///< Role voted in favor of.
 
-         uint16_t                  vote_rank;             ///< The rank of the executive vote.
+         uint16_t                  vote_rank = 1;         ///< The rank of the executive vote.
    };
 
    class account_officer_vote_object : public object< account_officer_vote_object_type, account_officer_vote_object >
@@ -791,13 +791,13 @@ namespace node { namespace chain {
 
          id_type                                 id;
 
-         account_name_type                       account;             ///< Username of the account, voting for the officer
+         account_name_type                       account;             ///< Username of the account, voting for the officer.
          
          account_name_type                       business_account;    ///< Name of the referred business account.
 
          account_name_type                       officer_account;     ///< Name of the officer account.
 
-         uint16_t                                vote_rank;           ///< The rank of the officer vote.
+         uint16_t                                vote_rank = 1;       ///< The rank of the officer vote.
    };
 
    class account_member_request_object : public object< account_member_request_object_type, account_member_request_object >
@@ -900,8 +900,6 @@ namespace node { namespace chain {
 
          share_type                  receiving_balance;          ///< Balance that has been delegated to the account by other delegators.
 
-         share_type                  total_balance;              ///< The total of all balances.
-
          share_type                  stake_rate;                 ///< Amount of liquid balance that is being staked from the liquid balance to the staked balance. 
 
          time_point                  next_stake_time;            ///< time at which the stake rate will be transferred from liquid to staked.
@@ -936,7 +934,7 @@ namespace node { namespace chain {
          }
 
          asset                       get_savings_balance()const
-         { 
+         {
             return asset( savings_balance, symbol );
          }
 
@@ -952,7 +950,7 @@ namespace node { namespace chain {
 
          asset                       get_total_balance()const
          { 
-            return asset( total_balance, symbol );
+            return asset( ( liquid_balance + reward_balance + staked_balance + savings_balance ), symbol );
          }
 
          asset                       get_voting_power()const
@@ -962,53 +960,47 @@ namespace node { namespace chain {
 
          void                        adjust_liquid_balance( const asset& delta )
          { try {
-            FC_ASSERT( delta.symbol == symbol );
+            FC_ASSERT( delta.symbol == symbol, 
+               "Delta asset: ${s} is not the correct asset for account balance ${b}",("s",delta.symbol)("b",symbol) );
             liquid_balance += delta.amount;
-            total_balance += delta.amount;
-            FC_ASSERT( liquid_balance >= 0 );
-            FC_ASSERT( total_balance >= 0 );
-         } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
+            FC_ASSERT( liquid_balance >= 0,
+               "Liquid balance cannot go below 0, balance: ${b}",("b",liquid_balance) );
+         } FC_CAPTURE_AND_RETHROW( (delta) ) }
 
          void                        adjust_staked_balance( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             staked_balance += delta.amount;
-            total_balance += delta.amount;
             FC_ASSERT( staked_balance >= 0 );
-            FC_ASSERT( total_balance >= 0 );
-         } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
+         } FC_CAPTURE_AND_RETHROW( (delta) ) }
 
          void                        adjust_reward_balance( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             reward_balance += delta.amount;
-            total_balance += delta.amount;
             FC_ASSERT( reward_balance >= 0 );
-            FC_ASSERT( total_balance >= 0 );
-         } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
+         } FC_CAPTURE_AND_RETHROW( (delta) ) }
 
          void                        adjust_savings_balance( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             savings_balance += delta.amount;
-            total_balance += delta.amount;
             FC_ASSERT( savings_balance >= 0 );
-            FC_ASSERT( total_balance >= 0 );
-         } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
+         } FC_CAPTURE_AND_RETHROW( (delta) ) }
 
          void                        adjust_delegated_balance( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             delegated_balance += delta.amount;
             FC_ASSERT( delegated_balance >= 0 );
-         } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
+         } FC_CAPTURE_AND_RETHROW( (delta) ) }
 
          void                        adjust_receiving_balance( const asset& delta )
          { try {
             FC_ASSERT( delta.symbol == symbol );
             receiving_balance += delta.amount;
             FC_ASSERT( receiving_balance >= 0 );
-         } FC_CAPTURE_AND_RETHROW( ( delta ) ) }
+         } FC_CAPTURE_AND_RETHROW( (delta) ) }
    };
 
 
@@ -2483,7 +2475,7 @@ FC_REFLECT( node::chain::account_object,
          (recurring_membership)
          (created)
          (membership_expiration)
-         (last_account_update)
+         (last_updated)
          (last_vote_time)
          (last_view_time)
          (last_share_time)
@@ -2608,7 +2600,6 @@ FC_REFLECT( node::chain::account_balance_object,
          (savings_balance)
          (delegated_balance)
          (receiving_balance)
-         (total_balance)
          (stake_rate)
          (next_stake_time)
          (to_stake)

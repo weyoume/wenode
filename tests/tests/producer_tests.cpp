@@ -33,6 +33,8 @@ BOOST_AUTO_TEST_CASE( producer_update_operation_tests )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Create new Producer" );
 
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
       ACTORS( (alice) );
 
       fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -49,8 +51,8 @@ BOOST_AUTO_TEST_CASE( producer_update_operation_tests )
       producer_update.signatory = "alice";
       producer_update.owner = "alice";
       producer_update.details = "My Details";
-      producer_update.url = "www.url.com";
-      producer_update.json = "{\"json\":\"valid\"}";
+      producer_update.url = "https://www.url.com";
+      producer_update.json = "{ \"valid\": true }";
       producer_update.latitude = -37.840935;
       producer_update.longitude = 144.946457;
 
@@ -92,8 +94,6 @@ BOOST_AUTO_TEST_CASE( producer_update_operation_tests )
       BOOST_REQUIRE( alice_producer.vote_count == 0 );
       BOOST_REQUIRE( alice_producer.mining_power == 0 );
       BOOST_REQUIRE( alice_producer.mining_count == 0 );
-      BOOST_REQUIRE( alice_producer.last_mining_update == now() );
-      BOOST_REQUIRE( alice_producer.last_pow_time == now() );
       BOOST_REQUIRE( alice_producer.recent_txn_stake_weight == 0 );
       BOOST_REQUIRE( alice_producer.last_txn_stake_weight_update == now() );
       BOOST_REQUIRE( alice_producer.accumulated_activity_stake == 0 );
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE( producer_update_operation_tests )
       BOOST_TEST_MESSAGE( "│   ├── Testing: Update existing Producer and chain properties" );
 
       producer_update.details = "My New Details";
-      producer_update.url = "www.newurl.com";
+      producer_update.url = "https://www.newurl.com";
       producer_update.json = "{\"json\":\"veryvalid\"}";
       producer_update.latitude = -38.840935;
       producer_update.longitude = 145.946457;
@@ -154,21 +154,17 @@ BOOST_AUTO_TEST_CASE( producer_update_operation_tests )
       BOOST_REQUIRE( alice_producer.vote_count == 0 );
       BOOST_REQUIRE( alice_producer.mining_power == 0 );
       BOOST_REQUIRE( alice_producer.mining_count == 0 );
-      BOOST_REQUIRE( alice_producer.last_mining_update == now() );
-      BOOST_REQUIRE( alice_producer.last_pow_time == now() );
       BOOST_REQUIRE( alice_producer.recent_txn_stake_weight == 0 );
       BOOST_REQUIRE( alice_producer.last_txn_stake_weight_update == now() );
       BOOST_REQUIRE( alice_producer.accumulated_activity_stake == 0 );
       BOOST_REQUIRE( alice_producer.total_missed == 0 );
       BOOST_REQUIRE( alice_producer.last_aslot == 0 );
-
       BOOST_REQUIRE( alice_producer.voting_virtual_last_update == 0 );
       BOOST_REQUIRE( alice_producer.voting_virtual_position == 0 );
       BOOST_REQUIRE( alice_producer.voting_virtual_scheduled_time == fc::uint128_t::max_value() );
       BOOST_REQUIRE( alice_producer.mining_virtual_last_update == 0 );
       BOOST_REQUIRE( alice_producer.mining_virtual_position == 0 );
       BOOST_REQUIRE( alice_producer.mining_virtual_scheduled_time == fc::uint128_t::max_value() );
-
       BOOST_REQUIRE( alice_producer.props.maximum_block_size == producer_update.props.maximum_block_size );
       BOOST_REQUIRE( alice_producer.props.credit_min_interest == producer_update.props.credit_variable_interest );
       BOOST_REQUIRE( alice_producer.props.credit_variable_interest == producer_update.props.credit_variable_interest );
@@ -190,6 +186,8 @@ BOOST_AUTO_TEST_CASE( proof_of_work_operation_test )
       BOOST_TEST_MESSAGE( "├── Testing: PROOF OF WORK" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Create proof of work" );
+
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       ACTORS( (alice) );
 
@@ -259,6 +257,8 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
       BOOST_TEST_MESSAGE( "├── Testing: VERIFY BLOCK OPERATION SEQUENCE" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Verify block" );
+
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 

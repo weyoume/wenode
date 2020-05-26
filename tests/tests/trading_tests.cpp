@@ -33,6 +33,8 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: creation of limit order" );
 
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
       fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -221,6 +223,8 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
       BOOST_TEST_MESSAGE( "├── Testing: MARGIN ORDER" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Creation sequence of margin order" );
+
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
@@ -596,6 +600,8 @@ BOOST_AUTO_TEST_CASE( auction_order_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Creation sequence of auction orderbook" );
 
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
       fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -780,6 +786,8 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
       BOOST_TEST_MESSAGE( "├── Testing: CALL ORDER" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: creation of call order" );
+
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
@@ -1074,6 +1082,8 @@ BOOST_AUTO_TEST_CASE( option_order_operation_test )
       BOOST_TEST_MESSAGE( "├── Testing: OPTION ORDER" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Creation sequence of option order" );
+
+      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 

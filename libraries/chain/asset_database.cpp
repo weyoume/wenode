@@ -39,6 +39,8 @@ using boost::container::flat_set;
 
 void database::process_asset_staking()
 {
+   // ilog( "Process Asset Staking" );
+
    const auto& unstake_idx = get_index< account_balance_index >().indices().get< by_next_unstake_time >();
    const auto& stake_idx = get_index< account_balance_index >().indices().get< by_next_stake_time >();
    const auto& vesting_idx = get_index< account_vesting_balance_index >().indices().get< by_vesting_time >();
@@ -186,6 +188,8 @@ void database::process_asset_staking()
 
 void database::process_recurring_transfers()
 {
+   // ilog( "Process Recurring Transfers" );
+
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = props.time;
    const auto& transfer_idx = get_index< transfer_recurring_index >().indices().get< by_next_transfer >();
@@ -244,6 +248,8 @@ void database::process_recurring_transfers()
 
 void database::process_savings_withdraws()
 {
+   // ilog( "Process Savings Withdraws" );
+
    const auto& idx = get_index< savings_withdraw_index >().indices().get< by_complete_from_request_id >();
    auto itr = idx.begin();
    time_point now = head_block_time();
@@ -280,6 +286,8 @@ void database::process_savings_withdraws()
 
 void database::process_escrow_transfers()
 {
+   // ilog( "Process Escrow Transfers" );
+
    const auto& escrow_acc_idx = get_index< escrow_index >().indices().get< by_acceptance_time >();
    auto escrow_acc_itr = escrow_acc_idx.lower_bound( false );
    time_point now = head_block_time();
@@ -313,6 +321,8 @@ void database::update_median_liquidity()
    if( (head_block_num() % MEDIAN_LIQUIDITY_INTERVAL_BLOCKS) != 0 )
       return;
 
+   ilog( "Update Median Liquidity" );
+
    const auto& liq_idx = get_index< asset_liquidity_pool_index >().indices().get< by_asset_pair>();
    auto liq_itr = liq_idx.begin();
 
@@ -322,8 +332,8 @@ void database::update_median_liquidity()
    while( liq_itr != liq_idx.end() )
    {
       const asset_liquidity_pool_object& pool = *liq_itr;
-      vector<price> day; 
-      vector<price> hour;
+      vector< price > day; 
+      vector< price > hour;
       day.reserve( day_history_window );
       hour.reserve( hour_history_window );
 
@@ -387,6 +397,8 @@ void database::process_bond_interest()
    if( (head_block_num() % BOND_COUPON_INTERVAL_BLOCKS) != 0 )
       return;
 
+   ilog( "Update Bond Interest" );
+
    const auto& bond_idx = get_index< asset_bond_data_index >().indices().get< by_symbol >();
    const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol >();
    auto bond_itr = bond_idx.begin();
@@ -404,7 +416,7 @@ void database::process_bond_interest()
       {
          const account_balance_object& balance = *balance_itr;
 
-         asset interest = asset( ( bond.value.amount * balance.total_balance * bond.coupon_rate_percent * ( now - balance.last_interest_time ).to_seconds() ) / fc::days(365).to_seconds(), bond.value.symbol );
+         asset interest = asset( ( bond.value.amount * balance.get_total_balance().amount * bond.coupon_rate_percent * ( now - balance.last_interest_time ).to_seconds() ) / fc::days(365).to_seconds(), bond.value.symbol );
          total_interest += interest;
 
          modify( balance, [&]( account_balance_object& b )
@@ -433,6 +445,8 @@ void database::process_bond_interest()
  */
 void database::process_bond_assets()
 { try {
+   // ilog( "Process Bond Assets" );
+
    time_point now = head_block_time();
    const auto& bond_idx = get_index< asset_bond_data_index >().indices().get< by_maturity >();
    const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol >();
@@ -446,7 +460,7 @@ void database::process_bond_assets()
       ++bond_itr;
 
       const asset_dynamic_data_object& bond_dyn_data = get_dynamic_data( bond.symbol );
-      asset total_principle = ( bond.value * bond_dyn_data.total_supply ) / BLOCKCHAIN_PRECISION;
+      asset total_principle = ( bond.value * bond_dyn_data.get_total_supply().amount ) / BLOCKCHAIN_PRECISION;
       asset issuer_liquid = get_liquid_balance( bond.business_account, bond.value.symbol );
       asset principle_remaining = total_principle;
 
@@ -469,7 +483,7 @@ void database::process_bond_assets()
       else
       {
          principle_remaining = issuer_liquid + bond.collateral_pool;
-         asset partial_value = principle_remaining / bond_dyn_data.total_supply;
+         asset partial_value = principle_remaining / bond_dyn_data.get_total_supply().amount;
 
          while( balance_itr != balance_idx.end() && 
             balance_itr->symbol == bond.symbol &&
@@ -508,6 +522,8 @@ void database::process_credit_buybacks()
 { try {
    if( (head_block_num() % CREDIT_BUYBACK_INTERVAL_BLOCKS) != 0 )
       return;
+
+   // ilog( "Process Credit Buybacks" );
 
    const auto& credit_idx = get_index< asset_credit_data_index >().indices().get< by_symbol >();
    auto credit_itr = credit_idx.begin();
@@ -554,6 +570,8 @@ void database::process_credit_interest()
    { 
       return; 
    }
+
+   // ilog( "Process Credit Interest" );
 
    time_point now = head_block_time();
    const auto& credit_idx = get_index< asset_credit_data_index >().indices().get< by_symbol >();
@@ -644,6 +662,8 @@ void database::process_stimulus_assets()
    { 
       return; 
    }
+
+   // ilog( "Process Stimulus Assets" );
 
    time_point now = head_block_time();
    const auto& stimulus_idx = get_index< asset_stimulus_data_index >().indices().get< by_expiration >();
@@ -792,6 +812,8 @@ void database::process_option_assets()
       return; 
    }
 
+   // ilog( "Process Option Assets" );
+
    time_point now = head_block_time();
    const auto& option_order_idx = get_index< option_order_index >().indices().get< by_expiration >();
    auto option_order_itr = option_order_idx.begin();
@@ -870,6 +892,9 @@ void database::process_option_assets()
  */
 void database::process_prediction_assets()
 { try {
+
+   // ilog( "Process Prediction Assets" );
+
    time_point now = head_block_time();
    const auto& prediction_pool_idx = get_index< asset_prediction_pool_index >().indices().get< by_resolution_time >();
    auto prediction_pool_itr = prediction_pool_idx.begin();
@@ -895,6 +920,7 @@ void database::process_prediction_assets()
  */
 void database::close_prediction_pool( const asset_prediction_pool_object& pool )
 { try {
+   ilog( "Close Prediction Pool: ${p}", ("p", pool.prediction_symbol) );
    const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol >();
    const auto& resolution_idx = get_index< asset_prediction_pool_resolution_index >().indices().get< by_outcome_symbol >();
    auto balance_itr = balance_idx.begin();
@@ -964,7 +990,7 @@ void database::close_prediction_pool( const asset_prediction_pool_object& pool )
    {
       const account_balance_object& balance = *balance_itr;
 
-      pool_split = asset( balance.total_balance, pool.collateral_symbol );
+      pool_split = asset( balance.get_total_balance().amount, pool.collateral_symbol );
       
       if( pool_split > collateral_remaining )
       {
@@ -999,6 +1025,8 @@ void database::clear_asset_balances( const asset_symbol_type& symbol )
 
    FC_ASSERT( asset_obj.is_temp_asset(),
       "Cannot clear asset balances of a non-temporary Asset." );
+
+   ilog( "Clear Asset Balances: ${s}", ("s", symbol ) );
 
    const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol >();
    const auto& limit_idx = get_index< limit_order_index >().indices().get< by_symbol >();
@@ -1069,6 +1097,8 @@ void database::process_unique_assets()
 { try {
    if( (head_block_num() % UNIQUE_INTERVAL_BLOCKS ) != 0 )    // Runs once per day
       return;
+
+   // ilog( "Process Unique Assets" );
 
    const auto& unique_idx = get_index< asset_unique_data_index >().indices().get< by_access_price >();
    const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol_stake >();
@@ -1147,6 +1177,8 @@ void database::process_asset_distribution()
    }
 
    time_point now = head_block_time();
+
+   // ilog( "Process Asset Distribution" );
 
    const auto& distribution_idx = get_index< asset_distribution_index >().indices().get< by_next_round_time >();
    const auto& balance_idx = get_index< asset_distribution_balance_index >().indices().get< by_symbol >();
@@ -1389,12 +1421,15 @@ void database::process_asset_distribution()
  */
 void database::clear_expired_delegations()
 {
+   ilog( "Clear Expired Delegations" );
+
    auto now = head_block_time();
    const auto& exp_idx = get_index< asset_delegation_expiration_index, by_expiration >();
    
    auto exp_itr = exp_idx.begin();
 
-   while( exp_itr != exp_idx.end() && exp_itr->expiration < now )
+   while( exp_itr != exp_idx.end() && 
+      exp_itr->expiration <= now )
    {
       const asset_delegation_expiration_object& exp = *exp_itr;
       ++exp_itr;
@@ -1675,13 +1710,13 @@ void database::adjust_reward_balance( const account_name_type& a, const asset& d
          ("b", to_pretty_string( asset(0, delta.symbol)))
          ("r", to_pretty_string( -delta)));
 
-      create<account_balance_object>( [&]( account_balance_object& abo) 
+      create<account_balance_object>( [&]( account_balance_object& abo)
       {
          abo.owner = a;
          abo.symbol = delta.symbol;
          abo.reward_balance = delta.amount;
       });
-      modify( asset_dyn_data, [&](asset_dynamic_data_object& addo) 
+      modify( asset_dyn_data, [&](asset_dynamic_data_object& addo)
       {
          addo.adjust_reward_supply(delta);
       });
@@ -2110,6 +2145,7 @@ share_type database::get_voting_power( const account_name_type& a, const price& 
    const account_balance_object* coin_ptr = find_account_balance( a, SYMBOL_COIN );
    const account_balance_object* equity_ptr = find_account_balance( a, SYMBOL_EQUITY );
    share_type voting_power = 0;
+   
    if( coin_ptr != nullptr )
    {
       voting_power += coin_ptr->get_voting_power().amount;
@@ -2118,6 +2154,9 @@ share_type database::get_voting_power( const account_name_type& a, const price& 
    {
       voting_power += ( equity_ptr->get_voting_power() * equity_coin_price ).amount;
    }
+
+   ilog( "Got Voting power of account: ${a} with power: ${p}", ("a", a)("p", voting_power ) );
+
    return voting_power;
 }
 
@@ -2131,7 +2170,7 @@ share_type database::get_proxied_voting_power( const account_object& a, const pr
    for( auto name : a.proxied )
    {
       voting_power += get_voting_power( name, equity_price );
-      voting_power += get_proxied_voting_power( name, equity_price );    // Recursively finds voting power of proxies
+      voting_power += get_proxied_voting_power( name, equity_price );    // Recursively finds voting power of proxies.
    }
    return voting_power;
 
@@ -2177,6 +2216,8 @@ string database::to_pretty_string( const asset& a )const
 
 void database::update_expired_feeds()
 { try {
+   ilog( "Update Expired Feeds" );
+
    const auto head_time = head_block_time();
 
    const auto& idx = get_index< asset_stablecoin_data_index >().indices().get< by_feed_expiration >();
@@ -2207,7 +2248,7 @@ void database::process_bids( const asset_stablecoin_data_object& bad )
    if( bad.current_feed.settlement_price.is_null() )       // Asset must have settlement price
    {
       return;
-   } 
+   }
 
    const asset_object& to_revive = get_asset( bad.symbol ); 
    const asset_dynamic_data_object& bdd = get_dynamic_data( bad.symbol );
@@ -2221,7 +2262,7 @@ void database::process_bids( const asset_stablecoin_data_object& bad )
    // Count existing bids and determine if enough bids have been made to 
    // Revive asset, entire supply should be covered.
 
-   while( covered < bdd.total_supply && 
+   while( covered < bdd.get_total_supply().amount && 
       bid_itr != bid_idx.end() && 
       bid_itr->debt.symbol == bad.symbol )
    {
@@ -2229,9 +2270,9 @@ void database::process_bids( const asset_stablecoin_data_object& bad )
 
       asset debt_in_bid = bid.debt;
 
-      if( debt_in_bid.amount > bdd.total_supply )
+      if( debt_in_bid.amount > bdd.get_total_supply().amount )
       {
-         debt_in_bid.amount = bdd.total_supply;
+         debt_in_bid.amount = bdd.get_total_supply().amount;
       }
          
       asset total_collateral = debt_in_bid * bad.settlement_price;
@@ -2249,23 +2290,23 @@ void database::process_bids( const asset_stablecoin_data_object& bad )
       ++bid_itr;
    }
 
-   if( covered < bdd.total_supply ) 
+   if( covered < bdd.get_total_supply().amount ) 
    {
       return;   // Supply not yet covered
    }
    else
    {
       const auto end = bid_itr;
-      share_type to_cover = bdd.total_supply;
+      share_type to_cover = bdd.get_total_supply().amount;
       asset remaining_fund = bad.settlement_fund;
       for( bid_itr = start; bid_itr != end; )
       {
          const asset_collateral_bid_object& bid = *bid_itr;
          ++bid_itr;
          asset debt_in_bid = bid.debt;
-         if( debt_in_bid.amount > bdd.total_supply )
+         if( debt_in_bid.amount > bdd.get_total_supply().amount )
          {
-            debt_in_bid.amount = bdd.total_supply;
+            debt_in_bid.amount = bdd.get_total_supply().amount;
          }
 
          share_type debt = debt_in_bid.amount;
@@ -2293,6 +2334,8 @@ void database::process_bids( const asset_stablecoin_data_object& bad )
 
 void database::dispute_escrow( const escrow_object& escrow )
 { try {
+   ilog( "Disputing Escrow: ${e}", ("e",escrow.escrow_id) );
+
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = props.time;
 
@@ -2366,6 +2409,7 @@ void database::dispute_escrow( const escrow_object& escrow )
  */
 void database::release_escrow( const escrow_object& escrow )
 { try {
+   ilog( "Release Escrow: ${e}", ("e",escrow.escrow_id) );
    const median_chain_property_object& median_props = get_median_chain_properties();
    asset escrow_bond = asset( ( escrow.payment.amount * median_props.escrow_bond_percent ) / PERCENT_100, escrow.payment.symbol );
 

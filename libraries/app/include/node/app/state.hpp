@@ -450,6 +450,7 @@ namespace node { namespace app {
       int64_t                                                        staked_supply;             // The current staked supply of the asset
       int64_t                                                        reward_supply;             // The current reward supply of the asset
       int64_t                                                        savings_supply;            // The current savings supply of the asset
+      int64_t                                                        vesting_supply;            // The Current vesting supply of the asset
       int64_t                                                        delegated_supply;          // The current delegated supply of the asset
       int64_t                                                        receiving_supply;          // The current receiving supply supply of the asset, should equal delegated
       int64_t                                                        pending_supply;            // The current supply contained in reward funds and active order objects
@@ -825,6 +826,7 @@ FC_REFLECT_DERIVED( node::app::extended_asset, ( node::app::asset_api_obj ),
          (staked_supply)
          (reward_supply)
          (savings_supply)
+         (vesting_supply)
          (delegated_supply)
          (receiving_supply)
          (pending_supply)

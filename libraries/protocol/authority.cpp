@@ -1,4 +1,5 @@
 #include <node/protocol/authority.hpp>
+#include <fc/utf8.hpp>
 
 namespace node { namespace protocol {
 
@@ -38,7 +39,9 @@ void authority::validate()const
 {
    for( const auto& item : account_auths )
    {
-      FC_ASSERT( is_valid_account_name( item.first ) );
+      FC_ASSERT( is_valid_account_name( item.first ),
+         "Authority: ${n} is not valid.",
+         ("n", item) );
    }
 }
 
@@ -51,6 +54,10 @@ bool is_valid_account_name( const string& name )
       return false;
    }
    if( len > MAX_ACCOUNT_NAME_LENGTH )
+   {
+      return false;
+   }
+   if( !fc::is_utf8( name ) )
    {
       return false;
    }

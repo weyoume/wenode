@@ -391,6 +391,9 @@ asset database::distribute_comment_reward( util::comment_reward_context& ctx, co
    });
 
    push_virtual_operation( comment_payout_update_operation( c.author, to_string( c.permlink ) ) );    // Update comment metrics data
+
+   ilog( "Processed Comment Cashout - Author: ${a} Permlink: ${p} Reward: ${r}",
+      ("a",c.author)("p",c.permlink)("r",claimed_reward) );
    
    return claimed_reward;
 } FC_CAPTURE_AND_RETHROW() }
@@ -431,7 +434,7 @@ void database::process_comment_cashout()
 
       modify( reward_fund, [&]( reward_fund_object& rfo )
       {
-         rfo.recent_content_claims -= ( rfo.recent_content_claims * ( now - rfo.last_updated ).to_seconds() ) / ctx.decay_rate.to_seconds();
+         rfo.recent_content_claims -= ( rfo.recent_content_claims * ( now - rfo.last_updated ).count() ) / ctx.decay_rate.count();
          rfo.last_updated = now;
       });
 
@@ -500,8 +503,6 @@ void database::update_comment_metrics()
 
    time_point now = head_block_time();
    const comment_metrics_object& comment_metrics = get_comment_metrics();
-   
-   // Initialize comment metrics
 
    uint32_t recent_post_count = 0;        
    share_type recent_vote_power = 0;
@@ -655,6 +656,8 @@ void database::update_comment_metrics()
 
       push_virtual_operation( update_featured_feed_operation( now ) );
    }
+
+   ilog( "Updated Comment Metrics: ${m}", ("m", comment_metrics) );
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -666,6 +669,8 @@ void database::update_message_counter()
 { try {
    if( (head_block_num() % MESSAGE_COUNT_INTERVAL_BLOCKS) != 0 )
       return;
+
+   // ilog( "Update Message Counter" );
 
    time_point now = head_block_time();
 
@@ -735,7 +740,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
    {
       case feed_reach_type::NO_FEED:
       {
-         return;               // Do not share to any feeds. Shows only on account blog. 
+         return;                                 // Do not share to any feeds. Shows only on account blog. 
       }
       case feed_reach_type::COMMUNITY_FEED:     // Encrypted Community feed variants are only shared to community subscribers, and not account followers or connections. 
       case feed_reach_type::COMPANION_FEED:     // Encrypted posts are only shared to connected accounts of the specified level.
@@ -745,6 +750,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
          FC_ASSERT( comment.is_encrypted(), 
             "Post should be encrypted at this reach level." );
       }
+      break;
       case feed_reach_type::MUTUAL_FEED:        // Public Posts only from here down
       case feed_reach_type::FOLLOW_FEED:
       case feed_reach_type::TAG_FEED:           // Tag Feed level posts are shared to tag followers, in addition to account followers. 
@@ -752,9 +758,10 @@ void database::add_comment_to_feeds( const comment_object& comment )
          FC_ASSERT( !comment.is_encrypted(), 
             "Post should not encrypted at this reach level." );
       }
+      break;
       default:
       {
-         FC_ASSERT( false, "Invalid reach selection. ");
+         FC_ASSERT( false, "Invalid reach selection: ${r}", ("r", comment.reach ) );
       }
    }
 
@@ -982,7 +989,7 @@ void database::share_comment_to_feeds( const account_name_type& sharer,
          break;
       default:
       {
-         FC_ASSERT( false, "Invalid reach selection. ");
+         FC_ASSERT( false, "Invalid reach selection. ${r}", ("r", reach ) );
       }
    }
 

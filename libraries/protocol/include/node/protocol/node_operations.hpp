@@ -69,27 +69,24 @@ namespace node { namespace protocol {
 
    inline void validate_url( const string& url )
    {
-      std::regex url_regex(
-      R"(^(([^:\/?#]+):)?(//([^\/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?)",
-      std::regex::extended
-      );
+      std::regex url_regex( R"((http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*))" );
       
       FC_ASSERT( std::regex_match( url, url_regex ),
-         "URL is invalid" );
+         "URL is invalid: ${u}", ("u", url ) );
    };
 
    inline void validate_uuidv4( const string& uuidv4 )
    {
-      std::string pattern = "/^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i";
+      std::string pattern = "[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}";
       std::regex uuidv4_regex( pattern );
 
       FC_ASSERT( std::regex_match( uuidv4, uuidv4_regex ),
-         "UUIDV4 is invalid.");
+         "UUIDV4 is invalid: ${i}", ("i", uuidv4 ) );
    };
 
    inline void validate_public_key( const string& key )
    {
-      FC_ASSERT( key.size() < MAX_MEMO_SIZE,
+      FC_ASSERT( key.size() < MAX_URL_LENGTH,
          "Public Key is too long" );
       FC_ASSERT( fc::is_utf8( key ),
          "Public key is not formatted in UTF8." );
@@ -223,9 +220,18 @@ namespace node { namespace protocol {
     * Generates a public key from a specified account name, authority type 
     * and password using the graphene account authority standard.
     */
-   inline public_key_type get_key( string name, string type, string password )
+   inline public_key_type get_public_key( string name, string type, string password )
    {
       return fc::ecc::private_key::regenerate( fc::sha256::hash( std::string( name + type + password ) ) ).get_public_key();
+   }
+
+   /**
+    * Generates a private key from a specified account name, authority type 
+    * and password using the graphene account authority standard.
+    */
+   inline private_key_type get_private_key( string name, string type, string password )
+   {
+      return fc::ecc::private_key::regenerate( fc::sha256::hash( std::string( name + type + password ) ) );
    }
 
 
@@ -303,7 +309,7 @@ namespace node { namespace protocol {
       asset                         delegation;                    ///< Initial amount delegated to the new account.
 
       void                          validate()const;
-      void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      void                          get_required_owner_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       void                          get_creator_name( account_name_type a )const{ a = registrar; }
    };
 
@@ -496,7 +502,7 @@ namespace node { namespace protocol {
 
       string                        role;                  ///< Role of the executive.
 
-      uint16_t                      vote_rank;             ///< Rank of voting preference
+      uint16_t                      vote_rank = 1;         ///< Rank of voting preference.
 
       bool                          approved = true;       ///< True to add, false to remove. 
 
@@ -520,7 +526,7 @@ namespace node { namespace protocol {
 
       account_name_type             officer_account;       ///< Name of officer being voted for.
 
-      uint16_t                      vote_rank;             ///< Rank of voting preference.
+      uint16_t                      vote_rank = 1;         ///< Rank of voting preference.
 
       bool                          approved = true;       ///< True to add, false to remove. 
 
@@ -674,9 +680,9 @@ namespace node { namespace protocol {
 
       account_name_type             account;           ///< Account creating the vote.
 
-      uint16_t                      vote_rank;         ///< Rank ordering of the vote.
+      uint16_t                      vote_rank = 1;     ///< Rank ordering of the vote.
 
-      account_name_type             producer;           ///< producer being voted for.
+      account_name_type             producer;          ///< producer being voted for.
 
       bool                          approved = true;   ///< True to create vote, false to remove vote.
 
@@ -1106,7 +1112,7 @@ namespace node { namespace protocol {
 
       account_name_type              network_officer;       ///< The name of the network officer being voted for.
 
-      uint16_t                       vote_rank;             ///< Number of vote rank ordering.
+      uint16_t                       vote_rank = 1;         ///< Number of vote rank ordering.
 
       bool                           approved = true;       ///< True if approving, false if removing vote.
 
@@ -1217,7 +1223,7 @@ namespace node { namespace protocol {
 
       account_name_type              executive_board;       ///< The name of the executive board being voted for.
 
-      uint16_t                       vote_rank;             ///< Vote preference ranking.
+      uint16_t                       vote_rank = 1;         ///< Vote preference ranking.
 
       bool                           approved = true;       ///< True if approving, false if removing vote.
 
@@ -1485,7 +1491,7 @@ namespace node { namespace protocol {
 
       uint16_t                       milestone = 0;     ///< Number of the milestone that is being approved as completed.
 
-      uint16_t                       vote_rank;         ///< The rank of the approval for enterprise proposals.
+      uint16_t                       vote_rank = 1;     ///< The rank of the approval for enterprise proposals.
 
       bool                           approved = true;   ///< True to approve the milestone claim, false to remove approval. 
          
@@ -1495,9 +1501,12 @@ namespace node { namespace protocol {
    };
    
 
+
    //=====================================//
    //==== Post and Comment Operations ====//
    //=====================================//
+
+
 
    struct beneficiary_route_type
    {
@@ -2045,7 +2054,7 @@ namespace node { namespace protocol {
 
       account_name_type              moderator;        ///< Moderator account.
 
-      uint16_t                       vote_rank;        ///< Voting rank for the specified community moderator
+      uint16_t                       vote_rank = 1;    ///< Voting rank for the specified community moderator
 
       bool                           approved = true;  ///< True when voting for the moderator, false when removing.
 

@@ -23,15 +23,20 @@ namespace node { namespace chain {
       block_id_type previous_id()const { return data.previous; }
 
       weak_ptr< fork_item > prev;
-      uint32_t              num;    // initialized in ctor
+
+      uint64_t              num;    // initialized in ctor
+
       /**
        * Used to flag a block as invalid and prevent other blocks from
        * building on top of it.
        */
       bool                  invalid = false;
+
       block_id_type         id;
+
       signed_block          data;
    };
+
    typedef shared_ptr<fork_item> item_ptr;
 
 
@@ -55,18 +60,25 @@ namespace node { namespace chain {
          fork_database();
          void reset();
 
-         void                             start_block(signed_block b);
-         void                             remove(block_id_type b);
-         void                             set_head(shared_ptr<fork_item> h);
-         bool                             is_known_block(const block_id_type& id)const;
-         shared_ptr<fork_item>            fetch_block(const block_id_type& id)const;
-         vector<item_ptr>                 fetch_block_by_number(uint32_t n)const;
+         void                             start_block( signed_block b );
+
+         void                             remove( block_id_type b );
+
+         void                             set_head( shared_ptr< fork_item > h );
+
+         bool                             is_known_block( const block_id_type& id )const;
+
+         shared_ptr< fork_item >          fetch_block( const block_id_type& id )const;
+
+         vector< item_ptr >               fetch_block_by_number( uint64_t n )const;
 
          /**
           *  @return the new head block ( the longest fork )
           */
-         shared_ptr<fork_item>            push_block(const signed_block& b);
-         shared_ptr<fork_item>            head()const { return _head; }
+         shared_ptr< fork_item >          push_block(const signed_block& b);
+
+         shared_ptr< fork_item >          head()const { return _head; }
+
          void                             pop_block();
 
          /**
@@ -81,12 +93,13 @@ namespace node { namespace chain {
          struct block_id;
          struct block_num;
          struct by_previous;
+
          typedef multi_index_container<
             item_ptr,
             indexed_by<
-               hashed_unique<tag<block_id>, member<fork_item, block_id_type, &fork_item::id>, std::hash<fc::ripemd160>>,
-               hashed_non_unique<tag<by_previous>, const_mem_fun<fork_item, block_id_type, &fork_item::previous_id>, std::hash<fc::ripemd160>>,
-               ordered_non_unique<tag<block_num>, member<fork_item,uint32_t,&fork_item::num>>
+               hashed_unique<tag<block_id>, member<fork_item, block_id_type, &fork_item::id>, std::hash<fc::sha256>>,
+               hashed_non_unique<tag<by_previous>, const_mem_fun<fork_item, block_id_type, &fork_item::previous_id>, std::hash<fc::sha256>>,
+               ordered_non_unique<tag<block_num>, member<fork_item,uint64_t,&fork_item::num>>
             >
          > fork_multi_index_type;
 

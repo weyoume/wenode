@@ -141,7 +141,7 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
          acc.friend_public_key = ok;
          acc.companion_public_key = ok;
          acc.created = now;
-         acc.last_account_update = now;
+         acc.last_updated = now;
          acc.last_vote_time = now;
          acc.last_view_time = now;
          acc.last_share_time = now;

@@ -32,6 +32,7 @@
 #include <fc/container/deque.hpp>
 
 #include <fc/io/fstream.hpp>
+#include <fc/io/json.hpp>
 
 #include <cstdint>
 #include <deque>
@@ -93,12 +94,9 @@ database::~database()
    clear_pending();
 }
 
-void database::open( const fc::path& data_dir, const fc::path& shared_mem_dir, uint64_t shared_file_size = 0, 
-   uint32_t chainbase_flags = 0, const public_key_type& init_public_key = INIT_PUBLIC_KEY )
+void database::open( const fc::path& data_dir, const fc::path& shared_mem_dir, uint64_t shared_file_size, uint32_t chainbase_flags )
 { try {
-   
    chainbase::database::open( shared_mem_dir, chainbase_flags, shared_file_size );
-
    initialize_indexes();
    initialize_evaluators();
 
@@ -108,7 +106,7 @@ void database::open( const fc::path& data_dir, const fc::path& shared_mem_dir, u
       {
          with_write_lock( [&]()
          {
-            init_genesis( init_public_key );
+            init_genesis();
          });
       }
          
@@ -143,13 +141,14 @@ void database::open( const fc::path& data_dir, const fc::path& shared_mem_dir, u
    });
 } FC_CAPTURE_LOG_AND_RETHROW( (data_dir)(shared_mem_dir)(shared_file_size) ) }
 
+
 /**
  * Creates a new blockchain from the genesis block, 
  * creates all necessary network objects.
  * Generates initial assets, accounts, producers, communities
- * and sets initial global dynamic properties. 
+ * and sets initial global dynamic properties.
  */
-void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLIC_KEY )
+void database::init_genesis()
 { try {
    struct auth_inhibitor
    {
@@ -161,27 +160,82 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       database& db;
       uint32_t old_flags;
    } inhibitor(*this);
+   
+   // Create the Global Dynamic Properties Object to track consensus critical network and chain information
+
+   time_point now = GENESIS_TIME;
+
+   ilog( "INIT GENESIS: STARTING NEW CHAIN" );
+
+   create< dynamic_global_property_object >( [&]( dynamic_global_property_object& dgpo )
+   {
+      dgpo.current_producer = GENESIS_ACCOUNT_BASE_NAME;
+      dgpo.time = now;
+      dgpo.recent_slots_filled = fc::uint128::max_value();
+      dgpo.participation_count = 128;
+   });
+
+   create< median_chain_property_object >( [&]( median_chain_property_object& p ){});
+
+   create< comment_metrics_object >( [&]( comment_metrics_object& o ) {});
+
+   for( int i = 0; i < 0x10000; i++ )
+   {
+      create< block_summary_object >( [&]( block_summary_object& ) {});
+   }
+
+   create< hardfork_property_object >( [&]( hardfork_property_object& hpo )
+   {
+      hpo.processed_hardforks.push_back( now );
+   });
+
+   // Create the initial Reward fund object to contain the balances of the network reward funds and parameters
+
+   create< reward_fund_object >( [&]( reward_fund_object& rfo )
+   {
+      rfo.last_updated = now;
+      rfo.symbol = SYMBOL_COIN;
+      rfo.content_constant = CONTENT_CONSTANT;
+      rfo.content_reward_balance = asset(0, SYMBOL_COIN);
+      rfo.validation_reward_balance = asset(0, SYMBOL_COIN);
+      rfo.txn_stake_reward_balance = asset(0, SYMBOL_COIN);
+      rfo.work_reward_balance = asset(0, SYMBOL_COIN);
+      rfo.activity_reward_balance = asset(0, SYMBOL_COIN);
+      rfo.supernode_reward_balance = asset(0, SYMBOL_COIN);
+      rfo.power_reward_balance = asset(0, SYMBOL_COIN);
+      rfo.community_fund_balance = asset(0, SYMBOL_COIN);
+      rfo.development_reward_balance = asset(0, SYMBOL_COIN);
+      rfo.marketing_reward_balance = asset(0, SYMBOL_COIN);
+      rfo.advocacy_reward_balance = asset(0, SYMBOL_COIN);
+      rfo.activity_reward_balance = asset(0, SYMBOL_COIN);
+      rfo.recent_content_claims = 0;
+      rfo.author_reward_curve = curve_id::convergent_semi_quadratic;
+      rfo.curation_reward_curve = curve_id::convergent_semi_quadratic;
+   });
 
    // Create initial blockchain accounts
-
-   time_point now = head_block_time();
 
    create< account_object >( [&]( account_object& a )
    {
       a.name = INIT_ACCOUNT;
       a.registrar = INIT_ACCOUNT;
-      a.secure_public_key = get_key( a.name, "secure", INIT_ACCOUNT_PASSWORD );
-      a.connection_public_key = get_key( a.name, "connection", INIT_ACCOUNT_PASSWORD );
-      a.friend_public_key = get_key( a.name, "friend", INIT_ACCOUNT_PASSWORD );
-      a.companion_public_key = get_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
+      a.referrer = INIT_ACCOUNT;
+      a.secure_public_key = get_public_key( a.name, "secure", INIT_ACCOUNT_PASSWORD );
+      a.connection_public_key = get_public_key( a.name, "connection", INIT_ACCOUNT_PASSWORD );
+      a.friend_public_key = get_public_key( a.name, "friend", INIT_ACCOUNT_PASSWORD );
+      a.companion_public_key = get_public_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
       a.created = now;
-      a.last_account_update = now;
-      a.last_vote_time = now;
-      a.last_post = now;
-      a.last_root_post = now;
-      a.last_transfer_time = now;
-      a.last_activity_reward = now;
-      a.last_account_recovery = now;
+      a.last_updated = now;
+      a.last_vote_time = time_point::min();
+      a.last_view_time = time_point::min();
+      a.last_share_time = time_point::min();
+      a.last_post = time_point::min();
+      a.last_root_post = time_point::min();
+      a.last_transfer_time = time_point::min();
+      a.last_activity_reward = time_point::min();
+      a.last_account_recovery = time_point::min();
+      a.last_community_created = time_point::min();
+      a.last_asset_created = time_point::min();
       from_string( a.json, "" );
       from_string( a.json_private, "" );
       from_string( a.details, INIT_DETAILS );
@@ -190,17 +244,25 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.membership = membership_tier_type::TOP_MEMBERSHIP;
       a.membership_expiration = time_point::maximum();
       a.mined = true;
+      a.active = true;
+      a.can_vote = true;
+      a.revenue_share = true;
    });
 
    create< account_authority_object >( [&]( account_authority_object& auth )
    {
       auth.account = INIT_ACCOUNT;
-      auth.owner_auth.add_authority( get_key( INIT_ACCOUNT, "owner", INIT_ACCOUNT_PASSWORD ), 1 );
+      auth.owner_auth.add_authority( get_public_key( INIT_ACCOUNT, "owner", INIT_ACCOUNT_PASSWORD ), 1 );
       auth.owner_auth.weight_threshold = 1;
-      auth.active_auth.add_authority( get_key( INIT_ACCOUNT, "active", INIT_ACCOUNT_PASSWORD ), 1 );
+      auth.active_auth.add_authority( get_public_key( INIT_ACCOUNT, "active", INIT_ACCOUNT_PASSWORD ), 1 );
       auth.active_auth.weight_threshold = 1;
-      auth.posting_auth.add_authority( get_key( INIT_ACCOUNT, "posting", INIT_ACCOUNT_PASSWORD ), 1 );
+      auth.posting_auth.add_authority( get_public_key( INIT_ACCOUNT, "posting", INIT_ACCOUNT_PASSWORD ), 1 );
       auth.posting_auth.weight_threshold = 1;
+   });
+
+   create< account_permission_object >( [&]( account_permission_object& aao )
+   {
+      aao.account = INIT_ACCOUNT;
    });
 
    create< account_following_object >( [&]( account_following_object& afo )
@@ -213,20 +275,23 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.name = INIT_CEO;
       a.registrar = INIT_ACCOUNT;
-      a.secure_public_key = get_key( a.name, "secure", INIT_ACCOUNT_PASSWORD );
-      a.connection_public_key = get_key( a.name, "connection", INIT_ACCOUNT_PASSWORD );
-      a.friend_public_key = get_key( a.name, "friend", INIT_ACCOUNT_PASSWORD );
-      a.companion_public_key = get_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
+      a.referrer = INIT_ACCOUNT;
+      a.secure_public_key = get_public_key( a.name, "secure", INIT_ACCOUNT_PASSWORD );
+      a.connection_public_key = get_public_key( a.name, "connection", INIT_ACCOUNT_PASSWORD );
+      a.friend_public_key = get_public_key( a.name, "friend", INIT_ACCOUNT_PASSWORD );
+      a.companion_public_key = get_public_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
       a.created = now;
-      a.last_account_update = now;
-      a.last_vote_time = now;
-      a.last_post = now;
-      a.last_root_post = now;
-      a.last_transfer_time = now;
-      a.last_activity_reward = now;
-      a.last_account_recovery = now;
-      a.last_community_created = now;
-      a.last_asset_created = now;
+      a.last_updated = now;
+      a.last_vote_time = time_point::min();
+      a.last_view_time = time_point::min();
+      a.last_share_time = time_point::min();
+      a.last_post = time_point::min();
+      a.last_root_post = time_point::min();
+      a.last_transfer_time = time_point::min();
+      a.last_activity_reward = time_point::min();
+      a.last_account_recovery = time_point::min();
+      a.last_community_created = time_point::min();
+      a.last_asset_created = time_point::min();
       from_string( a.json, "" );
       from_string( a.json_private, "" );
       from_string( a.details, INIT_DETAILS );
@@ -234,17 +299,26 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       from_string( a.image, INIT_IMAGE );
       a.membership = membership_tier_type::TOP_MEMBERSHIP;
       a.membership_expiration = time_point::maximum();
+      a.mined = true;
+      a.active = true;
+      a.can_vote = true;
+      a.revenue_share = false;
    });
 
    create< account_authority_object >( [&]( account_authority_object& auth )
    {
       auth.account = INIT_CEO;
-      auth.owner_auth.add_authority( get_key( INIT_CEO, "owner", INIT_ACCOUNT_PASSWORD ), 1 );
+      auth.owner_auth.add_authority( get_public_key( INIT_CEO, "owner", INIT_ACCOUNT_PASSWORD ), 1 );
       auth.owner_auth.weight_threshold = 1;
-      auth.active_auth.add_authority( get_key( INIT_CEO, "active", INIT_ACCOUNT_PASSWORD ), 1 );
+      auth.active_auth.add_authority( get_public_key( INIT_CEO, "active", INIT_ACCOUNT_PASSWORD ), 1 );
       auth.active_auth.weight_threshold = 1;
-      auth.posting_auth.add_authority( get_key( INIT_CEO, "posting", INIT_ACCOUNT_PASSWORD ), 1 );
+      auth.posting_auth.add_authority( get_public_key( INIT_CEO, "posting", INIT_ACCOUNT_PASSWORD ), 1 );
       auth.posting_auth.weight_threshold = 1;
+   });
+
+   create< account_permission_object >( [&]( account_permission_object& aao )
+   {
+      aao.account = INIT_CEO;
    });
 
    create< account_following_object >( [&]( account_following_object& afo ) 
@@ -259,6 +333,33 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       abo.business_type = business_structure_type::PUBLIC_BUSINESS;
       abo.executive_board.CHIEF_EXECUTIVE_OFFICER = INIT_CEO;
       abo.officer_vote_threshold = 1000 * BLOCKCHAIN_PRECISION;
+      abo.business_public_key = get_public_key( abo.account, "business", INIT_ACCOUNT_PASSWORD );
+      abo.members.insert( INIT_CEO );
+      abo.officers.insert( INIT_CEO );
+      abo.executives.insert( INIT_CEO );
+      abo.equity_assets.insert( SYMBOL_EQUITY );
+      abo.equity_revenue_shares[ SYMBOL_EQUITY ] = DIVIDEND_SHARE_PERCENT;
+      abo.credit_assets.insert( SYMBOL_CREDIT );
+      abo.credit_revenue_shares[ SYMBOL_CREDIT ] = BUYBACK_SHARE_PERCENT;
+      abo.created = now;
+      abo.last_updated = now;
+   });
+
+   create< account_officer_vote_object >( [&]( account_officer_vote_object& aovo )
+   {
+      aovo.account = INIT_CEO;
+      aovo.business_account = INIT_ACCOUNT;
+      aovo.officer_account = INIT_CEO;
+      aovo.vote_rank = 1;
+   });
+
+   create< account_executive_vote_object >( [&]( account_executive_vote_object& aevo )
+   {
+      aevo.account = INIT_CEO;
+      aevo.business_account = INIT_ACCOUNT;
+      aevo.executive_account = INIT_CEO;
+      aevo.role = executive_role_type::CHIEF_EXECUTIVE_OFFICER;
+      aevo.vote_rank = 1;
    });
 
    create< governance_account_object >( [&]( governance_account_object& gao )
@@ -333,19 +434,24 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    create< account_object >( [&]( account_object& a )
    {
       a.name = ANON_ACCOUNT;
-      a.registrar = ANON_ACCOUNT;
-      a.secure_public_key = get_key( a.name, "secure", ANON_ACCOUNT_PASSWORD );
-      a.connection_public_key = get_key( a.name, "connection", ANON_ACCOUNT_PASSWORD );
-      a.friend_public_key = get_key( a.name, "friend", ANON_ACCOUNT_PASSWORD );
-      a.companion_public_key = get_key( a.name, "companion", ANON_ACCOUNT_PASSWORD );
+      a.registrar = INIT_ACCOUNT;
+      a.referrer = INIT_ACCOUNT;
+      a.secure_public_key = get_public_key( a.name, "secure", ANON_ACCOUNT_PASSWORD );
+      a.connection_public_key = get_public_key( a.name, "connection", ANON_ACCOUNT_PASSWORD );
+      a.friend_public_key = get_public_key( a.name, "friend", ANON_ACCOUNT_PASSWORD );
+      a.companion_public_key = get_public_key( a.name, "companion", ANON_ACCOUNT_PASSWORD );
       a.created = now;
-      a.last_account_update = now;
-      a.last_vote_time = now;
-      a.last_post = now;
-      a.last_root_post = now;
-      a.last_transfer_time = now;
-      a.last_activity_reward = now;
-      a.last_account_recovery = now;
+      a.last_updated = now;
+      a.last_vote_time = time_point::min();
+      a.last_view_time = time_point::min();
+      a.last_share_time = time_point::min();
+      a.last_post = time_point::min();
+      a.last_root_post = time_point::min();
+      a.last_transfer_time = time_point::min();
+      a.last_activity_reward = time_point::min();
+      a.last_account_recovery = time_point::min();
+      a.last_community_created = time_point::min();
+      a.last_asset_created = time_point::min();
       from_string( a.json, "" );
       from_string( a.json_private, "" );
       from_string( a.details, INIT_DETAILS );
@@ -354,17 +460,25 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.membership = membership_tier_type::TOP_MEMBERSHIP;
       a.membership_expiration = time_point::maximum();
       a.mined = true;
+      a.active = true;
+      a.can_vote = true;
+      a.revenue_share = false;
    });
 
    create< account_authority_object >( [&]( account_authority_object& auth )
    {
       auth.account = ANON_ACCOUNT;
-      auth.owner_auth.add_authority( get_key( ANON_ACCOUNT, "owner", ANON_ACCOUNT_PASSWORD ), 1 );
+      auth.owner_auth.add_authority( get_public_key( ANON_ACCOUNT, "owner", ANON_ACCOUNT_PASSWORD ), 1 );
       auth.owner_auth.weight_threshold = 1;
-      auth.active_auth.add_authority( get_key( ANON_ACCOUNT, "active", ANON_ACCOUNT_PASSWORD ), 1 );
+      auth.active_auth.add_authority( get_public_key( ANON_ACCOUNT, "active", ANON_ACCOUNT_PASSWORD ), 1 );
       auth.active_auth.weight_threshold = 1;
-      auth.posting_auth.add_authority( get_key( ANON_ACCOUNT, "posting", ANON_ACCOUNT_PASSWORD ), 1 );
+      auth.posting_auth.add_authority( get_public_key( ANON_ACCOUNT, "posting", ANON_ACCOUNT_PASSWORD ), 1 );
       auth.posting_auth.weight_threshold = 1;
+   });
+
+   create< account_permission_object >( [&]( account_permission_object& aao )
+   {
+      aao.account = ANON_ACCOUNT;
    });
 
    create< account_following_object >( [&]( account_following_object& afo )
@@ -373,54 +487,27 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       afo.last_updated = now;
    });
 
-   create< community_object >( [&]( community_object& bo )
-   {
-      bo.name = INIT_COMMUNITY;
-      bo.founder = INIT_ACCOUNT;
-      bo.community_privacy = community_privacy_type::OPEN_PUBLIC_COMMUNITY;
-      bo.community_public_key = get_key( INIT_COMMUNITY, "community", "communitypassword" );
-      bo.created = now;
-      bo.last_community_update = now;
-      bo.last_post = now;
-      bo.last_root_post = now;
-   });
-
-   const community_member_object& new_community_member = create< community_member_object >( [&]( community_member_object& bmo )
-   {
-      bmo.name = INIT_COMMUNITY;
-      bmo.founder = INIT_ACCOUNT;
-      bmo.subscribers.insert( INIT_ACCOUNT );
-      bmo.members.insert( INIT_ACCOUNT );
-      bmo.moderators.insert( INIT_ACCOUNT );
-      bmo.administrators.insert( INIT_ACCOUNT );
-   });
-
-   create< community_moderator_vote_object >( [&]( community_moderator_vote_object& v )
-   {
-      v.moderator = INIT_ACCOUNT;
-      v.account = INIT_ACCOUNT;
-      v.community = INIT_COMMUNITY;
-      v.vote_rank = 1;
-   });
-
-   update_community_moderators( new_community_member );
-
    create< account_object >( [&]( account_object& a )
    {
       a.name = PRODUCER_ACCOUNT;
       a.registrar = INIT_ACCOUNT;
-      a.secure_public_key = get_key( a.name, "secure", INIT_ACCOUNT_PASSWORD );
-      a.connection_public_key = get_key( a.name, "connection", INIT_ACCOUNT_PASSWORD );
-      a.friend_public_key = get_key( a.name, "friend", INIT_ACCOUNT_PASSWORD );
-      a.companion_public_key = get_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
+      a.referrer = INIT_ACCOUNT;
+      a.secure_public_key = get_public_key( a.name, "secure", INIT_ACCOUNT_PASSWORD );
+      a.connection_public_key = get_public_key( a.name, "connection", INIT_ACCOUNT_PASSWORD );
+      a.friend_public_key = get_public_key( a.name, "friend", INIT_ACCOUNT_PASSWORD );
+      a.companion_public_key = get_public_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
       a.created = now;
-      a.last_account_update = now;
-      a.last_vote_time = now;
-      a.last_post = now;
-      a.last_root_post = now;
-      a.last_transfer_time = now;
-      a.last_activity_reward = now;
-      a.last_account_recovery = now;
+      a.last_updated = now;
+      a.last_vote_time = time_point::min();
+      a.last_view_time = time_point::min();
+      a.last_share_time = time_point::min();
+      a.last_post = time_point::min();
+      a.last_root_post = time_point::min();
+      a.last_transfer_time = time_point::min();
+      a.last_activity_reward = time_point::min();
+      a.last_account_recovery = time_point::min();
+      a.last_community_created = time_point::min();
+      a.last_asset_created = time_point::min();
       from_string( a.json, "" );
       from_string( a.json_private, "" );
       from_string( a.details, INIT_DETAILS );
@@ -429,14 +516,28 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.membership = membership_tier_type::TOP_MEMBERSHIP;
       a.membership_expiration = time_point::maximum();
       a.mined = true;
+      a.active = true;
+      a.can_vote = true;
+      a.revenue_share = false;
    });
 
-   create< account_authority_object >( [&]( account_authority_object& auth )
+   const account_authority_object& producer_auth = create< account_authority_object >( [&]( account_authority_object& auth )
    {
       auth.account = PRODUCER_ACCOUNT;
       auth.owner_auth.weight_threshold = 1;
       auth.active_auth.weight_threshold = 1;
       auth.posting_auth.weight_threshold = 1;
+   });
+
+   create< account_permission_object >( [&]( account_permission_object& aao )
+   {
+      aao.account = PRODUCER_ACCOUNT;
+   });
+
+   create< account_following_object >( [&]( account_following_object& afo )
+   {
+      afo.account = PRODUCER_ACCOUNT;
+      afo.last_updated = now;
    });
 
    // Create NULL account, which cannot make operations. 
@@ -445,18 +546,23 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.name = NULL_ACCOUNT;
       a.registrar = INIT_ACCOUNT;
-      a.secure_public_key = get_key( a.name, "secure", INIT_ACCOUNT_PASSWORD );
-      a.connection_public_key = get_key( a.name, "connection", INIT_ACCOUNT_PASSWORD );
-      a.friend_public_key = get_key( a.name, "friend", INIT_ACCOUNT_PASSWORD );
-      a.companion_public_key = get_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
+      a.referrer = INIT_ACCOUNT;
+      a.secure_public_key = get_public_key( a.name, "secure", INIT_ACCOUNT_PASSWORD );
+      a.connection_public_key = get_public_key( a.name, "connection", INIT_ACCOUNT_PASSWORD );
+      a.friend_public_key = get_public_key( a.name, "friend", INIT_ACCOUNT_PASSWORD );
+      a.companion_public_key = get_public_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
       a.created = now;
-      a.last_account_update = now;
-      a.last_vote_time = now;
-      a.last_post = now;
-      a.last_root_post = now;
-      a.last_transfer_time = now;
-      a.last_activity_reward = now;
-      a.last_account_recovery = now;
+      a.last_updated = now;
+      a.last_vote_time = time_point::min();
+      a.last_view_time = time_point::min();
+      a.last_share_time = time_point::min();
+      a.last_post = time_point::min();
+      a.last_root_post = time_point::min();
+      a.last_transfer_time = time_point::min();
+      a.last_activity_reward = time_point::min();
+      a.last_account_recovery = time_point::min();
+      a.last_community_created = time_point::min();
+      a.last_asset_created = time_point::min();
       from_string( a.json, "" );
       from_string( a.json_private, "" );
       from_string( a.details, INIT_DETAILS );
@@ -465,6 +571,9 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.membership = membership_tier_type::TOP_MEMBERSHIP;
       a.membership_expiration = time_point::maximum();
       a.mined = true;
+      a.active = true;
+      a.can_vote = false;
+      a.revenue_share = false;
    });
 
    create< account_authority_object >( [&]( account_authority_object& auth )
@@ -475,22 +584,38 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       auth.posting_auth.weight_threshold = 1;
    });
 
+   create< account_permission_object >( [&]( account_permission_object& aao )
+   {
+      aao.account = NULL_ACCOUNT;
+   });
+
+   create< account_following_object >( [&]( account_following_object& afo )
+   {
+      afo.account = NULL_ACCOUNT;
+      afo.last_updated = now;
+   });
+
    create< account_object >( [&]( account_object& a )
    {
       a.name = TEMP_ACCOUNT;
       a.registrar = INIT_ACCOUNT;
-      a.secure_public_key = get_key( a.name, "secure", INIT_ACCOUNT_PASSWORD );
-      a.connection_public_key = get_key( a.name, "connection", INIT_ACCOUNT_PASSWORD );
-      a.friend_public_key = get_key( a.name, "friend", INIT_ACCOUNT_PASSWORD );
-      a.companion_public_key = get_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
+      a.referrer = INIT_ACCOUNT;
+      a.secure_public_key = get_public_key( a.name, "secure", INIT_ACCOUNT_PASSWORD );
+      a.connection_public_key = get_public_key( a.name, "connection", INIT_ACCOUNT_PASSWORD );
+      a.friend_public_key = get_public_key( a.name, "friend", INIT_ACCOUNT_PASSWORD );
+      a.companion_public_key = get_public_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
       a.created = now;
-      a.last_account_update = now;
-      a.last_vote_time = now;
-      a.last_post = now;
-      a.last_root_post = now;
-      a.last_transfer_time = now;
-      a.last_activity_reward = now;
-      a.last_account_recovery = now;
+      a.last_updated = now;
+      a.last_vote_time = time_point::min();
+      a.last_view_time = time_point::min();
+      a.last_share_time = time_point::min();
+      a.last_post = time_point::min();
+      a.last_root_post = time_point::min();
+      a.last_transfer_time = time_point::min();
+      a.last_activity_reward = time_point::min();
+      a.last_account_recovery = time_point::min();
+      a.last_community_created = time_point::min();
+      a.last_asset_created = time_point::min();
       from_string( a.json, "" );
       from_string( a.json_private, "" );
       from_string( a.details, INIT_DETAILS );
@@ -499,6 +624,9 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.membership = membership_tier_type::TOP_MEMBERSHIP;
       a.membership_expiration = time_point::maximum();
       a.mined = true;
+      a.active = true;
+      a.can_vote = false;
+      a.revenue_share = false;
    });
 
    create< account_authority_object >( [&]( account_authority_object& auth )
@@ -508,7 +636,18 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       auth.active_auth.weight_threshold = 0;
    });
 
-   // Create core asset
+   create< account_permission_object >( [&]( account_permission_object& aao )
+   {
+      aao.account = TEMP_ACCOUNT;
+   });
+
+   create< account_following_object >( [&]( account_following_object& afo )
+   {
+      afo.account = TEMP_ACCOUNT;
+      afo.last_updated = now;
+   });
+
+   // Create COIN asset
    
    create< asset_object >( [&]( asset_object& a ) 
    {
@@ -520,12 +659,17 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.issuer = NULL_ACCOUNT;
       a.unstake_intervals = 4;
       a.stake_intervals = 0;
+      from_string( a.json, "" );
+      from_string( a.details, COIN_DETAILS );
+      from_string( a.url, INIT_URL );
+      a.created = now;
+      a.last_updated = now;
    });
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
    {
       a.symbol = SYMBOL_COIN;
-      a.total_supply = INIT_COIN_SUPPLY;
+      a.issuer = NULL_ACCOUNT;
    });
 
    create< asset_currency_data_object >( [&]( asset_currency_data_object& a )
@@ -534,6 +678,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.block_reward = BLOCK_REWARD;
       a.block_reward_reduction_percent = 0;
       a.block_reward_reduction_days = 0;
+      a.content_reward_percent = CONTENT_REWARD_PERCENT;
       a.equity_asset = SYMBOL_EQUITY;
       a.equity_reward_percent = EQUITY_REWARD_PERCENT;
       a.producer_reward_percent = PRODUCER_REWARD_PERCENT;
@@ -563,13 +708,17 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.issuer = INIT_ACCOUNT;
       a.unstake_intervals = 0;
       a.stake_intervals = 4;
+      from_string( a.json, "" );
+      from_string( a.details, EQUITY_DETAILS );
+      from_string( a.url, INIT_URL );
+      a.created = now;
+      a.last_updated = now;
    });
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
    {
       a.symbol = SYMBOL_EQUITY;
-      a.staked_supply = INIT_EQUITY_SUPPLY;
-      a.total_supply = INIT_EQUITY_SUPPLY;
+      a.issuer = INIT_ACCOUNT;
    });
 
    create< asset_equity_data_object >( [&]( asset_equity_data_object& a )
@@ -604,12 +753,34 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.issuer_permissions = 0;
       a.unstake_intervals = 4;
       a.stake_intervals = 0;
+      from_string( a.json, "" );
+      from_string( a.details, USD_DETAILS );
+      from_string( a.url, INIT_URL );
+      a.created = now;
+      a.last_updated = now;
+   });
+
+   create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+   {
+      a.symbol = SYMBOL_USD;
+      a.issuer = NULL_ACCOUNT;
    });
 
    create< asset_stablecoin_data_object >( [&]( asset_stablecoin_data_object& a )
    {
       a.symbol = SYMBOL_USD;
       a.backing_asset = SYMBOL_COIN;
+      a.feed_lifetime = PRICE_FEED_LIFETIME;
+      a.minimum_feeds = 1;
+      a.asset_settlement_delay = ASSET_SETTLEMENT_DELAY;
+      a.asset_settlement_offset_percent = ASSET_SETTLEMENT_OFFSET;
+      a.maximum_asset_settlement_volume = ASSET_SETTLEMENT_MAX_VOLUME;
+
+      price_feed feed;
+      feed.settlement_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      a.feeds[ GENESIS_ACCOUNT_BASE_NAME ] = make_pair( now, feed );
+      a.update_median_feeds( now );
    });
 
    // Create Credit asset
@@ -623,11 +794,17 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.issuer = INIT_ACCOUNT;
       a.unstake_intervals = 4;
       a.stake_intervals = 0;
+      from_string( a.json, "" );
+      from_string( a.details, CREDIT_DETAILS );
+      from_string( a.url, INIT_URL );
+      a.created = now;
+      a.last_updated = now;
    });
 
    create< asset_dynamic_data_object >([&](asset_dynamic_data_object& a) 
    {
       a.symbol = SYMBOL_CREDIT;
+      a.issuer = INIT_ACCOUNT;
    });
 
    create< asset_credit_data_object >( [&]( asset_credit_data_object& a )
@@ -646,10 +823,189 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.var_interest_range = VAR_INTEREST_RANGE;
    });
 
-   // Create Primary Liquidity Pools [coin/equity, coin/usd, coin/credit, equity/usd, equity/credit, usd/credit ]
+   const producer_schedule_object& pso = create< producer_schedule_object >( [&]( producer_schedule_object& pso ) {});
+
+   modify( pso, [&]( producer_schedule_object& pso )
+   {
+      pso.current_shuffled_producers.reserve( size_t( TOTAL_PRODUCERS ) );
+      pso.num_scheduled_producers = TOTAL_PRODUCERS;
+   });
+
+   // Create accounts for genesis producers
+
+   chain_properties chain_props;
+
+   for( int i = 0; i < ( GENESIS_PRODUCER_AMOUNT + GENESIS_EXTRA_PRODUCERS ); ++i )
+   {
+      account_name_type producer_name = GENESIS_ACCOUNT_BASE_NAME + ( i ? fc::to_string( i ) : std::string() );
+
+      create< account_object >( [&]( account_object& a )
+      {
+         a.name = producer_name;
+         a.registrar = INIT_ACCOUNT;
+         a.referrer = INIT_ACCOUNT;
+         a.secure_public_key = get_public_key( a.name, "secure", INIT_ACCOUNT_PASSWORD );
+         a.connection_public_key = get_public_key( a.name, "connection", INIT_ACCOUNT_PASSWORD );
+         a.friend_public_key = get_public_key( a.name, "friend", INIT_ACCOUNT_PASSWORD );
+         a.companion_public_key = get_public_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
+         a.created = now;
+         a.last_updated = now;
+         a.last_vote_time = time_point::min();
+         a.last_view_time = time_point::min();
+         a.last_share_time = time_point::min();
+         a.last_post = time_point::min();
+         a.last_root_post = time_point::min();
+         a.last_transfer_time = time_point::min();
+         a.last_activity_reward = time_point::min();
+         a.last_account_recovery = time_point::min();
+         a.last_community_created = time_point::min();
+         a.last_asset_created = time_point::min();
+         from_string( a.json, "" );
+         from_string( a.json_private, "" );
+         from_string( a.details, INIT_DETAILS );
+         from_string( a.url, INIT_URL );
+         from_string( a.image, INIT_IMAGE );
+         a.membership = membership_tier_type::TOP_MEMBERSHIP;
+         a.membership_expiration = time_point::maximum();
+         a.mined = true;
+         a.active = true;
+         a.can_vote = true;
+         a.revenue_share = false;
+      });
+
+      create< account_authority_object >( [&]( account_authority_object& auth )
+      {
+         auth.account = producer_name;
+         auth.owner_auth.add_authority( get_public_key( auth.account, "owner", INIT_ACCOUNT_PASSWORD ), 1 );
+         auth.owner_auth.weight_threshold = 1;
+         auth.active_auth.add_authority( get_public_key( auth.account, "active", INIT_ACCOUNT_PASSWORD ), 1 );
+         auth.active_auth.weight_threshold = 1;
+         auth.posting_auth.add_authority( get_public_key( auth.account, "posting", INIT_ACCOUNT_PASSWORD ), 1 );
+         auth.posting_auth.weight_threshold = 1;
+      });
+
+      create< account_permission_object >( [&]( account_permission_object& aao )
+      {
+         aao.account = producer_name;
+      });
+
+      create< account_following_object >( [&]( account_following_object& afo )
+      {
+         afo.account = producer_name;
+         afo.last_updated = now;
+      });
+
+      create< producer_object >( [&]( producer_object& p )
+      {
+         p.owner = producer_name;
+         p.props = chain_props;
+         p.signing_key = get_public_key( p.owner, "producer", INIT_ACCOUNT_PASSWORD );
+         p.schedule = producer_object::top_voting_producer;
+         p.active = true;
+         p.running_version = BLOCKCHAIN_VERSION;
+         from_string( p.json, "" );
+         from_string( p.details, INIT_DETAILS );
+         from_string( p.url, INIT_URL );
+         p.created = now;
+         p.last_updated = now;
+      });
+
+      if( i < GENESIS_PRODUCER_AMOUNT )
+      {
+         modify( pso, [&]( producer_schedule_object& pso )
+         {
+            pso.current_shuffled_producers.push_back( producer_name );
+         });
+
+         modify( producer_auth, [&]( account_authority_object& a )
+         {
+            a.active_auth.add_authority( producer_name, 1 );  
+         });
+      }
+   }
+
+   create< community_object >( [&]( community_object& bo )
+   {
+      bo.name = INIT_COMMUNITY;
+      bo.founder = INIT_ACCOUNT;
+      bo.community_privacy = community_privacy_type::OPEN_PUBLIC_COMMUNITY;
+      bo.community_public_key = get_public_key( INIT_COMMUNITY, "community", INIT_ACCOUNT_PASSWORD );
+      bo.max_rating = 9;
+      bo.url = INIT_URL;
+      bo.details = INIT_DETAILS;
+      bo.flags = 0;
+      bo.permissions = COMMUNITY_PERMISSION_MASK;
+      bo.created = now;
+      bo.last_updated = now;
+      bo.last_post = now;
+      bo.last_root_post = now;
+      bo.active = true;
+   });
+
+   create< community_member_object >( [&]( community_member_object& bmo )
+   {
+      bmo.name = INIT_COMMUNITY;
+      bmo.founder = INIT_ACCOUNT;
+      bmo.subscribers.insert( INIT_ACCOUNT );
+      bmo.members.insert( INIT_ACCOUNT );
+      bmo.moderators.insert( INIT_ACCOUNT );
+      bmo.administrators.insert( INIT_ACCOUNT );
+      bmo.last_updated = now;
+   });
+
+   create< community_moderator_vote_object >( [&]( community_moderator_vote_object& v )
+   {
+      v.moderator = INIT_ACCOUNT;
+      v.account = INIT_ACCOUNT;
+      v.community = INIT_COMMUNITY;
+      v.vote_rank = 1;
+   });
+
+   // Allocate Genesis block reward to Init Account and create primary asset liquidity and credit pools.
+
+   /**
+    * Create Primary Liquidity Pools in Block 0.
+    * 
+    * [ coin/equity, coin/usd, coin/credit, equity/usd, equity/credit, usd/credit ]
+    * Creates initial collateral positions of USD Asset, 
+    * and rewards init account with small amount of Equity 
+    * and Credit assets in liquidity and credit pools.
+    */
+
+   const asset_currency_data_object& currency = get_currency_data( SYMBOL_COIN );
+   asset block_reward = currency.block_reward;
+   FC_ASSERT( block_reward.symbol == SYMBOL_COIN && 
+      block_reward.amount == 25 * BLOCKCHAIN_PRECISION, 
+      "Block reward is not the correct symbol: ${s} or amount: ${a}",
+      ("s",block_reward.symbol)("a",block_reward.amount) );
+
+   adjust_liquid_balance( INIT_ACCOUNT, block_reward );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+
+   asset liquid_coin = get_liquid_balance( INIT_ACCOUNT, SYMBOL_COIN );
+
+   FC_ASSERT( liquid_coin.symbol == SYMBOL_COIN && 
+      liquid_coin.amount == 25 * BLOCKCHAIN_PRECISION, 
+      "INIT_ACCOUNT does not have correct balance - symbol: ${s} or amount: ${a}", 
+      ("s",liquid_coin.symbol)("a",liquid_coin.amount) );
+
+   create< call_order_object >( [&]( call_order_object& coo )
+   {
+      coo.borrower = INIT_ACCOUNT;
+      coo.collateral = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      coo.debt = asset( 5 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      coo.call_price = price( asset( 1, coo.collateral.symbol ), asset( 1, coo.debt.symbol ) );
+      coo.created = now;
+      coo.last_updated = now;
+   });
+
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+   adjust_pending_supply( asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( 5 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
 
    asset_symbol_type coin_equity_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_COIN )+"."+string( SYMBOL_EQUITY );
-   
+
    create< asset_object >( [&]( asset_object& a )
    {
       a.issuer = NULL_ACCOUNT;
@@ -662,23 +1018,29 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.issuer = NULL_ACCOUNT;
       a.symbol = coin_equity_symbol;
    });
-      
+
    create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
    {   
       a.issuer = NULL_ACCOUNT;
       a.symbol_a = SYMBOL_COIN;
       a.symbol_b = SYMBOL_EQUITY;
       a.symbol_liquid = coin_equity_symbol;
-      a.balance_a = asset( 0, SYMBOL_COIN );
-      a.balance_b = asset( 0, SYMBOL_EQUITY );
-      a.balance_liquid = asset( 0, coin_equity_symbol );
+      a.balance_a = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      a.balance_b = asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY );
+      a.balance_liquid = asset( BLOCKCHAIN_PRECISION, coin_equity_symbol );
       a.hour_median_price = price( a.balance_a, a.balance_b );
       a.day_median_price = price( a.balance_a, a.balance_b );
       a.price_history.push_back( price( a.balance_a, a.balance_b ) );
    });
 
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( BLOCKCHAIN_PRECISION, coin_equity_symbol ) );
+
    asset_symbol_type coin_usd_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_COIN )+"."+string( SYMBOL_USD );
-   
+
    create< asset_object >( [&]( asset_object& a )
    {
       a.issuer = NULL_ACCOUNT;
@@ -691,23 +1053,29 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.issuer = NULL_ACCOUNT;
       a.symbol = coin_usd_symbol;
    });
-      
+
    create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
    {   
       a.issuer = NULL_ACCOUNT;
       a.symbol_a = SYMBOL_COIN;
       a.symbol_b = SYMBOL_USD;
       a.symbol_liquid = coin_usd_symbol;
-      a.balance_a = asset( 0, SYMBOL_COIN );
-      a.balance_b = asset( 0, SYMBOL_USD );
-      a.balance_liquid = asset( 0, coin_usd_symbol );
+      a.balance_a = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      a.balance_b = asset( BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      a.balance_liquid = asset( BLOCKCHAIN_PRECISION, coin_usd_symbol );
       a.hour_median_price = price( a.balance_a, a.balance_b );
       a.day_median_price = price( a.balance_a, a.balance_b );
       a.price_history.push_back( price( a.balance_a, a.balance_b ) );
    });
 
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( BLOCKCHAIN_PRECISION, coin_usd_symbol ) );
+
    asset_symbol_type coin_credit_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_COIN )+"."+string( SYMBOL_CREDIT );
-   
+
    create< asset_object >( [&]( asset_object& a )
    {
       a.issuer = NULL_ACCOUNT;
@@ -720,23 +1088,29 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.issuer = NULL_ACCOUNT;
       a.symbol = coin_credit_symbol;
    });
-      
+
    create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
    {   
       a.issuer = NULL_ACCOUNT;
       a.symbol_a = SYMBOL_COIN;
       a.symbol_b = SYMBOL_CREDIT;
       a.symbol_liquid = coin_credit_symbol;
-      a.balance_a = asset( 0, SYMBOL_COIN );
-      a.balance_b = asset( 0, SYMBOL_CREDIT );
-      a.balance_liquid = asset( 0, coin_credit_symbol );
+      a.balance_a = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      a.balance_b = asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT );
+      a.balance_liquid = asset( BLOCKCHAIN_PRECISION, coin_credit_symbol );
       a.hour_median_price = price( a.balance_a, a.balance_b );
       a.day_median_price = price( a.balance_a, a.balance_b );
       a.price_history.push_back( price( a.balance_a, a.balance_b ) );
    });
 
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( BLOCKCHAIN_PRECISION, coin_credit_symbol ) );
+
    asset_symbol_type equity_usd_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_EQUITY )+"."+string( SYMBOL_USD );
-   
+
    create< asset_object >( [&]( asset_object& a )
    {
       a.issuer = NULL_ACCOUNT;
@@ -756,13 +1130,19 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.symbol_a = SYMBOL_EQUITY;
       a.symbol_b = SYMBOL_USD;
       a.symbol_liquid = equity_usd_symbol;
-      a.balance_a = asset( 0, SYMBOL_EQUITY );
-      a.balance_b = asset( 0, SYMBOL_USD );
-      a.balance_liquid = asset( 0, equity_usd_symbol );
+      a.balance_a = asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY );
+      a.balance_b = asset( BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      a.balance_liquid = asset( BLOCKCHAIN_PRECISION, equity_usd_symbol );
       a.hour_median_price = price( a.balance_a, a.balance_b );
       a.day_median_price = price( a.balance_a, a.balance_b );
       a.price_history.push_back( price( a.balance_a, a.balance_b ) );
    });
+
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( BLOCKCHAIN_PRECISION, equity_usd_symbol ) );
 
    asset_symbol_type equity_credit_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_EQUITY )+"."+string( SYMBOL_CREDIT );
    
@@ -785,16 +1165,22 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.symbol_a = SYMBOL_EQUITY;
       a.symbol_b = SYMBOL_CREDIT;
       a.symbol_liquid = equity_credit_symbol;
-      a.balance_a = asset( 0, SYMBOL_EQUITY );
-      a.balance_b = asset( 0, SYMBOL_CREDIT );
-      a.balance_liquid = asset( 0, equity_credit_symbol );
+      a.balance_a = asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY );
+      a.balance_b = asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT );
+      a.balance_liquid = asset( BLOCKCHAIN_PRECISION, equity_credit_symbol );
       a.hour_median_price = price( a.balance_a, a.balance_b );
       a.day_median_price = price( a.balance_a, a.balance_b );
       a.price_history.push_back( price( a.balance_a, a.balance_b ) );
    });
 
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( BLOCKCHAIN_PRECISION, equity_credit_symbol ) );
+
    asset_symbol_type usd_credit_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_USD )+"."+string( SYMBOL_CREDIT );
-   
+
    create< asset_object >( [&]( asset_object& a )
    {
       a.issuer = NULL_ACCOUNT;
@@ -807,20 +1193,26 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.issuer = NULL_ACCOUNT;
       a.symbol = usd_credit_symbol;
    });
-      
+
    create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
    {   
       a.issuer = NULL_ACCOUNT;
       a.symbol_a = SYMBOL_USD;
       a.symbol_b = SYMBOL_CREDIT;
       a.symbol_liquid = usd_credit_symbol;
-      a.balance_a = asset( 0, SYMBOL_USD );
-      a.balance_b = asset( 0, SYMBOL_CREDIT );
-      a.balance_liquid = asset( 0, usd_credit_symbol );
+      a.balance_a = asset( BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      a.balance_b = asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT );
+      a.balance_liquid = asset( BLOCKCHAIN_PRECISION, usd_credit_symbol );
       a.hour_median_price = price( a.balance_a, a.balance_b );
       a.day_median_price = price( a.balance_a, a.balance_b );
       a.price_history.push_back( price( a.balance_a, a.balance_b ) );
    });
+
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( BLOCKCHAIN_PRECISION, usd_credit_symbol ) );
 
    // Create Primary asset credit pools [ coin, equity, usd, credit ]
 
@@ -830,7 +1222,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.issuer = NULL_ACCOUNT;
       a.symbol = credit_asset_coin_symbol;
-      a.asset_type = asset_property_type::CREDIT_POOL_ASSET; 
+      a.asset_type = asset_property_type::CREDIT_POOL_ASSET;
    });
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
@@ -844,11 +1236,15 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.issuer = NULL_ACCOUNT;
       a.base_symbol = SYMBOL_COIN;
       a.credit_symbol = credit_asset_coin_symbol;
-      a.base_balance = asset( 0, SYMBOL_COIN );
+      a.base_balance = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       a.borrowed_balance = asset( 0, SYMBOL_COIN );
-      a.credit_balance = asset( 0, credit_asset_coin_symbol );
-      a.last_price = price( asset( 0, SYMBOL_COIN ), asset( 0, credit_asset_coin_symbol ) );
+      a.credit_balance = asset( 100 * BLOCKCHAIN_PRECISION, credit_asset_coin_symbol );
+      a.last_price = price( a.base_balance, a.credit_balance );
    });
+
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( 100 * BLOCKCHAIN_PRECISION, credit_asset_coin_symbol ) );
 
    asset_symbol_type credit_asset_equity_symbol = string( CREDIT_ASSET_PREFIX )+string( SYMBOL_EQUITY );
    
@@ -870,11 +1266,15 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.issuer = NULL_ACCOUNT;
       a.base_symbol = SYMBOL_EQUITY;
       a.credit_symbol = credit_asset_equity_symbol;
-      a.base_balance = asset( 0, SYMBOL_EQUITY );
+      a.base_balance = asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY );
       a.borrowed_balance = asset( 0, SYMBOL_EQUITY );
-      a.credit_balance = asset( 0, credit_asset_equity_symbol );
-      a.last_price = price( asset( 0, SYMBOL_EQUITY ), asset( 0, credit_asset_equity_symbol ) );
+      a.credit_balance = asset( 100 * BLOCKCHAIN_PRECISION, credit_asset_equity_symbol );
+      a.last_price = price( a.base_balance, a.credit_balance );
    });
+
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( 100 * BLOCKCHAIN_PRECISION, credit_asset_equity_symbol ) );
 
    asset_symbol_type credit_asset_usd_symbol = string( CREDIT_ASSET_PREFIX )+string( SYMBOL_USD );
    
@@ -896,11 +1296,15 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.issuer = NULL_ACCOUNT;
       a.base_symbol = SYMBOL_USD;
       a.credit_symbol = credit_asset_usd_symbol;
-      a.base_balance = asset( 0, SYMBOL_USD );
+      a.base_balance = asset( BLOCKCHAIN_PRECISION, SYMBOL_USD );
       a.borrowed_balance = asset( 0, SYMBOL_USD );
-      a.credit_balance = asset( 0, credit_asset_usd_symbol );
-      a.last_price = price( asset( 0, SYMBOL_USD ), asset( 0, credit_asset_usd_symbol ) );
+      a.credit_balance = asset( 100 * BLOCKCHAIN_PRECISION, credit_asset_usd_symbol );
+      a.last_price = price( a.base_balance, a.credit_balance );
    });
+
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( 100 * BLOCKCHAIN_PRECISION, credit_asset_usd_symbol ) );
 
    asset_symbol_type credit_asset_credit_symbol = string( CREDIT_ASSET_PREFIX )+string( SYMBOL_CREDIT );
    
@@ -908,7 +1312,7 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
    {
       a.issuer = NULL_ACCOUNT;
       a.symbol = credit_asset_credit_symbol;
-      a.asset_type = asset_property_type::CREDIT_POOL_ASSET; 
+      a.asset_type = asset_property_type::CREDIT_POOL_ASSET;
    });
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
@@ -922,135 +1326,26 @@ void database::init_genesis( const public_key_type& init_public_key = INIT_PUBLI
       a.issuer = NULL_ACCOUNT;
       a.base_symbol = SYMBOL_CREDIT;
       a.credit_symbol = credit_asset_credit_symbol;
-      a.base_balance = asset( 0, SYMBOL_CREDIT );
+      a.base_balance = asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT );
       a.borrowed_balance = asset( 0, SYMBOL_CREDIT );
-      a.credit_balance = asset( 0, credit_asset_credit_symbol );
-      a.last_price = price( asset( 0, SYMBOL_CREDIT ), asset( 0, credit_asset_credit_symbol ) );
+      a.credit_balance = asset( 100 * BLOCKCHAIN_PRECISION, credit_asset_credit_symbol );
+      a.last_price = price( a.base_balance, a.credit_balance );
    });
 
-   for( int i = 0; i < ( GENESIS_PRODUCER_AMOUNT + GENESIS_EXTRA_PRODUCERS ); ++i )
-   {
-      // Create account for genesis producer
-      create< account_object >( [&]( account_object& a )
-      {
-         a.name = GENESIS_ACCOUNT_BASE_NAME + ( i ? fc::to_string( i ) : std::string() );
-         a.registrar = INIT_ACCOUNT;
-         a.secure_public_key = get_key( a.name, "secure", INIT_ACCOUNT_PASSWORD );
-         a.connection_public_key = get_key( a.name, "connection", INIT_ACCOUNT_PASSWORD );
-         a.friend_public_key = get_key( a.name, "friend", INIT_ACCOUNT_PASSWORD );
-         a.companion_public_key = get_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
-         a.created = now;
-         a.last_account_update = now;
-         a.last_vote_time = now;
-         a.last_post = now;
-         a.last_root_post = now;
-         a.last_transfer_time = now;
-         a.last_activity_reward = now;
-         a.last_account_recovery = now;
-         from_string( a.json, "" );
-         from_string( a.json_private, "" );
-         from_string( a.details, INIT_DETAILS );
-         from_string( a.url, INIT_URL );
-         from_string( a.image, INIT_IMAGE );
-         a.membership = membership_tier_type::TOP_MEMBERSHIP;
-         a.membership_expiration = time_point::maximum();
-         a.mined = true;
-      });
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( 100 * BLOCKCHAIN_PRECISION, credit_asset_credit_symbol ) );
 
-      // Create Core asset balance object for producer
-      create< account_balance_object >( [&]( account_balance_object& abo )
-      {
-         abo.owner = GENESIS_ACCOUNT_BASE_NAME + ( i ? fc::to_string( i ) : std::string() );
-         abo.symbol = SYMBOL_COIN;
-         abo.liquid_balance  = GENESIS_ACCOUNT_COIN;
-         abo.staked_balance = GENESIS_ACCOUNT_COIN_STAKE;
-      });
-
-      create< account_authority_object >( [&]( account_authority_object& auth )
-      {
-         auth.account = GENESIS_ACCOUNT_BASE_NAME + ( i ? fc::to_string( i ) : std::string() );
-         auth.owner_auth.add_authority( init_public_key, 1 );
-         auth.owner_auth.weight_threshold = 1;
-         auth.active_auth = auth.owner_auth;
-         auth.posting_auth = auth.active_auth;
-      });
-
-      create< producer_object >( [&]( producer_object& p )
-      {
-         p.owner = GENESIS_ACCOUNT_BASE_NAME + ( i ? fc::to_string(i) : std::string() );
-         p.signing_key = init_public_key;
-         p.schedule = producer_object::top_voting_producer;
-      });
-   }
-
-   // Create Equity asset balance object for initial account
-
-   create< account_balance_object >( [&]( account_balance_object& abo )
-   {
-      abo.owner = INIT_ACCOUNT;
-      abo.symbol = SYMBOL_EQUITY;
-      abo.liquid_balance = 0;
-      abo.staked_balance = INIT_EQUITY_SUPPLY;
-   });
-
-   // Create the initial Reward fund object to contain the balances of the network reward funds and parameters
-
-   create< reward_fund_object >( [&]( reward_fund_object& rfo )
-   {
-      rfo.last_updated = now;
-      rfo.symbol = SYMBOL_COIN;
-      rfo.content_constant = CONTENT_CONSTANT;
-      rfo.content_reward_balance = asset(0, SYMBOL_COIN);
-      rfo.validation_reward_balance = asset(0, SYMBOL_COIN);
-      rfo.txn_stake_reward_balance = asset(0, SYMBOL_COIN);
-      rfo.work_reward_balance = asset(0, SYMBOL_COIN);
-      rfo.activity_reward_balance = asset(0, SYMBOL_COIN);
-      rfo.supernode_reward_balance = asset(0, SYMBOL_COIN);
-      rfo.power_reward_balance = asset(0, SYMBOL_COIN);
-      rfo.community_fund_balance = asset(0, SYMBOL_COIN);
-      rfo.development_reward_balance = asset(0, SYMBOL_COIN);
-      rfo.marketing_reward_balance = asset(0, SYMBOL_COIN);
-      rfo.advocacy_reward_balance = asset(0, SYMBOL_COIN);
-      rfo.activity_reward_balance = asset(0, SYMBOL_COIN);
-      rfo.recent_content_claims = 0;
-      rfo.author_reward_curve = curve_id::convergent_semi_quadratic;
-      rfo.curation_reward_curve = curve_id::convergent_semi_quadratic;
-   });
-
-   // Create the Global Dynamic Properties Object to track consensus critical network and chain information
-
-   create< dynamic_global_property_object >( [&]( dynamic_global_property_object& p )
-   {
-      p.current_producer = GENESIS_ACCOUNT_BASE_NAME;
-      p.time = GENESIS_TIME;
-      p.recent_slots_filled = fc::uint128::max_value();
-      p.participation_count = 128;
-   });
-
-   create< comment_metrics_object >( [&]( comment_metrics_object& o ) {});
-
-   for( int i = 0; i < 0x10000; i++ )
-   {
-      create< block_summary_object >( [&]( block_summary_object& ) {});
-   }
-
-   create< hardfork_property_object >( [&]( hardfork_property_object& hpo )
-   {
-      hpo.processed_hardforks.push_back( GENESIS_TIME );
-   });
-   
-   create< producer_schedule_object >( [&]( producer_schedule_object& pso )
-   {
-      pso.current_shuffled_producers[0] = GENESIS_ACCOUNT_BASE_NAME;    // Create producer schedule
-   });
+   ilog( "COMPLETED INIT GENESIS" );
 
 } FC_CAPTURE_AND_RETHROW() }
+
 
 void database::reindex( const fc::path& data_dir, const fc::path& shared_mem_dir, uint64_t shared_file_size )
 { try {
    ilog( "Reindexing Blockchain" );
    wipe( data_dir, shared_mem_dir, false );
-   open( data_dir, shared_mem_dir, shared_file_size, chainbase::database::read_write, INIT_PUBLIC_KEY );
+   open( data_dir, shared_mem_dir, shared_file_size, chainbase::database::read_write );
    _fork_db.reset();    // override effect of _fork_db.start_block() call in open()
 
    auto start = fc::time_point::now();
@@ -1097,6 +1392,7 @@ void database::reindex( const fc::path& data_dir, const fc::path& shared_mem_dir
    ilog( "Done reindexing, elapsed time: ${t} sec", ("t",double((end-start).count())/1000000.0 ) );
 } FC_CAPTURE_AND_RETHROW( (data_dir)(shared_mem_dir) ) }
 
+
 void database::wipe( const fc::path& data_dir, const fc::path& shared_mem_dir, bool include_blocks)
 {
    close();
@@ -1107,6 +1403,7 @@ void database::wipe( const fc::path& data_dir, const fc::path& shared_mem_dir, b
       fc::remove_all( data_dir / "block_log.index" );
    }
 }
+
 
 void database::close(bool rewind)
 {
@@ -1127,10 +1424,12 @@ void database::close(bool rewind)
    FC_CAPTURE_AND_RETHROW()
 }
 
+
 bool database::is_known_block( const block_id_type& id )const
 { try {
    return fetch_block_by_id( id ).valid();
 } FC_CAPTURE_AND_RETHROW() }
+
 
 /**
  * Only return true *if* the transaction has not expired or been invalidated. If this
@@ -1142,6 +1441,7 @@ bool database::is_known_transaction( const transaction_id_type& id )const
    const auto& trx_idx = get_index<transaction_index>().indices().get<by_trx_id>();
    return trx_idx.find( id ) != trx_idx.end();
 } FC_CAPTURE_AND_RETHROW() }
+
 
 block_id_type database::find_block_id_for_num( uint64_t block_num )const
 { try {
@@ -1221,6 +1521,9 @@ const signed_transaction database::get_recent_transaction( const transaction_id_
 
 annotated_signed_transaction database::get_transaction( const transaction_id_type& id )const
 { try {
+
+   #ifndef SKIP_BY_TX_ID
+
    const auto& txn_idx = get_index< operation_index >().indices().get< by_transaction_id >();
    auto txn_itr = txn_idx.lower_bound( id );
 
@@ -1240,6 +1543,9 @@ annotated_signed_transaction database::get_transaction( const transaction_id_typ
 
       return result;
    }
+
+   #endif
+
    FC_ASSERT( false, "Unknown Transaction ${t}", ("t",id));
 
 } FC_CAPTURE_AND_RETHROW( (id) ) }
@@ -1269,7 +1575,7 @@ chain_id_type database::get_chain_id() const
 
 const dynamic_global_property_object& database::get_dynamic_global_properties()const
 { try {
-   return get< dynamic_global_property_object >();
+   return get< dynamic_global_property_object, by_id >( 0 );
 } FC_CAPTURE_AND_RETHROW() }
 
 time_point database::head_block_time()const
@@ -1289,12 +1595,12 @@ block_id_type database::head_block_id()const
 
 const producer_schedule_object& database::get_producer_schedule()const
 { try {
-   return get< producer_schedule_object >();
+   return get< producer_schedule_object, by_id >( 0 );
 } FC_CAPTURE_AND_RETHROW() }
 
 const median_chain_property_object& database::get_median_chain_properties()const
 { try {
-   return get< median_chain_property_object >();
+   return get< median_chain_property_object, by_id >( 0 );
 } FC_CAPTURE_AND_RETHROW() }
 
 uint128_t database::pow_difficulty()const
@@ -2684,9 +2990,9 @@ bool database::before_last_checkpoint()const
  *
  * @return true if we switched forks as a result of this push.
  */
-bool database::push_block(const signed_block& new_block, uint32_t skip )
+bool database::push_block( const signed_block& new_block, uint32_t skip )
 {
-   //fc::time_point begin_time = fc::time_point::now();
+   fc::time_point begin_time = fc::time_point::now();
 
    bool result;
    detail::with_skip_flags( *this, skip, [&]()
@@ -2704,112 +3010,127 @@ bool database::push_block(const signed_block& new_block, uint32_t skip )
       });
    });
 
-   //fc::time_point end_time = fc::time_point::now();
-   //fc::microseconds dt = end_time - begin_time;
-   //if( ( new_block.block_num() % 10000 ) == 0 )
-   //   ilog( "push_block ${b} took ${t} microseconds", ("b", new_block.block_num())("t", dt.count()) );
+   fc::time_point end_time = fc::time_point::now();
+   fc::microseconds dt = end_time - begin_time;
+   if( ( new_block.block_num() % 10000 ) == 0 )
+   {
+      ilog( "Push_block ${b} took ${t} microseconds", ("b", new_block.block_num())("t", dt.count()) );
+   }
+ 
    return result;
 }
 
 void database::_maybe_warn_multiple_production( uint64_t height )const
 {
-   auto blocks = _fork_db.fetch_block_by_number( height );
+   vector< item_ptr > blocks = _fork_db.fetch_block_by_number( height );
+
    if( blocks.size() > 1 )
    {
-      vector< std::pair< account_name_type, fc::time_point > > producer_time_pairs;
+      vector< signed_block > block_list;
+
       for( const auto& b : blocks )
       {
-         producer_time_pairs.push_back( std::make_pair( b->data.producer, b->data.timestamp ) );
+         block_list.push_back( b->data );
       }
 
-      ilog( "Encountered block num collision at block ${n} due to a fork, producers are: ${w}", ("n", height)("w", producer_time_pairs) );
+      ilog( "Encountered block num collision at block ${n} due to a fork.", ("n", height) );
    }
    return;
 }
 
-bool database::_push_block(const signed_block& new_block)
+bool database::_push_block( const signed_block& new_block )
 { try {
    uint32_t skip = get_node_properties().skip_flags;
-   //uint32_t skip_undo_db = skip & skip_undo_block;
+   // uint32_t skip_undo_db = skip & skip_undo_block;
 
    if( !(skip&skip_fork_db) )
    {
-      shared_ptr<fork_item> new_head = _fork_db.push_block(new_block);
+      shared_ptr< fork_item > new_head = _fork_db.push_block( new_block );
       _maybe_warn_multiple_production( new_head->num );
 
-      //If the head block from the longest chain does not build off of the current head, we need to switch forks.
+      // If the head block from the longest chain does not build off of the current head, we need to switch forks.
+
       if( new_head->data.previous != head_block_id() )
       {
-         //If the newly pushed block is the same height as head, we get head back in new_head
-         //Only switch forks if new_head is actually higher than head
+         // If the newly pushed block is the same height as head, we get head back in new_head
+         // Only switch forks if new_head is actually higher than head
+
          if( new_head->data.block_num() > head_block_num() )
          {
-            // wlog( "Switching to fork: ${id}", ("id",new_head->data.id()) );
-            auto branches = _fork_db.fetch_branch_from(new_head->data.id(), head_block_id());
+            wlog( "Switching to fork: ${id}", ("id",new_head->data.id()) );
+            auto branches = _fork_db.fetch_branch_from( new_head->data.id(), head_block_id() );
 
             // pop blocks until we hit the forked block
             while( head_block_id() != branches.second.back()->data.previous )
+            { 
                pop_block();
+            }
 
             // push all blocks on the new fork
             for( auto ritr = branches.first.rbegin(); ritr != branches.first.rend(); ++ritr )
             {
-                // ilog( "pushing blocks from fork ${n} ${id}", ("n",(*ritr)->data.block_num())("id",(*ritr)->data.id()) );
-                optional<fc::exception> except;
-                try
-                {
-                   auto session = start_undo_session( true );
-                   apply_block( (*ritr)->data, skip );
-                   session.push();
-                }
-                catch ( const fc::exception& e ) { except = e; }
-                if( except )
-                {
-                   // wlog( "exception thrown while switching forks ${e}", ("e",except->to_detail_string() ) );
-                   // remove the rest of branches.first from the fork_db, those blocks are invalid
-                   while( ritr != branches.first.rend() )
-                   {
-                      _fork_db.remove( (*ritr)->data.id() );
-                      ++ritr;
-                   }
-                   _fork_db.set_head( branches.second.front() );
+               ilog( "Pushing blocks from fork ${n} ${id}", ("n",(*ritr)->data.block_num())("id",(*ritr)->data.id()) );
+               optional<fc::exception> except;
+               try
+               {
+                  auto session = start_undo_session( true );
+                  apply_block( (*ritr)->data, skip );
+                  session.push();
+               }
+               catch ( const fc::exception& e ) { except = e; }
 
-                   // pop all blocks from the bad fork
-                   while( head_block_id() != branches.second.back()->data.previous )
-                      pop_block();
+               if( except )
+               {
+                  wlog( "exception thrown while switching forks ${e}", ("e",except->to_detail_string() ) );
+                  // remove the rest of branches.first from the fork_db, those blocks are invalid
+                  while( ritr != branches.first.rend() )
+                  {
+                     _fork_db.remove( (*ritr)->data.id() );
+                     ++ritr;
+                  }
+                  _fork_db.set_head( branches.second.front() );
 
-                   // restore all blocks from the good fork
-                   for( auto ritr = branches.second.rbegin(); ritr != branches.second.rend(); ++ritr )
-                   {
-                      auto session = start_undo_session( true );
-                      apply_block( (*ritr)->data, skip );
-                      session.push();
-                   }
-                   throw *except;
-                }
+                  // pop all blocks from the bad fork
+                  while( head_block_id() != branches.second.back()->data.previous )
+                  {
+                     pop_block();
+                  }
+                  // restore all blocks from the good fork
+                  for( auto ritr = branches.second.rbegin(); ritr != branches.second.rend(); ++ritr )
+                  {
+                     auto session = start_undo_session( true );
+                     apply_block( (*ritr)->data, skip );
+                     session.push();
+                  }
+                  throw *except;
+               }
             }
             return true;
          }
          else
+         {
             return false;
+         }
       }
    }
 
    try
    {
       auto session = start_undo_session( true );
-      apply_block(new_block, skip);
+      apply_block( new_block, skip );
       session.push();
    }
    catch( const fc::exception& e )
    {
-      elog("Failed to push new block:\n${e}", ("e", e.to_detail_string()));
+      elog("Failed to push new block: \n ${e}", ("e", e.to_detail_string()));
       _fork_db.remove(new_block.id());
       throw;
    }
 
+   ilog( "Pushed Block: \n ${b} \n", ("b", new_block.id() ) );
+
    return false;
-} FC_CAPTURE_AND_RETHROW() }
+} FC_CAPTURE_AND_RETHROW( ( new_block ) ) }
 
 /**
  * Attempts to push the transaction into the pending queue
@@ -2870,15 +3191,15 @@ void database::_push_transaction( const signed_transaction& trx )
 }
 
 
-/** Creates a new block using the keys provided to the producer node, 
+/** 
+ * Creates a new block using the keys provided to the producer node, 
  * when the producer is scheduled and syncronised.
  */
 signed_block database::generate_block(
    time_point when,
    const account_name_type& producer_owner,
    const fc::ecc::private_key& block_signing_private_key,
-   uint32_t skip /* = 0 */
-   )
+   uint32_t skip )
 {
    signed_block result;
    detail::with_skip_flags( *this, skip, [&]()
@@ -2914,6 +3235,7 @@ signed_block database::_generate_block( fc::time_point when, const account_name_
    }
       
    signed_block pending_block;
+
    pending_block.previous = head_block_id();
    pending_block.timestamp = when;
    pending_block.producer = producer_owner;
@@ -3013,6 +3335,8 @@ signed_block database::_generate_block( fc::time_point when, const account_name_
       FC_ASSERT( fc::raw::pack_size( pending_block ) <= MAX_BLOCK_SIZE );
    }
 
+   // ilog( "Generated Block ID: ${i} at block height: ${h}",("i", pending_block.id() )("h", pending_block.block_num() ) );
+
    push_block( pending_block, skip );
 
    return pending_block;
@@ -3023,6 +3347,8 @@ signed_block database::_generate_block( fc::time_point when, const account_name_
  */
 void database::pop_block()
 { try {
+   ilog( "Popping Block" );
+
    _pending_tx_session.reset();
    auto head_id = head_block_id();
 
@@ -3101,38 +3427,55 @@ account_name_type database::get_scheduled_producer( uint64_t slot_num )const
 {
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    const producer_schedule_object& pso = get_producer_schedule();
+
    uint64_t current_aslot = props.current_aslot + slot_num;
-   return pso.current_shuffled_producers[ current_aslot % pso.num_scheduled_producers ];
+   account_name_type scheduled_producer = pso.current_shuffled_producers[ current_aslot % pso.num_scheduled_producers ];
+
+   // ilog( "Get Scheduled Producer: ASlot: ${s} Producer: ${p}", ("s", current_aslot)("p", scheduled_producer ) );
+
+   return scheduled_producer;
 }
 
-fc::time_point database::get_slot_time(uint64_t slot_num)const
+fc::time_point database::get_slot_time( uint64_t slot_num )const
 {
    if( slot_num == 0 )
+   {
       return fc::time_point();
+   }
 
-   int64_t interval_micsec = BLOCK_INTERVAL.count();
+   int64_t interval = BLOCK_INTERVAL.count();
 
-   if( head_block_num() == 0 )
+   const dynamic_global_property_object& dgpo = get_dynamic_global_properties();
+
+   if( dgpo.head_block_number == 0 )
    {
       // n.b. first block is at genesis_time plus one block interval
-      fc::time_point genesis_time = head_block_time();
-      return genesis_time + fc::microseconds( slot_num * interval_micsec );
+      fc::time_point genesis_time = dgpo.time;
+      return genesis_time + fc::microseconds( slot_num * interval );
    }
 
    // "slot 0" is head_slot_time
    // "slot 1" is head_slot_time
 
-   int64_t head_block_abs_slot = ( head_block_time().time_since_epoch().count() / interval_micsec );
-   return fc::time_point( fc::microseconds( head_block_abs_slot * interval_micsec + slot_num * interval_micsec ) );
+   int64_t head_block_abs_slot = dgpo.time.time_since_epoch().count() / interval;
+   fc::time_point head_slot_time = fc::time_point( fc::microseconds( head_block_abs_slot * interval ) );
+   fc::time_point slot_time = head_slot_time + fc::microseconds( slot_num * interval );
+
+   // ilog( "Get Slot Time: Slot: ${s} Time: ${t}", ("s", slot_num)("t", slot_time ) );
+
+   return slot_time;
 }
 
-uint64_t database::get_slot_at_time(fc::time_point when)const
+uint64_t database::get_slot_at_time( fc::time_point when )const
 {
    fc::time_point first_slot_time = get_slot_time( 1 );
-   if( when < first_slot_time ) {
+
+   if( when < first_slot_time ) 
+   {
       return 0;
    }
-   uint64_t slot_number = ((when.time_since_epoch().count() - first_slot_time.time_since_epoch().count()) / BLOCK_INTERVAL.count()) + 1;
+
+   uint64_t slot_number = ( ( when - first_slot_time ).count() / BLOCK_INTERVAL.count() ) + 1;
    return slot_number;
 }
 
@@ -3166,6 +3509,8 @@ void database::process_update_producer_set()
       pso.total_producer_voting_power = total_producer_voting_power;
    });
 
+   ilog( "Updated Producer set: \n ${p} \n", ("p", pso) );
+
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -3183,7 +3528,8 @@ share_type database::update_producer( const producer_object& producer, const pro
    share_type voting_power = 0;
    uint32_t vote_count = 0;
 
-   while( producer_vote_itr != producer_vote_idx.end() && producer_vote_itr->producer == producer.owner )
+   while( producer_vote_itr != producer_vote_idx.end() && 
+      producer_vote_itr->producer == producer.owner )
    {
       const producer_vote_object& vote = *producer_vote_itr;
       const account_object& voter = get_account( vote.account );
@@ -3193,7 +3539,7 @@ share_type database::update_producer( const producer_object& producer, const pro
          weight += get_proxied_voting_power( voter, equity_price );
       }
       // divides voting weight by 2^vote_rank, limiting total voting weight -> total voting power as votes increase.
-      voting_power += ( weight.value >> vote.vote_rank );
+      voting_power += share_type( weight.value >> vote.vote_rank );
       vote_count++;
       ++producer_vote_itr;
    }
@@ -3226,13 +3572,14 @@ share_type database::update_producer( const producer_object& producer, const pro
  */
 void database::update_community_moderators( const community_member_object& community )
 { try {
-   price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
+   ilog( "Update Community moderators: ${c}", ("c", community.name) );
+   price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
    const auto& vote_idx = get_index< community_moderator_vote_index >().indices().get< by_community_moderator >();
-   flat_map<account_name_type, share_type> mod_weight;
-
+   flat_map< account_name_type, share_type > mod_weight;
    auto vote_itr = vote_idx.lower_bound( community.name );
 
-   while( vote_itr != vote_idx.end() && vote_itr->community == community.name )
+   while( vote_itr != vote_idx.end() && 
+      vote_itr->community == community.name )
    {
       const community_moderator_vote_object& vote = *vote_itr;
       const account_object& voter = get_account( vote.account );
@@ -3242,7 +3589,7 @@ void database::update_community_moderators( const community_member_object& commu
          weight += get_proxied_voting_power( voter, equity_price );
       }
       // divides voting weight by 2^vote_rank, limiting total voting weight -> total voting power as votes increase.
-      mod_weight[ vote.moderator ] += ( weight.value >> vote.vote_rank );
+      mod_weight[ vote.moderator ] += share_type( weight.value >> vote.vote_rank );
       ++vote_itr;
    }
    
@@ -3272,6 +3619,8 @@ void database::update_community_moderator_set()
       update_community_moderators( *community_itr );
       ++community_itr;
    }
+
+   ilog( "Update Community moderator set" );
 
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -3308,7 +3657,7 @@ void database::update_business_account( const account_business_object& business 
          bus_officer_vote_itr->account == voter.name )
       {
          const account_officer_vote_object& vote = *bus_officer_vote_itr;
-         officers[ vote.officer_account ] += ( weight.value >> vote.vote_rank );
+         officers[ vote.officer_account ] += share_type( weight.value >> vote.vote_rank );
          // divides voting weight by 2^vote_rank, limiting total voting weight -> total voting power as votes increase.
          ++bus_officer_vote_itr;
       }
@@ -3343,7 +3692,7 @@ void database::update_business_account( const account_business_object& business 
       {
          const account_executive_vote_object& vote = *bus_executive_vote_itr;
 
-         exec_map[ vote.executive_account ][ vote.role ] += ( weight.value >> vote.vote_rank );
+         exec_map[ vote.executive_account ][ vote.role ] += share_type( weight.value >> vote.vote_rank );
          // divides voting weight by 2^vote_rank, limiting total voting weight -> total voting power as votes increase.
          ++bus_executive_vote_itr;
       }
@@ -3364,7 +3713,8 @@ void database::update_business_account( const account_business_object& business 
 
    auto role_rank_itr = role_rank.begin();
 
-   while( !exec_set.allocated() && role_rank_itr != role_rank.end() )
+   while( !exec_set.allocated() && 
+      role_rank_itr != role_rank.end() )
    {
       pair< account_name_type, pair< executive_role_type, share_type > > rank = *role_rank_itr;
       
@@ -3437,6 +3787,7 @@ void database::update_business_account( const account_business_object& business 
       }
 
       executive_account_list.insert( executive );
+      ++role_rank_itr;
    }
 
    modify( business, [&]( account_business_object& b )
@@ -3447,6 +3798,8 @@ void database::update_business_account( const account_business_object& business 
       b.executive_votes = executives;
       b.executive_board = exec_set;
    });
+
+   // ilog( "Updated Business Account: ${b}",("b",business ) );
 
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -3460,6 +3813,8 @@ void database::update_business_account_set()
    if( (head_block_num() % SET_UPDATE_BLOCK_INTERVAL) != 0 )    // Runs once per day
       return;
 
+   // ilog( "Update business account set" );
+
    const auto& business_idx = get_index< account_business_index >().indices().get< by_account >();
    auto business_itr = business_idx.begin();
 
@@ -3468,7 +3823,6 @@ void database::update_business_account_set()
       update_business_account( *business_itr );
       ++business_itr;
    }
-   
 } FC_CAPTURE_AND_RETHROW() }
 
 /**
@@ -3479,6 +3833,8 @@ void database::process_stablecoins()
 { try {
    if( (head_block_num() % STABLECOIN_BLOCK_INTERVAL) != 0 )    // Runs once per day
       return;
+
+   // ilog( "Process Stablecoins" );
 
    time_point_sec now = head_block_time();
    uint64_t head_epoch_seconds = now.sec_since_epoch();
@@ -3519,6 +3875,7 @@ void database::process_stablecoins()
             }
          }
       });
+      ++stablecoin_itr;
    }
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -3531,6 +3888,8 @@ void database::process_power_rewards()
 { try {
    if( (head_block_num() % EQUITY_INTERVAL_BLOCKS) != 0 )    // Runs once per week
       return;
+
+   // ilog( "Process Power Rewards" );
 
    const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol_stake >();
    const auto& fund_idx = get_index< reward_fund_index >().indices().get< by_symbol >();
@@ -3575,7 +3934,7 @@ void database::process_power_rewards()
       adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
 
       ++fund_itr;
-   }  
+   }
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -3685,11 +4044,12 @@ void database::process_equity_rewards()
  */
 void database::update_proof_of_work_target()
 { try {
-   if( (head_block_num() % POW_UPDATE_BLOCK_INTERVAL) != 0 )    // Runs once per week
+   if( (head_block_num() % POW_UPDATE_BLOCK_INTERVAL) != 0 )    // Runs once per Hour
       return;
 
    const median_chain_property_object& median_props = get_median_chain_properties();
    const producer_schedule_object& pso = get_producer_schedule();
+
    uint128_t recent_pow = pso.recent_pow;        // Amount of proofs of work, times block precision, decayed over 7 days
    uint128_t target_pow = ( BLOCKCHAIN_PRECISION.value * median_props.pow_decay_time.to_seconds() ) / median_props.pow_target_time.to_seconds();
    uint128_t new_difficulty = ( pso.pow_target_difficulty * target_pow ) / recent_pow;
@@ -3701,12 +4061,13 @@ void database::update_proof_of_work_target()
       pso.decay_pow( now, median_props );
    });
 
+   ilog( "Updated Proof of work target:", ("pso",pso) );
+
 } FC_CAPTURE_AND_RETHROW() }
 
 
 void database::claim_proof_of_work_reward( const account_name_type& miner )
 { try {
-   
    const median_chain_property_object& median_props = get_median_chain_properties();
    time_point now = head_block_time();
    const producer_schedule_object& pso = get_producer_schedule();
@@ -3715,7 +4076,7 @@ void database::claim_proof_of_work_reward( const account_name_type& miner )
    modify( producer, [&]( producer_object& p )
    {
       p.mining_power += BLOCKCHAIN_PRECISION;
-      p.mining_count ++;
+      p.mining_count++;
       p.last_pow_time = now;
       p.decay_weights( now, median_props );
    });
@@ -3745,6 +4106,8 @@ void database::claim_proof_of_work_reward( const account_name_type& miner )
       ++fund_itr;
    }
 
+   ilog( "Miner: ${p} Claimed proof of work reward.", ("p", producer.owner ) );
+
 } FC_CAPTURE_AND_RETHROW() }
 
 /**
@@ -3755,13 +4118,15 @@ void database::claim_proof_of_work_reward( const account_name_type& miner )
  */
 void database::process_txn_stake_rewards()
 { try {
-   if( (head_block_num() % TXN_STAKE_BLOCK_INTERVAL) != 0 )    // Runs once per week
+   if( (head_block_num() % TXN_STAKE_BLOCK_INTERVAL) != 0 )    // Runs once per Hour
       return;
+
+   // ilog( "Process Transaction Stake reward" );
 
    const auto& producer_idx = get_index< producer_index >().indices().get< by_txn_stake_weight >();
    auto producer_itr = producer_idx.begin();
     
-   flat_map < account_name_type, share_type > stake_map;
+   flat_map< account_name_type, share_type > stake_map;
    share_type total_stake_shares = 0;
    
    while( producer_itr != producer_idx.end() &&
@@ -3780,7 +4145,7 @@ void database::process_txn_stake_rewards()
    const auto& fund_idx = get_index< reward_fund_index >().indices().get< by_symbol >();
    auto fund_itr = fund_idx.begin();
 
-   while( fund_itr != fund_idx.end() )
+   while( fund_itr != fund_idx.end() && total_stake_shares > 0 )
    {
       const reward_fund_object& reward_fund = *fund_itr;
       asset txn_stake_reward = reward_fund.txn_stake_reward_balance;     // Record the opening balance of the transaction stake reward fund
@@ -3819,7 +4184,8 @@ void database::process_txn_stake_rewards()
  */
 void database::process_validation_rewards()
 { try {
-   
+   // ilog( "Process Validation rewards" );
+
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    const auto& valid_idx = get_index< block_validation_index >().indices().get< by_height_stake >();
    auto valid_itr = valid_idx.lower_bound( props.last_irreversible_block_num );
@@ -3844,7 +4210,7 @@ void database::process_validation_rewards()
    const auto& fund_idx = get_index< reward_fund_index >().indices().get< by_symbol >();
    auto fund_itr = fund_idx.begin();
 
-   while( fund_itr != fund_idx.end() )
+   while( fund_itr != fund_idx.end() && total_validation_shares > 0 )
    {
       const reward_fund_object& reward_fund = *fund_itr;
       asset validation_reward = reward_fund.validation_reward_balance;     // Record the opening balance of the validation reward fund
@@ -3881,6 +4247,8 @@ void database::process_producer_activity_rewards()
 { try {
    if( (head_block_num() % POA_BLOCK_INTERVAL ) != 0 )    // Runs once per 8 hours.
       return;
+
+   // ilog( "Process Producer Activity Rewards" );
    
    const auto& producer_idx = get_index< producer_index >().indices().get< by_activity_stake >();
    auto producer_itr = producer_idx.begin();
@@ -3904,11 +4272,11 @@ void database::process_producer_activity_rewards()
 
          modify( reward_fund, [&]( reward_fund_object& r )
          {
-            r.adjust_producer_activity_reward_balance( -poa_reward );     // Remove the distributed amount from the reward pool.
+            r.adjust_producer_activity_reward_balance( -poa_reward );        // Remove the distributed amount from the reward pool.
          });
 
-         adjust_reward_balance( prime_producer.owner, poa_reward );   // Pay producer activity reward to the producer with the highest accumulated activity stake.
-         adjust_pending_supply( -poa_reward );        // Deduct distributed amount from pending supply.
+         adjust_reward_balance( prime_producer.owner, poa_reward );          // Pay producer activity reward to the producer with the highest accumulated activity stake.
+         adjust_pending_supply( -poa_reward );                               // Deduct distributed amount from pending supply.
 
          ++fund_itr;
       }
@@ -3924,6 +4292,8 @@ void database::process_supernode_rewards()
 { try {
    if( (head_block_num() % SUPERNODE_BLOCK_INTERVAL ) != 0 )    // Runs once per day.
       return;
+
+   // ilog( "Process Supernode Rewards" );
 
    time_point now = head_block_time();
    const auto& supernode_idx = get_index< supernode_index >().indices().get< by_view_weight >();
@@ -3947,7 +4317,7 @@ void database::process_supernode_rewards()
    const auto& fund_idx = get_index< reward_fund_index >().indices().get< by_symbol >();
    auto fund_itr = fund_idx.begin();
 
-   while( fund_itr != fund_idx.end() )
+   while( fund_itr != fund_idx.end() && total_supernode_shares > 0 )
    {
       const reward_fund_object& reward_fund = *fund_itr;
       asset supernode_reward = reward_fund.supernode_reward_balance;     // Record the opening balance of the supernode reward fund
@@ -3989,9 +4359,9 @@ void database::update_network_officer( const network_officer_object& network_off
    const producer_schedule_object& pso, const dynamic_global_property_object& props )
 { try {
    uint32_t vote_count = 0;
-   uint128_t voting_power = 0;
+   share_type voting_power = 0;
    uint32_t producer_vote_count = 0;
-   uint128_t producer_voting_power = 0;
+   share_type producer_voting_power = 0;
    price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
 
    const auto& vote_idx = get_index< network_officer_vote_index >().indices().get< by_officer_account >();
@@ -4006,17 +4376,19 @@ void database::update_network_officer( const network_officer_object& network_off
       vote_count++;
       share_type weight = 0;
       weight += get_voting_power( vote.account, equity_price );
+
       if( voter.proxied.size() )
       {
          weight += get_proxied_voting_power( voter, equity_price );
       }
-      voting_power += ( weight.value >> vote.vote_rank );
+
+      voting_power += share_type( weight.value >> vote.vote_rank );
 
       if( is_producer )
       {
          producer_vote_count++;
          const producer_object& producer = get_producer( voter.name );
-         producer_voting_power += ( producer.voting_power.value >> vote.vote_rank );
+         producer_voting_power += share_type( producer.voting_power.value >> vote.vote_rank );
       }
       ++vote_itr;
    }
@@ -4024,17 +4396,19 @@ void database::update_network_officer( const network_officer_object& network_off
    // Approve the network officer when a threshold of voting power and vote amount supports it.
    bool approve_officer = ( vote_count >= OFFICER_VOTE_THRESHOLD_AMOUNT ) &&
       ( producer_vote_count >= OFFICER_VOTE_THRESHOLD_PRODUCERS ) &&
-      ( voting_power >= ( props.total_voting_power * OFFICER_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
-      ( producer_voting_power >= ( pso.total_producer_voting_power * OFFICER_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
+      ( voting_power.value >= ( props.total_voting_power * OFFICER_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
+      ( producer_voting_power.value >= ( pso.total_producer_voting_power * OFFICER_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
    
    modify( network_officer, [&]( network_officer_object& n )
    {
       n.vote_count = vote_count;
-      n.voting_power = share_type( voting_power.to_uint64() );
+      n.voting_power = voting_power;
       n.producer_vote_count = producer_vote_count;
-      n.producer_voting_power = share_type( producer_voting_power.to_uint64() );
+      n.producer_voting_power = producer_voting_power;
       n.officer_approved = approve_officer;
    });
+
+   ilog( "Updated Network Officer: \n ${n} \n ", ("n", network_officer ) );
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -4047,6 +4421,8 @@ void database::process_network_officer_rewards()
 { try {
    if( (head_block_num() % NETWORK_OFFICER_BLOCK_INTERVAL ) != 0 )    // Runs once per day.
       return;
+
+   // ilog( "Process Network Officer Rewards" );
 
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    const producer_schedule_object& pso = get_producer_schedule();
@@ -4066,7 +4442,8 @@ void database::process_network_officer_rewards()
    flat_map < account_name_type, share_type > development_map;
    share_type total_development_shares = 0;
 
-   while( development_itr != development_end && development_map.size() < NETWORK_OFFICER_ACTIVE_SET ) 
+   while( development_itr != development_end && 
+      development_map.size() < NETWORK_OFFICER_ACTIVE_SET ) 
    {
       share_type development_shares = development_itr->voting_power;  // Get the development officer voting power
 
@@ -4085,7 +4462,8 @@ void database::process_network_officer_rewards()
    flat_map < account_name_type, share_type > marketing_map;
    share_type total_marketing_shares = 0;
    
-   while( marketing_itr != marketing_end && marketing_map.size() < NETWORK_OFFICER_ACTIVE_SET ) 
+   while( marketing_itr != marketing_end && 
+      marketing_map.size() < NETWORK_OFFICER_ACTIVE_SET ) 
    {
       share_type marketing_shares = marketing_itr->voting_power;  // Get the marketing officer voting power
 
@@ -4174,9 +4552,9 @@ void database::update_executive_board( const executive_board_object& executive_b
    const producer_schedule_object& pso, const dynamic_global_property_object& props )
 { try {
    uint32_t vote_count = 0;
-   uint128_t voting_power = 0;
+   share_type voting_power = 0;
    uint32_t producer_vote_count = 0;
-   uint128_t producer_voting_power = 0;
+   share_type producer_voting_power = 0;
    price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
 
    const auto& vote_idx = get_index< executive_board_vote_index >().indices().get< by_executive_account >();
@@ -4195,13 +4573,13 @@ void database::update_executive_board( const executive_board_object& executive_b
       {
          weight += get_proxied_voting_power( voter, equity_price );
       }
-      voting_power += ( weight.value >> vote.vote_rank );
+      voting_power += share_type( weight.value >> vote.vote_rank );
 
       if( is_producer )
       {
          producer_vote_count++;
          const producer_object& producer = get_producer( voter.name );
-         producer_voting_power += ( producer.voting_power.value >> vote.vote_rank );
+         producer_voting_power += share_type( producer.voting_power.value >> vote.vote_rank );
       }
       ++vote_itr;
    }
@@ -4209,17 +4587,20 @@ void database::update_executive_board( const executive_board_object& executive_b
    // Approve the executive board when a threshold of accounts vote to support its budget.
    bool approve_board = ( vote_count >= EXECUTIVE_VOTE_THRESHOLD_AMOUNT ) &&
       ( producer_vote_count >= EXECUTIVE_VOTE_THRESHOLD_PRODUCERS ) &&
-      ( voting_power >= ( props.total_voting_power * EXECUTIVE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
-      ( producer_voting_power >= ( pso.total_producer_voting_power * EXECUTIVE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
+      ( voting_power.value >= ( props.total_voting_power * EXECUTIVE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
+      ( producer_voting_power.value >= ( pso.total_producer_voting_power * EXECUTIVE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
    
    modify( executive_board, [&]( executive_board_object& e )
    {
       e.vote_count = vote_count;
-      e.voting_power = share_type( voting_power.to_uint64() );
+      e.voting_power = voting_power;
       e.producer_vote_count = producer_vote_count;
-      e.producer_voting_power = share_type( producer_voting_power.to_uint64() );
+      e.producer_voting_power = producer_voting_power;
       e.board_approved = approve_board;
    });
+
+   ilog( "Update Executive Board: \n ${b} \n", ("b", executive_board ) );
+
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -4239,6 +4620,8 @@ void database::process_executive_board_budgets()
 { try {
    if( (head_block_num() % EXECUTIVE_BOARD_BLOCK_INTERVAL ) != 0 )    // Runs once per day.
       return;
+
+   // ilog( "Process Executive Board Budgets" );
 
    const producer_schedule_object& pso = get_producer_schedule();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
@@ -4281,9 +4664,9 @@ void database::update_governance_account( const governance_account_object& gover
    const producer_schedule_object& pso, const dynamic_global_property_object& props )
 { try {
    uint32_t vote_count = 0;
-   uint128_t voting_power = 0;
+   share_type voting_power = 0;
    uint32_t producer_vote_count = 0;
-   uint128_t producer_voting_power = 0;
+   share_type producer_voting_power = 0;
    price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
 
    const auto& vote_idx = get_index< governance_subscription_index >().indices().get< by_governance_account >();
@@ -4302,13 +4685,13 @@ void database::update_governance_account( const governance_account_object& gover
       {
          weight += get_proxied_voting_power( voter, equity_price );
       }
-      voting_power += ( weight.value >> vote.vote_rank );
+      voting_power += share_type( weight.value >> vote.vote_rank );
 
       if( is_producer )
       {
          producer_vote_count++;
          const producer_object& producer = get_producer( voter.name );
-         producer_voting_power += ( producer.voting_power.value >> vote.vote_rank );
+         producer_voting_power += share_type( producer.voting_power.value >> vote.vote_rank );
       }
       ++vote_itr;
    }
@@ -4316,17 +4699,20 @@ void database::update_governance_account( const governance_account_object& gover
    // Approve the governance account when a threshold of votes to support its budget.
    bool approve_account = ( vote_count >= GOVERNANCE_VOTE_THRESHOLD_AMOUNT * 4 ) &&
       ( producer_vote_count >= GOVERNANCE_VOTE_THRESHOLD_PRODUCERS ) &&
-      ( voting_power >= ( props.total_voting_power * GOVERNANCE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
-      ( producer_voting_power >= ( pso.total_producer_voting_power * GOVERNANCE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
+      ( voting_power.value >= ( props.total_voting_power * GOVERNANCE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
+      ( producer_voting_power.value >= ( pso.total_producer_voting_power * GOVERNANCE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
    
    modify( governance_account, [&]( governance_account_object& g )
    {
       g.subscriber_count = vote_count;
-      g.subscriber_power = share_type( voting_power.to_uint64() );
+      g.subscriber_power = voting_power;
       g.producer_subscriber_count = producer_vote_count;
-      g.producer_subscriber_power = share_type( producer_voting_power.to_uint64() );
+      g.producer_subscriber_power = producer_voting_power;
       g.account_approved = approve_account;
    });
+
+   ilog( "Update Governance Account: \n ${g} \n", ("g", governance_account ) );
+
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -4334,6 +4720,8 @@ void database::update_governance_account_set()
 { try { 
    if( (head_block_num() % SET_UPDATE_BLOCK_INTERVAL ) != 0 )    // Runs once per day
       return;
+
+   // ilog( "Update Governance Account Set" );
    
    const producer_schedule_object& pso = get_producer_schedule();
    const dynamic_global_property_object& props = get_dynamic_global_properties();
@@ -4358,13 +4746,13 @@ void database::update_enterprise( const community_enterprise_object& enterprise,
    const producer_schedule_object& pso, const dynamic_global_property_object& props )
 { try {
    uint32_t total_approvals = 0;
-   uint128_t total_voting_power = 0;
+   share_type total_voting_power = 0;
    uint32_t total_producer_approvals = 0;
-   uint128_t total_producer_voting_power = 0;
+   share_type total_producer_voting_power = 0;
    uint32_t current_approvals = 0;
-   uint128_t current_voting_power = 0;
+   share_type current_voting_power = 0;
    uint32_t current_producer_approvals = 0;
-   uint128_t current_producer_voting_power = 0;
+   share_type current_producer_voting_power = 0;
    price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
 
    const auto& approval_idx = get_index< enterprise_approval_index >().indices().get< by_enterprise_id >();
@@ -4378,10 +4766,10 @@ void database::update_enterprise( const community_enterprise_object& enterprise,
       const account_object& voter = get_account( approval.account );
       bool is_producer = pso.is_top_voting_producer( voter.name );
       total_approvals++;
-      total_voting_power += get_voting_power( approval.account, equity_price ).value;
+      total_voting_power += get_voting_power( approval.account, equity_price );
       if( voter.proxied.size() )
       {
-         total_voting_power += get_proxied_voting_power( voter, equity_price ).value;
+         total_voting_power += get_proxied_voting_power( voter, equity_price );
       }
 
       if( is_producer )
@@ -4394,10 +4782,10 @@ void database::update_enterprise( const community_enterprise_object& enterprise,
       if( approval.milestone == enterprise.claimed_milestones ) // approval is current 
       {
          current_approvals++;
-         current_voting_power += get_voting_power( approval.account, equity_price ).value;
+         current_voting_power += get_voting_power( approval.account, equity_price );
          if( voter.proxied.size() )
          {
-            current_voting_power += get_proxied_voting_power( voter, equity_price ).value;
+            current_voting_power += get_proxied_voting_power( voter, equity_price );
          }
 
          if( is_producer )
@@ -4413,24 +4801,28 @@ void database::update_enterprise( const community_enterprise_object& enterprise,
    // Approve the latest claimed milestone when a threshold of approvals support its release.
    bool approve_milestone = ( current_approvals >= ENTERPRISE_VOTE_THRESHOLD_AMOUNT ) &&
       ( current_producer_approvals >= ENTERPRISE_VOTE_THRESHOLD_PRODUCERS ) &&
-      ( current_voting_power >= ( props.total_voting_power * ENTERPRISE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
-      ( current_producer_voting_power >= ( pso.total_producer_voting_power * ENTERPRISE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
+      ( current_voting_power.value >= ( props.total_voting_power * ENTERPRISE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
+      ( current_producer_voting_power.value >= ( pso.total_producer_voting_power * ENTERPRISE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
 
    modify( enterprise, [&]( community_enterprise_object& e )
    {
       e.total_approvals = total_approvals;
-      e.total_voting_power = share_type( total_voting_power.to_uint64() );
+      e.total_voting_power = total_voting_power;
       e.total_producer_approvals = total_producer_approvals;
-      e.total_producer_voting_power = share_type( total_producer_voting_power.to_uint64() );
+      e.total_producer_voting_power = total_producer_voting_power;
       e.current_approvals = current_approvals;
-      e.current_voting_power = share_type( current_voting_power.to_uint64() );
+      e.current_voting_power = current_voting_power;
       e.current_producer_approvals = current_producer_approvals;
-      e.current_producer_voting_power = share_type( current_producer_voting_power.to_uint64() );
+      e.current_producer_voting_power = current_producer_voting_power;
+
       if( approve_milestone )
       {
          e.approved_milestones = e.claimed_milestones;
       }
    });
+
+   ilog( "Update Enterprise: ${e}", ("e", enterprise.enterprise_id ) );
+
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -4513,6 +4905,8 @@ void database::process_community_enterprise_fund()
                e.total_distributed += distributed;
             });
          }
+
+         // ilog( "Process Enterprise Funding: ${e}", ("e", enterprise.enterprise_id ) );
       }
       ++enterprise_itr;
    }
@@ -4534,6 +4928,8 @@ void database::process_credit_updates()
 
    const auto& loan_idx = get_index< credit_loan_index >().indices().get< by_liquidation_spread >();
    auto loan_itr = loan_idx.begin();
+
+   // ilog( "Process Credit Updates" );
 
    while( loan_itr != loan_idx.end() )
    {
@@ -4644,6 +5040,8 @@ void database::process_product_auctions()
 { try {
    time_point now = head_block_time();
 
+   // ilog( "Process Product Auctions" );
+
    const auto& auction_idx = get_index< product_auction_sale_index >().indices().get< by_completion_time >();
    auto auction_itr = auction_idx.begin();
    const auto& bid_idx = get_index< product_auction_bid_index >().indices().get< by_highest_bid >();
@@ -4720,7 +5118,8 @@ void database::process_product_auctions()
 
 /**
  * Distributes currency issuance of all currency assets.
- * Pays out Staked and liquid Currency assets, including MEC, every block to all network contributors.
+ * Pays out Staked and liquid Currency assets, including MEC, 
+ * every block to all network contributors.
  * 
  * For MeCoin, the issuance rate is one Billion per year.
  * 
@@ -4741,73 +5140,85 @@ void database::process_funds()
    const producer_object& current_producer = get_producer( props.current_producer );
    const account_object& producer_account = get_account( props.current_producer );
 
-   FC_ASSERT( current_producer.active && producer_account.active,
-         "Block Producer cannot process funds while account or producer object is inactive." );
+   FC_ASSERT( current_producer.active && 
+      producer_account.active,
+      "Block Producer cannot process funds while account or producer object is inactive." );
 
-   const auto& currency_idx = get_index< asset_currency_data_index >().indices().get< by_id >();
-   auto currency_itr = currency_idx.begin();
-
-   while( currency_itr != currency_idx.end() )
+   if( props.head_block_number > 0 )      // First block uses init genesis for reward.
    {
-      const asset_currency_data_object& currency = *currency_itr;
+      const auto& currency_idx = get_index< asset_currency_data_index >().indices().get< by_id >();
+      auto currency_itr = currency_idx.begin();
 
-      asset block_reward = currency.block_reward;
-
-      asset content_reward            = ( block_reward * currency.content_reward_percent          ) / PERCENT_100;
-      asset equity_reward             = ( block_reward * currency.equity_reward_percent           ) / PERCENT_100;
-      asset producer_reward           = ( block_reward * currency.producer_reward_percent         ) / PERCENT_100;
-      asset supernode_reward          = ( block_reward * currency.supernode_reward_percent        ) / PERCENT_100;
-      asset power_reward              = ( block_reward * currency.power_reward_percent            ) / PERCENT_100;
-      asset community_fund_reward     = ( block_reward * currency.community_fund_reward_percent   ) / PERCENT_100;
-      asset development_reward        = ( block_reward * currency.development_reward_percent      ) / PERCENT_100;
-      asset marketing_reward          = ( block_reward * currency.marketing_reward_percent        ) / PERCENT_100;
-      asset advocacy_reward           = ( block_reward * currency.advocacy_reward_percent         ) / PERCENT_100;
-      asset activity_reward           = ( block_reward * currency.activity_reward_percent         ) / PERCENT_100;
-
-      asset producer_block_reward     = ( producer_reward * currency.producer_block_reward_percent     ) / PERCENT_100;
-      asset validation_reward         = ( producer_reward * currency.validation_reward_percent         ) / PERCENT_100;
-      asset txn_stake_reward          = ( producer_reward * currency.txn_stake_reward_percent          ) / PERCENT_100;
-      asset work_reward               = ( producer_reward * currency.work_reward_percent               ) / PERCENT_100;
-      asset producer_activity_reward  = ( producer_reward * currency.producer_activity_reward_percent  ) / PERCENT_100;
-
-      asset producer_pending = validation_reward + txn_stake_reward + work_reward + producer_activity_reward;
-      asset pending_issuance = content_reward + equity_reward + supernode_reward + power_reward + community_fund_reward + development_reward + marketing_reward + advocacy_reward + activity_reward;
-      asset reward_checksum = content_reward + equity_reward + validation_reward + txn_stake_reward + work_reward + producer_activity_reward + producer_block_reward + supernode_reward + power_reward + community_fund_reward + development_reward + marketing_reward + advocacy_reward + activity_reward;
-      
-      FC_ASSERT( reward_checksum == block_reward,
-         "Block reward issuance checksum failed, allocation is invalid." );
-      
-      const reward_fund_object& reward_fund = get_reward_fund( currency.symbol );
-      const asset_equity_data_object& equity = get_equity_data( currency.equity_asset );
-
-      modify( reward_fund, [&]( reward_fund_object& rfo )
+      while( currency_itr != currency_idx.end() )
       {
-         rfo.adjust_content_reward_balance( content_reward );
-         rfo.adjust_validation_reward_balance( validation_reward );
-         rfo.adjust_txn_stake_reward_balance( txn_stake_reward );
-         rfo.adjust_work_reward_balance( work_reward );
-         rfo.adjust_producer_activity_reward_balance( producer_activity_reward );
-         rfo.adjust_supernode_reward_balance( supernode_reward );
-         rfo.adjust_power_reward_balance( power_reward );
-         rfo.adjust_community_fund_balance( community_fund_reward );
-         rfo.adjust_development_reward_balance( development_reward );
-         rfo.adjust_marketing_reward_balance( marketing_reward );
-         rfo.adjust_advocacy_reward_balance( advocacy_reward );
-         rfo.adjust_activity_reward_balance( activity_reward );
-      });
+         const asset_currency_data_object& currency = *currency_itr;
 
-      modify( equity, [&]( asset_equity_data_object& aedo ) 
-      {
-         aedo.adjust_pool( equity_reward );
-      });
+         asset block_reward = currency.block_reward;
 
-      adjust_reward_balance( producer_account, producer_block_reward );
+         asset content_reward            = ( block_reward * currency.content_reward_percent               ) / PERCENT_100;
+         asset equity_reward             = ( block_reward * currency.equity_reward_percent                ) / PERCENT_100;
+         asset producer_reward           = ( block_reward * currency.producer_reward_percent              ) / PERCENT_100;
+         asset supernode_reward          = ( block_reward * currency.supernode_reward_percent             ) / PERCENT_100;
+         asset power_reward              = ( block_reward * currency.power_reward_percent                 ) / PERCENT_100;
+         asset community_fund_reward     = ( block_reward * currency.community_fund_reward_percent        ) / PERCENT_100;
+         asset development_reward        = ( block_reward * currency.development_reward_percent           ) / PERCENT_100;
+         asset marketing_reward          = ( block_reward * currency.marketing_reward_percent             ) / PERCENT_100;
+         asset advocacy_reward           = ( block_reward * currency.advocacy_reward_percent              ) / PERCENT_100;
+         asset activity_reward           = ( block_reward * currency.activity_reward_percent              ) / PERCENT_100;
 
-      adjust_pending_supply( pending_issuance + producer_pending );
-      
-      push_virtual_operation( producer_reward_operation( producer_account.name, producer_block_reward ) );
+         asset producer_block_reward     = ( producer_reward * currency.producer_block_reward_percent     ) / PERCENT_100;
+         asset validation_reward         = ( producer_reward * currency.validation_reward_percent         ) / PERCENT_100;
+         asset txn_stake_reward          = ( producer_reward * currency.txn_stake_reward_percent          ) / PERCENT_100;
+         asset work_reward               = ( producer_reward * currency.work_reward_percent               ) / PERCENT_100;
+         asset producer_activity_reward  = ( producer_reward * currency.producer_activity_reward_percent  ) / PERCENT_100;
 
-      ++currency_itr;
+         asset reward_checksum = content_reward + equity_reward + producer_reward + supernode_reward + power_reward + community_fund_reward + development_reward + marketing_reward + advocacy_reward + activity_reward;
+         
+         FC_ASSERT( reward_checksum == block_reward,
+            "Block reward issuance checksum failed: ${r} != ${c}, for currency: ${c}",
+            ("r", reward_checksum)("b", block_reward)("c", currency));
+
+         asset producer_checksum = producer_block_reward + validation_reward + txn_stake_reward + work_reward + producer_activity_reward;
+         
+         FC_ASSERT( producer_checksum == producer_reward,
+            "Producer reward issuance checksum failed: ${r} != ${c}, for currency: ${c}",
+            ("r", producer_checksum)("b", producer_reward)("c", currency));
+         
+         const reward_fund_object& reward_fund = get_reward_fund( currency.symbol );
+         const asset_equity_data_object& equity = get_equity_data( currency.equity_asset );
+
+         modify( reward_fund, [&]( reward_fund_object& rfo )
+         {
+            rfo.adjust_content_reward_balance( content_reward );
+            rfo.adjust_validation_reward_balance( validation_reward );
+            rfo.adjust_txn_stake_reward_balance( txn_stake_reward );
+            rfo.adjust_work_reward_balance( work_reward );
+            rfo.adjust_producer_activity_reward_balance( producer_activity_reward );
+            rfo.adjust_supernode_reward_balance( supernode_reward );
+            rfo.adjust_power_reward_balance( power_reward );
+            rfo.adjust_community_fund_balance( community_fund_reward );
+            rfo.adjust_development_reward_balance( development_reward );
+            rfo.adjust_marketing_reward_balance( marketing_reward );
+            rfo.adjust_advocacy_reward_balance( advocacy_reward );
+            rfo.adjust_activity_reward_balance( activity_reward );
+         });
+
+         modify( equity, [&]( asset_equity_data_object& aedo )
+         {
+            aedo.adjust_pool( equity_reward );
+         });
+
+         adjust_reward_balance( producer_account, producer_block_reward );
+
+         asset producer_pending = validation_reward + txn_stake_reward + work_reward + producer_activity_reward;
+         asset pending_issuance = content_reward + equity_reward + supernode_reward + power_reward + community_fund_reward + development_reward + marketing_reward + advocacy_reward + activity_reward;
+
+         adjust_pending_supply( pending_issuance + producer_pending );
+         
+         push_virtual_operation( producer_reward_operation( producer_account.name, producer_block_reward ) );
+
+         ++currency_itr;
+      }
    }
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -5194,10 +5605,15 @@ void database::apply_block( const signed_block& next_block, uint32_t skip )
    if( _checkpoints.size() && _checkpoints.rbegin()->second != block_id_type() )
    {
       auto itr = _checkpoints.find( block_num );
+
       if( itr != _checkpoints.end() )
+      {
          FC_ASSERT( next_block.id() == itr->second, "Block did not match checkpoint", ("checkpoint",*itr)("block_id",next_block.id()) );
+      }
+         
 
       if( _checkpoints.rbegin()->first >= block_num )
+      {
          skip = skip_producer_signature
               | skip_transaction_signatures
               | skip_transaction_dupe_check
@@ -5211,12 +5627,13 @@ void database::apply_block( const signed_block& next_block, uint32_t skip )
               | skip_validate
               | skip_validate_invariants
               ;
+      }  
    }
 
    detail::with_skip_flags( *this, skip, [&]()
    {
       _apply_block( next_block );
-   } );
+   });
 
    /*try
    {
@@ -5283,6 +5700,7 @@ void database::show_free_memory( bool force )
 
 void database::_apply_block( const signed_block& next_block )
 { try {
+   ilog( "Begin Applying Block: ${b}", ("b", next_block.id() ) );
    notify_pre_apply_block( next_block );
    uint64_t next_block_num = next_block.block_num();
    uint32_t skip = get_node_properties().skip_flags;
@@ -5308,7 +5726,7 @@ void database::_apply_block( const signed_block& next_block )
       }
    }
 
-   const producer_object& signing_producer = validate_block_header(skip, next_block);
+   const producer_object& signing_producer = validate_block_header( skip, next_block );
 
    _current_block_num = next_block_num;
    _current_trx_in_block = 0;
@@ -5361,17 +5779,17 @@ void database::_apply_block( const signed_block& next_block )
       ++_current_trx_in_block;
    }
 
-   update_global_dynamic_data( next_block);
+   update_global_dynamic_data( next_block );
    update_signing_producer( signing_producer, next_block );
-
+   update_producer_schedule(*this);
    update_last_irreversible_block();
    update_transaction_stake( signing_producer, _current_trx_stake_weight );
    create_block_summary( next_block );
+
    clear_expired_transactions();
    clear_expired_operations();
    clear_expired_delegations();
-   update_producer_schedule(*this);
-
+   
    update_producer_set();
    update_governance_account_set();
    update_community_moderator_set();
@@ -5532,7 +5950,7 @@ void database::_apply_transaction( const signed_transaction& trx )
       fc::time_point now = head_block_time();
 
       ASSERT( trx.expiration <= now + fc::seconds(MAX_TIME_UNTIL_EXPIRATION), transaction_expiration_exception,
-                  "", ("trx.expiration",trx.expiration)("now",now)("max_til_exp",MAX_TIME_UNTIL_EXPIRATION));
+         "", ("trx.expiration",trx.expiration)("now",now)("max_til_exp",MAX_TIME_UNTIL_EXPIRATION));
       
       ASSERT( now < trx.expiration, transaction_expiration_exception, "", ("now",now)("trx.exp",trx.expiration) );
    }
@@ -5587,8 +6005,9 @@ void database::update_stake( const signed_transaction& trx)
 }
 
 /**
- * Decays and increments the current producer according to the stake
- * weight of all the transactions in the block they have created.
+ * Decays and increments the current producer 
+ * according to the stake weight of all the 
+ * transactions in the block they have created.
  */
 void database::update_transaction_stake( const producer_object& signing_producer, const uint128_t& transaction_stake )
 {
@@ -5596,12 +6015,15 @@ void database::update_transaction_stake( const producer_object& signing_producer
    const time_point now = head_block_time();
    fc::microseconds decay_time = median_props.txn_stake_decay_time;
 
-   modify( signing_producer, [&]( producer_object& p ) 
+   modify( signing_producer, [&]( producer_object& p )
    {
       p.recent_txn_stake_weight -= ( p.recent_txn_stake_weight * ( now - p.last_txn_stake_weight_update).to_seconds() ) / decay_time.to_seconds();
       p.recent_txn_stake_weight += transaction_stake;
       p.last_txn_stake_weight_update = now;
    });
+
+   ilog( "Producer: ${p} Updated transaction stake: ${t}", 
+      ( "t", transaction_stake )( "p", signing_producer.owner ) );
 }
 
 void database::apply_operation(const operation& op)
@@ -5657,6 +6079,7 @@ void database::create_block_summary(const signed_block& next_block)
 void database::update_global_dynamic_data( const signed_block& b )
 { try {
    const dynamic_global_property_object& props = get_dynamic_global_properties();
+   
    uint32_t missed_blocks = 0;
    price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
    price usd_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).hour_median_price;
@@ -5684,22 +6107,27 @@ void database::update_global_dynamic_data( const signed_block& b )
       }
    }
    
-   modify( props, [&]( dynamic_global_property_object& dgp )  
+   modify( props, [&]( dynamic_global_property_object& dgpo )  
    {
-      // dynamic global properties updating, constant time assuming 100% participation. It is O(B) otherwise (B = Num blocks between update)
+      // Dynamic global properties updating, constant time assuming 100% participation. It is O(B) otherwise (B = Num blocks between update)
+
       for( uint32_t i = 0; i < missed_blocks + 1; i++ )
       {
-         dgp.participation_count -= dgp.recent_slots_filled.hi & 0x8000000000000000ULL ? 1 : 0;
-         dgp.recent_slots_filled = ( dgp.recent_slots_filled << 1 ) + ( i == 0 ? 1 : 0 );
-         dgp.participation_count += ( i == 0 ? 1 : 0 );
+         dgpo.participation_count -= dgpo.recent_slots_filled.hi & 0x8000000000000000ULL ? 1 : 0;
+         dgpo.recent_slots_filled = ( dgpo.recent_slots_filled << 1 ) + ( i == 0 ? 1 : 0 );
+         dgpo.participation_count += ( i == 0 ? 1 : 0 );
       }
-      dgp.head_block_number = b.block_num();
-      dgp.head_block_id = b.id();
-      dgp.time = b.timestamp;
-      dgp.current_aslot += missed_blocks+1;
-      dgp.current_median_equity_price = equity_price;
-      dgp.current_median_usd_price = usd_price;
+
+      dgpo.head_block_number = b.block_num();
+      dgpo.head_block_id = b.id();
+      dgpo.time = b.timestamp;
+      dgpo.current_aslot += (missed_blocks+1);
+      dgpo.current_median_equity_price = equity_price;
+      dgpo.current_median_usd_price = usd_price;
    });
+
+   ilog( "Updated Global Dynamic Data: Head Block Number: ${n} Head block ID: ${i} ASlot: ${s} Time: ${t}", 
+   ("n", props.head_block_number)("i", props.head_block_id)("s",props.current_aslot)("t",props.time) );
 
    if( !( get_node_properties().skip_flags & skip_undo_history_check ) )
    {
@@ -5722,6 +6150,8 @@ void database::update_signing_producer( const producer_object& signing_producer,
       p.last_confirmed_block_num = new_block.block_num();
       p.total_blocks++;
    });
+
+   ilog( "Update signing producer: ${p}", ("p", signing_producer.owner ) );
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -5733,13 +6163,15 @@ void database::update_signing_producer( const producer_object& signing_producer,
 void database::update_last_irreversible_block()
 { try {
    const dynamic_global_property_object& props = get_dynamic_global_properties();
-   const producer_schedule_object& pso = producer_schedule_object();
+   const producer_schedule_object& pso = get_producer_schedule();
 
    vector< const producer_object* > producer_objs;
+
    producer_objs.reserve( pso.num_scheduled_producers );
-   for( int i = 0; i < pso.num_scheduled_producers; i++ )
+
+   for( size_t i = 0; i < pso.current_shuffled_producers.size(); i++ )
    {
-      producer_objs.push_back( &get_producer( pso.current_shuffled_producers[i] ) );
+      producer_objs.push_back( &get_producer( pso.current_shuffled_producers[ i ] ) );
    }
 
    static_assert( IRREVERSIBLE_THRESHOLD > 0, "irreversible threshold must be nonzero" );
@@ -5818,6 +6250,8 @@ void database::update_last_irreversible_block()
    }
 
    _fork_db.set_max_size( props.head_block_number - commit_height + 1 );
+
+   ilog( "Update last irreverisble block: ${b}", ("b",commit_height) );
 
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -6025,9 +6459,9 @@ asset database::pay_network_fees( const account_object& payer, const asset& amou
    asset referrer_share = ( registrar_share * payer.referrer_rewards_percentage ) / PERCENT_100;
    registrar_share -= referrer_share;
 
-   asset g_paid = pay_multi_fee_share( governance_subscriptions, g_share );
-   asset registrar_paid = pay_fee_share( registrar, registrar_share );
-   asset referrer_paid = pay_fee_share( referrer, referrer_share );
+   asset g_paid = pay_multi_fee_share( governance_subscriptions, g_share, true );
+   asset registrar_paid = pay_fee_share( registrar, registrar_share, true );
+   asset referrer_paid = pay_fee_share( referrer, referrer_share, true );
 
    total_fees -= ( g_paid + registrar_paid + referrer_paid );
 
@@ -6085,8 +6519,8 @@ asset database::pay_trading_fees( const account_object& taker, const asset& rece
    asset taker_interface_share = ( total_fees * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
    asset network_fee = ( total_fees * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
 
-   asset maker_paid = pay_fee_share( m_interface, maker_interface_share );
-   asset taker_paid = pay_fee_share( t_interface, taker_interface_share );
+   asset maker_paid = pay_fee_share( m_interface, maker_interface_share, true );
+   asset taker_paid = pay_fee_share( t_interface, taker_interface_share, true );
    asset network_paid = pay_network_fees( taker, network_fee );
 
    asset total_paid = network_paid + maker_paid + taker_paid;
@@ -6108,8 +6542,8 @@ asset database::pay_advertising_delivery( const account_object& provider, const 
    asset audience_share   = ( total_fees * AUDIENCE_ADVERTISING_FEE_PERCENT ) / PERCENT_100;
    asset network_fee      = ( total_fees * NETWORK_ADVERTISING_FEE_PERCENT ) / PERCENT_100;
 
-   asset demand_paid = pay_fee_share( demand, demand_share );
-   asset audience_paid = pay_fee_share( audience, audience_share );
+   asset demand_paid = pay_fee_share( demand, demand_share, true );
+   asset audience_paid = pay_fee_share( audience, audience_share, true );
    asset network_paid = pay_network_fees( provider, network_fee );
 
    asset fees_paid = network_paid + demand_paid + audience_paid;
@@ -6124,38 +6558,44 @@ asset database::pay_advertising_delivery( const account_object& provider, const 
  * Pays the fees to a network contibutor, and splits fees to the account's governance 
  * account subscriptions, and registrar and referrer.
  */
-asset database::pay_fee_share( const account_object& payee, const asset& amount )
+asset database::pay_fee_share( const account_object& payee, const asset& amount, bool recursive )
 { try {
    asset total_fees = amount;
 
-   flat_set<const account_object*> governance_subscriptions;
-
-   const auto& g_idx = get_index< governance_subscription_index >().indices().get< by_account_governance >();
-   auto g_itr = g_idx.lower_bound( payee.name );
-
-   while( g_itr != g_idx.end() && g_itr->account == payee.name )
+   if( recursive )
    {
-      const governance_subscription_object& sub = *g_itr;
-      const account_object* account_ptr = find_account( sub.governance_account );
-      governance_subscriptions.insert( account_ptr );
-      ++g_itr;
+      flat_set<const account_object*> governance_subscriptions;
+
+      const auto& g_idx = get_index< governance_subscription_index >().indices().get< by_account_governance >();
+      auto g_itr = g_idx.lower_bound( payee.name );
+
+      while( g_itr != g_idx.end() && g_itr->account == payee.name )
+      {
+         const governance_subscription_object& sub = *g_itr;
+         const account_object* account_ptr = find_account( sub.governance_account );
+         governance_subscriptions.insert( account_ptr );
+         ++g_itr;
+      }
+      const account_object& registrar = get_account( payee.registrar );
+      const account_object& referrer = get_account( payee.referrer );
+
+      asset g_share = ( amount * GOVERNANCE_SHARE_PERCENT ) / PERCENT_100;
+      asset registrar_share = ( amount * REFERRAL_SHARE_PERCENT ) / PERCENT_100;
+      asset referrer_share = ( registrar_share * payee.referrer_rewards_percentage ) / PERCENT_100;
+      registrar_share -= referrer_share;
+
+      asset g_paid = pay_multi_fee_share( governance_subscriptions, g_share, false );
+      asset registrar_paid = pay_fee_share( registrar, registrar_share, false );
+      asset referrer_paid = pay_fee_share( referrer, referrer_share, false );
+
+      asset distribution = total_fees - ( g_paid + registrar_paid + referrer_paid );
+      adjust_reward_balance( payee.name, distribution );
    }
-   const account_object& registrar = get_account( payee.registrar );
-   const account_object& referrer = get_account( payee.referrer );
-
-   asset g_share = ( amount * GOVERNANCE_SHARE_PERCENT ) / PERCENT_100;
-   asset registrar_share = ( amount * REFERRAL_SHARE_PERCENT ) / PERCENT_100;
-   asset referrer_share = ( registrar_share * payee.referrer_rewards_percentage ) / PERCENT_100;
-   registrar_share -= referrer_share;
-
-   asset g_paid = pay_multi_fee_share( governance_subscriptions, g_share );
-   asset registrar_paid = pay_fee_share( registrar, registrar_share );
-   asset referrer_paid = pay_fee_share( referrer, referrer_share );
-
-   asset distribution = total_fees - ( g_paid + registrar_paid + referrer_paid );
-
-   adjust_reward_balance( payee.name, distribution );
-
+   else
+   {
+      adjust_reward_balance( payee.name, total_fees );
+   }
+   
    return total_fees;
 
 } FC_CAPTURE_AND_RETHROW() }
@@ -6165,15 +6605,18 @@ asset database::pay_fee_share( const account_object& payee, const asset& amount 
  * Pays fees to a set of network contibutors, and splits fees to the account's governance 
  * account subscriptions, and registrar and referrer.
  */
-asset database::pay_multi_fee_share( flat_set< const account_object* > payees, const asset& amount )
+asset database::pay_multi_fee_share( flat_set< const account_object* > payees, const asset& amount, bool recursive )
 { try {
    asset total_paid = asset( 0, amount.symbol );
-   asset fee_split = amount / payees.size();
-
-   for( auto payee : payees )
+   if( payees.size() )
    {
-      total_paid += pay_fee_share( *payee, fee_split ); 
+      asset fee_split = amount / payees.size();
+      for( auto payee : payees )
+      {
+         total_paid += pay_fee_share( *payee, fee_split, recursive ); 
+      }
    }
+  
    return total_paid;
 
 } FC_CAPTURE_AND_RETHROW() }
@@ -6323,6 +6766,8 @@ void database::init_hardforks()
 void database::clear_expired_operations()
 { try {
    time_point now = head_block_time();
+
+   // ilog( "Clear Expired Operations:", ("now", now) );
    
    const auto& connection_req_index = get_index< connection_request_index >().indices().get< by_expiration >();
    while( !connection_req_index.empty() && connection_req_index.begin()->expiration <= now )
@@ -6485,7 +6930,7 @@ void database::clear_expired_operations()
          if( max_settlement_volume.symbol != current_asset ) // only calculate once per asset
          {  
             const asset_dynamic_data_object& dyn_data = get_dynamic_data( mia_object.symbol );
-            max_settlement_volume = asset( mia_stablecoin.max_asset_settlement_volume(dyn_data.total_supply), mia_object.symbol );
+            max_settlement_volume = asset( mia_stablecoin.max_asset_settlement_volume(dyn_data.get_total_supply().amount), mia_object.symbol );
          }
 
          if( mia_stablecoin.force_settled_volume >= max_settlement_volume.amount || current_asset_finished )
@@ -6560,12 +7005,17 @@ void database::process_hardforks()
       while( _hardfork_versions[ hardforks.last_hardfork ] < hardforks.next_hardfork
          && hardforks.next_hardfork_time <= head_block_time() )
       {
-         if( hardforks.last_hardfork < NUM_HARDFORKS ) {
+         if( hardforks.last_hardfork < NUM_HARDFORKS ) 
+         {
             apply_hardfork( hardforks.last_hardfork + 1 );
          }
          else
+         {
             throw unknown_hardfork_exception();
+         }
       }
+
+      // ilog( "Processed Hardforks" );
    }
    FC_CAPTURE_AND_RETHROW()
 }
@@ -6618,251 +7068,43 @@ void database::apply_hardfork( uint32_t hardfork )
 }
 
 /**
- * Verifies all supply invariants
+ * Verifies all supply invariants.
  */
 void database::validate_invariants()const
 { try {
+   // ilog( "Validate Invariants" );
    const auto& asset_idx = get_index< asset_dynamic_data_index >().indices().get< by_symbol >();
-   flat_map< asset_symbol_type, asset > asset_checksum;
-
+   const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol >();
+   
    auto asset_itr = asset_idx.begin();
    while( asset_itr != asset_idx.end() )
    {
       const asset_dynamic_data_object& addo = *asset_itr;
-      asset total_supply_checksum = asset( 0, addo.symbol );
-
-      total_supply_checksum += addo.get_liquid_supply();
-      total_supply_checksum += addo.get_staked_supply();
-      total_supply_checksum += addo.get_savings_supply();
-      total_supply_checksum += addo.get_reward_supply();
-      total_supply_checksum += addo.get_pending_supply();
-      total_supply_checksum += addo.get_confidential_supply();
-
+      asset total_account_balance_supply =  addo.get_account_balance_supply();
+      
       FC_ASSERT( addo.get_delegated_supply() == addo.get_receiving_supply(),
          "Asset Supply error: Delegated supply not equal to receiving supply",
          ("Asset", addo.symbol ) );
-      FC_ASSERT( total_supply_checksum == addo.get_total_supply(),
-         "Asset Supply error: Supply values Sum not equal to total supply",
-         ("Asset", addo.symbol ) );
 
-      asset_checksum[ addo.symbol ] = addo.get_total_supply();     // Build a vector to record all asset total supply values for verification
+      asset total_account_balances = asset( 0, addo.symbol );
+
+      auto balance_itr = balance_idx.lower_bound( addo.symbol );
+
+      while( balance_itr != balance_idx.end() && 
+         balance_itr->symbol == addo.symbol )
+      {
+         const account_balance_object& abo = *balance_itr;
+         total_account_balances += abo.get_total_balance();
+         ++balance_itr;
+      }
+
+      FC_ASSERT( total_account_balances == total_account_balance_supply,
+            "Account Balance Error: Balance of asset ${s} account balance sum: ${b} not equal to total account balance supply: ${t}.", 
+            ("s", addo.symbol)("b", total_account_balances)("t", total_account_balance_supply) );
+
       ++asset_itr;
    }
 
-   const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol >();
-   auto balance_itr = balance_idx.begin();
-
-   while( balance_itr != balance_idx.end() )
-   {
-      const account_balance_object& abo = *balance_itr;
-      asset total_balance_checksum = asset( 0, abo.symbol );
-
-      total_balance_checksum += abo.get_liquid_balance();
-      total_balance_checksum += abo.get_staked_balance();
-      total_balance_checksum += abo.get_savings_balance();
-      total_balance_checksum += abo.get_reward_balance();
-
-      FC_ASSERT( total_balance_checksum == abo.get_total_balance(),
-         "Account Balance error: Balance value sum not equal to total balance.", ("Asset", abo.symbol)("Account", abo.owner ) );
-      asset_checksum[ abo.symbol ] -= abo.get_total_balance();      // decrement the asset checksum by the total of all account balance objects.
-      ++balance_itr;
-   }
-
-   const auto& limit_idx = get_index< limit_order_index >().indices().get< by_high_price >();
-   auto limit_itr = limit_idx.begin();
-
-   while( limit_itr != limit_idx.end() )
-   {
-      const limit_order_object& limit = *limit_itr;
-      asset_checksum[ limit.amount_for_sale().symbol ] -= limit.amount_for_sale();
-      ++limit_itr;
-   }
-
-   const auto& margin_idx = get_index< margin_order_index >().indices().get< by_high_price >();
-   auto margin_itr = margin_idx.begin();
-
-   while( margin_itr != margin_idx.end() )
-   {
-      const margin_order_object& margin = *margin_itr;
-      asset_checksum[ margin.debt_balance.symbol ] -= margin.debt_balance;
-      asset_checksum[ margin.position_balance.symbol ] -= margin.position_balance;
-      asset_checksum[ margin.collateral.symbol ] -= margin.collateral;
-      ++margin_itr;
-   }
-
-   const auto& call_idx = get_index< call_order_index >().indices().get< by_high_price >();
-   auto call_itr = call_idx.begin();
-
-   while( call_itr != call_idx.end() )
-   {
-      const call_order_object& call = *call_itr;
-      asset_checksum[ call.collateral_type() ] -= call.collateral;
-      ++call_itr;
-   }
-
-   const auto& collateral_idx = get_index< credit_collateral_index >().indices().get< by_owner_symbol >();
-   auto collateral_itr = collateral_idx.begin();
-
-   while( collateral_itr != collateral_idx.end() )
-   {
-      const credit_collateral_object& collateral = *collateral_itr;
-      asset_checksum[ collateral.symbol ] -= collateral.collateral;
-      ++collateral_itr;
-   }
-
-   const auto& loan_idx = get_index< credit_loan_index >().indices();
-   auto loan_itr = loan_idx.begin();
-
-   while( loan_itr != loan_idx.end() )
-   {
-      const credit_loan_object& loan = *loan_itr;
-      asset_checksum[ loan.collateral_asset() ] -= loan.collateral;
-      ++loan_itr;
-   }
-
-   const auto& liquid_idx = get_index< asset_liquidity_pool_index >().indices().get< by_symbol_a >();
-   auto liquid_itr = liquid_idx.begin();
-
-   while( liquid_itr != liquid_idx.end() )
-   {
-      const asset_liquidity_pool_object& liquid = *liquid_itr;
-      asset_checksum[ liquid.symbol_a ] -= liquid.balance_a;
-      asset_checksum[ liquid.symbol_b ] -= liquid.balance_b;
-      ++liquid_itr;
-   }
-
-   const auto& credit_idx = get_index< asset_credit_pool_index >().indices().get< by_base_symbol >();
-   auto credit_itr = credit_idx.begin();
-
-   while( credit_itr != credit_idx.end() )
-   {
-      const asset_credit_pool_object& credit = *credit_itr;
-      asset_checksum[ credit.base_symbol ] -= credit.base_balance;
-      ++credit_itr;
-   }
-
-   const auto& equity_idx = get_index< asset_equity_data_index >().indices().get< by_symbol >();
-   auto equity_itr = equity_idx.begin();
-
-   while( equity_itr != equity_idx.end() )
-   {
-      const asset_equity_data_object& equity = *equity_itr;
-      for( auto a : equity.dividend_pool )
-      {
-         asset_checksum[ a.first ] -= a.second;
-      }
-      
-      ++equity_itr;
-   }
-
-   const auto& cred_idx = get_index< asset_credit_data_index >().indices().get< by_symbol >();
-   auto cred_itr = cred_idx.begin();
-
-   while( cred_itr != cred_idx.end() )
-   {
-      const asset_credit_data_object& cred = *cred_itr;
-      asset_checksum[ cred.buyback_asset ] -= cred.buyback_pool;
-      ++cred_itr;
-   }
-
-   const auto& stablecoin_idx = get_index< asset_stablecoin_data_index >().indices().get< by_symbol >();
-   auto stablecoin_itr = stablecoin_idx.begin();
-
-   while( stablecoin_itr != stablecoin_idx.end() )
-   {
-      const asset_stablecoin_data_object& stablecoin = *stablecoin_itr;
-      asset_checksum[ stablecoin.symbol ] -= stablecoin.settlement_fund;
-      ++stablecoin_itr;
-   }
-
-   const auto& escrow_idx = get_index< escrow_index >().indices().get< by_id >();
-   auto escrow_itr = escrow_idx.begin();
-
-   while( escrow_itr != escrow_idx.end() )
-   {
-      const escrow_object& escrow = *escrow_itr;
-      asset_checksum[ escrow.balance.symbol ] -= escrow.balance;
-      ++escrow_itr;
-   }
-
-   const auto& withdraw_idx = get_index< savings_withdraw_index >().indices().get< by_id >();
-   auto withdraw_itr = withdraw_idx.begin();
-
-   while( withdraw_itr != withdraw_idx.end() )
-   {
-      const savings_withdraw_object& withdraw = *withdraw_itr;
-      asset_checksum[ withdraw.amount.symbol ] -= withdraw.amount;
-      ++withdraw_itr;
-   }
-
-   const auto& settlement_idx = get_index< asset_settlement_index >().indices().get< by_id >();
-   auto settlement_itr = settlement_idx.begin();
-
-   while( settlement_itr != settlement_idx.end() )
-   {
-      const asset_settlement_object& settlement = *settlement_itr;
-      asset_checksum[ settlement.balance.symbol ] -= settlement.balance;
-      ++settlement_itr;
-   }
-
-   const auto& enterprise_idx = get_index< community_enterprise_index >().indices().get< by_id >();
-   auto enterprise_itr = enterprise_idx.begin();
-
-   while( enterprise_itr != enterprise_idx.end() )
-   {
-      const community_enterprise_object& enterprise = *enterprise_itr;
-      asset_checksum[ enterprise.pending_budget.symbol ] -= enterprise.pending_budget;
-      ++enterprise_itr;
-   }
-
-   const auto& campaign_idx = get_index< ad_campaign_index >().indices().get< by_id >();
-   auto campaign_itr = campaign_idx.begin();
-
-   while( campaign_itr != campaign_idx.end() )
-   {
-      const ad_campaign_object& campaign = *campaign_itr;
-      asset_checksum[ campaign.budget.symbol ] -= campaign.budget;
-      ++campaign_itr;
-   }
-
-   const auto& fund_idx = get_index< reward_fund_index >().indices().get< by_symbol >();
-   auto fund_itr = fund_idx.begin();
-
-   while( fund_itr != fund_idx.end() )
-   {
-      const reward_fund_object& reward_fund = *fund_itr;
-      asset total_reward_balance = asset( 0, reward_fund.symbol );
-
-      total_reward_balance += reward_fund.content_reward_balance;
-      total_reward_balance += reward_fund.validation_reward_balance;
-      total_reward_balance += reward_fund.txn_stake_reward_balance;
-      total_reward_balance += reward_fund.work_reward_balance;
-      total_reward_balance += reward_fund.producer_activity_reward_balance;
-      total_reward_balance += reward_fund.supernode_reward_balance;
-      total_reward_balance += reward_fund.power_reward_balance;
-      total_reward_balance += reward_fund.community_fund_balance;
-      total_reward_balance += reward_fund.development_reward_balance;
-      total_reward_balance += reward_fund.marketing_reward_balance;
-      total_reward_balance += reward_fund.advocacy_reward_balance;
-      total_reward_balance += reward_fund.activity_reward_balance;
-      total_reward_balance += reward_fund.premium_partners_fund_balance;
-
-      FC_ASSERT( total_reward_balance == reward_fund.total_pending_reward_balance,
-         "Reward Fund Error: Balance sums not equal to total balance value." );
-      
-      asset_checksum[ reward_fund.symbol ] -= total_reward_balance;
-
-      ++fund_itr;
-   }
-
-   asset_itr = asset_idx.begin();
-
-   while( asset_itr != asset_idx.end() ) // ASSERT ALL ASSET CHECKSUMS ARE ZERO;
-   {
-      const asset_dynamic_data_object& asset_obj = *asset_itr;
-      FC_ASSERT( asset_checksum[ asset_obj.symbol ].amount == 0, 
-         "Asset Supply Invariant Error: Supply checksum not equal to zero.", ("Asset", asset_obj.symbol));
-   }
 } FC_CAPTURE_LOG_AND_RETHROW( (head_block_num()) ) }
 
 

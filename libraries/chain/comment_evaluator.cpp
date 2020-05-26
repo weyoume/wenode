@@ -146,18 +146,21 @@ void comment_evaluator::do_apply( const comment_operation& o )
          case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
          case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
          {
-            FC_ASSERT( public_key_type( o.public_key ) != public_key_type(), 
-               "Posts in Open and Public communities should not be encrypted." );
+            FC_ASSERT( !o.public_key.size(), 
+               "Posts in Public communities should not be encrypted." );
          }
+         break;
          case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
          case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
          case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
          case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
          {
-            FC_ASSERT( public_key_type( o.public_key ) == community.community_public_key, 
-               "Posts in Private and Exclusive Communities must be encrypted with the community public key.");
+            FC_ASSERT( o.public_key.size(),
+               "Posts in Private Communities should be encrypted." );
+            FC_ASSERT( public_key_type( o.public_key ) == community.community_public_key,
+               "Posts in Private Communities must be encrypted with the community public key.");
             FC_ASSERT( reach_type == community_feed_type, 
-               "Posts in Private and Exclusive Communities should have reach limited to only community level subscribers.");
+               "Posts in Private Communities should have reach limited to only community level subscribers.");
          }
          break;
          default:
@@ -180,7 +183,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
       case feed_reach_type::FOLLOW_FEED:
       case feed_reach_type::MUTUAL_FEED:
       {
-         FC_ASSERT( public_key_type( o.public_key ) == public_key_type(), 
+         FC_ASSERT( !o.public_key.size(), 
             "Follow, Mutual and Tag level posts should not be encrypted." );
       }
       break;
@@ -573,9 +576,17 @@ void comment_evaluator::do_apply( const comment_operation& o )
          com.premium_price = o.premium_price;
          com.latitude = o.latitude;
          com.longitude = o.longitude;
-         com.public_key = public_key_type( o.public_key );
+
+         if( o.public_key.size() )
+         {
+            com.public_key = public_key_type( o.public_key );
+         }
+         else
+         {
+            com.public_key = public_key_type();
+         }
          
-         if( o.interface.size() )
+         if( o.interface != account_name_type() )
          {
             com.interface = o.interface;
          }
@@ -790,7 +801,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
             {
                from_string( com.language, o.language );
             }
-            if( o.public_key.size() ) 
+            if( o.public_key.size() )
             {
                com.public_key = public_key_type( o.public_key );
             }
@@ -837,34 +848,10 @@ void comment_evaluator::do_apply( const comment_operation& o )
          _db.clear_comment_feeds( comment );
       }
    }
+
+   ilog( "Author: ${a} Created post: ${p}", ("a", o.author)("p", o.permlink ) );
+
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
-
-
-struct comment_options_extension_visitor
-{
-   comment_options_extension_visitor( const comment_object& c, database& db ) : _c( c ), _db( db ) {}
-   typedef void result_type;
-   const comment_object& _c;
-   database& _db;
-
-   void operator()( const comment_payout_beneficiaries& cpb ) const
-   {
-      FC_ASSERT( _c.beneficiaries.size() == 0,
-         "Comment already has beneficiaries specified." );
-      FC_ASSERT( _c.net_reward == 0,
-         "Comment must not have been voted on before specifying beneficiaries." );
-
-      _db.modify( _c, [&]( comment_object& c )
-      {
-         for( auto& b : cpb.beneficiaries )
-         {
-            auto acc = _db.find< account_object, by_name >( b.account );
-            FC_ASSERT( acc != nullptr, "Beneficiary \"${a}\" must exist.", ("a", b.account) );
-            c.beneficiaries.push_back( b );
-         }
-      });
-   }
-};
 
 
 void message_evaluator::do_apply( const message_operation& o )

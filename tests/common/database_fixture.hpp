@@ -162,17 +162,34 @@ struct database_fixture {
 
    signed_transaction           trx;
 
-   public_key_type              committee_key;
-
-   account_id_type              committee_account;
-
    fc::ecc::private_key         private_key = fc::ecc::private_key::generate();
 
-   fc::ecc::private_key         init_account_priv_key = fc::ecc::private_key::regenerate( fc::sha256::hash( string( "init_key" ) ) );
 
-   string                       debug_key = graphene::utilities::key_to_wif( init_account_priv_key );
+   fc::ecc::public_key          init_account_public_owner_key = get_public_key( INIT_ACCOUNT, "owner", INIT_ACCOUNT_PASSWORD );
 
-   public_key_type              init_account_pub_key = init_account_priv_key.get_public_key();
+   fc::ecc::public_key          init_account_public_active_key = get_public_key( INIT_ACCOUNT, "active", INIT_ACCOUNT_PASSWORD );
+
+   fc::ecc::public_key          init_account_public_posting_key = get_public_key( INIT_ACCOUNT, "posting", INIT_ACCOUNT_PASSWORD );
+
+   fc::ecc::public_key          init_account_public_producer_key = get_public_key( INIT_ACCOUNT, "producer", INIT_ACCOUNT_PASSWORD );
+
+
+   fc::ecc::private_key         init_account_private_owner_key = get_private_key( INIT_ACCOUNT, "owner", INIT_ACCOUNT_PASSWORD );
+
+   fc::ecc::private_key         init_account_private_active_key = get_private_key( INIT_ACCOUNT, "active", INIT_ACCOUNT_PASSWORD );
+
+   fc::ecc::private_key         init_account_private_posting_key = get_private_key( INIT_ACCOUNT, "posting", INIT_ACCOUNT_PASSWORD );
+
+   fc::ecc::private_key         init_account_private_producer_key = get_private_key( INIT_ACCOUNT, "producer", INIT_ACCOUNT_PASSWORD );
+
+
+   string                       init_account_private_owner_wif = graphene::utilities::key_to_wif( init_account_private_owner_key );
+
+   string                       init_account_private_active_wif = graphene::utilities::key_to_wif( init_account_private_active_key );
+
+   string                       init_account_private_posting_wif = graphene::utilities::key_to_wif( init_account_private_posting_key );
+
+   string                       init_account_private_producer_wif = graphene::utilities::key_to_wif( init_account_private_producer_key );
 
    uint32_t                     default_skip = 0 | database::skip_undo_history_check | database::skip_authority_check;
 
@@ -193,7 +210,7 @@ struct database_fixture {
 
    void generate_block( uint32_t skip );
    
-   void generate_block( uint32_t skip, fc::ecc::private_key key, int miss_blocks );
+   void generate_block( uint32_t skip, int miss_blocks );
 
    /**
     * @brief Generates block_count blocks

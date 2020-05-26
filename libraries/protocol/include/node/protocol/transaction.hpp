@@ -9,9 +9,9 @@ namespace node { namespace protocol {
 
    struct transaction
    {
-      uint16_t             ref_block_num    = 0;
+      uint64_t             ref_block_num = 0;
 
-      uint32_t             ref_block_prefix = 0;
+      uint64_t             ref_block_prefix = 0;
 
       fc::time_point       expiration;
 
@@ -20,8 +20,11 @@ namespace node { namespace protocol {
       extensions_type      extensions;
 
       digest_type          digest()const;
+
       transaction_id_type  id()const;
+
       void                 validate() const;
+      
       digest_type          sig_digest( const chain_id_type& chain_id )const;
 
       void set_expiration( fc::time_point expiration_time );

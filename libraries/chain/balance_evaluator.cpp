@@ -54,7 +54,7 @@ void claim_reward_balance_evaluator::do_apply( const claim_reward_balance_operat
 
    asset shared_reward = asset( 0, o.reward.symbol );
 
-   if( acc.revenue_share )     // Distributes revenue from rewards to listed equity and credit assets for business accounts. 
+   if( acc.revenue_share )     // Distributes revenue from rewards to listed equity and credit assets for business accounts.
    {
       const account_business_object& bus_acc = _db.get_account_business( signed_for );
 
@@ -192,13 +192,14 @@ void unstake_asset_evaluator::do_apply( const unstake_asset_operation& o )
    time_point now = _db.head_block_time();
 
    FC_ASSERT( stake >= o.amount, 
-      "Account does not have sufficient staked balance for unstaking." );
+      "Account: ${a} has Insufficient Staked balance: ${s} for unstake of amount: ${w}.",
+      ("a",o.from)("s",stake)("w",o.amount) );
 
    if( !from_account.mined && o.amount.symbol == SYMBOL_COIN )
    {
       asset min_stake = median_props.account_creation_fee * 10;
       FC_ASSERT( stake >= min_stake,
-         "Account registered by another account requires 10x account creation before it can be powered down." );
+         "Account registered by another account requires 10x account creation before it can be unstaked." );
    }
 
    if( o.amount.amount == 0 )
@@ -341,7 +342,8 @@ void transfer_to_savings_evaluator::do_apply( const transfer_to_savings_operatio
    const asset& liquid = _db.get_liquid_balance( from, o.amount.symbol );
 
    FC_ASSERT( liquid >= o.amount,
-      "Account does not have sufficient funds to transfer to savings." );
+      "Account: ${a} has Insufficient Liquid balance: ${s} for savings transfer of amount: ${w}.",
+      ("a",o.from)("s",liquid)("w",o.amount) );
 
    _db.adjust_liquid_balance( from, -o.amount );
    _db.adjust_savings_balance( to, o.amount );
@@ -376,7 +378,8 @@ void transfer_from_savings_evaluator::do_apply( const transfer_from_savings_oper
 
    const asset& savings = _db.get_savings_balance( o.from, o.amount.symbol );
    FC_ASSERT( savings >= o.amount,
-      "Insufficient Savings balance." );
+      "Account: ${a} has Insufficient Savings balance: ${s} for withdrawal request of: ${w}.",
+      ("a",o.from)("s",savings)("w",o.amount) );
 
    const auto& savings_idx = _db.get_index< savings_withdraw_index >().indices().get< by_request_id >();
    auto savings_itr = savings_idx.find( boost::make_tuple( from_account.name, o.request_id ) );
