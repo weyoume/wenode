@@ -1014,7 +1014,7 @@ BOOST_AUTO_TEST_CASE( prediction_pool_operation_sequence_test )
       create.prediction_symbol = "PREDICTION";
       create.collateral_symbol = SYMBOL_COIN;
       create.outcome_assets = { "YES", "NO" };
-      create.outcome_details = { "The predicted event will happen.", "The predicted event will not happen." };
+      create.outcome_details = "Yes: The predicted event will happen / No: The predicted event will not happen.";
       create.display_symbol = "Prediction market asset success.";
       create.json = "{ \"valid\": true }";
       create.url = "https://www.url.com";
@@ -1039,11 +1039,11 @@ BOOST_AUTO_TEST_CASE( prediction_pool_operation_sequence_test )
       BOOST_REQUIRE( create.account == prediction.issuer );
       BOOST_REQUIRE( create.prediction_symbol == prediction.prediction_symbol );
       BOOST_REQUIRE( create.collateral_symbol == prediction.collateral_symbol );
+      BOOST_REQUIRE( create.outcome_details == to_string( prediction.outcome_details ) );
 
       for( size_t i = 0; i < prediction.outcome_assets.size(); i++ )
       {
          BOOST_REQUIRE( create.outcome_assets[i] == prediction.outcome_assets[i] );
-         BOOST_REQUIRE( create.outcome_details[i] == to_string( prediction.outcome_details[i] ) );
       }
 
       BOOST_REQUIRE( create.display_symbol == to_string( prediction_asset.display_symbol ) );

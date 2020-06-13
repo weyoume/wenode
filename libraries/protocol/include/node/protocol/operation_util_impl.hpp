@@ -52,16 +52,16 @@ struct operation_creator_visitor
 {
    typedef void result_type;
 
-   account_name_type       creator;
+   flat_set< account_name_type >&       creators;
 
    operation_creator_visitor( 
-      account_name_type a ) :
-      creator(a) {}
+      flat_set< account_name_type >& a ) :
+      creators( a ) {}
 
    template< typename T > 
-   void operator()( const T& v )const 
+   void operator()( const T& v )const
    { 
-      v.get_creator_name( creator );
+      v.get_creator_name( creators );
    }
 };
 
@@ -146,9 +146,9 @@ void operation_validate( const OperationType& op )                         \
 }                                                                          \
                                                                            \
 void operation_creator_name( const OperationType& op,                      \
-                           account_name_type creator )                     \
+                             flat_set< account_name_type >& creators )      \
 {                                                                          \
-   op.visit( node::protocol::operation_creator_visitor( creator ) );       \
+   op.visit( node::protocol::operation_creator_visitor( creators ) );       \
 }                                                                          \
                                                                            \
 void operation_get_required_authorities( const OperationType& op,          \

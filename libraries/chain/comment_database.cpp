@@ -105,7 +105,7 @@ asset database::pay_voters( const comment_object& c, const asset& max_rewards )
       {
          uint128_t weight( vote_itr->weight );
          uint128_t reward_amount = ( max_rewards.amount.value * weight ) / total_weight;
-         asset reward = asset( int64_t( reward_amount.to_uint64() ), max_rewards.symbol );
+         asset reward = asset( reward_amount.to_uint64(), max_rewards.symbol );
 
          if( reward.amount > 0 )
          {

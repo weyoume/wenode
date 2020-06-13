@@ -147,30 +147,9 @@ void community_update_evaluator::do_apply( const community_update_operation& o )
    }
 
    const community_object& community = _db.get_community( o.community );
-   time_point now = _db.head_block_time();
 
-   FC_ASSERT( now >= ( community.last_updated + MIN_COMMUNITY_UPDATE_INTERVAL ),
-      "Communities can only be updated once per 10 minutes." );
-
-   const community_member_object& community_member = _db.get_community_member( o.community );
-
-   FC_ASSERT( community_member.is_administrator( o.account ),
-      "Only administrators of the community can update it.");
-
-   const comment_object* pinned_post_ptr = nullptr;
-
-   if( o.pinned_author.size() || o.pinned_permlink.size() )
-   {
-      pinned_post_ptr = _db.find_comment( o.pinned_author, o.pinned_permlink );
-
-      if( pinned_post_ptr != nullptr )
-      {
-         FC_ASSERT( pinned_post_ptr->root == true,
-            "Pinned post must be a root comment." );
-         FC_ASSERT( pinned_post_ptr->community == o.community,
-            "Pinned post must be contained within the community." );
-      }
-   }
+   ilog( "Begin Account: ${f} updating community: \n ${c} \n",
+      ("f", o.account)("c",community) );
 
    // New permissions must be subset of old permissions.
    
@@ -181,29 +160,80 @@ void community_update_evaluator::do_apply( const community_update_operation& o )
 
    FC_ASSERT(!(( o.flags ^ community.flags ) & ~community.permissions ),
       "Flag change is not possible within community permissions." );
+   
+   time_point now = _db.head_block_time();
+
+   FC_ASSERT( now >= ( community.last_updated + MIN_COMMUNITY_UPDATE_INTERVAL ),
+      "Communities can only be updated once per 10 minutes." );
+
+   const community_member_object& community_member = _db.get_community_member( o.community );
+
+   FC_ASSERT( community_member.is_administrator( o.account ),
+      "Only administrators of the community can update it.");
+
+   if( o.pinned_author.size() > 0 || o.pinned_permlink.size() > 0 )
+   {
+      const comment_object& pinned_post = _db.get_comment( o.pinned_author, o.pinned_permlink );
+
+      FC_ASSERT( pinned_post.root,
+         "Pinned post must be a root comment." );
+      FC_ASSERT( pinned_post.community == o.community,
+         "Pinned post must be contained within the community." );
+   }
 
    _db.modify( community, [&]( community_object& co )
    {
-      co.community_public_key = public_key_type( o.community_public_key );
-      from_string( co.json, o.json );
-      from_string( co.json_private, o.json_private );
-      from_string( co.details, o.details );
-      from_string( co.url, o.url );
-      co.max_rating = o.max_rating;
-      co.flags = o.flags;
-      co.permissions = o.permissions;
-      co.reward_currency = o.reward_currency;
-      co.last_updated = now;
-      co.active = o.active;
-
-      if( pinned_post_ptr != nullptr )
+      if( o.community_public_key.size() > 0 )
       {
-         co.pinned_author = o.pinned_author;
+         co.community_public_key = public_key_type( o.community_public_key );
+      }
+      if( o.json.size() > 0 )
+      {
+         from_string( co.json, o.json );
+      }
+      if( o.json_private.size() > 0 )
+      {
+         from_string( co.json_private, o.json_private );
+      }
+      if( o.details.size() > 0 )
+      {
+         from_string( co.details, o.details );
+      }
+      if( o.url.size() > 0 )
+      {
+         from_string( co.url, o.url );
+      }
+      if( co.max_rating != o.max_rating && o.max_rating != 0 )
+      {
+         co.max_rating = o.max_rating;
+      }
+      if( co.flags != o.flags )
+      {
+         co.flags = o.flags;
+      }
+      if( co.permissions != o.permissions )
+      {
+         co.permissions = o.permissions;
+      }
+      if( co.reward_currency != o.reward_currency )
+      {
+         co.reward_currency = o.reward_currency;
+      }
+      if( o.pinned_permlink.size() > 0 )
+      {
          from_string( co.pinned_permlink, o.pinned_permlink );
       }
+      if( o.pinned_author.size() > 0 )
+      {
+         co.pinned_author = o.pinned_author;
+      }
+
+      co.last_updated = now;
+      co.active = o.active;
    });
 
-   ilog( "Account: ${f} updated community: \n ${c} \n",("f", o.account)("c",community) );
+   ilog( "Account: ${f} updated community: \n ${c} \n",
+      ("f", o.account)("c",community) );
 
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 

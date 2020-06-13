@@ -186,7 +186,7 @@ void database_fixture::generate_block( uint32_t skip, int miss_blocks )
    db_plugin->debug_generate_blocks( 1, skip, miss_blocks );
 }
 
-void database_fixture::generate_blocks( uint32_t block_count )
+void database_fixture::generate_blocks( uint32_t block_count = 1 )
 {
    auto produced = db_plugin->debug_generate_blocks( block_count, default_skip, 0 );
    BOOST_REQUIRE( produced == block_count );
@@ -372,6 +372,9 @@ const producer_object& database_fixture::producer_create(
       op.url = "https://www.url.com";
       op.json = "{ \"valid\": true }";
       op.block_signing_key = string( signing_key );
+      op.latitude = 37.8136;
+      op.longitude = 144.9631;
+      op.active = true;
       op.validate();
 
       trx.operations.push_back( op );
@@ -379,10 +382,44 @@ const producer_object& database_fixture::producer_create(
       trx.sign( owner_key, db.get_chain_id() );
       trx.validate();
       db.push_transaction( trx, 0 );
+      
       trx.operations.clear();
       trx.signatures.clear();
 
       return db.get_producer( owner );
+   }
+   FC_CAPTURE_AND_RETHROW( (owner) )
+}
+
+
+const producer_vote_object& database_fixture::producer_vote(
+   const string& owner,
+   const private_key_type& owner_key )
+{
+   try
+   {
+      account_producer_vote_operation op;
+
+      op.signatory = owner;
+      op.account = owner;
+      op.producer = owner;
+      op.vote_rank = 1;
+      op.validate();
+
+      trx.operations.clear();
+      trx.signatures.clear();
+      op.validate();
+
+      trx.operations.push_back( op );
+      trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      trx.sign( owner_key, db.get_chain_id() );
+      trx.validate();
+      db.push_transaction( trx, 0 );
+      
+      trx.operations.clear();
+      trx.signatures.clear();
+
+      return db.get_producer_vote( owner, owner );
    }
    FC_CAPTURE_AND_RETHROW( (owner) )
 }
@@ -399,6 +436,7 @@ const comment_object& database_fixture::comment_create(
       op.signatory = author;
       op.author = author;
       op.permlink = permlink;
+      op.parent_author = ROOT_POST_PARENT;
       op.parent_permlink = permlink;
       op.title = "test";
       op.body = "test";

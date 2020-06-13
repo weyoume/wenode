@@ -37,10 +37,10 @@ BOOST_AUTO_TEST_CASE( producer_update_operation_tests )
 
       ACTORS( (alice) );
 
-      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       
       signed_transaction tx;
 
@@ -72,11 +72,10 @@ BOOST_AUTO_TEST_CASE( producer_update_operation_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const producer_object& alice_producer = db.get_producer( "alice" );
+      const producer_object& alice_producer = db.get_producer( alice.name );
 
       alice_producer.props.validate();
 
-      BOOST_REQUIRE( alice_producer.owner == "alice" );
       BOOST_REQUIRE( alice_producer.active == true );
       BOOST_REQUIRE( alice_producer.schedule == producer_object::none );
       BOOST_REQUIRE( alice_producer.last_confirmed_block_num == 0 );
@@ -136,7 +135,6 @@ BOOST_AUTO_TEST_CASE( producer_update_operation_tests )
 
       alice_producer.props.validate();
 
-      BOOST_REQUIRE( alice_producer.owner == "alice" );
       BOOST_REQUIRE( alice_producer.active == true );
       BOOST_REQUIRE( alice_producer.schedule == producer_object::none );
       BOOST_REQUIRE( alice_producer.last_confirmed_block_num == 0 );
@@ -191,11 +189,11 @@ BOOST_AUTO_TEST_CASE( proof_of_work_operation_test )
 
       ACTORS( (alice) );
 
-      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      producer_create( "alice", alice_private_owner_key, alice_public_owner_key );
+      fund( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      producer_create( alice.name, alice_private_owner_key, alice_public_owner_key );
 
       generate_block();
       
@@ -206,11 +204,11 @@ BOOST_AUTO_TEST_CASE( proof_of_work_operation_test )
 
       x11_proof_of_work work;
 
-      work.create( head_block_id, "alice", 0 );
+      work.create( head_block_id, alice.name, 0 );
       
       for( auto n = 1; work.pow_summary >= target_pow; n++ )
       {
-         work.create( head_block_id, "alice", n );
+         work.create( head_block_id, alice.name, n );
       }
 
       proof_of_work_operation proof;
@@ -230,11 +228,10 @@ BOOST_AUTO_TEST_CASE( proof_of_work_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const producer_object& alice_producer = db.get_producer( "alice" );
+      const producer_object& alice_producer = db.get_producer( alice.name );
 
       alice_producer.props.validate();
 
-      BOOST_REQUIRE( alice_producer.owner == "alice" );
       BOOST_REQUIRE( alice_producer.active == true );
       BOOST_REQUIRE( alice_producer.mining_power > 0 );
       BOOST_REQUIRE( alice_producer.mining_count == 1 );
@@ -262,31 +259,31 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
 
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
-      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      producer_create( "alice", alice_private_owner_key, alice_public_owner_key );
+      fund( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      producer_create( alice.name, alice_private_owner_key, alice_public_owner_key );
 
-      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund( bob.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( bob.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( bob.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( bob.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       
-      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund( candice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( candice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( candice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( candice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
 
-      fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund( dan.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( dan.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( dan.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( dan.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
 
-      fund( "elon", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "elon", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( "elon", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_stake( "elon", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund( elon.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( elon.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund( elon.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( elon.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
 
       generate_block();
       
@@ -365,7 +362,7 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
 
       uint64_t block_height = protocol::block_header::num_from_id( verify.block_id );
 
-      const block_validation_object& validation = db.get_block_validation( "alice", block_height );
+      const block_validation_object& validation = db.get_block_validation( alice.name, block_height );
 
       BOOST_REQUIRE( validation.producer == verify.producer );
       BOOST_REQUIRE( validation.block_id == verify.block_id );
@@ -402,8 +399,8 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
          tx.operations.clear();
          tx.signatures.clear();
 
-         fund( name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-         fund_stake( name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+         fund( name, asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+         fund_stake( name, asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
          producer_create( name, alice_private_active_key, alice_public_active_key );
 
          vote.signatory = name;
@@ -449,7 +446,7 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
       commit.producer = "alice";
       commit.block_id = verify.block_id;
       commit.verifications = verifications;
-      commit.commitment_stake = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      commit.commitment_stake = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       commit.validate();
 
       block_height = protocol::block_header::num_from_id( verify.block_id );

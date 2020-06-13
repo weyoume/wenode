@@ -15,8 +15,8 @@ namespace node { namespace chain {
 
       public:
          template< typename Constructor, typename Allocator >
-         operation_object( Constructor&& c, allocator< Allocator > a )
-            :serialized_op( a.get_segment_manager() )
+         operation_object( Constructor&& c, allocator< Allocator > a ) : 
+            serialized_op( a.get_segment_manager() )
          {
             c( *this );
          }

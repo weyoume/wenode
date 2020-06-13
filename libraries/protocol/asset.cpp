@@ -207,19 +207,39 @@ namespace node { namespace protocol {
       FC_ASSERT( is_valid_symbol( a.symbol ) );
       FC_ASSERT( is_valid_symbol( b.base.symbol ) );
       FC_ASSERT( is_valid_symbol( b.quote.symbol ) );
+      
+      uint128_t numerator = 0;
+      uint128_t denominator = 0;
+      uint128_t result = 0;
+
       if( a.symbol == b.base.symbol )
       {
          FC_ASSERT( b.base.amount.value > 0 );
-         share_type result = ( a.amount.value * b.quote.amount.value ) / b.base.amount.value;
-         return asset( result, b.quote.symbol );
+         numerator = uint128_t( a.amount.value ) * uint128_t( b.quote.amount.value );
+         denominator = uint128_t( b.base.amount.value );
+         result = numerator / denominator;
+         if( result.hi == 0 )
+         {
+            share_type r = result.to_uint64();
+            return asset( r, b.quote.symbol );
+         }
       }
       else if( a.symbol == b.quote.symbol )
       {
          FC_ASSERT( b.quote.amount.value > 0 );
-         share_type result = ( a.amount.value * b.base.amount.value ) / b.quote.amount.value;
-         return asset( result, b.base.symbol );
+         numerator = uint128_t( a.amount.value ) * uint128_t( b.base.amount.value );
+         denominator = uint128_t( b.quote.amount.value );
+         result = numerator / denominator;
+         if( result.hi == 0 )
+         {
+            share_type r = result.to_uint64();
+            return asset( r, b.base.symbol );
+         }
       }
-      FC_THROW_EXCEPTION( fc::assert_exception, "invalid asset * price", ("asset",a)("price",b) );
+
+      FC_THROW_EXCEPTION( fc::assert_exception,
+         "Invalid asset multiplication: ${a} * ${p} - Numerator: ${n} Denominator: ${d} Result: ${r}", 
+         ("a",a)("p",b)("n",numerator)("d",denominator)("r",result) );
    }
 
    price operator / ( const asset& base, const asset& quote )

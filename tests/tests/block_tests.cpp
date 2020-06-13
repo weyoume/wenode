@@ -561,9 +561,9 @@ BOOST_FIXTURE_TEST_CASE( pop_block_twice, clean_database_fixture )
 
       transfer_operation transfer;
 
-      transfer.signatory = alice.name;
-      transfer.from = alice.name;
-      transfer.to = bob.name;
+      transfer.signatory = "alice";
+      transfer.from = "alice";
+      transfer.to = "bob";
       transfer.amount = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       transfer.memo = "memo";
       transfer.validate();

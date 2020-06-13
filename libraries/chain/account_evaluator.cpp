@@ -308,21 +308,27 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
    FC_ASSERT( ( now - account_auth.last_owner_update ) >= OWNER_UPDATE_LIMIT,
       "Owner authority can only be updated once an hour." );
 
-   for( auto a: o.owner_auth.account_auths )
+   for( auto a : o.owner_auth.account_auths )
    {
-      _db.get_account( a.first );
+      const account_object& account_auth = _db.get_account( a.first );
+      FC_ASSERT( account_auth.active, 
+         "Account: ${s} must be active to add account authority.",("s", account_auth) );
    }
    
    _db.update_owner_authority( account, o.owner_auth );
 
-   for( auto a: o.active_auth.account_auths )
+   for( auto a : o.active_auth.account_auths )
    {
-      _db.get_account( a.first );
+      const account_object& account_auth = _db.get_account( a.first );
+      FC_ASSERT( account_auth.active, 
+         "Account: ${s} must be active to add account authority.",("s", account_auth) );
    }
 
-   for( auto a: o.posting_auth.account_auths )
+   for( auto a : o.posting_auth.account_auths )
    {
-      _db.get_account( a.first );
+      const account_object& account_auth = _db.get_account( a.first );
+      FC_ASSERT( account_auth.active, 
+         "Account: ${s} must be active to add account authority.",("s", account_auth) );
    }
    
    const comment_object* pinned_post_ptr = nullptr;
@@ -548,6 +554,7 @@ void account_business_evaluator::do_apply( const account_business_operation& o )
          abo.officers.insert( o.init_ceo_account );
          abo.executives.insert( o.init_ceo_account );
          abo.officer_vote_threshold = o.officer_vote_threshold;
+         abo.active = true;
          abo.last_updated = now;
          abo.created = now;
       });
@@ -579,6 +586,7 @@ void account_business_evaluator::do_apply( const account_business_operation& o )
       {
          abo.business_public_key = public_key_type( o.business_public_key );
          abo.officer_vote_threshold = o.officer_vote_threshold;
+         abo.active = o.active;
          abo.last_updated = now;
       });
 
@@ -1418,6 +1426,16 @@ void account_update_proxy_evaluator::do_apply( const account_update_proxy_operat
    FC_ASSERT( account.can_vote,
       "Account has declined the ability to vote and cannot proxy votes." );
 
+   if( account.proxy.size() )
+   {
+      const account_object& old_proxy = _db.get_account( account.proxy );
+
+      _db.modify( old_proxy, [&]( account_object& a )
+      {
+         a.proxied.erase( o.account );       // Remove name from old proxy.
+      });
+   }
+
    if( o.proxy.size() ) 
    {
       const account_object& new_proxy = _db.get_account( o.proxy );
@@ -1453,16 +1471,6 @@ void account_update_proxy_evaluator::do_apply( const account_update_proxy_operat
       _db.modify( account, [&]( account_object& a )
       {
          a.proxy = PROXY_TO_SELF_ACCOUNT;
-      });
-   }
-
-   if( account.proxy.size() )
-   {
-      const account_object& old_proxy = _db.get_account( account.proxy );
-
-      _db.modify( old_proxy, [&]( account_object& a )
-      {
-         a.proxied.erase( o.account );       // Remove name from old proxy.
       });
    }
 
@@ -1566,7 +1574,7 @@ void recover_account_evaluator::do_apply( const recover_account_operation& o )
    const account_object& account = _db.get_account( o.account_to_recover );
    time_point now = _db.head_block_time();
 
-   FC_ASSERT( now - account.last_account_recovery > OWNER_UPDATE_LIMIT,
+   FC_ASSERT( now - account.last_account_recovery >= OWNER_UPDATE_LIMIT,
       "Owner authority can only be updated once an hour." );
 
    const auto& recovery_request_idx = _db.get_index< account_recovery_request_index >().indices().get< by_account >();
@@ -1578,18 +1586,17 @@ void recover_account_evaluator::do_apply( const recover_account_operation& o )
       "New owner authority does not match recovery request." );
 
    const auto& recent_auth_idx = _db.get_index< owner_authority_history_index >().indices().get< by_account >();
-   auto hist = recent_auth_idx.lower_bound( o.account_to_recover );
+   auto recent_auth_itr = recent_auth_idx.lower_bound( o.account_to_recover );
    bool found = false;
 
-   while( hist != recent_auth_idx.end() && hist->account == o.account_to_recover && !found )
+   while( recent_auth_itr != recent_auth_idx.end() && recent_auth_itr->account == o.account_to_recover && !found )
    {
-      found = hist->previous_owner_authority == o.recent_owner_authority;
-      if( found ) break;
-      ++hist;
+      found = recent_auth_itr->previous_owner_authority == o.recent_owner_authority;
+      ++recent_auth_itr;
    }
 
    FC_ASSERT( found, 
-      "Recent authority not found in authority history." );
+      "Recent authority: ${a} not found in authority history.", ("a", o.recent_owner_authority ) );
 
    _db.remove( *request );     // Remove first, update_owner_authority may invalidate iterator
    _db.update_owner_authority( account, o.new_owner_authority );
@@ -1744,12 +1751,14 @@ void decline_voting_rights_evaluator::do_apply( const decline_voting_rights_oper
 
    if( o.declined )
    {
+      FC_ASSERT( account.can_vote,
+         "Account has already declined its voting rights." );
       FC_ASSERT( req_itr == req_idx.end(),
          "Decline voting rights request already exists for this account." );
       
       _db.create< decline_voting_rights_request_object >( [&]( decline_voting_rights_request_object& dvrro )
       {
-         dvrro.account = account.name;
+         dvrro.account = o.account;
          dvrro.effective_date = now + DECLINE_VOTING_RIGHTS_DURATION;
       });
    }
@@ -1848,7 +1857,7 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
          {
             FC_ASSERT( friend_itr == con_idx.end(),
                "Friend level connection already exists." );
-            FC_ASSERT( now > ( connection_obj.created + CONNECTION_REQUEST_DURATION ),
+            FC_ASSERT( now >= ( connection_obj.created + CONNECTION_REQUEST_DURATION ),
                "Friend Connection must wait one week from first connection." );
          }
          else if( connection_tier == connection_tier_type::COMPANION )
@@ -1857,7 +1866,7 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
                "Companion connection must follow a friend connection." );
                FC_ASSERT( comp_itr == con_idx.end(),
                "companion level connection already exists." );
-            FC_ASSERT( now > ( friend_itr->created + CONNECTION_REQUEST_DURATION ),
+            FC_ASSERT( now >= ( friend_itr->created + CONNECTION_REQUEST_DURATION ),
                "Companion Connection must wait one week from Friend connection." );
          }
 
@@ -1878,6 +1887,9 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
  
       _db.remove( *req_itr );
    }
+
+   ilog( "Account: ${a} requested to connect with ${b}", 
+      ("a", o.account)("b",o.requested_account ) );
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -1970,7 +1982,7 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
       FC_ASSERT( connection_tier == request.connection_type,
          "Connection request must be of the same level as acceptance" );
 
-      _db.create< connection_object >( [&]( connection_object& co )
+      const connection_object& new_connection = _db.create< connection_object >( [&]( connection_object& co )
       {
          co.account_a = account_a_name;
          co.account_b = account_b_name;
@@ -2029,6 +2041,9 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
       });
 
       _db.remove( request );  // Remove initial request object
+
+      ilog( "Account: ${a} accepted new connection with ${b} - \n ${c} \n",
+      ("a", o.account)("b",o.requesting_account )("c", new_connection ) );
    }
    else 
    {
@@ -2085,7 +2100,10 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
          });
 
          _db.remove( connection_obj );
-      } 
+      }
+
+      ilog( "Account: ${a} updated connection with ${b} - \n ${c} \n",
+      ("a", o.account)("b",o.requesting_account )("c", connection_obj ) );
    }
 
    _db.update_account_in_feed( o.account, o.requesting_account );
@@ -2375,12 +2393,14 @@ void activity_reward_evaluator::do_apply( const activity_reward_operation& o )
    const account_object& account = _db.get_account( o.account );
 
    FC_ASSERT( account.producer_vote_count >= MIN_ACTIVITY_PRODUCERS,
-      "Account must have at least 10 producer votes to claim activity reward." );
+      "Account: ${a} must have at least 10 producer votes to claim activity reward. Votes: ${v}",
+      ("a", o.account)("v", account.producer_vote_count) );
 
    asset stake = _db.get_staked_balance( o.account, SYMBOL_EQUITY );
 
-   FC_ASSERT( stake >= asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ),
-      "Account must have at least one equity asset to claim activity reward." );
+   FC_ASSERT( stake.amount >= BLOCKCHAIN_PRECISION,
+      "Account: ${a} must have at least one staked equity asset to claim activity reward. Stake: ${s}",
+      ("a", o.account)("s", stake ) );
 
    const comment_metrics_object& comment_metrics = _db.get_comment_metrics();
    const comment_object& comment = _db.get_comment( o.account, o.permlink );

@@ -1048,7 +1048,6 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
             ceo.begin = o.begin;
             ceo.duration = o.duration;
             ceo.end = o.begin + fc::days( o.duration );
-
             ceo.milestone_shares.reserve( o.milestone_shares.size() );
 
             for( auto& mile : o.milestone_shares )
@@ -1056,12 +1055,7 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
                ceo.milestone_shares.push_back( mile );
             }
 
-            ceo.milestone_details.reserve( o.milestone_details.size() );
-
-            for( size_t i = 0; i < ceo.milestone_details.size(); i++ )
-            {
-               from_string( ceo.milestone_details[ i ], o.milestone_details[ i ] );
-            }
+            
          }
       });
    }
@@ -1109,22 +1103,10 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
          ceo.total_distributed = asset( 0, o.daily_budget.symbol );
 
          ceo.milestone_shares.reserve( o.milestone_shares.size() );
-
-         for( auto& mile : o.milestone_shares )
+         for( auto m : o.milestone_shares )
          {
-            ceo.milestone_shares.push_back( mile );
+            ceo.milestone_shares.push_back( m );
          }
-         
-         ceo.milestone_details.reserve( o.milestone_shares.size() );
-
-         for( size_t i = 0; i < ceo.milestone_details.size(); i++ )
-         {
-            from_string( ceo.milestone_details[ i ], o.milestone_details[ i ] );
-         }
-
-         ceo.milestone_history.reserve( o.milestone_shares.size() );
-
-         from_string( ceo.milestone_history[ 0 ], string( "Milestone History: Initial Claim." ) );
 
          if( o.investment.valid() )
          {
@@ -1176,11 +1158,6 @@ void claim_enterprise_milestone_evaluator::do_apply( const claim_enterprise_mile
 
    _db.modify( enterprise, [&]( community_enterprise_object& ceo )
    { 
-      if( o.details.size() )
-      {
-         ceo.milestone_history.reserve( enterprise.milestone_shares.size() );
-         from_string( ceo.milestone_history[ o.milestone ], o.details );
-      }
       ceo.claimed_milestones = o.milestone;
    });
 
@@ -1245,9 +1222,11 @@ void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_
       }
       else
       {
-         if( account_enterprise_itr != account_enterprise_idx.end() && account_rank_itr != account_rank_idx.end() )
+         if( account_enterprise_itr != account_enterprise_idx.end() && 
+            account_rank_itr != account_rank_idx.end() )
          {
-            FC_ASSERT( account_enterprise_itr->creator != account_rank_itr->creator && account_enterprise_itr->enterprise_id != account_rank_itr->enterprise_id, 
+            FC_ASSERT( account_enterprise_itr->creator != account_rank_itr->creator && 
+               account_enterprise_itr->enterprise_id != account_rank_itr->enterprise_id, 
                "Vote at rank is already specified Enterprise proposal." );
          }
          

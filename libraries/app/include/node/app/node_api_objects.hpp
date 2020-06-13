@@ -474,7 +474,10 @@ struct account_business_api_obj
       business_type( business_structure_values[ int( a.business_type ) ] ),
       business_public_key( a.business_public_key ),
       executive_board( a.executive_board ),
-      officer_vote_threshold( a.officer_vote_threshold.value )
+      officer_vote_threshold( a.officer_vote_threshold.value ),
+      active( a.active ),
+      created( a.created ),
+      last_updated( a.last_updated )
       {
          for( auto name : a.executive_votes )
          {
@@ -531,6 +534,9 @@ struct account_business_api_obj
    vector<asset_symbol_type >                                      credit_assets;              ///< Set of credit assets that offer interest and buybacks from the business account
    vector< pair < asset_symbol_type,uint16_t > >                   equity_revenue_shares;      ///< Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
    vector< pair < asset_symbol_type,uint16_t > >                   credit_revenue_shares;      ///< Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
+   bool                                                            active;                     ///< True when the business account is active, false to deactivate business account.
+   time_point                                                      created;                    ///< Time that business account object was created.
+   time_point                                                      last_updated;               ///< Time that the business account object was last updated.
 };
 
 
@@ -1219,14 +1225,6 @@ struct community_enterprise_api_obj
          {
             milestone_shares.push_back( milestone );
          }
-         for( auto milestone : o.milestone_details )
-         {
-            milestone_details.push_back( to_string( milestone) );
-         }
-         for( auto milestone : o.milestone_history )
-         {
-            milestone_history.push_back( to_string( milestone ) );
-         }
       }
 
    community_enterprise_api_obj(){}
@@ -1238,8 +1236,6 @@ struct community_enterprise_api_obj
    string                             proposal_type;                              ///< The type of proposal, determines release schedule.
    map< account_name_type, uint16_t > beneficiaries;                              ///< Map of account names and percentages of budget value.
    vector< uint16_t >                 milestone_shares;                           ///< Ordered vector of release milestone descriptions.
-   vector< string >                   milestone_details;                          ///< Ordered vector of release milestone percentages of budget value.
-   vector< string >                   milestone_history;                          ///< Ordered vector of the details of every claimed milestone.
    int16_t                            approved_milestones;                        ///< Number of the last approved milestone by the community.
    int16_t                            claimed_milestones;                         ///< Number of milestones claimed for release.  
    asset_symbol_type                  investment;                                 ///< Symbol of the asset to be purchased with the funding if the proposal is investment type. 
@@ -1332,6 +1328,8 @@ struct comment_api_obj
       reply_connection( connection_tier_values[ int( o.reply_connection ) ] ),
       community( o.community ),
       body( to_string( o.body ) ),
+      ipfs( to_string( o.ipfs ) ),
+      magnet( to_string( o.magnet ) ),
       url( to_string( o.url ) ),
       interface( o.interface ),
       rating( o.rating ),
@@ -1390,14 +1388,6 @@ struct comment_api_obj
       root( o.root ),
       deleted( o.deleted )
       {
-         for( auto i : o.ipfs )
-         {
-            ipfs.push_back( to_string( i ) );
-         }
-         for( auto m : o.magnet )
-         {
-            magnet.push_back( to_string( m ) );
-         }
          for( auto tag: o.tags )
          {
             tags.push_back( tag );
@@ -1429,8 +1419,8 @@ struct comment_api_obj
    community_name_type            community;                    ///< The name of the community to which the post is uploaded to. Null string if no community. 
    vector< tag_name_type >        tags;                         ///< Set of string tags for sorting the post by.
    string                         body;                         ///< String containing text for display when the post is opened.
-   vector< string >               ipfs;                         ///< String containing a display image or video file as an IPFS file hash.
-   vector< string >               magnet;                       ///< String containing a bittorrent magnet link to a file swarm.
+   string                         ipfs;                         ///< String containing a display image or video file as an IPFS file hash.
+   string                         magnet;                       ///< String containing a bittorrent magnet link to a file swarm.
    string                         url;                          ///< String containing a URL for the post to link to.
    account_name_type              interface;                    ///< Name of the interface account that was used to broadcast the transaction and view the post.
    uint16_t                       rating;                       ///< User nominated rating as to the maturity of the content, and display sensitivity. 
@@ -1646,7 +1636,7 @@ struct poll_api_obj
       {
          for( auto p : o.poll_options )
          {
-            poll_options.push_back( to_string( p ) );
+            poll_options.push_back( p );
          }
       }
 
@@ -1656,7 +1646,7 @@ struct poll_api_obj
    account_name_type              creator;             ///< Name of the account that created the poll.
    string                         poll_id;             ///< uuidv4 referring to the list.
    string                         details;             ///< Text describing the question being asked.
-   vector< string >               poll_options;        ///< Available poll voting options.
+   vector< fixed_string_32 >      poll_options;        ///< Available poll voting options.
    time_point                     completion_time;     ///< Time the poll voting completes.
    time_point                     last_updated;        ///< Time the list was last edited by the creator.
    time_point                     created;             ///< Time that the comment tag was created.
@@ -1670,7 +1660,7 @@ struct poll_vote_api_obj
       voter( o.voter ),
       creator( o.creator ),
       poll_id( to_string( o.poll_id ) ),
-      poll_option( to_string( o.poll_option ) ),
+      poll_option( o.poll_option ),
       last_updated( o.last_updated ),
       created( o.created ){}
 
@@ -1680,7 +1670,7 @@ struct poll_vote_api_obj
    account_name_type           voter;               ///< Name of the account that created the vote.
    account_name_type           creator;             ///< Name of the account that created the poll.
    string                      poll_id;             ///< uuidv4 referring to the poll.
-   string                      poll_option;         ///< Poll option chosen.
+   fixed_string_32             poll_option;         ///< Poll option chosen.
    time_point                  last_updated;        ///< Time the vote was last edited by the voter.
    time_point                  created;             ///< Time that the vote was created.
 };
@@ -2150,11 +2140,11 @@ struct graph_node_api_obj
          }
          for( auto t : o.attributes )
          {
-            attributes.push_back( to_string( t ) );
+            attributes.push_back( t );
          }
          for( auto t : o.attribute_values )
          {
-            attribute_values.push_back( to_string( t ) );
+            attribute_values.push_back( t );
          }
       }
 
@@ -2166,8 +2156,8 @@ struct graph_node_api_obj
    string                                  node_id;                     ///< uuidv4 identifying the node. Unique for each account.
    string                                  name;                        ///< Name of the node.
    string                                  details;                     ///< Describes the additional details of the node.
-   vector< string >                        attributes;                  ///< List of attributes types for this node.
-   vector< string >                        attribute_values;            ///< List of attribute values for this node.
+   vector< fixed_string_32 >               attributes;                  ///< List of attributes types for this node.
+   vector< fixed_string_32 >               attribute_values;            ///< List of attribute values for this node.
    string                                  json;                        ///< Public plaintext JSON node attribute information.
    string                                  json_private;                ///< Private encrypted ciphertext JSON node attribute information.
    public_key_type                         node_public_key;             ///< Key used for encrypting and decrypting private node JSON data and attribute values.
@@ -2201,11 +2191,11 @@ struct graph_edge_api_obj
          }
          for( auto t : o.attributes )
          {
-            attributes.push_back( to_string( t ) );
+            attributes.push_back( t );
          }
          for( auto t : o.attribute_values )
          {
-            attribute_values.push_back( to_string( t ) );
+            attribute_values.push_back( t );
          }
       }
 
@@ -2219,8 +2209,8 @@ struct graph_edge_api_obj
    graph_node_id_type                       to_node;                     ///< The Node being connected to.
    string                                   name;                        ///< Name of the edge.
    string                                   details;                     ///< Describes the edge.
-   vector< string >                         attributes;                  ///< List of attributes types for this edge.
-   vector< string >                         attribute_values;            ///< List of attribute values for this edge.
+   vector< fixed_string_32 >                attributes;                  ///< List of attributes types for this edge.
+   vector< fixed_string_32 >                attribute_values;            ///< List of attribute values for this edge.
    string                                   json;                        ///< Public plaintext JSON edge attribute information.
    string                                   json_private;                ///< Private encrypted ciphertext JSON edge attribute information.
    public_key_type                          edge_public_key;             ///< Key used for encrypting and decrypting private edge JSON data.
@@ -2248,7 +2238,7 @@ struct graph_node_property_api_obj
       {
          for( auto t : o.attributes )
          {
-            attributes.push_back( to_string( t ) );
+            attributes.push_back( t );
          }
       }
 
@@ -2262,7 +2252,7 @@ struct graph_node_property_api_obj
    string                             details;                     ///< Describes the additional details of the node.
    string                             url;                         ///< Reference URL link for more details.
    string                             json;                        ///< Public plaintext JSON metadata information.
-   vector< string >                   attributes;                  ///< List of attributes that each node is required to have.
+   vector< fixed_string_32 >          attributes;                  ///< List of attributes that each node is required to have.
    account_name_type                  interface;                   ///< Name of the application that facilitated the creation of the node type.
    time_point                         created;                     ///< Time the node type was created.
    time_point                         last_updated;                ///< Time that the node type was last updated by its creator.
@@ -2294,7 +2284,7 @@ struct graph_edge_property_api_obj
          }
          for( auto t : o.attributes )
          {
-            attributes.push_back( to_string( t ) );
+            attributes.push_back( t );
          }
       }
 
@@ -2309,7 +2299,7 @@ struct graph_edge_property_api_obj
    string                                    details;                     ///< Describes the additional details of the node.
    string                                    url;                         ///< Reference URL link for more details.
    string                                    json;                        ///< Public plaintext JSON metadata information.
-   vector< string >                          attributes;                  ///< List of attributes that each edge is required to have.
+   vector< fixed_string_32 >                 attributes;                  ///< List of attributes that each edge is required to have.
    account_name_type                         interface;                   ///< Name of the application that facilitated the creation of the edge type.
    time_point                                created;                     ///< Time the edge type was created.
    time_point                                last_updated;                ///< Time that the edge type was last updated by its creator.
@@ -2476,21 +2466,16 @@ struct product_sale_api_obj
       name( to_string( o.name ) ),
       url( to_string( o.url ) ),
       json( to_string( o.json ) ),
+      product_details( to_string( o.product_details ) ),
+      product_image( to_string( o.product_image ) ),
+      delivery_details( to_string( o.delivery_details ) ),
       created( o.created ),
       last_updated( o.last_updated ),
       active( o.active )
       {
          for( auto s : o.product_variants )
          {
-            product_variants.push_back( to_string( s ) );
-         }
-         for( auto s : o.product_details )
-         {
-            product_details.push_back( to_string( s ) );
-         }
-         for( auto s : o.product_images )
-         {
-            product_images.push_back( to_string( s ) );
+            product_variants.push_back( s );
          }
          for( auto s : o.product_prices )
          {
@@ -2506,11 +2491,7 @@ struct product_sale_api_obj
          }
          for( auto s : o.delivery_variants )
          {
-            delivery_variants.push_back( to_string( s ) );
-         }
-         for( auto s : o.delivery_details )
-         {
-            delivery_details.push_back( to_string( s ) );
+            delivery_variants.push_back( s );
          }
          for( auto s : o.delivery_prices )
          {
@@ -2526,14 +2507,14 @@ struct product_sale_api_obj
    string                                name;                   ///< The name of the product.
    string                                url;                    ///< Reference URL of the product or seller.
    string                                json;                   ///< JSON metadata attributes of the product.
-   vector< string >                      product_variants;       ///< The collection of product variants. Each map must have a key for each variant.
-   vector< string >                      product_details;        ///< The Description details of each variant of the product.
-   vector< string >                      product_images;         ///< IPFS references to images of each product variant.
+   vector< fixed_string_32 >             product_variants;       ///< The collection of product variants. Each map must have a key for each variant.
+   string                                product_details;        ///< The Description details of each variant of the product.
+   string                                product_image;          ///< IPFS reference to primary image of product.
    vector< asset >                       product_prices;         ///< The price (or min auction price) for each variant of the product.
    map< uint32_t, uint16_t >             wholesale_discount;     ///< Discount percentages that are applied when quantity is above a given size.
    vector< uint32_t >                    stock_available;        ///< The available stock of each variant of the product.
-   vector< string >                      delivery_variants;      ///< The types of product delivery available to purchasers.
-   vector< string >                      delivery_details;       ///< The Description details of each variant of the delivery.
+   vector< fixed_string_32 >             delivery_variants;      ///< The types of product delivery available to purchasers.
+   string                                delivery_details;       ///< The Description details of each variant of the delivery.
    vector< asset >                       delivery_prices;        ///< The price for each variant of delivery.
    time_point                            created;                ///< Time that the order was created.
    time_point                            last_updated;           ///< Time that the order was last updated, approved, or disputed.
@@ -2553,7 +2534,7 @@ struct product_purchase_api_obj
       json( to_string( o.json ) ),
       purchase_public_key( o.purchase_public_key ),
       shipping_address( to_string( o.shipping_address ) ),
-      delivery_variant( to_string( o.delivery_variant ) ),
+      delivery_variant( o.delivery_variant ),
       delivery_details( to_string( o.delivery_details ) ),
       order_value( o.order_value ),
       created( o.created ),
@@ -2561,7 +2542,7 @@ struct product_purchase_api_obj
       {
          for( auto v : o.order_variants )
          {
-            order_variants.push_back( to_string( v ) );
+            order_variants.push_back( v );
          }
          for( auto v : o.order_size )
          {
@@ -2576,13 +2557,13 @@ struct product_purchase_api_obj
    string                            order_id;               ///< uuidv4 referring to the purchase order.
    account_name_type                 seller;                 ///< The Seller of the product.
    string                            product_id;             ///< uuidv4 refrring to the product.
-   vector< string >                  order_variants;         ///< Variants of product ordered in the purchase.
+   vector< fixed_string_32 >         order_variants;         ///< Variants of product ordered in the purchase.
    vector< uint32_t >                order_size;             ///< The number of each product variant ordered. 
    string                            memo;                   ///< The memo for the transaction, encryption on the memo is advised.
    string                            json;                   ///< Additional JSON object attribute details.
    public_key_type                   purchase_public_key;    ///< the Public key used to encrypt the memo and shipping address. 
    string                            shipping_address;       ///< The shipping address requested, encrypted with the secure key of the seller.
-   string                            delivery_variant;       ///< The type of product delivery selected.
+   fixed_string_32                   delivery_variant;       ///< The type of product delivery selected.
    string                            delivery_details;       ///< The Description details of the delivery.
    asset                             order_value;            ///< The total value of the order.
    time_point                        created;                ///< Time that the order was created.
@@ -2601,25 +2582,19 @@ struct product_auction_sale_api_obj
       url( to_string( o.url ) ),
       json( to_string( o.json ) ),
       product_details( to_string( o.product_details ) ),
+      product_image( to_string( o.product_image ) ),
       reserve_bid( o.reserve_bid ),
       maximum_bid( o.maximum_bid ),
+      delivery_details( to_string( o.delivery_details ) ),
       final_bid_time( o.final_bid_time ),
       completion_time( o.completion_time ),
       winning_bid( o.winning_bid ),
       created( o.created ),
       last_updated( o.last_updated )
       {
-         for( auto s : o.product_images )
-         {
-            product_images.push_back( to_string( s ) );
-         }
          for( auto s : o.delivery_variants )
          {
-            delivery_variants.push_back( to_string( s ) );
-         }
-         for( auto s : o.delivery_details )
-         {
-            delivery_details.push_back( to_string( s ) );
+            delivery_variants.push_back( s );
          }
          for( auto s : o.delivery_prices )
          {
@@ -2637,11 +2612,11 @@ struct product_auction_sale_api_obj
    string                                url;                    ///< Reference URL of the product or seller.
    string                                json;                   ///< JSON metadata attributes of the product.
    string                                product_details;        ///< The Description details of each variant of the product.
-   vector< string >                      product_images;         ///< IPFS references to images of each product variant.
+   string                                product_image;          ///< IPFS reference to primary image of product.
    asset                                 reserve_bid;            ///< The min auction bid, or minimum price of a reverse auction at final bid time.
    asset                                 maximum_bid;            ///< The max auction bid. Auction will immediately conclude if this price is bidded. Starting price of reverse auction.
-   vector< string >                      delivery_variants;      ///< The types of product delivery available to purchasers.
-   vector< string >                      delivery_details;       ///< The Description details of each variant of the delivery.
+   vector< fixed_string_32 >             delivery_variants;      ///< The types of product delivery available to purchasers.
+   string                                delivery_details;       ///< The Description details of each variant of the delivery.
    vector< asset >                       delivery_prices;        ///< The price for each variant of delivery.
    time_point                            final_bid_time;         ///< No more bids will be accepted after this time. Concealed bids must be revealed before completion time.
    time_point                            completion_time;        ///< Time that the auction will select the winning bidder, or end if no bids.
@@ -2667,7 +2642,7 @@ struct product_auction_bid_api_obj
       json( to_string( o.json ) ),
       bid_public_key( o.bid_public_key ),
       shipping_address( to_string( o.shipping_address ) ),
-      delivery_variant( to_string( o.delivery_variant ) ),
+      delivery_variant( o.delivery_variant ),
       delivery_details( to_string( o.delivery_details ) ),
       delivery_value( o.delivery_value ),
       created( o.created ),
@@ -2690,7 +2665,7 @@ struct product_auction_bid_api_obj
    string                            json;                   ///< Additional JSON object attribute details.
    public_key_type                   bid_public_key;         ///< the Public key used to encrypt the memo and shipping address. 
    string                            shipping_address;       ///< The shipping address requested, encrypted with the secure key of the seller.
-   string                            delivery_variant;       ///< The type of product delivery selected.
+   fixed_string_32                   delivery_variant;       ///< The type of product delivery selected.
    string                            delivery_details;       ///< The Description details of the delivery.
    asset                             delivery_value;         ///< The cost of the delivery if the bid is successful.
    time_point                        created;                ///< Time that the order was created.
@@ -3485,6 +3460,7 @@ struct prediction_pool_api_obj
       collateral_symbol( p.collateral_symbol ),
       collateral_pool( p.collateral_pool ),
       prediction_bond_pool( p.prediction_bond_pool ),
+      outcome_details( to_string( p.outcome_details ) ),
       json( to_string( p.json ) ),
       url( to_string( p.url ) ),
       details( to_string( p.details ) ),
@@ -3494,10 +3470,6 @@ struct prediction_pool_api_obj
          for( auto sym : p.outcome_assets )
          {
             outcome_assets.push_back( sym );
-         }
-         for( auto sym : p.outcome_details )
-         {
-            outcome_details.push_back( to_string( sym ) );
          }
       }
 
@@ -3510,7 +3482,7 @@ struct prediction_pool_api_obj
    asset                                        collateral_pool;          ///< Funds accumulated by outcome asset positions for distribution to winning outcome.
    asset                                        prediction_bond_pool;     ///< Security deposit placed by the issuer on the market.
    vector< asset_symbol_type >                  outcome_assets;           ///< Outcome asset symbols for the market.
-   vector< string >                             outcome_details;          ///< Description of each outcome and the resolution conditions for each asset. 
+   string                                       outcome_details;          ///< Description of each outcome and the resolution conditions for each asset. 
    string                                       json;                     ///< JSON Metadata of the prediction market.
    string                                       url;                      ///< Reference URL of the market.
    string                                       details;                  ///< Description of the market, how it will be resolved using known public data sources.
@@ -4117,6 +4089,9 @@ FC_REFLECT( node::app::account_business_api_obj,
          (credit_assets)
          (equity_revenue_shares)
          (credit_revenue_shares)
+         (active)
+         (created)
+         (last_updated)
          );
 
 FC_REFLECT( node::app::account_permission_api_obj,
@@ -4371,8 +4346,6 @@ FC_REFLECT( node::app::community_enterprise_api_obj,
          (proposal_type)
          (beneficiaries)
          (milestone_shares)
-         (milestone_details)
-         (milestone_history)
          (approved_milestones)
          (claimed_milestones)
          (investment)
@@ -4894,7 +4867,7 @@ FC_REFLECT( node::app::product_sale_api_obj,
          (json)
          (product_variants)
          (product_details)
-         (product_images)
+         (product_image)
          (product_prices)
          (stock_available)
          (delivery_variants)
@@ -4933,7 +4906,7 @@ FC_REFLECT( node::app::product_auction_sale_api_obj,
          (url)
          (json)
          (product_details)
-         (product_images)
+         (product_image)
          (reserve_bid)
          (maximum_bid)
          (delivery_variants)

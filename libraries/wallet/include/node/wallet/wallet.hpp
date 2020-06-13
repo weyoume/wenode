@@ -1557,6 +1557,7 @@ class wallet_api
        * @param business_type The type of business account being created.
        * @param officer_vote_threshold The voting power required to be an active officer.
        * @param business_public_key The public key used for encrypted business content.
+       * @param active True when the business account is active, false to deactivate business account.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           account_business( 
@@ -1566,6 +1567,7 @@ class wallet_api
          string business_type,
          int64_t officer_vote_threshold,
          string business_public_key,
+         bool active,
          bool broadcast );
 
 
@@ -2210,7 +2212,6 @@ class wallet_api
        * @param proposal_type The type of proposal, determines release schedule.
        * @param beneficiaries Set of account names and percentages of budget value. Should not include the null account.
        * @param milestone_shares Ordered vector of release milestone percentages of budget value.
-       * @param milestone_details Ordered vector of release milestone descriptions.
        * @param investment Symbol of the asset to be purchased with the funding if the proposal is investment type. 
        * @param details The proposals's details description. 
        * @param url The proposals's reference URL. 
@@ -2229,7 +2230,6 @@ class wallet_api
          string proposal_type,
          map< string, uint16_t > beneficiaries,
          vector< uint16_t > milestone_shares,
-         vector< string > milestone_details,
          string investment,
          string details,
          string url,
@@ -3555,7 +3555,7 @@ class wallet_api
        * @param json JSON metadata attributes of the product.
        * @param product_variants The collection of product variants. Each map must have a key for each variant.
        * @param product_details The Description details of each variant of the product.
-       * @param product_images IPFS references to images of each product variant.
+       * @param product_image IPFS references to images of each product variant.
        * @param product_prices The price (or min auction price) for each variant of the product.
        * @param wholesale_discount Discount percentages that are applied when quantity is above a given size.
        * @param stock_available The available stock of each variant of the product.
@@ -3574,7 +3574,7 @@ class wallet_api
          string json,
          vector< string > product_variants,
          vector< string > product_details,
-         vector< string > product_images,
+         string product_image,
          vector< asset > product_prices,
          flat_map< uint32_t, uint16_t > wholesale_discount,
          vector< uint32_t > stock_available,
@@ -3633,7 +3633,7 @@ class wallet_api
        * @param url Reference URL of the product or seller.
        * @param json JSON metadata attributes of the product.
        * @param product_details The Description details of each variant of the product.
-       * @param product_images IPFS references to images of each product variant.
+       * @param product_image IPFS references to images of each product variant.
        * @param reserve_bid The min auction bid, or minimum price of a reverse auction at final bid time.
        * @param maximum_bid The max auction bid. Auction will immediately conclude if this price is bidded. Starting price of reverse auction.
        * @param delivery_variants The types of product delivery available to purchasers.
@@ -3652,7 +3652,7 @@ class wallet_api
          string url,
          string json,
          string product_details,
-         vector< string > product_images,
+         string product_image,
          asset reserve_bid,
          asset maximum_bid,
          vector< string > delivery_variants,
@@ -4105,7 +4105,7 @@ class wallet_api
          string prediction_symbol,
          string collateral_symbol,
          vector< string > outcome_assets,
-         vector< string > outcome_details,
+         string outcome_details,
          string display_symbol,
          string json,
          string url,

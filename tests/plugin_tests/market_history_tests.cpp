@@ -7,7 +7,6 @@ using namespace node;
 using namespace node::chain;
 using namespace node::protocol;
 using namespace node::market_history;
-using node::protocol::generate_private_key;
 
 BOOST_FIXTURE_TEST_SUITE( market_history_tests, clean_database_fixture )
 

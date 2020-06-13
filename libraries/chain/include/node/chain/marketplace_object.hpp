@@ -27,21 +27,21 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          product_sale_object( Constructor&& c, allocator< Allocator > a ) :
-         product_id(a), 
-         name(a), 
-         url(a), 
-         json(a), 
-         product_variants( a.get_segment_manager() ), 
-         product_details( a.get_segment_manager() ), 
-         product_images( a.get_segment_manager() ), 
-         product_prices( a.get_segment_manager() ), 
-         stock_available( a.get_segment_manager() ), 
-         delivery_variants( a.get_segment_manager() ), 
-         delivery_details( a.get_segment_manager() ), 
-         delivery_prices( a.get_segment_manager() )
-         {
-            c( *this );
-         }
+            product_id(a), 
+            name(a), 
+            url(a), 
+            json(a), 
+            product_variants( a.get_segment_manager() ), 
+            product_details( a ), 
+            product_image( a ), 
+            product_prices( a.get_segment_manager() ), 
+            stock_available( a.get_segment_manager() ), 
+            delivery_variants( a.get_segment_manager() ), 
+            delivery_details( a ), 
+            delivery_prices( a.get_segment_manager() )
+            {
+               c( *this );
+            }
 
          id_type                               id;
 
@@ -55,11 +55,11 @@ namespace node { namespace chain {
 
          shared_string                         json;                   ///< JSON metadata attributes of the product.
 
-         shared_vector< shared_string >        product_variants;       ///< The collection of product variants. Each map must have a key for each variant.
+         shared_vector< fixed_string_32 >      product_variants;       ///< The collection of product variants. Each map must have a key for each variant.
 
-         shared_vector< shared_string >        product_details;        ///< The Description details of each variant of the product.
+         shared_string                         product_details;        ///< The Description details of each variant of the product.
 
-         shared_vector< shared_string >        product_images;         ///< IPFS references to images of each product variant.
+         shared_string                         product_image;         ///< IPFS references to images of each product variant.
 
          shared_vector< asset >                product_prices;         ///< The price for each variant of the product.
 
@@ -67,9 +67,9 @@ namespace node { namespace chain {
          
          shared_vector< uint32_t >             stock_available;        ///< The available stock of each variant of the product.
 
-         shared_vector< shared_string >        delivery_variants;      ///< The types of product delivery available to purchasers.
+         shared_vector< fixed_string_32 >      delivery_variants;      ///< The types of product delivery available to purchasers.
 
-         shared_vector< shared_string >        delivery_details;       ///< The Description details of each variant of the delivery.
+         shared_string                         delivery_details;       ///< The Description details of each variant of the delivery.
 
          shared_vector< asset >                delivery_prices;        ///< The price for each variant of delivery.
 
@@ -96,18 +96,17 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          product_purchase_object( Constructor&& c, allocator< Allocator > a ) :
-         order_id(a), 
-         product_id(a), 
-         order_variants( a.get_segment_manager() ), 
-         order_size( a.get_segment_manager() ), 
-         memo(a), 
-         json(a), 
-         shipping_address(a),
-         delivery_variant(a), 
-         delivery_details(a)
-         {
-            c( *this );
-         }
+            order_id(a), 
+            product_id(a), 
+            order_variants( a.get_segment_manager() ), 
+            order_size( a.get_segment_manager() ), 
+            memo(a), 
+            json(a), 
+            shipping_address(a),
+            delivery_details(a)
+            {
+               c( *this );
+            }
 
          id_type                           id;
 
@@ -119,7 +118,7 @@ namespace node { namespace chain {
 
          shared_string                     product_id;             ///< uuidv4 referring to the product.
 
-         shared_vector< shared_string >    order_variants;         ///< Variants of product ordered in the purchase.
+         shared_vector< fixed_string_32 >  order_variants;         ///< Variants of product ordered in the purchase.
 
          shared_vector< uint32_t >         order_size;             ///< The number of each product variant ordered.
 
@@ -131,7 +130,7 @@ namespace node { namespace chain {
 
          shared_string                     shipping_address;       ///< The shipping address requested, encrypted with the secure key of the seller.
 
-         shared_string                     delivery_variant;       ///< The type of product delivery selected.
+         fixed_string_32                   delivery_variant;       ///< The type of product delivery selected.
 
          shared_string                     delivery_details;       ///< The Description details of the delivery.
 
@@ -161,18 +160,18 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          product_auction_sale_object( Constructor&& c, allocator< Allocator > a ) :
-         auction_id(a), 
-         name(a), 
-         url(a), 
-         json(a), 
-         product_details(a), 
-         product_images( a.get_segment_manager() ), 
-         delivery_variants( a.get_segment_manager() ), 
-         delivery_details( a.get_segment_manager() ), 
-         delivery_prices( a.get_segment_manager() )
-         {
-            c( *this );
-         }
+            auction_id(a), 
+            name(a), 
+            url(a), 
+            json(a), 
+            product_details(a), 
+            product_image( a ), 
+            delivery_variants( a.get_segment_manager() ), 
+            delivery_details( a ), 
+            delivery_prices( a.get_segment_manager() )
+            {
+               c( *this );
+            }
 
          id_type                               id;
 
@@ -190,15 +189,15 @@ namespace node { namespace chain {
 
          shared_string                         product_details;        ///< The Description details of each variant of the product.
 
-         shared_vector< shared_string >        product_images;         ///< IPFS references to images of each product variant.
+         shared_string                         product_image;          ///< IPFS references to image of each product variant.
 
          asset                                 reserve_bid;            ///< The min auction bid, or minimum price of a reverse auction at final bid time.
 
          asset                                 maximum_bid;            ///< The max auction bid. Auction will immediately conclude if this price is bidded. Starting price of reverse auction.
 
-         shared_vector< shared_string >        delivery_variants;      ///< The types of product delivery available to purchasers.
+         shared_vector< fixed_string_32 >      delivery_variants;      ///< The types of product delivery available to purchasers.
 
-         shared_vector< shared_string >        delivery_details;       ///< The Description details of each variant of the delivery.
+         shared_string                         delivery_details;       ///< The Description details of each variant of the delivery.
 
          shared_vector< asset >                delivery_prices;        ///< The price for each variant of delivery.
 
@@ -260,7 +259,6 @@ namespace node { namespace chain {
          memo(a), 
          json(a), 
          shipping_address(a),
-         delivery_variant(a), 
          delivery_details(a)
          {
             c( *this );
@@ -292,7 +290,7 @@ namespace node { namespace chain {
 
          shared_string                     shipping_address;       ///< The shipping address requested, encrypted with the secure key of the seller.
 
-         shared_string                     delivery_variant;       ///< The type of product delivery selected.
+         fixed_string_32                   delivery_variant;       ///< The type of product delivery selected.
 
          shared_string                     delivery_details;       ///< The Description details of the delivery.
 
@@ -707,7 +705,7 @@ FC_REFLECT( node::chain::product_sale_object,
          (json)
          (product_variants)
          (product_details)
-         (product_images)
+         (product_image)
          (product_prices)
          (stock_available)
          (delivery_variants)
@@ -750,7 +748,7 @@ FC_REFLECT( node::chain::product_auction_sale_object,
          (url)
          (json)
          (product_details)
-         (product_images)
+         (product_image)
          (reserve_bid)
          (maximum_bid)
          (delivery_variants)

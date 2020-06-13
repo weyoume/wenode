@@ -66,6 +66,9 @@ void comment_evaluator::do_apply( const comment_operation& o )
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
+   ilog("Begin creating comment: Author: ${a} Created post: ${p}",
+      ("a",o.author)("p",o.permlink ));
+
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
    time_point now = _db.head_block_time();
    const auto& by_permlink_idx = _db.get_index< comment_index >().indices().get< by_permlink >();
@@ -360,22 +363,24 @@ void comment_evaluator::do_apply( const comment_operation& o )
          "Comment is nested ${x} posts deep, maximum depth is ${y}.", ("x",parent->depth)("y",MAX_COMMENT_DEPTH) );
    }
       
-   if ( itr == by_permlink_idx.end() )             // Post does not yet exist, creating new post
+   if( itr == by_permlink_idx.end() )             // Post does not yet exist, creating new post
    {
       if( o.parent_author == ROOT_POST_PARENT )       // Post is a new root post
       {
-         FC_ASSERT( ( now - auth.last_root_post ) > MIN_ROOT_COMMENT_INTERVAL, 
-            "You may only post once every 60 seconds.", ("now",now)("last_root_post", auth.last_root_post) );
+         FC_ASSERT( ( now - auth.last_root_post ) >= MIN_ROOT_COMMENT_INTERVAL,
+            "You may only post once every 60 seconds. Last post was: ${t}. Try again in ${s} seconds.",
+            ("t",auth.last_root_post)("s",(MIN_ROOT_COMMENT_INTERVAL-(now-auth.last_root_post )).to_seconds() ) );
       }    
       else         // Post is a new comment
       {
          const comment_object& root = _db.get( parent->root_comment );       // If root post, gets the posts own object.
          const account_object& root_auth = _db.get_account( root.author );
 
-         FC_ASSERT( root.allow_replies, 
+         FC_ASSERT( root.allow_replies,
             "The parent comment has disabled replies." );
-         FC_ASSERT( ( now - auth.last_post ) > MIN_REPLY_INTERVAL, 
-            "You may only comment once every 15 seconds.", ("now",now)("auth.last_post",auth.last_post) );
+         FC_ASSERT( ( now - auth.last_post ) >= MIN_REPLY_INTERVAL,
+            "You may only comment once every 15 seconds. Last post was: ${t}. Try again in ${s} seconds.",
+            ("t",auth.last_root_post)("s",(MIN_REPLY_INTERVAL-(now-auth.last_root_post )).to_seconds() ) );
 
          // If root charges a comment price, pay the comment price to root author.
 
@@ -591,23 +596,21 @@ void comment_evaluator::do_apply( const comment_operation& o )
             com.interface = o.interface;
          }
 
-         com.ipfs.reserve( o.ipfs.size() );
-         for( size_t i = 0; i < o.ipfs.size(); i++ )
+         if( o.ipfs.size() )
          {
-            from_string( com.ipfs[ i ], o.ipfs[ i ] );
+            from_string( com.ipfs, o.ipfs );
          }
 
-         com.magnet.reserve( o.magnet.size() );
-         for( size_t i = 0; i < o.magnet.size(); i++ )
+         if( o.magnet.size() )
          {
-            from_string( com.magnet[ i ], o.magnet[ i ] );
+            from_string( com.magnet, o.magnet );
          }
 
-         for( auto& tag : o.tags )
+         for( auto tag : o.tags )
          {
             com.tags.push_back( tag );
          }
-         for( auto& b : options.beneficiaries )
+         for( auto b : options.beneficiaries )
          {
             com.beneficiaries.push_back( b );
          }
@@ -782,18 +785,16 @@ void comment_evaluator::do_apply( const comment_operation& o )
             {
                from_string( com.url, o.url );  
             }
-            com.ipfs.reserve( o.ipfs.size() );
-            for( size_t i = 0; i < o.ipfs.size(); i++ )
+
+            if( o.ipfs.size() )
             {
-               from_string( com.ipfs[ i ], o.ipfs[ i ] );
+               from_string( com.ipfs, o.ipfs );
             }
-            
-            com.magnet.reserve( o.magnet.size() );
-            for( size_t i = 0; i < o.magnet.size(); i++ )
+            if( o.magnet.size() )
             {
-               from_string( com.magnet[ i ], o.magnet[ i ] );
+               from_string( com.magnet, o.magnet );
             }
-            for( auto& tag : o.tags )
+            for( auto tag : o.tags )
             {
                com.tags.push_back( tag );
             }
@@ -849,7 +850,8 @@ void comment_evaluator::do_apply( const comment_operation& o )
       }
    }
 
-   ilog( "Author: ${a} Created post: ${p}", ("a", o.author)("p", o.permlink ) );
+   ilog( "Author: ${a} Created post: ${p}", 
+      ("a", o.author)("p", o.permlink ) );
 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -2040,11 +2042,12 @@ void poll_evaluator::do_apply( const poll_operation& o )
    time_point now = _db.head_block_time();
 
    FC_ASSERT( creator.active, 
-      "Creator: ${s} must be active to broadcast transaction.",("s", o.creator) );
+      "Creator: ${s} must be active to broadcast transaction.",
+      ("s", o.creator) );
    
    const auto& poll_idx = _db.get_index< poll_index >().indices().get< by_poll_id >();
    auto poll_itr = poll_idx.find( boost::make_tuple( o.creator, o.poll_id ) );
-   
+
    if( poll_itr == poll_idx.end() )
    {
       _db.create< poll_object >( [&]( poll_object& p )
@@ -2054,9 +2057,9 @@ void poll_evaluator::do_apply( const poll_operation& o )
          from_string( p.details, o.details );
 
          p.poll_options.reserve( o.poll_options.size() );
-         for( size_t i = 0; i < o.poll_options.size(); i++ )
+         for( auto option : o.poll_options )
          {
-            from_string( p.poll_options[ i ], o.poll_options[ i ] );
+            p.poll_options.push_back( option );
          }
 
          p.completion_time = o.completion_time;
@@ -2064,22 +2067,38 @@ void poll_evaluator::do_apply( const poll_operation& o )
          p.created = now;
       });
    }
-   else    
+   else
    {
       const poll_object& poll = *poll_itr;
 
-      _db.modify( poll, [&]( poll_object& p )
+      const auto& vote_idx = _db.get_index< poll_vote_index >().indices().get< by_poll_id >();
+      auto vote_itr = vote_idx.find( boost::make_tuple( poll.creator, poll.poll_id ) );
+      
+      if( vote_itr == vote_idx.end() )    // No existing votes
       {
-         from_string( p.details, o.details );
-
-         p.poll_options.reserve( o.poll_options.size() );
-         for( size_t i = 0; i < o.poll_options.size(); i++ )
+         _db.modify( poll, [&]( poll_object& p )
          {
-            from_string( p.poll_options[ i ], o.poll_options[ i ] );
-         }
-         
-         p.last_updated = now;
-      });
+            from_string( p.details, o.details );
+
+            p.poll_options.clear();
+            p.poll_options.reserve( o.poll_options.size() );
+            for( auto option : o.poll_options )
+            {
+               p.poll_options.push_back( option );
+            }
+
+            p.completion_time = o.completion_time;
+            p.last_updated = now;
+         });
+      }
+      else     // Pre-existing votes
+      {
+         _db.modify( poll, [&]( poll_object& p )
+         {
+            from_string( p.details, o.details ); 
+            p.last_updated = now;
+         });
+      }
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
@@ -2123,7 +2142,7 @@ void poll_vote_evaluator::do_apply( const poll_vote_operation& o )
          p.voter = o.voter;
          p.creator = o.creator;
          from_string( p.poll_id, o.poll_id );
-         from_string( p.poll_option, to_string( poll.poll_options[ o.poll_option ] ) );
+         p.poll_option = poll.poll_options[ o.poll_option ];
          p.last_updated = now;
          p.created = now;
       });
@@ -2134,7 +2153,7 @@ void poll_vote_evaluator::do_apply( const poll_vote_operation& o )
 
       _db.modify( vote, [&]( poll_vote_object& p )
       {
-         from_string( p.poll_option, to_string( poll.poll_options[ o.poll_option ] ) );
+         p.poll_option = poll.poll_options[ o.poll_option ];
          p.last_updated = now;
       });
    }

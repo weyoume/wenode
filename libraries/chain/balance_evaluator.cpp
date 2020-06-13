@@ -44,17 +44,17 @@ void claim_reward_balance_evaluator::do_apply( const claim_reward_balance_operat
       FC_ASSERT( b.is_officer( o.signatory ),
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-
-   const account_balance_object& account_balance = _db.get_account_balance( o.account, o.reward.symbol );
-   const account_object& acc = _db.get_account( o.account );
-
-   FC_ASSERT( o.reward.amount <= account_balance.reward_balance,
+   
+   const account_object& account = _db.get_account( o.account );
+   asset reward = _db.get_reward_balance( o.account, o.reward.symbol );
+   
+   FC_ASSERT( o.reward.amount <= reward.amount,
       "Cannot claim requested reward assets. Claimed: ${c} Available: ${a}",
-      ( "c", o.reward.amount )("a", account_balance.reward_balance ) );
+      ("c", o.reward)("a", reward) );
 
    asset shared_reward = asset( 0, o.reward.symbol );
 
-   if( acc.revenue_share )     // Distributes revenue from rewards to listed equity and credit assets for business accounts.
+   if( account.revenue_share )     // Distributes revenue from rewards to listed equity and credit assets for business accounts.
    {
       const account_business_object& bus_acc = _db.get_account_business( signed_for );
 
@@ -80,17 +80,17 @@ void claim_reward_balance_evaluator::do_apply( const claim_reward_balance_operat
       }
    }
 
-   const asset& reward = o.reward - shared_reward;
-   const asset& staked_reward = ( reward * REWARD_STAKED_PERCENT ) / PERCENT_100;
-   const asset& liquid_reward = reward - staked_reward;
+   asset claimed_reward = o.reward - shared_reward;
+   asset staked_reward = ( claimed_reward * REWARD_STAKED_PERCENT ) / PERCENT_100;
+   asset liquid_reward = claimed_reward - staked_reward;
 
-   _db.adjust_reward_balance( acc, -o.reward );
-   _db.adjust_liquid_balance( acc, liquid_reward );
-   _db.adjust_staked_balance( acc, staked_reward );
+   _db.adjust_reward_balance( o.account, -o.reward );
+   _db.adjust_liquid_balance( o.account, liquid_reward );
+   _db.adjust_staked_balance( o.account, staked_reward );
 
-   _db.modify( acc, [&]( account_object& a ) 
+   _db.modify( account, [&]( account_object& a )
    {
-      a.total_rewards += reward.amount;
+      a.total_rewards += claimed_reward.amount;
    }); 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -195,11 +195,13 @@ void unstake_asset_evaluator::do_apply( const unstake_asset_operation& o )
       "Account: ${a} has Insufficient Staked balance: ${s} for unstake of amount: ${w}.",
       ("a",o.from)("s",stake)("w",o.amount) );
 
-   if( !from_account.mined && o.amount.symbol == SYMBOL_COIN )
+   if( !from_account.mined && 
+      o.amount.symbol == SYMBOL_COIN )
    {
       asset min_stake = median_props.account_creation_fee * 10;
       FC_ASSERT( stake >= min_stake,
-         "Account registered by another account requires 10x account creation before it can be unstaked." );
+         "Account ${a} requires 10x account creation fee: ${m} before it can be unstaked. Staked balance: ${s} Unstake amount: ${w}.", 
+         ("a",o.from)("s",stake)("w",o.amount)("m",min_stake));
    }
 
    if( o.amount.amount == 0 )
@@ -369,15 +371,17 @@ void transfer_from_savings_evaluator::do_apply( const transfer_from_savings_oper
 
    const account_object& to_account = _db.get_account( o.to );
    FC_ASSERT( to_account.active,
-      "Account: ${s} must be active to withdraw savings balance to.",("s", o.to) );
+      "Account: ${s} must be active to withdraw savings balance to.",
+      ("s", o.to) );
+   
    const account_object& from_account = _db.get_account( o.from );
    time_point now = _db.head_block_time();
 
    FC_ASSERT( from_account.savings_withdraw_requests < SAVINGS_WITHDRAW_REQUEST_LIMIT,
       "Account has reached limit for pending withdraw requests." );
 
-   const asset& savings = _db.get_savings_balance( o.from, o.amount.symbol );
-   FC_ASSERT( savings >= o.amount,
+   asset savings = _db.get_savings_balance( o.from, o.amount.symbol );
+   FC_ASSERT( savings.amount >= o.amount.amount,
       "Account: ${a} has Insufficient Savings balance: ${s} for withdrawal request of: ${w}.",
       ("a",o.from)("s",savings)("w",o.amount) );
 

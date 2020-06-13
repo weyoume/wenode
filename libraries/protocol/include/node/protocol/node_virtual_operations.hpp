@@ -27,7 +27,7 @@ namespace node { namespace protocol {
 
       asset                  reward_usd_value;               ///< Denominated in USD
 
-      void get_creator_name( account_name_type a )const{ a = post_author; }
+      void get_creator_name( flat_set<account_name_type>& a )const{ a.insert( post_author ); }
    };
 
 
@@ -51,7 +51,7 @@ namespace node { namespace protocol {
 
       asset                  reward;
 
-      void get_creator_name( account_name_type a )const{ a = post_author; }
+      void get_creator_name( flat_set<account_name_type>& a )const{ a.insert( post_author ); }
    };
 
 
@@ -81,7 +81,7 @@ namespace node { namespace protocol {
 
       
 
-      void get_creator_name( account_name_type a )const{ a = voter; }
+      void get_creator_name( flat_set<account_name_type>& a )const{ a.insert( voter ); }
    };
 
 
@@ -109,7 +109,7 @@ namespace node { namespace protocol {
 
       asset                  reward;
 
-      void get_creator_name( account_name_type a )const{ a = viewer; }
+      void get_creator_name( flat_set<account_name_type>& a )const{ a.insert( viewer ); }
    };
 
 
@@ -137,7 +137,7 @@ namespace node { namespace protocol {
 
       asset                  reward;
 
-      void get_creator_name( account_name_type a )const{ a = sharer; }
+      void get_creator_name( flat_set<account_name_type>& a )const{ a.insert( sharer ); }
    };
 
 
@@ -169,7 +169,7 @@ namespace node { namespace protocol {
 
       asset                   reward;
 
-      void get_creator_name( account_name_type a )const{ a = comment_author; }
+      void get_creator_name( flat_set<account_name_type>& a )const{ a.insert( comment_author ); }
    };
 
 
@@ -198,7 +198,7 @@ namespace node { namespace protocol {
 
       asset                  reward;
 
-      void get_creator_name( account_name_type a )const{ a = supernode; }
+      void get_creator_name( flat_set<account_name_type>& a )const{ a.insert( supernode ); }
    };
 
 
@@ -227,7 +227,7 @@ namespace node { namespace protocol {
 
       asset                  reward;
 
-      void get_creator_name( account_name_type a )const{ a = moderator; }
+      void get_creator_name( flat_set<account_name_type>& a )const{ a.insert( moderator ); }
    };
 
 
@@ -244,7 +244,7 @@ namespace node { namespace protocol {
 
       string                permlink;
 
-      void get_creator_name( account_name_type a )const{ a = author; }
+      void get_creator_name( flat_set<account_name_type>& a )const{ a.insert( author ); }
    };
 
 
@@ -269,7 +269,7 @@ namespace node { namespace protocol {
 
       asset                 reward;
 
-      void get_creator_name( account_name_type a )const{ a = benefactor; }
+      void get_creator_name( flat_set<account_name_type>& a )const{ a.insert( benefactor ); }
    };
 
 
@@ -282,7 +282,7 @@ namespace node { namespace protocol {
 
       asset                    interest;
 
-      void get_creator_name( account_name_type a )const{ a = owner; }
+      void get_creator_name( flat_set<account_name_type>& a )const{ a.insert( owner ); }
    };
 
 
@@ -293,7 +293,7 @@ namespace node { namespace protocol {
 
       account_name_type    owner;
 
-      void get_creator_name( account_name_type a )const{ a = owner; }
+      void get_creator_name( flat_set<account_name_type>& a )const{ a.insert( owner ); }
    };
 
 
@@ -334,7 +334,7 @@ namespace node { namespace protocol {
 
       asset_symbol_type      symbol_b;
 
-      void get_creator_name( account_name_type a )const{ a = current_owner; }
+      void get_creator_name( flat_set<account_name_type>& a )const{ a.insert( current_owner ); }
    };
 
 
@@ -363,7 +363,7 @@ namespace node { namespace protocol {
 
       string               memo;
 
-      void get_creator_name( account_name_type a )const{ a = from; }
+      void get_creator_name( flat_set<account_name_type>& a )const{ a.insert( from ); }
    };
 
 
@@ -374,7 +374,7 @@ namespace node { namespace protocol {
 
       uint32_t         hardfork_id = 0;
 
-      void get_creator_name( account_name_type a )const{ a = account_name_type( NULL_ACCOUNT ); }
+      void get_creator_name( flat_set<account_name_type>& a )const{ a.insert( NULL_ACCOUNT ); }
    };
 
 
@@ -391,7 +391,7 @@ namespace node { namespace protocol {
 
       asset                  amount;
 
-      void get_creator_name( account_name_type a )const{ a = account; }
+      void get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -408,7 +408,7 @@ namespace node { namespace protocol {
 
       asset                 reward;
 
-      void get_creator_name( account_name_type a )const{ a = producer; }
+      void get_creator_name( flat_set<account_name_type>& a )const{ a.insert( producer ); }
    };
 
 
@@ -429,7 +429,7 @@ namespace node { namespace protocol {
 
       asset               collateral;
 
-      void get_creator_name( account_name_type a )const{ a = bidder; }
+      void get_creator_name( flat_set<account_name_type>& a )const{ a.insert( bidder ); }
    };
 
    struct update_featured_feed_operation : public virtual_operation
@@ -441,7 +441,7 @@ namespace node { namespace protocol {
 
       time_point       featured_time;
 
-      void get_creator_name( account_name_type a )const{ a = account_name_type( NULL_ACCOUNT ); }
+      void get_creator_name( flat_set<account_name_type>& a )const{ a.insert( NULL_ACCOUNT ); }
    };
 
 

@@ -272,8 +272,6 @@ namespace node { namespace app {
       vector< community_enterprise_api_obj >                               enterprise_proposals;
       vector< block_validation_api_obj >                                   block_validations;
 
-      
-
       map< account_name_type, producer_vote_api_obj >                      incoming_producer_votes;
       map< account_name_type, network_officer_vote_api_obj >               incoming_network_officer_votes;
       map< account_name_type, executive_board_vote_api_obj >               incoming_executive_board_votes;
@@ -337,7 +335,7 @@ namespace node { namespace app {
       poll_state( const poll_object& a ):poll_api_obj( a ){}
       poll_state(){}
 
-      map< string, uint32_t >                 vote_count;
+      map< fixed_string_32, uint32_t >        vote_count;
       vector< poll_vote_api_obj >             votes;
    };
 
@@ -386,8 +384,8 @@ namespace node { namespace app {
 
    struct graph_data_state
    {
-      vector< graph_node_api_obj >            nodes;
-      vector< graph_edge_api_obj >            edges;
+      vector< graph_node_api_obj >              nodes;
+      vector< graph_edge_api_obj >              edges;
    };
 
    struct message_state

@@ -2099,7 +2099,7 @@ asset database::get_receiving_balance( const account_name_type& a, const asset_s
  */
 share_type database::get_voting_power( const account_object& a )const
 {
-   return get_voting_power(a.name);
+   return get_voting_power( a.name );
 }
 
 /**
@@ -2109,20 +2109,8 @@ share_type database::get_voting_power( const account_object& a )const
  */
 share_type database::get_voting_power( const account_name_type& a )const
 {
-   const account_balance_object* coin_ptr = find_account_balance( a, SYMBOL_COIN );
-   const account_balance_object* equity_ptr = find_account_balance( a, SYMBOL_EQUITY );
    price equity_coin_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
-   share_type voting_power = 0;
-
-   if( coin_ptr != nullptr )
-   {
-      voting_power += coin_ptr->get_voting_power().amount;
-   }
-   if( equity_ptr != nullptr )
-   {
-      voting_power += ( equity_ptr->get_voting_power()*equity_coin_price ).amount;
-   }
-   return voting_power;
+   return get_voting_power( a, equity_coin_price );
 }
 
 /**
@@ -2144,18 +2132,24 @@ share_type database::get_voting_power( const account_name_type& a, const price& 
 {
    const account_balance_object* coin_ptr = find_account_balance( a, SYMBOL_COIN );
    const account_balance_object* equity_ptr = find_account_balance( a, SYMBOL_EQUITY );
-   share_type voting_power = 0;
+   asset coin_vote = asset( 0, SYMBOL_COIN );
+   asset equity_vote = asset( 0, SYMBOL_EQUITY );
    
    if( coin_ptr != nullptr )
    {
-      voting_power += coin_ptr->get_voting_power().amount;
+      coin_vote = coin_ptr->get_voting_power();
    }
    if( equity_ptr != nullptr )
    {
-      voting_power += ( equity_ptr->get_voting_power() * equity_coin_price ).amount;
+      equity_vote = equity_ptr->get_voting_power();
    }
 
-   ilog( "Got Voting power of account: ${a} with power: ${p}", ("a", a)("p", voting_power ) );
+   share_type voting_power = coin_vote.amount + ( equity_vote * equity_coin_price ).amount;
+
+   /**
+   ilog( "Account: ${a} has Voting Power: ${p} [ Coin:${c} Equity:${q} at Equity Price: ${e} ]", 
+   ("a", a)("p", voting_power )("e", equity_coin_price)("c", coin_vote)("q", equity_vote) );
+   */
 
    return voting_power;
 }
@@ -2216,7 +2210,7 @@ string database::to_pretty_string( const asset& a )const
 
 void database::update_expired_feeds()
 { try {
-   ilog( "Update Expired Feeds" );
+   // ilog( "Update Expired Feeds" );
 
    const auto head_time = head_block_time();
 
@@ -2334,7 +2328,7 @@ void database::process_bids( const asset_stablecoin_data_object& bad )
 
 void database::dispute_escrow( const escrow_object& escrow )
 { try {
-   ilog( "Disputing Escrow: ${e}", ("e",escrow.escrow_id) );
+   // ilog( "Disputing Escrow: ${e}", ("e",escrow.escrow_id) );
 
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = props.time;
@@ -2409,7 +2403,7 @@ void database::dispute_escrow( const escrow_object& escrow )
  */
 void database::release_escrow( const escrow_object& escrow )
 { try {
-   ilog( "Release Escrow: ${e}", ("e",escrow.escrow_id) );
+   // ilog( "Release Escrow: ${e}", ("e",escrow.escrow_id) );
    const median_chain_property_object& median_props = get_median_chain_properties();
    asset escrow_bond = asset( ( escrow.payment.amount * median_props.escrow_bond_percent ) / PERCENT_100, escrow.payment.symbol );
 

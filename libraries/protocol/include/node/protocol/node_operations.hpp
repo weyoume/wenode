@@ -1,12 +1,12 @@
 #pragma once
+
 #include <node/protocol/base.hpp>
 #include <node/protocol/block_header.hpp>
+#include <node/protocol/utilities.hpp>
 #include <node/protocol/asset.hpp>
 #include <node/protocol/x11.hpp>
 
 #include <fc/utf8.hpp>
-#include <fc/crypto/equihash.hpp>
-#include <regex> 
 
 namespace node { namespace protocol {
 
@@ -19,6 +19,7 @@ namespace node { namespace protocol {
    using node::protocol::community_name_type;
    using node::protocol::graph_node_name_type;
    using node::protocol::graph_edge_name_type;
+   using node::protocol::fixed_string_32;
    using node::protocol::tag_name_type;
    using node::protocol::share_type;
    using node::protocol::asset;
@@ -26,213 +27,6 @@ namespace node { namespace protocol {
    using node::protocol::price_feed;
    using node::protocol::option_strike;
    using node::protocol::asset_unit;
-
-   inline void validate_account_name( const string& name )
-   {
-      FC_ASSERT( is_valid_account_name( name ),
-         "Account name ${n} is invalid", ("n", name) );
-   };
-
-   inline void validate_community_name( const string& name )
-   {
-      FC_ASSERT( is_valid_account_name( name ),
-         "Community name ${n} is invalid", ("n", name) );
-   };
-
-   inline void validate_tag_name( const string& name )
-   {
-      FC_ASSERT( is_valid_account_name( name ),
-         "Tag name ${n} is invalid", ("n", name) );
-   };
-
-   inline void validate_permlink( const string& permlink )
-   {
-      FC_ASSERT( permlink.size() > MIN_PERMLINK_LENGTH && 
-         permlink.size() < MAX_PERMLINK_LENGTH, 
-         "Permlink is not a valid size." );
-
-      for( auto c : permlink )
-      {
-         switch( c )
-         {
-            case 'a': case 'b': case 'c': case 'd': case 'e': case 'f': case 'g': case 'h': case 'i':
-            case 'j': case 'k': case 'l': case 'm': case 'n': case 'o': case 'p': case 'q': case 'r':
-            case 's': case 't': case 'u': case 'v': case 'w': case 'x': case 'y': case 'z': case '0':
-            case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
-            case '-':
-               break;
-            default:
-               FC_ASSERT( false, "Invalid permlink character: ${s}", ("s", std::string() + c ) );
-         }
-      }
-   }
-
-   inline void validate_url( const string& url )
-   {
-      std::regex url_regex( R"((http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*))" );
-      
-      FC_ASSERT( std::regex_match( url, url_regex ),
-         "URL is invalid: ${u}", ("u", url ) );
-   };
-
-   inline void validate_uuidv4( const string& uuidv4 )
-   {
-      std::string pattern = "[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}";
-      std::regex uuidv4_regex( pattern );
-
-      FC_ASSERT( std::regex_match( uuidv4, uuidv4_regex ),
-         "UUIDV4 is invalid: ${i}", ("i", uuidv4 ) );
-   };
-
-   inline void validate_public_key( const string& key )
-   {
-      FC_ASSERT( key.size() < MAX_URL_LENGTH,
-         "Public Key is too long" );
-      FC_ASSERT( fc::is_utf8( key ),
-         "Public key is not formatted in UTF8." );
-      public_key_type pkt = public_key_type( key );
-      string result = string( pkt );
-      FC_ASSERT( key == result, "Invalid Public Key" );
-   };
-
-   /**
-    * Retrieves the edit distance between two strings, 
-    * the number of additions, substitutions or deletions needed
-    * to transfrom string a into string b.
-    */
-   inline size_t edit_distance( const string& s1, const string& s2 )
-   {
-      const size_t m(s1.size());
-      const size_t n(s2.size());
-      
-      if( m==0 ) return n;
-      if( n==0 ) return m;
-      
-      vector<size_t> costs;
-      costs.reserve( n+1 );
-      
-      for( size_t k=0; k<=n; k++ )
-      {
-         costs[k] = k;
-      }
-      
-      size_t i = 0;
-      for( std::string::const_iterator it1 = s1.begin(); it1 != s1.end(); ++it1, ++i )
-      {
-         costs[0] = i+1;
-         size_t corner = i;
-      
-         size_t j = 0;
-         for( std::string::const_iterator it2 = s2.begin(); it2 != s2.end(); ++it2, ++j )
-         {
-            size_t upper = costs[j+1];
-            if( *it1 == *it2 )
-            {
-               costs[j+1] = corner;
-            }
-            else
-            {
-               size_t t(upper<corner?upper:corner);
-               costs[j+1] = (costs[j]<t?costs[j]:t)+1;
-            }
-      
-            corner = upper;
-         }
-      }
-      
-      size_t result = costs[n];
-      return result;
-   };
-
-   /**
-    * Returns the Private key generated from a specified seed string.
-    */
-   inline fc::ecc::private_key generate_private_key( string seed )
-   {
-      return fc::ecc::private_key::regenerate( fc::sha256::hash( seed ) );
-   };
-
-   /**
-    * Rounds a specifed value N to the nearest n significant figures.
-    */
-   inline double round_sig_figs( double N, double n ) 
-   { 
-      int h; 
-      double b, d, e, i, j, m, f; 
-      b = N; 
-
-      for (i = 0; b >= 1; ++i)
-      {
-         b = b / 10; 
-      }
-         
-      d = n - i; 
-      b = N; 
-      b = b * std::pow(10, d); 
-      e = b + 0.5; 
-      if( (float)e == (float)std::ceil(b) )
-      { 
-         f = (std::ceil(b)); 
-         h = f - 2; 
-         if (h % 2 != 0) 
-         { 
-            e = e - 1; 
-         } 
-      }
-      j = std::floor(e); 
-      m = std::pow(10, d); 
-      j = j / m;
-      return j; 
-   }
-
-   inline uint8_t find_msb( const uint128_t& u )
-   {
-      uint64_t x;
-      uint8_t places;
-      x      = (u.lo ? u.lo : 1);
-      places = (u.hi ?   64 : 0);
-      x      = (u.hi ? u.hi : x);
-      return uint8_t( boost::multiprecision::detail::find_msb(x) + places );
-   }
-
-   inline uint64_t approx_sqrt( const uint128_t& x )
-   {
-      if( (x.lo == 0) && (x.hi == 0) )
-         return 0;
-
-      uint8_t msb_x = find_msb(x);
-      uint8_t msb_z = msb_x >> 1;
-
-      uint128_t msb_x_bit = uint128_t(1) << msb_x;
-      uint64_t  msb_z_bit = uint64_t (1) << msb_z;
-
-      uint128_t mantissa_mask = msb_x_bit - 1;
-      uint128_t mantissa_x = x & mantissa_mask;
-      uint64_t mantissa_z_hi = (msb_x & 1) ? msb_z_bit : 0;
-      uint64_t mantissa_z_lo = (mantissa_x >> (msb_x - msb_z)).lo;
-      uint64_t mantissa_z = (mantissa_z_hi | mantissa_z_lo) >> 1;
-      uint64_t result = msb_z_bit | mantissa_z;
-
-      return result;
-   }
-
-   /**
-    * Generates a public key from a specified account name, authority type 
-    * and password using the graphene account authority standard.
-    */
-   inline public_key_type get_public_key( string name, string type, string password )
-   {
-      return fc::ecc::private_key::regenerate( fc::sha256::hash( std::string( name + type + password ) ) ).get_public_key();
-   }
-
-   /**
-    * Generates a private key from a specified account name, authority type 
-    * and password using the graphene account authority standard.
-    */
-   inline private_key_type get_private_key( string name, string type, string password )
-   {
-      return fc::ecc::private_key::regenerate( fc::sha256::hash( std::string( name + type + password ) ) );
-   }
 
 
    //============================//
@@ -310,7 +104,7 @@ namespace node { namespace protocol {
 
       void                          validate()const;
       void                          get_required_owner_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = registrar; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( registrar ); }
    };
 
 
@@ -367,7 +161,7 @@ namespace node { namespace protocol {
 
       void                          validate()const;
       void                          get_required_owner_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -395,7 +189,7 @@ namespace node { namespace protocol {
 
       void                          validate()const;
       void                          get_required_owner_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = verifier_account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( verifier_account ); }
    };
 
 
@@ -426,9 +220,11 @@ namespace node { namespace protocol {
 
       string                        business_public_key;      ///< The public key used for encrypted business content.
 
+      bool                          active = true;            ///< True when the business account is active, false to deactivate business account.
+
       void                          validate()const;
       void                          get_required_owner_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -483,7 +279,7 @@ namespace node { namespace protocol {
 
       void                          validate() const;
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -508,7 +304,7 @@ namespace node { namespace protocol {
 
       void                          validate() const;
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = business_account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( business_account ); }
    };
 
 
@@ -532,7 +328,7 @@ namespace node { namespace protocol {
 
       void                          validate() const;
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = business_account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( business_account ); }
    };
 
 
@@ -553,7 +349,7 @@ namespace node { namespace protocol {
 
       void                          validate() const;
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -578,7 +374,7 @@ namespace node { namespace protocol {
 
       void                          validate() const;
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -601,7 +397,7 @@ namespace node { namespace protocol {
 
       void                          validate() const;
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -620,7 +416,7 @@ namespace node { namespace protocol {
 
       void                          validate() const;
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -639,7 +435,7 @@ namespace node { namespace protocol {
 
       void                          validate() const;
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -662,7 +458,7 @@ namespace node { namespace protocol {
 
       void                              validate() const;
       void                              get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                              get_creator_name( account_name_type a )const{ a = account; }
+      void                              get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -688,7 +484,7 @@ namespace node { namespace protocol {
 
       void                          validate() const;
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -708,7 +504,7 @@ namespace node { namespace protocol {
 
       void                          validate()const;
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -750,7 +546,7 @@ namespace node { namespace protocol {
 
       authority                     new_owner_authority;    ///< The new owner authority the account to recover wishes to have.
 
-      void                          get_creator_name( account_name_type a )const{ a = recovery_account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( recovery_account ); }
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       void                          validate() const;
    };
@@ -810,7 +606,7 @@ namespace node { namespace protocol {
          a.push_back( new_owner_authority );
          a.push_back( recent_owner_authority );
       }
-      void                          get_creator_name( account_name_type a )const{ a = account_to_recover; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account_to_recover ); }
       void                          validate() const;
    };
 
@@ -831,7 +627,7 @@ namespace node { namespace protocol {
       authority                     new_owner_authority;    ///< A recent owner authority on your account.
 
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = reset_account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( reset_account ); }
       void                          validate()const;
    };
 
@@ -853,7 +649,7 @@ namespace node { namespace protocol {
 
       void                          validate()const;
       void                          get_required_owner_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -885,7 +681,7 @@ namespace node { namespace protocol {
       account_name_type             new_recovery_account;   ///< The account that is authorized to create recovery requests.
 
       void                          get_required_owner_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = account_to_recover; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account_to_recover ); }
       void                          validate() const;
    };
 
@@ -906,7 +702,7 @@ namespace node { namespace protocol {
       bool                          declined = true;     ///< True to decine voting rights, false to cancel pending request.
 
       void                          get_required_owner_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                          validate() const;
    };
 
@@ -941,7 +737,7 @@ namespace node { namespace protocol {
 
       void                          validate()const;
       void                          get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -973,7 +769,7 @@ namespace node { namespace protocol {
 
       void                          validate()const;
       void                          get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -999,7 +795,7 @@ namespace node { namespace protocol {
 
       void                          validate()const;
       void                          get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = follower; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( follower ); }
    };
 
 
@@ -1025,7 +821,7 @@ namespace node { namespace protocol {
 
       void                          validate()const;
       void                          get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = follower; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( follower ); }
    };
 
 
@@ -1059,7 +855,7 @@ namespace node { namespace protocol {
 
       void                          validate()const;
       void                          get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -1093,7 +889,7 @@ namespace node { namespace protocol {
       bool                          active = true;     ///< Set true to activate the officer, false to deactivate. 
          
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                          validate() const;
    };
 
@@ -1117,7 +913,7 @@ namespace node { namespace protocol {
       bool                           approved = true;       ///< True if approving, false if removing vote.
 
       void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                           validate() const;
    };
 
@@ -1207,7 +1003,7 @@ namespace node { namespace protocol {
       bool                          active = true;     ///< Set true to activate the board, false to deactivate. 
          
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                          validate() const;
    };
 
@@ -1228,7 +1024,7 @@ namespace node { namespace protocol {
       bool                           approved = true;       ///< True if approving, false if removing vote.
 
       void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                           validate() const;
    };
 
@@ -1254,7 +1050,7 @@ namespace node { namespace protocol {
       bool                           active = true;     ///< Set true to activate governance account, false to deactivate. 
          
       void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                           validate() const;
    };
 
@@ -1281,7 +1077,7 @@ namespace node { namespace protocol {
       bool                           subscribe = true;    ///< True if subscribing, false if unsubscribing.
 
       void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                           validate() const;
    };
 
@@ -1333,7 +1129,7 @@ namespace node { namespace protocol {
       bool                           active = true;               ///< Set true to activate the supernode, false to deactivate. 
          
       void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                           validate() const;
    };
 
@@ -1361,7 +1157,7 @@ namespace node { namespace protocol {
       bool                           active = true;     ///< Set true to activate the interface, false to deactivate. 
          
       void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                           validate() const;
    };
 
@@ -1391,7 +1187,7 @@ namespace node { namespace protocol {
       bool                           active = true;     ///< Set true to activate the mediator, false to deactivate. 
          
       void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                           validate() const;
    };
 
@@ -1413,13 +1209,11 @@ namespace node { namespace protocol {
 
       string                                            enterprise_id;       ///< uuidv4 referring to the proposal. 
 
-      string                                            proposal_type;       ///< The type of proposal, determines release schedule
+      string                                            proposal_type;       ///< The type of proposal, determines release schedule.
 
       flat_map< account_name_type, uint16_t >           beneficiaries;       ///< Set of account names and percentages of budget value. Should not include the null account.
 
       vector< uint16_t >                                milestone_shares;    ///< Ordered vector of release milestone descriptions.
-
-      vector< string >                                  milestone_details;   ///< Ordered vector of release milestone percentages of budget value.
 
       optional< asset_symbol_type >                     investment;          ///< Symbol of the asset to be purchased with the funding if the proposal is investment type. 
 
@@ -1440,7 +1234,7 @@ namespace node { namespace protocol {
       bool                                              active = true;       ///< True to set the proposal to activate, false to deactivate an existing proposal and delay funding. 
          
       void                                              get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                                              get_creator_name( account_name_type a )const{ a = creator; }
+      void                                              get_creator_name( flat_set<account_name_type>& a )const{ a.insert( creator ); }
       void                                              validate() const;
    };
 
@@ -1457,14 +1251,12 @@ namespace node { namespace protocol {
 
       account_name_type              creator;               ///< The name of the account that created the proposal.
 
-      string                         enterprise_id;         ///< UUIDv4 referring to the proposal. 
+      string                         enterprise_id;         ///< UUIDv4 referring to the proposal.
 
       uint16_t                       milestone = 0;         ///< Number of the milestone that is being claimed as completed. Number 0 for initial acceptance. 
-
-      string                         details;               ///< Description of completion of milestone, with supporting evidence.
          
       void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = creator; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( creator ); }
       void                           validate() const;
    };
 
@@ -1496,7 +1288,7 @@ namespace node { namespace protocol {
       bool                           approved = true;   ///< True to approve the milestone claim, false to remove approval. 
          
       void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                           validate() const;
    };
    
@@ -1606,9 +1398,9 @@ namespace node { namespace protocol {
 
       string                         body;                 ///< String containing text for display when the post is opened.
 
-      vector< string >               ipfs;                 ///< Vector of Strings containing IPFS file hashes: images, videos, files.
+      string                         ipfs;                 ///< IPFS file hash: images, videos, files.
 
-      vector< string >               magnet;               ///< Vector of Strings containing bittorrent magnet links to torrent file swarms: videos, files.
+      string                         magnet;               ///< Bittorrent magnet links to torrent file swarms: videos, files.
 
       string                         url;                  ///< String containing a URL for the post to link to.
 
@@ -1644,7 +1436,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = author; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( author ); }
    };
 
 
@@ -1668,7 +1460,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = sender; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( sender ); }
    };
 
 
@@ -1691,7 +1483,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = voter; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( voter ); }
    };
 
 
@@ -1719,7 +1511,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = viewer; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( viewer ); }
    };
 
 
@@ -1753,7 +1545,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = sharer; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( sharer ); }
    };
 
 
@@ -1784,7 +1576,7 @@ namespace node { namespace protocol {
 
       string                         permlink;           ///< Permlink of the post being tagged.
 
-      vector< string >               tags;               ///< Set of tags to apply to the post for selective interface side filtering.
+      vector< tag_name_type >        tags;               ///< Set of tags to apply to the post for selective interface side filtering.
 
       uint16_t                       rating;             ///< Newly proposed rating for the post.
 
@@ -1798,7 +1590,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = moderator; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( moderator ); }
    };
 
 
@@ -1839,7 +1631,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = creator; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( creator ); }
    };
 
 
@@ -1858,13 +1650,13 @@ namespace node { namespace protocol {
 
       string                         details;             ///< Text describing the question being asked.
 
-      vector< string >               poll_options;        ///< Available poll voting options.
+      vector< fixed_string_32 >      poll_options;        ///< Available poll voting options.
 
       time_point                     completion_time;     ///< Time the poll voting completes.
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = creator; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( creator ); }
    };
 
 
@@ -1887,7 +1679,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = voter; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( voter ); }
    };
 
 
@@ -1943,7 +1735,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = founder; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( founder ); }
    };
 
    /**
@@ -1987,7 +1779,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
    /**
@@ -2011,7 +1803,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
    /**
@@ -2035,7 +1827,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
    /**
@@ -2060,7 +1852,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
    /**
@@ -2082,7 +1874,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_owner_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
    /**
@@ -2107,7 +1899,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
    /**
@@ -2135,7 +1927,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
    /**
@@ -2161,7 +1953,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
    /**
@@ -2182,7 +1974,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
    /**
@@ -2204,7 +1996,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
    /**
@@ -2227,7 +2019,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
    /**
@@ -2252,7 +2044,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -2294,7 +2086,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -2319,7 +2111,7 @@ namespace node { namespace protocol {
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = account; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -2353,7 +2145,7 @@ namespace node { namespace protocol {
 
       void                     validate()const;
       void                     get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                     get_creator_name( account_name_type a )const{ a = account; }
+      void                     get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
    /**
@@ -2386,7 +2178,7 @@ namespace node { namespace protocol {
 
       void                             validate()const;
       void                             get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                             get_creator_name( account_name_type a )const{ a = account; }
+      void                             get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
    /**
@@ -2418,7 +2210,7 @@ namespace node { namespace protocol {
 
       void                               validate()const;
       void                               get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                               get_creator_name( account_name_type a )const{ a = provider; }
+      void                               get_creator_name( flat_set<account_name_type>& a )const{ a.insert( provider ); }
    };
 
    /**
@@ -2444,7 +2236,7 @@ namespace node { namespace protocol {
 
       void                               validate()const;
       void                               get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                               get_creator_name( account_name_type a )const{ a = account; }
+      void                               get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
    /**
@@ -2494,7 +2286,7 @@ namespace node { namespace protocol {
 
       void                             validate()const;
       void                             get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                             get_creator_name( account_name_type a )const{ a = bidder; }
+      void                             get_creator_name( flat_set<account_name_type>& a )const{ a.insert( bidder ); }
    };
 
 
@@ -2522,9 +2314,9 @@ namespace node { namespace protocol {
 
       string                             details;                ///< Describes the additional details of the node.
 
-      vector< string >                   attributes;             ///< The Attributes of the node.
+      vector< fixed_string_32 >          attributes;             ///< The Attributes of the node.
 
-      vector< string >                   attribute_values;       ///< The Attribute values of the node.
+      vector< fixed_string_32 >          attribute_values;       ///< The Attribute values of the node.
 
       string                             json;                   ///< Public plaintext JSON node attribute information.
 
@@ -2536,7 +2328,7 @@ namespace node { namespace protocol {
 
       void                               validate()const;
       void                               get_required_posting_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
-      void                               get_creator_name( account_name_type a )const{ a = account; }
+      void                               get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -2565,9 +2357,9 @@ namespace node { namespace protocol {
 
       string                             details;              ///< Describes the edge.
 
-      vector< string >                   attributes;           ///< The Attributes of the edge.
+      vector< fixed_string_32 >          attributes;           ///< The Attributes of the edge.
 
-      vector< string >                   attribute_values;     ///< The Attribute values of the edge.
+      vector< fixed_string_32 >          attribute_values;     ///< The Attribute values of the edge.
 
       string                             json;                 ///< Public plaintext JSON edge attribute information.
 
@@ -2579,7 +2371,7 @@ namespace node { namespace protocol {
 
       void                               validate()const;
       void                               get_required_posting_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
-      void                               get_creator_name( account_name_type a )const{ a = account; }
+      void                               get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -2604,13 +2396,13 @@ namespace node { namespace protocol {
 
       string                             json;                        ///< JSON Metadata for the node type.
 
-      vector< string >                   attributes;                  ///< List of attributes that each node is required to have.
+      vector< fixed_string_32 >          attributes;                  ///< List of attributes that each node is required to have.
 
       account_name_type                  interface;                   ///< Name of the application that facilitated the creation of the node type.
 
       void                               validate()const;
       void                               get_required_posting_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
-      void                               get_creator_name( account_name_type a )const{ a = account; }
+      void                               get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -2637,13 +2429,13 @@ namespace node { namespace protocol {
 
       string                             json;                        ///< JSON Metadata for the edge type.
 
-      vector< string >                   attributes;                  ///< List of attributes that each edge is required to have.
+      vector< fixed_string_32 >          attributes;                  ///< List of attributes that each edge is required to have.
 
       account_name_type                  interface;                   ///< Name of the application that facilitated the creation of the edge type.
 
       void                               validate()const;
       void                               get_required_posting_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
-      void                               get_creator_name( account_name_type a )const{ a = account; }
+      void                               get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -2676,7 +2468,7 @@ namespace node { namespace protocol {
 
       void                        validate()const;
       void                        get_required_active_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
-      void                        get_creator_name( account_name_type a )const{ a = from; }
+      void                        get_creator_name( flat_set<account_name_type>& a )const{ a.insert( from ); }
    };
 
 
@@ -2703,7 +2495,7 @@ namespace node { namespace protocol {
 
       void                         validate()const;
       void                         get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                         get_creator_name( account_name_type a )const{ a = to; }
+      void                         get_creator_name( flat_set<account_name_type>& a )const{ a.insert( to ); }
    };
 
 
@@ -2724,7 +2516,7 @@ namespace node { namespace protocol {
 
       void                         validate()const;
       void                         get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                         get_creator_name( account_name_type a )const{ a = from; }
+      void                         get_creator_name( flat_set<account_name_type>& a )const{ a.insert( from ); }
    };
 
 
@@ -2759,7 +2551,7 @@ namespace node { namespace protocol {
 
       void                        validate()const;
       void                        get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                        get_creator_name( account_name_type a )const{ a = from; }
+      void                        get_creator_name( flat_set<account_name_type>& a )const{ a.insert( from ); }
    };
 
 
@@ -2796,7 +2588,7 @@ namespace node { namespace protocol {
 
       void                         validate()const;
       void                         get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                         get_creator_name( account_name_type a )const{ a = to; }
+      void                         get_creator_name( flat_set<account_name_type>& a )const{ a.insert( to ); }
    };
 
 
@@ -2817,7 +2609,7 @@ namespace node { namespace protocol {
 
       void                         validate()const;
       void                         get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                         get_creator_name( account_name_type a )const{ a = from; }
+      void                         get_creator_name( flat_set<account_name_type>& a )const{ a.insert( from ); }
    };
 
 
@@ -2957,11 +2749,7 @@ namespace node { namespace protocol {
             a.push_back( in.owner ); 
          }
       }
-      void                                 get_creator_name( account_name_type a )const 
-      { 
-         const account_name_type& n = account_name_type( NULL_ACCOUNT );
-         a = n;
-      }
+      void                                 get_creator_name( flat_set<account_name_type>& a )const { a.insert( NULL_ACCOUNT ); }
    };
 
    
@@ -2984,7 +2772,7 @@ namespace node { namespace protocol {
 
       void                               validate()const;
       void                               get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                               get_creator_name( account_name_type a )const{ a = from; }
+      void                               get_creator_name( flat_set<account_name_type>& a )const{ a.insert( from ); }
    };
 
 
@@ -3011,11 +2799,7 @@ namespace node { namespace protocol {
             a.push_back( in.owner ); 
          }  
       }
-      void                              get_creator_name( account_name_type a )const 
-      { 
-         const account_name_type& n = account_name_type( NULL_ACCOUNT );
-         a = n;
-      }
+      void                              get_creator_name( flat_set<account_name_type>& a )const { a.insert( NULL_ACCOUNT ); }
    };
 
 
@@ -3038,7 +2822,7 @@ namespace node { namespace protocol {
       asset                    reward;       ///< Amount of Reward balance to claim.
 
       void                     get_required_posting_authorities( flat_set< account_name_type >& a )const{ a.insert( signatory ); }
-      void                     get_creator_name( account_name_type a )const{ a = account; }
+      void                     get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                     validate() const;
    };
 
@@ -3058,7 +2842,7 @@ namespace node { namespace protocol {
 
       void                     validate()const;
       void                     get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                     get_creator_name( account_name_type a )const{ a = from; }
+      void                     get_creator_name( flat_set<account_name_type>& a )const{ a.insert( from ); }
    };
 
 
@@ -3077,7 +2861,7 @@ namespace node { namespace protocol {
 
       void                     validate()const;
       void                     get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                     get_creator_name( account_name_type a )const{ a = from; }
+      void                     get_creator_name( flat_set<account_name_type>& a )const{ a.insert( from ); }
    };
 
 
@@ -3102,7 +2886,7 @@ namespace node { namespace protocol {
 
       void                     validate()const;
       void                     get_required_active_authorities( flat_set<account_name_type>& a )const { a.insert( signatory ); }
-      void                     get_creator_name( account_name_type a )const{ a = from; }
+      void                     get_creator_name( flat_set<account_name_type>& a )const{ a.insert( from ); }
    };
 
 
@@ -3126,7 +2910,7 @@ namespace node { namespace protocol {
       string                    memo;       ///< The memo for the transaction, encryption on the memo is advised.
 
       void                      get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                      get_creator_name( account_name_type a )const{ a = from; }
+      void                      get_creator_name( flat_set<account_name_type>& a )const{ a.insert( from ); }
       void                      validate() const;
    };
 
@@ -3151,7 +2935,7 @@ namespace node { namespace protocol {
       bool                     transferred = true;   ///< True if the transfer is accepted, false to cancel transfer.
 
       void                     get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                     get_creator_name( account_name_type a )const{ a = from; }
+      void                     get_creator_name( flat_set<account_name_type>& a )const{ a.insert( from ); }
       void                     validate() const;
    };
 
@@ -3174,7 +2958,7 @@ namespace node { namespace protocol {
       asset                    amount;           ///< The amount of the asset delegated.
 
       void                     get_required_active_authorities( flat_set< account_name_type >& a ) const { a.insert( signatory ); }
-      void                     get_creator_name( account_name_type a )const{ a = delegator; }
+      void                     get_creator_name( flat_set<account_name_type>& a )const{ a.insert( delegator ); }
       void                     validate() const;
    };
 
@@ -3203,11 +2987,11 @@ namespace node { namespace protocol {
 
       string                             json;                   ///< JSON metadata attributes of the product.
 
-      vector< string >                   product_variants;       ///< The collection of product variants. Each map must have a key for each variant.
+      vector< fixed_string_32 >          product_variants;       ///< The collection of product variants. Each map must have a key for each variant.
 
-      vector< string >                   product_details;        ///< The Description details of each variant of the product.
+      string                             product_details;        ///< The Description details of each variant of the product.
 
-      vector< string >                   product_images;         ///< IPFS references to images of each product variant.
+      string                             product_image;          ///< IPFS references to images of each product variant.
 
       vector< asset >                    product_prices;         ///< The price for each variant of the product.
 
@@ -3215,16 +2999,16 @@ namespace node { namespace protocol {
 
       vector< uint32_t >                 stock_available;        ///< The available stock of each variant of the product.
 
-      vector< string >                   delivery_variants;      ///< The types of product delivery available to purchasers.
+      vector< fixed_string_32 >          delivery_variants;      ///< The types of product delivery available to purchasers.
 
-      vector< string >                   delivery_details;       ///< The details of product delivery variants.
+      string                             delivery_details;       ///< The details of product delivery variants.
 
       vector< asset >                    delivery_prices;        ///< The price for each variant of delivery.
 
       bool                               active = true;          ///< True when the product is active and able to be sold, false when discontinued.
 
       void                               get_required_active_authorities( flat_set< account_name_type >& a ) const { a.insert( signatory ); }
-      void                               get_creator_name( account_name_type a )const{ a = account; }
+      void                               get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                               validate() const;
    };
 
@@ -3247,7 +3031,7 @@ namespace node { namespace protocol {
 
       string                         product_id;          ///< uuidv4 referring to the product.
 
-      vector< string >               order_variants;      ///< Variants of product ordered in the purchase.
+      vector< fixed_string_32 >      order_variants;      ///< Variants of product ordered in the purchase.
 
       vector< uint32_t >             order_size;          ///< The number of each product variant ordered.
 
@@ -3257,7 +3041,7 @@ namespace node { namespace protocol {
 
       string                         shipping_address;    ///< The shipping address requested, encrypted with the secure key of the seller.
 
-      string                         delivery_variant;    ///< The type of product delivery selected.
+      fixed_string_32                delivery_variant;    ///< The type of product delivery selected.
 
       string                         delivery_details;    ///< The Description details of the delivery.
 
@@ -3266,7 +3050,7 @@ namespace node { namespace protocol {
       time_point                     escrow_expiration;   ///< Time after which balance can be claimed by FROM or TO freely.
 
       void                           get_required_active_authorities( flat_set< account_name_type >& a ) const { a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = buyer; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( buyer ); }
       void                           validate() const;
    };
 
@@ -3299,15 +3083,15 @@ namespace node { namespace protocol {
 
       string                             product_details;        ///< The Description details of the product for auction.
 
-      vector< string >                   product_images;         ///< IPFS references to images of the product for auction.
+      string                             product_image;          ///< IPFS references to images of the product for auction.
 
       asset                              reserve_bid;            ///< The min auction bid, or minimum price of a reverse auction at final bid time.
 
       asset                              maximum_bid;            ///< The max auction bid. Auction will immediately conclude if this price is bidded. Starting price of reverse auction.
 
-      vector< string >                   delivery_variants;      ///< The types of product delivery available to purchasers.
+      vector< fixed_string_32 >          delivery_variants;      ///< The types of product delivery available to purchasers.
 
-      vector< string >                   delivery_details;       ///< The details of product delivery variants.
+      string                             delivery_details;       ///< The details of product delivery variants.
 
       vector< asset >                    delivery_prices;        ///< The price for each variant of delivery.
 
@@ -3316,7 +3100,7 @@ namespace node { namespace protocol {
       time_point                         completion_time;        ///< Time that the auction will select the winning bidder, or end if no bids.
 
       void                               get_required_active_authorities( flat_set< account_name_type >& a ) const { a.insert( signatory ); }
-      void                               get_creator_name( account_name_type a )const{ a = account; }
+      void                               get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                               validate() const;
    };
 
@@ -3325,7 +3109,7 @@ namespace node { namespace protocol {
     * Creates or updates a bid on a product auction sale.
     * 
     * - Open auctions enable the bidders to publicly 
-    * declare the amountthat they are willing to pay, 
+    * declare the amount that they are willing to pay, 
     * and bump their bids until completion time.
     * 
     * - Reverse Auctions start the bidding at a maximum
@@ -3361,12 +3145,12 @@ namespace node { namespace protocol {
 
       string                         shipping_address;       ///< The shipping address requested, encrypted with the secure key of the seller.
 
-      string                         delivery_variant;       ///< The type of product delivery selected.
+      fixed_string_32                delivery_variant;       ///< The type of product delivery selected.
 
       string                         delivery_details;       ///< The Description details of the delivery.
 
       void                           get_required_active_authorities( flat_set< account_name_type >& a ) const { a.insert( signatory ); }
-      void                           get_creator_name( account_name_type a )const{ a = buyer; }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( buyer ); }
       void                           validate() const;
    };
 
@@ -3431,7 +3215,7 @@ namespace node { namespace protocol {
 
       void                     validate()const;
       void                     get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                     get_creator_name( account_name_type a )const{ a = account; }
+      void                     get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -3460,7 +3244,7 @@ namespace node { namespace protocol {
 
       void                     validate()const;
       void                     get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                     get_creator_name( account_name_type a )const{ a = account; }
+      void                     get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -3484,7 +3268,7 @@ namespace node { namespace protocol {
 
       void                     validate()const;
       void                     get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                     get_creator_name( account_name_type a )const{ a = account; }
+      void                     get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -3533,7 +3317,7 @@ namespace node { namespace protocol {
 
       void                     validate()const;
       void                     get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                     get_creator_name( account_name_type a )const{ a = account; }
+      void                     get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
@@ -3572,7 +3356,7 @@ namespace node { namespace protocol {
       bool                   fill_or_kill = false;  ///< True if the order should be removed if it does not immediately fill on the orderbook.
 
       void                   validate()const;
-      void                   get_creator_name( account_name_type a )const{ a = owner; }
+      void                   get_creator_name( flat_set<account_name_type>& a )const{ a.insert( owner ); }
       void                   get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -3619,7 +3403,7 @@ namespace node { namespace protocol {
       bool                   force_close = false;        ///< Set true when closing to force liquidate the order against the liquidity pool at available price.
 
       void                   validate()const;
-      void                   get_creator_name( account_name_type a )const{ a = owner; }
+      void                   get_creator_name( flat_set<account_name_type>& a )const{ a.insert( owner ); }
       void                   get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -3651,7 +3435,7 @@ namespace node { namespace protocol {
       bool                     opened = true;            ///< True to open new order, false to cancel existing order.
 
       void                     validate()const;
-      void                     get_creator_name( account_name_type a )const{ a = owner; }
+      void                     get_creator_name( flat_set<account_name_type>& a )const{ a.insert( owner ); }
       void                     get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -3677,7 +3461,7 @@ namespace node { namespace protocol {
       account_name_type        interface;                  ///< Name of the interface that created the transaction.
 
       void                     validate()const;
-      void                     get_creator_name( account_name_type a )const{ a = owner; }
+      void                     get_creator_name( flat_set<account_name_type>& a )const{ a.insert( owner ); }
       void                     get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -3740,7 +3524,7 @@ namespace node { namespace protocol {
       bool                     opened = true;         ///< True to open new order, false to close existing order by repaying options assets.
 
       void                     validate()const;
-      void                     get_creator_name( account_name_type a )const{ a = owner; }
+      void                     get_creator_name( flat_set<account_name_type>& a )const{ a.insert( owner ); }
       void                     get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -3775,7 +3559,7 @@ namespace node { namespace protocol {
       asset                 second_amount;      ///< Initial balance of second asset, initial price is the ratio of these two amounts.
 
       void                  validate()const;
-      void                  get_creator_name( account_name_type a )const{ a = account; }
+      void                  get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -3807,7 +3591,7 @@ namespace node { namespace protocol {
       bool                  acquire = false;    ///< Set true to acquire the specified amount, false to exchange in.
 
       void                  validate()const;
-      void                  get_creator_name( account_name_type a )const{ a = account; }
+      void                  get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -3834,7 +3618,7 @@ namespace node { namespace protocol {
       asset_symbol_type     pair_asset;         ///< Pair asset to the liquidity pool to receive liquidity pool assets of. 
 
       void                  validate()const;
-      void                  get_creator_name( account_name_type a )const{ a = account; }
+      void                  get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -3859,7 +3643,7 @@ namespace node { namespace protocol {
       asset_symbol_type     receive_asset;     ///< The asset to receive from the liquidity pool.
 
       void                  validate()const;
-      void                  get_creator_name( account_name_type a )const{ a = account; }
+      void                  get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -3882,7 +3666,7 @@ namespace node { namespace protocol {
       asset                 amount;          ///< Amount of collateral balance to lock, 0 to unlock existing collateral.
 
       void                  validate()const;
-      void                  get_creator_name( account_name_type a )const{ a = account; }
+      void                  get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -3923,7 +3707,7 @@ namespace node { namespace protocol {
       bool                  flash_loan = false;   ///< True to execute a no collateral loan within a single transaction. Must be repaid within same txn.
 
       void                  validate()const;
-      void                  get_creator_name( account_name_type a )const{ a = account; }
+      void                  get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -3948,7 +3732,7 @@ namespace node { namespace protocol {
       asset                 amount;          ///< Amount of asset being lent.
 
       void                  validate()const;
-      void                  get_creator_name( account_name_type a )const{ a = account; }
+      void                  get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -3971,7 +3755,7 @@ namespace node { namespace protocol {
       asset                 amount;        ///< Amount of interest bearing credit assets being redeemed for their underlying assets. 
 
       void                  validate()const;
-      void                  get_creator_name( account_name_type a )const{ a = account; }
+      void                  get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -3996,7 +3780,7 @@ namespace node { namespace protocol {
       asset_symbol_type     second_asset;      ///< Second asset in the option trading pair.
 
       void                  validate()const;
-      void                  get_creator_name( account_name_type a )const{ a = account; }
+      void                  get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                  get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -4036,7 +3820,7 @@ namespace node { namespace protocol {
 
       vector< asset_symbol_type >        outcome_assets;           ///< Symbol Suffixes for each outcome of the prediction market.
 
-      vector< string >                   outcome_details;          ///< Description of each outcome and the resolution conditions for each asset.
+      string                             outcome_details;          ///< Description of each outcome and the resolution conditions for each asset.
 
       string                             display_symbol;           ///< Non-consensus display name for interface reference.
 
@@ -4051,7 +3835,7 @@ namespace node { namespace protocol {
       asset                              prediction_bond;          ///< Initial deposit placed by the issuer on the market, which requires them to vote in the resolution process.
 
       void                               validate()const;
-      void                               get_creator_name( account_name_type a )const{ a = account; }
+      void                               get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                               get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -4083,7 +3867,7 @@ namespace node { namespace protocol {
       bool                               withdraw = false;           ///< True to Withdraw collateral, false to add funds. 
 
       void                               validate()const;
-      void                               get_creator_name( account_name_type a )const{ a = account; }
+      void                               get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                               get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -4110,7 +3894,7 @@ namespace node { namespace protocol {
       asset_symbol_type                  resolution_outcome;         ///< Base Asset to the prediction pool to exchange with.
 
       void                               validate()const;
-      void                               get_creator_name( account_name_type a )const{ a = account; }
+      void                               get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                               get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -4325,7 +4109,7 @@ namespace node { namespace protocol {
       asset_options                   options;                 ///< Series of options parameters that apply to each asset type.
 
       void                            validate()const;
-      void                            get_creator_name( account_name_type a )const{ a = issuer; }
+      void                            get_creator_name( flat_set<account_name_type>& a )const{ a.insert( issuer ); }
       void                            get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -4344,7 +4128,7 @@ namespace node { namespace protocol {
       asset_options                 new_options;              ///< Options used for all asset types.
 
       void                          validate()const;
-      void                          get_creator_name( account_name_type a )const{ a = issuer; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( issuer ); }
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -4367,7 +4151,7 @@ namespace node { namespace protocol {
       string                        memo;                 ///< The memo for the transaction, encryption on the memo is advised.
 
       void                          validate()const;
-      void                          get_creator_name( account_name_type a )const{ a = issuer; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( issuer ); }
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -4386,7 +4170,7 @@ namespace node { namespace protocol {
       asset                         amount_to_reserve;   ///< Amount of the asset being reserved.
 
       void                          validate()const;
-      void                          get_creator_name( account_name_type a )const{ a = payer; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( payer ); }
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -4409,7 +4193,7 @@ namespace node { namespace protocol {
       account_name_type             new_issuer;         ///< Name of the account specified to become the new issuer of the asset.
 
       void                          validate()const;
-      void                          get_creator_name( account_name_type a )const{ a = issuer; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( issuer ); }
       void                          get_required_owner_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -4468,7 +4252,7 @@ namespace node { namespace protocol {
       time_point                    begin_time;                   ///< Time to begin the first distribution round.
 
       void                          validate()const;
-      void                          get_creator_name( account_name_type a )const{ a = issuer; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( issuer ); }
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -4493,7 +4277,7 @@ namespace node { namespace protocol {
       asset                         amount;                    ///< Asset amount being sent for distribution.
 
       void                          validate()const;
-      void                          get_creator_name( account_name_type a )const{ a = sender; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( sender ); }
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -4517,7 +4301,7 @@ namespace node { namespace protocol {
       asset                         amount;               ///< Option assets being exercised by exchanging the quoted asset for the underlying. 
 
       void                          validate()const;
-      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -4539,7 +4323,7 @@ namespace node { namespace protocol {
       asset                         amount;               ///< Redemption asset being injected into the redemption pool.
 
       void                          validate()const;
-      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -4570,7 +4354,7 @@ namespace node { namespace protocol {
       flat_set< account_name_type >   new_feed_producers;      ///< Set of accounts that can determine the price feed of the asset.
 
       void                            validate()const;
-      void                            get_creator_name( account_name_type a )const{ a = issuer; }
+      void                            get_creator_name( flat_set<account_name_type>& a )const{ a.insert( issuer ); }
       void                            get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -4614,7 +4398,7 @@ namespace node { namespace protocol {
       price_feed                    feed;          ///< Exchange rate between stablecoin and backing asset.
 
       void                          validate()const;
-      void                          get_creator_name( account_name_type a )const{ a = publisher; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( publisher ); }
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -4647,7 +4431,7 @@ namespace node { namespace protocol {
       account_name_type             interface;        ///< Account of the interface used to broadcast the operation.
 
       void                          validate()const;
-      void                          get_creator_name( account_name_type a )const{ a = account; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -4680,7 +4464,7 @@ namespace node { namespace protocol {
       price                         settle_price;        ///< Global settlement price, must be in asset / backing asset. 
 
       void                          validate()const;
-      void                          get_creator_name( account_name_type a )const{ a = issuer; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( issuer ); }
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -4706,7 +4490,7 @@ namespace node { namespace protocol {
       asset                    debt;          ///< The amount of debt to take over.
 
       void                     validate()const;
-      void                     get_creator_name( account_name_type a )const{ a = bidder; }
+      void                     get_creator_name( flat_set<account_name_type>& a )const{ a.insert( bidder ); }
       void                     get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
    
@@ -4985,7 +4769,7 @@ namespace node { namespace protocol {
       bool                          active = true;          ///< Set active to true to activate producer, false to deactivate.
 
       void                          validate()const;
-      void                          get_creator_name( account_name_type a )const{ a = owner; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( owner ); }
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -5053,9 +4837,9 @@ namespace node { namespace protocol {
 
       void                          validate()const;
 
-      void                          get_creator_name( account_name_type a )const
+      void                          get_creator_name( flat_set<account_name_type>& a )const
       { 
-         a = work.get< x11_proof_of_work >().input.miner_account; 
+         a.insert( work.get< x11_proof_of_work >().input.miner_account ); 
       }
 
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const;      ///< No signatory authorities required, proof of work is implicit authority.
@@ -5085,7 +4869,7 @@ namespace node { namespace protocol {
       block_id_type                 block_id;      ///< The Block ID of the block being verifed as valid and received. 
 
       void                          validate()const;
-      void                          get_creator_name( account_name_type a )const{ a = producer; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( producer ); }
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -5134,7 +4918,7 @@ namespace node { namespace protocol {
       asset                             commitment_stake;    ///< The value of staked balance that the producer stakes on this commitment. Must be at least one unit of COIN. 
 
       void                              validate()const;
-      void                              get_creator_name( account_name_type a )const{ a = producer; }
+      void                              get_creator_name( flat_set<account_name_type>& a )const{ a.insert( producer ); }
       void                              get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -5155,7 +4939,7 @@ namespace node { namespace protocol {
       vector<char>                  second_trx;    ///< The second transaction that is in contravention of the first commitment transaction. 
 
       void                          validate()const;
-      void                          get_creator_name( account_name_type a )const{ a = reporter; }
+      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( reporter ); }
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
    };
 
@@ -5179,7 +4963,7 @@ namespace node { namespace protocol {
       vector< char >                     data;              ///< Char vector of data contained within the operation. Max size 8 KB
 
       void                               validate()const;
-      void                               get_creator_name( account_name_type a )const{ a = *required_auths.begin(); }
+      void                               get_creator_name( flat_set<account_name_type>& a )const{ a.insert( *required_auths.begin() ); }
       void                               get_required_active_authorities( flat_set<account_name_type>& a )const{ for( const auto& i : required_auths ) a.insert(i); }
    };
 
@@ -5204,20 +4988,19 @@ namespace node { namespace protocol {
       string                            json;                     ///< Valid UTF8 / JSON string of operation data. Max size 8 KB
 
       void                              validate()const;
-      void                              get_creator_name( account_name_type a )const 
+      void                              get_creator_name( flat_set<account_name_type>& a )const 
       { 
          if( required_auths.begin() != required_auths.end() )
          {
-            a = *required_auths.begin();
+            a.insert( *required_auths.begin() );
          }
          else if( required_posting_auths.begin() != required_posting_auths.end() )
          {
-            a = *required_posting_auths.begin();
+            a.insert( *required_posting_auths.begin() );
          }
          else
          {
-            const account_name_type& n = account_name_type( NULL_ACCOUNT );
-            a = n;
+            a.insert( account_name_type( NULL_ACCOUNT ) );
          }
       }
       void                              get_required_active_authorities( flat_set<account_name_type>& a )const{ for( const auto& i : required_auths ) a.insert(i); }
@@ -5306,6 +5089,7 @@ FC_REFLECT( node::protocol::account_business_operation,
          (business_type)
          (officer_vote_threshold)
          (business_public_key)
+         (active)
          );
 
 FC_REFLECT( node::protocol::account_membership_operation,
@@ -5599,7 +5383,6 @@ FC_REFLECT( node::protocol::create_community_enterprise_operation,
          (proposal_type)
          (beneficiaries)
          (milestone_shares)
-         (milestone_details)
          (investment)
          (details)
          (url)
@@ -5616,7 +5399,6 @@ FC_REFLECT( node::protocol::claim_enterprise_milestone_operation,
          (creator)
          (enterprise_id)
          (milestone)
-         (details)
          );
 
 FC_REFLECT( node::protocol::approve_enterprise_milestone_operation, 
@@ -6258,7 +6040,7 @@ FC_REFLECT( node::protocol::product_sale_operation,
          (json)
          (product_variants)
          (product_details)
-         (product_images)
+         (product_image)
          (product_prices)
          (wholesale_discount)
          (stock_available)
@@ -6294,7 +6076,7 @@ FC_REFLECT( node::protocol::product_auction_sale_operation,
          (url)
          (json)
          (product_details)
-         (product_images)
+         (product_image)
          (reserve_bid)
          (maximum_bid)
          (delivery_variants)

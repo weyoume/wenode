@@ -19,15 +19,15 @@ namespace node { namespace chain {
          permlink(a), 
          title(a), 
          body(a), 
-         ipfs( a.get_segment_manager() ), 
-         magnet( a.get_segment_manager() ), 
+         ipfs( a ), 
+         magnet( a ), 
          url(a), 
          tags( a.get_segment_manager() ), 
          language(a), 
          parent_permlink(a), 
          json(a), 
          category(a), 
-         beneficiaries(a)
+         beneficiaries( a.get_segment_manager() )
          {
             c( *this );
          }
@@ -42,9 +42,9 @@ namespace node { namespace chain {
 
          shared_string                     body;                                ///< String containing text for display when the post is opened.
 
-         shared_vector< shared_string >    ipfs;                                ///< String containing a display image or video file as an IPFS file hash.
+         shared_string                     ipfs;                                ///< String containing a display image or video file as an IPFS file hash.
 
-         shared_vector< shared_string >    magnet;                              ///< String containing a bittorrent magnet link to a file swarm.
+         shared_string                     magnet;                              ///< String containing a bittorrent magnet link to a file swarm.
 
          shared_string                     url;                                 ///< String containing a URL for the post to link to.
 
@@ -88,7 +88,7 @@ namespace node { namespace chain {
 
          flat_map< account_name_type, flat_map< asset_symbol_type, asset > >  payments_received;    ///< Map of all transfers received that referenced this comment. 
 
-         bip::vector< beneficiary_route_type, allocator< beneficiary_route_type > > beneficiaries;  ///< Vector of beneficiary routes that receive a content reward distribution.
+         shared_vector< beneficiary_route_type > beneficiaries;                 ///< Vector of beneficiary routes that receive a content reward distribution.
          
          time_point                        last_updated;                        ///< The time the comment was last edited by the author
 
@@ -562,7 +562,7 @@ namespace node { namespace chain {
 
          shared_string                               details;             ///< Text describing the question being asked.
 
-         shared_vector< shared_string >              poll_options;        ///< Available poll voting options.
+         shared_vector< fixed_string_32 >            poll_options;        ///< Available poll voting options.
 
          time_point                                  completion_time;     ///< Time the poll voting completes.
 
@@ -584,8 +584,7 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          poll_vote_object( Constructor&& c, allocator< Allocator > a ) :
-         poll_id(a),
-         poll_option(a)
+         poll_id(a)
          {
             c( *this );
          }
@@ -598,7 +597,7 @@ namespace node { namespace chain {
 
          shared_string                               poll_id;             ///< uuidv4 referring to the poll.
 
-         shared_string                               poll_option;         ///< Poll option chosen.
+         fixed_string_32                             poll_option;         ///< Poll option chosen.
 
          time_point                                  last_updated;        ///< Time the vote was last edited by the voter.
 

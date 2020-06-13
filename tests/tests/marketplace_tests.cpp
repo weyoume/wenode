@@ -1015,12 +1015,12 @@ BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
       product.url = "https://www.url.com";
       product.json = "{ \"valid\": true }";
       product.product_variants = { "Red Widget", "Blue Widget" };
-      product.product_details = { "Red Coloured Widget, Extremely Artisanal.", "Blue Coloured Widget, Extremely Artisanal." };
-      product.product_images = { "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB", "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" };
+      product.product_details = "Coloured Widget, Extremely Artisanal.";
+      product.product_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       product.product_prices = { asset( 35 * BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( 35 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) };
       product.stock_available = { 100, 100 };
       product.delivery_variants = { "Standard", "Express" };
-      product.delivery_details = { "Shipped within 3 working days.", "Shipped next day." };
+      product.delivery_details = "Standard: Shipped within 3 working days. Express: Shipped next day.";
       product.delivery_prices = { asset( 2 * BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( 5 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) };
       product.active = true;
       product.validate();
@@ -1040,20 +1040,20 @@ BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
       BOOST_REQUIRE( product.name == to_string( alice_product.name ) );
       BOOST_REQUIRE( product.url == to_string( alice_product.url ) );
       BOOST_REQUIRE( product.json == to_string( alice_product.json ) );
+      BOOST_REQUIRE( product.product_image == to_string( alice_product.product_image ) );
+      BOOST_REQUIRE( product.delivery_details == to_string( alice_product.delivery_details ) );
+      BOOST_REQUIRE( product.product_details == to_string( alice_product.product_details ) );
 
       for( size_t i = 0; i < product.product_variants.size(); i++ )
       {
-         BOOST_REQUIRE( product.product_variants[i] == to_string( alice_product.product_variants[i] ) );
-         BOOST_REQUIRE( product.product_details[i] == to_string( alice_product.product_details[i] ) );
-         BOOST_REQUIRE( product.product_images[i] == to_string( alice_product.product_images[i] ) );
+         BOOST_REQUIRE( product.product_variants[i] == alice_product.product_variants[i] );
          BOOST_REQUIRE( product.product_prices[i] == alice_product.product_prices[i] );
          BOOST_REQUIRE( product.stock_available[i] == alice_product.stock_available[i] );
       }
 
       for( size_t i = 0; i < product.delivery_variants.size(); i++ )
       {
-         BOOST_REQUIRE( product.delivery_variants[i] == to_string( alice_product.delivery_variants[i] ) );
-         BOOST_REQUIRE( product.delivery_details[i] == to_string( alice_product.delivery_details[i] ) );
+         BOOST_REQUIRE( product.delivery_variants[i] == alice_product.delivery_variants[i] );
          BOOST_REQUIRE( product.delivery_prices[i] == alice_product.delivery_prices[i] );
       }
 
@@ -1091,12 +1091,12 @@ BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
 
       BOOST_REQUIRE( purchase.buyer == bob_purchase.buyer );
       BOOST_REQUIRE( purchase.order_id == to_string( bob_purchase.order_id ) );
-      BOOST_REQUIRE( purchase.order_variants[0] == to_string( bob_purchase.order_variants[0] ) );
+      BOOST_REQUIRE( purchase.order_variants[0] == bob_purchase.order_variants[0] );
       BOOST_REQUIRE( purchase.order_size[0] == bob_purchase.order_size[0] );
       BOOST_REQUIRE( purchase.memo == to_string( bob_purchase.memo ) );
       BOOST_REQUIRE( purchase.json == to_string( bob_purchase.json ) );
       BOOST_REQUIRE( purchase.shipping_address == to_string( bob_purchase.shipping_address ) );
-      BOOST_REQUIRE( purchase.delivery_variant == to_string( bob_purchase.delivery_variant ) );
+      BOOST_REQUIRE( purchase.delivery_variant == bob_purchase.delivery_variant );
       BOOST_REQUIRE( purchase.delivery_details == to_string( bob_purchase.delivery_details ) );
       BOOST_REQUIRE( product.product_prices[0] + product.delivery_prices[0] == bob_purchase.order_value );
 
@@ -1326,11 +1326,11 @@ BOOST_AUTO_TEST_CASE( auction_operation_sequence_tests )
       auction.url = "https://www.url.com";
       auction.json = "{ \"valid\": true }";
       auction.product_details = "Red Coloured Widget, Extremely Artisanal.";
-      auction.product_images = { "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" };
+      auction.product_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       auction.reserve_bid = asset( 25 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       auction.maximum_bid = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       auction.delivery_variants = { "Standard", "Express" };
-      auction.delivery_details = { "Shipped within 3 working days.", "Shipped next day." };
+      auction.delivery_details = "Standard: Shipped within 3 working days. Express: Shipped next day.";
       auction.delivery_prices = { asset( 2 * BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( 5 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) };
       auction.final_bid_time = now() + fc::days(7);
       auction.completion_time = now() + fc::days(7);
@@ -1356,16 +1356,12 @@ BOOST_AUTO_TEST_CASE( auction_operation_sequence_tests )
       BOOST_REQUIRE( auction.maximum_bid == alice_auction.maximum_bid );
       BOOST_REQUIRE( auction.final_bid_time == alice_auction.final_bid_time );
       BOOST_REQUIRE( auction.completion_time == alice_auction.completion_time );
-
-      for( size_t i = 0; i < auction.product_images.size(); i++ )
-      {
-         BOOST_REQUIRE( auction.product_images[i] == to_string( alice_auction.product_images[i] ) );
-      }
+      BOOST_REQUIRE( auction.product_image == to_string( alice_auction.product_image ) );
+      BOOST_REQUIRE( auction.delivery_details == to_string( alice_auction.delivery_details ) );
 
       for( size_t i = 0; i < auction.delivery_variants.size(); i++ )
       {
-         BOOST_REQUIRE( auction.delivery_variants[i] == to_string( alice_auction.delivery_variants[i] ) );
-         BOOST_REQUIRE( auction.delivery_details[i] == to_string( alice_auction.delivery_details[i] ) );
+         BOOST_REQUIRE( auction.delivery_variants[i] == alice_auction.delivery_variants[i] );
          BOOST_REQUIRE( auction.delivery_prices[i] == alice_auction.delivery_prices[i] );
       }
 
@@ -1411,7 +1407,7 @@ BOOST_AUTO_TEST_CASE( auction_operation_sequence_tests )
       BOOST_REQUIRE( bid.memo == to_string( bob_bid.memo ) );
       BOOST_REQUIRE( bid.json == to_string( bob_bid.json ) );
       BOOST_REQUIRE( bid.shipping_address == to_string( bob_bid.shipping_address ) );
-      BOOST_REQUIRE( bid.delivery_variant == to_string( bob_bid.delivery_variant ) );
+      BOOST_REQUIRE( bid.delivery_variant == bob_bid.delivery_variant );
       BOOST_REQUIRE( bid.delivery_details == to_string( bob_bid.delivery_details ) );
 
       account_membership_operation member;

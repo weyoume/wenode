@@ -20,17 +20,17 @@ namespace node { namespace chain {
       public:
          template<typename Constructor, typename Allocator>
          graph_node_object( Constructor&& c, allocator< Allocator > a ) :
-         node_types( a.get_segment_manager() ),
-         node_id(a), 
-         name(a), 
-         details(a), 
-         attributes( a.get_segment_manager() ), 
-         attribute_values( a.get_segment_manager() ), 
-         json(a), 
-         json_private(a)
-         {
-            c(*this);
-         };
+            node_types( a.get_segment_manager() ),
+            node_id(a),
+            name(a),
+            details(a),
+            attributes( a.get_segment_manager() ),
+            attribute_values( a.get_segment_manager() ),
+            json(a),
+            json_private(a)
+            {
+               c(*this);
+            };
 
          id_type                                  id;           
 
@@ -44,9 +44,9 @@ namespace node { namespace chain {
 
          shared_string                            details;                     ///< Describes the additional details of the node.
 
-         shared_vector< shared_string >           attributes;                  ///< List of attributes types for this node.
+         shared_vector< fixed_string_32 >         attributes;                  ///< List of attributes types for this node.
 
-         shared_vector< shared_string >           attribute_values;            ///< List of attribute values for this node.
+         shared_vector< fixed_string_32 >         attribute_values;            ///< List of attribute values for this node.
 
          shared_string                            json;                        ///< Public plaintext JSON node attribute information.
 
@@ -70,12 +70,12 @@ namespace node { namespace chain {
             return node_types[0];
          };
 
-         flat_map< string, string >               attribute_map()const
+         flat_map< fixed_string_32, fixed_string_32 > attribute_map()const
          {
-            flat_map< string, string > map;
+            flat_map< fixed_string_32, fixed_string_32 > map;
             for( size_t i = 0; i < attributes.size(); i++ )
             {
-               map[ to_string( attributes[ i ] ) ] = to_string( attribute_values [ i ] );
+               map[ attributes[ i ] ] = attribute_values[ i ];
             }
             return map;
          }
@@ -93,17 +93,17 @@ namespace node { namespace chain {
       public:
          template<typename Constructor, typename Allocator>
          graph_edge_object( Constructor&& c, allocator< Allocator > a ) :
-         edge_types( a.get_segment_manager() ),
-         edge_id(a),
-         name(a),
-         details(a),
-         attributes( a.get_segment_manager() ),
-         attribute_values( a.get_segment_manager() ),
-         json(a),
-         json_private(a)
-         {
-            c(*this);
-         };
+            edge_types( a.get_segment_manager() ),
+            edge_id(a),
+            name(a),
+            details(a),
+            attributes( a.get_segment_manager() ),
+            attribute_values( a.get_segment_manager() ),
+            json(a),
+            json_private(a)
+            {
+               c(*this);
+            };
 
          id_type                                  id;           
 
@@ -121,9 +121,9 @@ namespace node { namespace chain {
 
          shared_string                            details;                     ///< Describes the edge.
 
-         shared_vector< shared_string >           attributes;                  ///< List of attributes types for this edge.
+         shared_vector< fixed_string_32 >         attributes;                  ///< List of attributes types for this edge.
  
-         shared_vector< shared_string >           attribute_values;            ///< List of attribute values for this edge.
+         shared_vector< fixed_string_32 >         attribute_values;            ///< List of attribute values for this edge.
 
          shared_string                            json;                        ///< Public plaintext JSON edge attribute information.
 
@@ -147,12 +147,12 @@ namespace node { namespace chain {
             return edge_types[0];
          };
 
-         flat_map< string, string >               attribute_map()const
+         flat_map< fixed_string_32, fixed_string_32 > attribute_map()const
          {
-            flat_map< string, string > map;
+            flat_map< fixed_string_32, fixed_string_32 > map;
             for( size_t i = 0; i < attributes.size(); i++ )
             {
-               map[ to_string( attributes[ i ] ) ] = to_string( attribute_values [ i ] );
+               map[ attributes[ i ] ] = attribute_values[ i ];
             }
             return map;
          }
@@ -170,13 +170,13 @@ namespace node { namespace chain {
       public:
          template<typename Constructor, typename Allocator>
          graph_node_property_object( Constructor&& c, allocator< Allocator > a ) :
-         details(a), 
-         url(a), 
-         json(a), 
-         attributes( a.get_segment_manager() )
-         {
-            c(*this);
-         };
+            details(a), 
+            url(a), 
+            json(a), 
+            attributes( a.get_segment_manager() )
+            {
+               c(*this);
+            };
 
          id_type                            id;           
 
@@ -194,7 +194,7 @@ namespace node { namespace chain {
 
          shared_string                      json;                        ///< Public plaintext JSON metadata information.
 
-         shared_vector< shared_string >     attributes;                  ///< List of attributes that each node is required to have.
+         shared_vector< fixed_string_32 >   attributes;                  ///< List of attributes that each node is required to have.
 
          account_name_type                  interface;                   ///< Name of the application that facilitated the creation of the node type.
 
@@ -215,15 +215,15 @@ namespace node { namespace chain {
       public:
          template<typename Constructor, typename Allocator>
          graph_edge_property_object( Constructor&& c, allocator< Allocator > a ) :
-         from_node_types( a.get_segment_manager() ),
-         to_node_types( a.get_segment_manager() ),
-         details(a), 
-         url(a), 
-         json(a), 
-         attributes( a.get_segment_manager() )
-         {
-            c(*this);
-         };
+            from_node_types( a.get_segment_manager() ),
+            to_node_types( a.get_segment_manager() ),
+            details(a), 
+            url(a), 
+            json(a), 
+            attributes( a.get_segment_manager() )
+            {
+               c(*this);
+            };
 
          id_type                                   id;           
 
@@ -245,7 +245,7 @@ namespace node { namespace chain {
 
          shared_string                             json;                        ///< Public plaintext JSON metadata information.
 
-         shared_vector< shared_string >            attributes;                  ///< List of attributes that each edge is required to have.
+         shared_vector< fixed_string_32 >          attributes;                  ///< List of attributes that each edge is required to have.
 
          account_name_type                         interface;                   ///< Name of the application that facilitated the creation of the edge type.
 

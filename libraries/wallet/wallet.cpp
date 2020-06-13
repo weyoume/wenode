@@ -2515,6 +2515,7 @@ annotated_signed_transaction      wallet_api::account_business(
    string business_type,
    int64_t officer_vote_threshold,
    string business_public_key,
+   bool active,
    bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
@@ -2527,6 +2528,7 @@ annotated_signed_transaction      wallet_api::account_business(
    op.business_type = business_type;
    op.officer_vote_threshold = officer_vote_threshold;
    op.business_public_key = business_public_key;
+   op.active = active;
    
    signed_transaction tx;
    tx.operations.push_back(op);
@@ -3397,7 +3399,6 @@ annotated_signed_transaction      wallet_api::create_community_enterprise(
    string proposal_type,
    map< string, uint16_t > beneficiaries,
    vector< uint16_t > milestone_shares,
-   vector< string > milestone_details,
    string investment,
    string details,
    string url,
@@ -3424,7 +3425,6 @@ annotated_signed_transaction      wallet_api::create_community_enterprise(
    }
 
    op.milestone_shares = milestone_shares;
-   op.milestone_details = milestone_details;
    op.investment = investment;
    op.details = details;
    op.url = url;
@@ -5267,7 +5267,7 @@ annotated_signed_transaction       wallet_api::product_sale(
    string json,
    vector< string > product_variants,
    vector< string > product_details,
-   vector< string > product_images,
+   string product_image,
    vector< asset > product_prices,
    flat_map< uint32_t, uint16_t > wholesale_discount,
    vector< uint32_t > stock_available,
@@ -5289,7 +5289,7 @@ annotated_signed_transaction       wallet_api::product_sale(
    op.json = json;
    op.product_variants = product_variants;
    op.product_details = product_details;
-   op.product_images = product_images;
+   op.product_image = product_image;
    op.product_prices = product_prices;
    op.wholesale_discount = wholesale_discount;
    op.stock_available = stock_available;
@@ -5359,7 +5359,7 @@ annotated_signed_transaction       wallet_api::product_auction_sale(
    string url,
    string json,
    string product_details,
-   vector< string > product_images,
+   string product_image,
    asset reserve_bid,
    asset maximum_bid,
    vector< string > delivery_variants,
@@ -5381,7 +5381,7 @@ annotated_signed_transaction       wallet_api::product_auction_sale(
    op.url = url;
    op.json = json;
    op.product_details = product_details;
-   op.product_images = product_images;
+   op.product_image = product_image;
    op.reserve_bid = reserve_bid;
    op.maximum_bid = maximum_bid;
    op.delivery_variants = delivery_variants;
@@ -5976,7 +5976,7 @@ annotated_signed_transaction      wallet_api::prediction_pool_create(
    string prediction_symbol,
    string collateral_symbol,
    vector< string > outcome_assets,
-   vector< string > outcome_details,
+   string outcome_details,
    string display_symbol,
    string json,
    string url,

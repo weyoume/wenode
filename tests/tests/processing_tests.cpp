@@ -45,17 +45,17 @@ BOOST_AUTO_TEST_CASE( recent_content_claims_decay_test )
 
       comment_operation comment;
 
-      comment.signatory = alice.name;
-      comment.author = alice.name;
+      comment.signatory = "alice";
+      comment.author = "alice";
       comment.permlink = "test";
       comment.title = "Lorem Ipsum";
       comment.body = "Hello";
-      comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
-      comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+      comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
       comment.url = "https://www.url.com";
       comment.public_key = "";
       comment.community = INIT_COMMUNITY;
-      comment.tags.push_back( "test" );
+      comment.tags.push_back( tag_name_type( "test" )  );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
       comment.parent_author = ROOT_POST_PARENT;
@@ -77,9 +77,9 @@ BOOST_AUTO_TEST_CASE( recent_content_claims_decay_test )
       
       vote_operation vote;
 
-      vote.signatory = alice.name;
-      vote.voter = alice.name;
-      vote.author = alice.name;
+      vote.signatory = "alice";
+      vote.voter = "alice";
+      vote.author = "alice";
       vote.permlink = "test";
       vote.weight = PERCENT_100;
       vote.validate();
@@ -144,17 +144,17 @@ BOOST_AUTO_TEST_CASE( comment_payout_test )
 
       comment_operation comment;
 
-      comment.signatory = alice.name;
-      comment.author = alice.name;
+      comment.signatory = "alice";
+      comment.author = "alice";
       comment.permlink = "test";
       comment.title = "Lorem Ipsum";
       comment.body = "Hello";
-      comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
-      comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+      comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
       comment.url = "https://www.url.com";
       comment.public_key = "";
       comment.community = INIT_COMMUNITY;
-      comment.tags.push_back( "test" );
+      comment.tags.push_back( tag_name_type( "test" )  );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
       comment.parent_author = ROOT_POST_PARENT;
@@ -176,9 +176,9 @@ BOOST_AUTO_TEST_CASE( comment_payout_test )
 
       vote_operation vote;
 
-      vote.signatory = alice.name;
-      vote.voter = alice.name;
-      vote.author = alice.name;
+      vote.signatory = "alice";
+      vote.voter = "alice";
+      vote.author = "alice";
       vote.permlink = "test";
       vote.weight = 81 * PERCENT_1;
 
@@ -192,12 +192,12 @@ BOOST_AUTO_TEST_CASE( comment_payout_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      comment.signatory = bob.name;
-      comment.author = bob.name;
+      comment.signatory = "bob";
+      comment.author = "bob";
 
-      vote.signatory = bob.name;
-      vote.voter = bob.name;
-      vote.author = bob.name;
+      vote.signatory = "bob";
+      vote.voter = "bob";
+      vote.author = "bob";
       vote.weight = 59 * PERCENT_1;
 
       tx.operations.push_back( comment );
@@ -297,12 +297,12 @@ BOOST_AUTO_TEST_CASE( comment_processing_test )
          comment.permlink = "test";
          comment.title = "Lorem Ipsum";
          comment.body = "Hello";
-         comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
-         comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+         comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+         comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
          comment.url = "https://www.url.com";
          comment.public_key = "";
          comment.community = INIT_COMMUNITY;
-         comment.tags.push_back( "test" );
+         comment.tags.push_back( tag_name_type( "test" )  );
          comment.interface = INIT_ACCOUNT;
          comment.language = "en";
          comment.parent_author = ROOT_POST_PARENT;
@@ -412,17 +412,17 @@ BOOST_AUTO_TEST_CASE( nested_comment_payout_test )
 
       comment_operation comment;
 
-      comment.signatory = alice.name;
-      comment.author = alice.name;
+      comment.signatory = "alice";
+      comment.author = "alice";
       comment.permlink = "test";
       comment.title = "Lorem Ipsum";
       comment.body = "Hello";
-      comment.ipfs.push_back( "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" );
-      comment.magnet.push_back( "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" );
+      comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
       comment.url = "https://www.url.com";
       comment.public_key = "";
       comment.community = INIT_COMMUNITY;
-      comment.tags.push_back( "test" );
+      comment.tags.push_back( tag_name_type( "test" )  );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
       comment.parent_author = ROOT_POST_PARENT;

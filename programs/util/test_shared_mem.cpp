@@ -53,7 +53,8 @@ namespace bip=boost::interprocess;
  *   */
 
 typedef bip::basic_string<
-  char,std::char_traits<char>,
+  char,
+  std::char_traits<char>,
   bip::allocator<char,bip::managed_mapped_file::segment_manager>
 > shared_string;
 

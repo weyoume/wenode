@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const graph_node_property_object& person_node = db.get_graph_node_property( "person" );
+      const graph_node_property_object& person_node = db.get_graph_node_property( graph_node_name_type( "person" ) );
 
       BOOST_REQUIRE( node_property.account == person_node.account );
       BOOST_REQUIRE( node_property.node_type == person_node.node_type );
@@ -105,13 +105,13 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const graph_edge_property_object& family_edge = db.get_graph_edge_property( "family" );
+      const graph_edge_property_object& family_edge = db.get_graph_edge_property( graph_edge_name_type( "family" ) );
 
       BOOST_REQUIRE( edge_property.account == family_edge.account );
       BOOST_REQUIRE( edge_property.edge_type == family_edge.edge_type );
       BOOST_REQUIRE( family_edge.graph_privacy == connection_tier_type::CONNECTION );
-      BOOST_REQUIRE( edge_property.from_node_types[0] == family_edge.from_node_types[0] );
-      BOOST_REQUIRE( edge_property.to_node_types[0] == family_edge.to_node_types[0] );
+      BOOST_REQUIRE( edge_property.from_node_types[ 0 ] == family_edge.from_node_types[ 0 ] );
+      BOOST_REQUIRE( edge_property.to_node_types[ 0 ] == family_edge.to_node_types[ 0 ] );
       BOOST_REQUIRE( edge_property.details == to_string( family_edge.details ) );
       BOOST_REQUIRE( edge_property.url == to_string( family_edge.url ) );
       BOOST_REQUIRE( edge_property.json == to_string( family_edge.json ) );
@@ -146,13 +146,13 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const graph_node_object& alice_person = db.get_graph_node( "alice", string( "939f0aa6-cd4f-4065-83e3-f54ce368bffc" ) );
+      const graph_node_object& alice_person = db.get_graph_node( account_name_type( "alice" ), string( "939f0aa6-cd4f-4065-83e3-f54ce368bffc" ) );
 
       BOOST_REQUIRE( node.account == alice_person.account );
 
       for( size_t i = 0; i < alice_person.node_types.size(); i++ )
       {
-         BOOST_REQUIRE( node.node_types[i] == alice_person.node_types[i] );
+         BOOST_REQUIRE( node.node_types[ i ] == alice_person.node_types[ i ] );
       }
 
       BOOST_REQUIRE( node.node_id == to_string( alice_person.node_id ) );
@@ -161,8 +161,8 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
 
       for( size_t i = 0; i < alice_person.attributes.size(); i++ )
       {
-         BOOST_REQUIRE( node.attributes[i] == to_string( alice_person.attributes[i] ) );
-         BOOST_REQUIRE( node.attribute_values[i] == to_string( alice_person.attribute_values[i] ) );
+         BOOST_REQUIRE( node.attributes[ i ] == alice_person.attributes[ i ] );
+         BOOST_REQUIRE( node.attribute_values[ i ] == alice_person.attribute_values[ i ] );
       }
 
       BOOST_REQUIRE( node.json == to_string( alice_person.json ) );
@@ -193,13 +193,13 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const graph_node_object& bob_person = db.get_graph_node( "bob", string( "772a9705-091a-43f6-841c-720d0e0fb9f3" ) );
+      const graph_node_object& bob_person = db.get_graph_node( account_name_type( "bob" ), string( "772a9705-091a-43f6-841c-720d0e0fb9f3" ) );
 
       BOOST_REQUIRE( node.account == bob_person.account );
 
       for( size_t i = 0; i < bob_person.node_types.size(); i++ )
       {
-         BOOST_REQUIRE( node.node_types[i] == bob_person.node_types[i] );
+         BOOST_REQUIRE( node.node_types[ i ] == bob_person.node_types[ i ] );
       }
 
       BOOST_REQUIRE( node.node_id == to_string( bob_person.node_id ) );
@@ -208,8 +208,8 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
 
       for( size_t i = 0; i < bob_person.attributes.size(); i++ )
       {
-         BOOST_REQUIRE( node.attributes[i] == to_string( bob_person.attributes[i] ) );
-         BOOST_REQUIRE( node.attribute_values[i] == to_string( bob_person.attribute_values[i] ) );
+         BOOST_REQUIRE( node.attributes[ i ] == bob_person.attributes[ i ] );
+         BOOST_REQUIRE( node.attribute_values[ i ] == bob_person.attribute_values[ i ] );
       }
 
       BOOST_REQUIRE( node.json == to_string( bob_person.json ) );
@@ -296,13 +296,13 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const graph_edge_object& alice_family = db.get_graph_edge( "alice", string( "772a9705-091a-43f6-841c-720d0e0fb9f3" ) );
+      const graph_edge_object& alice_family = db.get_graph_edge( account_name_type( "alice" ), string( "772a9705-091a-43f6-841c-720d0e0fb9f3" ) );
 
       BOOST_REQUIRE( edge.account == alice_family.account );
 
       for( size_t i = 0; i < alice_family.edge_types.size(); i++ )
       {
-         BOOST_REQUIRE( edge.edge_types[i] == alice_family.edge_types[i] );
+         BOOST_REQUIRE( edge.edge_types[ i ] == alice_family.edge_types[ i ] );
       }
 
       BOOST_REQUIRE( edge.edge_id == to_string( alice_family.edge_id ) );
@@ -313,8 +313,8 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
 
       for( size_t i = 0; i < alice_family.attributes.size(); i++ )
       {
-         BOOST_REQUIRE( edge.attributes[i] == to_string( alice_family.attributes[i] ) );
-         BOOST_REQUIRE( edge.attribute_values[i] == to_string( alice_family.attribute_values[i] ) );
+         BOOST_REQUIRE( edge.attributes[ i ] == alice_family.attributes[ i ] );
+         BOOST_REQUIRE( edge.attribute_values[ i ] == alice_family.attribute_values[ i ] );
       }
 
       BOOST_REQUIRE( edge.json == to_string( alice_family.json ) );

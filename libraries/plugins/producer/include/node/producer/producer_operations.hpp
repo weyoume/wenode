@@ -19,7 +19,7 @@ struct enable_content_editing_operation : base_operation
    fc::time_point                relock_time;
 
    void validate()const;
-   void get_creator_name( protocol::account_name_type a )const{ a = account; }
+   void get_creator_name( flat_set< protocol::account_name_type>& a )const { a.insert( account ); }
    void get_required_active_authorities( flat_set< protocol::account_name_type>& a )const { a.insert( account ); }
 };
 

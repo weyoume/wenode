@@ -341,6 +341,7 @@ void database::init_genesis()
       abo.equity_revenue_shares[ SYMBOL_EQUITY ] = DIVIDEND_SHARE_PERCENT;
       abo.credit_assets.insert( SYMBOL_CREDIT );
       abo.credit_revenue_shares[ SYMBOL_CREDIT ] = BUYBACK_SHARE_PERCENT;
+      abo.active = true;
       abo.created = now;
       abo.last_updated = now;
    });
@@ -3509,7 +3510,7 @@ void database::process_update_producer_set()
       pso.total_producer_voting_power = total_producer_voting_power;
    });
 
-   ilog( "Updated Producer set: \n ${p} \n", ("p", pso) );
+   // ilog( "Updated Producer set." );
 
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -3583,12 +3584,15 @@ void database::update_community_moderators( const community_member_object& commu
    {
       const community_moderator_vote_object& vote = *vote_itr;
       const account_object& voter = get_account( vote.account );
-      share_type weight = get_voting_power( vote_itr->account );
+      share_type weight = get_voting_power( vote.account );
+
       if( voter.proxied.size() )
       {
          weight += get_proxied_voting_power( voter, equity_price );
       }
+
       // divides voting weight by 2^vote_rank, limiting total voting weight -> total voting power as votes increase.
+
       mod_weight[ vote.moderator ] += share_type( weight.value >> vote.vote_rank );
       ++vote_itr;
    }
@@ -4408,7 +4412,9 @@ void database::update_network_officer( const network_officer_object& network_off
       n.officer_approved = approve_officer;
    });
 
-   ilog( "Updated Network Officer: \n ${n} \n ", ("n", network_officer ) );
+   ilog( "Updated Network Officer: \n ${n} \n ", 
+      ("n", network_officer ) );
+   
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -5968,7 +5974,6 @@ void database::_apply_transaction( const signed_transaction& trx )
 
    notify_on_pre_apply_transaction( trx );
 
-   
    _current_op_in_trx = 0;
    for( const auto& op : trx.operations )
    { 
@@ -5991,14 +5996,20 @@ void database::_apply_transaction( const signed_transaction& trx )
 
 } FC_CAPTURE_AND_RETHROW( (trx) ) }
 
-void database::update_stake( const signed_transaction& trx)
+void database::update_stake( const signed_transaction& trx )
 {
    if( trx.operations.size() )
    {
-      const operation& op = trx.operations[0];
-      account_name_type creator;
-      operation_creator_name( op, creator );
-      share_type voting_power = get_voting_power( creator );
+      flat_set< account_name_type > creators;
+      for( const operation& op : trx.operations )
+      {
+         operation_creator_name( op, creators );
+      }
+      share_type voting_power;
+      for( account_name_type name : creators )
+      {
+         voting_power += get_voting_power( name );
+      }
       size_t size = fc::raw::pack_size(trx);
       _current_trx_stake_weight += uint128_t( voting_power.value * size );
    }
@@ -6220,12 +6231,12 @@ void database::update_last_irreversible_block()
       });
    }
 
-   // Take the highest of last committed and irreverisble blocks, and commit it to the local database.
+   // Take the highest of last committed and irreversible blocks, and commit it to the local database.
    uint64_t commit_height = std::max( props.last_committed_block_num, props.last_irreversible_block_num );
    
    commit( commit_height );  // Node will not reverse blocks after they have been committed or produced on by two thirds of producers.
 
-   if( !( get_node_properties().skip_flags & skip_block_log ) )  // Output to block log based on new committed and last irreverisible block numbers.
+   if( !( get_node_properties().skip_flags & skip_block_log ) )  // Output to block log based on new committed and last irreversiible block numbers.
    {
       const auto& tmp_head = _block_log.head();
       uint64_t log_head_num = 0;
@@ -6251,7 +6262,8 @@ void database::update_last_irreversible_block()
 
    _fork_db.set_max_size( props.head_block_number - commit_height + 1 );
 
-   ilog( "Update last irreverisble block: ${b}", ("b",commit_height) );
+   ilog( "Update last irreversible block: ${b}", 
+      ("b",commit_height) );
 
 } FC_CAPTURE_AND_RETHROW() }
 

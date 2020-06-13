@@ -1997,7 +1997,7 @@ poll_state database_api_impl::get_poll( string name, string poll_id )const
          vote_itr->creator == name &&
          to_string( vote_itr->poll_id ) == poll_id )
       {
-         pstate.vote_count[ to_string( vote_itr->poll_option ) ]++;
+         pstate.vote_count[ vote_itr->poll_option ]++;
          pstate.votes.push_back( *vote_itr );
          ++vote_itr;
       }
@@ -2041,7 +2041,7 @@ vector< account_poll_state > database_api_impl::get_account_polls( vector< strin
             vote_itr->creator == name &&
             vote_itr->poll_id == poll.poll_id )
          {
-            pstate.vote_count[ to_string( vote_itr->poll_option ) ] += 1;
+            pstate.vote_count[ vote_itr->poll_option ] += 1;
             pstate.votes.push_back( *vote_itr );
             ++vote_itr;
          }
@@ -4243,7 +4243,7 @@ graph_data_state database_api_impl::get_graph_query( const graph_query& query )c
          continue;
       }
 
-      flat_map< string, string > attribute_map = node_itr->attribute_map();
+      flat_map< fixed_string_32, fixed_string_32 > attribute_map = node_itr->attribute_map();
 
       // Must match all intersect select attribute values
       for( size_t i = 0; i < query.node_intersect_select_attributes.size(); i++ )
@@ -4415,7 +4415,7 @@ graph_data_state database_api_impl::get_graph_query( const graph_query& query )c
          continue;
       }
 
-      flat_map< string, string > attribute_map = edge_itr->attribute_map();
+      flat_map< fixed_string_32, fixed_string_32 > attribute_map = edge_itr->attribute_map();
 
       // Must match all intersect select attribute values
       for( size_t i = 0; i < query.edge_intersect_select_attributes.size(); i++ )
@@ -4615,7 +4615,7 @@ search_result_state database_api_impl::get_search_query( const search_query& que
    {
       while( account_itr != account_idx.end() )
       {
-         size_t edit_dist = edit_distance( string( account_itr->name ), q );
+         size_t edit_dist = protocol::edit_distance( string( account_itr->name ), q );
          if( edit_dist <= margin )
          {
             accounts.push_back( std::make_pair( account_itr->name, edit_dist  ) );
@@ -4646,7 +4646,7 @@ search_result_state database_api_impl::get_search_query( const search_query& que
    {
       while( community_itr != community_idx.end() )
       {
-         size_t edit_dist = edit_distance( string( community_itr->name ), q );
+         size_t edit_dist = protocol::edit_distance( string( community_itr->name ), q );
          if( edit_dist <= margin )
          {
             communities.push_back( std::make_pair( community_itr->name, edit_dist ) );
@@ -4677,7 +4677,7 @@ search_result_state database_api_impl::get_search_query( const search_query& que
    {
       while( tag_itr != tag_idx.end() )
       {
-         size_t edit_dist = edit_distance( string( tag_itr->tag ), q );
+         size_t edit_dist = protocol::edit_distance( string( tag_itr->tag ), q );
          if( edit_dist <= margin )
          {
             tags.push_back( std::make_pair( tag_itr->tag, edit_dist ) );
@@ -4708,7 +4708,7 @@ search_result_state database_api_impl::get_search_query( const search_query& que
    {
       while( asset_itr != asset_idx.end() )
       {
-         size_t edit_dist = edit_distance( string( asset_itr->symbol ), q );
+         size_t edit_dist = protocol::edit_distance( string( asset_itr->symbol ), q );
          if( edit_dist <= margin )
          {
             assets.push_back( std::make_pair( asset_itr->symbol, edit_dist ) );
@@ -4740,7 +4740,7 @@ search_result_state database_api_impl::get_search_query( const search_query& que
       while( post_itr != post_idx.end() )
       {
          string title = to_string( post_itr->title );
-         size_t edit_dist = edit_distance( title, q );
+         size_t edit_dist = protocol::edit_distance( title, q );
          if( edit_dist <= margin )
          {
             posts.push_back( std::make_pair( title, edit_dist ) );

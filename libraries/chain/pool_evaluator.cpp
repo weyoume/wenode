@@ -817,8 +817,6 @@ void prediction_pool_create_evaluator::do_apply( const prediction_pool_create_op
 
    vector< asset_symbol_type > outcome_assets = o.outcome_assets;
    outcome_assets.push_back( INVALID_OUTCOME_SYMBOL );
-   vector< string > outcome_details = o.outcome_details;
-   outcome_details.push_back( INVALID_OUTCOME_DETAILS );
    
    _db.create< asset_object >( [&]( asset_object& a )
    {
@@ -856,16 +854,14 @@ void prediction_pool_create_evaluator::do_apply( const prediction_pool_create_op
       appo.prediction_symbol = o.prediction_symbol;
       appo.collateral_symbol = o.collateral_symbol;
       appo.collateral_pool = asset( 0, o.collateral_symbol );
-      appo.outcome_assets.reserve( outcome_assets.size() );
-      appo.outcome_details.reserve( outcome_details.size() );
 
-      for( size_t i = 0; i < outcome_assets.size(); i++ )
+      appo.outcome_assets.reserve( outcome_assets.size() );
+      for( auto out : outcome_assets )
       {
-         asset_symbol_type combined = o.prediction_symbol+"."+outcome_assets[ i ];
-         appo.outcome_assets.push_back( combined );
-         from_string( appo.outcome_details[ i ], outcome_details[ i ] );
+         appo.outcome_assets.push_back( out );
       }
 
+      from_string( appo.outcome_details, o.outcome_details );
       from_string( appo.json, o.json );
       from_string( appo.url, o.url );
       from_string( appo.details, o.details );
@@ -876,8 +872,7 @@ void prediction_pool_create_evaluator::do_apply( const prediction_pool_create_op
 
    for( size_t i = 0; i < outcome_assets.size(); i++ )
    {
-      asset_symbol_type s = outcome_assets[i];
-      string d = outcome_details[i];
+      asset_symbol_type s = outcome_assets[ i ];
 
       _db.create< asset_object >( [&]( asset_object& a )
       {
@@ -885,7 +880,7 @@ void prediction_pool_create_evaluator::do_apply( const prediction_pool_create_op
          a.asset_type = asset_property_type::OPTION_ASSET;
          a.issuer = o.account;
          from_string( a.display_symbol, o.display_symbol );
-         from_string( a.details, d );
+         from_string( a.details, o.outcome_details );
          from_string( a.json, o.json );
          from_string( a.url, o.url );
          a.max_supply = MAX_ASSET_SUPPLY;

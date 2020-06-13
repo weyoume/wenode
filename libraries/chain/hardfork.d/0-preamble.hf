@@ -18,8 +18,8 @@ class hardfork_property_object : public object< hardfork_property_object_type, h
 {
    public:
       template< typename Constructor, typename Allocator >
-      hardfork_property_object( Constructor&& c, allocator< Allocator > a )
-         :processed_hardforks( a.get_segment_manager() )
+      hardfork_property_object( Constructor&& c, allocator< Allocator > a ) : 
+         processed_hardforks( a.get_segment_manager() )
       {
          c( *this );
       }

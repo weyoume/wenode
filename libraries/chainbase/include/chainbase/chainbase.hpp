@@ -52,6 +52,8 @@ namespace chainbase {
 
    typedef bip::basic_string< char, std::char_traits< char >, allocator< char > > shared_string;
 
+   typedef bip::allocator< shared_string, bip::managed_mapped_file::segment_manager > basic_string_allocator;
+
    template<typename T>
    using shared_vector = std::vector<T, allocator<T> >;
 

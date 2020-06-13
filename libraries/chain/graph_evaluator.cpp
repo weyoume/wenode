@@ -57,7 +57,7 @@ void graph_node_evaluator::do_apply( const graph_node_operation& o )
 
       for( auto att : node_property.attributes )
       {
-         attribute_set.insert( to_string( att ) );
+         attribute_set.insert( att );
       }
 
       if( node_property.graph_privacy > connection_tier )
@@ -132,24 +132,27 @@ void graph_node_evaluator::do_apply( const graph_node_operation& o )
       _db.create< graph_node_object >( [&]( graph_node_object& gno )
       {
          gno.account = o.account;
+
+         gno.node_types.reserve( o.node_types.size() );
          for( auto nt : o.node_types )
          {
             gno.node_types.push_back( nt );
          }
+
          from_string( gno.node_id, o.node_id );
          from_string( gno.name, o.name );
          from_string( gno.details, o.details );
 
          gno.attributes.reserve( o.attributes.size() );
-         for( size_t i = 0; i < o.attributes.size(); i++ )
+         for( auto att : o.attributes )
          {
-            from_string( gno.attributes[ i ], o.attributes[ i ] );
+            gno.attributes.push_back( att );
          }
 
          gno.attribute_values.reserve( o.attribute_values.size() );
-         for( size_t i = 0; i < o.attribute_values.size(); i++ )
+         for( auto av : o.attribute_values )
          {
-            from_string( gno.attribute_values[ i ], o.attribute_values[ i ] );
+            gno.attribute_values.push_back( av );
          }
 
          from_string( gno.json, o.json );
@@ -171,6 +174,7 @@ void graph_node_evaluator::do_apply( const graph_node_operation& o )
 
       _db.modify( node, [&]( graph_node_object& gno )
       {
+         gno.node_types.reserve( o.node_types.size() );
          for( auto nt : o.node_types )
          {
             gno.node_types.push_back( nt );
@@ -178,16 +182,18 @@ void graph_node_evaluator::do_apply( const graph_node_operation& o )
          from_string( gno.name, o.name );
          from_string( gno.details, o.details );
 
+         gno.attributes.clear();
          gno.attributes.reserve( o.attributes.size() );
-         for( size_t i = 0; i < o.attributes.size(); i++ )
+         for( auto att : o.attributes )
          {
-            from_string( gno.attributes[ i ], o.attributes[ i ] );
+            gno.attributes.push_back( att );
          }
 
+         gno.attribute_values.clear();
          gno.attribute_values.reserve( o.attribute_values.size() );
-         for( size_t i = 0; i < o.attribute_values.size(); i++ )
+         for( auto av : o.attribute_values )
          {
-            from_string( gno.attribute_values[ i ], o.attribute_values[ i ] );
+            gno.attribute_values.push_back( av );
          }
 
          from_string( gno.json, o.json );
@@ -230,7 +236,7 @@ void graph_edge_evaluator::do_apply( const graph_edge_operation& o )
       const graph_edge_property_object& edge_property = _db.get_graph_edge_property( property );
       for( auto att : edge_property.attributes )
       {
-         attribute_set.insert( to_string( att ) );
+         attribute_set.insert( att );
       }
 
       for( graph_node_name_type node_type : from_node.node_types )
@@ -351,10 +357,13 @@ void graph_edge_evaluator::do_apply( const graph_edge_operation& o )
       _db.create< graph_edge_object >( [&]( graph_edge_object& geo )
       {
          geo.account = o.account;
+
+         geo.edge_types.reserve( o.edge_types.size() );
          for( auto et : o.edge_types )
          {
             geo.edge_types.push_back( et );
          }
+
          from_string( geo.edge_id, o.edge_id );
          geo.from_node = from_node.id;
          geo.to_node = to_node.id;
@@ -363,15 +372,15 @@ void graph_edge_evaluator::do_apply( const graph_edge_operation& o )
          from_string( geo.details, o.details );
 
          geo.attributes.reserve( o.attributes.size() );
-         for( size_t i = 0; i < o.attributes.size(); i++ )
+         for( auto att : o.attributes )
          {
-            from_string( geo.attributes[ i ], o.attributes[ i ] );
+            geo.attributes.push_back( att );
          }
 
          geo.attribute_values.reserve( o.attribute_values.size() );
-         for( size_t i = 0; i < o.attribute_values.size(); i++ )
+         for( auto av : o.attribute_values )
          {
-            from_string( geo.attribute_values[ i ], o.attribute_values[ i ] );
+            geo.attribute_values.push_back( av );
          }
 
          from_string( geo.json, o.json );
@@ -393,27 +402,31 @@ void graph_edge_evaluator::do_apply( const graph_edge_operation& o )
 
       _db.modify( edge, [&]( graph_edge_object& geo )
       {
+         geo.edge_types.clear();
+         geo.edge_types.reserve( o.edge_types.size() );
          for( auto et : o.edge_types )
          {
             geo.edge_types.push_back( et );
          }
+
          from_string( geo.edge_id, o.edge_id );
          geo.from_node = from_node.id;
          geo.to_node = to_node.id;
-
          from_string( geo.name, o.name );
          from_string( geo.details, o.details );
 
+         geo.attributes.clear();
          geo.attributes.reserve( o.attributes.size() );
-         for( size_t i = 0; i < o.attributes.size(); i++ )
+         for( auto att : o.attributes )
          {
-            from_string( geo.attributes[ i ], o.attributes[ i ] );
+            geo.attributes.push_back( att );
          }
 
+         geo.attribute_values.clear();
          geo.attribute_values.reserve( o.attribute_values.size() );
-         for( size_t i = 0; i < o.attribute_values.size(); i++ )
+         for( auto av : o.attribute_values )
          {
-            from_string( geo.attribute_values[ i ], o.attribute_values[ i ] );
+            geo.attribute_values.push_back( av );
          }
 
          from_string( geo.json, o.json );
@@ -498,9 +511,9 @@ void graph_node_property_evaluator::do_apply( const graph_node_property_operatio
          from_string( gnpo.json, o.json );
 
          gnpo.attributes.reserve( o.attributes.size() );
-         for( size_t i = 0; i < o.attributes.size(); i++ )
+         for( auto att : o.attributes )
          {
-            from_string( gnpo.attributes[ i ], o.attributes[ i ] );
+            gnpo.attributes.push_back( att );
          }
          
          if( o.interface.size() )
@@ -519,23 +532,10 @@ void graph_node_property_evaluator::do_apply( const graph_node_property_operatio
       _db.modify( node, [&]( graph_node_property_object& gnpo )
       {
          gnpo.node_type = o.node_type;
-         gnpo.graph_privacy = graph_privacy;
-         gnpo.edge_permission = edge_permission;
          
          from_string( gnpo.details, o.details );
          from_string( gnpo.url, o.url );
          from_string( gnpo.json, o.json );
-
-         gnpo.attributes.reserve( o.attributes.size() );
-         for( size_t i = 0; i < o.attributes.size(); i++ )
-         {
-            from_string( gnpo.attributes[ i ], o.attributes[ i ] );
-         }
-         
-         if( o.interface.size() )
-         {
-            gnpo.interface = o.interface;
-         }
          
          gnpo.last_updated = now;
       });
@@ -559,16 +559,6 @@ void graph_edge_property_evaluator::do_apply( const graph_edge_property_operatio
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   for( graph_node_name_type property : o.from_node_types )
-   {
-      _db.get_graph_node_property( property );
-   }
-
-   for( graph_node_name_type property : o.to_node_types )
-   {
-      _db.get_graph_node_property( property );
-   }
-
    if( o.interface.size() )
    {
       const account_object& interface_acc = _db.get_account( o.interface );
@@ -589,6 +579,27 @@ void graph_edge_property_evaluator::do_apply( const graph_edge_property_operatio
          break;
       }
    }
+
+   connection_tier_type edge_permission = connection_tier_type::PUBLIC;
+   
+   for( graph_node_name_type property : o.from_node_types )
+   {
+      const graph_node_property_object& n = _db.get_graph_node_property( property );
+      if( n.edge_permission > edge_permission )
+      {
+         edge_permission = n.edge_permission;
+      }
+   }
+
+   for( graph_node_name_type property : o.to_node_types )
+   {
+      _db.get_graph_node_property( property );
+      const graph_node_property_object& n = _db.get_graph_node_property( property );
+      if( n.edge_permission > edge_permission )
+      {
+         edge_permission = n.edge_permission;
+      }
+   }
    
    time_point now = _db.head_block_time();
 
@@ -602,15 +613,28 @@ void graph_edge_property_evaluator::do_apply( const graph_edge_property_operatio
          gepo.account = o.account;
          gepo.edge_type = o.edge_type;
          gepo.graph_privacy = graph_privacy;
+         gepo.edge_permission = edge_permission;     // Use highest edge permission
+
+         gepo.from_node_types.reserve( o.from_node_types.size() );
+         for( auto t : o.from_node_types )
+         {
+            gepo.from_node_types.push_back( t );
+         }
+
+         gepo.to_node_types.reserve( o.to_node_types.size() );
+         for( auto t : o.to_node_types )
+         {
+            gepo.to_node_types.push_back( t );
+         }
          
          from_string( gepo.details, o.details );
          from_string( gepo.url, o.url );
          from_string( gepo.json, o.json );
 
          gepo.attributes.reserve( o.attributes.size() );
-         for( size_t i = 0; i < o.attributes.size(); i++ )
+         for( auto att : o.attributes )
          {
-            from_string( gepo.attributes[ i ], o.attributes[ i ] );
+            gepo.attributes.push_back( att );
          }
          
          if( o.interface.size() )
@@ -628,24 +652,10 @@ void graph_edge_property_evaluator::do_apply( const graph_edge_property_operatio
 
       _db.modify( edge, [&]( graph_edge_property_object& gepo )
       {
-         gepo.edge_type = o.edge_type;
-         gepo.graph_privacy = graph_privacy;
-         
          from_string( gepo.details, o.details );
          from_string( gepo.url, o.url );
          from_string( gepo.json, o.json );
 
-         gepo.attributes.reserve( o.attributes.size() );
-         for( size_t i = 0; i < o.attributes.size(); i++ )
-         {
-            from_string( gepo.attributes[ i ], o.attributes[ i ] );
-         }
-         
-         if( o.interface.size() )
-         {
-            gepo.interface = o.interface;
-         }
-         
          gepo.last_updated = now;
       });
    }

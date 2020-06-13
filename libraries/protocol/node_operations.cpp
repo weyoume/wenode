@@ -329,10 +329,8 @@ namespace node { namespace protocol {
          "Business Type is invalid." );
       FC_ASSERT( fc::is_utf8( business_type ),
          "Business Type is invalid." );
-      
       FC_ASSERT( officer_vote_threshold > 0, 
          "Officer vote threshold must be greater than 0.");
-
       FC_ASSERT( business_public_key.size() < MAX_URL_LENGTH,
          "Business Public key is too long." );
       validate_public_key( business_public_key );
@@ -384,6 +382,7 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( business_account );
+
       FC_ASSERT( message.size() <= MAX_STRING_LENGTH, 
          "Message is too long" );
    }
@@ -394,6 +393,7 @@ namespace node { namespace protocol {
       validate_account_name( account );
       validate_account_name( business_account );
       validate_account_name( member );
+
       FC_ASSERT( account != member, 
          "Account: ${a} cannot invite itself to become a member of a Business account: ${b}.", 
       ("a", member)("b", business_account));
@@ -409,6 +409,7 @@ namespace node { namespace protocol {
       validate_account_name( account );
       validate_account_name( business_account );
       validate_account_name( member );
+
       FC_ASSERT( account != member, 
          "Account: ${a} cannot accept its own join request to a business account: ${b}.", 
          ("a", member)("b", business_account));
@@ -644,6 +645,7 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( network_officer );
+
       FC_ASSERT( vote_rank >= 1 && vote_rank <= 100, 
          "Vote rank must be between zero and one hundred." );
    }
@@ -889,8 +891,6 @@ namespace node { namespace protocol {
             "Beneficiary percent is too large." );
       }
 
-      FC_ASSERT( milestone_details.size() >= 2, 
-         "Proposal must have at least 2 milestones." );
       FC_ASSERT( milestone_shares.size() >= 2, 
          "Proposal must have at least 2 milestones." );
 
@@ -898,11 +898,6 @@ namespace node { namespace protocol {
       {
          FC_ASSERT( mile <= PERCENT_100,
             "Milestone share percent is too large." );
-      }
-      for( auto mile : milestone_details )
-      {
-         FC_ASSERT( mile.size() < MAX_STRING_LENGTH,
-            "Milestone details are too long." );
       }
 
       FC_ASSERT( duration <= 3650,
@@ -932,8 +927,6 @@ namespace node { namespace protocol {
       validate_uuidv4( enterprise_id );
       FC_ASSERT( milestone <= PERCENT_100,
          "Milestone percent is too large." );
-      FC_ASSERT( details.size() < MAX_STRING_LENGTH,
-         "Details size is too large." );
    }
 
    void approve_enterprise_milestone_operation::validate() const
@@ -1021,18 +1014,20 @@ namespace node { namespace protocol {
       FC_ASSERT( language.size() == 2,
          "Comment rejected: Language should be two characters using ISO 639-1." );
 
-      for( string item : ipfs )
+      if( ipfs.size() )
       {
-         FC_ASSERT( item.size() == 46 && item[0] == 'Q' && item[1] == 'm',
+         FC_ASSERT( ipfs.size() == 46 && ipfs[0] == 'Q' && ipfs[1] == 'm',
             "Comment rejected: IPFS string should be 46 characters long and begin with 'Qm'." );
+         FC_ASSERT( fc::is_utf8( ipfs ), 
+         "Comment rejected: JSON is not valid UTF8" );
       }
 
-      for( string item : magnet )
+      if( magnet.size() )
       {
-         FC_ASSERT( item.size() < MAX_BODY_SIZE,
+         FC_ASSERT( magnet.size() < MAX_STRING_LENGTH,
             "Comment rejected: Magnet size is too large." );
       }
-
+         
       if( url.size() )
       {
          FC_ASSERT( url.size() < MAX_URL_LENGTH,
@@ -1042,11 +1037,11 @@ namespace node { namespace protocol {
          validate_url( url );
       }
 
-      for( auto item : tags )
+      for( tag_name_type t : tags )
       {
-         FC_ASSERT( item.size() < MAX_URL_LENGTH,
-            "Tag: ${t} is too long.",("t", item) );
-         validate_tag_name( item );
+         FC_ASSERT( t.size() < MAX_URL_LENGTH,
+            "Tag: ${t} is too long.",("t", t) );
+         validate_tag_name( t );
       }
 
       if( parent_author.size() )
@@ -1108,8 +1103,9 @@ namespace node { namespace protocol {
          "Message must include a message string." );
       FC_ASSERT( message.size() < MAX_STRING_LENGTH,
          "Message is too long." );
-      FC_ASSERT( uuid.size() < MAX_STRING_LENGTH,
+      FC_ASSERT( uuid.size() < MAX_URL_LENGTH,
          "UUID is too long." );
+      validate_uuidv4( uuid );
    }
 
    void vote_operation::validate() const
@@ -1171,17 +1167,16 @@ namespace node { namespace protocol {
       validate_account_name( moderator );
       validate_account_name( author );
       validate_permlink( permlink );
-      for( auto tag : tags )
+
+      for( tag_name_type t : tags )
       {
-         validate_tag_name( tag );
+         validate_tag_name( t );
       }
 
       FC_ASSERT( rating >= 1 && rating <= 10,
          "Post Rating level should be between 1 and 10" );
-
       FC_ASSERT( details.size(), 
          "Moderation tag must include details explaining the rule or standard violation." );
-
       FC_ASSERT( details.size() < MAX_STRING_LENGTH,
          "Details are too long." );
    }
@@ -1356,6 +1351,10 @@ namespace node { namespace protocol {
 
       if( url.size() > 0 )
       {
+         FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL is too long." );
+         FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
          validate_url( url );
       }
 
@@ -1391,12 +1390,13 @@ namespace node { namespace protocol {
          "Details are too long." );
       FC_ASSERT( fc::is_utf8( details ), 
          "Details are not formatted in UTF8." );
-      FC_ASSERT( url.size() < MAX_URL_LENGTH,
-         "URL is too long." );
-      FC_ASSERT( fc::is_utf8( url ),
-         "URL is not formatted in UTF8." );
+      
       if( url.size() > 0 )
       {
+         FC_ASSERT( url.size() < MAX_URL_LENGTH,
+         "URL is too long." );
+         FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
          validate_url( url );
       }
 
@@ -1435,7 +1435,7 @@ namespace node { namespace protocol {
    {
       validate_account_name( signatory );
       validate_account_name( account );
-      validate_account_name( new_founder);
+      validate_account_name( new_founder );
       validate_community_name( community );
    }
 
@@ -1962,8 +1962,6 @@ namespace node { namespace protocol {
       {
          FC_ASSERT( a.size() < MAX_URL_LENGTH,
             "Attribute is too long." );
-         FC_ASSERT( fc::is_utf8( a ),
-            "Attribute is not formatted in UTF8." );
       }
    }
 
@@ -2014,8 +2012,6 @@ namespace node { namespace protocol {
       {
          FC_ASSERT( a.size() < MAX_URL_LENGTH,
             "Attribute is too long." );
-         FC_ASSERT( fc::is_utf8( a ),
-            "Attribute is not formatted in UTF8." );
       }
    }
 
@@ -2454,23 +2450,20 @@ namespace node { namespace protocol {
             "Product variant is not UTF8" );
       }
 
-      for( auto a : product_details )
+      if( product_details.size() )
       {
-         FC_ASSERT( a.size() < MAX_STRING_LENGTH,
+         FC_ASSERT( product_details.size() < MAX_STRING_LENGTH,
             "Product details is too long" );
-         FC_ASSERT( fc::is_utf8( a ),
+         FC_ASSERT( fc::is_utf8( product_details ),
             "Product details is not UTF8" );
       }
 
-      for( auto a : product_images )
-      {
-         FC_ASSERT( a.size() < MAX_STRING_LENGTH,
-            "Image is too long" );
-         FC_ASSERT( fc::is_utf8( a ),
-            "Image is not UTF8" );
-         FC_ASSERT( a.size() == 46 && a[0] == 'Q' && a[1] == 'm',
-            "Image IPFS string should be 46 characters long and begin with 'Qm'." );
-      }
+      FC_ASSERT( product_image.size() < MAX_STRING_LENGTH,
+         "Image is too long" );
+      FC_ASSERT( fc::is_utf8( product_image ),
+         "Image is not UTF8" );
+      FC_ASSERT( product_image.size() == 46 && product_image[0] == 'Q' && product_image[1] == 'm',
+         "Image IPFS string should be 46 characters long and begin with 'Qm'." );
 
       for( auto a : product_prices )
       {
@@ -2517,14 +2510,11 @@ namespace node { namespace protocol {
             "Delivery variant is not UTF8" );
       }
 
-      for( auto a : delivery_details )
-      {
-         FC_ASSERT( a.size() < MAX_STRING_LENGTH,
-            "Delivery variant is too long" );
-         FC_ASSERT( fc::is_utf8( a ),
-            "Delivery variant is not UTF8" );
-      }
-
+      FC_ASSERT( delivery_details.size() < MAX_STRING_LENGTH,
+         "Delivery variant is too long" );
+      FC_ASSERT( fc::is_utf8( delivery_details ),
+         "Delivery variant is not UTF8" );
+      
       for( auto a : delivery_prices )
       {
          FC_ASSERT( is_valid_symbol( a.symbol ),
@@ -2642,16 +2632,13 @@ namespace node { namespace protocol {
       FC_ASSERT( fc::is_utf8( product_details ),
          "Product details is not UTF8" );
 
-      for( auto a : product_images )
-      {
-         FC_ASSERT( a.size() < MAX_STRING_LENGTH,
-            "Image is too long" );
-         FC_ASSERT( fc::is_utf8( a ),
-            "Image is not UTF8" );
-         FC_ASSERT( a.size() == 46 && a[0] == 'Q' && a[1] == 'm',
-            "Image IPFS string should be 46 characters long and begin with 'Qm'." );
-      }
-
+      FC_ASSERT( product_image.size() < MAX_STRING_LENGTH,
+         "Image is too long" );
+      FC_ASSERT( fc::is_utf8( product_image ),
+         "Image is not UTF8" );
+      FC_ASSERT( product_image.size() == 46 && product_image[0] == 'Q' && product_image[1] == 'm',
+         "Image IPFS string should be 46 characters long and begin with 'Qm'." );
+      
       FC_ASSERT( is_valid_symbol( reserve_bid.symbol ),
          "Reserve Bid symbol is not valid symbol" );
       FC_ASSERT( reserve_bid.amount >= 0,
@@ -2669,14 +2656,11 @@ namespace node { namespace protocol {
             "Delivery variant is not UTF8" );
       }
 
-      for( auto a : delivery_details )
-      {
-         FC_ASSERT( a.size() < MAX_STRING_LENGTH,
-            "Delivery variant is too long" );
-         FC_ASSERT( fc::is_utf8( a ),
-            "Delivery variant is not UTF8" );
-      }
-
+      FC_ASSERT( delivery_details.size() < MAX_STRING_LENGTH,
+         "Delivery variant is too long" );
+      FC_ASSERT( fc::is_utf8( delivery_details ),
+         "Delivery variant is not UTF8" );
+      
       for( auto a : delivery_prices )
       {
          FC_ASSERT( is_valid_symbol( a.symbol ),
@@ -3170,17 +3154,12 @@ namespace node { namespace protocol {
 
       FC_ASSERT( asset_set.size() == outcome_assets.size(),
          "Outcome assets should not contain any duplicates." );
-
-      for( string s : outcome_details )
-      {
-         FC_ASSERT( s.size() < MAX_STRING_LENGTH,
-            "Details are too long." );
-         FC_ASSERT( s.size(),
-            "Details are required." );
-         FC_ASSERT( fc::is_utf8( s ),
-            "Details are not UTF8." );
-      }
-
+      FC_ASSERT( outcome_details.size() < MAX_STRING_LENGTH,
+         "Details are too long." );
+      FC_ASSERT( outcome_details.size(),
+         "Details are required." );
+      FC_ASSERT( fc::is_utf8( outcome_details ),
+         "Details are not UTF8." );
       FC_ASSERT( display_symbol.size() < MAX_STRING_LENGTH,
          "Display Symbol is too long." );
       FC_ASSERT( display_symbol.size(),

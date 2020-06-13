@@ -274,6 +274,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       account_business.business_type = "open";
       account_business.officer_vote_threshold = BLOCKCHAIN_PRECISION;
       account_business.business_public_key = string( candice_public_connection_key );
+      account_business.active = true;
       account_business.validate();
 
       tx.operations.push_back( account_business );
@@ -413,6 +414,7 @@ BOOST_AUTO_TEST_CASE( asset_operation_sequence_test )
       account_business.business_type = "open";
       account_business.officer_vote_threshold = BLOCKCHAIN_PRECISION;
       account_business.business_public_key = string( dan_public_connection_key );
+      account_business.active = true;
       account_business.validate();
 
       tx.operations.push_back( account_business );

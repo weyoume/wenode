@@ -43,6 +43,7 @@ namespace node { namespace chain {
    using node::protocol::asset_symbol_type;
    using node::protocol::graph_node_name_type;
    using node::protocol::graph_edge_name_type;
+   using node::protocol::fixed_string_32;
    
    using node::protocol::encrypted_keypair_type;
    using node::protocol::date_type;

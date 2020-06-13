@@ -327,21 +327,25 @@ asset database::claim_activity_reward( const account_object& account,
 
 void database::update_owner_authority( const account_object& account, const authority& owner_authority )
 {
-   if( head_block_num() >= OWNER_AUTH_HISTORY_TRACKING_START_BLOCK_NUM )
-   {
-      create< owner_authority_history_object >( [&]( owner_authority_history_object& hist )
-      {
-         hist.account = account.name;
-         hist.previous_owner_authority = get< account_authority_object, by_account >( account.name ).owner_auth;
-         hist.last_valid_time = head_block_time();
-      });
-   }
+   time_point now = head_block_time();
 
-   modify( get< account_authority_object, by_account >( account.name ), [&]( account_authority_object& auth )
+   const account_authority_object& auth = get< account_authority_object, by_account >( account.name );
+
+   create< owner_authority_history_object >( [&]( owner_authority_history_object& h )
    {
-      auth.owner_auth = owner_authority;
-      auth.last_owner_update = head_block_time();
+      h.account = account.name;
+      h.previous_owner_authority = auth.owner_auth;
+      h.last_valid_time = now;
    });
+   
+   modify( auth, [&]( account_authority_object& a )
+   {
+      a.owner_auth = owner_authority;
+      a.last_owner_update = now;
+   });
+
+   ilog( "Updated Owner Authority Account: \n ${a} \n New Authority: \n ${o} \n", 
+      ("a", account)("o",owner_authority) );
 }
 
 /**
@@ -355,7 +359,8 @@ void database::update_producer_votes( const account_object& account )
 
    uint16_t new_vote_rank = 1;
 
-   while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
+   while( vote_itr != vote_idx.end() && 
+      vote_itr->account == account.name )
    {
       const producer_vote_object& vote = *vote_itr;
       if( vote.vote_rank != new_vote_rank )

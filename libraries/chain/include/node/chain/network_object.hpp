@@ -301,7 +301,10 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          mediator_object( Constructor&& c, allocator< Allocator > a ) :
-         details(a), url(a), json(a), last_escrow_id(a)
+         details(a), 
+         url(a), 
+         json(a), 
+         last_escrow_id(a)
          {
             c( *this );
          }
@@ -339,16 +342,14 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          community_enterprise_object( Constructor&& c, allocator< Allocator > a ) :
-         enterprise_id(a), 
-         milestone_shares( a.get_segment_manager() ), 
-         milestone_details( a.get_segment_manager() ), 
-         milestone_history( a.get_segment_manager() ), 
-         details(a), 
-         url(a), 
-         json(a)
-         {
-            c( *this );
-         }
+            enterprise_id(a), 
+            milestone_shares( a.get_segment_manager() ),
+            details(a), 
+            url(a), 
+            json(a)
+            {
+               c( *this );
+            }
 
          id_type                                     id;
 
@@ -364,17 +365,13 @@ namespace node { namespace chain {
 
          shared_vector< uint16_t >                   milestone_shares;                                ///< Ordered vector of release milestone descriptions.
 
-         shared_vector< shared_string >              milestone_details;                               ///< Ordered vector of release milestone percentages of budget value.
-
-         shared_vector< shared_string >              milestone_history;                               ///< Ordered vector of the details of every claimed milestone.
-
          int16_t                                     approved_milestones;                             ///< Number of the last approved milestone by the community.
 
          int16_t                                     claimed_milestones;                              ///< Number of milestones claimed for release.  
 
          fc::optional< asset_symbol_type >           investment;                                      ///< Symbol of the asset to be purchased with the funding if the proposal is investment type. 
 
-         shared_string                               details;                                         ///< The proposals's details description.
+         shared_string                               details;                                         ///< The proposals's details and release milestone percentages of budget value.
 
          shared_string                               url;                                             ///< The proposals's reference URL.
 
@@ -467,7 +464,7 @@ namespace node { namespace chain {
 
          shared_string                  enterprise_id;             ///< UUIDv4 referring to the proposal being claimed.
 
-         uint16_t                       vote_rank = 1;                 ///< The vote rank of the approval for enterprise.
+         uint16_t                       vote_rank = 1;             ///< The vote rank of the approval for enterprise.
 
          int16_t                        milestone;                 ///< Number of the milestone being approved for release.
    };
@@ -1086,8 +1083,6 @@ FC_REFLECT( node::chain::community_enterprise_object,
          (proposal_type)
          (beneficiaries)
          (milestone_shares)
-         (milestone_details)
-         (milestone_history)
          (approved_milestones)
          (claimed_milestones)
          (investment)

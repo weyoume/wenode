@@ -1457,14 +1457,14 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          asset_prediction_pool_object( Constructor&& c, allocator< Allocator > a ) :
-         outcome_assets( a.get_segment_manager() ), 
-         outcome_details( a.get_segment_manager() ),
-         json(a),
-         url(a),
-         details(a)
-         {
-            c( *this );
-         }
+            outcome_assets( a.get_segment_manager() ), 
+            outcome_details( a ),
+            json(a),
+            url(a),
+            details(a)
+            {
+               c( *this );
+            }
 
          id_type                                      id;
 
@@ -1480,7 +1480,7 @@ namespace node { namespace chain {
 
          shared_vector< asset_symbol_type >           outcome_assets;           ///< Outcome asset symbols for the market.
 
-         shared_vector< shared_string >               outcome_details;          ///< Description of each outcome and the resolution conditions for each asset. 
+         shared_string                                outcome_details;          ///< Description of each outcome and the resolution conditions for each asset. 
          
          shared_string                                json;                     ///< JSON Metadata of the prediction market.
 

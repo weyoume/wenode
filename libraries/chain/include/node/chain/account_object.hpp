@@ -403,9 +403,11 @@ namespace node { namespace chain {
 
          flat_map< asset_symbol_type, uint16_t >         credit_revenue_shares;      ///< Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
 
+         bool                                            active;                     ///< True when the business account is active, false to deactivate business account.
+
          time_point                                      created;                    ///< Time that business account object was created.
 
-         time_point                                      last_updated;               ///< Time that the business account object was last updated. 
+         time_point                                      last_updated;               ///< Time that the business account object was last updated.
 
          bool is_authorized_request( const account_name_type& account, const account_permission_object& obj )const      ///< Determines Permission to request to join.
          {
@@ -1121,35 +1123,35 @@ namespace node { namespace chain {
           */
          share_type                        adjacency_value( const account_following_object& f )const
          {
-            vector<account_name_type> common_followers;
+            vector< account_name_type > common_followers;
             common_followers.reserve( followers.size() );
             std::set_intersection( f.followers.begin(), f.followers.end(), followers.begin(), followers.end(), common_followers.begin());
 
-            vector<account_name_type> common_following;
+            vector< account_name_type > common_following;
             common_following.reserve( following.size() );
             std::set_intersection( f.following.begin(), f.following.end(), following.begin(), following.end(), common_following.begin());
 
-            vector<account_name_type> common_mutual_followers;
+            vector< account_name_type > common_mutual_followers;
             common_mutual_followers.reserve( mutual_followers.size() );
             std::set_intersection( f.mutual_followers.begin(), f.mutual_followers.end(), mutual_followers.begin(), mutual_followers.end(), common_mutual_followers.begin());
 
-            vector<account_name_type> common_connections;
+            vector< account_name_type > common_connections;
             common_connections.reserve( connections.size() );
             std::set_intersection( f.connections.begin(), f.connections.end(), connections.begin(), connections.end(), common_connections.begin());
 
-            vector<account_name_type> common_friends;
+            vector< account_name_type > common_friends;
             common_friends.reserve( friends.size() );
             std::set_intersection( f.friends.begin(), f.friends.end(), friends.begin(), friends.end(), common_friends.begin());
 
-            vector<account_name_type> common_companions;
+            vector< account_name_type > common_companions;
             common_companions.reserve( companions.size() );
             std::set_intersection( f.companions.begin(), f.companions.end(), companions.begin(), companions.end(), common_companions.begin());
 
-            vector<account_name_type> common_followed_communities;
+            vector< account_name_type > common_followed_communities;
             common_followed_communities.reserve( followed_communities.size() );
             std::set_intersection( f.followed_communities.begin(), f.followed_communities.end(), followed_communities.begin(), followed_communities.end(), common_followed_communities.begin());
 
-            vector<account_name_type> common_followed_tags;
+            vector< account_name_type > common_followed_tags;
             common_followed_tags.reserve( followed_tags.size() );
             std::set_intersection( f.followed_tags.begin(), f.followed_tags.end(), followed_tags.begin(), followed_tags.end(), common_followed_tags.begin());
 
@@ -1526,8 +1528,8 @@ namespace node { namespace chain {
 
       public:
          template< typename Constructor, typename Allocator >
-         owner_authority_history_object( Constructor&& c, allocator< Allocator > a )
-            :previous_owner_authority( shared_authority::allocator_type( a.get_segment_manager() ) )
+         owner_authority_history_object( Constructor&& c, allocator< Allocator > a ) : 
+            previous_owner_authority( shared_authority::allocator_type( a.get_segment_manager() ) )
          {
             c( *this );
          }
@@ -1548,8 +1550,8 @@ namespace node { namespace chain {
 
       public:
          template< typename Constructor, typename Allocator >
-         account_recovery_request_object( Constructor&& c, allocator< Allocator > a )
-            :new_owner_authority( shared_authority::allocator_type( a.get_segment_manager() ) )
+         account_recovery_request_object( Constructor&& c, allocator< Allocator > a ) : 
+            new_owner_authority( shared_authority::allocator_type( a.get_segment_manager() ) )
          {
             c( *this );
          }
@@ -2521,6 +2523,7 @@ FC_REFLECT( node::chain::account_business_object,
          (credit_assets)
          (equity_revenue_shares)
          (credit_revenue_shares)
+         (active)
          (created)
          (last_updated)
          );

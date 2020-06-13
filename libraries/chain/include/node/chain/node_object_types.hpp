@@ -40,6 +40,7 @@ using node::protocol::tag_name_type;
 using node::protocol::asset_symbol_type;
 using node::protocol::graph_node_name_type;
 using node::protocol::graph_edge_name_type;
+using node::protocol::fixed_string_32;
 using node::protocol::encrypted_keypair_type;
 using node::protocol::date_type;
 
@@ -65,6 +66,7 @@ using node::protocol::community_permission_flags;
 
 
 typedef bip::basic_string< char, std::char_traits< char >, allocator< char > > shared_string;
+typedef bip::allocator< shared_string, bip::managed_mapped_file::segment_manager > basic_string_allocator;
 inline std::string to_string( const shared_string& str ) { return std::string( str.begin(), str.end() ); }
 inline void from_string( shared_string& out, const string& in ){ out.assign( in.begin(), in.end() ); }
 
@@ -557,13 +559,13 @@ namespace fc
    }
 
    template<typename T>
-   void to_variant( const chainbase::oid<T>& var, variant& vo )
+   inline void to_variant( const chainbase::oid<T>& var, variant& vo )
    {
       vo = var._id;
    }
 
    template<typename T>
-   void from_variant( const variant& vo, chainbase::oid<T>& var )
+   inline void from_variant( const variant& vo, chainbase::oid<T>& var )
    {
       var._id = vo.as_int64();
    }

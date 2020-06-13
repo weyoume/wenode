@@ -136,7 +136,6 @@
 #define SHARE_CURATION_DECAY            (50)                  // Curation reward decays by 50% per 50 shares.
 #define COMMENT_CURATION_DECAY          (100)                 // Curation reward decays by 50% per 100 comments.
 
-#define OWNER_AUTH_HISTORY_TRACKING_START_BLOCK_NUM      1
 #define DECLINE_VOTING_RIGHTS_DURATION                   fc::days(3)
 #define MIN_COMMUNITY_CREATE_INTERVAL                    fc::days(1)
 #define MIN_ASSET_CREATE_INTERVAL                        fc::days(1)

@@ -1,4 +1,3 @@
-
 #include <node/chain/node_evaluator.hpp>
 #include <node/chain/database.hpp>
 #include <node/chain/custom_operation_interpreter.hpp>
@@ -61,23 +60,20 @@ void product_sale_evaluator::do_apply( const product_sale_operation& o )
          from_string( p.json, o.json );
 
          p.product_variants.reserve( o.product_variants.size() );
-         for( size_t i = 0; i < o.product_variants.size(); i++ )
+         for( auto v : o.product_variants )
          {
-            from_string( p.product_variants[ i ], o.product_variants[ i ] );
+            p.product_variants.push_back( v );
          }
 
          p.product_details.reserve( o.product_details.size() );
-         for( size_t i = 0; i < o.product_details.size(); i++ )
+         for( auto d : o.product_details )
          {
-            from_string( p.product_details[ i ], o.product_details[ i ] );
+            p.product_details.push_back( d );
          }
 
-         p.product_images.reserve( o.product_images.size() );
-         for( size_t i = 0; i < o.product_images.size(); i++ )
-         {
-            from_string( p.product_images[ i ], o.product_images[ i ] );
-         }
+         from_string( p.product_image, o.product_image );
 
+         p.product_prices.reserve( o.product_prices.size() );
          for( auto pr : o.product_prices )
          {
             p.product_prices.push_back( pr );
@@ -85,23 +81,21 @@ void product_sale_evaluator::do_apply( const product_sale_operation& o )
 
          p.wholesale_discount = o.wholesale_discount;
 
+         p.stock_available.reserve( o.stock_available.size() );
          for( auto sa : o.stock_available )
          {
             p.stock_available.push_back( sa );
          }
 
          p.delivery_variants.reserve( o.delivery_variants.size() );
-         for( size_t i = 0; i < o.delivery_variants.size(); i++ )
+         for( auto v : o.delivery_variants )
          {
-            from_string( p.delivery_variants[ i ], o.delivery_variants[ i ] );
+            p.delivery_variants.push_back( v );
          }
 
-         p.delivery_details.reserve( o.delivery_details.size() );
-         for( size_t i = 0; i < o.delivery_details.size(); i++ )
-         {
-            from_string( p.delivery_details[ i ], o.delivery_details[ i ] );
-         }
-
+         from_string( p.delivery_details, o.delivery_details );
+         
+         p.delivery_prices.reserve( o.delivery_prices.size() );
          for( auto dp : o.delivery_prices )
          {
             p.delivery_prices.push_back( dp );
@@ -122,24 +116,24 @@ void product_sale_evaluator::do_apply( const product_sale_operation& o )
          from_string( p.url, o.url );
          from_string( p.json, o.json );
 
+         p.product_variants.clear();
          p.product_variants.reserve( o.product_variants.size() );
-         for( size_t i = 0; i < o.product_variants.size(); i++ )
+         for( auto v : o.product_variants )
          {
-            from_string( p.product_variants[ i ], o.product_variants[ i ] );
+            p.product_variants.push_back( v );
          }
 
+         p.product_details.clear();
          p.product_details.reserve( o.product_details.size() );
-         for( size_t i = 0; i < o.product_details.size(); i++ )
+         for( auto d : o.product_details )
          {
-            from_string( p.product_details[ i ], o.product_details[ i ] );
+            p.product_details.push_back( d );
          }
 
-         p.product_images.reserve( o.product_images.size() );
-         for( size_t i = 0; i < o.product_images.size(); i++ )
-         {
-            from_string( p.product_images[ i ], o.product_images[ i ] );
-         }
+         from_string( p.product_image, o.product_image );
 
+         p.product_prices.clear();
+         p.product_prices.reserve( o.product_prices.size() );
          for( auto pr : o.product_prices )
          {
             p.product_prices.push_back( pr );
@@ -147,27 +141,29 @@ void product_sale_evaluator::do_apply( const product_sale_operation& o )
 
          p.wholesale_discount = o.wholesale_discount;
 
+         p.stock_available.clear();
+         p.stock_available.reserve( o.stock_available.size() );
          for( auto sa : o.stock_available )
          {
             p.stock_available.push_back( sa );
          }
 
+         p.delivery_variants.clear();
          p.delivery_variants.reserve( o.delivery_variants.size() );
-         for( size_t i = 0; i < o.delivery_variants.size(); i++ )
+         for( auto v : o.delivery_variants )
          {
-            from_string( p.delivery_variants[ i ], o.delivery_variants[ i ] );
+            p.delivery_variants.push_back( v );
          }
 
-         p.delivery_details.reserve( o.delivery_details.size() );
-         for( size_t i = 0; i < o.delivery_details.size(); i++ )
-         {
-            from_string( p.delivery_details[ i ], o.delivery_details[ i ] );
-         }
-
+         from_string( p.delivery_details, o.delivery_details );
+         
+         p.delivery_prices.clear();
+         p.delivery_prices.reserve( o.delivery_prices.size() );
          for( auto dp : o.delivery_prices )
          {
             p.delivery_prices.push_back( dp );
          }
+
          p.last_updated = now;
          p.active = o.active;
       });
@@ -198,18 +194,18 @@ void product_purchase_evaluator::do_apply( const product_purchase_operation& o )
 
    asset payment = asset( 0, product.product_prices[0].symbol );
 
-   flat_map< string, asset > price_map;
+   flat_map< fixed_string_32, asset > price_map;
 
    for( size_t i = 0; i < product.product_variants.size(); i++ )
    {
-      price_map[ to_string( product.product_variants[ i ] ) ] = product.product_prices[ i ];
+      price_map[ product.product_variants[ i ] ] = product.product_prices[ i ];
    }
 
-   flat_map< string, asset > delivery_map;
+   flat_map< fixed_string_32, asset > delivery_map;
 
    for( size_t i = 0; i < product.delivery_variants.size(); i++ )
    {
-      delivery_map[ to_string( product.delivery_variants[ i ] ) ] = product.delivery_prices[ i ];
+      delivery_map[ product.delivery_variants[ i ] ] = product.delivery_prices[ i ];
    }
 
    for( size_t i = 0; i < o.order_variants.size(); i++ )
@@ -234,11 +230,14 @@ void product_purchase_evaluator::do_apply( const product_purchase_operation& o )
          from_string( p.order_id, o.order_id );
          p.seller = o.seller;
          from_string( p.product_id, o.product_id );
+
          p.order_variants.reserve( o.order_variants.size() );
-         for( size_t i = 0; i < o.order_variants.size(); i++ )
+         for( auto va : o.order_variants )
          {
-            from_string( p.order_variants[ i ], o.order_variants[ i ] );
+            p.order_variants.push_back( va );
          }
+
+         p.order_size.reserve( o.order_size.size() );
          for( auto os : o.order_size )
          {
             p.order_size.push_back( os );
@@ -248,7 +247,7 @@ void product_purchase_evaluator::do_apply( const product_purchase_operation& o )
          from_string( p.json, o.json );
          p.purchase_public_key = seller.secure_public_key;
          from_string( p.shipping_address, o.shipping_address );
-         from_string( p.delivery_variant, o.delivery_variant );
+         p.delivery_variant = o.delivery_variant;
          from_string( p.delivery_details, o.delivery_details );
          p.order_value = payment;
          p.created = now;
@@ -289,20 +288,25 @@ void product_purchase_evaluator::do_apply( const product_purchase_operation& o )
 
       _db.modify( purchase, [&]( product_purchase_object& p )
       {
+         p.order_variants.clear();
          p.order_variants.reserve( o.order_variants.size() );
-         for( size_t i = 0; i < o.order_variants.size(); i++ )
+         for( auto va : o.order_variants )
          {
-            from_string( p.order_variants[ i ], o.order_variants[ i ] );
+            p.order_variants.push_back( va );
          }
+
+         p.order_size.clear();
+         p.order_size.reserve( o.order_size.size() );
          for( auto os : o.order_size )
          {
             p.order_size.push_back( os );
          }
+
          p.order_value = payment;
          from_string( p.memo, o.memo );
          from_string( p.json, o.json );
          from_string( p.shipping_address, o.shipping_address );
-         from_string( p.delivery_variant, o.delivery_variant );
+         p.delivery_variant = o.delivery_variant;
          from_string( p.delivery_details, o.delivery_details );
          p.last_updated = now;
       });
@@ -392,28 +396,20 @@ void product_auction_sale_evaluator::do_apply( const product_auction_sale_operat
          from_string( p.url, o.url );
          from_string( p.json, o.json );
          from_string( p.product_details, o.product_details );
-
-         p.product_images.reserve( o.product_images.size() );
-         for( size_t i = 0; i < o.product_images.size(); i++ )
-         {
-            from_string( p.product_images[ i ], o.product_images[ i ] );
-         }
+         from_string( p.product_image, o.product_image );
 
          p.reserve_bid = o.reserve_bid;
          p.maximum_bid = o.maximum_bid;
 
          p.delivery_variants.reserve( o.delivery_variants.size() );
-         for( size_t i = 0; i < o.delivery_variants.size(); i++ )
+         for( auto dv : o.delivery_variants )
          {
-            from_string( p.delivery_variants[ i ], o.delivery_variants[ i ] );
+            p.delivery_variants.push_back( dv );
          }
 
-         p.delivery_details.reserve( o.delivery_details.size() );
-         for( size_t i = 0; i < o.delivery_details.size(); i++ )
-         {
-            from_string( p.delivery_details[ i ], o.delivery_details[ i ] );
-         }
-
+         from_string( p.delivery_details, o.delivery_details );
+         
+         p.delivery_prices.reserve( o.delivery_prices.size() );
          for( auto dp : o.delivery_prices )
          {
             p.delivery_prices.push_back( dp );
@@ -464,28 +460,22 @@ void product_auction_sale_evaluator::do_apply( const product_auction_sale_operat
             from_string( p.url, o.url );
             from_string( p.json, o.json );
             from_string( p.product_details, o.product_details );
-
-            p.product_images.reserve( o.product_images.size() );
-            for( size_t i = 0; i < o.product_images.size(); i++ )
-            {
-               from_string( p.product_images[ i ], o.product_images[ i ] );
-            }
+            from_string( p.product_image, o.product_image );
 
             p.reserve_bid = o.reserve_bid;
             p.maximum_bid = o.maximum_bid;
 
+            p.delivery_variants.clear();
             p.delivery_variants.reserve( o.delivery_variants.size() );
-            for( size_t i = 0; i < o.delivery_variants.size(); i++ )
+            for( auto dv : o.delivery_variants )
             {
-               from_string( p.delivery_variants[ i ], o.delivery_variants[ i ] );
+               p.delivery_variants.push_back( dv );
             }
 
-            p.delivery_details.reserve( o.delivery_details.size() );
-            for( size_t i = 0; i < o.delivery_details.size(); i++ )
-            {
-               from_string( p.delivery_details[ i ], o.delivery_details[ i ] );
-            }
-
+            from_string( p.delivery_details, o.delivery_details );
+            
+            p.delivery_prices.clear();
+            p.delivery_prices.reserve( o.delivery_prices.size() );
             for( auto dp : o.delivery_prices )
             {
                p.delivery_prices.push_back( dp );
@@ -504,12 +494,7 @@ void product_auction_sale_evaluator::do_apply( const product_auction_sale_operat
             from_string( p.url, o.url );
             from_string( p.json, o.json );
             from_string( p.product_details, o.product_details );
-
-            p.product_images.reserve( o.product_images.size() );
-            for( size_t i = 0; i < o.product_images.size(); i++ )
-            {
-               from_string( p.product_images[ i ], o.product_images[ i ] );
-            }
+            from_string( p.product_image, o.product_image );
 
             p.last_updated = now;
          });
@@ -544,11 +529,11 @@ void product_auction_bid_evaluator::do_apply( const product_auction_bid_operatio
    FC_ASSERT( o.public_bid_amount == auction.reserve_bid.amount,
       "The completion time must be at least 7 days after final bid time." );
 
-   flat_map< string, asset > delivery_map;
+   flat_map< fixed_string_32, asset > delivery_map;
 
    for( size_t i = 0; i < auction.delivery_variants.size(); i++ )
    {
-      delivery_map[ to_string( auction.delivery_variants[ i ] ) ] = auction.delivery_prices[ i ];
+      delivery_map[ auction.delivery_variants[ i ] ] = auction.delivery_prices[ i ];
    }
 
    asset delivery_value = delivery_map[ o.delivery_variant ];
@@ -628,7 +613,7 @@ void product_auction_bid_evaluator::do_apply( const product_auction_bid_operatio
          p.bid_public_key = seller.secure_public_key;
 
          from_string( p.shipping_address, o.shipping_address );
-         from_string( p.delivery_variant, o.delivery_variant );
+         p.delivery_variant = o.delivery_variant;
          from_string( p.delivery_details, o.delivery_details );
 
          p.delivery_value = delivery_value;
@@ -705,7 +690,7 @@ void product_auction_bid_evaluator::do_apply( const product_auction_bid_operatio
          p.bid_public_key = seller.secure_public_key;
 
          from_string( p.shipping_address, o.shipping_address );
-         from_string( p.delivery_variant, o.delivery_variant );
+         p.delivery_variant = o.delivery_variant;
          from_string( p.delivery_details, o.delivery_details );
 
          p.delivery_value = delivery_value;

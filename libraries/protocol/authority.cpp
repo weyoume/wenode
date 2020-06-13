@@ -1,4 +1,5 @@
 #include <node/protocol/authority.hpp>
+#include <fc/log/logger.hpp>
 #include <fc/utf8.hpp>
 
 namespace node { namespace protocol {
@@ -51,14 +52,17 @@ bool is_valid_account_name( const string& name )
    const size_t len = name.size();
    if( len < MIN_ACCOUNT_NAME_LENGTH )
    {
+      elog( "Name: ${n} is too short, min length is 3.", ("n",name ) );
       return false;
    }
    if( len > MAX_ACCOUNT_NAME_LENGTH )
    {
+      elog( "Name: ${n} is too long, max length is 32.", ("n",name ) );
       return false;
    }
    if( !fc::is_utf8( name ) )
    {
+      elog( "Name: ${n} is not UTF-8.", ("n",name ) );
       return false;
    }
       
@@ -70,6 +74,7 @@ bool is_valid_account_name( const string& name )
          end = len;
       if( end - begin < MIN_ACCOUNT_NAME_LENGTH )
       {
+         elog( "Name: ${n} must have segment lengths of at least 3.", ("n",name ) );
          return false;
       }
          
@@ -81,7 +86,10 @@ bool is_valid_account_name( const string& name )
          case 'y': case 'z':
             break;
          default:
+         {
+            elog( "Name: ${n} must have begin with a letter.", ("n",name ) );
             return false;
+         }   
       }
       switch( name[end-1] )
       {
@@ -93,7 +101,10 @@ bool is_valid_account_name( const string& name )
          case '8': case '9':
             break;
          default:
+         {
+            elog( "Name: ${n} must have alpha-numeric characters.", ("n",name ) );
             return false;
+         }
       }
       if( len >= MIN_ACCOUNT_NAME_LENGTH )
       {
@@ -110,7 +121,10 @@ bool is_valid_account_name( const string& name )
                case '-':
                   break;
                default:
+               {
+                  elog( "Name: ${n} must have alpha-numeric characters or hyphens.", ("n",name ) );
                   return false;
+               }
             }
          }
       }
