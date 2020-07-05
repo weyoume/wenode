@@ -165,8 +165,9 @@ void transfer_request_evaluator::do_apply( const transfer_request_operation& o )
       "Transfer is not authorized, due to recipient account's asset permisssions." );
    FC_ASSERT( from_account_permissions.is_authorized_transfer( o.to, asset_obj ),
       "Transfer is not authorized, due to sender account's asset permisssions." );
-   FC_ASSERT( from_liquid >= o.amount,
-         "Account ${f} does not have sufficient funds for transfer.",("f", o.from) );
+   FC_ASSERT( from_liquid.amount >= o.amount.amount,
+         "Account: ${a} does not have sufficient funds: ${b} for transfer of amount: ${m}.",
+         ("a",o.from)("b",from_liquid)("m",o.amount) );
 
    const auto& req_idx = _db.get_index< transfer_request_index >().indices().get< by_request_id >();
    auto req_itr = req_idx.find( boost::make_tuple( o.to, o.request_id ) );
@@ -198,6 +199,7 @@ void transfer_request_evaluator::do_apply( const transfer_request_operation& o )
       }
       else
       {
+         ilog( "Removed: ${v}",("v",*req_itr));
          _db.remove( *req_itr );
       }
    }
@@ -259,6 +261,7 @@ void transfer_accept_evaluator::do_apply( const transfer_accept_operation& o )
    }
    else
    {
+      ilog( "Removed: ${v}",("v",request));
       _db.remove( request );
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
@@ -361,6 +364,7 @@ void transfer_recurring_evaluator::do_apply( const transfer_recurring_operation&
       }
       else
       {
+         ilog( "Removed: ${v}",("v",*recurring_itr));
          _db.remove( *recurring_itr );
       }
    }
@@ -447,6 +451,7 @@ void transfer_recurring_request_evaluator::do_apply( const transfer_recurring_re
       }
       else
       {
+         ilog( "Removed: ${v}",("v",*req_itr));
          _db.remove( *req_itr );
       }
    }
@@ -513,6 +518,7 @@ void transfer_recurring_accept_evaluator::do_apply( const transfer_recurring_acc
    }
    else    // Rejecting recurring transfer request.
    {
+      ilog( "Removed: ${v}",("v",request));
       _db.remove( request );
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
@@ -562,6 +568,7 @@ void transfer_confidential_evaluator::do_apply( const transfer_confidential_oper
       confidential_itr = confidential_idx.find( in.commitment );
       FC_ASSERT( confidential_itr != confidential_idx.end(), 
          "Input Commitment is not found", ("commitment",in.commitment) );
+      ilog( "Removed: ${v}",("v",*confidential_itr));
       _db.remove( *confidential_itr );
    }
 
@@ -679,6 +686,7 @@ void transfer_from_confidential_evaluator::do_apply( const transfer_from_confide
    {
       confidential_itr = confidential_idx.find( in.commitment );
       FC_ASSERT( confidential_itr != confidential_idx.end() );
+      ilog( "Removed: ${v}",("v",*confidential_itr));
       _db.remove( *confidential_itr );
    }
 

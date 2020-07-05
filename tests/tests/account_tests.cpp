@@ -31,9 +31,10 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
 
       account_create_operation create;
 
-      create.signatory = account_name_type( "alice" );
-      create.registrar = account_name_type( "alice" );
-      create.new_account_name = account_name_type( "bob" );
+      create.signatory = "alice";
+      create.registrar = "alice";
+      create.referrer = "alice";
+      create.new_account_name = "bob";
 
       flat_set< account_name_type > auths;
       flat_set< account_name_type > expected;
@@ -65,8 +66,6 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_TEST_MESSAGE( "│   ├── Testing: Account creation" );
 
       signed_transaction tx;
-   
-      asset init_starting_balance = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
 
       fc::ecc::private_key alice_private_owner_key = get_private_key( "alice", "owner", INIT_ACCOUNT_PASSWORD );
       fc::ecc::private_key alice_private_active_key = get_private_key( "alice", "active", INIT_ACCOUNT_PASSWORD );
@@ -83,10 +82,8 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       public_key_type alice_public_connection_key = alice_private_connection_key.get_public_key();
       public_key_type alice_public_friend_key = alice_private_friend_key.get_public_key();
       public_key_type alice_public_companion_key = alice_private_companion_key.get_public_key();
-      
-      fund( INIT_ACCOUNT, init_starting_balance );
 
-      asset init_liquid_balance = db.get_liquid_balance( INIT_ACCOUNT, SYMBOL_COIN );
+      asset init_liquid_balance = get_liquid_balance( INIT_ACCOUNT, SYMBOL_COIN );
 
       create.signatory = INIT_ACCOUNT;
       create.registrar = INIT_ACCOUNT;
@@ -125,11 +122,11 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       tx.operations.clear();
 
       const account_object& alice = db.get_account( account_name_type( "alice" ) );
-      const account_authority_object& alice_auth = db.get< account_authority_object, by_account >( account_name_type( account_name_type( "alice" ) ) );
-      const account_following_object& alice_follow = db.get_account_following( account_name_type( account_name_type( "alice" ) ) );
+      const account_authority_object& alice_auth = db.get< account_authority_object, by_account >( account_name_type( "alice" ) );
+      const account_following_object& alice_follow = db.get_account_following( account_name_type( "alice" ) );
 
       BOOST_REQUIRE( alice.registrar == INIT_ACCOUNT );
-      BOOST_REQUIRE( account_name_type( "alice" ) == create.new_account_name );
+      BOOST_REQUIRE( create.new_account_name == "alice" );
       BOOST_REQUIRE( alice_follow.account == create.new_account_name );
       BOOST_REQUIRE( alice.referrer == INIT_ACCOUNT );
       BOOST_REQUIRE( alice.proxy == INIT_ACCOUNT );
@@ -147,13 +144,11 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       BOOST_REQUIRE( alice.id._id == alice_auth.id._id );
       BOOST_REQUIRE( alice.id._id == alice_follow.id._id );
       
-      BOOST_REQUIRE( db.get_staked_balance( account_name_type( "alice" ), SYMBOL_COIN ) == create.fee );
+      BOOST_REQUIRE( get_staked_balance( account_name_type( "alice" ), SYMBOL_COIN ) == create.fee );
 
-      asset init_liquid = db.get_liquid_balance( INIT_ACCOUNT, SYMBOL_COIN );
+      asset init_liquid = get_liquid_balance( INIT_ACCOUNT, SYMBOL_COIN );
       
       BOOST_REQUIRE( ( init_liquid_balance - create.fee ) == init_liquid );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Account creation" );
 
@@ -260,8 +255,6 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
 
       BOOST_REQUIRE( db.get_staked_balance( ionstudios_acc.name, SYMBOL_COIN ) == create.fee );
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: Business account creation" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure of duplicate account creation" );
@@ -275,10 +268,10 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       tx.signatures.clear();
       tx.operations.clear();
 
-      init_liquid = db.get_liquid_balance( INIT_ACCOUNT, SYMBOL_COIN );
+      init_liquid = get_liquid_balance( INIT_ACCOUNT, SYMBOL_COIN );
 
       create.fee = init_liquid + asset( 1 , SYMBOL_COIN );    // Fee slightly greater than liquid balance.
-      create.new_account_name = account_name_type( "bob" );
+      create.new_account_name = "bob";
 
       tx.operations.push_back( create );
       tx.sign( init_account_private_active_key, db.get_chain_id() );
@@ -286,8 +279,6 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
 
       tx.signatures.clear();
       tx.operations.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when creator cannot cover fee" );
 
@@ -329,8 +320,6 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
       
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when account posting authority is invalid" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob) );
 
       private_key_type new_private_key = get_private_key( "alice", "owner", "aliceownerhunter2" );
@@ -354,8 +343,6 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
       tx.signatures.clear();
       tx.operations.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when account posting authority is invalid" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: account update authorities" );
@@ -374,8 +361,6 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
       update.validate();
 
       tx.operations.push_back( update );   // No signature
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: account update authorities" );
 
@@ -453,10 +438,9 @@ BOOST_AUTO_TEST_CASE( account_membership_operation_test )
       
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal account membership" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
-      fund( account_name_type( "alice" ), asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      
+      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       account_membership_operation membership;
       
@@ -478,8 +462,6 @@ BOOST_AUTO_TEST_CASE( account_membership_operation_test )
       BOOST_REQUIRE( alice.membership_interface == INIT_ACCOUNT );
       BOOST_REQUIRE( alice.recurring_membership == 1 );
       BOOST_REQUIRE( alice.membership_expiration == now() + fc::days(30) );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: normal account membership" );
 
@@ -511,8 +493,6 @@ BOOST_AUTO_TEST_CASE( account_member_request_operation_test )
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT MEMBER REQUEST" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal account member request" );
-
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
@@ -522,10 +502,10 @@ BOOST_AUTO_TEST_CASE( account_member_request_operation_test )
       request.account = "alice";
       request.business_account = INIT_ACCOUNT;
       request.message = "Hello";
-
       request.validate();
 
       signed_transaction tx;
+      
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( request );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -538,8 +518,6 @@ BOOST_AUTO_TEST_CASE( account_member_request_operation_test )
       BOOST_REQUIRE( alice_request.message == "Hello" );
       BOOST_REQUIRE( alice_request.expiration == now() + CONNECTION_REQUEST_DURATION );
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: normal account member request" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when request already exists" );
@@ -550,8 +528,6 @@ BOOST_AUTO_TEST_CASE( account_member_request_operation_test )
       tx.operations.push_back( request );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      validate_database();
    
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when request already exists" );
 
@@ -587,20 +563,13 @@ BOOST_AUTO_TEST_CASE( account_member_invite_operation_test )
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT MEMBER INVITE" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal account member invite" );
-
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
-      fund( account_name_type( "alice" ), asset( BLOCKCHAIN_PRECISION * 10000, SYMBOL_EQUITY ) );
-      fund_stake( account_name_type( "alice" ), asset( BLOCKCHAIN_PRECISION * 10000, SYMBOL_EQUITY ) );
-      fund( account_name_type( "bob" ), asset( BLOCKCHAIN_PRECISION * 10000, SYMBOL_EQUITY ) );
-      fund_stake( account_name_type( "bob" ), asset( BLOCKCHAIN_PRECISION * 10000, SYMBOL_EQUITY ) );
-
-      fund( account_name_type( "alice" ), asset( BLOCKCHAIN_PRECISION * 10000, SYMBOL_COIN ) );
-      fund_stake( account_name_type( "alice" ), asset( BLOCKCHAIN_PRECISION * 10000, SYMBOL_COIN ) );
-      fund( account_name_type( "bob" ), asset( BLOCKCHAIN_PRECISION * 10000, SYMBOL_COIN ) );
-      fund_stake( account_name_type( "bob" ), asset( BLOCKCHAIN_PRECISION * 10000, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( BLOCKCHAIN_PRECISION * 10000, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( BLOCKCHAIN_PRECISION * 10000, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( BLOCKCHAIN_PRECISION * 10000, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( BLOCKCHAIN_PRECISION * 10000, SYMBOL_COIN ) );
 
       private_key_type init_ceo_private_secure_key = get_private_key( INIT_CEO, "secure", INIT_ACCOUNT_PASSWORD );
       private_key_type init_ceo_private_active_key = get_private_key( INIT_CEO, "active", INIT_ACCOUNT_PASSWORD );
@@ -632,8 +601,6 @@ BOOST_AUTO_TEST_CASE( account_member_invite_operation_test )
       BOOST_REQUIRE( alice_invite.message == "Hello" );
       BOOST_REQUIRE( alice_invite.expiration == now() + CONNECTION_REQUEST_DURATION );
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: normal account member invite" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when invite already exists" );
@@ -644,8 +611,6 @@ BOOST_AUTO_TEST_CASE( account_member_invite_operation_test )
       tx.operations.push_back( invite );
       tx.sign( init_ceo_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      validate_database();
    
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when invite already exists" );
 
@@ -681,21 +646,18 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
       BOOST_TEST_MESSAGE( "├── Testing: BUSINESS ACCOUNT MANAGEMENT SEQUENCE" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal account accept invite" );
-
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
-      fund_stake( account_name_type( "alice" ), asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund_stake( account_name_type( "alice" ), asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "alice" ), asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "bob" ), asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "bob" ), asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( INIT_CEO, asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund_liquid( INIT_CEO, asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( INIT_CEO, asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       fund_stake( INIT_CEO, asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( INIT_CEO, asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       const account_business_object& bus_acc = db.get_account_business( INIT_ACCOUNT );
 
@@ -703,6 +665,27 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
       private_key_type init_ceo_private_active_key = get_private_key( INIT_CEO, "active", INIT_ACCOUNT_PASSWORD );
       public_key_type init_ceo_public_secure_key = get_public_key( INIT_CEO, "secure", INIT_ACCOUNT_PASSWORD );
       string init_account_private_business_wif = graphene::utilities::key_to_wif( get_private_key( INIT_ACCOUNT, "business", INIT_ACCOUNT_PASSWORD ) );
+
+      stake_asset_operation stake;
+
+      stake.signatory = INIT_CEO;
+      stake.from = INIT_CEO;
+      stake.to = INIT_CEO;
+      stake.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY );
+      stake.validate();
+
+      signed_transaction tx;
+
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( stake );
+      tx.sign( init_ceo_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      generate_blocks( now() + STAKE_WITHDRAW_INTERVAL - BLOCK_INTERVAL, true );    // enable equity to stake
+      generate_blocks( 10 );
 
       account_member_invite_operation invite;
 
@@ -713,8 +696,6 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
       invite.message = "Hello";
       invite.encrypted_business_key = get_encrypted_message( init_ceo_private_secure_key, init_ceo_public_secure_key, alice_public_secure_key, init_account_private_business_wif );
       invite.validate();
-
-      signed_transaction tx;
 
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( invite );
@@ -735,16 +716,14 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( bus_acc.is_member( account_name_type( "alice" ) ) );
+      tx.operations.clear();
+      tx.signatures.clear();
 
-      validate_database();
+      BOOST_REQUIRE( bus_acc.is_member( account_name_type( "alice" ) ) );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: normal account accept invite" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when invite does not exist" );
-
-      tx.operations.clear();
-      tx.signatures.clear();
 
       accept_invite.signatory = "dan";   // dan has not been invited
       accept_invite.account = "dan";
@@ -757,8 +736,6 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
    
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when invite does not exist" );
 
@@ -792,16 +769,14 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
       tx.sign( init_ceo_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
+      tx.operations.clear();
+      tx.signatures.clear();
+
       BOOST_REQUIRE( bus_acc.is_member( account_name_type( "bob" ) ) );
-      
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: normal account accept request" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when unauthorized request acceptance" );
-
-      tx.operations.clear();
-      tx.signatures.clear();
 
       request.signatory = "candice";
       request.account = "candice";
@@ -829,8 +804,6 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
    
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when unauthorized request acceptance" );
 
@@ -850,6 +823,9 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
       tx.sign( init_ceo_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
+      tx.operations.clear();
+      tx.signatures.clear();
+
       const account_officer_vote_object& off_vote = db.get_account_officer_vote( INIT_CEO, INIT_ACCOUNT, account_name_type( "alice" ) );
 
       BOOST_REQUIRE( off_vote.account == vote_officer.account );
@@ -857,14 +833,9 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
       BOOST_REQUIRE( off_vote.officer_account == vote_officer.officer_account );
       BOOST_REQUIRE( off_vote.vote_rank == 1 );
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: normal account vote officer" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when no equity voting power" );
-
-      tx.operations.clear();
-      tx.signatures.clear();
 
       vote_officer.signatory = "bob";
       vote_officer.account = "bob";
@@ -875,8 +846,6 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
    
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when no equity voting power" );
 
@@ -897,6 +866,9 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
       tx.sign( init_ceo_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
+      tx.operations.clear();
+      tx.signatures.clear();
+
       const account_executive_vote_object& exec_vote = db.get_account_executive_vote( INIT_CEO, INIT_ACCOUNT, account_name_type( "alice" ) );
 
       BOOST_REQUIRE( exec_vote.account == vote_executive.account );
@@ -905,14 +877,9 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
       BOOST_REQUIRE( exec_vote.vote_rank == 1 );
       BOOST_REQUIRE( exec_vote.role == executive_role_type::CHIEF_OPERATING_OFFICER );
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: normal account vote executive" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when not a business member" );
-
-      tx.operations.clear();
-      tx.signatures.clear();
 
       vote_executive.signatory = "bob";
       vote_executive.account = "bob";
@@ -921,14 +888,12 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
       tx.sign( bob_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      validate_database();
+      tx.operations.clear();
+      tx.signatures.clear();
    
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when not a business member" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: cancel executive vote" );
-
-      tx.operations.clear();
-      tx.signatures.clear();
 
       vote_executive.signatory = INIT_CEO;
       vote_executive.account = INIT_CEO;
@@ -939,17 +904,15 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
       tx.sign( init_ceo_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
+      tx.operations.clear();
+      tx.signatures.clear();
+
       const account_executive_vote_object* executive_vote_ptr = db.find_account_executive_vote( INIT_CEO, INIT_ACCOUNT, account_name_type( "alice" ) );
       BOOST_REQUIRE( executive_vote_ptr == nullptr );
-
-      validate_database();
    
       BOOST_TEST_MESSAGE( "│   ├── Passed: cancel executive vote" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: cancel officer vote" );
-
-      tx.operations.clear();
-      tx.signatures.clear();
       
       vote_officer.signatory = INIT_CEO;
       vote_officer.account = INIT_CEO;
@@ -968,15 +931,10 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
 
       const account_officer_vote_object* officer_vote_ptr = db.find_account_officer_vote( INIT_CEO, INIT_ACCOUNT, account_name_type( "alice" ) );
       BOOST_REQUIRE( officer_vote_ptr == nullptr );
-
-      validate_database();
    
       BOOST_TEST_MESSAGE( "│   ├── Passed: cancel officer vote" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when unauthorized remove member" );
-
-      tx.operations.clear();
-      tx.signatures.clear();
 
       BOOST_REQUIRE( bus_acc.is_member( account_name_type( "alice" ) ) );
 
@@ -994,8 +952,6 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
    
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when unauthorized remove member" );
 
@@ -1029,8 +985,6 @@ BOOST_AUTO_TEST_CASE( account_update_list_operation_test )
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT UPDATE LIST" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal account update list" );
-
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
@@ -1054,8 +1008,6 @@ BOOST_AUTO_TEST_CASE( account_update_list_operation_test )
       const account_permission_object& acc_perm = db.get_account_permissions( account_name_type( "alice" ) );
 
       BOOST_REQUIRE( acc_perm.blacklisted_accounts.find( account_name_type( "bob" ) ) != acc_perm.blacklisted_accounts.end() );    // Bob has been blacklisted
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: normal account update list" );
 
@@ -1089,33 +1041,19 @@ BOOST_AUTO_TEST_CASE( account_producer_vote_operation_test )
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT PRODUCER VOTE" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal account producer vote" );
-
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
    
       ACTORS( (alice)(bob)(candice)(dan)(elon)(sam) );
 
-      fund( account_name_type( "alice" ), asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
-      fund_stake( account_name_type( "alice" ), asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
-      fund( account_name_type( "bob" ), asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
-      fund_stake( account_name_type( "bob" ), asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
-      fund( account_name_type( "candice" ), asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
-      fund_stake( account_name_type( "candice" ), asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
+      producer_create( "alice", alice_private_owner_key );
 
-      private_key_type alice_producer_key = generate_private_key( "aliceproducercorrecthorsebatterystaple" );
+      fund_liquid( "bob", asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
 
-      producer_create(
-         account_name_type( "alice" ), 
-         alice_private_owner_key, 
-         alice_producer_key.get_public_key()
-      );
-
-      private_key_type candice_producer_key = generate_private_key( "candiceproducercorrecthorsebatterystaple" );
-
-      producer_create(
-         account_name_type( "candice" ), 
-         candice_private_owner_key, 
-         candice_producer_key.get_public_key()
-      );
+      fund_liquid( "candice", asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( BLOCKCHAIN_PRECISION * 1000, SYMBOL_COIN ) );
+      producer_create( "candice", candice_private_owner_key );
 
       const producer_object& producer_a = db.get_producer( account_name_type( "alice" ) );
       const producer_object& producer_c = db.get_producer( account_name_type( "candice" ) );
@@ -1147,8 +1085,6 @@ BOOST_AUTO_TEST_CASE( account_producer_vote_operation_test )
       BOOST_REQUIRE( bob.producer_vote_count == 1 );
       BOOST_REQUIRE( producer_a.vote_count == 1 );
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: normal account producer vote" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: additional producer vote" );
@@ -1175,16 +1111,12 @@ BOOST_AUTO_TEST_CASE( account_producer_vote_operation_test )
       BOOST_REQUIRE( producer_a.vote_count == 1 );
       BOOST_REQUIRE( producer_c.vote_count == 1 );
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: additional producer vote" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: cancel producer vote" );
 
       vote.approved = false;
 
-      tx.operations.clear();
-      tx.signatures.clear();
       tx.operations.push_back( vote );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -1193,11 +1125,10 @@ BOOST_AUTO_TEST_CASE( account_producer_vote_operation_test )
       tx.signatures.clear();
 
       const producer_vote_object* bob_candice_vote_ptr = db.find_producer_vote( account_name_type( "bob" ), account_name_type( "candice" ) );
+
       BOOST_REQUIRE( bob_candice_vote_ptr == nullptr );
       BOOST_REQUIRE( bob.producer_vote_count == 1 );
       BOOST_REQUIRE( producer_c.vote_count == 0 );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: cancel producer vote" );
 
@@ -1205,8 +1136,6 @@ BOOST_AUTO_TEST_CASE( account_producer_vote_operation_test )
 
       vote.producer = "alice";
 
-      tx.operations.clear();
-      tx.signatures.clear();
       tx.operations.push_back( vote );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -1215,11 +1144,10 @@ BOOST_AUTO_TEST_CASE( account_producer_vote_operation_test )
       tx.signatures.clear();
 
       const producer_vote_object* bob_alice_vote_ptr = db.find_producer_vote( account_name_type( "bob" ), account_name_type( "alice" ) );
+
       BOOST_REQUIRE( bob_alice_vote_ptr == nullptr );
       BOOST_REQUIRE( bob.producer_vote_count == 0 );
       BOOST_REQUIRE( producer_a.vote_count == 0 );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: cancel additional producer vote" );
 
@@ -1241,8 +1169,6 @@ BOOST_AUTO_TEST_CASE( account_producer_vote_operation_test )
       tx.sign( bob_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when voting for a non-existent account" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when voting for an account that is not a producer" );
@@ -1251,6 +1177,7 @@ BOOST_AUTO_TEST_CASE( account_producer_vote_operation_test )
       tx.signatures.clear();
 
       vote.producer = "elon";
+
       tx.operations.push_back( vote );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -1275,20 +1202,18 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
       const dynamic_global_property_object& props = db.get_dynamic_global_properties();
       price equity_price = props.current_median_equity_price;
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(sam)(dan)(elon) )
 
-      fund( account_name_type( "alice" ), asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( account_name_type( "alice" ), asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "bob" ), asset( 3000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( account_name_type( "bob" ), asset( 3000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "candice" ), asset( 3000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( account_name_type( "candice" ), asset( 3000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "sam" ), asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( account_name_type( "sam" ), asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "dan" ), asset( 7000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( account_name_type( "dan" ), asset( 7000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 3000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 3000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 3000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 3000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "sam", asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "sam", asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 7000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 7000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       account_update_proxy_operation proxy;
 
@@ -1310,8 +1235,6 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
       BOOST_REQUIRE( alice.proxy == PROXY_TO_SELF_ACCOUNT );
       BOOST_REQUIRE( *alice.proxied.begin() == "bob" );
       BOOST_REQUIRE( db.get_proxied_voting_power( alice, equity_price ) == db.get_voting_power( bob, equity_price ) );
-      
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: normal account update proxy" );
 
@@ -1333,8 +1256,6 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
       BOOST_REQUIRE( sam.proxy == PROXY_TO_SELF_ACCOUNT );
       BOOST_REQUIRE( *sam.proxied.begin() == "bob" );
       BOOST_REQUIRE( db.get_proxied_voting_power( sam, equity_price ) == db.get_voting_power( bob, equity_price ) );
-      
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: changing proxy" );
 
@@ -1365,8 +1286,6 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
       BOOST_REQUIRE( *dan.proxied.begin() == "sam" );
       BOOST_REQUIRE( dan.proxy == PROXY_TO_SELF_ACCOUNT );
       BOOST_REQUIRE( db.get_proxied_voting_power( dan, equity_price ) == db.get_voting_power( sam, equity_price ) + db.get_voting_power( bob, equity_price ) );
-      
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: adding a grandparent proxy" );
 
@@ -1395,7 +1314,6 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
       BOOST_REQUIRE( *dan.proxied.begin() == "sam" );
       BOOST_REQUIRE( dan.proxy == PROXY_TO_SELF_ACCOUNT );
       BOOST_REQUIRE( db.get_proxied_voting_power( dan, equity_price ) == db.get_voting_power( alice, equity_price ) + db.get_voting_power( bob, equity_price ) + db.get_voting_power( sam, equity_price ) );
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: adding a grandchild proxy" );
 
@@ -1420,6 +1338,7 @@ BOOST_AUTO_TEST_CASE( account_update_proxy_operation_test )
       BOOST_REQUIRE( *dan.proxied.begin() == "sam" );
       BOOST_REQUIRE( dan.proxy == PROXY_TO_SELF_ACCOUNT );
       BOOST_REQUIRE( db.get_proxied_voting_power( dan, equity_price ) == db.get_voting_power( alice, equity_price ) + db.get_voting_power( sam, equity_price ) );
+      
       validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: removing a grandchild proxy" );
@@ -1437,13 +1356,11 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT RECOVERY SEQUENCE" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal request account recovery" );
-
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       
       ACTORS( (alice)(candice)(sam)(dan) );
 
-      fund( account_name_type( "alice" ), asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( account_name_type( "alice" ), asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       account_create_operation acc_create;       // Creating account bob with alice as recovery account
 
@@ -1452,7 +1369,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       acc_create.referrer = "alice";
       acc_create.recovery_account = "alice";
       acc_create.reset_account = "alice";
-      acc_create.new_account_name = account_name_type( "bob" );
+      acc_create.new_account_name = "bob";
       acc_create.owner_auth = authority( 1, generate_private_key( "bob_owner" ).get_public_key(), 1 );
       acc_create.active_auth = authority( 1, generate_private_key( "bob_active" ).get_public_key(), 1 );
       acc_create.posting_auth = authority( 1, generate_private_key( "bob_posting" ).get_public_key(), 1 );
@@ -1637,7 +1554,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       const auto& new_request_idx = db.get_index< account_recovery_request_index >().indices();
       BOOST_REQUIRE( new_request_idx.begin() != new_request_idx.end() );    // Request has not yet expired
 
-      generate_block();
+      generate_block(10);
 
       BOOST_REQUIRE( new_request_idx.begin() == new_request_idx.end() );    // Request has now expired
 
@@ -1672,7 +1589,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       db.push_transaction( tx, 0 );
 
       generate_blocks( now() + ( OWNER_AUTH_RECOVERY_PERIOD - ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD ) );
-      generate_block();
+      generate_block(10);
 
       request.new_owner_authority = authority( 1, generate_private_key( "last key" ).get_public_key(), 1 );
 
@@ -1782,10 +1699,10 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       };
 
       // if either/both users do not exist, we shouldn't allow it
-      REQUIRE_THROW( change_recovery_account( account_name_type( "alice" ), "nobody" ), fc::exception );
-      REQUIRE_THROW( change_recovery_account( "haxer", sam.name ), fc::exception );
+      REQUIRE_THROW( change_recovery_account( "alice", "nobody" ), fc::exception );
+      REQUIRE_THROW( change_recovery_account( "haxer", "sam" ), fc::exception );
       REQUIRE_THROW( change_recovery_account( "haxer", "nobody" ), fc::exception );
-      change_recovery_account( account_name_type( "alice" ), sam.name );
+      change_recovery_account( "alice", "sam" );
 
       fc::ecc::private_key alice_priv1 = fc::ecc::private_key::regenerate( fc::sha256::hash( "alice_k1" ) );
       fc::ecc::private_key alice_priv2 = fc::ecc::private_key::regenerate( fc::sha256::hash( "alice_k2" ) );
@@ -1793,17 +1710,17 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
 
       generate_blocks( now() + OWNER_AUTH_RECOVERY_PERIOD - BLOCK_INTERVAL, true );
       // cannot request account recovery until recovery account is approved
-      REQUIRE_THROW( request_account_recovery( sam.name, sam_private_owner_key, account_name_type( "alice" ), alice_pub1 ), fc::exception );
+      REQUIRE_THROW( request_account_recovery( "sam", sam_private_owner_key, "alice", alice_pub1 ), fc::exception );
       generate_blocks(1);
       // cannot finish account recovery until requested
-      REQUIRE_THROW( recover_account( account_name_type( "alice" ), alice_priv1, alice_private_owner_key ), fc::exception );
+      REQUIRE_THROW( recover_account( "alice", alice_priv1, alice_private_owner_key ), fc::exception );
       // do the request
-      request_account_recovery( sam.name, sam_private_owner_key, account_name_type( "alice" ), alice_pub1 );
+      request_account_recovery( "sam", sam_private_owner_key, "alice", alice_pub1 );
       // can't recover with the current owner key
-      REQUIRE_THROW( recover_account( account_name_type( "alice" ), alice_priv1, alice_private_owner_key ), fc::exception );
+      REQUIRE_THROW( recover_account( "alice", alice_priv1, alice_private_owner_key ), fc::exception );
       // unless we change it!
-      change_owner( account_name_type( "alice" ), alice_private_owner_key, public_key_type( alice_priv2.get_public_key() ) );
-      recover_account( account_name_type( "alice" ), alice_priv1, alice_private_owner_key );
+      change_owner( "alice", alice_private_owner_key, public_key_type( alice_priv2.get_public_key() ) );
+      recover_account( "alice", alice_priv1, alice_private_owner_key );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: change_recovery_account_operation" );
 
@@ -1820,12 +1737,10 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal account reset" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(candice)(dan) );
 
-      fund( account_name_type( "alice" ), asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( account_name_type( "alice" ), asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       account_create_operation acc_create;
 
@@ -1864,7 +1779,7 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
 
       const account_object& bob_acc = db.get_account( account_name_type( "bob" ) );
 
-      generate_blocks( now() + ( fc::days( bob_acc.reset_account_delay_days ) - BLOCK_INTERVAL ) );
+      generate_blocks( now() + fc::days(7) - BLOCK_INTERVAL, true );
 
       reset_account_operation reset;
 
@@ -1875,14 +1790,14 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
       reset.validate();
 
       tx.operations.push_back( reset );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );   // reset not valid yet
 
-      generate_block();
+      generate_blocks( 10 );
 
-      db.push_transaction( tx, 0 );    // reset now valid
-
+      db.push_transaction( tx, database::skip_transaction_dupe_check );    // reset now valid
+      
       tx.operations.clear();
       tx.signatures.clear();
 
@@ -1971,14 +1886,15 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: decline voting rights request" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob) );
 
-      fund( account_name_type( "alice" ), asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "bob" ), asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( account_name_type( "alice" ), asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( account_name_type( "bob" ), asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_liquid( "bob", asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      generate_blocks( now() + fc::days(2), true );
 
       decline_voting_rights_operation decline;
 
@@ -1994,6 +1910,9 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
+      tx.operations.clear();
+      tx.signatures.clear();
+
       const auto& req_idx = db.get_index< decline_voting_rights_request_index >().indices().get< by_account >();
       auto req_itr = req_idx.find( account_name_type( "alice" ) );
 
@@ -2006,12 +1925,12 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
 
       generate_block();
 
-      tx.operations.clear();
-      tx.signatures.clear();
-
       tx.operations.push_back( decline );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure revoking voting rights with existing request" );
 
@@ -2026,6 +1945,9 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, database::skip_transaction_dupe_check );
 
+      tx.operations.clear();
+      tx.signatures.clear();
+
       req_itr = req_idx.find( account_name_type( "alice" ) );
       BOOST_REQUIRE( req_itr == req_idx.end() );    // Request is now removed
 
@@ -2035,12 +1957,12 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
 
       generate_block();
 
-      tx.operations.clear();
-      tx.signatures.clear();
-
       tx.operations.push_back( decline );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), fc::exception );   // Can't cancel again
+
+      tx.operations.clear();
+      tx.signatures.clear();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure cancelling a request that doesn't exist" );
 
@@ -2048,33 +1970,17 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
 
       decline.declined = true;
 
-      tx.operations.clear();
-      tx.signatures.clear();
-
       tx.operations.push_back( decline );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, database::skip_transaction_dupe_check );
 
-      generate_blocks( now() + DECLINE_VOTING_RIGHTS_DURATION - BLOCK_INTERVAL, true );
-
-      BOOST_REQUIRE( alice.can_vote );   // Alice can still vote
-
-      producer_create( account_name_type( "alice" ), alice_private_owner_key, alice_private_owner_key.get_public_key() );
-
-      account_producer_vote_operation producer_vote;
-
-      producer_vote.signatory = "alice";
-      producer_vote.account = "alice";
-      producer_vote.producer = "alice";
-      producer_vote.vote_rank = 1;
-      producer_vote.validate();
-
       tx.operations.clear();
       tx.signatures.clear();
 
-      tx.operations.push_back( producer_vote );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
+      BOOST_REQUIRE( alice.can_vote );   // Alice can still vote
+
+      producer_create( "alice", alice_private_owner_key );
+      producer_vote( "alice", alice_private_owner_key );
 
       comment_operation comment;
 
@@ -2086,10 +1992,18 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       comment.community = INIT_COMMUNITY;
       comment.title = "test";
       comment.body = "test";
+      comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
+      comment.url = "https://www.url.com";
       comment.language = "en";
       comment.interface = INIT_ACCOUNT;
       comment.tags.push_back( "test" );
       comment.json = "{ \"valid\": true }";
+      comment.latitude = 37.8136;
+      comment.longitude = 144.9631;
+      comment.comment_price = asset( 0, SYMBOL_COIN );
+      comment.reply_price = asset( 0, SYMBOL_COIN );
+      comment.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;
 
@@ -2108,15 +2022,15 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       vote.permlink = "test";
       vote.interface = INIT_ACCOUNT;
       vote.weight = PERCENT_100;
-
-      tx.operations.clear();
-      tx.signatures.clear();
+      vote.validate();
 
       tx.operations.push_back( comment );
       tx.operations.push_back( vote );
-
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
 
       const auto& comment_idx = db.get_index< comment_index >().indices().get< by_permlink >();
       const auto& comment_vote_idx = db.get_index< comment_vote_index >().indices().get< by_voter_comment >();
@@ -2130,15 +2044,14 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       BOOST_REQUIRE( comment_vote_itr->voter == "alice" );
       BOOST_REQUIRE( producer_vote_itr->account == "alice" );
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: check account can vote during waiting period" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: check account cannot vote after request is processed" );
 
-      generate_block();
+      generate_blocks( now() + DECLINE_VOTING_RIGHTS_DURATION - BLOCK_INTERVAL, true );
+      generate_blocks( 10 );
+
       BOOST_REQUIRE( !alice.can_vote );   // Alice can no longer vote
-      validate_database();
 
       req_itr = req_idx.find( account_name_type( "alice" ) );
       BOOST_REQUIRE( req_itr == req_idx.end() );   // Request no longer exists
@@ -2149,10 +2062,22 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      account_producer_vote_operation producer_vote;
+
+      producer_vote.signatory = "alice";
+      producer_vote.account = "alice";
+      producer_vote.producer = "alice";
+      producer_vote.vote_rank = 1;
+      producer_vote.approved = true;
+      producer_vote.validate();
+
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( producer_vote );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
 
       vote.weight = 0;
 
@@ -2178,14 +2103,12 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: create connection request" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
-      fund( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       string alice_private_connection_wif = graphene::utilities::key_to_wif( alice_private_connection_key );
       string bob_private_connection_wif = graphene::utilities::key_to_wif( bob_private_connection_key );
@@ -2307,8 +2230,6 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-      
-      validate_database();
 
       const account_verification_object alice_verification = db.get_account_verification( account_name_type( "alice" ), account_name_type( "bob" ) );
 
@@ -2436,8 +2357,6 @@ BOOST_AUTO_TEST_CASE( account_follow_operation_test )
       BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT FOLLOW" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal account follow" );
-
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       ACTORS( (alice)(bob) );
 
@@ -2570,8 +2489,6 @@ BOOST_AUTO_TEST_CASE( tag_follow_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal tag follow" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
       tag_follow_operation follow;
@@ -2639,70 +2556,91 @@ BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: normal activity reward claim process" );
 
-      fund( INIT_ACCOUNT, asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme)(kathryn) );
 
-      fund_stake( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund_stake( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( account_name_type( "alice" ), alice_private_owner_key, alice_public_owner_key );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "alice", alice_private_owner_key );
+      producer_vote( "alice", alice_private_owner_key );
 
-      fund_stake( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund_stake( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( account_name_type( "bob" ), bob_private_owner_key, bob_public_owner_key );
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "bob", bob_private_owner_key );
+      producer_vote( "bob", bob_private_owner_key );
 
-      fund_stake( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund_stake( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( account_name_type( "candice" ), candice_private_owner_key, candice_public_owner_key );
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "candice", candice_private_owner_key );
+      producer_vote( "candice", candice_private_owner_key );
 
-      fund_stake( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund_stake( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( account_name_type( "dan" ), dan_private_owner_key, dan_public_owner_key );
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "dan", dan_private_owner_key );
+      producer_vote( "dan", dan_private_owner_key );
 
-      fund_stake( account_name_type( "elon" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund_stake( account_name_type( "elon" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "elon" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( account_name_type( "elon" ), elon_private_owner_key, elon_public_owner_key );
+      fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "elon", elon_private_owner_key );
+      producer_vote( "elon", elon_private_owner_key );
 
-      fund_stake( account_name_type( "fred" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund_stake( account_name_type( "fred" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "fred" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( account_name_type( "fred" ), fred_private_owner_key, fred_public_owner_key );
+      fund_stake( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "fred", fred_private_owner_key );
+      producer_vote( "fred", fred_private_owner_key );
 
-      fund_stake( account_name_type( "george" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund_stake( account_name_type( "george" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "george" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( account_name_type( "george" ), george_private_owner_key, george_public_owner_key );
+      fund_stake( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "george", george_private_owner_key );
+      producer_vote( "george", george_private_owner_key );
 
-      fund_stake( account_name_type( "haz" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund_stake( account_name_type( "haz" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "haz" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( account_name_type( "haz" ), haz_private_owner_key, haz_public_owner_key );
+      fund_stake( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "haz", haz_private_owner_key );
+      producer_vote( "haz", haz_private_owner_key );
 
-      fund_stake( account_name_type( "isabelle" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund_stake( account_name_type( "isabelle" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "isabelle" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( account_name_type( "isabelle" ), isabelle_private_owner_key, isabelle_public_owner_key );
+      fund_stake( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "isabelle", isabelle_private_owner_key );
+      producer_vote( "isabelle", isabelle_private_owner_key );
 
-      fund_stake( account_name_type( "jayme" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund_stake( account_name_type( "jayme" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "jayme" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( account_name_type( "jayme" ), jayme_private_owner_key, jayme_public_owner_key );
+      fund_stake( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "jayme", jayme_private_owner_key );
+      producer_vote( "jayme", jayme_private_owner_key );
 
-      fund_stake( account_name_type( "kathryn" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund_stake( account_name_type( "kathryn" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "kathryn" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( account_name_type( "kathryn" ), kathryn_private_owner_key, kathryn_public_owner_key );
+      fund_stake( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "kathryn", kathryn_private_owner_key );
+      producer_vote( "kathryn", kathryn_private_owner_key );
+
+      signed_transaction tx;
+
+      stake_asset_operation stake;
+
+      stake.signatory = "alice";
+      stake.from = "alice";
+      stake.to = "alice";
+      stake.amount = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY );
+      stake.validate();
+
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( stake );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      generate_blocks( now() + STAKE_WITHDRAW_INTERVAL - BLOCK_INTERVAL, true );    // enable equity to stake
+      generate_blocks( 10 );
+
+      comment_create( "alice", alice_private_posting_key, "alicetestpost" );
+
+      const comment_object& bob_post = comment_create( "bob", bob_private_posting_key, "bobtestpost" );
+      const comment_object& candice_post = comment_create( "candice", candice_private_posting_key, "candicetestpost" );
 
       generate_block();
-
-      comment_create( account_name_type( "alice" ), alice_private_posting_key, string( "alicetestpost" ) );
-      const comment_object& bob_post = comment_create( account_name_type( "bob" ), bob_private_posting_key, string( "bobtestpost" ) );
-      const comment_object& candice_post = comment_create( account_name_type( "candice" ), candice_private_posting_key, string( "candicetestpost" ) );
 
       vote_operation vote;
 
@@ -2713,8 +2651,6 @@ BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
       vote.weight = PERCENT_100;
       vote.interface = INIT_ACCOUNT;
       vote.validate();
-
-      signed_transaction tx;
 
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( vote );
@@ -2767,6 +2703,8 @@ BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      generate_block();
 
       view_operation view;
 
@@ -2830,18 +2768,19 @@ BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      db.update_comment_metrics();     // calculate median values.
+      generate_blocks( now() + fc::hours(2), true );
 
       account_producer_vote_operation producer_vote;
 
       producer_vote.signatory = "alice";
       producer_vote.account = "alice";
       producer_vote.producer = "bob";
-      producer_vote.vote_rank = 1;
+      producer_vote.vote_rank = 2;
       producer_vote.approved = true;
       producer_vote.validate();
 
       tx.operations.push_back( producer_vote );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2849,7 +2788,7 @@ BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
       tx.signatures.clear();
 
       producer_vote.producer = "candice";
-      producer_vote.vote_rank = 2;
+      producer_vote.vote_rank = 3;
 
       tx.operations.push_back( producer_vote );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -2859,7 +2798,7 @@ BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
       tx.signatures.clear();
 
       producer_vote.producer = "dan";
-      producer_vote.vote_rank = 3;
+      producer_vote.vote_rank = 4;
 
       tx.operations.push_back( producer_vote );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -2945,8 +2884,8 @@ BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
       activity.signatory = "alice";
       activity.account = "alice";
       activity.permlink = "alicetestpost";
-      activity.vote_id = uint64_t( bob_post.id._id );
-      activity.view_id = uint64_t( candice_post.id._id );
+      activity.vote_id = bob_post.id._id;
+      activity.view_id = candice_post.id._id;
       activity.interface = INIT_ACCOUNT;
       activity.validate();
 
@@ -2954,17 +2893,16 @@ BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
+      tx.operations.clear();
+      tx.signatures.clear();
+
       const reward_fund_object& rfo = db.get_reward_fund( SYMBOL_COIN );
       
-      BOOST_REQUIRE( alice.last_activity_reward == now() );
       BOOST_REQUIRE( rfo.recent_activity_claims == uint128_t( BLOCKCHAIN_PRECISION.value ) );
       
       BOOST_TEST_MESSAGE( "│   ├── Passed: normal activity reward claim process" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when claiming again" );
-
-      tx.operations.clear();
-      tx.signatures.clear();
 
       tx.operations.push_back( activity );
       tx.sign( alice_private_posting_key, db.get_chain_id() );

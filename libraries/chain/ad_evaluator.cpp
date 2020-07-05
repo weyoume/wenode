@@ -70,9 +70,9 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
       case ad_format_type::STANDARD_FORMAT:
       {
          const comment_object& creative_obj = _db.get_comment( o.author, o.objective );
-         FC_ASSERT( creative_obj.root_comment == true,
+         FC_ASSERT( creative_obj.root,
             "Creative post must be a root comment" );
-         FC_ASSERT( creative_obj.deleted == false,
+         FC_ASSERT( !creative_obj.deleted,
             "Creative post has been deleted." );
          FC_ASSERT( !creative_obj.is_encrypted(),
             "Creative post must be public." );
@@ -83,9 +83,9 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
       case ad_format_type::PREMIUM_FORMAT:
       {
          const comment_object& creative_obj = _db.get_comment( o.author, o.objective );
-         FC_ASSERT( creative_obj.root_comment == true,
+         FC_ASSERT( creative_obj.root,
             "Creative premium post must be a root comment" );
-         FC_ASSERT( creative_obj.deleted == false,
+         FC_ASSERT( !creative_obj.deleted,
             "Creative premium post has been deleted." );
          FC_ASSERT( creative_obj.is_encrypted(),
             "Creative premium post must be encrypted." );
@@ -247,6 +247,7 @@ void ad_campaign_evaluator::do_apply( const ad_campaign_operation& o )
 
       if( campaign.budget.amount == 0 )
       {
+         ilog( "Removed: ${v}",("v",campaign));
          _db.remove( campaign );
       }
    }
@@ -335,6 +336,7 @@ void ad_inventory_evaluator::do_apply( const ad_inventory_operation& o )
 
       if( inventory.remaining == 0 )
       {
+         ilog( "Removed: ${v}",("v",inventory));
          _db.remove( inventory );
       }
    }
@@ -444,8 +446,6 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
       "Campaign has expired.");
    FC_ASSERT( inventory.active,
       "Inventory must be set to active to create a bid." );
-   FC_ASSERT( now < inventory.expiration,
-      "Inventory offering has expired.");
    FC_ASSERT( inventory.remaining >= o.requested,
       "Bid request exceeds the inventory remaining from the provider." );
    FC_ASSERT( o.bid_price >= inventory.min_price,
@@ -500,14 +500,14 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
    }
 
    const auto& audience_idx = _db.get_index< ad_audience_index >().indices().get< by_audience_id >();
-   auto audience_itr = audience_idx.find( boost::make_tuple( o.bidder, o.bid_id ) );
+   auto audience_itr = audience_idx.find( boost::make_tuple( o.bidder, o.audience_id ) );
    
    if( audience_itr == audience_idx.end() )    // Combined Ad audience for this bid_id does not exist, creating new one.
    {
       _db.create< ad_audience_object >( [&]( ad_audience_object& aao )
       {
          aao.account = o.bidder;
-         from_string( aao.audience_id, o.bid_id );     // New audience ID is bid_id of the bid.
+         from_string( aao.audience_id, o.audience_id );     // New audience ID is bid_id of the bid.
          from_string( aao.json, o.json );
          aao.audience = combined_audience;
          aao.created = now;
@@ -517,6 +517,7 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
    else    // Bid audience already exists for this bid id, editing bid.
    {
       const ad_audience_object& audience = *audience_itr;
+
       _db.modify( audience, [&]( ad_audience_object& aao )
       {
          from_string( aao.json, o.json );
@@ -542,6 +543,7 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
       {
          abo.bidder = o.bidder;
          from_string( abo.bid_id, o.bid_id );
+         from_string( abo.audience_id, o.audience_id );
          abo.account = o.account;
          from_string( abo.campaign_id, o.campaign_id );
          abo.author = o.author;
@@ -567,6 +569,10 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
    else  
    {
       const ad_bid_object& bid = *bid_itr;
+
+      FC_ASSERT( o.audience_id == to_string( bid.audience_id ),
+         "Audience ID cannot be changed on existing bid." );
+
       uint32_t prev_requested = bid.requested;
       uint32_t prev_remaining = bid.remaining;
       asset prev_price = bid.bid_price;
@@ -596,7 +602,7 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
             abo.expiration = o.expiration;
          }); 
 
-         if( delta_total_bids != asset( 0, inventory_asset ) )
+         if( delta_total_bids.amount != 0 )
          {
             _db.modify( campaign, [&]( ad_campaign_object& aco )
             {
@@ -613,6 +619,7 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
             aco.total_bids -= bid_total_remaining;
          });
 
+         ilog( "Removed: ${v}",("v",bid));
          _db.remove( bid );
       }  
    }

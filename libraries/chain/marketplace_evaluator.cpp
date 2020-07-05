@@ -168,6 +168,8 @@ void product_sale_evaluator::do_apply( const product_sale_operation& o )
          p.active = o.active;
       });
    }
+
+   ilog( "Account: ${a} created product sale id: ${id}",("a",o.account)("id",o.product_id));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -321,6 +323,8 @@ void product_purchase_evaluator::do_apply( const product_purchase_operation& o )
          esc.last_updated = now;
       });
    }
+
+   ilog( "Buyer: ${a} purchased product id: ${id}",("a",o.buyer)("id",o.product_id));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -500,6 +504,9 @@ void product_auction_sale_evaluator::do_apply( const product_auction_sale_operat
          });
       }
    }
+
+   ilog( "Account: ${a} created product auction id: ${id}",("a",o.account)("id",o.auction_id));
+
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -560,8 +567,8 @@ void product_auction_bid_evaluator::do_apply( const product_auction_bid_operatio
          {
             FC_ASSERT( o.public_bid_amount >= auction.reserve_bid.amount,
                "Bid amount must be greater than or equal to the auction reserve price." );
-            FC_ASSERT( o.public_bid_amount >= auction.maximum_bid.amount,
-               "Bid amount must be greater than or equal to the auction reserve price." );
+            FC_ASSERT( o.public_bid_amount <= auction.maximum_bid.amount,
+               "Bid amount must be less than or equal to the maximum bid price." );
             FC_ASSERT( o.bid_price_commitment == commitment_type(),
                "Open bid must not have a bid price commitment." );
             FC_ASSERT( o.blinding_factor == blind_factor_type(),
@@ -638,7 +645,6 @@ void product_auction_bid_evaluator::do_apply( const product_auction_bid_operatio
                "Bid amount must be greater than or equal to the auction reserve price." );
             FC_ASSERT( o.public_bid_amount <= auction.maximum_bid.amount,
                "Bid amount must be less than or equal to the auction maximum price." );
-            
             bid_price = o.public_bid_amount;
          }
          break;
@@ -658,7 +664,7 @@ void product_auction_bid_evaluator::do_apply( const product_auction_bid_operatio
                   "Cannot change blinding factor after final bid time." );
                FC_ASSERT( o.public_bid_amount >= auction.reserve_bid.amount,
                   "Bid amount must be greater than or equal to the auction reserve price." );
-               FC_ASSERT( o.public_bid_amount >= auction.maximum_bid.amount,
+               FC_ASSERT( o.public_bid_amount <= auction.maximum_bid.amount,
                   "Bid amount must be less than or equal to the auction maximum price." );
 
                commitment_type public_c = fc::ecc::blind( o.blinding_factor, o.public_bid_amount.value );
@@ -666,7 +672,6 @@ void product_auction_bid_evaluator::do_apply( const product_auction_bid_operatio
                FC_ASSERT( fc::ecc::verify_sum( { public_c }, { o.bid_price_commitment }, 0 ), 
                   "Public bid amount ${a} does not validate with bid price commitment.", 
                   ("a", o.public_bid_amount) );
-
                bid_price = o.public_bid_amount;
             }
          }
@@ -697,6 +702,8 @@ void product_auction_bid_evaluator::do_apply( const product_auction_bid_operatio
          p.last_updated = now;
       });
    }
+
+   ilog( "Buyer: ${a} made purchase bid on product auction id: ${id}",("a",o.buyer)("id",o.auction_id));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -781,6 +788,8 @@ void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
          esc.last_updated = now;
       });
    }
+
+   ilog( "Account: ${a} created escrow transfer id: ${id}",("a",o.account)("id",o.escrow_id));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -808,6 +817,8 @@ void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
    const mediator_object& mediator_obj = _db.get_mediator( o.mediator );
    FC_ASSERT( mediator_obj.active, 
       "Mediator: ${s} must be active to be assigned to escrow transfer.",("s", o.mediator) );
+   FC_ASSERT( o.account != escrow.to || o.mediator != o.account, 
+      "Mediator: ${s} selection must not be the fund recipient of escrow transfer.",("s", o.mediator) );
 
    asset liquid = _db.get_liquid_balance( o.account, escrow.payment.symbol );
    // Escrow bond is a percentage paid as security in the event of dispute, and can be forfeited.
@@ -883,6 +894,8 @@ void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
    {
       _db.release_escrow( escrow );
    }
+
+   ilog( "Account: ${a} approved escrow: \n ${e} \n",("a",o.account)("e",escrow));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -915,6 +928,8 @@ void escrow_dispute_evaluator::do_apply( const escrow_dispute_operation& o )
       "The escrow is already under dispute." );
 
    _db.dispute_escrow( escrow );
+
+   ilog( "Account: ${a} disputed escrow id: ${id}",("a",o.account)("id",o.escrow_id));
 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -984,6 +999,8 @@ void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
 
       _db.release_escrow( escrow );
    }
+
+   ilog( "Account: ${a} released escrow: \n ${e} \n",("a",o.account)("e",escrow));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 } } // node::chain

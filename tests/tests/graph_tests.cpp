@@ -32,15 +32,13 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Successful graph node property creation" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob) );
 
-      fund_stake( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "bob", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "bob", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       signed_transaction tx;
 
@@ -187,7 +185,7 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
       node.validate();
 
       tx.operations.push_back( node );
-      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -296,7 +294,7 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const graph_edge_object& alice_family = db.get_graph_edge( account_name_type( "alice" ), string( "772a9705-091a-43f6-841c-720d0e0fb9f3" ) );
+      const graph_edge_object& alice_family = db.get_graph_edge( account_name_type( "alice" ), string( "6a9a6cd7-8fe2-4135-9758-92b0378b7dc6" ) );
 
       BOOST_REQUIRE( edge.account == alice_family.account );
 

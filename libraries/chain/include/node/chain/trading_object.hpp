@@ -321,7 +321,10 @@ namespace node { namespace chain {
          pair< asset_symbol_type, asset_symbol_type > get_market()const
          {
             auto tmp = std::make_pair( call_price.base.symbol, call_price.quote.symbol );
-            if( tmp.first > tmp.second ) std::swap( tmp.first, tmp.second );
+            if( tmp.first > tmp.second ) 
+            {
+               std::swap( tmp.first, tmp.second );
+            }
             return tmp;
          }
 
@@ -378,6 +381,11 @@ namespace node { namespace chain {
             const optional<price>& maintenance_collateralization = optional<price>()
          )const 
          { try {
+
+            ilog( "Get max debt to cover - match price: ${mp} feed price: ${fp} mcr: ${mcr} mc: ${mc}",
+               ("mp",match_price)("fp",feed_price)("mcr",maintenance_collateral_ratio)("mc",maintenance_collateralization) );
+
+            share_type result;
          
             if( feed_price.base.symbol != call_price.base.symbol )
             {
@@ -393,12 +401,12 @@ namespace node { namespace chain {
             
             if( collateralization() > *maintenance_collateralization )
             {
-               return 0;
+               result = 0;
             }
                
             if( !target_collateral_ratio.valid() ) // target cr is not set
             {
-               return debt.amount;
+               result = debt.amount;
             }
                
             uint16_t tcr = std::max( *target_collateral_ratio, maintenance_collateral_ratio );    // use mcr if target cr is too small
@@ -421,19 +429,19 @@ namespace node { namespace chain {
 
             if( numerator < 0 ) 
             {
-               return 0;
+               result = 0;
             }
 
             int256_t denominator = fp_coll_amt * mp_debt_amt * tcr - fp_debt_amt * mp_coll_amt * COLLATERAL_RATIO_DENOM;
             if( denominator <= 0 )
             {
-               return debt.amount;     // black swan
+               result = debt.amount;     // black swan
             } 
 
             int256_t to_cover_i256 = ( numerator / denominator );
             if( to_cover_i256 >= debt.amount.value )
             { 
-               return debt.amount;
+               result = debt.amount;
             }
 
             share_type to_cover_amt = static_cast< int64_t >( to_cover_i256 );
@@ -443,7 +451,7 @@ namespace node { namespace chain {
 
             if( to_cover.amount >= debt.amount || to_pay.amount >= collateral.amount )
             {
-               return debt.amount;
+               result = debt.amount;
             }
 
             FC_ASSERT( to_pay.amount < collateral.amount && to_cover.amount < debt.amount );
@@ -451,7 +459,7 @@ namespace node { namespace chain {
 
             if( new_collateralization > target_collateralization )
             {
-               return to_cover.amount;
+               result = to_cover.amount;
             }
 
             // to_cover is too small due to rounding. deal with the fraction
@@ -482,7 +490,7 @@ namespace node { namespace chain {
 
             if( max_to_pay <= to_pay || max_to_cover <= to_cover ) // strange data. should skip binary search and go on, but doesn't help much
             { 
-               return debt.amount; 
+               result = debt.amount; 
             }
 
             FC_ASSERT( max_to_pay > to_pay && max_to_cover > to_cover );
@@ -555,7 +563,7 @@ namespace node { namespace chain {
                // check the mean
                if( to_pay.amount == max_to_pay.amount && ( max_is_ok || to_pay.amount == collateral.amount ) )
                {
-                  return to_cover.amount;
+                  result = to_cover.amount;
                }
 
                FC_ASSERT( to_pay.amount < collateral.amount && to_cover.amount < debt.amount );
@@ -567,7 +575,7 @@ namespace node { namespace chain {
                {
                   if( to_pay.amount == max_to_pay.amount )
                   {
-                     return to_cover.amount;
+                     result = to_cover.amount;
                   }  
                   max_to_pay.amount = to_pay.amount;
                   max_to_cover.amount = to_cover.amount;
@@ -592,17 +600,17 @@ namespace node { namespace chain {
                   to_pay.amount += d2;
                   if( to_pay.amount >= collateral.amount )
                   {
-                     return debt.amount;
+                     result = debt.amount;
                   }
                   to_cover = to_pay * match_price;
                   if( to_cover.amount >= debt.amount )
                   {
-                     return debt.amount;
+                     result = debt.amount;
                   }
                   to_pay = to_cover.multiply_and_round_up( match_price ); // stabilization
                   if( to_pay.amount >= collateral.amount )
                   {
-                     return debt.amount;
+                     result = debt.amount;
                   }
                }
                else // step of collateral is smaller or equal
@@ -610,17 +618,17 @@ namespace node { namespace chain {
                   to_cover.amount += d2;
                   if( to_cover.amount >= debt.amount )
                   {
-                     return debt.amount;
+                     result = debt.amount;
                   }
                   to_pay = to_cover.multiply_and_round_up( match_price );
                   if( to_pay.amount >= collateral.amount )
                   {
-                     return debt.amount;
+                     result = debt.amount;
                   }
                   to_cover = to_pay * match_price; // stabilization
                   if( to_cover.amount >= debt.amount )
                   {
-                     return debt.amount;
+                     result = debt.amount;
                   }
                }
 
@@ -629,9 +637,14 @@ namespace node { namespace chain {
 
                if( new_collateralization > target_collateralization )
                {
-                  return to_cover.amount;
+                  result = to_cover.amount;
                }
             }
+
+            ilog( "Max debt to cover: ${r}",
+               ("r",result));
+
+            return result;
       } FC_CAPTURE_AND_RETHROW() }
    };
 

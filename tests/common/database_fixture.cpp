@@ -59,6 +59,11 @@ clean_database_fixture::clean_database_fixture()
 
       db.set_hardfork( NUM_HARDFORKS );
 
+      generate_liquid( INIT_ACCOUNT, asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      generate_liquid( INIT_ACCOUNT, asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+      generate_liquid( INIT_ACCOUNT, asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      generate_liquid( INIT_ACCOUNT, asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+
       //ahplugin->plugin_startup();
 
       validate_database();
@@ -109,7 +114,6 @@ void clean_database_fixture::resize_shared_mem( uint64_t size )
    generate_block();
    db.set_hardfork( NUM_HARDFORKS );
    generate_block();
-
    
    validate_database();
 }
@@ -359,8 +363,7 @@ const asset_object& database_fixture::asset_create(
 
 const producer_object& database_fixture::producer_create(
    const string& owner,
-   const private_key_type& owner_key,
-   const public_key_type& signing_key )
+   const private_key_type& owner_key )
 {
    try
    {
@@ -371,7 +374,7 @@ const producer_object& database_fixture::producer_create(
       op.details = "details";
       op.url = "https://www.url.com";
       op.json = "{ \"valid\": true }";
-      op.block_signing_key = string( signing_key );
+      op.block_signing_key = string( node::protocol::get_public_key( owner, "producer", INIT_ACCOUNT_PASSWORD ) );
       op.latitude = 37.8136;
       op.longitude = 144.9631;
       op.active = true;
@@ -476,48 +479,102 @@ const comment_object& database_fixture::comment_create(
    FC_CAPTURE_AND_RETHROW( (author)(permlink) )
 }
 
-void database_fixture::fund(
+
+void database_fixture::generate_liquid(
    const string& account_name,
    const asset& amount )
 {
-   try
-   {
-      db.adjust_liquid_balance( account_name, amount );
-   }
-   FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
+   db.adjust_liquid_balance( account_name, amount );
+}
+
+void database_fixture::generate_stake(
+   const string& account_name,
+   const asset& amount )
+{
+   db.adjust_staked_balance( account_name, amount );
+}
+
+void database_fixture::generate_savings(
+   const string& account_name,
+   const asset& amount )
+{
+   db.adjust_savings_balance( account_name, amount );
+}
+
+void database_fixture::generate_reward(
+   const string& account_name,
+   const asset& amount )
+{
+   db.adjust_reward_balance( account_name, amount );
+}
+
+
+void database_fixture::fund_liquid(
+   const string& account_name,
+   const asset& amount )
+{
+   transfer_operation op;
+
+   op.signatory = INIT_ACCOUNT;
+   op.from = INIT_ACCOUNT;
+   op.to = account_name;
+   op.amount = amount;
+   op.memo = "Funding";
+   op.validate();
+   
+   trx.operations.push_back( op );
+   
+   trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+   trx.sign( init_account_private_active_key, db.get_chain_id() );
+   trx.validate();
+   db.push_transaction( trx, 0 );
+   trx.operations.clear();
+   trx.signatures.clear();
 }
 
 void database_fixture::fund_stake(
    const string& account_name,
    const asset& amount )
 {
-   try
-   {
-      db.adjust_staked_balance( account_name, amount );
-   }
-   FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
+   stake_asset_operation op;
+
+   op.signatory = INIT_ACCOUNT;
+   op.from = INIT_ACCOUNT;
+   op.to = account_name;
+   op.amount = amount;
+   op.validate();
+   
+   trx.operations.push_back( op );
+   
+   trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+   trx.sign( init_account_private_active_key, db.get_chain_id() );
+   trx.validate();
+   db.push_transaction( trx, 0 );
+   trx.operations.clear();
+   trx.signatures.clear();
 }
 
 void database_fixture::fund_savings(
    const string& account_name,
    const asset& amount )
 {
-   try
-   {
-      db.adjust_savings_balance( account_name, amount );
-   }
-   FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
-}
+   transfer_to_savings_operation op;
 
-void database_fixture::fund_reward(
-   const string& account_name,
-   const asset& amount )
-{
-   try
-   {
-      db.adjust_reward_balance( account_name, amount );
-   }
-   FC_CAPTURE_AND_RETHROW( (account_name)(amount) )
+   op.signatory = INIT_ACCOUNT;
+   op.from = INIT_ACCOUNT;
+   op.to = account_name;
+   op.amount = amount;
+   op.memo = "Funding";
+   op.validate();
+   
+   trx.operations.push_back( op );
+   
+   trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+   trx.sign( init_account_private_active_key, db.get_chain_id() );
+   trx.validate();
+   db.push_transaction( trx, 0 );
+   trx.operations.clear();
+   trx.signatures.clear();
 }
 
 void database_fixture::proxy( const string& account, const string& proxy )

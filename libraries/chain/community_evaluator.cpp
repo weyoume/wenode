@@ -82,7 +82,7 @@ void community_create_evaluator::do_apply( const community_create_operation& o )
    const community_object& new_community = _db.create< community_object >( [&]( community_object& co )
    {
       co.name = o.name;
-      co.founder = founder.name;
+      co.founder = o.founder;
       co.community_privacy = privacy_type;
       co.community_public_key = public_key_type( o.community_public_key );
       from_string( co.json, o.json );
@@ -103,17 +103,19 @@ void community_create_evaluator::do_apply( const community_create_operation& o )
    const community_member_object& new_community_member = _db.create< community_member_object >( [&]( community_member_object& cmo )
    {
       cmo.name = o.name;
-      cmo.founder = founder.name;
-      cmo.subscribers.insert( founder.name );
-      cmo.members.insert( founder.name );
-      cmo.moderators.insert( founder.name );
-      cmo.administrators.insert( founder.name );
+      cmo.founder = o.founder;
+      cmo.subscribers.insert( o.founder );
+      cmo.members.insert( o.founder );
+      cmo.moderators.insert( o.founder );
+      cmo.administrators.insert( o.founder );
+      cmo.community_privacy = privacy_type;
+      cmo.last_updated = now;
    });
 
    _db.create< community_moderator_vote_object >( [&]( community_moderator_vote_object& v )
    {
-      v.moderator = founder.name;
-      v.account = founder.name;
+      v.moderator = o.founder;
+      v.account = o.founder;
       v.community = o.name;
       v.vote_rank = 1;
    });
@@ -125,7 +127,8 @@ void community_create_evaluator::do_apply( const community_create_operation& o )
 
    _db.update_community_moderators( new_community_member );
 
-   ilog( "Founder: ${f} created new Community: \n ${c} \n",("f", o.founder)("c", new_community) );
+   ilog( "Founder: ${f} created new Community with privacy type: ${t}: \n ${c} \n ${m} \n",
+      ("f", o.founder)("t",privacy_type)("c", new_community)("m",new_community_member) );
 
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
@@ -303,6 +306,7 @@ void community_vote_mod_evaluator::do_apply( const community_vote_mod_operation&
          
          if( account_community_moderator_itr != account_community_moderator_idx.end() )
          {
+            ilog( "Removed: ${v}",("v",*account_community_moderator_itr));
             _db.remove( *account_community_moderator_itr );
          }
 
@@ -313,10 +317,12 @@ void community_vote_mod_evaluator::do_apply( const community_vote_mod_operation&
    {
       if( account_community_moderator_itr != account_community_moderator_idx.end() )
       {
+         ilog( "Removed: ${v}",("v",*account_community_moderator_itr));
          _db.remove( *account_community_moderator_itr );
       }
       else if( account_community_rank_itr != account_community_rank_idx.end() )
       {
+         ilog( "Removed: ${v}",("v",*account_community_rank_itr));
          _db.remove( *account_community_rank_itr );
       }
       _db.update_community_moderator_votes( voter, o.community );
@@ -342,7 +348,7 @@ void community_add_mod_evaluator::do_apply( const community_add_mod_operation& o
       FC_ASSERT( b.is_authorized_governance( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const account_object& account = _db.get_account( o.account );
+
    const account_object& moderator = _db.get_account( o.moderator );
    const community_object& community = _db.get_community( o.community );
    FC_ASSERT( community.active, 
@@ -355,7 +361,7 @@ void community_add_mod_evaluator::do_apply( const community_add_mod_operation& o
    
    if( o.added || o.account != o.moderator )     // Account can remove itself from community administrators.
    {
-      FC_ASSERT( community_member.is_administrator( account.name ), 
+      FC_ASSERT( community_member.is_administrator( o.account ), 
          "Account: ${a} is not an administrator of the Community: ${b} and cannot add or remove moderators.", ("a", o.account)("b", o.community));
    }
 
@@ -410,7 +416,7 @@ void community_add_admin_evaluator::do_apply( const community_add_admin_operatio
       FC_ASSERT( b.is_authorized_governance( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const account_object& account = _db.get_account( o.account );
+
    const account_object& administrator = _db.get_account( o.admin ); 
    const community_object& community = _db.get_community( o.community );
    FC_ASSERT( community.active, 
@@ -423,9 +429,9 @@ void community_add_admin_evaluator::do_apply( const community_add_admin_operatio
    FC_ASSERT( community_member.is_moderator( administrator.name ), 
       "Account: ${a} must be a moderator before promotion to administrator of Community: ${b}.", ("a", o.admin)("b", o.community));
 
-   if( o.added || account.name != administrator.name )     // Account can remove itself from community administrators.  
+   if( o.added || o.account != administrator.name )     // Account can remove itself from community administrators.  
    {
-      FC_ASSERT( community_member.founder == account.name, 
+      FC_ASSERT( community_member.founder == o.account, 
          "Only the Founder: ${f} of the community can add or remove administrators.", ("f", community_member.founder));
    }
    if(o.added)
@@ -477,14 +483,13 @@ void community_transfer_ownership_evaluator::do_apply( const community_transfer_
    const community_object& community = _db.get_community( o.community );
    FC_ASSERT( community.active, 
       "Community: ${s} must be active for ownership transfer.",("s", o.community) );
-   const account_object& account = _db.get_account( o.account );
    const account_object& new_founder = _db.get_account( o.new_founder );
    FC_ASSERT( new_founder.active, 
       "Account: ${s} must be active to become the new community founder.",("s", o.new_founder) );
    time_point now = _db.head_block_time();
    const community_member_object& community_member = _db.get_community_member( o.community );
 
-   FC_ASSERT( community.founder == account.name && community_member.founder == account.name,
+   FC_ASSERT( community.founder == o.account && community_member.founder == o.account,
       "Only the founder of the community can transfer ownership." );
    FC_ASSERT( now > community.last_updated + MIN_COMMUNITY_UPDATE_INTERVAL, 
       "Communities can only be updated once per 10 minutes." );
@@ -526,14 +531,13 @@ void community_join_request_evaluator::do_apply( const community_join_request_op
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const account_object& account = _db.get_account( o.account );
    const community_object& community = _db.get_community( o.community );
    FC_ASSERT( community.active,
       "Community: ${s} must be active for join requests.",("s", o.community) );
    const community_member_object& community_member = _db.get_community_member( o.community );
-   FC_ASSERT( !community_member.is_member( account.name ),
+   FC_ASSERT( !community_member.is_member( o.account ),
       "Account: ${a} is already a member of the community: ${b}.", ("a", o.account)("b", o.community));
-   FC_ASSERT( community_member.is_authorized_request( account.name ),
+   FC_ASSERT( community_member.is_authorized_request( o.account ),
       "Account: ${a} is not authorised to request to join the community: ${b}.", ("a", o.account)("b", o.community));
    time_point now = _db.head_block_time();
    const auto& req_idx = _db.get_index< community_join_request_index >().indices().get< by_account_community >();
@@ -546,7 +550,7 @@ void community_join_request_evaluator::do_apply( const community_join_request_op
 
       _db.create< community_join_request_object >( [&]( community_join_request_object& bjro )
       {
-         bjro.account = account.name;
+         bjro.account = o.account;
          bjro.community = community.name;
          from_string( bjro.message, o.message );
          bjro.expiration = now + CONNECTION_REQUEST_DURATION;
@@ -556,6 +560,7 @@ void community_join_request_evaluator::do_apply( const community_join_request_op
    {
       FC_ASSERT( !o.requested,
          "Request already exists, Requested should be set to false to remove existing request." );
+      ilog( "Removed: ${v}",("v",*itr));
       _db.remove( *itr );
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
@@ -576,7 +581,6 @@ void community_join_invite_evaluator::do_apply( const community_join_invite_oper
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const account_object& account = _db.get_account( o.account );
    const account_object& member = _db.get_account( o.member );
    const community_object& community = _db.get_community( o.community );
    FC_ASSERT( community.active, 
@@ -584,7 +588,7 @@ void community_join_invite_evaluator::do_apply( const community_join_invite_oper
    const community_member_object& community_member = _db.get_community_member( o.community );
    FC_ASSERT( !community_member.is_member( member.name ), 
       "Account: ${a} is already a member of the community: ${b}.", ("a", o.member)("b", o.community));
-   FC_ASSERT( community_member.is_authorized_invite( account.name ),
+   FC_ASSERT( community_member.is_authorized_invite( o.account ),
       "Account: ${a} is not authorised to send community: ${b} join invitations.", ("a", o.account)("b", o.community));
 
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.member );
@@ -606,7 +610,7 @@ void community_join_invite_evaluator::do_apply( const community_join_invite_oper
 
       _db.create< community_join_invite_object >( [&]( community_join_invite_object& bjio )
       {
-         bjio.account = account.name;
+         bjio.account = o.account;
          bjio.member = member.name;
          bjio.community = community.name;
          from_string( bjio.message, o.message );
@@ -615,7 +619,7 @@ void community_join_invite_evaluator::do_apply( const community_join_invite_oper
 
       _db.create< community_member_key_object >( [&]( community_member_key_object& bmko )
       {
-         bmko.account = account.name;
+         bmko.account = o.account;
          bmko.member = member.name;
          bmko.community = o.community;
          bmko.encrypted_community_key = encrypted_keypair_type( member.secure_public_key, community.community_public_key, o.encrypted_community_key );
@@ -626,8 +630,10 @@ void community_join_invite_evaluator::do_apply( const community_join_invite_oper
       FC_ASSERT( !o.invited,
          "Invite already exists, Invited should be set to false to remove existing Invitation." );
       
+      ilog( "Removed: ${v}",("v",*inv_itr));
       _db.remove( *inv_itr );
       auto key_itr = key_idx.find( std::make_tuple( o.member, o.community ) );
+      ilog( "Removed: ${v}",("v",*key_itr));
       _db.remove( *key_itr );
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
@@ -648,7 +654,7 @@ void community_join_accept_evaluator::do_apply( const community_join_accept_oper
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const account_object& account = _db.get_account( o.account ); 
+
    const account_object& member = _db.get_account( o.member );
    const community_object& community = _db.get_community( o.community );
    FC_ASSERT( community.active, 
@@ -658,7 +664,7 @@ void community_join_accept_evaluator::do_apply( const community_join_accept_oper
 
    FC_ASSERT( !community_member.is_member( member.name ),
       "Account: ${a} is already a member of the community: ${b}.", ("a", o.member)("b", o.community));
-   FC_ASSERT( community_member.is_authorized_invite( account.name ), 
+   FC_ASSERT( community_member.is_authorized_invite( o.account ), 
       "Account: ${a} is not authorized to accept join requests to the community: ${b}.", ("a", o.account)("b", o.community));    // Ensure Account is a moderator.
 
    const auto& req_idx = _db.get_index< community_join_request_index >().indices().get< by_account_community >();
@@ -677,7 +683,7 @@ void community_join_accept_evaluator::do_apply( const community_join_accept_oper
 
       _db.create< community_member_key_object >( [&]( community_member_key_object& bmko )
       {
-         bmko.account = account.name;
+         bmko.account = o.account;
          bmko.member = member.name;
          bmko.community = o.community;
          bmko.encrypted_community_key = encrypted_keypair_type( member.secure_public_key, community.community_public_key, o.encrypted_community_key );
@@ -704,14 +710,13 @@ void community_invite_accept_evaluator::do_apply( const community_invite_accept_
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   const account_object& account = _db.get_account( o.account );
    const community_object& community = _db.get_community( o.community );
    FC_ASSERT( community.active, 
       "Community: ${s} must be active for invite acceptance.",("s", o.community) );
    const community_member_object& community_member = _db.get_community_member( o.community );
    time_point now = _db.head_block_time();
 
-   FC_ASSERT( !community_member.is_member( account.name ), 
+   FC_ASSERT( !community_member.is_member( o.account ), 
       "Account: ${a} is already a member of the community: ${b}.", ("a", o.account)("b", o.community));
    const auto& inv_idx = _db.get_index< community_join_invite_index >().indices().get< by_member_community >();
    auto itr = inv_idx.find( std::make_tuple( o.account, o.community ) );
@@ -729,15 +734,16 @@ void community_invite_accept_evaluator::do_apply( const community_invite_accept_
    {
       _db.modify( community_member, [&]( community_member_object& cmo )
       {
-         cmo.members.insert( account.name );
+         cmo.members.insert( o.account );
          cmo.last_updated = now;
       });
    }
    else
    {
+      ilog( "Removed: ${v}",("v",*key_itr));
       _db.remove( *key_itr );
    }
-   
+   ilog( "Removed: ${v}",("v",invite));
    _db.remove( invite );
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
@@ -757,7 +763,7 @@ void community_remove_member_evaluator::do_apply( const community_remove_member_
       FC_ASSERT( b.is_authorized_governance( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const account_object& account = _db.get_account( o.account );
+
    const account_object& member = _db.get_account( o.member );
    const community_object& community = _db.get_community( o.community );
    FC_ASSERT( community.active, 
@@ -776,7 +782,7 @@ void community_remove_member_evaluator::do_apply( const community_remove_member_
 
    const auto& key_idx = _db.get_index< community_member_key_index >().indices().get< by_member_community >();
 
-   if( account.name != member.name )     // Account can remove itself from community membership.  
+   if( o.account != member.name )     // Account can remove itself from community membership.  
    {
       FC_ASSERT( community_member.is_authorized_blacklist( o.account ), 
          "Account: ${a} is not authorised to remove accounts from community: ${b}.", ("a", o.account)("b", o.community)); 
@@ -792,6 +798,7 @@ void community_remove_member_evaluator::do_apply( const community_remove_member_
    if( key_itr != key_idx.end() )
    {
       const community_member_key_object& key = *key_itr;
+      ilog( "Removed: ${v}",("v",key));
       _db.remove( key );
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
@@ -861,7 +868,7 @@ void community_subscribe_evaluator::do_apply( const community_subscribe_operatio
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const account_object& account = _db.get_account( o.account );
+
    const account_following_object& account_following = _db.get_account_following( o.account );
    const community_object& community = _db.get_community( o.community );
    FC_ASSERT( community.active, 
@@ -871,15 +878,15 @@ void community_subscribe_evaluator::do_apply( const community_subscribe_operatio
 
    if( o.subscribed )   // Adding subscription 
    {
-      FC_ASSERT( community_member.is_authorized_interact( account.name ), 
-         "Account: ${a} is not authorized to subscribe to the community ${b}.",("a", account.name)("b", o.community));
-      FC_ASSERT( !community_member.is_subscriber( account.name ), 
-         "Account: ${a} is already subscribed to the community ${b}.",("a", account.name)("b", o.community));
+      FC_ASSERT( community_member.is_authorized_interact( o.account ), 
+         "Account: ${a} is not authorized to subscribe to the community ${b}.",("a", o.account)("b", o.community));
+      FC_ASSERT( !community_member.is_subscriber( o.account ), 
+         "Account: ${a} is already subscribed to the community ${b}.",("a", o.account)("b", o.community));
    }
    else     // Removing subscription
    {
-      FC_ASSERT( community_member.is_subscriber( account.name ), 
-         "Account: ${a} is not subscribed to the community ${b}.",("a", account.name)("b", o.community));
+      FC_ASSERT( community_member.is_subscriber( o.account ), 
+         "Account: ${a} is not subscribed to the community ${b}.",("a", o.account)("b", o.community));
    }
 
    if( o.added )
@@ -888,7 +895,7 @@ void community_subscribe_evaluator::do_apply( const community_subscribe_operatio
       {
          _db.modify( community_member, [&]( community_member_object& cmo )
          {
-            cmo.add_subscriber( account.name );
+            cmo.subscribers.insert( o.account );
             cmo.last_updated = now;
          });
 
@@ -913,7 +920,7 @@ void community_subscribe_evaluator::do_apply( const community_subscribe_operatio
       {
          _db.modify( community_member, [&]( community_member_object& cmo )
          {
-            cmo.remove_subscriber( account.name );
+            cmo.subscribers.erase( o.account );
             cmo.last_updated = now;
          });
 

@@ -36,8 +36,6 @@ BOOST_AUTO_TEST_CASE( recent_content_claims_decay_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Ongoing claims for duration of comment rewards" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob) )
       generate_block();
 
@@ -92,7 +90,7 @@ BOOST_AUTO_TEST_CASE( recent_content_claims_decay_test )
 
       const reward_fund_object& rf = db.get_reward_fund( SYMBOL_COIN );
       const median_chain_property_object& median_props = db.get_median_chain_properties();
-      const comment_object& alice_comment = db.get_comment( alice.name, comment.permlink );
+      const comment_object& alice_comment = db.get_comment( account_name_type( "alice" ), comment.permlink );
 
       uint128_t alice_reward_curve = util::evaluate_reward_curve(
          uint128_t( alice_comment.net_reward.value ),
@@ -131,14 +129,12 @@ BOOST_AUTO_TEST_CASE( comment_payout_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: comment payout" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob) );
 
-      fund( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( bob.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( bob.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       signed_transaction tx;
 
@@ -206,7 +202,7 @@ BOOST_AUTO_TEST_CASE( comment_payout_test )
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_object& alice_comment = db.get_comment( alice.name, comment.permlink );
+      const comment_object& alice_comment = db.get_comment( account_name_type( "alice" ), comment.permlink );
 
       BOOST_REQUIRE( alice_comment.cashouts_received == 0 );
 
@@ -231,8 +227,6 @@ BOOST_AUTO_TEST_CASE( comment_processing_test )
       BOOST_TEST_MESSAGE( "├── Testing: COMMENT PROCESSING" );
       
       BOOST_TEST_MESSAGE( "│   ├── Testing: Comment payout received in equal amounts for equal voting power" );
-
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       ACTORS( (alice)(bob)(dan)(ulysses)(vivian)(wendy) );
 
@@ -280,8 +274,8 @@ BOOST_AUTO_TEST_CASE( comment_processing_test )
 
       for( const auto& voter : voters )
       {
-         fund( voter.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-         fund_stake( voter.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+         fund_liquid( voter.name, asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+         fund_stake( voter.name, asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       }
 
       // authors all write in the same block, but Bob declines payout
@@ -356,7 +350,7 @@ BOOST_AUTO_TEST_CASE( comment_processing_test )
          tx.signatures.clear();
       }
 
-      const comment_object& alice_comment = db.get_comment( alice.name, string( "test" ) );
+      const comment_object& alice_comment = db.get_comment( account_name_type( "alice" ), string( "test" ) );
 
       generate_blocks( alice_comment.cashout_time + fc::minutes(1), true );
 
@@ -371,9 +365,9 @@ BOOST_AUTO_TEST_CASE( comment_processing_test )
          ilog( "${n} : ${r}", ("n", voter.name)("r", bal.reward_balance) );
       }
       
-      const account_balance_object& alice_account_balance = db.get_account_balance( alice.name, SYMBOL_COIN );
-      const account_balance_object& bob_account_balance = db.get_account_balance( bob.name, SYMBOL_COIN );
-      const account_balance_object& dan_account_balance = db.get_account_balance( dan.name, SYMBOL_COIN );
+      const account_balance_object& alice_account_balance = db.get_account_balance( account_name_type( "alice" ), SYMBOL_COIN );
+      const account_balance_object& bob_account_balance = db.get_account_balance( account_name_type( "bob" ), SYMBOL_COIN );
+      const account_balance_object& dan_account_balance = db.get_account_balance( account_name_type( "dan" ), SYMBOL_COIN );
 
       BOOST_CHECK( alice_account_balance.reward_balance.value > 0 );
       BOOST_CHECK( bob_account_balance.reward_balance.value == 0 );
@@ -395,18 +389,16 @@ BOOST_AUTO_TEST_CASE( nested_comment_payout_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Reward fund correctly allocates content rewards for post payouts" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan) );
 
-      fund( alice.name, asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( alice.name, asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( bob.name, asset( 7500 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( bob.name, asset( 7500 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( candice.name, asset( 8000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( candice.name, asset( 8000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( dan.name, asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( dan.name, asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 7500 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 7500 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 8000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 8000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       signed_transaction tx;
 
@@ -510,8 +502,8 @@ BOOST_AUTO_TEST_CASE( nested_comment_payout_test )
       tx.signatures.clear();
 
       const reward_fund_object& rf = db.get_reward_fund( SYMBOL_COIN );
-      const comment_object& alice_comment = db.get_comment( alice.name, comment.permlink );
-      const comment_object& bob_comment = db.get_comment( bob.name, comment.permlink );
+      const comment_object& alice_comment = db.get_comment( account_name_type( "alice" ), comment.permlink );
+      const comment_object& bob_comment = db.get_comment( account_name_type( "bob" ), comment.permlink );
 
       generate_blocks( alice_comment.cashout_time - BLOCK_INTERVAL, true );
 
@@ -599,8 +591,8 @@ BOOST_AUTO_TEST_CASE( nested_comment_payout_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const comment_object& candice_comment = db.get_comment( candice.name, comment.permlink );
-      const comment_object& dan_comment = db.get_comment( dan.name, comment.permlink );
+      const comment_object& candice_comment = db.get_comment( account_name_type( "candice" ), comment.permlink );
+      const comment_object& dan_comment = db.get_comment( account_name_type( "dan" ), comment.permlink );
 
       reward = rf.content_reward_balance;
 
@@ -639,8 +631,6 @@ BOOST_AUTO_TEST_CASE( asset_feed_publish_mean )
 
       resize_shared_mem( 1024 * 1024 * 32 );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       generate_blocks( fc::seconds( 30 ).count() / BLOCK_INTERVAL.count() );
 
       vector< string > accounts;
@@ -670,7 +660,7 @@ BOOST_AUTO_TEST_CASE( asset_feed_publish_mean )
 
       for( int i = 0; i < 7; i++ )
       {
-         fund( accounts[i], asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+         fund_liquid( accounts[i], asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
          fund_stake( accounts[i], asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
          producer_votes.push_back( account_producer_vote_operation() );
@@ -757,23 +747,21 @@ BOOST_AUTO_TEST_CASE( network_credit_interest_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Payment of interest on credit balances" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice) );
 
       generate_block();
 
-      fund( alice.name, asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
-      fund_stake( alice.name, asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
-      fund_savings( alice.name, asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+      fund_liquid( "alice", asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+      fund_stake( "alice", asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+      fund_savings( "alice", asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
 
       time_point now = db.head_block_time();
 
       signed_transaction tx;
 
-      asset init_liquid_balance = db.get_liquid_balance( alice.name, SYMBOL_CREDIT );
-      asset init_staked_balance = db.get_staked_balance( alice.name, SYMBOL_CREDIT );
-      asset init_savings_balance = db.get_savings_balance( alice.name, SYMBOL_CREDIT );
+      asset init_liquid_balance = get_liquid_balance( account_name_type( "alice" ), SYMBOL_CREDIT );
+      asset init_staked_balance = get_staked_balance( account_name_type( "alice" ), SYMBOL_CREDIT );
+      asset init_savings_balance = get_savings_balance( account_name_type( "alice" ), SYMBOL_CREDIT );
 
       const asset_credit_data_object& credit = db.get_credit_data( SYMBOL_CREDIT );
       asset_symbol_type cs = credit.symbol;
@@ -809,9 +797,9 @@ BOOST_AUTO_TEST_CASE( network_credit_interest_test )
 
       generate_blocks( CREDIT_INTERVAL_BLOCKS );
 
-      asset liquid_balance = db.get_liquid_balance( "alice", SYMBOL_CREDIT );
-      asset staked_balance = db.get_staked_balance( "alice", SYMBOL_CREDIT );
-      asset savings_balance = db.get_savings_balance( "alice", SYMBOL_CREDIT );
+      asset liquid_balance = get_liquid_balance( "alice", SYMBOL_CREDIT );
+      asset staked_balance = get_staked_balance( "alice", SYMBOL_CREDIT );
+      asset savings_balance = get_savings_balance( "alice", SYMBOL_CREDIT );
 
       BOOST_REQUIRE( liquid_balance == init_liquid_balance + liquid_interest );
       BOOST_REQUIRE( staked_balance == init_staked_balance + staked_interest );

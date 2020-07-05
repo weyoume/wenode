@@ -1163,8 +1163,6 @@ struct mediator_api_obj
       json( to_string( o.json ) ),
       mediator_bond( o.mediator_bond ),
       mediation_virtual_position( o.mediation_virtual_position ),
-      last_escrow_from( o.last_escrow_from ),
-      last_escrow_id( to_string( o.last_escrow_id ) ),
       created( o.created ),
       last_updated( o.last_updated ){}
    
@@ -1178,8 +1176,6 @@ struct mediator_api_obj
    string                  json;                        ///< Json metadata of the mediator, including additional outside of consensus APIs and services. 
    asset                   mediator_bond;               ///< Core Asset staked in mediation bond for selection.
    uint128_t               mediation_virtual_position;  ///< Quantitative ranking of selection for mediation.
-   account_name_type       last_escrow_from;            ///< The sender of the most recently allocated escrow
-   string                  last_escrow_id;              ///< Escrow uuidv4 of the most recently allocated escrow.
    time_point              created;                     ///< The time the mediator was created.
    time_point              last_updated;                ///< The time the mediator was last updated.
 };
@@ -1192,10 +1188,8 @@ struct community_enterprise_api_obj
       creator( o.creator ),
       enterprise_id( to_string( o.enterprise_id ) ),
       active( o.active ),
-      proposal_type( proposal_distribution_values[ int( o.proposal_type ) ] ),
       approved_milestones( o.approved_milestones ),
       claimed_milestones( o.claimed_milestones ),
-      investment( *o.investment ),
       details( to_string( o.details ) ),
       url( to_string( o.url ) ),
       json( to_string( o.json ) ),
@@ -1233,12 +1227,10 @@ struct community_enterprise_api_obj
    account_name_type                  creator;                                    ///< The name of the governance account that created the community enterprise proposal.
    string                             enterprise_id;                              ///< UUIDv4 for referring to the proposal.
    bool                               active;                                     ///< True if the project is active, set false to deactivate.
-   string                             proposal_type;                              ///< The type of proposal, determines release schedule.
    map< account_name_type, uint16_t > beneficiaries;                              ///< Map of account names and percentages of budget value.
    vector< uint16_t >                 milestone_shares;                           ///< Ordered vector of release milestone descriptions.
    int16_t                            approved_milestones;                        ///< Number of the last approved milestone by the community.
-   int16_t                            claimed_milestones;                         ///< Number of milestones claimed for release.  
-   asset_symbol_type                  investment;                                 ///< Symbol of the asset to be purchased with the funding if the proposal is investment type. 
+   int16_t                            claimed_milestones;                         ///< Number of milestones claimed for release.
    string                             details;                                    ///< The proposals's details description. 
    string                             url;                                        ///< The proposals's reference URL. 
    string                             json;                                       ///< Json metadata of the proposal. 
@@ -2003,7 +1995,6 @@ struct ad_inventory_api_obj
       json( to_string( o.json ) ),
       created( o.created ),
       last_updated( o.last_updated ),
-      expiration( o.expiration ),
       active( o.active ){}
    
    ad_inventory_api_obj(){}
@@ -2019,7 +2010,6 @@ struct ad_inventory_api_obj
    string                           json;              ///< json metadata for the inventory.
    time_point                       created;           ///< Time inventory was created.
    time_point                       last_updated;      ///< Time inventorys's details were last updated or inventory was delivered.
-   time_point                       expiration;        ///< Time that the inventory offering expires. All outstanding bids for the inventory also expire at this time. 
    bool                             active;            ///< True when active for bidding and delivery, false to deactivate.
 };
 
@@ -4332,8 +4322,6 @@ FC_REFLECT( node::app::mediator_api_obj,
          (json)
          (mediator_bond)
          (mediation_virtual_position)
-         (last_escrow_from)
-         (last_escrow_id)
          (created)
          (last_updated)
          );
@@ -4343,12 +4331,10 @@ FC_REFLECT( node::app::community_enterprise_api_obj,
          (creator)
          (enterprise_id)
          (active)
-         (proposal_type)
          (beneficiaries)
          (milestone_shares)
          (approved_milestones)
          (claimed_milestones)
-         (investment)
          (details)
          (url)
          (json)
@@ -4671,7 +4657,6 @@ FC_REFLECT( node::app::ad_inventory_api_obj,
          (json)
          (created)
          (last_updated)
-         (expiration)
          (active)
          );
 

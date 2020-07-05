@@ -601,12 +601,8 @@ namespace node { namespace protocol {
 
       authority                     recent_owner_authority;    ///< A previous owner authority that the account holder will use to prove past ownership of the account to be recovered.
 
-      void                          get_required_authorities( vector< authority >& a )const
-      {
-         a.push_back( new_owner_authority );
-         a.push_back( recent_owner_authority );
-      }
-      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account_to_recover ); }
+      void                          get_required_authorities( vector< authority >& a )const { a.push_back( new_owner_authority ); a.push_back( recent_owner_authority ); }
+      void                          get_creator_name( flat_set<account_name_type>& a )const { a.insert( account_to_recover ); }
       void                          validate() const;
    };
 
@@ -847,9 +843,9 @@ namespace node { namespace protocol {
 
       string                        permlink;       ///< Permlink of the users recent post in the last 24h.
 
-      uint64_t                      view_id;        ///< Recent comment id viewed in the last 24h.
+      int64_t                       view_id;        ///< Recent comment id viewed in the last 24h.
 
-      uint64_t                      vote_id;        ///< Recent comment id voted on in the last 24h.
+      int64_t                       vote_id;        ///< Recent comment id voted on in the last 24h.
 
       account_name_type             interface;      ///< Name of the interface account that was used to broadcast the transaction. 
 
@@ -1195,10 +1191,9 @@ namespace node { namespace protocol {
    /**
     * Creates a new community enterprise proposal.
     * 
-    * This provides funding to projects that work to benefit the network by either 
-    * distributing payments based on milestone completion, 
-    * to the winner of a competition, or purchases an
-    * investment in a business account's cryptoequity asset. 
+    * Provides funding to projects that work to benefit the network by
+    * distributing payments based on milestone completion.
+    * 
     * A proposal becomes active when its first milestone is approved.
     */
    struct create_community_enterprise_operation : public base_operation
@@ -1207,17 +1202,13 @@ namespace node { namespace protocol {
 
       account_name_type                                 creator;             ///< The name of the account that created the community enterprise proposal.
 
-      string                                            enterprise_id;       ///< uuidv4 referring to the proposal. 
-
-      string                                            proposal_type;       ///< The type of proposal, determines release schedule.
+      string                                            enterprise_id;       ///< uuidv4 referring to the proposal.
 
       flat_map< account_name_type, uint16_t >           beneficiaries;       ///< Set of account names and percentages of budget value. Should not include the null account.
 
       vector< uint16_t >                                milestone_shares;    ///< Ordered vector of release milestone descriptions.
 
-      optional< asset_symbol_type >                     investment;          ///< Symbol of the asset to be purchased with the funding if the proposal is investment type. 
-
-      string                                            details;             ///< The proposals's details description. 
+      string                                            details;             ///< The proposals's details description.
 
       string                                            url;                 ///< The proposals's reference URL. 
 
@@ -1281,9 +1272,9 @@ namespace node { namespace protocol {
 
       string                         enterprise_id;     ///< UUIDv4 referring to the proposal. 
 
-      uint16_t                       milestone = 0;     ///< Number of the milestone that is being approved as completed.
+      int16_t                        milestone = 0;     ///< Number of the milestone that is being approved as completed.
 
-      uint16_t                       vote_rank = 1;     ///< The rank of the approval for enterprise proposals.
+      int16_t                        vote_rank = 1;     ///< The rank of the approval for enterprise proposals.
 
       bool                           approved = true;   ///< True to approve the milestone claim, false to remove approval. 
          
@@ -1412,7 +1403,7 @@ namespace node { namespace protocol {
 
       account_name_type              interface;            ///< Name of the interface application that broadcasted the transaction.
 
-      double                         latitude;             ///< Latitude co-ordinates of the comment. 
+      double                         latitude;             ///< Latitude co-ordinates of the comment.
 
       double                         longitude;            ///< Longitude co-ordinates of the comment.
 
@@ -2258,7 +2249,7 @@ namespace node { namespace protocol {
       
       string                           bid_id;                ///< Bid uuidv4 for referring to the bid.
 
-      account_name_type                account;               ///< Account that created the campaign that the bid is directed towards. 
+      account_name_type                account;               ///< Account that created the campaign that the bid is directed towards.
 
       string                           campaign_id;           ///< Ad campaign uuidv4 to utilise for the bid.
 
@@ -2277,6 +2268,8 @@ namespace node { namespace protocol {
       vector< string >                 included_audiences;    ///< List of desired audiences for display acceptance, accounts must be in inventory audience.
 
       vector< string >                 excluded_audiences;    ///< List of audiences to remove all members from the combined bid audience.
+
+      string                           audience_id;           ///< uuidv4 for the combined display acceptance.
 
       string                           json;                  ///< JSON metadata for the Bid and new inventory.
 
@@ -2742,13 +2735,7 @@ namespace node { namespace protocol {
       asset                                fee;          ///< Fee paid for the transfer.
       
       void                                 validate()const;
-      void                                 get_required_authorities( vector<authority>& a )const
-      {
-         for( const auto& in : inputs )
-         {
-            a.push_back( in.owner ); 
-         }
-      }
+      void                                 get_required_authorities( vector<authority>& a )const { for( const auto& in : inputs ){ a.push_back( in.owner ); } }
       void                                 get_creator_name( flat_set<account_name_type>& a )const { a.insert( NULL_ACCOUNT ); }
    };
 
@@ -2792,13 +2779,7 @@ namespace node { namespace protocol {
       asset                             fee;                  ///< Fee amount paid for the transfer.
 
       void                              validate()const;
-      void                              get_required_authorities( vector<authority>& a )const
-      {
-         for( const auto& in : inputs )
-         {
-            a.push_back( in.owner ); 
-         }  
-      }
+      void                              get_required_authorities( vector<authority>& a )const { for( const auto& in : inputs ){ a.push_back( in.owner ); } }
       void                              get_creator_name( flat_set<account_name_type>& a )const { a.insert( NULL_ACCOUNT ); }
    };
 
@@ -3249,7 +3230,7 @@ namespace node { namespace protocol {
 
 
    /**
-    * If an escrow payment has an issue, they can raise it for dispute. 
+    * If an escrow payment has an issue, they can raise it for dispute.
     * 
     * Once a payment is in dispute, 
     * a team of mediators are appointed and 
@@ -3943,7 +3924,7 @@ namespace node { namespace protocol {
 
       // === Currency Asset Options === //
 
-      asset                           block_reward = asset();                                         ///< The value of the initial reward paid into the reward fund every block.
+      asset                           block_reward = BLOCK_REWARD;                                    ///< The value of the initial reward paid into the reward fund every block.
 
       uint16_t                        block_reward_reduction_percent = 0;                             ///< The percentage by which the block reward is reduced each period. 0 for no reduction.
 
@@ -4029,7 +4010,7 @@ namespace node { namespace protocol {
 
       asset_symbol_type               buyback_asset = SYMBOL_USD;                                        ///< Asset used to repurchase the credit asset.
 
-      price                           buyback_price = price();                                           ///< Price that credit asset is repurchased at to repay creditors.
+      price                           buyback_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ),asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );  ///< Price that credit asset is repurchased at to repay creditors.
 
       uint16_t                        buyback_share_percent = BUYBACK_SHARE_PERCENT;                     ///< Percentage of incoming assets added to the buyback pool.
 
@@ -4055,7 +4036,7 @@ namespace node { namespace protocol {
 
       vector< account_name_type >     access_list;                                                       ///< List of accounts that have access to the unique asset.
 
-      asset                           access_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );         ///< Price per day for all accounts in the access list.
+      asset                           access_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_USD );          ///< Price per day for all accounts in the access list.
 
       // === Bond Asset Options === //
 
@@ -4065,19 +4046,19 @@ namespace node { namespace protocol {
 
       uint16_t                        coupon_rate_percent = BOND_COUPON_RATE_PERCENT;                    ///< Percentage rate of the value that is paid each month in interest to the holders.
 
-      date_type                       maturity_date = date_type();                                       ///< Date at which the bond will mature. Principle value will be automatically paid from business_account.
+      date_type                       maturity_date = date_type( 1, 1, 1970 );                           ///< Date at which the bond will mature. Principle value will be automatically paid from business_account.
 
       // === Stimulus Asset Options === //
 
       asset_symbol_type               redemption_asset = SYMBOL_USD;                                     ///< Symbol of the asset that can be redeemed in exchange the stimulus asset.
 
-      price                           redemption_price = price();                                        ///< Price at which the stimulus asset is redeemed. Redemption asset is base.
+      price                           redemption_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ),asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) ); ///< Price at which the stimulus asset is redeemed. Redemption asset is base.
       
       vector< account_name_type >     distribution_list;                                                 ///< List of accounts that receive an equal balance of the stimulus asset.
 
       vector< account_name_type >     redemption_list;                                                   ///< List of accounts that can receive and redeem the stimulus asset.
 
-      asset                           distribution_amount = asset();                                     ///< Amount of stimulus asset distributed each interval.
+      asset                           distribution_amount = asset( BLOCKCHAIN_PRECISION, SYMBOL_USD );   ///< Amount of stimulus asset distributed each interval.
 
       void validate()const;
    };
@@ -4836,21 +4817,9 @@ namespace node { namespace protocol {
       chain_properties              props;             ///< Chain properties values for selection of adjustable network parameters. 
 
       void                          validate()const;
-
-      void                          get_creator_name( flat_set<account_name_type>& a )const
-      { 
-         a.insert( work.get< x11_proof_of_work >().input.miner_account ); 
-      }
-
-      void                          get_required_active_authorities( flat_set<account_name_type>& a )const;      ///< No signatory authorities required, proof of work is implicit authority.
-
-      void                          get_required_authorities( vector< authority >& a )const
-      {
-         if( new_owner_key )
-         {
-            a.push_back( authority( 1, *new_owner_key, 1 ) );
-         }
-      };
+      void                          get_creator_name( flat_set<account_name_type>& a )const { a.insert( work.get< x11_proof_of_work >().input.miner_account ); }
+      void                          get_required_active_authorities( flat_set<account_name_type>& a )const;
+      void                          get_required_authorities( vector< authority >& a )const { if( new_owner_key.valid() ){ a.push_back( authority( 1, *new_owner_key, 1 ) ); } };
    };
 
 
@@ -5380,10 +5349,8 @@ FC_REFLECT( node::protocol::create_community_enterprise_operation,
          (signatory)
          (creator)
          (enterprise_id)
-         (proposal_type)
          (beneficiaries)
          (milestone_shares)
-         (investment)
          (details)
          (url)
          (json)
@@ -5763,6 +5730,7 @@ FC_REFLECT( node::protocol::ad_bid_operation,
          (requested)
          (included_audiences)
          (excluded_audiences)
+         (audience_id)
          (json)
          (expiration)
          (active)

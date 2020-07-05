@@ -169,6 +169,52 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       case asset_property_type::CURRENCY_ASSET:
       {
          issuer_account_name = NULL_ACCOUNT;
+
+         _db.create< reward_fund_object >( [&]( reward_fund_object& rfo )
+         {
+            rfo.last_updated = now;
+            rfo.symbol = o.symbol;
+            rfo.content_constant = CONTENT_CONSTANT;
+            rfo.content_reward_balance = asset(0, o.symbol);
+            rfo.validation_reward_balance = asset(0, o.symbol);
+            rfo.txn_stake_reward_balance = asset(0, o.symbol);
+            rfo.work_reward_balance = asset(0, o.symbol);
+            rfo.activity_reward_balance = asset(0, o.symbol);
+            rfo.supernode_reward_balance = asset(0, o.symbol);
+            rfo.power_reward_balance = asset(0, o.symbol);
+            rfo.community_fund_balance = asset(0, o.symbol);
+            rfo.development_reward_balance = asset(0, o.symbol);
+            rfo.marketing_reward_balance = asset(0, o.symbol);
+            rfo.advocacy_reward_balance = asset(0, o.symbol);
+            rfo.activity_reward_balance = asset(0, o.symbol);
+            rfo.recent_content_claims = 0;
+            rfo.author_reward_curve = curve_id::convergent_semi_quadratic;
+            rfo.curation_reward_curve = curve_id::convergent_semi_quadratic;
+         });
+
+         _db.create< asset_currency_data_object >( [&]( asset_currency_data_object& a )
+         {
+            a.symbol = o.symbol;
+            a.block_reward = o.options.block_reward;
+            a.block_reward_reduction_percent = o.options.block_reward_reduction_percent;
+            a.block_reward_reduction_days = o.options.block_reward_reduction_days;;
+            a.content_reward_percent = o.options.content_reward_percent;
+            a.equity_asset = o.options.equity_asset;
+            a.equity_reward_percent = o.options.equity_reward_percent;
+            a.producer_reward_percent = o.options.producer_reward_percent;
+            a.supernode_reward_percent = o.options.supernode_reward_percent;
+            a.power_reward_percent = o.options.power_reward_percent;
+            a.community_fund_reward_percent = o.options.community_fund_reward_percent;
+            a.development_reward_percent = o.options.development_reward_percent;
+            a.marketing_reward_percent = o.options.marketing_reward_percent;
+            a.advocacy_reward_percent = o.options.advocacy_reward_percent;
+            a.activity_reward_percent = o.options.activity_reward_percent;
+            a.producer_block_reward_percent = o.options.producer_block_reward_percent;
+            a.validation_reward_percent = o.options.validation_reward_percent;
+            a.txn_stake_reward_percent = o.options.txn_stake_reward_percent;
+            a.work_reward_percent = o.options.work_reward_percent;
+            a.producer_activity_reward_percent = o.options.producer_activity_reward_percent;
+         });
       }
       break;
       case asset_property_type::STABLECOIN_ASSET:
@@ -198,12 +244,20 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          _db.create< asset_stablecoin_data_object >( [&]( asset_stablecoin_data_object& a )
          {
             a.symbol = o.symbol;
+            a.issuer = o.issuer;
             a.backing_asset = o.options.backing_asset;
+            a.current_feed_publication_time = now;
             a.feed_lifetime = o.options.feed_lifetime;
             a.minimum_feeds = o.options.minimum_feeds;
             a.asset_settlement_delay = o.options.asset_settlement_delay;
             a.asset_settlement_offset_percent = o.options.asset_settlement_offset_percent;
             a.maximum_asset_settlement_volume = o.options.maximum_asset_settlement_volume;
+
+            price_feed feed;
+            feed.settlement_price = price( asset( 1, o.symbol ), asset( 1, o.options.backing_asset ) );
+
+            a.feeds[ o.issuer ] = make_pair( now, feed );
+            a.update_median_feeds( now );
          });
       }
       break;
@@ -1550,6 +1604,7 @@ void asset_distribution_fund_evaluator::do_apply( const asset_distribution_fund_
       }
       else
       {
+         ilog( "Removed: ${v}",("v",balance));
          _db.remove( balance );
       }
    }
@@ -1702,28 +1757,32 @@ void asset_publish_feed_evaluator::do_apply( const asset_publish_feed_operation&
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
+   
    const asset_object& base = _db.get_asset( o.symbol );     // Verify that this feed is for a market-issued asset and that asset is backed by the base.
-
    time_point now = _db.head_block_time();
    
-   FC_ASSERT( base.is_market_issued(), 
+   FC_ASSERT( base.is_market_issued(),
       "Can only publish price feeds for market-issued assets" );
 
    const asset_stablecoin_data_object& stablecoin = _db.get_stablecoin_data( base.symbol );
 
    // The settlement price must be quoted in terms of the backing asset.
+
    FC_ASSERT( o.feed.settlement_price.quote.symbol == stablecoin.backing_asset,
       "Quote asset type in settlement price should be same as backing asset of this asset" );
    
    if( base.is_producer_fed() )     // Verify that the publisher is authoritative to publish a feed.
    {
-      FC_ASSERT( _db.get_account_authority( PRODUCER_ACCOUNT ).active_auth.account_auths.count( o.publisher ),
-         "Only active producers are allowed to publish price feeds for this asset" );
+      const account_authority_object& auth = _db.get_account_authority( PRODUCER_ACCOUNT );
+      FC_ASSERT( auth.active_auth.account_auths.count( o.publisher ),
+         "Asset: ${a} is a producer fed asset, and Account: ${ac} is not an active producer. Current active producer authorities are: \n ${p} \n",
+         ("a",o.symbol)("ac",o.publisher)("p",auth.active_auth.account_auths) );
    }
    else
    {
       FC_ASSERT( stablecoin.feeds.count( o.publisher ),
-         "The account is not in the set of allowed price feed producers of this asset" );
+         "Asset: ${a} is a stablecoin and Account: ${ac} is not an active publisher. Current active publisher feeds are: \n ${p} \n",
+         ("a",o.symbol)("ac",o.publisher)("p",stablecoin.feeds) );
    }
 
    price_feed old_feed =  stablecoin.current_feed;    // Store medians for this asset.
@@ -1760,6 +1819,9 @@ void asset_publish_feed_evaluator::do_apply( const asset_publish_feed_operation&
       }
       _db.check_call_orders( base, true, false );    // Process margin calls, allow black swan, not for a new limit order
    }
+
+   ilog("Account: ${a} published price feed: ${f}",
+      ("a",o.publisher)("f",o.feed));
 } FC_CAPTURE_AND_RETHROW(( o )) }
 
 
@@ -1864,6 +1926,7 @@ void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
 
          if( o.amount.amount == 0 )
          {
+            ilog( "Removed: ${v}",("v",settle));
             _db.remove( settle );
          }
          else
@@ -1964,7 +2027,8 @@ void asset_collateral_bid_evaluator::do_apply( const asset_collateral_bid_operat
    if( o.collateral.amount > 0 )
    {
       FC_ASSERT( liquid >= o.collateral,
-         "Cannot bid ${c} collateral when payer only has ${b}", ("c", o.collateral.amount)("b", liquid ) );
+         "Cannot bid ${c} collateral when payer only has ${b}", 
+         ("c", o.collateral.amount)("b", liquid ) );
    }
 
    const auto& bid_idx = _db.get_index< asset_collateral_bid_index >().indices().get< by_account >();

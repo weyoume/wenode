@@ -262,16 +262,13 @@ namespace node { namespace chain {
                case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
                case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
                case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
+               {
+                  return is_member( account );
+               }
+               break;
                case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
                {
-                  if( is_member( account ) )
-                  {
-                     return true;
-                  }
-                  else
-                  {
-                     return false;
-                  }
+                  return is_moderator( account );
                }
                break;
                default:
@@ -307,14 +304,7 @@ namespace node { namespace chain {
                case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
                case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
                {
-                  if( is_member( account ) )
-                  {
-                     return true;
-                  }
-                  else
-                  {
-                     return false;
-                  } 
+                  return is_member( account );
                }
                break;
                default:
@@ -339,18 +329,18 @@ namespace node { namespace chain {
             {
                case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
                case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
-               {
-                  return false; 
-               }
-               break;
                case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
                case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
                case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
                case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
+               {
+                  return true;
+               }
+               break;
                case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
                case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
                {
-                  return true;
+                  return false;
                }
                break;
                default:
@@ -377,14 +367,7 @@ namespace node { namespace chain {
                case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
                case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
                {
-                  if( is_member( account ) )
-                  {
-                     return true;
-                  }
-                  else
-                  {
-                     return false;
-                  }  
+                  return is_member( account );
                }
                break;
                case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
@@ -392,26 +375,12 @@ namespace node { namespace chain {
                case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
                case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
                {
-                  if( is_moderator( account ) )
-                  {
-                     return true;
-                  }
-                  else
-                  {
-                     return false;
-                  }
+                  return is_moderator( account );
                }
                break;
                case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
                {
-                  if( is_administrator( account ) )
-                  {
-                     return true;
-                  }
-                  else
-                  {
-                     return false;
-                  }
+                  return is_administrator( account );
                }
                break;
                default:
@@ -443,14 +412,7 @@ namespace node { namespace chain {
                case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
                case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
                {
-                  if( is_moderator( account ) )
-                  {
-                     return true;
-                  }
-                  else
-                  {
-                     return false;
-                  }
+                  return is_moderator( account );
                }
                break;
                case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
@@ -458,14 +420,7 @@ namespace node { namespace chain {
                case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
                case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
                {
-                  if( is_administrator( account ) )
-                  {
-                     return true;
-                  }
-                  else
-                  {
-                     return false;
-                  }
+                  return is_administrator( account );
                }
                break;
                default:
@@ -500,54 +455,6 @@ namespace node { namespace chain {
          {
             return std::find( blacklist.begin(), blacklist.end(), account ) != blacklist.end();
          };
-
-         void                              add_subscriber( const account_name_type& account )
-         {
-            if( !is_subscriber( account )  )
-            {
-               subscribers.insert( account );
-            }
-         }
-
-         void                              remove_subscriber( const account_name_type& account )
-         {
-            if( is_subscriber( account ) )
-            {
-               subscribers.erase( account );
-            }
-         }  
-
-         void                              add_member( const account_name_type& account )
-         {
-            if( !is_member( account )  )
-            {
-               members.insert( account );
-            }
-         }
-
-         void                              remove_member( const account_name_type& account )
-         {
-            if( is_member( account ) )
-            {
-               members.erase( account );
-            }
-         }
-
-         void                              add_moderator( const account_name_type& account )
-         {
-            if( !is_moderator( account )  )
-            {
-               moderators.insert( account );
-            }
-         }
-
-         void                              remove_moderator( const account_name_type& account )
-         {
-            if( is_moderator( account ) )
-            {
-               moderators.erase( account );
-            }
-         }
    };
 
 

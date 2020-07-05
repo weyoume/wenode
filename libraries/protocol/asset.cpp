@@ -4,17 +4,7 @@
 
 namespace node { namespace protocol {
 
-   int64_t asset::precision_value()const
-   {
-      static int64_t table[] = {
-         1, 10, 100, 1000, 10000,
-         100000, 1000000, 10000000, 100000000ll,
-         1000000000ll, 10000000000ll,
-         100000000000ll, 1000000000000ll,
-         10000000000000ll, 100000000000000ll
-         };
-      return table[ precision ];
-   }
+   
 
    /**
     * prec is a power of ten, so for example when working with
@@ -68,6 +58,7 @@ namespace node { namespace protocol {
    asset asset::multiply_and_round_up( const price& b )const
    {
       const asset& a = *this;
+      ilog( "Multiply and round up: Asset: ${a} Price: ${p}",("a",a)("p",b));
       if( a.symbol == b.base.symbol )
       {
          FC_ASSERT( b.base.amount.value > 0 );
@@ -148,43 +139,43 @@ namespace node { namespace protocol {
 
    bool operator == ( const price& a, const price& b )
    {
-      FC_ASSERT( is_valid_symbol( a.base.symbol ) );
-      FC_ASSERT( is_valid_symbol( b.base.symbol ) );
-      FC_ASSERT( is_valid_symbol( a.quote.symbol ) );
-      FC_ASSERT( is_valid_symbol( b.quote.symbol ) );
+      FC_ASSERT( is_valid_symbol( a.base.symbol ), "Symbol: ${s} is not a valid symbol",("s",a.base.symbol) );
+      FC_ASSERT( is_valid_symbol( b.base.symbol ), "Symbol: ${s} is not a valid symbol",("s",b.base.symbol) );
+      FC_ASSERT( is_valid_symbol( a.quote.symbol ), "Symbol: ${s} is not a valid symbol",("s",a.quote.symbol) );
+      FC_ASSERT( is_valid_symbol( b.quote.symbol ), "Symbol: ${s} is not a valid symbol",("s",b.quote.symbol) );
 
       if( std::tie( a.base.symbol, a.quote.symbol ) != std::tie( b.base.symbol, b.quote.symbol ) )
       {
          return false;
       }   
 
-      const auto amult = share_type( b.quote.amount.value ) * a.base.amount.value;
-      const auto bmult = share_type( a.quote.amount.value ) * b.base.amount.value;
+      uint128_t amult = uint128_t( b.quote.amount.value ) * uint128_t( a.base.amount.value );
+      uint128_t bmult = uint128_t( a.quote.amount.value ) * uint128_t( b.base.amount.value );
 
       return amult == bmult;
    }
 
    bool operator < ( const price& a, const price& b )
    {
-      FC_ASSERT( is_valid_symbol( a.base.symbol ) );
-      FC_ASSERT( is_valid_symbol( b.base.symbol ) );
-      FC_ASSERT( is_valid_symbol( a.quote.symbol ) );
-      FC_ASSERT( is_valid_symbol( b.quote.symbol ) );
+      FC_ASSERT( is_valid_symbol( a.base.symbol ), "Symbol: ${s} is not a valid symbol",("s",a.base.symbol) );
+      FC_ASSERT( is_valid_symbol( b.base.symbol ), "Symbol: ${s} is not a valid symbol",("s",b.base.symbol) );
+      FC_ASSERT( is_valid_symbol( a.quote.symbol ), "Symbol: ${s} is not a valid symbol",("s",a.quote.symbol) );
+      FC_ASSERT( is_valid_symbol( b.quote.symbol ), "Symbol: ${s} is not a valid symbol",("s",b.quote.symbol) );
 
       if( a.base.symbol < b.base.symbol ) return true;
       if( a.base.symbol > b.base.symbol ) return false;
       if( a.quote.symbol < b.quote.symbol ) return true;
       if( a.quote.symbol > b.quote.symbol ) return false;
 
-      const auto amult = share_type( b.quote.amount.value ) * a.base.amount.value;
-      const auto bmult = share_type( a.quote.amount.value ) * b.base.amount.value;
+      uint128_t amult = uint128_t( b.quote.amount.value ) * uint128_t( a.base.amount.value );
+      uint128_t bmult = uint128_t( a.quote.amount.value ) * uint128_t( b.base.amount.value );
 
       return amult < bmult;
    }
 
    bool operator <= ( const price& a, const price& b )
    {
-      return (a == b) || (a < b);
+      return !(a > b);
    }
 
    bool operator != ( const price& a, const price& b )
@@ -194,7 +185,20 @@ namespace node { namespace protocol {
 
    bool operator > ( const price& a, const price& b )
    {
-      return !(a <= b);
+      FC_ASSERT( is_valid_symbol( a.base.symbol ), "Symbol: ${s} is not a valid symbol",("s",a.base.symbol) );
+      FC_ASSERT( is_valid_symbol( b.base.symbol ), "Symbol: ${s} is not a valid symbol",("s",b.base.symbol) );
+      FC_ASSERT( is_valid_symbol( a.quote.symbol ), "Symbol: ${s} is not a valid symbol",("s",a.quote.symbol) );
+      FC_ASSERT( is_valid_symbol( b.quote.symbol ), "Symbol: ${s} is not a valid symbol",("s",b.quote.symbol) );
+
+      if( a.base.symbol > b.base.symbol ) return true;
+      if( a.base.symbol < b.base.symbol ) return false;
+      if( a.quote.symbol > b.quote.symbol ) return true;
+      if( a.quote.symbol < b.quote.symbol ) return false;
+
+      uint128_t amult = uint128_t( b.quote.amount.value ) * uint128_t( a.base.amount.value );
+      uint128_t bmult = uint128_t( a.quote.amount.value ) * uint128_t( b.base.amount.value );
+
+      return amult > bmult;
    }
 
    bool operator >= ( const price& a, const price& b )
@@ -204,9 +208,9 @@ namespace node { namespace protocol {
 
    asset operator * ( const asset& a, const price& b )
    {
-      FC_ASSERT( is_valid_symbol( a.symbol ) );
-      FC_ASSERT( is_valid_symbol( b.base.symbol ) );
-      FC_ASSERT( is_valid_symbol( b.quote.symbol ) );
+      FC_ASSERT( is_valid_symbol( a.symbol ), "Symbol: ${s} is not a valid symbol",("s",a.symbol) );
+      FC_ASSERT( is_valid_symbol( b.base.symbol ), "Symbol: ${s} is not a valid symbol",("s",b.base.symbol) );
+      FC_ASSERT( is_valid_symbol( b.quote.symbol ), "Symbol: ${s} is not a valid symbol",("s",b.quote.symbol));
       
       uint128_t numerator = 0;
       uint128_t denominator = 0;
@@ -244,8 +248,8 @@ namespace node { namespace protocol {
 
    price operator / ( const asset& base, const asset& quote )
    { try {
-      FC_ASSERT( is_valid_symbol( base.symbol ) );
-      FC_ASSERT( is_valid_symbol( quote.symbol ) );
+      FC_ASSERT( is_valid_symbol( base.symbol ), "Symbol: ${s} is not a valid symbol",("s",base.symbol));
+      FC_ASSERT( is_valid_symbol( quote.symbol ), "Symbol: ${s} is not a valid symbol",("s",quote.symbol));
       FC_ASSERT( base.symbol != quote.symbol );
       return price{ base, quote };
    } FC_CAPTURE_AND_RETHROW( (base)(quote) ) }
@@ -257,8 +261,8 @@ namespace node { namespace protocol {
 
    void price::validate() const
    { try {
-      FC_ASSERT( is_valid_symbol( base.symbol ) );
-      FC_ASSERT( is_valid_symbol( quote.symbol ) );
+      FC_ASSERT( is_valid_symbol( base.symbol ), "Symbol: ${s} is not a valid symbol",("s",base.symbol));
+      FC_ASSERT( is_valid_symbol( quote.symbol ), "Symbol: ${s} is not a valid symbol",("s",quote.symbol));
       FC_ASSERT( base.amount.value > 0,
          "Price is invalid, base is less than 0.");
       FC_ASSERT( quote.amount.value > 0,
@@ -466,7 +470,6 @@ namespace node { namespace protocol {
       FC_ASSERT( strike_price.base.amount.value == BLOCKCHAIN_PRECISION.value || strike_price.quote.amount.value == BLOCKCHAIN_PRECISION.value ,
          "Option Strike price must specify an asset with a price unit of 1." );
    }
-
 
    string option_strike::to_string()const
    {

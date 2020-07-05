@@ -66,9 +66,11 @@ void limit_order_evaluator::do_apply( const limit_order_operation& o )
    if( limit_itr == limit_idx.end() )    // Limit order does not already exist
    {
       FC_ASSERT( o.opened,
-         "Limit order cannot be closed: No Limit order found with the specified ID." );
+         "Limit order cannot be closed: No Limit order found with the specified ID: ${id}",
+         ("id",o.order_id) );
       FC_ASSERT( liquid >= o.amount_to_sell,
-         "Account does not have sufficient funds for limit order." );
+         "Account: ${a} does not have sufficient liquid balance: ${l} for Limit order of amount: ${am}.",
+         ("a",o.owner)("l", liquid)("am",o.amount_to_sell));
 
       _db.adjust_liquid_balance( o.owner, -o.amount_to_sell );
       _db.adjust_pending_supply( o.amount_to_sell );
@@ -176,11 +178,14 @@ void margin_order_evaluator::do_apply( const margin_order_operation& o )
    const credit_collateral_object& collateral = _db.get_collateral( o.owner, o.collateral.symbol );
 
    FC_ASSERT( debt_asset.is_credit_enabled(),
-      "Cannot borrow debt asset: ${s}.", ("s", debt_asset.symbol) );
-   FC_ASSERT( collateral_asset.is_credit_enabled(), 
-      "Cannot collateralize asset: ${s}.", ("s", collateral_asset.symbol) );
-   FC_ASSERT( position_asset.is_credit_enabled(), 
-      "Cannot open margin position with asset: ${s}.", ("s", position_asset.symbol) );
+      "Cannot borrow debt asset: ${s}.",
+      ("s", debt_asset.symbol) );
+   FC_ASSERT( collateral_asset.is_credit_enabled(),
+      "Cannot collateralize asset: ${s}.",
+      ("s", collateral_asset.symbol) );
+   FC_ASSERT( position_asset.is_credit_enabled(),
+      "Cannot open margin position with asset: ${s}.",
+      ("s", position_asset.symbol) );
 
    const asset_credit_pool_object& pool = _db.get_credit_pool( o.amount_to_borrow.symbol, false );
    asset min_collateral = ( o.amount_to_borrow * median_props.margin_open_ratio ) / PERCENT_100;        // Min margin collateral equal to 20% of debt value.
@@ -431,7 +436,8 @@ void auction_order_evaluator::do_apply( const auction_order_operation& o )
       FC_ASSERT( o.opened,
          "Auction order cannot be closed: No Auction order found with the specified ID." );
       FC_ASSERT( liquid >= o.amount_to_sell,
-         "Account does not have sufficient funds for Auction order." );
+         "Account: ${a} does not have sufficient liquid balance: ${l} for Auction order of amount: ${am}.",
+         ("a",o.owner)("l", liquid)("am",o.amount_to_sell));
 
       _db.adjust_liquid_balance( o.owner, -o.amount_to_sell );
       _db.adjust_pending_supply( o.amount_to_sell );
@@ -502,12 +508,14 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
    const asset_dynamic_data_object& debt_dynamic_data = _db.get_dynamic_data( o.debt.symbol );
    const asset_stablecoin_data_object& debt_stablecoin_data = _db.get_stablecoin_data( o.debt.symbol );
 
+   ilog( "Account: ${a} creating call order for stablecoin: ${d}",("a",o.owner)("d",debt_stablecoin_data));
+
    FC_ASSERT( debt_asset.is_market_issued(),
       "Asset ${sym} is not a collateralized asset.", ("sym", debt_asset.symbol) );
    FC_ASSERT( !debt_stablecoin_data.has_settlement(),
-      "Cannot update debt position when the asset has been globally settled" );
+      "Cannot update debt position when the asset has been globally settled." );
    FC_ASSERT( o.collateral.symbol == debt_stablecoin_data.backing_asset,
-      "Collateral asset type should be same as backing asset of debt asset" );
+      "Collateral asset type should be same as backing asset of debt asset." );
    FC_ASSERT( !debt_stablecoin_data.current_feed.settlement_price.is_null(),
       "Cannot borrow asset with no price feed." );
 
@@ -522,6 +530,8 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
 
    if( call_itr == call_idx.end() )    // creating new debt position
    {
+      ilog( "Account: ${a} begin creating new call order -",("a",o.owner));
+
       FC_ASSERT( debt_dynamic_data.get_total_supply().amount + o.debt.amount <= debt_asset.max_supply,
          "Borrowing this quantity would exceed the asset's Maximum supply." );
       FC_ASSERT( debt_dynamic_data.get_total_supply().amount + o.debt.amount >= 0,
@@ -529,11 +539,14 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
       FC_ASSERT( liquid_collateral >= o.collateral,
          "Account does not have sufficient liquid collateral asset funds for Call order." );
 
+      ilog( "Call Order Details: \n ${de} \n ${ts} \n ${as} \n ${lc}",
+         ("de",debt_dynamic_data)("ts", debt_dynamic_data.get_total_supply() )("as",debt_asset)("lc",liquid_collateral) );
+
       _db.adjust_liquid_balance( o.owner, -o.collateral );
       _db.adjust_pending_supply( o.collateral );
       _db.adjust_liquid_balance( o.owner, o.debt );
       
-      _db.create< call_order_object >( [&]( call_order_object& coo )
+      const call_order_object& call = _db.create< call_order_object >( [&]( call_order_object& coo )
       {
          coo.borrower = o.owner;
          coo.collateral = o.collateral;
@@ -543,13 +556,17 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
          coo.created = now;
          coo.last_updated = now;
       });
+
+      ilog( "Account: ${a} created new call order: ${c}",
+         ("a",o.owner)("c",call));
    }
    else        // updating existing debt position
    {
-      const call_order_object& call_object = *call_itr;
+      const call_order_object& call = *call_itr;
+      ilog( "Account: ${a} begin editing call order: ${c}",("a",o.owner)("c",call));
 
-      asset delta_collateral = o.collateral - call_object.collateral;
-      asset delta_debt = o.debt - call_object.debt;
+      asset delta_collateral = o.collateral - call.collateral;
+      asset delta_debt = o.debt - call.debt;
 
       FC_ASSERT( liquid_collateral >= delta_collateral,
          "Account does not have sufficient liquid collateral asset funds for Call order." );
@@ -565,22 +582,25 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
          FC_ASSERT( o.collateral.amount > 0 && o.debt.amount > 0,
             "Both collateral and debt should be positive after updated a debt position if not to close it" );
 
-         old_collateralization = call_object.collateralization();
-         old_debt = call_object.debt.amount;
+         old_collateralization = call.collateralization();
+         old_debt = call.debt.amount;
 
-         _db.modify( call_object, [&]( call_order_object& coo )
+         _db.modify( call, [&]( call_order_object& coo )
          {
             coo.collateral = o.collateral;
             coo.debt = o.debt;
             coo.target_collateral_ratio = *o.target_collateral_ratio;
             coo.last_updated = now;
          });
+
+         ilog( "Account: ${a} updated call order: ${c}",("a",o.owner)("c",call));
       }
       else
       {
          FC_ASSERT( o.collateral.amount == 0,
             "Should claim all collateral when closing debt position" );
-         _db.remove( call_object );
+         ilog( "Removed: ${v}",("v",call));
+         _db.remove( call );
       } 
    }
 
@@ -734,6 +754,7 @@ void option_order_evaluator::do_apply( const option_order_operation& o )
       }
       else
       {
+         ilog( "Removed: ${v}",("v",order));
          _db.remove( order );
       }
    }

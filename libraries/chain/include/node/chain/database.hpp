@@ -659,7 +659,7 @@ namespace node { namespace chain {
 
          void adjust_interface_users( const interface_object& interface, bool adjust );
 
-         void clear_network_votes( const account_object& a );
+         void clear_network_votes( const account_name_type& a );
 
          void process_funds();
          

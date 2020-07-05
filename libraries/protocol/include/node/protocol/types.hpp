@@ -205,23 +205,6 @@ namespace node {
       };
 
       /**
-       * Types of network officers, each receive reward distributions from the network upon voter approval.
-       */
-      enum class proposal_distribution_type : int
-      {
-         FUNDING,      ///< Funds are distributed to beneficiarires based on milestone based projects completed.
-         COMPETITION,  ///< Funds are distributed to the winners of a competitons with predefined terms and objectives. 
-         INVESTMENT    ///< Funds are used to purchase a business account"s equity or credit asset, to be held by the community account.
-      };
-
-      const static vector< string > proposal_distribution_values =
-      {
-         "funding",
-         "competition",
-         "investment"
-      };
-
-      /**
        * Types of Product Auction sale, varying the mechanism of determining the bidding prices of the item being sold.
        */
       enum class product_auction_type : int
@@ -322,7 +305,7 @@ namespace node {
       {
          "text",
          "image",
-         "gif"
+         "gif",
          "video",
          "link",
          "article",
@@ -699,11 +682,11 @@ namespace node {
          date_type( uint16_t day, uint16_t month, uint16_t year );
          date_type( time_point time );
 
-         uint16_t      day;         ///< Day of the month [1-31]
+         uint16_t      day = 1;         ///< Day of the month [1-31]
 
-         uint16_t      month;       ///< Month of the year [1-12]
+         uint16_t      month = 1;       ///< Month of the year [1-12]
 
-         uint16_t      year;        ///< Year [1970+]
+         uint16_t      year = 1970;        ///< Year [1970+]
 
          bool is_null()const;
 
@@ -794,12 +777,6 @@ FC_REFLECT_ENUM( node::protocol::executive_role_type,
          (CHIEF_MARKETING_OFFICER)
          (CHIEF_DESIGN_OFFICER)
          (CHIEF_ADVOCACY_OFFICER)
-         );
-
-FC_REFLECT_ENUM( node::protocol::proposal_distribution_type,
-         (FUNDING)
-         (COMPETITION)
-         (INVESTMENT)
          );
 
 FC_REFLECT_ENUM( node::protocol::product_auction_type,

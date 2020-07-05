@@ -31,138 +31,140 @@ BOOST_AUTO_TEST_CASE( update_network_officer_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Network officer creation" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme)(kathryn)(leonie)(margot)
+      (natalie)(olivia)(peter)(quentin)(rachel)(sam)(tim)(usain)(veronica)(will)(xerxes)(yan)(zach) );
 
-      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme)(kathryn)(leonie)
-         (margot)(natalie)(olivia)(peter)(quentin)(rachel)(sam)(tim)(veronica) );
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "alice", alice_private_owner_key );
+      producer_vote( "alice", alice_private_owner_key );
 
-      fund_stake( alice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( alice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( alice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( alice.name, alice_private_owner_key, alice_public_owner_key );
-      producer_vote( alice.name, alice_private_owner_key );
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "bob", bob_private_owner_key );
+      producer_vote( "bob", bob_private_owner_key );
 
-      fund_stake( bob.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( bob.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( bob.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( bob.name, bob_private_owner_key, bob_public_owner_key );
-      producer_vote( bob.name, bob_private_owner_key );
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "candice", candice_private_owner_key );
+      producer_vote( "candice", candice_private_owner_key );
 
-      fund_stake( candice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( candice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( candice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( candice.name, candice_private_owner_key, candice_public_owner_key );
-      producer_vote( candice.name, candice_private_owner_key );
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "dan", dan_private_owner_key );
+      producer_vote( "dan", dan_private_owner_key );
 
-      fund_stake( dan.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( dan.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( dan.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( dan.name, dan_private_owner_key, dan_public_owner_key );
-      producer_vote( dan.name, dan_private_owner_key );
+      fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "elon", elon_private_owner_key );
+      producer_vote( "elon", elon_private_owner_key );
 
-      fund_stake( elon.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( elon.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( elon.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( elon.name, elon_private_owner_key, elon_public_owner_key );
-      producer_vote( elon.name, elon_private_owner_key );
+      fund_stake( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "fred", fred_private_owner_key );
+      producer_vote( "fred", fred_private_owner_key );
 
-      fund_stake( fred.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( fred.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( fred.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( fred.name, fred_private_owner_key, fred_public_owner_key );
-      producer_vote( fred.name, fred_private_owner_key );
+      fund_stake( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "george", george_private_owner_key );
+      producer_vote( "george", george_private_owner_key );
 
-      fund_stake( george.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( george.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( george.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( george.name, george_private_owner_key, george_public_owner_key );
-      producer_vote( george.name, george_private_owner_key );
+      fund_stake( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "haz", haz_private_owner_key );
+      producer_vote( "haz", haz_private_owner_key );
 
-      fund_stake( haz.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( haz.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( haz.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( haz.name, haz_private_owner_key, haz_public_owner_key );
-      producer_vote( haz.name, haz_private_owner_key );
+      fund_stake( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "isabelle", isabelle_private_owner_key );
+      producer_vote( "isabelle", isabelle_private_owner_key );
 
-      fund_stake( isabelle.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( isabelle.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( isabelle.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( isabelle.name, isabelle_private_owner_key, isabelle_public_owner_key );
-      producer_vote( isabelle.name, isabelle_private_owner_key );
+      fund_stake( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "jayme", jayme_private_owner_key );
+      producer_vote( "jayme", jayme_private_owner_key );
 
-      fund_stake( jayme.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( jayme.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( jayme.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( jayme.name, jayme_private_owner_key, jayme_public_owner_key );
-      producer_vote( jayme.name, jayme_private_owner_key );
+      fund_stake( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "kathryn", kathryn_private_owner_key );
+      producer_vote( "kathryn", kathryn_private_owner_key );
 
-      fund_stake( kathryn.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( kathryn.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( kathryn.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( kathryn.name, kathryn_private_owner_key, kathryn_public_owner_key );
-      producer_vote( kathryn.name, kathryn_private_owner_key );
+      fund_stake( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "leonie", leonie_private_owner_key );
+      producer_vote( "leonie", leonie_private_owner_key );
 
-      fund_stake( leonie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( leonie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( leonie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( leonie.name, leonie_private_owner_key, leonie_public_owner_key );
-      producer_vote( leonie.name, leonie_private_owner_key );
+      fund_stake( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "margot", margot_private_owner_key );
+      producer_vote( "margot", margot_private_owner_key );
 
-      fund_stake( margot.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( margot.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( margot.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( margot.name, margot_private_owner_key, margot_public_owner_key );
-      producer_vote( margot.name, margot_private_owner_key );
+      fund_stake( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "natalie", natalie_private_owner_key );
+      producer_vote( "natalie", natalie_private_owner_key );
 
-      fund_stake( natalie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( natalie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( natalie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( natalie.name, natalie_private_owner_key, natalie_public_owner_key );
-      producer_vote( natalie.name, natalie_private_owner_key );
+      fund_stake( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "olivia", olivia_private_owner_key );
+      producer_vote( "olivia", olivia_private_owner_key );
 
-      fund_stake( olivia.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( olivia.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( olivia.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( olivia.name, olivia_private_owner_key, olivia_public_owner_key );
-      producer_vote( olivia.name, olivia_private_owner_key );
+      fund_stake( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "peter", peter_private_owner_key );
+      producer_vote( "peter", peter_private_owner_key );
 
-      fund_stake( peter.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( peter.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( peter.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( peter.name, peter_private_owner_key, peter_public_owner_key );
-      producer_vote( peter.name, peter_private_owner_key );
+      fund_stake( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "quentin", quentin_private_owner_key );
+      producer_vote( "quentin", quentin_private_owner_key );
 
-      fund_stake( quentin.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( quentin.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( quentin.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( quentin.name, quentin_private_owner_key, quentin_public_owner_key );
-      producer_vote( quentin.name, quentin_private_owner_key );
+      fund_stake( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "rachel", rachel_private_owner_key );
+      producer_vote( "rachel", rachel_private_owner_key );
 
-      fund_stake( rachel.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( rachel.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( rachel.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( rachel.name, rachel_private_owner_key, rachel_public_owner_key );
-      producer_vote( rachel.name, rachel_private_owner_key );
+      fund_stake( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "sam", sam_private_owner_key );
+      producer_vote( "sam", sam_private_owner_key );
 
-      fund_stake( sam.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( sam.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( sam.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( sam.name, sam_private_owner_key, sam_public_owner_key );
-      producer_vote( sam.name, sam_private_owner_key );
+      fund_stake( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "tim", tim_private_owner_key );
+      producer_vote( "tim", tim_private_owner_key );
 
-      fund_stake( tim.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( tim.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( tim.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( tim.name, tim_private_owner_key, tim_public_owner_key );
-      producer_vote( tim.name, tim_private_owner_key );
+      fund_stake( "usain", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "usain", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "usain", usain_private_owner_key );
+      producer_vote( "usain", usain_private_owner_key );
 
-      fund_stake( veronica.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( veronica.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( veronica.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( veronica.name, veronica_private_owner_key, veronica_public_owner_key );
-      producer_vote( veronica.name, veronica_private_owner_key );
+      fund_stake( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "veronica", veronica_private_owner_key );
+      producer_vote( "veronica", veronica_private_owner_key );
 
-      generate_blocks( now() + fc::minutes(10), true );
+      fund_stake( "will", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "will", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "will", will_private_owner_key );
+      producer_vote( "will", will_private_owner_key );
+
+      fund_stake( "xerxes", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "xerxes", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "xerxes", xerxes_private_owner_key );
+      producer_vote( "xerxes", xerxes_private_owner_key );
+
+      fund_stake( "yan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "yan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "yan", yan_private_owner_key );
+      producer_vote( "yan", yan_private_owner_key );
+
+      fund_stake( "zach", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "zach", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "zach", zach_private_owner_key );
+      producer_vote( "zach", zach_private_owner_key );
+
+      generate_blocks( TOTAL_PRODUCERS );
 
       account_membership_operation membership;
 
@@ -201,9 +203,8 @@ BOOST_AUTO_TEST_CASE( update_network_officer_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const network_officer_object& alice_officer = db.get_network_officer( alice.name );
+      const network_officer_object& alice_officer = db.get_network_officer( account_name_type( "alice" ) );
       
-      BOOST_REQUIRE( alice_officer.account == "alice" );
       BOOST_REQUIRE( alice_officer.officer_type == network_officer_role_type::DEVELOPMENT );
       BOOST_REQUIRE( alice_officer.active == true );
       BOOST_REQUIRE( alice_officer.officer_approved == false );
@@ -408,11 +409,61 @@ BOOST_AUTO_TEST_CASE( update_network_officer_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      vote.signatory = "usain";
+      vote.account = "usain";
+
+      tx.operations.push_back( vote );
+      tx.sign( usain_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
       vote.signatory = "veronica";
       vote.account = "veronica";
 
       tx.operations.push_back( vote );
       tx.sign( veronica_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      vote.signatory = "will";
+      vote.account = "will";
+
+      tx.operations.push_back( vote );
+      tx.sign( will_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      vote.signatory = "xerxes";
+      vote.account = "xerxes";
+
+      tx.operations.push_back( vote );
+      tx.sign( xerxes_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      vote.signatory = "yan";
+      vote.account = "yan";
+
+      tx.operations.push_back( vote );
+      tx.sign( yan_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      vote.signatory = "zach";
+      vote.account = "zach";
+
+      tx.operations.push_back( vote );
+      tx.sign( zach_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -438,331 +489,150 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: executive board creation" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme)(kathryn)(leonie)(margot)
+      (natalie)(olivia)(peter)(quentin)(rachel)(sam)(tim)(usain)(veronica)(will)(xerxes)(yan)(zach)(execboard) );
 
-      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme)(kathryn)(leonie)(margot)(natalie)(olivia)(peter)(quentin)(rachel)(sam)(tim)(veronica) 
-      (alice2)(bob2)(candice2)(dan2)(elon2)(fred2)(george2)(haz2)(isabelle2)(jayme2)(kathryn2)(leonie2)(margot2)(natalie2)(olivia2)(peter2)(quentin2)(rachel2)(sam2)(tim2)(veronica2)(execboard));
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "alice", alice_private_owner_key );
+      producer_vote( "alice", alice_private_owner_key );
 
-      fund_stake( alice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( alice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( alice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( alice.name, alice_private_owner_key, alice_public_owner_key );
-      producer_vote( alice.name, alice_private_owner_key );
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "bob", bob_private_owner_key );
+      producer_vote( "bob", bob_private_owner_key );
 
-      fund_stake( bob.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( bob.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( bob.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( bob.name, bob_private_owner_key, bob_public_owner_key );
-      producer_vote( bob.name, bob_private_owner_key );
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "candice", candice_private_owner_key );
+      producer_vote( "candice", candice_private_owner_key );
 
-      fund_stake( candice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( candice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( candice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( candice.name, candice_private_owner_key, candice_public_owner_key );
-      producer_vote( candice.name, candice_private_owner_key );
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "dan", dan_private_owner_key );
+      producer_vote( "dan", dan_private_owner_key );
 
-      fund_stake( dan.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( dan.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( dan.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( dan.name, dan_private_owner_key, dan_public_owner_key );
-      producer_vote( dan.name, dan_private_owner_key );
+      fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "elon", elon_private_owner_key );
+      producer_vote( "elon", elon_private_owner_key );
 
-      fund_stake( elon.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( elon.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( elon.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( elon.name, elon_private_owner_key, elon_public_owner_key );
-      producer_vote( elon.name, elon_private_owner_key );
+      fund_stake( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "fred", fred_private_owner_key );
+      producer_vote( "fred", fred_private_owner_key );
 
-      fund_stake( fred.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( fred.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( fred.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( fred.name, fred_private_owner_key, fred_public_owner_key );
-      producer_vote( fred.name, fred_private_owner_key );
+      fund_stake( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "george", george_private_owner_key );
+      producer_vote( "george", george_private_owner_key );
 
-      fund_stake( george.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( george.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( george.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( george.name, george_private_owner_key, george_public_owner_key );
-      producer_vote( george.name, george_private_owner_key );
+      fund_stake( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "haz", haz_private_owner_key );
+      producer_vote( "haz", haz_private_owner_key );
 
-      fund_stake( haz.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( haz.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( haz.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( haz.name, haz_private_owner_key, haz_public_owner_key );
-      producer_vote( haz.name, haz_private_owner_key );
+      fund_stake( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "isabelle", isabelle_private_owner_key );
+      producer_vote( "isabelle", isabelle_private_owner_key );
 
-      fund_stake( isabelle.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( isabelle.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( isabelle.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( isabelle.name, isabelle_private_owner_key, isabelle_public_owner_key );
-      producer_vote( isabelle.name, isabelle_private_owner_key );
+      fund_stake( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "jayme", jayme_private_owner_key );
+      producer_vote( "jayme", jayme_private_owner_key );
 
-      fund_stake( jayme.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( jayme.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( jayme.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( jayme.name, jayme_private_owner_key, jayme_public_owner_key );
-      producer_vote( jayme.name, jayme_private_owner_key );
+      fund_stake( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "kathryn", kathryn_private_owner_key );
+      producer_vote( "kathryn", kathryn_private_owner_key );
 
-      fund_stake( kathryn.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( kathryn.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( kathryn.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( kathryn.name, kathryn_private_owner_key, kathryn_public_owner_key );
-      producer_vote( kathryn.name, kathryn_private_owner_key );
+      fund_stake( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "leonie", leonie_private_owner_key );
+      producer_vote( "leonie", leonie_private_owner_key );
 
-      fund_stake( leonie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( leonie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( leonie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( leonie.name, leonie_private_owner_key, leonie_public_owner_key );
-      producer_vote( leonie.name, leonie_private_owner_key );
+      fund_stake( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "margot", margot_private_owner_key );
+      producer_vote( "margot", margot_private_owner_key );
 
-      fund_stake( margot.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( margot.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( margot.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( margot.name, margot_private_owner_key, margot_public_owner_key );
-      producer_vote( margot.name, margot_private_owner_key );
+      fund_stake( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "natalie", natalie_private_owner_key );
+      producer_vote( "natalie", natalie_private_owner_key );
 
-      fund_stake( natalie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( natalie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( natalie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( natalie.name, natalie_private_owner_key, natalie_public_owner_key );
-      producer_vote( natalie.name, natalie_private_owner_key );
+      fund_stake( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "olivia", olivia_private_owner_key );
+      producer_vote( "olivia", olivia_private_owner_key );
 
-      fund_stake( olivia.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( olivia.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( olivia.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( olivia.name, olivia_private_owner_key, olivia_public_owner_key );
-      producer_vote( olivia.name, olivia_private_owner_key );
+      fund_stake( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "peter", peter_private_owner_key );
+      producer_vote( "peter", peter_private_owner_key );
 
-      fund_stake( peter.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( peter.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( peter.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( peter.name, peter_private_owner_key, peter_public_owner_key );
-      producer_vote( peter.name, peter_private_owner_key );
+      fund_stake( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "quentin", quentin_private_owner_key );
+      producer_vote( "quentin", quentin_private_owner_key );
 
-      fund_stake( quentin.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( quentin.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( quentin.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( quentin.name, quentin_private_owner_key, quentin_public_owner_key );
-      producer_vote( quentin.name, quentin_private_owner_key );
+      fund_stake( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "rachel", rachel_private_owner_key );
+      producer_vote( "rachel", rachel_private_owner_key );
 
-      fund_stake( rachel.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( rachel.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( rachel.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( rachel.name, rachel_private_owner_key, rachel_public_owner_key );
-      producer_vote( rachel.name, rachel_private_owner_key );
+      fund_stake( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "sam", sam_private_owner_key );
+      producer_vote( "sam", sam_private_owner_key );
 
-      fund_stake( sam.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( sam.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( sam.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( sam.name, sam_private_owner_key, sam_public_owner_key );
-      producer_vote( sam.name, sam_private_owner_key );
+      fund_stake( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "tim", tim_private_owner_key );
+      producer_vote( "tim", tim_private_owner_key );
 
-      fund_stake( tim.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( tim.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( tim.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( tim.name, tim_private_owner_key, tim_public_owner_key );
-      producer_vote( tim.name, tim_private_owner_key );
+      fund_stake( "usain", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "usain", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "usain", usain_private_owner_key );
+      producer_vote( "usain", usain_private_owner_key );
 
-      fund_stake( veronica.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( veronica.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( veronica.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( veronica.name, veronica_private_owner_key, veronica_public_owner_key );
-      producer_vote( veronica.name, veronica_private_owner_key );
+      fund_stake( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "veronica", veronica_private_owner_key );
+      producer_vote( "veronica", veronica_private_owner_key );
 
-      // Second set
+      fund_stake( "will", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "will", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "will", will_private_owner_key );
+      producer_vote( "will", will_private_owner_key );
 
-      fund_stake( alice2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( alice2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( alice2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( alice2.name, alice2_private_owner_key, alice2_public_owner_key );
-      producer_vote( alice2.name, alice2_private_owner_key );
+      fund_stake( "xerxes", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "xerxes", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "xerxes", xerxes_private_owner_key );
+      producer_vote( "xerxes", xerxes_private_owner_key );
 
-      fund_stake( bob2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( bob2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( bob2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( bob2.name, bob2_private_owner_key, bob2_public_owner_key );
-      producer_vote( bob2.name, bob2_private_owner_key );
+      fund_stake( "yan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "yan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "yan", yan_private_owner_key );
+      producer_vote( "yan", yan_private_owner_key );
 
-      fund_stake( candice2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( candice2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( candice2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( candice2.name, candice2_private_owner_key, candice2_public_owner_key );
-      producer_vote( candice2.name, candice2_private_owner_key );
+      fund_stake( "zach", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "zach", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "zach", zach_private_owner_key );
+      producer_vote( "zach", zach_private_owner_key );
 
-      fund_stake( dan2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( dan2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( dan2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( dan2.name, dan2_private_owner_key, dan2_public_owner_key );
-      producer_vote( dan2.name, dan2_private_owner_key );
+      fund_stake( "execboard", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "execboard", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "execboard", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      producer_create( "execboard", execboard_private_owner_key );
+      producer_vote( "execboard", execboard_private_owner_key );
 
-      fund_stake( elon2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( elon2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( elon2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( elon2.name, elon2_private_owner_key, elon2_public_owner_key );
-      producer_vote( elon2.name, elon2_private_owner_key );
+      generate_blocks( GENESIS_TIME + fc::days(2), true );
 
-      fund_stake( fred2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( fred2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( fred2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( fred2.name, fred2_private_owner_key, fred2_public_owner_key );
-      producer_vote( fred2.name, fred2_private_owner_key );
-
-      fund_stake( george2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( george2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( george2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( george2.name, george2_private_owner_key, george2_public_owner_key );
-      producer_vote( george2.name, george2_private_owner_key );
-
-      fund_stake( haz2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( haz2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( haz2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( haz2.name, haz2_private_owner_key, haz2_public_owner_key );
-      producer_vote( haz2.name, haz2_private_owner_key );
-
-      fund_stake( isabelle2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( isabelle2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( isabelle2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( isabelle2.name, isabelle2_private_owner_key, isabelle2_public_owner_key );
-      producer_vote( isabelle2.name, isabelle2_private_owner_key );
-
-      fund_stake( jayme2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( jayme2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( jayme2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( jayme2.name, jayme2_private_owner_key, jayme2_public_owner_key );
-      producer_vote( jayme2.name, jayme2_private_owner_key );
-
-      fund_stake( kathryn2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( kathryn2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( kathryn2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( kathryn2.name, kathryn2_private_owner_key, kathryn2_public_owner_key );
-      producer_vote( kathryn2.name, kathryn2_private_owner_key );
-
-      fund_stake( leonie2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( leonie2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( leonie2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( leonie2.name, leonie2_private_owner_key, leonie2_public_owner_key );
-      producer_vote( leonie2.name, leonie2_private_owner_key );
-
-      fund_stake( margot2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( margot2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( margot2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( margot2.name, margot2_private_owner_key, margot2_public_owner_key );
-      producer_vote( margot2.name, margot2_private_owner_key );
-
-      fund_stake( natalie2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( natalie2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( natalie2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( natalie2.name, natalie2_private_owner_key, natalie2_public_owner_key );
-      producer_vote( natalie2.name, natalie2_private_owner_key );
-
-      fund_stake( olivia2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( olivia2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( olivia2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( olivia2.name, olivia2_private_owner_key, olivia2_public_owner_key );
-      producer_vote( olivia2.name, olivia2_private_owner_key );
-
-      fund_stake( peter2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( peter2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( peter2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( peter2.name, peter2_private_owner_key, peter2_public_owner_key );
-      producer_vote( peter2.name, peter2_private_owner_key );
-
-      fund_stake( quentin2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( quentin2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( quentin2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( quentin2.name, quentin2_private_owner_key, quentin2_public_owner_key );
-      producer_vote( quentin2.name, quentin2_private_owner_key );
-
-      fund_stake( rachel2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( rachel2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( rachel2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( rachel2.name, rachel2_private_owner_key, rachel2_public_owner_key );
-      producer_vote( rachel2.name, rachel2_private_owner_key );
-
-      fund_stake( sam2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( sam2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( sam2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( sam2.name, sam2_private_owner_key, sam2_public_owner_key );
-      producer_vote( sam2.name, sam2_private_owner_key );
-
-      fund_stake( tim2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( tim2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( tim2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( tim2.name, tim2_private_owner_key, tim2_public_owner_key );
-      producer_vote( tim2.name, tim2_private_owner_key );
-
-      fund_stake( veronica2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( veronica2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( veronica2.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( veronica2.name, veronica2_private_owner_key, veronica2_public_owner_key );
-      producer_vote( veronica2.name, veronica2_private_owner_key );
-
-      fund_stake( execboard.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( execboard.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( execboard.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( execboard.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      producer_create( execboard.name, execboard_private_owner_key, execboard_public_owner_key );
-      producer_vote( execboard.name, execboard_private_owner_key );
-
-      generate_blocks( now() + fc::minutes(10), true );
-
-      account_business_operation business_create;
-
-      business_create.signatory = "execboard";
-      business_create.account = "execboard";
-      business_create.business_type = "public";
-      business_create.officer_vote_threshold = BLOCKCHAIN_PRECISION;
-      business_create.business_public_key = string( alice_public_posting_key );
-      business_create.init_ceo_account = "alice";
-      business_create.active = true;
-      business_create.validate();
+      generate_blocks( TOTAL_PRODUCERS );
 
       signed_transaction tx;
-      
-      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( business_create );
-      tx.sign( execboard_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      asset_create_operation asset_create;
-
-      asset_create.signatory = "execboard";
-      asset_create.issuer = "execboard";
-      asset_create.symbol = "EXEQ";
-      asset_create.asset_type = "equity";
-      asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
-      asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, "EXEQ" );
-      asset_create.options.display_symbol = "Exec Board Equity";
-      asset_create.options.details = "Details";
-      asset_create.options.json = "{ \"valid\": true }";
-      asset_create.options.url = "https://www.url.com";
-      asset_create.validate();
-
-      tx.operations.push_back( asset_create );
-      tx.sign( execboard_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      fund_stake( execboard.name, asset( 1000 * BLOCKCHAIN_PRECISION, "EXEQ" ) );
-      fund_stake( alice.name, asset( 1000 * BLOCKCHAIN_PRECISION, "EXEQ" ) );
-
-      const asset_object& exeq_asset = db.get_asset( "EXEQ" );
-
-      BOOST_REQUIRE( exeq_asset.issuer == asset_create.issuer );
-      BOOST_REQUIRE( exeq_asset.symbol == asset_create.symbol );
-      BOOST_REQUIRE( exeq_asset.asset_type == asset_property_type::EQUITY_ASSET );
-      BOOST_REQUIRE( exeq_asset.created == now() );
-      BOOST_REQUIRE( exeq_asset.last_updated == now() );
-
-      const asset_equity_data_object& exeq_equity = db.get_equity_data( "EXEQ" );
-
-      BOOST_REQUIRE( exeq_equity.business_account == asset_create.issuer );
 
       account_membership_operation member;
 
@@ -772,7 +642,8 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       member.months = 1;
       member.interface = INIT_ACCOUNT;
       member.validate();
-
+      
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( member );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -820,6 +691,77 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      account_business_operation business_create;
+
+      business_create.signatory = "execboard";
+      business_create.account = "execboard";
+      business_create.business_type = "public";
+      business_create.officer_vote_threshold = BLOCKCHAIN_PRECISION;
+      business_create.business_public_key = string( alice_public_connection_key );
+      business_create.init_ceo_account = "alice";
+      business_create.active = true;
+      business_create.validate();
+
+      tx.operations.push_back( business_create );
+      tx.sign( execboard_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const account_business_object& bus_acc = db.get_account_business( "execboard" );
+
+      asset_create_operation asset_create;
+
+      asset_create.signatory = "execboard";
+      asset_create.issuer = "execboard";
+      asset_create.symbol = "EXEQ";
+      asset_create.asset_type = "equity";
+      asset_create.coin_liquidity = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      asset_create.usd_liquidity = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      asset_create.credit_liquidity = asset( 100 * BLOCKCHAIN_PRECISION, asset_symbol_type( "EXEQ" ) );
+      asset_create.options.display_symbol = "Exec Board Equity";
+      asset_create.options.details = "Details";
+      asset_create.options.json = "{ \"valid\": true }";
+      asset_create.options.url = "https://www.url.com";
+      asset_create.validate();
+
+      tx.operations.push_back( asset_create );
+      tx.sign( execboard_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      asset_issue_operation asset_issue;
+
+      asset_issue.signatory = "execboard";
+      asset_issue.issuer = "execboard";
+      asset_issue.asset_to_issue = asset( 5000 * BLOCKCHAIN_PRECISION, asset_symbol_type( "EXEQ" ) );
+      asset_issue.issue_to_account = INIT_ACCOUNT;
+      asset_issue.memo = "Issue";
+      asset_issue.validate();
+
+      tx.operations.push_back( asset_issue );
+      tx.sign( execboard_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      fund_stake( "execboard", asset( 1000 * BLOCKCHAIN_PRECISION, asset_symbol_type( "EXEQ" ) ) );
+      fund_stake( "alice", asset( 1000 * BLOCKCHAIN_PRECISION, asset_symbol_type( "EXEQ" ) ) );
+
+      const asset_object& exeq_asset = db.get_asset( asset_symbol_type( "EXEQ" ) );
+
+      BOOST_REQUIRE( exeq_asset.issuer == asset_create.issuer );
+      BOOST_REQUIRE( exeq_asset.symbol == asset_create.symbol );
+      BOOST_REQUIRE( exeq_asset.asset_type == asset_property_type::EQUITY_ASSET );
+
+      const asset_equity_data_object& exeq_equity = db.get_equity_data( asset_symbol_type( "EXEQ" ) );
+
+      BOOST_REQUIRE( exeq_equity.business_account == asset_create.issuer );
+
       update_network_officer_operation officer;
 
       officer.signatory = "bob";
@@ -859,6 +801,84 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      string alice_private_connection_wif = graphene::utilities::key_to_wif( alice_private_connection_key );
+
+      account_member_invite_operation invite;
+
+      invite.signatory = "alice";
+      invite.account = "alice";
+      invite.member = "bob";
+      invite.business_account = "execboard";
+      invite.message = "Hello";
+      invite.encrypted_business_key = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, bob_public_secure_key, alice_private_connection_wif );
+      invite.validate();
+
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( invite );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite.member = "candice";
+      invite.encrypted_business_key = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, candice_public_secure_key, alice_private_connection_wif );
+      
+      tx.operations.push_back( invite );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      invite.member = "dan";
+      invite.encrypted_business_key = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, dan_public_secure_key, alice_private_connection_wif );
+      
+      tx.operations.push_back( invite );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      account_accept_invite_operation accept_invite;
+
+      accept_invite.signatory = "bob";
+      accept_invite.account = "bob";
+      accept_invite.business_account = "execboard";
+      accept_invite.validate();
+
+      tx.operations.push_back( accept_invite );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      accept_invite.signatory = "candice";
+      accept_invite.account = "candice";
+
+      tx.operations.push_back( accept_invite );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      accept_invite.signatory = "dan";
+      accept_invite.account = "dan";
+
+      tx.operations.push_back( accept_invite );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      BOOST_REQUIRE( bus_acc.is_member( account_name_type( "bob" ) ) );
+      BOOST_REQUIRE( bus_acc.is_member( account_name_type( "candice" ) ) );
+      BOOST_REQUIRE( bus_acc.is_member( account_name_type( "dan" ) ) );
 
       account_vote_officer_operation vote;
 
@@ -983,7 +1003,9 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      comment_create( alice.name, alice_private_posting_key, "alicetestpost" );
+      generate_blocks( TOTAL_PRODUCERS );
+
+      comment_create( "alice", alice_private_posting_key, "alicetestpost" );
 
       account_create_operation create;
 
@@ -1011,6 +1033,8 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
          tx.operations.clear();
          tx.signatures.clear();
       }
+
+      generate_blocks( now() + MIN_VIEW_INTERVAL );
 
       view_operation view;
 
@@ -1064,17 +1088,43 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: executive board approval process" );
 
-      executive_board_vote_operation eb_vote;    // 40 accounts vote for executive board
+      executive_board_vote_operation eb_vote;    // 100 accounts vote for executive board
 
-      eb_vote.signatory = "bob";
-      eb_vote.account = "bob";
+      eb_vote.signatory = "newuser";
+      eb_vote.account = "newuser";
       eb_vote.executive_board = "execboard";
       eb_vote.vote_rank = 1;
       eb_vote.approved = true;
       eb_vote.validate();
 
+      for( auto i = 0; i < 100; i++ )
+      {
+         eb_vote.signatory = "newuser"+fc::to_string( i );
+         eb_vote.account = "newuser"+fc::to_string( i );
+
+         tx.operations.push_back( eb_vote );
+         tx.sign( alice_private_active_key, db.get_chain_id() );
+         db.push_transaction( tx, 0 );
+
+         tx.operations.clear();
+         tx.signatures.clear();
+      }
+
+      eb_vote.signatory = "alice";
+      eb_vote.account = "alice";
+
       tx.operations.push_back( eb_vote );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      eb_vote.signatory = "bob";
+      eb_vote.account = "bob";
+
+      tx.operations.push_back( eb_vote );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1084,7 +1134,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       eb_vote.account = "candice";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( candice_private_owner_key, db.get_chain_id() );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1094,7 +1144,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       eb_vote.account = "dan";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( dan_private_owner_key, db.get_chain_id() );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1104,7 +1154,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       eb_vote.account = "elon";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( elon_private_owner_key, db.get_chain_id() );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1114,7 +1164,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       eb_vote.account = "fred";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( fred_private_owner_key, db.get_chain_id() );
+      tx.sign( fred_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1124,7 +1174,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       eb_vote.account = "george";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( george_private_owner_key, db.get_chain_id() );
+      tx.sign( george_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1134,7 +1184,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       eb_vote.account = "haz";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( haz_private_owner_key, db.get_chain_id() );
+      tx.sign( haz_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1144,7 +1194,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       eb_vote.account = "isabelle";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( isabelle_private_owner_key, db.get_chain_id() );
+      tx.sign( isabelle_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1154,7 +1204,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       eb_vote.account = "jayme";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( jayme_private_owner_key, db.get_chain_id() );
+      tx.sign( jayme_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1164,7 +1214,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       eb_vote.account = "kathryn";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( kathryn_private_owner_key, db.get_chain_id() );
+      tx.sign( kathryn_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1174,7 +1224,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       eb_vote.account = "leonie";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( leonie_private_owner_key, db.get_chain_id() );
+      tx.sign( leonie_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1184,7 +1234,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       eb_vote.account = "margot";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( margot_private_owner_key, db.get_chain_id() );
+      tx.sign( margot_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1194,7 +1244,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       eb_vote.account = "natalie";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( natalie_private_owner_key, db.get_chain_id() );
+      tx.sign( natalie_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1204,7 +1254,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       eb_vote.account = "olivia";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( olivia_private_owner_key, db.get_chain_id() );
+      tx.sign( olivia_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1214,7 +1264,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       eb_vote.account = "peter";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( peter_private_owner_key, db.get_chain_id() );
+      tx.sign( peter_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1224,7 +1274,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       eb_vote.account = "quentin";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( quentin_private_owner_key, db.get_chain_id() );
+      tx.sign( quentin_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1234,7 +1284,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       eb_vote.account = "rachel";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( rachel_private_owner_key, db.get_chain_id() );
+      tx.sign( rachel_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1244,7 +1294,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       eb_vote.account = "sam";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( sam_private_owner_key, db.get_chain_id() );
+      tx.sign( sam_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1254,7 +1304,17 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       eb_vote.account = "tim";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( tim_private_owner_key, db.get_chain_id() );
+      tx.sign( tim_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      eb_vote.signatory = "usain";
+      eb_vote.account = "usain";
+
+      tx.operations.push_back( eb_vote );
+      tx.sign( usain_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1264,213 +1324,53 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       eb_vote.account = "veronica";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( veronica_private_owner_key, db.get_chain_id() );
+      tx.sign( veronica_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      eb_vote.signatory = "bob2";
-      eb_vote.account = "bob2";
+      eb_vote.signatory = "will";
+      eb_vote.account = "will";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( bob2_private_owner_key, db.get_chain_id() );
+      tx.sign( will_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      eb_vote.signatory = "candice2";
-      eb_vote.account = "candice2";
+      eb_vote.signatory = "xerxes";
+      eb_vote.account = "xerxes";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( candice2_private_owner_key, db.get_chain_id() );
+      tx.sign( xerxes_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      eb_vote.signatory = "dan2";
-      eb_vote.account = "dan2";
+      eb_vote.signatory = "yan";
+      eb_vote.account = "yan";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( dan2_private_owner_key, db.get_chain_id() );
+      tx.sign( yan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      eb_vote.signatory = "elon2";
-      eb_vote.account = "elon2";
+      eb_vote.signatory = "zach";
+      eb_vote.account = "zach";
 
       tx.operations.push_back( eb_vote );
-      tx.sign( elon2_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      eb_vote.signatory = "fred2";
-      eb_vote.account = "fred2";
-
-      tx.operations.push_back( eb_vote );
-      tx.sign( fred2_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      eb_vote.signatory = "george2";
-      eb_vote.account = "george2";
-
-      tx.operations.push_back( eb_vote );
-      tx.sign( george2_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      eb_vote.signatory = "haz2";
-      eb_vote.account = "haz2";
-
-      tx.operations.push_back( eb_vote );
-      tx.sign( haz2_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      eb_vote.signatory = "isabelle2";
-      eb_vote.account = "isabelle2";
-
-      tx.operations.push_back( eb_vote );
-      tx.sign( isabelle2_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      eb_vote.signatory = "jayme2";
-      eb_vote.account = "jayme2";
-
-      tx.operations.push_back( eb_vote );
-      tx.sign( jayme2_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      eb_vote.signatory = "kathryn2";
-      eb_vote.account = "kathryn2";
-
-      tx.operations.push_back( eb_vote );
-      tx.sign( kathryn2_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      eb_vote.signatory = "leonie2";
-      eb_vote.account = "leonie2";
-
-      tx.operations.push_back( eb_vote );
-      tx.sign( leonie2_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      eb_vote.signatory = "margot2";
-      eb_vote.account = "margot2";
-
-      tx.operations.push_back( eb_vote );
-      tx.sign( margot2_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      eb_vote.signatory = "natalie2";
-      eb_vote.account = "natalie2";
-
-      tx.operations.push_back( eb_vote );
-      tx.sign( natalie2_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      eb_vote.signatory = "olivia2";
-      eb_vote.account = "olivia2";
-
-      tx.operations.push_back( eb_vote );
-      tx.sign( olivia2_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      eb_vote.signatory = "peter2";
-      eb_vote.account = "peter2";
-
-      tx.operations.push_back( eb_vote );
-      tx.sign( peter2_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      eb_vote.signatory = "quentin2";
-      eb_vote.account = "quentin2";
-
-      tx.operations.push_back( eb_vote );
-      tx.sign( quentin2_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      eb_vote.signatory = "rachel2";
-      eb_vote.account = "rachel2";
-
-      tx.operations.push_back( eb_vote );
-      tx.sign( rachel2_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      eb_vote.signatory = "sam2";
-      eb_vote.account = "sam2";
-
-      tx.operations.push_back( eb_vote );
-      tx.sign( sam2_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      eb_vote.signatory = "tim2";
-      eb_vote.account = "tim2";
-
-      tx.operations.push_back( eb_vote );
-      tx.sign( tim2_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      eb_vote.signatory = "veronica2";
-      eb_vote.account = "veronica2";
-
-      tx.operations.push_back( eb_vote );
-      tx.sign( veronica2_private_owner_key, db.get_chain_id() );
+      tx.sign( zach_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
       
-      BOOST_REQUIRE( executive.account == "execboard" );
+      BOOST_REQUIRE( executive.account == account_name_type( "execboard" ) );
       BOOST_REQUIRE( executive.board_approved == true );
       BOOST_REQUIRE( executive.active == true );
       
@@ -1490,137 +1390,140 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: governance account creation" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme)(kathryn)(leonie)(margot)
+      (natalie)(olivia)(peter)(quentin)(rachel)(sam)(tim)(usain)(veronica)(will)(xerxes)(yan)(zach) );
 
-      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme)(kathryn)(leonie)(margot)(natalie)(olivia)(peter)(quentin)(rachel)(sam)(tim)(veronica) );
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "alice", alice_private_owner_key );
+      producer_vote( "alice", alice_private_owner_key );
 
-      fund_stake( alice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( alice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( alice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( alice.name, alice_private_owner_key, alice_public_owner_key );
-      producer_vote( alice.name, alice_private_owner_key );
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "bob", bob_private_owner_key );
+      producer_vote( "bob", bob_private_owner_key );
 
-      fund_stake( bob.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( bob.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( bob.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( bob.name, bob_private_owner_key, bob_public_owner_key );
-      producer_vote( bob.name, bob_private_owner_key );
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "candice", candice_private_owner_key );
+      producer_vote( "candice", candice_private_owner_key );
 
-      fund_stake( candice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( candice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( candice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( candice.name, candice_private_owner_key, candice_public_owner_key );
-      producer_vote( candice.name, candice_private_owner_key );
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "dan", dan_private_owner_key );
+      producer_vote( "dan", dan_private_owner_key );
 
-      fund_stake( dan.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( dan.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( dan.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( dan.name, dan_private_owner_key, dan_public_owner_key );
-      producer_vote( dan.name, dan_private_owner_key );
+      fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "elon", elon_private_owner_key );
+      producer_vote( "elon", elon_private_owner_key );
 
-      fund_stake( elon.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( elon.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( elon.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( elon.name, elon_private_owner_key, elon_public_owner_key );
-      producer_vote( elon.name, elon_private_owner_key );
+      fund_stake( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "fred", fred_private_owner_key );
+      producer_vote( "fred", fred_private_owner_key );
 
-      fund_stake( fred.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( fred.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( fred.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( fred.name, fred_private_owner_key, fred_public_owner_key );
-      producer_vote( fred.name, fred_private_owner_key );
+      fund_stake( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "george", george_private_owner_key );
+      producer_vote( "george", george_private_owner_key );
 
-      fund_stake( george.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( george.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( george.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( george.name, george_private_owner_key, george_public_owner_key );
-      producer_vote( george.name, george_private_owner_key );
+      fund_stake( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "haz", haz_private_owner_key );
+      producer_vote( "haz", haz_private_owner_key );
 
-      fund_stake( haz.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( haz.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( haz.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( haz.name, haz_private_owner_key, haz_public_owner_key );
-      producer_vote( haz.name, haz_private_owner_key );
+      fund_stake( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "isabelle", isabelle_private_owner_key );
+      producer_vote( "isabelle", isabelle_private_owner_key );
 
-      fund_stake( isabelle.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( isabelle.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( isabelle.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( isabelle.name, isabelle_private_owner_key, isabelle_public_owner_key );
-      producer_vote( isabelle.name, isabelle_private_owner_key );
+      fund_stake( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "jayme", jayme_private_owner_key );
+      producer_vote( "jayme", jayme_private_owner_key );
 
-      fund_stake( jayme.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( jayme.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( jayme.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( jayme.name, jayme_private_owner_key, jayme_public_owner_key );
-      producer_vote( jayme.name, jayme_private_owner_key );
+      fund_stake( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "kathryn", kathryn_private_owner_key );
+      producer_vote( "kathryn", kathryn_private_owner_key );
 
-      fund_stake( kathryn.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( kathryn.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( kathryn.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( kathryn.name, kathryn_private_owner_key, kathryn_public_owner_key );
-      producer_vote( kathryn.name, kathryn_private_owner_key );
+      fund_stake( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "leonie", leonie_private_owner_key );
+      producer_vote( "leonie", leonie_private_owner_key );
 
-      fund_stake( leonie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( leonie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( leonie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( leonie.name, leonie_private_owner_key, leonie_public_owner_key );
-      producer_vote( leonie.name, leonie_private_owner_key );
+      fund_stake( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "margot", margot_private_owner_key );
+      producer_vote( "margot", margot_private_owner_key );
 
-      fund_stake( margot.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( margot.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( margot.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( margot.name, margot_private_owner_key, margot_public_owner_key );
-      producer_vote( margot.name, margot_private_owner_key );
+      fund_stake( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "natalie", natalie_private_owner_key );
+      producer_vote( "natalie", natalie_private_owner_key );
 
-      fund_stake( natalie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( natalie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( natalie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( natalie.name, natalie_private_owner_key, natalie_public_owner_key );
-      producer_vote( natalie.name, natalie_private_owner_key );
+      fund_stake( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "olivia", olivia_private_owner_key );
+      producer_vote( "olivia", olivia_private_owner_key );
 
-      fund_stake( olivia.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( olivia.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( olivia.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( olivia.name, olivia_private_owner_key, olivia_public_owner_key );
-      producer_vote( olivia.name, olivia_private_owner_key );
+      fund_stake( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "peter", peter_private_owner_key );
+      producer_vote( "peter", peter_private_owner_key );
 
-      fund_stake( peter.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( peter.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( peter.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( peter.name, peter_private_owner_key, peter_public_owner_key );
-      producer_vote( peter.name, peter_private_owner_key );
+      fund_stake( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "quentin", quentin_private_owner_key );
+      producer_vote( "quentin", quentin_private_owner_key );
 
-      fund_stake( quentin.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( quentin.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( quentin.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( quentin.name, quentin_private_owner_key, quentin_public_owner_key );
-      producer_vote( quentin.name, quentin_private_owner_key );
+      fund_stake( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "rachel", rachel_private_owner_key );
+      producer_vote( "rachel", rachel_private_owner_key );
 
-      fund_stake( rachel.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( rachel.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( rachel.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( rachel.name, rachel_private_owner_key, rachel_public_owner_key );
-      producer_vote( rachel.name, rachel_private_owner_key );
+      fund_stake( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "sam", sam_private_owner_key );
+      producer_vote( "sam", sam_private_owner_key );
 
-      fund_stake( sam.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( sam.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( sam.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( sam.name, sam_private_owner_key, sam_public_owner_key );
-      producer_vote( sam.name, sam_private_owner_key );
+      fund_stake( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "tim", tim_private_owner_key );
+      producer_vote( "tim", tim_private_owner_key );
 
-      fund_stake( tim.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( tim.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( tim.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( tim.name, tim_private_owner_key, tim_public_owner_key );
-      producer_vote( tim.name, tim_private_owner_key );
+      fund_stake( "usain", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "usain", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "usain", usain_private_owner_key );
+      producer_vote( "usain", usain_private_owner_key );
 
-      fund_stake( veronica.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( veronica.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( veronica.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( veronica.name, veronica_private_owner_key, veronica_public_owner_key );
-      producer_vote( veronica.name, veronica_private_owner_key );
+      fund_stake( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "veronica", veronica_private_owner_key );
+      producer_vote( "veronica", veronica_private_owner_key );
 
-      generate_blocks( now() + fc::minutes(10), true );
+      fund_stake( "will", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "will", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "will", will_private_owner_key );
+      producer_vote( "will", will_private_owner_key );
+
+      fund_stake( "xerxes", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "xerxes", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "xerxes", xerxes_private_owner_key );
+      producer_vote( "xerxes", xerxes_private_owner_key );
+
+      fund_stake( "yan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "yan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "yan", yan_private_owner_key );
+      producer_vote( "yan", yan_private_owner_key );
+
+      fund_stake( "zach", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "zach", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "zach", zach_private_owner_key );
+      producer_vote( "zach", zach_private_owner_key );
+
+      generate_blocks( TOTAL_PRODUCERS );
 
       account_create_operation create;
 
@@ -1652,18 +1555,16 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const account_object& govaccount = db.get_account( account_name_type( "govaccount" ) );
-
-      fund_stake( govaccount.name, asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( govaccount.name, asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "govaccount", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "govaccount", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       account_membership_operation member;
 
-      member.signatory = govaccount.name;
-      member.account = govaccount.name;
+      member.signatory = "govaccount";
+      member.account = "govaccount";
       member.membership_type = "top";
       member.months = 1;
       member.interface = INIT_ACCOUNT;
@@ -1678,8 +1579,8 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
 
       update_governance_operation gov;
       
-      gov.signatory = govaccount.name;
-      gov.account = govaccount.name;
+      gov.signatory = "govaccount";
+      gov.account = "govaccount";
       gov.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
       gov.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
       gov.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
@@ -1692,9 +1593,9 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const governance_account_object& governance = db.get_governance_account( govaccount.name );
+      const governance_account_object& governance = db.get_governance_account( account_name_type( "govaccount" ) );
       
-      BOOST_REQUIRE( governance.account == govaccount.name );
+      BOOST_REQUIRE( governance.account == account_name_type( "govaccount" ) );
       BOOST_REQUIRE( governance.account_approved == false );
       BOOST_REQUIRE( governance.active == true );
       
@@ -1702,13 +1603,23 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: governance account approval process" );
 
-      subscribe_governance_operation sub;    // 20 accounts subscribe to governance address
+      subscribe_governance_operation sub;
+
+      sub.signatory = "alice";
+      sub.account = "alice";
+      sub.governance_account = "govaccount";
+      sub.subscribe = true;
+      sub.validate();
+
+      tx.operations.push_back( sub );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
 
       sub.signatory = "bob";
       sub.account = "bob";
-      sub.governance_account = govaccount.name;
-      sub.subscribe = true;
-      sub.validate();
 
       tx.operations.push_back( sub );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
@@ -1897,6 +1808,16 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      sub.signatory = "usain";
+      sub.account = "usain";
+
+      tx.operations.push_back( sub );
+      tx.sign( usain_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
       sub.signatory = "veronica";
       sub.account = "veronica";
 
@@ -1906,8 +1827,48 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      sub.signatory = "will";
+      sub.account = "will";
+
+      tx.operations.push_back( sub );
+      tx.sign( will_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      sub.signatory = "xerxes";
+      sub.account = "xerxes";
+
+      tx.operations.push_back( sub );
+      tx.sign( xerxes_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      sub.signatory = "yan";
+      sub.account = "yan";
+
+      tx.operations.push_back( sub );
+      tx.sign( yan_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      sub.signatory = "zach";
+      sub.account = "zach";
+
+      tx.operations.push_back( sub );
+      tx.sign( zach_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
       
-      BOOST_REQUIRE( governance.account == govaccount.name );
+      BOOST_REQUIRE( governance.account == "govaccount" );
       BOOST_REQUIRE( governance.account_approved == true );
       BOOST_REQUIRE( governance.active == true );
       
@@ -1926,9 +1887,9 @@ BOOST_AUTO_TEST_CASE( update_supernode_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: supernode creation" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan) );
+
+      generate_blocks( TOTAL_PRODUCERS );
 
       update_supernode_operation supernode;
       
@@ -1954,7 +1915,7 @@ BOOST_AUTO_TEST_CASE( update_supernode_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const supernode_object& alice_supernode = db.get_supernode( alice.name );
+      const supernode_object& alice_supernode = db.get_supernode( account_name_type( "alice" ) );
       
       BOOST_REQUIRE( alice_supernode.account == "alice" );
       BOOST_REQUIRE( alice_supernode.daily_active_users == 0 );
@@ -1965,7 +1926,7 @@ BOOST_AUTO_TEST_CASE( update_supernode_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: supernode viewing process" );
 
-      comment_create( alice.name, alice_private_posting_key, "alicetestpost" );
+      comment_create( "alice", alice_private_posting_key, "alicetestpost" );
 
       view_operation view;
 
@@ -2005,12 +1966,12 @@ BOOST_AUTO_TEST_CASE( update_interface_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: interface creation" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan) );
 
-      fund( alice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( bob.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      generate_blocks( TOTAL_PRODUCERS );
 
       account_membership_operation member;
 
@@ -2046,7 +2007,7 @@ BOOST_AUTO_TEST_CASE( update_interface_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const interface_object& alice_interface = db.get_interface( alice.name );
+      const interface_object& alice_interface = db.get_interface( account_name_type( "alice" ) );
       
       BOOST_REQUIRE( alice_interface.account == "alice" );
       BOOST_REQUIRE( alice_interface.daily_active_users == 0 );
@@ -2071,7 +2032,7 @@ BOOST_AUTO_TEST_CASE( update_interface_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: supernode viewing process" );
 
-      comment_create( alice.name, alice_private_posting_key, string( "alicetestpost" ) );
+      comment_create( "alice", alice_private_posting_key, "alicetestpost" );
 
       view_operation view;
 
@@ -2115,12 +2076,10 @@ BOOST_AUTO_TEST_CASE( update_mediator_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: mediator creation" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan) );
 
-      fund( alice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( bob.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       signed_transaction tx;
 
@@ -2157,7 +2116,7 @@ BOOST_AUTO_TEST_CASE( update_mediator_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const mediator_object& alice_mediator = db.get_mediator( alice.name );
+      const mediator_object& alice_mediator = db.get_mediator( account_name_type( "alice" ) );
       
       BOOST_REQUIRE( alice_mediator.account == "alice" );
       BOOST_REQUIRE( alice_mediator.mediator_bond == mediator.mediator_bond );
@@ -2192,148 +2151,148 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: community enterprise proposal creation" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme)(kathryn)(leonie)(margot)
-         (natalie)(olivia)(peter)(quentin)(rachel)(sam)(tim)(veronica));
+      (natalie)(olivia)(peter)(quentin)(rachel)(sam)(tim)(usain)(veronica)(will)(xerxes)(yan)(zach) );
 
-      fund_stake( alice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( alice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( alice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( alice.name, alice_private_owner_key, alice_public_owner_key );
-      producer_vote( alice.name, alice_private_owner_key );
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "alice", alice_private_owner_key );
+      producer_vote( "alice", alice_private_owner_key );
 
-      fund_stake( bob.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( bob.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( bob.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( bob.name, bob_private_owner_key, bob_public_owner_key );
-      producer_vote( bob.name, bob_private_owner_key );
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "bob", bob_private_owner_key );
+      producer_vote( "bob", bob_private_owner_key );
 
-      fund_stake( candice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( candice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( candice.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( candice.name, candice_private_owner_key, candice_public_owner_key );
-      producer_vote( candice.name, candice_private_owner_key );
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "candice", candice_private_owner_key );
+      producer_vote( "candice", candice_private_owner_key );
 
-      fund_stake( dan.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( dan.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( dan.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( dan.name, dan_private_owner_key, dan_public_owner_key );
-      producer_vote( dan.name, dan_private_owner_key );
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "dan", dan_private_owner_key );
+      producer_vote( "dan", dan_private_owner_key );
 
-      fund_stake( elon.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( elon.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( elon.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( elon.name, elon_private_owner_key, elon_public_owner_key );
-      producer_vote( elon.name, elon_private_owner_key );
+      fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "elon", elon_private_owner_key );
+      producer_vote( "elon", elon_private_owner_key );
 
-      fund_stake( fred.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( fred.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( fred.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( fred.name, fred_private_owner_key, fred_public_owner_key );
-      producer_vote( fred.name, fred_private_owner_key );
+      fund_stake( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "fred", fred_private_owner_key );
+      producer_vote( "fred", fred_private_owner_key );
 
-      fund_stake( george.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( george.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( george.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( george.name, george_private_owner_key, george_public_owner_key );
-      producer_vote( george.name, george_private_owner_key );
+      fund_stake( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "george", george_private_owner_key );
+      producer_vote( "george", george_private_owner_key );
 
-      fund_stake( haz.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( haz.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( haz.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( haz.name, haz_private_owner_key, haz_public_owner_key );
-      producer_vote( haz.name, haz_private_owner_key );
+      fund_stake( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "haz", haz_private_owner_key );
+      producer_vote( "haz", haz_private_owner_key );
 
-      fund_stake( isabelle.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( isabelle.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( isabelle.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( isabelle.name, isabelle_private_owner_key, isabelle_public_owner_key );
-      producer_vote( isabelle.name, isabelle_private_owner_key );
+      fund_stake( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "isabelle", isabelle_private_owner_key );
+      producer_vote( "isabelle", isabelle_private_owner_key );
 
-      fund_stake( jayme.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( jayme.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( jayme.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( jayme.name, jayme_private_owner_key, jayme_public_owner_key );
-      producer_vote( jayme.name, jayme_private_owner_key );
+      fund_stake( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "jayme", jayme_private_owner_key );
+      producer_vote( "jayme", jayme_private_owner_key );
 
-      fund_stake( kathryn.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( kathryn.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( kathryn.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( kathryn.name, kathryn_private_owner_key, kathryn_public_owner_key );
-      producer_vote( kathryn.name, kathryn_private_owner_key );
+      fund_stake( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "kathryn", kathryn_private_owner_key );
+      producer_vote( "kathryn", kathryn_private_owner_key );
 
-      fund_stake( leonie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( leonie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( leonie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( leonie.name, leonie_private_owner_key, leonie_public_owner_key );
-      producer_vote( leonie.name, leonie_private_owner_key );
+      fund_stake( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "leonie", leonie_private_owner_key );
+      producer_vote( "leonie", leonie_private_owner_key );
 
-      fund_stake( margot.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( margot.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( margot.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( margot.name, margot_private_owner_key, margot_public_owner_key );
-      producer_vote( margot.name, margot_private_owner_key );
+      fund_stake( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "margot", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "margot", margot_private_owner_key );
+      producer_vote( "margot", margot_private_owner_key );
 
-      fund_stake( natalie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( natalie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( natalie.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( natalie.name, natalie_private_owner_key, natalie_public_owner_key );
-      producer_vote( natalie.name, natalie_private_owner_key );
+      fund_stake( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "natalie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "natalie", natalie_private_owner_key );
+      producer_vote( "natalie", natalie_private_owner_key );
 
-      fund_stake( olivia.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( olivia.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( olivia.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( olivia.name, olivia_private_owner_key, olivia_public_owner_key );
-      producer_vote( olivia.name, olivia_private_owner_key );
+      fund_stake( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "olivia", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "olivia", olivia_private_owner_key );
+      producer_vote( "olivia", olivia_private_owner_key );
 
-      fund_stake( peter.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( peter.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( peter.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( peter.name, peter_private_owner_key, peter_public_owner_key );
-      producer_vote( peter.name, peter_private_owner_key );
+      fund_stake( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "peter", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "peter", peter_private_owner_key );
+      producer_vote( "peter", peter_private_owner_key );
 
-      fund_stake( quentin.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( quentin.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( quentin.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( quentin.name, quentin_private_owner_key, quentin_public_owner_key );
-      producer_vote( quentin.name, quentin_private_owner_key );
+      fund_stake( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "quentin", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "quentin", quentin_private_owner_key );
+      producer_vote( "quentin", quentin_private_owner_key );
 
-      fund_stake( rachel.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( rachel.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( rachel.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( rachel.name, rachel_private_owner_key, rachel_public_owner_key );
-      producer_vote( rachel.name, rachel_private_owner_key );
+      fund_stake( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "rachel", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "rachel", rachel_private_owner_key );
+      producer_vote( "rachel", rachel_private_owner_key );
 
-      fund_stake( sam.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( sam.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( sam.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( sam.name, sam_private_owner_key, sam_public_owner_key );
-      producer_vote( sam.name, sam_private_owner_key );
+      fund_stake( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "sam", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "sam", sam_private_owner_key );
+      producer_vote( "sam", sam_private_owner_key );
 
-      fund_stake( tim.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( tim.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( tim.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( tim.name, tim_private_owner_key, tim_public_owner_key );
-      producer_vote( tim.name, tim_private_owner_key );
+      fund_stake( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "tim", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "tim", tim_private_owner_key );
+      producer_vote( "tim", tim_private_owner_key );
 
-      fund_stake( veronica.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( veronica.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( veronica.name, asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      producer_create( veronica.name, veronica_private_owner_key, veronica_public_owner_key );
-      producer_vote( veronica.name, veronica_private_owner_key );
+      fund_stake( "usain", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "usain", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "usain", usain_private_owner_key );
+      producer_vote( "usain", usain_private_owner_key );
 
-      generate_blocks( now() + fc::minutes(10), true );
+      fund_stake( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "veronica", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "veronica", veronica_private_owner_key );
+      producer_vote( "veronica", veronica_private_owner_key );
+
+      fund_stake( "will", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "will", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "will", will_private_owner_key );
+      producer_vote( "will", will_private_owner_key );
+
+      fund_stake( "xerxes", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "xerxes", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "xerxes", xerxes_private_owner_key );
+      producer_vote( "xerxes", xerxes_private_owner_key );
+
+      fund_stake( "yan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "yan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "yan", yan_private_owner_key );
+      producer_vote( "yan", yan_private_owner_key );
+
+      fund_stake( "zach", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "zach", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "zach", zach_private_owner_key );
+      producer_vote( "zach", zach_private_owner_key );
+
+      generate_blocks( TOTAL_PRODUCERS );
 
       create_community_enterprise_operation create;
 
       create.signatory = "alice";
       create.creator = "alice";
       create.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
-      create.proposal_type = "funding";
-      create.beneficiaries[ alice.name ] = PERCENT_100;
-      create.milestone_shares.push_back( 50*PERCENT_1 );
-      create.milestone_shares.push_back( 50*PERCENT_1 );
+      create.beneficiaries[ account_name_type( "alice" ) ] = PERCENT_100;
+      create.milestone_shares = { 50*PERCENT_1, 50*PERCENT_1 };
       create.details = "details";
       create.url = "https://www.url.com";
       create.json = "{ \"valid\": true }";
@@ -2573,6 +2532,16 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      approve.signatory = "usain";
+      approve.account = "usain";
+
+      tx.operations.push_back( approve );
+      tx.sign( usain_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
       approve.signatory = "veronica";
       approve.account = "veronica";
 
@@ -2583,23 +2552,64 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      approve.signatory = "will";
+      approve.account = "will";
+
+      tx.operations.push_back( approve );
+      tx.sign( will_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "xerxes";
+      approve.account = "xerxes";
+
+      tx.operations.push_back( approve );
+      tx.sign( xerxes_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "yan";
+      approve.account = "yan";
+
+      tx.operations.push_back( approve );
+      tx.sign( yan_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "zach";
+      approve.account = "zach";
+
+      tx.operations.push_back( approve );
+      tx.sign( zach_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
       const dynamic_global_property_object& props = db.get_dynamic_global_properties();
       const producer_schedule_object& producer_schedule = db.get_producer_schedule();
+
       db.update_enterprise( enterprise, producer_schedule, props );
 
       BOOST_REQUIRE( enterprise.creator == "alice" );
-      BOOST_REQUIRE( enterprise.approved_milestones == 0 );    // initial milestone now approved
+      BOOST_REQUIRE( enterprise.approved_milestones == 0 );        // Initial milestone now approved
       BOOST_REQUIRE( enterprise.claimed_milestones == 0 );
       BOOST_REQUIRE( enterprise.days_paid == 0 );
       BOOST_REQUIRE( enterprise.active == true );
 
-      generate_blocks( BLOCKS_PER_DAY * 8 - 1 );
+      generate_blocks( GENESIS_TIME + fc::days(1) - BLOCK_INTERVAL, true );
 
       BOOST_REQUIRE( enterprise.days_paid == 0 );
 
-      generate_block();
+      generate_blocks( 10 );
 
-      BOOST_REQUIRE( enterprise.days_paid == 1 );   // Daily budget is paid
+      BOOST_REQUIRE( enterprise.days_paid == 1 );         // Daily budget is paid
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: community enterprise proposal milestone approval" );
 
@@ -2838,11 +2848,61 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      approve.signatory = "usain";
+      approve.account = "usain";
+
+      tx.operations.push_back( approve );
+      tx.sign( usain_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
       approve.signatory = "veronica";
       approve.account = "veronica";
 
       tx.operations.push_back( approve );
       tx.sign( veronica_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "will";
+      approve.account = "will";
+
+      tx.operations.push_back( approve );
+      tx.sign( will_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "xerxes";
+      approve.account = "xerxes";
+
+      tx.operations.push_back( approve );
+      tx.sign( xerxes_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "yan";
+      approve.account = "yan";
+
+      tx.operations.push_back( approve );
+      tx.sign( yan_private_owner_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      approve.signatory = "zach";
+      approve.account = "zach";
+
+      tx.operations.push_back( approve );
+      tx.sign( zach_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -2856,11 +2916,7 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
       BOOST_REQUIRE( enterprise.days_paid == 1 );
       BOOST_REQUIRE( enterprise.active == true );
 
-      generate_blocks( BLOCKS_PER_DAY * 14 - 1 );
-
-      BOOST_REQUIRE( enterprise.days_paid == 13 );
-
-      generate_block();
+      generate_blocks( BLOCKS_PER_DAY * 15 );
 
       BOOST_REQUIRE( enterprise.days_paid == 14 );   // Daily budget is fully completed
 

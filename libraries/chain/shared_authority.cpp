@@ -69,7 +69,7 @@ void shared_authority::validate()const
 {
    for( const auto& item : account_auths )
    {
-      FC_ASSERT( protocol::is_valid_account_name( item.first ), 
+      FC_ASSERT( protocol::is_valid_account_name( item.first ),
          "Authority: ${n} is not valid.", 
          ("n", item) );
    }

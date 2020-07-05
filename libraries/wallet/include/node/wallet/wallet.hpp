@@ -2209,10 +2209,8 @@ class wallet_api
        * @param signatory The name of the account signing the transaction.
        * @param creator The name of the account that created the community enterprise proposal.
        * @param enterprise_id uuidv4 referring to the proposal.
-       * @param proposal_type The type of proposal, determines release schedule.
        * @param beneficiaries Set of account names and percentages of budget value. Should not include the null account.
        * @param milestone_shares Ordered vector of release milestone percentages of budget value.
-       * @param investment Symbol of the asset to be purchased with the funding if the proposal is investment type. 
        * @param details The proposals's details description. 
        * @param url The proposals's reference URL. 
        * @param json Json metadata of the proposal.
@@ -2227,10 +2225,8 @@ class wallet_api
          string signatory,
          string creator,
          string enterprise_id,
-         string proposal_type,
          map< string, uint16_t > beneficiaries,
          vector< uint16_t > milestone_shares,
-         string investment,
          string details,
          string url,
          string json,
@@ -3030,6 +3026,7 @@ class wallet_api
        * @param requested Maximum total metrics requested.
        * @param included_audiences List of desired audiences for display acceptance, accounts must be in inventory audience.
        * @param excluded_audiences List of audiences to remove all members from the combined bid audience.
+       * @param audience_id Audience uuidv4 for combined audience.
        * @param json JSON metadata for the inventory.
        * @param expiration Time the the bid is valid until, bid is cancelled after this time if not filled. 
        * @param active True if the bid is open for delivery, false to cancel.
@@ -3049,6 +3046,7 @@ class wallet_api
          uint32_t requested,
          vector< string > included_audiences,
          vector< string > excluded_audiences,
+         string audience_id,
          string json,
          time_point expiration,
          bool active,

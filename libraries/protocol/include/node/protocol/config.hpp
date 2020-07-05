@@ -121,7 +121,7 @@
 
 #define SET_UPDATE_BLOCK_INTERVAL       (BLOCKS_PER_DAY)      // Updates business account executive sets once every day.
 #define ENTERPRISE_BLOCK_INTERVAL       (BLOCKS_PER_DAY)      // Distributes community enterprise funding once every day.
-#define STABLECOIN_BLOCK_INTERVAL         (BLOCKS_PER_DAY)      // Updates the settlement volume on stablecoins and processes collateral bids
+#define STABLECOIN_BLOCK_INTERVAL       (BLOCKS_PER_DAY)      // Updates the settlement volume on stablecoins and processes collateral bids
 #define VOTE_RECHARGE_TIME              fc::days(7)           // 7 days to regenerate maximum voting power. Accumulation period of unused transactions for allocating rewards.
 #define VIEW_RECHARGE_TIME              fc::days(7)           // 7 day to regenerate maximum viewing power. Accumulation period of unused transactions for allocating rewards.
 #define SHARE_RECHARGE_TIME             fc::days(7)           // 7 days to regenerate maximum sharing power. Accumulation period of unused transactions for allocating rewards.

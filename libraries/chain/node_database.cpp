@@ -226,16 +226,16 @@ void database::init_genesis()
       a.companion_public_key = get_public_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
       a.created = now;
       a.last_updated = now;
-      a.last_vote_time = time_point::min();
-      a.last_view_time = time_point::min();
-      a.last_share_time = time_point::min();
-      a.last_post = time_point::min();
-      a.last_root_post = time_point::min();
-      a.last_transfer_time = time_point::min();
-      a.last_activity_reward = time_point::min();
-      a.last_account_recovery = time_point::min();
-      a.last_community_created = time_point::min();
-      a.last_asset_created = time_point::min();
+      a.last_vote_time = now;
+      a.last_view_time = now;
+      a.last_share_time = now;
+      a.last_post = now;
+      a.last_root_post = now;
+      a.last_transfer_time = now;
+      a.last_activity_reward = now;
+      a.last_account_recovery = now;
+      a.last_community_created = now;
+      a.last_asset_created = now;
       from_string( a.json, "" );
       from_string( a.json_private, "" );
       from_string( a.details, INIT_DETAILS );
@@ -282,16 +282,16 @@ void database::init_genesis()
       a.companion_public_key = get_public_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
       a.created = now;
       a.last_updated = now;
-      a.last_vote_time = time_point::min();
-      a.last_view_time = time_point::min();
-      a.last_share_time = time_point::min();
-      a.last_post = time_point::min();
-      a.last_root_post = time_point::min();
-      a.last_transfer_time = time_point::min();
-      a.last_activity_reward = time_point::min();
-      a.last_account_recovery = time_point::min();
-      a.last_community_created = time_point::min();
-      a.last_asset_created = time_point::min();
+      a.last_vote_time = now;
+      a.last_view_time = now;
+      a.last_share_time = now;
+      a.last_post = now;
+      a.last_root_post = now;
+      a.last_transfer_time = now;
+      a.last_activity_reward = now;
+      a.last_account_recovery = now;
+      a.last_community_created = now;
+      a.last_asset_created = now;
       from_string( a.json, "" );
       from_string( a.json_private, "" );
       from_string( a.details, INIT_DETAILS );
@@ -443,16 +443,16 @@ void database::init_genesis()
       a.companion_public_key = get_public_key( a.name, "companion", ANON_ACCOUNT_PASSWORD );
       a.created = now;
       a.last_updated = now;
-      a.last_vote_time = time_point::min();
-      a.last_view_time = time_point::min();
-      a.last_share_time = time_point::min();
-      a.last_post = time_point::min();
-      a.last_root_post = time_point::min();
-      a.last_transfer_time = time_point::min();
-      a.last_activity_reward = time_point::min();
-      a.last_account_recovery = time_point::min();
-      a.last_community_created = time_point::min();
-      a.last_asset_created = time_point::min();
+      a.last_vote_time = now;
+      a.last_view_time = now;
+      a.last_share_time = now;
+      a.last_post = now;
+      a.last_root_post = now;
+      a.last_transfer_time = now;
+      a.last_activity_reward = now;
+      a.last_account_recovery = now;
+      a.last_community_created = now;
+      a.last_asset_created = now;
       from_string( a.json, "" );
       from_string( a.json_private, "" );
       from_string( a.details, INIT_DETAILS );
@@ -499,16 +499,16 @@ void database::init_genesis()
       a.companion_public_key = get_public_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
       a.created = now;
       a.last_updated = now;
-      a.last_vote_time = time_point::min();
-      a.last_view_time = time_point::min();
-      a.last_share_time = time_point::min();
-      a.last_post = time_point::min();
-      a.last_root_post = time_point::min();
-      a.last_transfer_time = time_point::min();
-      a.last_activity_reward = time_point::min();
-      a.last_account_recovery = time_point::min();
-      a.last_community_created = time_point::min();
-      a.last_asset_created = time_point::min();
+      a.last_vote_time = now;
+      a.last_view_time = now;
+      a.last_share_time = now;
+      a.last_post = now;
+      a.last_root_post = now;
+      a.last_transfer_time = now;
+      a.last_activity_reward = now;
+      a.last_account_recovery = now;
+      a.last_community_created = now;
+      a.last_asset_created = now;
       from_string( a.json, "" );
       from_string( a.json_private, "" );
       from_string( a.details, INIT_DETAILS );
@@ -554,16 +554,16 @@ void database::init_genesis()
       a.companion_public_key = get_public_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
       a.created = now;
       a.last_updated = now;
-      a.last_vote_time = time_point::min();
-      a.last_view_time = time_point::min();
-      a.last_share_time = time_point::min();
-      a.last_post = time_point::min();
-      a.last_root_post = time_point::min();
-      a.last_transfer_time = time_point::min();
-      a.last_activity_reward = time_point::min();
-      a.last_account_recovery = time_point::min();
-      a.last_community_created = time_point::min();
-      a.last_asset_created = time_point::min();
+      a.last_vote_time = now;
+      a.last_view_time = now;
+      a.last_share_time = now;
+      a.last_post = now;
+      a.last_root_post = now;
+      a.last_transfer_time = now;
+      a.last_activity_reward = now;
+      a.last_account_recovery = now;
+      a.last_community_created = now;
+      a.last_asset_created = now;
       from_string( a.json, "" );
       from_string( a.json_private, "" );
       from_string( a.details, INIT_DETAILS );
@@ -607,16 +607,16 @@ void database::init_genesis()
       a.companion_public_key = get_public_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
       a.created = now;
       a.last_updated = now;
-      a.last_vote_time = time_point::min();
-      a.last_view_time = time_point::min();
-      a.last_share_time = time_point::min();
-      a.last_post = time_point::min();
-      a.last_root_post = time_point::min();
-      a.last_transfer_time = time_point::min();
-      a.last_activity_reward = time_point::min();
-      a.last_account_recovery = time_point::min();
-      a.last_community_created = time_point::min();
-      a.last_asset_created = time_point::min();
+      a.last_vote_time = now;
+      a.last_view_time = now;
+      a.last_share_time = now;
+      a.last_post = now;
+      a.last_root_post = now;
+      a.last_transfer_time = now;
+      a.last_activity_reward = now;
+      a.last_account_recovery = now;
+      a.last_community_created = now;
+      a.last_asset_created = now;
       from_string( a.json, "" );
       from_string( a.json_private, "" );
       from_string( a.details, INIT_DETAILS );
@@ -770,7 +770,9 @@ void database::init_genesis()
    create< asset_stablecoin_data_object >( [&]( asset_stablecoin_data_object& a )
    {
       a.symbol = SYMBOL_USD;
+      a.issuer = NULL_ACCOUNT;
       a.backing_asset = SYMBOL_COIN;
+      a.current_feed_publication_time = now;
       a.feed_lifetime = PRICE_FEED_LIFETIME;
       a.minimum_feeds = 1;
       a.asset_settlement_delay = ASSET_SETTLEMENT_DELAY;
@@ -851,16 +853,16 @@ void database::init_genesis()
          a.companion_public_key = get_public_key( a.name, "companion", INIT_ACCOUNT_PASSWORD );
          a.created = now;
          a.last_updated = now;
-         a.last_vote_time = time_point::min();
-         a.last_view_time = time_point::min();
-         a.last_share_time = time_point::min();
-         a.last_post = time_point::min();
-         a.last_root_post = time_point::min();
-         a.last_transfer_time = time_point::min();
-         a.last_activity_reward = time_point::min();
-         a.last_account_recovery = time_point::min();
-         a.last_community_created = time_point::min();
-         a.last_asset_created = time_point::min();
+         a.last_vote_time = now;
+         a.last_view_time = now;
+         a.last_share_time = now;
+         a.last_post = now;
+         a.last_root_post = now;
+         a.last_transfer_time = now;
+         a.last_activity_reward = now;
+         a.last_account_recovery = now;
+         a.last_community_created = now;
+         a.last_asset_created = now;
          from_string( a.json, "" );
          from_string( a.json_private, "" );
          from_string( a.details, INIT_DETAILS );
@@ -951,6 +953,7 @@ void database::init_genesis()
       bmo.members.insert( INIT_ACCOUNT );
       bmo.moderators.insert( INIT_ACCOUNT );
       bmo.administrators.insert( INIT_ACCOUNT );
+      bmo.community_privacy = community_privacy_type::OPEN_PUBLIC_COMMUNITY;
       bmo.last_updated = now;
    });
 
@@ -3128,7 +3131,7 @@ bool database::_push_block( const signed_block& new_block )
       throw;
    }
 
-   ilog( "Pushed Block: \n ${b} \n", ("b", new_block.id() ) );
+   // ilog( "Pushed Block: ${b}", ("b", new_block.id() ) );
 
    return false;
 } FC_CAPTURE_AND_RETHROW( ( new_block ) ) }
@@ -3577,6 +3580,7 @@ void database::update_community_moderators( const community_member_object& commu
    price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
    const auto& vote_idx = get_index< community_moderator_vote_index >().indices().get< by_community_moderator >();
    flat_map< account_name_type, share_type > mod_weight;
+   share_type total = 0;
    auto vote_itr = vote_idx.lower_bound( community.name );
 
    while( vote_itr != vote_idx.end() && 
@@ -3585,21 +3589,24 @@ void database::update_community_moderators( const community_member_object& commu
       const community_moderator_vote_object& vote = *vote_itr;
       const account_object& voter = get_account( vote.account );
       share_type weight = get_voting_power( vote.account );
-
+      
       if( voter.proxied.size() )
       {
          weight += get_proxied_voting_power( voter, equity_price );
       }
+      share_type w = share_type( weight.value >> vote.vote_rank );
 
       // divides voting weight by 2^vote_rank, limiting total voting weight -> total voting power as votes increase.
 
-      mod_weight[ vote.moderator ] += share_type( weight.value >> vote.vote_rank );
+      mod_weight[ vote.moderator ] += w;
+      total += w;
       ++vote_itr;
    }
    
    modify( community, [&]( community_member_object& b )
    {
       b.mod_weight = mod_weight;
+      b.total_mod_weight = total;
    });
 
 } FC_CAPTURE_AND_RETHROW() }
@@ -3623,9 +3630,6 @@ void database::update_community_moderator_set()
       update_community_moderators( *community_itr );
       ++community_itr;
    }
-
-   ilog( "Update Community moderator set" );
-
 } FC_CAPTURE_AND_RETHROW() }
 
 /**
@@ -4053,20 +4057,22 @@ void database::update_proof_of_work_target()
 
    const median_chain_property_object& median_props = get_median_chain_properties();
    const producer_schedule_object& pso = get_producer_schedule();
-
    uint128_t recent_pow = pso.recent_pow;        // Amount of proofs of work, times block precision, decayed over 7 days
-   uint128_t target_pow = ( BLOCKCHAIN_PRECISION.value * median_props.pow_decay_time.to_seconds() ) / median_props.pow_target_time.to_seconds();
-   uint128_t new_difficulty = ( pso.pow_target_difficulty * target_pow ) / recent_pow;
-   time_point now = head_block_time();
 
-   modify( pso, [&]( producer_schedule_object& pso )
+   if( recent_pow > 0 )
    {
-      pso.pow_target_difficulty = new_difficulty;
-      pso.decay_pow( now, median_props );
-   });
+      uint128_t target_pow = ( BLOCKCHAIN_PRECISION.value * median_props.pow_decay_time.to_seconds() ) / median_props.pow_target_time.to_seconds();
+      uint128_t new_difficulty = ( pso.pow_target_difficulty * target_pow ) / recent_pow;
+      time_point now = head_block_time();
 
-   ilog( "Updated Proof of work target:", ("pso",pso) );
+      modify( pso, [&]( producer_schedule_object& pso )
+      {
+         pso.pow_target_difficulty = new_difficulty;
+         pso.decay_pow( now, median_props );
+      });
 
+      ilog( "Updated Proof of Work target difficulty: ${d}", ("d",new_difficulty) );
+   }
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -4110,7 +4116,7 @@ void database::claim_proof_of_work_reward( const account_name_type& miner )
       ++fund_itr;
    }
 
-   ilog( "Miner: ${p} Claimed proof of work reward.", ("p", producer.owner ) );
+   ilog( "Miner: ${p} Claimed proof of work reward.", ("p", producer ) );
 
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -4146,6 +4152,8 @@ void database::process_txn_stake_rewards()
       ++producer_itr;
    }
 
+   ilog("Processing Txn Stake Reward: \n ${m} \n",("m",stake_map));
+
    const auto& fund_idx = get_index< reward_fund_index >().indices().get< by_symbol >();
    auto fund_itr = fund_idx.begin();
 
@@ -4157,7 +4165,8 @@ void database::process_txn_stake_rewards()
 
       for( auto b : stake_map )
       {
-         asset stake_reward = ( txn_stake_reward * b.second ) / total_stake_shares; 
+         uint128_t r_shares = ( uint128_t( txn_stake_reward.amount.value ) * uint128_t( b.second.value ) ) / uint128_t( total_stake_shares.value ); 
+         asset stake_reward = asset( share_type( int64_t( r_shares.to_uint64() ) ), reward_fund.symbol );
          adjust_reward_balance( b.first, stake_reward );       // Pay transaction stake reward to each block producer proportionally.
          distributed += stake_reward;
       }
@@ -4412,8 +4421,7 @@ void database::update_network_officer( const network_officer_object& network_off
       n.officer_approved = approve_officer;
    });
 
-   ilog( "Updated Network Officer: \n ${n} \n ", 
-      ("n", network_officer ) );
+   ilog( "Updated Network Officer: ${n}", ("n", network_officer.account ) );
    
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -4605,7 +4613,7 @@ void database::update_executive_board( const executive_board_object& executive_b
       e.board_approved = approve_board;
    });
 
-   ilog( "Update Executive Board: \n ${b} \n", ("b", executive_board ) );
+   ilog( "Update Executive Board: ${b}", ("b", executive_board.account ) );
 
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -4703,7 +4711,7 @@ void database::update_governance_account( const governance_account_object& gover
    }
 
    // Approve the governance account when a threshold of votes to support its budget.
-   bool approve_account = ( vote_count >= GOVERNANCE_VOTE_THRESHOLD_AMOUNT * 4 ) &&
+   bool approve_account = ( vote_count >= GOVERNANCE_VOTE_THRESHOLD_AMOUNT ) &&
       ( producer_vote_count >= GOVERNANCE_VOTE_THRESHOLD_PRODUCERS ) &&
       ( voting_power.value >= ( props.total_voting_power * GOVERNANCE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
       ( producer_voting_power.value >= ( pso.total_producer_voting_power * GOVERNANCE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
@@ -4717,7 +4725,7 @@ void database::update_governance_account( const governance_account_object& gover
       g.account_approved = approve_account;
    });
 
-   ilog( "Update Governance Account: \n ${g} \n", ("g", governance_account ) );
+   ilog( "Update Governance Account: ${g}", ("g", governance_account.account ) );
 
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -4770,9 +4778,11 @@ void database::update_enterprise( const community_enterprise_object& enterprise,
    {
       const enterprise_approval_object& approval = *approval_itr;
       const account_object& voter = get_account( approval.account );
+
       bool is_producer = pso.is_top_voting_producer( voter.name );
       total_approvals++;
       total_voting_power += get_voting_power( approval.account, equity_price );
+
       if( voter.proxied.size() )
       {
          total_voting_power += get_proxied_voting_power( voter, equity_price );
@@ -4785,7 +4795,7 @@ void database::update_enterprise( const community_enterprise_object& enterprise,
          total_producer_voting_power += producer.voting_power.value;
       }
 
-      if( approval.milestone == enterprise.claimed_milestones ) // approval is current 
+      if( approval.milestone >= enterprise.claimed_milestones )
       {
          current_approvals++;
          current_voting_power += get_voting_power( approval.account, equity_price );
@@ -4827,7 +4837,8 @@ void database::update_enterprise( const community_enterprise_object& enterprise,
       }
    });
 
-   ilog( "Update Enterprise: ${e}", ("e", enterprise.enterprise_id ) );
+   ilog( "Updated Enterprise: ${e} - Total Approvals: ${t} - Current Approvals: ${a} - Claimed Milestones: ${m} - Approved Milestones: ${ap}",
+      ("e", enterprise.enterprise_id )("t",enterprise.total_approvals)("a",enterprise.current_approvals)("m",enterprise.claimed_milestones)("ap",enterprise.approved_milestones) );
 
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -4912,7 +4923,8 @@ void database::process_community_enterprise_fund()
             });
          }
 
-         // ilog( "Process Enterprise Funding: ${e}", ("e", enterprise.enterprise_id ) );
+         ilog( "Process Enterprise Funding: ${e}",
+            ("e", enterprise.enterprise_id ) );
       }
       ++enterprise_itr;
    }
@@ -5046,8 +5058,6 @@ void database::process_product_auctions()
 { try {
    time_point now = head_block_time();
 
-   // ilog( "Process Product Auctions" );
-
    const auto& auction_idx = get_index< product_auction_sale_index >().indices().get< by_completion_time >();
    auto auction_itr = auction_idx.begin();
    const auto& bid_idx = get_index< product_auction_bid_index >().indices().get< by_highest_bid >();
@@ -5056,8 +5066,10 @@ void database::process_product_auctions()
       auction_itr->completion_time >= now )
    {
       const product_auction_sale_object& auction = *auction_itr;
+      ilog( "Processing Product Auction - Account: ${a} - ID: ${id} - Type: ${t}",
+         ("a",auction.account)("id",auction.auction_id )("t",auction.auction_type) );
 
-      auto bid_itr = bid_idx.lower_bound( boost::make_tuple( auction.account, auction.auction_id ) );
+      auto bid_itr = bid_idx.lower_bound( boost::make_tuple( auction.account, auction.auction_id, auction.maximum_bid.amount, product_auction_bid_id_type() ) );
 
       product_auction_bid_id_type winning_bid = product_auction_bid_id_type();
       asset bid_price = auction.reserve_bid;
@@ -5109,6 +5121,9 @@ void database::process_product_auctions()
             pabo.winning_bid = true;
             pabo.last_updated = now;
          });
+
+         ilog( "Winning Bid from buyer ${w}: ${b}",
+            ("w",bid.buyer)("b",bid.bid_id ) );
       }
 
       modify( auction, [&]( product_auction_sale_object& paso )
@@ -5554,6 +5569,7 @@ void database::initialize_indexes()
    add_core_index< asset_equity_data_index                 >(*this);
    add_core_index< asset_bond_data_index                   >(*this);
    add_core_index< asset_credit_data_index                 >(*this);
+   add_core_index< asset_stimulus_data_index               >(*this);
    add_core_index< asset_unique_data_index                 >(*this);
    add_core_index< asset_liquidity_pool_index              >(*this);
    add_core_index< asset_credit_pool_index                 >(*this);
@@ -5695,18 +5711,17 @@ void database::show_free_memory( bool force )
    {
       uint64_t free_mb = uint64_t( get_free_memory() / (1024*1024) );
 
-      if( free_mb <= 500 && head_block_num() % 10 == 0 )
+      if( free_mb <= 200 && head_block_num() % 100 == 0 )
       {
          elog( "Free memory is now ${n} MB. Shared Memory Capacity is insufficient, and may cause a node failure when depleted. Please increase shared file size.", 
          ("n", free_mb) );
-      }
-         
+      } 
    }
 }
 
 void database::_apply_block( const signed_block& next_block )
 { try {
-   ilog( "Begin Applying Block: ${b}", ("b", next_block.id() ) );
+   // ilog( "Begin Applying Block: ${b}", ("b", next_block.id() ) );
    notify_pre_apply_block( next_block );
    uint64_t next_block_num = next_block.block_num();
    uint32_t skip = get_node_properties().skip_flags;
@@ -6033,8 +6048,8 @@ void database::update_transaction_stake( const producer_object& signing_producer
       p.last_txn_stake_weight_update = now;
    });
 
-   ilog( "Producer: ${p} Updated transaction stake: ${t}", 
-      ( "t", transaction_stake )( "p", signing_producer.owner ) );
+   // ilog( "Producer: ${p} Updated transaction stake: ${t}", 
+      // ( "t", transaction_stake )( "p", signing_producer.owner ) );
 }
 
 void database::apply_operation(const operation& op)
@@ -6137,8 +6152,8 @@ void database::update_global_dynamic_data( const signed_block& b )
       dgpo.current_median_usd_price = usd_price;
    });
 
-   ilog( "Updated Global Dynamic Data: Head Block Number: ${n} Head block ID: ${i} ASlot: ${s} Time: ${t}", 
-   ("n", props.head_block_number)("i", props.head_block_id)("s",props.current_aslot)("t",props.time) );
+   // ilog( "Updated Global Dynamic Data: Head Block Number: ${n} Head block ID: ${i} ASlot: ${s} Time: ${t}", 
+   // ("n", props.head_block_number)("i", props.head_block_id)("s",props.current_aslot)("t",props.time) );
 
    if( !( get_node_properties().skip_flags & skip_undo_history_check ) )
    {
@@ -6162,7 +6177,7 @@ void database::update_signing_producer( const producer_object& signing_producer,
       p.total_blocks++;
    });
 
-   ilog( "Update signing producer: ${p}", ("p", signing_producer.owner ) );
+   // ilog( "Update signing producer: ${p}", ("p", signing_producer.owner ) );
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -6262,8 +6277,7 @@ void database::update_last_irreversible_block()
 
    _fork_db.set_max_size( props.head_block_number - commit_height + 1 );
 
-   ilog( "Update last irreversible block: ${b}", 
-      ("b",commit_height) );
+   // ilog( "Update last irreversible block: ${b}", ("b",commit_height) );
 
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -6635,9 +6649,9 @@ asset database::pay_multi_fee_share( flat_set< const account_object* > payees, c
 
 
 /**
- * Activates the delivery process for a bid
- * that has been triggered by an operation broadcast by
- * an audience member. 
+ * Activates the delivery process for an ad bid.
+ * 
+ * Triggered by an operation broadcast from an audience member.
  * Rewards the Provider of the inventory, in addition to the 
  * audience member account that received the ad display.
  */
@@ -6666,7 +6680,6 @@ void database::deliver_ad_bid( const ad_bid_object& bid, const account_object& v
       audience.active && 
       creative.active && 
       now < bid.expiration &&
-      now < inventory.expiration &&
       now > campaign.begin &&
       now < campaign.end )
    {
@@ -6694,17 +6707,23 @@ void database::deliver_ad_bid( const ad_bid_object& bid, const account_object& v
 
       if( bid.remaining == 0 )
       {
+         ilog( "Removed: ${v}",("v",bid));
          remove( bid );
       }
       if( inventory.remaining == 0 )
       {
+         ilog( "Removed: ${v}",("v",inventory));
          remove( inventory );
       }
       if( campaign.budget.amount == 0 )
       {
+         ilog( "Removed: ${v}",("v",campaign));
          remove( campaign );
       }
    }
+
+   ilog( "Delivered Ad Bid to audience account: ${v} bid: \n ${b} \n",
+      ("v",viewer.name)("b",bid));
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -6723,6 +6742,7 @@ void database::cancel_ad_bid( const ad_bid_object& bid )
       aco.total_bids -= bid_total_remaining;
    });
 
+   ilog( "Removed: ${v}",("v",bid));
    remove( bid );
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -6742,6 +6762,8 @@ void database::cancel_community_enterprise( const community_enterprise_object& e
    {
       const enterprise_approval_object& old_approval = *approval_itr;
       ++approval_itr;
+
+      ilog( "Removed: ${v}",("v",old_approval));
       remove( old_approval );
    }
 
@@ -6751,6 +6773,7 @@ void database::cancel_community_enterprise( const community_enterprise_object& e
       o.adjust_community_fund_balance( pending );    // Return pending budget to the community fund.
    });
 
+   ilog( "Removed: ${v}",("v",e.enterprise_id));
    remove( e );
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -6785,6 +6808,7 @@ void database::clear_expired_operations()
    while( !connection_req_index.empty() && connection_req_index.begin()->expiration <= now )
    {
       const connection_request_object& req = *connection_req_index.begin();
+      ilog( "Removed: ${v}",("v",req));
       remove( req );
    }
 
@@ -6806,6 +6830,7 @@ void database::clear_expired_operations()
    while( !transfer_req_index.empty() && transfer_req_index.begin()->expiration <= now )
    {
       const transfer_request_object& req = *transfer_req_index.begin();
+      ilog( "Removed: ${v}",("v",req));
       remove( req );
    }
 
@@ -6813,6 +6838,7 @@ void database::clear_expired_operations()
    while( !transfer_rec_index.empty() && transfer_rec_index.begin()->expiration <= now )
    {
       const transfer_recurring_request_object& rec = *transfer_rec_index.begin();
+      ilog( "Removed: ${v}",("v",rec));
       remove( rec );
    }
 
@@ -6820,6 +6846,7 @@ void database::clear_expired_operations()
    while( !account_member_request_idx.empty() && account_member_request_idx.begin()->expiration <= now )
    {
       const account_member_request_object& req = *account_member_request_idx.begin();
+      ilog( "Removed: ${v}",("v",req));
       remove( req );
    }
 
@@ -6827,6 +6854,7 @@ void database::clear_expired_operations()
    while( !account_member_invite_idx.empty() && account_member_invite_idx.begin()->expiration <= now )
    {
       const account_member_invite_object& inv = *account_member_invite_idx.begin();
+      ilog( "Removed: ${v}",("v",inv));
       remove( inv );
    }
 
@@ -6834,6 +6862,7 @@ void database::clear_expired_operations()
    while( !community_join_request_idx.empty() && community_join_request_idx.begin()->expiration <= now )
    {
       const community_join_request_object& req = *community_join_request_idx.begin();
+      ilog( "Removed: ${v}",("v",req));
       remove( req );
    }
 
@@ -6841,6 +6870,7 @@ void database::clear_expired_operations()
    while( !community_join_invite_idx.empty() && community_join_invite_idx.begin()->expiration <= now )
    {
       const community_join_invite_object& inv = *community_join_invite_idx.begin();
+      ilog( "Removed: ${v}",("v",inv));
       remove( inv );
    }
 

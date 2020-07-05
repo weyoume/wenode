@@ -70,7 +70,7 @@ namespace node { namespace chain {
 
          network_officer_role_type      officer_type;               ///< the type of network officer that is being voted for.
 
-         uint16_t                       vote_rank = 1;                  ///< the ranking of the vote for the officer.
+         uint16_t                       vote_rank = 1;              ///< the ranking of the vote for the officer.
    };
 
 
@@ -303,8 +303,7 @@ namespace node { namespace chain {
          mediator_object( Constructor&& c, allocator< Allocator > a ) :
          details(a), 
          url(a), 
-         json(a), 
-         last_escrow_id(a)
+         json(a)
          {
             c( *this );
          }
@@ -325,10 +324,6 @@ namespace node { namespace chain {
 
          uint128_t                      mediation_virtual_position = 0;       ///< Quantitative ranking of selection for mediation.
 
-         account_name_type              last_escrow_from;                     ///< The sender of the most recently allocated escrow
-
-         shared_string                  last_escrow_id;                       ///< Escrow uuidv4 of the most recently allocated escrow.
-
          time_point                     created;                              ///< The time the mediator was created.
 
          time_point                     last_updated;                         ///< The time the mediator was last updated.
@@ -342,9 +337,9 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          community_enterprise_object( Constructor&& c, allocator< Allocator > a ) :
-            enterprise_id(a), 
+            enterprise_id(a),
             milestone_shares( a.get_segment_manager() ),
-            details(a), 
+            details(a),
             url(a), 
             json(a)
             {
@@ -359,17 +354,13 @@ namespace node { namespace chain {
 
          bool                                        active = true;                                   ///< True if the project is active, set false to deactivate.
 
-         proposal_distribution_type                  proposal_type;                                   ///< The type of proposal, determines release schedule.
-
          flat_map< account_name_type, uint16_t >     beneficiaries;                                   ///< Map of account names and percentages of budget value.
 
          shared_vector< uint16_t >                   milestone_shares;                                ///< Ordered vector of release milestone descriptions.
 
          int16_t                                     approved_milestones;                             ///< Number of the last approved milestone by the community.
 
-         int16_t                                     claimed_milestones;                              ///< Number of milestones claimed for release.  
-
-         fc::optional< asset_symbol_type >           investment;                                      ///< Symbol of the asset to be purchased with the funding if the proposal is investment type. 
+         int16_t                                     claimed_milestones;                              ///< Number of milestones claimed for release.
 
          shared_string                               details;                                         ///< The proposals's details and release milestone percentages of budget value.
 
@@ -451,10 +442,10 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          enterprise_approval_object( Constructor&& c, allocator< Allocator > a ) :
-         enterprise_id(a)
-         {
-            c( *this );
-         }
+            enterprise_id(a)
+            {
+               c( *this );
+            }
 
          id_type                        id;
 
@@ -466,7 +457,7 @@ namespace node { namespace chain {
 
          uint16_t                       vote_rank = 1;             ///< The vote rank of the approval for enterprise.
 
-         int16_t                        milestone;                 ///< Number of the milestone being approved for release.
+         int16_t                        milestone = 0;             ///< Number of the milestone being approved for release.
    };
 
    struct by_type_voting_power;
@@ -1067,25 +1058,21 @@ FC_REFLECT( node::chain::mediator_object,
          (json)
          (mediator_bond)
          (mediation_virtual_position)
-         (last_escrow_from)
-         (last_escrow_id)
          (created)
          (last_updated)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::chain::mediator_object, node::chain::mediator_index );   
+CHAINBASE_SET_INDEX_TYPE( node::chain::mediator_object, node::chain::mediator_index );
 
 FC_REFLECT( node::chain::community_enterprise_object,
          (id)
          (creator)
          (enterprise_id)
          (active)
-         (proposal_type)
          (beneficiaries)
          (milestone_shares)
          (approved_milestones)
          (claimed_milestones)
-         (investment)
          (details)
          (url)
          (json)

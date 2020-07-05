@@ -34,20 +34,18 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       const median_chain_property_object& median_props = db.get_median_chain_properties();
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice) );
 
-      fund_stake( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      generate_blocks( 5 );
+      generate_blocks( TOTAL_PRODUCERS );
 
       comment_operation comment;
 
@@ -60,7 +58,8 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
       comment.url = "https://www.url.com";
       comment.community = INIT_COMMUNITY;
-      comment.tags.push_back( tag_name_type( "test" ) );
+      comment.public_key = string();
+      comment.tags.push_back( "test" );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
       comment.parent_author = ROOT_POST_PARENT;
@@ -134,10 +133,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( alice_comment.reply_price == comment.reply_price );
       BOOST_REQUIRE( alice_comment.premium_price == comment.premium_price );
 
-      BOOST_REQUIRE( alice_comment.last_updated == now() );
-      BOOST_REQUIRE( alice_comment.created == now() );
-      BOOST_REQUIRE( alice_comment.active == now() );
-
       BOOST_REQUIRE( alice_comment.depth == 0 );
       BOOST_REQUIRE( alice_comment.children == 0 );
       BOOST_REQUIRE( alice_comment.net_votes == 0 );
@@ -149,8 +144,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( alice_comment.view_power == 0 );
       BOOST_REQUIRE( alice_comment.share_power == 0 );
       BOOST_REQUIRE( alice_comment.comment_power == 0 );
-      
-      BOOST_REQUIRE( alice_comment.cashout_time == fc::time_point( now() + CONTENT_REWARD_INTERVAL ) );
       BOOST_REQUIRE( alice_comment.cashouts_received == 0 );
 
       BOOST_REQUIRE( alice_comment.total_vote_weight == 0 );
@@ -183,8 +176,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( alice_comment.root == true );
       BOOST_REQUIRE( alice_comment.deleted == false );
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: Success posting a root comment" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when posting a comment on a non-existent comment" );
@@ -194,6 +185,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       comment.permlink = "ipsum";
       comment.parent_author = "alice";
       comment.parent_permlink = "foobar";
+      comment.validate();
 
       tx.operations.push_back( comment );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
@@ -233,10 +225,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( bob_comment.reply_price == comment.reply_price );
       BOOST_REQUIRE( bob_comment.premium_price == comment.premium_price );
 
-      BOOST_REQUIRE( bob_comment.last_updated == now() );
-      BOOST_REQUIRE( bob_comment.created == now() );
-      BOOST_REQUIRE( bob_comment.active == now() );
-
       BOOST_REQUIRE( bob_comment.depth == 1 );
       BOOST_REQUIRE( bob_comment.children == 0 );
       BOOST_REQUIRE( bob_comment.net_votes == 0 );
@@ -248,8 +236,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( bob_comment.view_power == 0 );
       BOOST_REQUIRE( bob_comment.share_power == 0 );
       BOOST_REQUIRE( bob_comment.comment_power == 0 );
-      
-      BOOST_REQUIRE( bob_comment.cashout_time == fc::time_point( now() + CONTENT_REWARD_INTERVAL ) );
       BOOST_REQUIRE( bob_comment.cashouts_received == 0 );
 
       BOOST_REQUIRE( bob_comment.total_vote_weight == 0 );
@@ -282,8 +268,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       BOOST_REQUIRE( alice_comment.children == 1 );
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: posting a comment on previous comment" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: posting a comment on additional previous comment" );
@@ -293,6 +277,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       comment.permlink = "dolor";
       comment.parent_author = "bob";
       comment.parent_permlink = "ipsum";
+      comment.validate();
 
       tx.operations.push_back( comment );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
@@ -319,10 +304,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( candice_comment.reply_price == comment.reply_price );
       BOOST_REQUIRE( candice_comment.premium_price == comment.premium_price );
 
-      BOOST_REQUIRE( candice_comment.last_updated == now() );
-      BOOST_REQUIRE( candice_comment.created == now() );
-      BOOST_REQUIRE( candice_comment.active == now() );
-
       BOOST_REQUIRE( candice_comment.depth == 2 );
       BOOST_REQUIRE( candice_comment.children == 0 );
       BOOST_REQUIRE( candice_comment.net_votes == 0 );
@@ -334,8 +315,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( candice_comment.view_power == 0 );
       BOOST_REQUIRE( candice_comment.share_power == 0 );
       BOOST_REQUIRE( candice_comment.comment_power == 0 );
-      
-      BOOST_REQUIRE( candice_comment.cashout_time == fc::time_point( now() + CONTENT_REWARD_INTERVAL ) );
       BOOST_REQUIRE( candice_comment.cashouts_received == 0 );
 
       BOOST_REQUIRE( candice_comment.total_vote_weight == 0 );
@@ -369,19 +348,15 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( bob_comment.children == 1 );
       BOOST_REQUIRE( alice_comment.children == 2 );
 
-      validate_database();
-
-      generate_blocks( 5 );
+      generate_blocks( 10 );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: posting a comment on additional previous comment" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: modifying a comment" );
 
-      fc::time_point created = candice_comment.created;
-
       comment.title = "foo";
       comment.body = "bar";
-      comment.json = "{\"bar\":\"foo\"}";
+      comment.validate();
 
       tx.operations.push_back( comment );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
@@ -390,22 +365,15 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       tx.signatures.clear();
       tx.operations.clear();
 
-      BOOST_REQUIRE( candice_comment.author == comment.author );
-      BOOST_REQUIRE( to_string( candice_comment.permlink ) == comment.permlink );
-      BOOST_REQUIRE( candice_comment.parent_author == comment.parent_author );
-      BOOST_REQUIRE( to_string( candice_comment.parent_permlink ) == comment.parent_permlink );
-      BOOST_REQUIRE( candice_comment.last_updated == now() );
-      BOOST_REQUIRE( candice_comment.created == created );
-      BOOST_REQUIRE( candice_comment.cashout_time == candice_comment.created + CONTENT_REWARD_INTERVAL );
-
-      validate_database();
+      BOOST_REQUIRE( comment.title == to_string( candice_comment.title ) );
+      BOOST_REQUIRE( comment.body == to_string( candice_comment.body ) );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: modifying a comment" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure posting again within time limit" );
 
       comment.permlink = "sit";
-      comment.parent_author = "";
+      comment.parent_author = ROOT_POST_PARENT;
       comment.parent_permlink = "test";
 
       tx.operations.push_back( comment );
@@ -426,22 +394,11 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
-      generate_block();
-      
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure posting again within time limit" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: more than 100% weight on a single route" );
 
-      options.beneficiaries.push_back( beneficiary_route_type( account_name_type( account_name_type( "bob" ) ), PERCENT_100 + 1 ) );
+      options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "bob" ), PERCENT_100 + 1 ) );
 
       REQUIRE_THROW( options.validate(), fc::assert_exception );
 
@@ -450,7 +407,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_TEST_MESSAGE( "│   ├── Testing: more than 100% total weight" );
 
       options.beneficiaries.clear();
-      options.beneficiaries.push_back( beneficiary_route_type( account_name_type( account_name_type( "bob" ) ), PERCENT_1 * 75 ) );
+      options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "bob" ), PERCENT_1 * 75 ) );
       options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "sam" ), PERCENT_1 * 75 ) );
       
       REQUIRE_THROW( options.validate(), fc::assert_exception );
@@ -549,8 +506,8 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       validate_database();
       
       options.beneficiaries.clear();
-      options.beneficiaries.push_back( beneficiary_route_type( account_name_type( account_name_type( "bob" ) ), 25 * PERCENT_1 ) );
-      options.beneficiaries.push_back( beneficiary_route_type( account_name_type( account_name_type( "alice" ) ), 50 * PERCENT_1 ) );
+      options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "bob" ), 25 * PERCENT_1 ) );
+      options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "alice" ), 50 * PERCENT_1 ) );
 
       options.validate();
       comment.options = options;
@@ -619,9 +576,9 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       BOOST_REQUIRE( candice_comment.cashouts_received == 0 );
 
-      asset alice_reward = db.get_reward_balance( account_name_type( "alice" ), SYMBOL_COIN );
-      asset bob_reward = db.get_reward_balance( account_name_type( "bob" ), SYMBOL_COIN );
-      asset candice_reward = db.get_reward_balance( account_name_type( "candice" ), SYMBOL_COIN );
+      asset alice_reward = get_reward_balance( "alice", SYMBOL_COIN );
+      asset bob_reward = get_reward_balance( "bob", SYMBOL_COIN );
+      asset candice_reward = get_reward_balance( "candice", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_reward.amount == 0 );
       BOOST_REQUIRE( bob_reward.amount == 0 );
@@ -631,9 +588,9 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       BOOST_REQUIRE( candice_comment.cashouts_received == 1 );
 
-      alice_reward = db.get_reward_balance( account_name_type( "alice" ), SYMBOL_COIN );
-      bob_reward = db.get_reward_balance( account_name_type( "bob" ), SYMBOL_COIN );
-      candice_reward = db.get_reward_balance( account_name_type( "candice" ), SYMBOL_COIN );
+      alice_reward = get_reward_balance( "alice", SYMBOL_COIN );
+      bob_reward = get_reward_balance( "bob", SYMBOL_COIN );
+      candice_reward = get_reward_balance( "candice", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_reward.amount > 0 );
       BOOST_REQUIRE( bob_reward.amount > 0 );
@@ -659,21 +616,21 @@ BOOST_AUTO_TEST_CASE( message_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when no connection" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan) );
 
-      fund_stake( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      generate_blocks( TOTAL_PRODUCERS );
 
       string alice_private_connection_wif = graphene::utilities::key_to_wif( alice_private_connection_key );
       string bob_private_connection_wif = graphene::utilities::key_to_wif( bob_private_connection_key );
@@ -782,21 +739,21 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
       
       const median_chain_property_object& median_props = db.get_median_chain_properties();
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan) );
 
-      fund_stake( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      generate_blocks( TOTAL_PRODUCERS );
 
       const auto& vote_idx = db.get_index< comment_vote_index >().indices().get< by_comment_voter >();
 
@@ -855,7 +812,7 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      validate_database();
+      generate_blocks(10);
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when voting on a non-existent comment" );
 
@@ -870,13 +827,13 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      validate_database();
+      generate_blocks(10);
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when voting with an initial weight of 0" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful vote with PERCENT_100 weight" );
 
-      auto old_voting_power = bob.voting_power;
+      uint16_t old_voting_power = bob.voting_power;
 
       vote.weight = PERCENT_100;
       vote.permlink = "lorem";
@@ -886,20 +843,22 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
 
       tx.operations.push_back( vote );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
-
       db.push_transaction( tx, 0 );
 
       const comment_object& alice_comment = db.get_comment( account_name_type( "alice" ), string( "lorem" ) );
 
       auto bob_vote_itr = vote_idx.find( std::make_tuple( alice_comment.id, account_name_type( "bob" ) ) );
+
       int64_t max_vote_denom = median_props.vote_reserve_rate * ( median_props.vote_recharge_time.count() / fc::days(1).count() );
 
-      BOOST_REQUIRE( bob.voting_power == old_voting_power - ( ( old_voting_power + max_vote_denom - 1 ) / max_vote_denom ) );
-      BOOST_REQUIRE( bob.last_vote_time == now() );
+      uint16_t used_power = ( old_voting_power * abs( vote.weight ) ) / PERCENT_100;
+      used_power = ( used_power + max_vote_denom - 1 ) / max_vote_denom;
+
+      BOOST_REQUIRE( bob.voting_power == old_voting_power - used_power );
       BOOST_REQUIRE( alice_comment.cashout_time == alice_comment.created + CONTENT_REWARD_INTERVAL );
       BOOST_REQUIRE( bob_vote_itr != vote_idx.end() );
 
-      validate_database();
+      generate_blocks(10);
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: successful vote with PERCENT_100 weight" );
 
@@ -920,20 +879,19 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
 
       auto candice_vote_itr = vote_idx.find( std::make_tuple( alice_comment.id, account_name_type( "candice" ) ) );
 
-      BOOST_REQUIRE( candice.voting_power == old_voting_power - ( ( old_voting_power + max_vote_denom - 1 ) / max_vote_denom ) );
-      BOOST_REQUIRE( candice.last_vote_time == now() );
+      used_power = ( old_voting_power * abs( vote.weight ) ) / PERCENT_100;
+      used_power = ( used_power + max_vote_denom - 1 ) / max_vote_denom;
+
+      BOOST_REQUIRE( candice.voting_power == old_voting_power - used_power );
       BOOST_REQUIRE( alice_comment.cashout_time == alice_comment.created + CONTENT_REWARD_INTERVAL );
       BOOST_REQUIRE( candice_vote_itr != vote_idx.end() );
-      BOOST_REQUIRE( candice_vote_itr->last_updated == now() );
       BOOST_REQUIRE( candice_vote_itr->vote_percent == vote.weight );
 
-      validate_database();
+      generate_blocks(10);
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: negative vote" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: adjusting vote weight" );
-
-      generate_blocks( now() + MIN_VOTE_INTERVAL );
 
       vote.weight = PERCENT_1 * 50;
       
@@ -947,16 +905,13 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
       candice_vote_itr = vote_idx.find( std::make_tuple( alice_comment.id, account_name_type( "candice" ) ) );
 
       BOOST_REQUIRE( candice_vote_itr != vote_idx.end() );
-      BOOST_REQUIRE( candice_vote_itr->last_updated == now() );
       BOOST_REQUIRE( candice_vote_itr->vote_percent == vote.weight );
-      
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: adjusting vote weight" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: changing vote to 0 weight" );
 
-      generate_blocks( now() + MIN_VOTE_INTERVAL );
+      generate_blocks(10);
 
       vote.weight = 0;
 
@@ -969,7 +924,6 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
 
       candice_vote_itr = vote_idx.find( std::make_tuple( alice_comment.id, account_name_type( "candice" ) ) );
 
-      BOOST_REQUIRE( candice_vote_itr->last_updated == now() );
       BOOST_REQUIRE( candice_vote_itr->vote_percent == vote.weight );
       BOOST_REQUIRE( candice_vote_itr->reward == 0 );
       
@@ -993,21 +947,21 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
 
       const median_chain_property_object& median_props = db.get_median_chain_properties();
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan) );
 
-      fund_stake( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      generate_blocks( TOTAL_PRODUCERS );
 
       const auto& view_idx = db.get_index< comment_view_index >().indices().get< by_comment_viewer >();
 
@@ -1024,7 +978,7 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
       comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
       comment.url = "https://www.url.com";
       comment.community = INIT_COMMUNITY;
-      comment.tags.push_back( tag_name_type( "test" ) );
+      comment.tags.push_back( "test" );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
       comment.parent_author = "";
@@ -1064,16 +1018,15 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
 
       tx.operations.push_back( view );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
-
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      validate_database();
+      generate_blocks(10);
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when viewing a non-existent comment" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful view" );
 
-      auto old_viewing_power = bob.viewing_power;
+      uint16_t old_viewing_power = bob.viewing_power;
 
       view.permlink = "lorem";
 
@@ -1082,7 +1035,6 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
 
       tx.operations.push_back( view );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
-
       db.push_transaction( tx, 0 );
 
       const comment_object& alice_comment = db.get_comment( account_name_type( "alice" ), string( "lorem" ) );
@@ -1090,20 +1042,19 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
       auto bob_view_itr = view_idx.find( std::make_tuple( alice_comment.id, account_name_type( "bob" ) ) );
       int64_t max_view_denom = median_props.view_reserve_rate * ( median_props.view_recharge_time.count() / fc::days(1).count() );
 
-      BOOST_REQUIRE( bob.viewing_power == old_viewing_power - ( ( old_viewing_power + max_view_denom - 1 ) / max_view_denom ) );
-      BOOST_REQUIRE( bob.last_view_time == now() );
+      uint16_t used_power = ( PERCENT_100 + max_view_denom - 1 ) / max_view_denom;
+
+      BOOST_REQUIRE( bob.viewing_power == old_viewing_power - used_power );
       BOOST_REQUIRE( alice_comment.cashout_time == alice_comment.created + CONTENT_REWARD_INTERVAL );
       BOOST_REQUIRE( bob_view_itr != view_idx.end() );
       BOOST_REQUIRE( bob_view_itr->weight > 0 );
       BOOST_REQUIRE( bob_view_itr->reward > 0 );
 
-      validate_database();
+      generate_blocks(10);
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: successful view" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: removing view" );
-
-      generate_blocks( now() + MIN_VIEW_INTERVAL );
 
       view.viewed = false;
       
@@ -1138,21 +1089,21 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
 
       const median_chain_property_object& median_props = db.get_median_chain_properties();
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan) );
 
-      fund_stake( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      generate_blocks( TOTAL_PRODUCERS );
 
       const auto& share_idx = db.get_index< comment_share_index >().indices().get< by_comment_sharer >();
 
@@ -1169,7 +1120,7 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
       comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
       comment.url = "https://www.url.com";
       comment.community = INIT_COMMUNITY;
-      comment.tags.push_back( tag_name_type( "test" ) );
+      comment.tags.push_back( "test" );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
       comment.parent_author = "";
@@ -1208,16 +1159,15 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
 
       tx.operations.push_back( share );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
-
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      validate_database();
+      generate_blocks(10);
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when sharing a non-existent comment" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful share to follow feed" );
 
-      auto old_sharing_power = bob.sharing_power;
+      uint16_t old_sharing_power = bob.sharing_power;
 
       share.permlink = "lorem";
 
@@ -1226,7 +1176,6 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
 
       tx.operations.push_back( share );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
-
       db.push_transaction( tx, 0 );
 
       const comment_object& alice_comment = db.get_comment( account_name_type( "alice" ), string( "lorem" ) );
@@ -1234,20 +1183,19 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
       auto bob_share_itr = share_idx.find( std::make_tuple( alice_comment.id, account_name_type( "bob" ) ) );
       int64_t max_share_denom = median_props.share_reserve_rate * ( median_props.share_recharge_time.count() / fc::days(1).count() );
 
-      BOOST_REQUIRE( bob.sharing_power == old_sharing_power - ( ( old_sharing_power + max_share_denom - 1 ) / max_share_denom ) );
-      BOOST_REQUIRE( bob.last_share_time == now() );
+      uint16_t used_power = ( PERCENT_100 + max_share_denom - 1 ) / max_share_denom;
+
+      BOOST_REQUIRE( bob.sharing_power == old_sharing_power - used_power );
       BOOST_REQUIRE( alice_comment.cashout_time == alice_comment.created + CONTENT_REWARD_INTERVAL );
       BOOST_REQUIRE( bob_share_itr != share_idx.end() );
       BOOST_REQUIRE( bob_share_itr->weight > 0 );
       BOOST_REQUIRE( bob_share_itr->reward > 0 );
 
-      validate_database();
+      generate_blocks(10);
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: successful share to follow feed" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: removing share" );
-
-      generate_blocks( now() + MIN_SHARE_INTERVAL );
 
       share.shared = false;
       
@@ -1280,21 +1228,21 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when moderating a non-existent comment" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan) );
 
-      fund_stake( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      generate_blocks( TOTAL_PRODUCERS );
 
       signed_transaction tx;
 
@@ -1355,8 +1303,8 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      validate_database();
-
+      generate_blocks(10);
+      
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when moderating a non-existent comment" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when account is not governance account" );
@@ -1370,7 +1318,10 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      validate_database();
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      generate_blocks(10);
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when account is not governance account" );
 
@@ -1419,6 +1370,9 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
+      tx.operations.clear();
+      tx.signatures.clear();
+
       const comment_object& alice_comment = db.get_comment( account_name_type( "alice" ), string( "lorem" ) );
 
       const auto& tag_idx = db.get_index< moderation_tag_index >().indices().get< by_comment_moderator >();
@@ -1428,20 +1382,14 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       BOOST_REQUIRE( to_string( tag_itr->details ) == tag.details );
       BOOST_REQUIRE( tag_itr->tags[0] == tag.tags[0] );
       BOOST_REQUIRE( tag_itr->filter == tag.filter );
-      BOOST_REQUIRE( tag_itr->created == now() );
-   
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: successful moderation tag" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: removing moderation tag" );
 
-      generate_blocks( now() + MIN_SHARE_INTERVAL );
+      generate_blocks(10);
 
       tag.applied = false;
-      
-      tx.operations.clear();
-      tx.signatures.clear();
 
       tx.operations.push_back( tag );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
@@ -1469,15 +1417,15 @@ BOOST_AUTO_TEST_CASE( list_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Creating new List" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob) );
 
-      fund_stake( account_name_type( "alice" ), asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "alice" ), asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "bob" ), asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "bob" ), asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      generate_blocks( TOTAL_PRODUCERS );
 
       signed_transaction tx;
 
@@ -1565,21 +1513,21 @@ BOOST_AUTO_TEST_CASE( poll_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Creating new Poll" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan) );
 
-      fund_stake( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      generate_blocks( TOTAL_PRODUCERS );
 
       signed_transaction tx;
 
@@ -1611,7 +1559,7 @@ BOOST_AUTO_TEST_CASE( poll_operation_test )
 
       for( size_t i = 0; i < poll.poll_options.size(); i++ )
       {
-         BOOST_REQUIRE( poll.poll_options[i] == alice_poll.poll_options[i] );
+         BOOST_REQUIRE( poll.poll_options[ i ] == alice_poll.poll_options[ i ] );
       }
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Creating new Poll" );
@@ -1639,7 +1587,7 @@ BOOST_AUTO_TEST_CASE( poll_operation_test )
       const poll_vote_object& bob_vote = db.get_poll_vote( account_name_type( "bob" ), account_name_type( "alice" ), string( "2aafe6cf-8d37-4467-a8ce-d55d12a3f492" ) );
 
       BOOST_REQUIRE( vote.creator == bob_vote.creator );
-      BOOST_REQUIRE( vote.voter == bob_vote.creator );
+      BOOST_REQUIRE( vote.voter == bob_vote.voter );
       BOOST_REQUIRE( vote.poll_id == to_string( bob_vote.poll_id ) );
       BOOST_REQUIRE( alice_poll.poll_options[ vote.poll_option ] == bob_vote.poll_option );
 

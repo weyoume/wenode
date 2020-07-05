@@ -52,14 +52,12 @@ void database::process_membership_updates()
    auto account_itr = account_idx.begin();
    
    while( account_itr != account_idx.end() && 
-      account_itr->membership_expiration >= now )
+      account_itr->membership_expiration <= now )
    {
       const account_object& member = *account_itr;
 
       if( member.recurring_membership > 0 )
       {
-         const account_object& int_account = get_account( member.membership_interface );
-
          asset liquid = get_liquid_balance( member.name, SYMBOL_COIN );
          asset monthly_fee = asset( 0, SYMBOL_USD );
 
@@ -91,15 +89,24 @@ void database::process_membership_updates()
             }
          }
 
-         asset total_fees = monthly_fee * member.recurring_membership; 
+         asset total_fees = monthly_fee * member.recurring_membership;
 
-         if( liquid >= total_fees && total_fees.amount > 0)
+         if( liquid >= total_fees && 
+            total_fees.amount > 0 )
          {
-            pay_membership_fees( member, -total_fees, int_account );      // Pays splits to interface, premium partners, and network
-
+            if( member.membership_interface != NULL_ACCOUNT )
+            {
+               const account_object& int_account = get_account( member.membership_interface );
+               pay_membership_fees( member, total_fees, int_account );
+            }
+            else
+            {
+               pay_membership_fees( member, total_fees );
+            }
+            
             modify( member, [&]( account_object& a )
             {
-               a.membership_expiration = now + fc::days( 30 * a.recurring_membership );
+               a.membership_expiration = ( now + fc::days( 30 * a.recurring_membership ) );
             });
          }
          else
@@ -124,33 +131,34 @@ void database::process_membership_updates()
          });
       }
 
+      ilog( "Updated Account Membership: ${m}",("m",member));
+
       ++account_itr;
    }
 } FC_CAPTURE_AND_RETHROW() }
 
 
 /**
- * Pays protocol membership fees, and splits to network contributors
- * member: The account that is paying to upgrade to a membership level
- * payment: The asset being received as payment
- * interface: The owner account of the interface that sold the membership
+ * Pays protocol membership fees.
+ * 
+ * Splits to network contributors -
+ * member: The account that is paying to upgrade to a membership level.
+ * payment: The asset being received as payment.
+ * interface: The owner account of the interface that sold the membership.
  */
 asset database::pay_membership_fees( const account_object& member, const asset& mem_payment, const account_object& interface )
 { try {
-   FC_ASSERT( mem_payment.symbol == SYMBOL_USD, 
-      "Payment asset must be denominated in USD asset.");
+   FC_ASSERT( mem_payment > asset( 0, SYMBOL_USD ), 
+      "Payment must be denominated in USD asset and greater than 0." );
 
    const reward_fund_object& reward_fund = get_reward_fund( SYMBOL_COIN );
    price usd_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).hour_median_price;
    asset membership_fee = mem_payment * usd_price;       // Membership fee denominated in Core asset
-
    asset network_fees = ( membership_fee * NETWORK_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
    asset interface_fees = ( membership_fee * INTERFACE_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
    asset partners_fees = ( membership_fee * PARTNERS_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
-
    asset network_paid = pay_network_fees( member, network_fees );
    asset interface_paid = pay_fee_share( interface, interface_fees, true );
-
    asset total_fees = network_paid + interface_paid + partners_fees;
    adjust_liquid_balance( member.name, -total_fees );
    
@@ -163,6 +171,7 @@ asset database::pay_membership_fees( const account_object& member, const asset& 
 
 } FC_CAPTURE_AND_RETHROW() }
 
+
 /**
  * Pays protocol membership fees, and splits to network contributors
  * member: The account that is paying to upgrade to a membership level
@@ -170,19 +179,16 @@ asset database::pay_membership_fees( const account_object& member, const asset& 
  */
 asset database::pay_membership_fees( const account_object& member, const asset& mem_payment )
 { try {
-   FC_ASSERT( mem_payment.symbol == SYMBOL_USD, 
-      "Payment asset must be denominated in USD asset.");
+   FC_ASSERT( mem_payment > asset( 0, SYMBOL_USD ), 
+      "Payment must be denominated in USD asset and greater than 0." );
 
    const reward_fund_object& reward_fund = get_reward_fund( SYMBOL_COIN );
    price usd_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).hour_median_price;
    asset membership_fee = mem_payment * usd_price;       // Membership fee denominated in Core asset
-
    asset network_fees = ( membership_fee * NETWORK_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
    asset interface_fees = ( membership_fee * INTERFACE_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
    asset partners_fees = ( membership_fee * PARTNERS_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
-
    asset network_paid = pay_network_fees( member, network_fees + interface_fees );
-   
    asset total_fees = network_paid + partners_fees;
    adjust_liquid_balance( member.name, -total_fees );
    
@@ -194,7 +200,6 @@ asset database::pay_membership_fees( const account_object& member, const asset& 
    return total_fees;
 
 } FC_CAPTURE_AND_RETHROW() }
-
 
 
 /**
@@ -661,7 +666,8 @@ void database::update_enterprise_approvals( const account_object& account )
 
    uint16_t new_vote_rank = 1;
 
-   while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
+   while( vote_itr != vote_idx.end() && 
+      vote_itr->account == account.name )
    {
       const enterprise_approval_object& vote = *vote_itr;
       if( vote.vote_rank != new_vote_rank )
@@ -688,7 +694,8 @@ void database::update_enterprise_approvals( const account_object& account, const
 
    uint16_t new_vote_rank = 1;
 
-   while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
+   while( vote_itr != vote_idx.end() && 
+      vote_itr->account == account.name )
    {
       const enterprise_approval_object& vote = *vote_itr;
       if( vote.vote_rank == input_vote_rank )
@@ -884,8 +891,10 @@ void database::account_recovery_processing()
    const auto& rec_req_idx = get_index< account_recovery_request_index >().indices().get< by_expiration >();
    auto rec_req = rec_req_idx.begin();
 
-   while( rec_req != rec_req_idx.end() && rec_req->expiration <= head_block_time() )
+   while( rec_req != rec_req_idx.end() && 
+      rec_req->expiration <= head_block_time() )
    {
+      ilog( "Removed: ${v}",("v",*rec_req));
       remove( *rec_req );
       rec_req = rec_req_idx.begin();
    }
@@ -896,6 +905,7 @@ void database::account_recovery_processing()
 
    while( hist != hist_idx.end() && time_point( hist->last_valid_time + OWNER_AUTH_RECOVERY_PERIOD ) < head_block_time() )
    {
+      ilog( "Removed: ${v}",("v",*hist));
       remove( *hist );
       hist = hist_idx.begin();
    }
@@ -910,74 +920,88 @@ void database::account_recovery_processing()
       {
          a.recovery_account = change_req->recovery_account;
       });
-
+      ilog( "Removed: ${v}",("v",*change_req));
       remove( *change_req );
       change_req = change_req_idx.begin();
    }
 }
 
-void database::clear_network_votes( const account_object& a )
+void database::clear_network_votes( const account_name_type& a )
 {
    const auto& producer_vote_idx = get_index< producer_vote_index >().indices().get< by_account_producer >();
-   auto producer_vote_itr = producer_vote_idx.lower_bound( a.name );
-   while( producer_vote_itr != producer_vote_idx.end() && producer_vote_itr->account == a.name )
+   auto producer_vote_itr = producer_vote_idx.lower_bound( a );
+   while( producer_vote_itr != producer_vote_idx.end() && 
+      producer_vote_itr->account == a )
    {
       const producer_vote_object& vote = *producer_vote_itr;
       ++producer_vote_itr;
+      ilog( "Removed: ${v}",("v",vote));
       remove(vote);
    }
 
    const auto& officer_vote_idx = get_index< network_officer_vote_index >().indices().get< by_account_officer >();
-   auto officer_vote_itr = officer_vote_idx.lower_bound( a.name );
-   while( officer_vote_itr != officer_vote_idx.end() && officer_vote_itr->account == a.name )
+   auto officer_vote_itr = officer_vote_idx.lower_bound( a );
+   while( officer_vote_itr != officer_vote_idx.end() && 
+      officer_vote_itr->account == a )
    {
       const network_officer_vote_object& vote = *officer_vote_itr;
       ++officer_vote_itr;
+      ilog( "Removed: ${v}",("v",vote));
       remove(vote);
    }
 
    const auto& executive_vote_idx = get_index< executive_board_vote_index >().indices().get< by_account_executive >();
-   auto executive_vote_itr = executive_vote_idx.lower_bound( a.name );
-   while( executive_vote_itr != executive_vote_idx.end() && executive_vote_itr->account == a.name )
+   auto executive_vote_itr = executive_vote_idx.lower_bound( a );
+   while( executive_vote_itr != executive_vote_idx.end() && 
+      executive_vote_itr->account == a )
    {
       const executive_board_vote_object& vote = *executive_vote_itr;
       ++executive_vote_itr;
+      ilog( "Removed: ${v}",("v",vote));
       remove(vote);
    }
 
    const auto& enterprise_approval_idx = get_index< enterprise_approval_index >().indices().get< by_account_enterprise >();
-   auto enterprise_approval_itr = enterprise_approval_idx.lower_bound( a.name );
-   while( enterprise_approval_itr != enterprise_approval_idx.end() && enterprise_approval_itr->account == a.name )
+   auto enterprise_approval_itr = enterprise_approval_idx.lower_bound( a );
+   while( enterprise_approval_itr != enterprise_approval_idx.end() && 
+      enterprise_approval_itr->account == a )
    {
       const enterprise_approval_object& vote = *enterprise_approval_itr;
       ++enterprise_approval_itr;
+      ilog( "Removed: ${v}",("v",vote));
       remove(vote);
    }
 
    const auto& community_moderator_vote_idx = get_index< community_moderator_vote_index >().indices().get< by_account >();
-   auto community_moderator_vote_itr = community_moderator_vote_idx.lower_bound( a.name );
-   while( community_moderator_vote_itr != community_moderator_vote_idx.end() && community_moderator_vote_itr->account == a.name )
+   auto community_moderator_vote_itr = community_moderator_vote_idx.lower_bound( a );
+   while( community_moderator_vote_itr != community_moderator_vote_idx.end() && 
+      community_moderator_vote_itr->account == a )
    {
       const community_moderator_vote_object& vote = *community_moderator_vote_itr;
       ++community_moderator_vote_itr;
+      ilog( "Removed: ${v}",("v",vote));
       remove(vote);
    }
 
    const auto& account_officer_vote_idx = get_index< account_officer_vote_index >().indices().get< by_account_business_officer >();
-   auto account_officer_vote_itr = account_officer_vote_idx.lower_bound( a.name );
-   while( account_officer_vote_itr != account_officer_vote_idx.end() && account_officer_vote_itr->account == a.name )
+   auto account_officer_vote_itr = account_officer_vote_idx.lower_bound( a );
+   while( account_officer_vote_itr != account_officer_vote_idx.end() && 
+      account_officer_vote_itr->account == a )
    {
       const account_officer_vote_object& vote = *account_officer_vote_itr;
       ++account_officer_vote_itr;
+      ilog( "Removed: ${v}",("v",vote));
       remove(vote);
    }
 
    const auto& account_executive_vote_idx = get_index< account_executive_vote_index >().indices().get< by_account_business_executive >();
-   auto account_executive_vote_itr = account_executive_vote_idx.lower_bound( a.name );
-   while( account_executive_vote_itr != account_executive_vote_idx.end() && account_executive_vote_itr->account == a.name )
+   auto account_executive_vote_itr = account_executive_vote_idx.lower_bound( a );
+   while( account_executive_vote_itr != account_executive_vote_idx.end() && 
+      account_executive_vote_itr->account == a )
    {
       const account_executive_vote_object& vote = *account_executive_vote_itr;
       ++account_executive_vote_itr;
+      ilog( "Removed: ${v}",("v",vote));
       remove(vote);
    }
 }
@@ -988,11 +1012,12 @@ void database::process_decline_voting_rights()
    const auto& req_idx = get_index< decline_voting_rights_request_index >().indices().get< by_effective_date >();
    auto req_itr = req_idx.begin();
 
-   while( req_itr != req_idx.end() && req_itr->effective_date <= now )
+   while( req_itr != req_idx.end() && 
+      req_itr->effective_date <= now )
    {
       const account_object& account = get_account( req_itr->account );
 
-      clear_network_votes( account );
+      clear_network_votes( account.name );
 
       for( auto proxy : account.proxied )   // Remove all accounts proxied to the acocunt.
       {
@@ -1002,14 +1027,17 @@ void database::process_decline_voting_rights()
          });
       }
 
-      modify( get_account( req_itr->account ), [&]( account_object& a )
+      modify( account, [&]( account_object& a )
       {
          a.can_vote = false;
          a.proxy = PROXY_TO_SELF_ACCOUNT;
          a.proxied.clear();
       });
 
+      ilog( "Removed: ${v}",("v",*req_itr));
       remove( *req_itr );
+
+      ilog( "Account: ${a} Processed Decline Voting Rights", ("a",req_itr->account));
    }
 }
 

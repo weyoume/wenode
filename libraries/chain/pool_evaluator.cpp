@@ -376,6 +376,7 @@ void credit_pool_collateral_evaluator::do_apply( const credit_pool_collateral_op
 
       if( collateral.collateral.amount == 0 )
       {
+         ilog( "Removed: ${v}",("v",collateral));
          _db.remove( collateral );
       }
    }
@@ -551,6 +552,7 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
             acpo.base_balance += closing_debt;
          });
 
+         ilog( "Removed: ${v}",("v",loan));
          _db.remove( loan );
       }
       else      // modifying the loan or repaying partially. 
@@ -815,8 +817,16 @@ void prediction_pool_create_evaluator::do_apply( const prediction_pool_create_op
 
    // Add Invalid outcome asset 
 
-   vector< asset_symbol_type > outcome_assets = o.outcome_assets;
-   outcome_assets.push_back( INVALID_OUTCOME_SYMBOL );
+   vector< asset_symbol_type > outcome_assets;
+   
+   for( asset_symbol_type a : o.outcome_assets )
+   {
+      asset_symbol_type outcome_symbol = string( o.prediction_symbol )+"."+string( a );
+      outcome_assets.push_back( outcome_symbol );
+   }
+
+   asset_symbol_type invalid_symbol = string( o.prediction_symbol )+"."+INVALID_OUTCOME_SYMBOL;
+   outcome_assets.push_back( invalid_symbol );
    
    _db.create< asset_object >( [&]( asset_object& a )
    {
@@ -899,7 +909,11 @@ void prediction_pool_create_evaluator::do_apply( const prediction_pool_create_op
          a.issuer = o.account;
          a.symbol = s;
       });
+
+      ilog("Created Prediction pool outcome asset: ${p}",("p",s ));
    }
+
+   ilog("Created Prediction pool: ${p}",("p",o.prediction_symbol ));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -1060,7 +1074,7 @@ void prediction_pool_resolve_evaluator::do_apply( const prediction_pool_resolve_
       ("a", account.name)("i", o.amount) );
 
       _db.adjust_liquid_balance( o.account, -o.amount );
-      _db.adjust_pending_supply( -o.amount );
+      _db.adjust_pending_supply( o.amount );
 
       _db.create< asset_prediction_pool_resolution_object >( [&]( asset_prediction_pool_resolution_object& a )
       {

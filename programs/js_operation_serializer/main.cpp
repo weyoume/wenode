@@ -15,7 +15,6 @@ using node::protocol::business_structure_type;
 using node::protocol::membership_tier_type;
 using node::protocol::network_officer_role_type;
 using node::protocol::executive_role_type;
-using node::protocol::proposal_distribution_type;
 using node::protocol::product_auction_type;
 using node::protocol::asset_property_type;
 using node::protocol::ad_format_type;

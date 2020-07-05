@@ -184,6 +184,7 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
          
          if( account_officer_itr != account_officer_idx.end() )
          {
+            ilog( "Removed: ${v}",("v",*account_officer_itr));
             _db.remove( *account_officer_itr );
          }
 
@@ -194,10 +195,12 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
    {
       if( account_officer_itr != account_officer_idx.end() )
       {
+         ilog( "Removed: ${v}",("v",*account_officer_itr));
          _db.remove( *account_officer_itr );
       }
       else if( account_type_rank_itr != account_type_rank_idx.end() )
       {
+         ilog( "Removed: ${v}",("v",*account_type_rank_itr));
          _db.remove( *account_type_rank_itr );
       }
       _db.update_network_officer_votes( voter );
@@ -246,7 +249,8 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
    const account_object& executive = _db.get_account( o.executive );
    FC_ASSERT( executive.active, 
       "Account: ${s} must be active to update executive board.",("s", o.executive) );
-   FC_ASSERT( o.executive == o.account || b.is_authorized_network( o.account, _db.get_account_permissions( o.account ) ),
+   FC_ASSERT( o.executive == o.account || 
+      b.is_authorized_network( o.account, _db.get_account_permissions( o.account ) ),
       "Account is not authorized to update Executive board." );
    const governance_account_object& gov_account = _db.get_governance_account( o.executive );
    FC_ASSERT( gov_account.active, 
@@ -274,8 +278,10 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
       "Executive board requires at least one officer." );
 
    if( exec_ptr != nullptr )      // Updating existing Executive board
-   { 
-      _db.modify( *exec_ptr, [&]( executive_board_object& ebo )
+   {
+      const executive_board_object& exec_board = *exec_ptr;
+
+      _db.modify( exec_board, [&]( executive_board_object& ebo )
       {
          ebo.budget = o.budget;
          if( o.url.size() )
@@ -292,24 +298,27 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
          }
          ebo.active = o.active;
       });
+
+      ilog( "Account: ${a} edited Executive Board: \n ${b} \n",
+         ("a",o.account)("b",exec_board));
    }
    else         // create new executive board
    {
       // Perform Executive board eligibility checks when creating new community.
       FC_ASSERT( o.active, 
-         "Executive board does not exist for this account, set active to true.");
+         "Executive board does not exist for this account, set active to true." );
       FC_ASSERT( supernode.active && interface.active && gov_account.active, 
-         "Executive board must have an active interface, supernode, and governance account");
+         "Executive board must have an active interface, supernode, and governance account." );
       FC_ASSERT( executive.membership == membership_tier_type::TOP_MEMBERSHIP, 
          "Account must be a top level member to create an Executive board.");  
       FC_ASSERT( stake.amount >= 100*BLOCKCHAIN_PRECISION, 
          "Must have a minimum stake of 100 Core assets.");
       FC_ASSERT( gov_account.subscriber_count >= 100, 
-         "Interface requires 100 daily active users to create Executive board.");
+         "Interface requires 100 daily active users to create Executive board." );
       FC_ASSERT( interface.daily_active_users >= 100 * PERCENT_100, 
-         "Interface requires 100 daily active users to create Executive board.");
+         "Interface requires 100 daily active users to create Executive board." );
       FC_ASSERT( supernode.daily_active_users >= 100 * PERCENT_100, 
-         "Supernode requires 100 daily active users to create Executive board.");
+         "Supernode requires 100 daily active users to create Executive board." );
       
       bool producer_check = false;
       bool dev_check = false;
@@ -427,7 +436,7 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
       FC_ASSERT( producer_check && dev_check && mar_check && adv_check, 
          "Executive board must contain at least one producer, developer, marketer, and advocate.");
 
-      _db.create< executive_board_object >( [&]( executive_board_object& ebo )
+      const executive_board_object& exec_board = _db.create< executive_board_object >( [&]( executive_board_object& ebo )
       {
          ebo.account = o.executive;
          ebo.budget = o.budget;
@@ -446,6 +455,9 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
          ebo.active = true;
          ebo.created = now;
       });
+
+      ilog( "Account: ${a} created new Executive Board: \n ${b} \n",
+         ("a",o.account)("b",exec_board));
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -490,7 +502,7 @@ void executive_board_vote_evaluator::do_apply( const executive_board_vote_operat
 
    if( o.approved )      // Adding or modifying vote
    {
-      if( account_executive_itr == account_executive_idx.end() && account_rank_itr == account_rank_idx.end() ) // No vote for executive or rank, create new vote.
+      if( account_executive_itr == account_executive_idx.end() && account_rank_itr == account_rank_idx.end() )     // No vote for executive or rank, create new vote.
       {
          FC_ASSERT( voter.executive_board_vote_count < MAX_EXEC_VOTES, 
             "Account has voted for too many Executive boards." );
@@ -514,6 +526,7 @@ void executive_board_vote_evaluator::do_apply( const executive_board_vote_operat
          
          if( account_executive_itr != account_executive_idx.end() )
          {
+            ilog( "Removed: ${v}",("v",*account_executive_itr));
             _db.remove( *account_executive_itr );
          }
 
@@ -524,10 +537,12 @@ void executive_board_vote_evaluator::do_apply( const executive_board_vote_operat
    {
       if( account_executive_itr != account_executive_idx.end() )
       {
+         ilog( "Removed: ${v}",("v",*account_executive_itr));
          _db.remove( *account_executive_itr );
       }
       else if( account_rank_itr != account_rank_idx.end() )
       {
+         ilog( "Removed: ${v}",("v",*account_rank_itr));
          _db.remove( *account_rank_itr );
       }
       _db.update_executive_board_votes( voter );
@@ -655,6 +670,7 @@ void subscribe_governance_evaluator::do_apply( const subscribe_governance_operat
          a.governance_subscriptions--;
       });
 
+      ilog( "Removed: ${v}",("v",*itr));
       _db.remove( *itr );
    }
 
@@ -920,8 +936,6 @@ void update_mediator_evaluator::do_apply( const update_mediator_operation& o )
          m.created = now;
          m.last_updated = now;
          m.mediator_bond = o.mediator_bond;
-         m.last_escrow_from = account_name_type();
-         from_string( m.last_escrow_id, "" ); ;
       });
    } 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -962,50 +976,22 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
 
    FC_ASSERT( milestone_sum == PERCENT_100, 
       "Milestone Sum must equal 100 percent." );
-
-   proposal_distribution_type prop_type = proposal_distribution_type::FUNDING;
-
-   for( size_t i = 0; i < proposal_distribution_values.size(); i++ )
-   {
-      if( o.proposal_type == proposal_distribution_values[ i ] )
-      {
-         prop_type = proposal_distribution_type( i );
-         break;
-      }
-   }
    
-   if( prop_type == proposal_distribution_type::FUNDING )
+   uint16_t beneficiary_sum = 0;
+   for( auto beneficiary : o.beneficiaries )
    {
-      uint16_t beneficiary_sum = 0;
-      for( auto beneficiary : o.beneficiaries )
-      {
-         beneficiary_sum += beneficiary.second;
-      }
-
-      FC_ASSERT( beneficiary_sum == PERCENT_100, 
-         "Beneficiary Sum must equal 100 percent." );
-      FC_ASSERT( o.beneficiaries.size() >= 1 && o.beneficiaries.size() <= 100, 
-         "Funding Proposal must have between 1 and 100 beneficiaries." );
-   }
-   else if( prop_type == proposal_distribution_type::INVESTMENT )
-   {
-      asset_symbol_type inv_asset = *o.investment;
-      const asset_object& asset_obj = _db.get_asset( inv_asset );
-
-      FC_ASSERT( !asset_obj.is_market_issued(),
-         "Investment Asset cannot be market issued." );
-      FC_ASSERT( o.beneficiaries.size() == 0, 
-         "Investment Proposal should not specify account beneficiaries." );
-      FC_ASSERT( o.investment.valid(), 
-         "Investment proposal should specify an asset to invest in." );
-      FC_ASSERT( is_valid_symbol( *o.investment ), 
-         "Invalid investment symbol." );
+      beneficiary_sum += beneficiary.second;
    }
 
+   FC_ASSERT( beneficiary_sum == PERCENT_100, 
+      "Beneficiary Sum must equal 100 percent." );
+   FC_ASSERT( o.beneficiaries.size() >= 1 && o.beneficiaries.size() <= 100, 
+      "Funding Proposal must have between 1 and 100 beneficiaries." );
+   
    const community_enterprise_object* ent_ptr = _db.find_community_enterprise( o.creator, o.enterprise_id );
 
    if( ent_ptr != nullptr ) // Updating or removing existing proposal 
-   { 
+   {
       const community_enterprise_object& enterprise = *ent_ptr;
       if( enterprise.approved_milestones == -1 )
       {
@@ -1019,13 +1005,8 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
          }
          FC_ASSERT( milestone_sum == PERCENT_100, 
             "Milestone Sum must equal 100 percent." );
-
-         if( prop_type == proposal_distribution_type::COMPETITION )
-         {
-            FC_ASSERT( o.beneficiaries.size() == 0, 
-               "Competition Proposal must not specifiy winner beneficiaries before starting new proposal." );
-         }
       }
+      
       _db.modify( *ent_ptr, [&]( community_enterprise_object& ceo )
       { 
          if( o.url.size() )
@@ -1043,7 +1024,6 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
          ceo.active = o.active;
          if( ceo.approved_milestones == -1 )     // Proposal not yet accepted, able to modify. 
          {
-            ceo.proposal_type = prop_type;
             ceo.beneficiaries = o.beneficiaries;
             ceo.begin = o.begin;
             ceo.duration = o.duration;
@@ -1054,43 +1034,33 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
             {
                ceo.milestone_shares.push_back( mile );
             }
-
-            
          }
       });
+
+      ilog( "Account: ${a} edited community enterprise id: ${id}",
+         ("a",o.creator)("id",o.enterprise_id));
    }
    else        // Create new community enterprise proposal
    {
       FC_ASSERT( o.begin  > ( now + fc::days(7) ), 
          "Begin time must be at least 7 days in the future." );
-      
-      if( prop_type == proposal_distribution_type::COMPETITION )
-      {
-         FC_ASSERT( o.beneficiaries.size() == 0, 
-            "Competition Proposal must not specifiy winner beneficiaries before starting new proposal." );
-      }
-
       FC_ASSERT( o.fee.amount >= 10 * BLOCKCHAIN_PRECISION, 
          "Proposal Requires a fee of 10 currency assets." );
       asset liquid = _db.get_liquid_balance( o.creator, o.daily_budget.symbol );
-
       FC_ASSERT( liquid >= o.fee,
          "Creator has insufficient balance to pay community enterprise proposal fee." );
 
       _db.adjust_liquid_balance( o.creator, -o.fee );
-
       _db.modify( reward_fund, [&]( reward_fund_object& rfo )
       { 
          rfo.adjust_community_fund_balance( o.fee );
       });
-
       _db.adjust_pending_supply( o.fee );
 
       _db.create< community_enterprise_object >( [&]( community_enterprise_object& ceo )
       {
          ceo.creator = o.creator;
          from_string( ceo.enterprise_id, o.enterprise_id );
-         ceo.proposal_type = prop_type;
          ceo.beneficiaries = o.beneficiaries;
          ceo.begin = o.begin;
          ceo.end = o.begin + fc::days( o.duration );
@@ -1107,11 +1077,6 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
          {
             ceo.milestone_shares.push_back( m );
          }
-
-         if( o.investment.valid() )
-         {
-            ceo.investment = *o.investment;
-         }
          if( o.url.size() )
          {
             from_string( ceo.url, o.url );
@@ -1127,7 +1092,10 @@ void create_community_enterprise_evaluator::do_apply( const create_community_ent
          ceo.active = true;
          ceo.created = now;
       });
-   } 
+
+      ilog( "Account: ${a} created community enterprise id: ${id}",
+         ("a",o.creator)("id",o.enterprise_id));
+   }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -1162,6 +1130,9 @@ void claim_enterprise_milestone_evaluator::do_apply( const claim_enterprise_mile
    });
 
    _db.update_enterprise( enterprise, producer_schedule, props );
+
+   ilog("Account: ${a} Claimed milestone: ${m} on enterprise id: ${id}",
+      ("a",o.creator)("m",enterprise.claimed_milestones)("id",enterprise.enterprise_id));
    
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -1205,20 +1176,25 @@ void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_
 
    if( o.approved )      // Adding or modifying vote
    {
-      if( account_enterprise_itr == account_enterprise_idx.end() && account_rank_itr == account_rank_idx.end() )
+      if( account_enterprise_itr == account_enterprise_idx.end() && 
+         account_rank_itr == account_rank_idx.end() )
       {
          FC_ASSERT( account.enterprise_approval_count < MAX_ACCOUNT_VOTES,
             "Account has voted for too many Enterprise proposals." );
 
-         _db.create< enterprise_approval_object >( [&]( enterprise_approval_object& v )
+         const enterprise_approval_object& app = _db.create< enterprise_approval_object >( [&]( enterprise_approval_object& v )
          {
-            v.creator = o.creator;
             v.account = o.account;
+            v.creator = o.creator;
+            from_string( v.enterprise_id, o.enterprise_id );
             v.vote_rank = o.vote_rank;
             v.milestone = o.milestone;
          });
          
          _db.update_enterprise_approvals( account );
+
+         ilog( "Account: ${a} created new Enterprise Approval - \n ${ap} \n",
+            ("a",o.account)("ap",app));
       }
       else
       {
@@ -1232,27 +1208,35 @@ void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_
          
          if( account_enterprise_itr != account_enterprise_idx.end() )
          {
+            ilog( "Removed: ${v}",("v",*account_enterprise_itr));
             _db.remove( *account_enterprise_itr );
          }
 
          _db.update_enterprise_approvals( account, o.creator, o.enterprise_id, o.vote_rank, o.milestone );
+
+         ilog( "Account: ${a} edited enterprise proposal - creator: ${c} id: ${id} vote rank: ${r} milestone: ${m}",
+            ("a",o.account)("c",o.creator)("id",o.enterprise_id)("r",o.vote_rank)("m",o.milestone));
       }
    }
    else       // Removing existing vote
    {
       if( account_enterprise_itr != account_enterprise_idx.end() )
       {
+         ilog( "Removed: ${v}",("v",*account_enterprise_itr));
          _db.remove( *account_enterprise_itr );
       }
       else if( account_rank_itr != account_rank_idx.end() )
       {
+         ilog( "Removed: ${v}",("v",*account_rank_itr));
          _db.remove( *account_rank_itr );
       }
       _db.update_enterprise_approvals( account );
+      ilog( "Account: ${a} removed enterprise proposal - creator: ${c} id: ${id} vote rank: ${r} milestone: ${m}",
+            ("a",o.account)("c",o.creator)("id",o.enterprise_id)("r",o.vote_rank)("m",o.milestone));
    }
 
    _db.update_enterprise( enterprise, producer_schedule, props );
-   
+
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 

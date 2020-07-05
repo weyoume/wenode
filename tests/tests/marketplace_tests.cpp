@@ -34,21 +34,19 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       const median_chain_property_object& median_props = db.get_median_chain_properties();
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
-      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       
-      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       
       signed_transaction tx;
 
@@ -74,7 +72,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const escrow_object& escrow1 = db.get_escrow( "alice", string( "6b3b3da0-660a-41a1-b6a2-221a71c0cc17" ) );
+      const escrow_object& escrow1 = db.get_escrow( account_name_type( "alice" ), string( "6b3b3da0-660a-41a1-b6a2-221a71c0cc17" ) );
 
       BOOST_REQUIRE( escrow1.to == transfer.to );
       BOOST_REQUIRE( escrow1.from == transfer.from );
@@ -83,8 +81,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       BOOST_REQUIRE( escrow1.escrow_expiration == transfer.escrow_expiration );
       BOOST_REQUIRE( escrow1.balance.amount == 0 );
       BOOST_REQUIRE( escrow1.is_approved() == false );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: creation of escrow transfer proposal" );
 
@@ -142,13 +138,10 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const mediator_object& candice_mediator = db.get_mediator( "candice" );
-      const mediator_object& dan_mediator = db.get_mediator( "dan" );
-
-      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
-      asset candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
-      asset dan_init_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
+      asset alice_init_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_init_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
+      asset candice_init_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
+      asset dan_init_liquid_balance = get_liquid_balance( "dan", SYMBOL_COIN );
 
       escrow_approve_operation approve;
 
@@ -216,17 +209,15 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       BOOST_REQUIRE( escrow1.to_mediator_approved() == true );
       BOOST_REQUIRE( escrow1.is_approved() == true );
 
-      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
-      asset candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
-      asset dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
+      asset alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
+      asset candice_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
+      asset dan_liquid_balance = get_liquid_balance( "dan", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_liquid_balance == ( alice_init_liquid_balance - ( transfer.amount + escrow_bond ) ) );
       BOOST_REQUIRE( bob_liquid_balance == ( bob_init_liquid_balance - escrow_bond ) );
       BOOST_REQUIRE( candice_liquid_balance == ( candice_init_liquid_balance - escrow_bond ) );
       BOOST_REQUIRE( dan_liquid_balance == ( dan_init_liquid_balance - escrow_bond ) );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: approval of escrow transfer proposal" );
 
@@ -248,10 +239,10 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
-      candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
-      dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
+      alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
+      candice_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
+      dan_liquid_balance = get_liquid_balance( "dan", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_liquid_balance == ( alice_init_liquid_balance - transfer.amount ) );
       BOOST_REQUIRE( bob_liquid_balance == ( bob_init_liquid_balance + transfer.amount ) );
@@ -259,15 +250,9 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance );
 
       const auto& escrow_idx = db.get_index< escrow_index >().indices().get< by_from_id >();
-      auto escrow_itr = escrow_idx.find( std::make_tuple( "alice", string( "6b3b3da0-660a-41a1-b6a2-221a71c0cc17" ) ) );
+      auto escrow_itr = escrow_idx.find( std::make_tuple( account_name_type( "alice" ), string( "6b3b3da0-660a-41a1-b6a2-221a71c0cc17" ) ) );
 
       BOOST_REQUIRE( escrow_itr == escrow_idx.end() );
-      BOOST_REQUIRE( candice_mediator.last_escrow_from == transfer.from );
-      BOOST_REQUIRE( to_string( candice_mediator.last_escrow_id ) == transfer.escrow_id );
-      BOOST_REQUIRE( dan_mediator.last_escrow_from == transfer.from );
-      BOOST_REQUIRE( to_string( dan_mediator.last_escrow_id ) == transfer.escrow_id );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: standard release of escrow funds by FROM account" );
 
@@ -286,8 +271,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when from account has insufficient balance" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when to and from are the same account" );
@@ -304,8 +287,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when to and from are the same account" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when account is not To or From" );
@@ -321,8 +302,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when account is not To or From" );
 
@@ -351,18 +330,17 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const escrow_object& escrow2 = db.get_escrow( "alice", string( "01eee083-5680-4740-ada3-46adda0994bd" ) );
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const escrow_object& escrow2 = db.get_escrow( account_name_type( "alice" ), string( "01eee083-5680-4740-ada3-46adda0994bd" ) );
 
       BOOST_REQUIRE( escrow2.to == transfer.to );
       BOOST_REQUIRE( escrow2.from == transfer.from );
-      BOOST_REQUIRE( escrow2.to_mediator == "dan" );
       BOOST_REQUIRE( escrow2.from_mediator == "candice" );
       BOOST_REQUIRE( escrow2.payment == transfer.amount );
       BOOST_REQUIRE( escrow2.acceptance_time == transfer.acceptance_time );
-      BOOST_REQUIRE( escrow2.escrow_expiration == transfer.escrow_expiration ); 
-
-      tx.operations.clear();
-      tx.signatures.clear();
+      BOOST_REQUIRE( escrow2.escrow_expiration == transfer.escrow_expiration );
 
       approve.approved = false;
 
@@ -370,7 +348,8 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      validate_database();
+      tx.operations.clear();
+      tx.signatures.clear();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure trying to repeal after approval" );
 
@@ -390,11 +369,9 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      escrow_itr = escrow_idx.find( std::make_tuple( "alice", string( "01eee083-5680-4740-ada3-46adda0994bd" ) ) );
+      escrow_itr = escrow_idx.find( std::make_tuple( account_name_type( "alice" ), string( "01eee083-5680-4740-ada3-46adda0994bd" ) ) );
 
       BOOST_REQUIRE( escrow_itr == escrow_idx.end() );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Success refunding repealed escrow" );
    
@@ -413,21 +390,19 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const escrow_object& escrow3 = db.get_escrow( "alice", string( "8ebbd965-739a-48dd-abeb-67d0363fdae8" ) );
+      const escrow_object& escrow3 = db.get_escrow( account_name_type( "alice" ), string( "8ebbd965-739a-48dd-abeb-67d0363fdae8" ) );
 
       BOOST_REQUIRE( escrow3.to == transfer.to );
       BOOST_REQUIRE( escrow3.from == transfer.from );
       BOOST_REQUIRE( escrow3.payment == transfer.amount );
       BOOST_REQUIRE( escrow3.acceptance_time == transfer.acceptance_time );
-      BOOST_REQUIRE( escrow3.escrow_expiration == transfer.escrow_expiration ); 
+      BOOST_REQUIRE( escrow3.escrow_expiration == transfer.escrow_expiration );
 
       generate_blocks( transfer.acceptance_time + BLOCK_INTERVAL );
 
-      escrow_itr = escrow_idx.find( std::make_tuple( "alice", string( "8ebbd965-739a-48dd-abeb-67d0363fdae8" ) ) );
+      escrow_itr = escrow_idx.find( std::make_tuple( account_name_type( "alice" ), string( "8ebbd965-739a-48dd-abeb-67d0363fdae8" ) ) );
 
       BOOST_REQUIRE( escrow_itr == escrow_idx.end() );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Automatic refund when escrow is not approved before deadline" );
 
@@ -438,8 +413,11 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       transfer.from = "alice";
       transfer.to = "bob";
       transfer.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
+      transfer.acceptance_time = now() + fc::days(1);
+      transfer.escrow_expiration = now() + fc::days(8);
       
       tx.operations.push_back( transfer );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -459,8 +437,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when releasing unapproved escrow" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Success editing unapproved escrow" );
@@ -471,6 +447,8 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       transfer.to = "bob";
       transfer.amount = asset( 1001 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       transfer.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
+
+      asset escrow_amount = transfer.amount;
       
       tx.operations.push_back( transfer );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -479,15 +457,13 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const escrow_object& escrow4 = db.get_escrow( "alice", string( "98351a27-d0d7-456a-b732-4fb414a0e639" ) );
+      const escrow_object& escrow4 = db.get_escrow( account_name_type( "alice" ), string( "98351a27-d0d7-456a-b732-4fb414a0e639" ) );
 
       BOOST_REQUIRE( escrow4.to == transfer.to );
       BOOST_REQUIRE( escrow4.from == transfer.from );
       BOOST_REQUIRE( escrow4.payment == transfer.amount );
       BOOST_REQUIRE( escrow4.acceptance_time == transfer.acceptance_time );
       BOOST_REQUIRE( escrow4.escrow_expiration == transfer.escrow_expiration ); 
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Success editing unapproved escrow" );
 
@@ -502,16 +478,10 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       tx.operations.push_back( approve );
       tx.sign( elon_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when when non-particpant account attempts to approve" );
 
@@ -526,16 +496,10 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       tx.operations.push_back( approve );
       tx.sign( alice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when approving with an invalid mediator" );
 
@@ -614,8 +578,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when releasing approved escrow back to self without dispute" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when editing approved escrow" );
@@ -631,7 +593,8 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      validate_database();
+      tx.operations.clear();
+      tx.signatures.clear();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when editing approved escrow" );
 
@@ -641,6 +604,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       create.signatory = "alice";
       create.registrar = "alice";
+      create.referrer = "alice";
       create.new_account_name = "newuser";
       create.owner_auth = authority( 1, alice_public_owner_key, 1 );
       create.active_auth = authority( 1, alice_public_active_key, 1 );
@@ -663,8 +627,8 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
          tx.operations.clear();
          tx.signatures.clear();
 
-         fund( "newuser"+fc::to_string( i ), asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-         fund_stake( "newuser"+fc::to_string( i ), asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+         fund_liquid( "newuser"+fc::to_string( i ), asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+         fund_stake( "newuser"+fc::to_string( i ), asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
          member.signatory = "newuser"+fc::to_string( i );
          member.account = "newuser"+fc::to_string( i );
@@ -693,6 +657,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       dispute.account = "alice";
       dispute.escrow_from = "alice";
       dispute.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
+      dispute.validate();
 
       tx.operations.push_back( dispute );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -707,7 +672,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       BOOST_REQUIRE( escrow4.from == "alice" );
       BOOST_REQUIRE( escrow4.to_mediator == "dan" );
       BOOST_REQUIRE( escrow4.from_mediator == "candice" );
-      BOOST_REQUIRE( escrow4.payment == transfer.amount );
+      BOOST_REQUIRE( escrow4.payment == escrow_amount );
       BOOST_REQUIRE( escrow4.acceptance_time == transfer.acceptance_time );
       BOOST_REQUIRE( escrow4.escrow_expiration == transfer.escrow_expiration );
       BOOST_REQUIRE( escrow4.dispute_release_time == now() + ESCROW_DISPUTE_DURATION );
@@ -719,8 +684,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       BOOST_REQUIRE( escrow4.is_approved() == true );
       BOOST_REQUIRE( escrow4.disputed == true );
       BOOST_REQUIRE( escrow4.mediators.size() == ESCROW_DISPUTE_MEDIATOR_AMOUNT );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Successfully disputing approved escrow" );
 
@@ -737,8 +700,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when escrow is already disputed" );
 
@@ -761,8 +722,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
          BOOST_REQUIRE( approvals[ m ] == true );
       }
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Dispute resolution mediators approving transfer" );
 
@@ -832,17 +791,9 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
          BOOST_REQUIRE( release_percentages[ m ] == release.release_percent );
       }
 
-      generate_blocks( escrow4.dispute_release_time + BLOCK_INTERVAL );
-
-      escrow_itr = escrow_idx.find( std::make_tuple( "alice", string( "98351a27-d0d7-456a-b732-4fb414a0e639" ) ) );
+      escrow_itr = escrow_idx.find( std::make_tuple( account_name_type( "alice" ), string( "98351a27-d0d7-456a-b732-4fb414a0e639" ) ) );
 
       BOOST_REQUIRE( escrow_itr == escrow_idx.end() );
-      BOOST_REQUIRE( candice_mediator.last_escrow_from == transfer.from );
-      BOOST_REQUIRE( to_string( candice_mediator.last_escrow_id ) == transfer.escrow_id );
-      BOOST_REQUIRE( dan_mediator.last_escrow_from == transfer.from );
-      BOOST_REQUIRE( to_string( dan_mediator.last_escrow_id ) == transfer.escrow_id );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Sucessful fund release from dispute" );
 
@@ -853,8 +804,11 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       transfer.from = "alice";
       transfer.to = "bob";
       transfer.escrow_id = "efab7764-63af-4e6a-95e4-b4dd7c23e40b";
+      transfer.acceptance_time = now() + fc::days(1);
+      transfer.escrow_expiration = now() + fc::days(8);
       
       tx.operations.push_back( transfer );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -908,9 +862,9 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      generate_blocks( transfer.escrow_expiration + BLOCK_INTERVAL );
+      generate_blocks( transfer.escrow_expiration + BLOCK_INTERVAL, true );
 
-      const escrow_object& escrow5 = db.get_escrow( "alice", string( "efab7764-63af-4e6a-95e4-b4dd7c23e40b" ) );
+      const escrow_object& escrow5 = db.get_escrow( account_name_type( "alice" ), string( "efab7764-63af-4e6a-95e4-b4dd7c23e40b" ) );
 
       escrow_bond = asset( ( escrow5.payment.amount * median_props.escrow_bond_percent ) / PERCENT_100, escrow5.payment.symbol );
 
@@ -936,12 +890,11 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       tx.operations.push_back( dispute );
       tx.sign( bob_private_active_key, db.get_chain_id() );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when disputing after escrow expiration" );
 
@@ -960,13 +913,9 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      escrow_itr = escrow_idx.find( std::make_tuple( "alice", string( "efab7764-63af-4e6a-95e4-b4dd7c23e40b" ) ) );
+      escrow_itr = escrow_idx.find( std::make_tuple( account_name_type( "alice" ), string( "efab7764-63af-4e6a-95e4-b4dd7c23e40b" ) ) );
 
       BOOST_REQUIRE( escrow_itr == escrow_idx.end() );
-      BOOST_REQUIRE( candice_mediator.last_escrow_from == transfer.from );
-      BOOST_REQUIRE( to_string( candice_mediator.last_escrow_id ) == transfer.escrow_id );
-      BOOST_REQUIRE( dan_mediator.last_escrow_from == transfer.from );
-      BOOST_REQUIRE( to_string( dan_mediator.last_escrow_id ) == transfer.escrow_id );
 
       validate_database();
 
@@ -978,7 +927,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 }
 
 
-BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
+BOOST_AUTO_TEST_CASE( product_sale_operation_sequence_tests )
 {
    try
    {
@@ -988,21 +937,23 @@ BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
 
       const median_chain_property_object& median_props = db.get_median_chain_properties();
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
-      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       
-      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       
       signed_transaction tx;
 
@@ -1014,12 +965,12 @@ BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
       product.name = "Artisanal Widget";
       product.url = "https://www.url.com";
       product.json = "{ \"valid\": true }";
-      product.product_variants = { "Red Widget", "Blue Widget" };
+      product.product_variants = { "red_widget", "blue_widget" };
       product.product_details = "Coloured Widget, Extremely Artisanal.";
       product.product_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       product.product_prices = { asset( 35 * BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( 35 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) };
       product.stock_available = { 100, 100 };
-      product.delivery_variants = { "Standard", "Express" };
+      product.delivery_variants = { "standard", "express" };
       product.delivery_details = "Standard: Shipped within 3 working days. Express: Shipped next day.";
       product.delivery_prices = { asset( 2 * BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( 5 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) };
       product.active = true;
@@ -1033,7 +984,7 @@ BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const product_sale_object& alice_product = db.get_product_sale( "alice", string( "98a65f5a-85e7-4c53-8d64-1ce393a5ae8c" ) );
+      const product_sale_object& alice_product = db.get_product_sale( account_name_type( "alice" ), string( "98a65f5a-85e7-4c53-8d64-1ce393a5ae8c" ) );
 
       BOOST_REQUIRE( product.account == alice_product.account );
       BOOST_REQUIRE( product.product_id == to_string( alice_product.product_id ) );
@@ -1057,8 +1008,6 @@ BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
          BOOST_REQUIRE( product.delivery_prices[i] == alice_product.delivery_prices[i] );
       }
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: Creation of product" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Purchase of product" );
@@ -1070,12 +1019,12 @@ BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
       purchase.order_id = "cfebe3a5-4b06-4dcb-916c-d8737f600701";
       purchase.seller = "alice";
       purchase.product_id = "98a65f5a-85e7-4c53-8d64-1ce393a5ae8c";
-      purchase.order_variants = { "Red Widget" };
+      purchase.order_variants = { "red_widget" };
       purchase.order_size = { 1 };
       purchase.memo = "Delivery memo";
       purchase.json = "{ \"valid\": true }";
       purchase.shipping_address = "1 Flinders Street Melbourne 3000 VIC";
-      purchase.delivery_variant = "Standard";
+      purchase.delivery_variant = "standard";
       purchase.acceptance_time = now() + fc::days(1);
       purchase.escrow_expiration = now() + fc::days(8);
       purchase.validate();
@@ -1087,7 +1036,7 @@ BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const product_purchase_object& bob_purchase = db.get_product_purchase( "bob", string( "cfebe3a5-4b06-4dcb-916c-d8737f600701" ) );
+      const product_purchase_object& bob_purchase = db.get_product_purchase( account_name_type( "bob" ), string( "cfebe3a5-4b06-4dcb-916c-d8737f600701" ) );
 
       BOOST_REQUIRE( purchase.buyer == bob_purchase.buyer );
       BOOST_REQUIRE( purchase.order_id == to_string( bob_purchase.order_id ) );
@@ -1152,13 +1101,10 @@ BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const mediator_object& candice_mediator = db.get_mediator( "candice" );
-      const mediator_object& dan_mediator = db.get_mediator( "dan" );
-
-      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_USD );
-      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_USD );
-      asset candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_USD );
-      asset dan_init_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_USD );
+      asset alice_init_liquid_balance = get_liquid_balance( "alice", SYMBOL_USD );
+      asset bob_init_liquid_balance = get_liquid_balance( "bob", SYMBOL_USD );
+      asset candice_init_liquid_balance = get_liquid_balance( "candice", SYMBOL_USD );
+      asset dan_init_liquid_balance = get_liquid_balance( "dan", SYMBOL_USD );
 
       escrow_approve_operation approve;
 
@@ -1210,7 +1156,7 @@ BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const escrow_object& bob_escrow = db.get_escrow( "bob", string( "cfebe3a5-4b06-4dcb-916c-d8737f600701" ) );
+      const escrow_object& bob_escrow = db.get_escrow( account_name_type( "bob" ), string( "cfebe3a5-4b06-4dcb-916c-d8737f600701" ) );
       asset escrow_bond = asset( ( bob_purchase.order_value.amount * median_props.escrow_bond_percent ) / PERCENT_100, bob_escrow.payment.symbol );
 
       BOOST_REQUIRE( bob_escrow.to == "alice" );
@@ -1227,17 +1173,15 @@ BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
       BOOST_REQUIRE( bob_escrow.to_mediator_approved() == true );
       BOOST_REQUIRE( bob_escrow.is_approved() == true );
 
-      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_USD );
-      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_USD );
-      asset candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_USD );
-      asset dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_USD );
+      asset alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_USD );
+      asset bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_USD );
+      asset candice_liquid_balance = get_liquid_balance( "candice", SYMBOL_USD );
+      asset dan_liquid_balance = get_liquid_balance( "dan", SYMBOL_USD );
 
       BOOST_REQUIRE( alice_liquid_balance == ( alice_init_liquid_balance - ( bob_purchase.order_value + escrow_bond ) ) );
       BOOST_REQUIRE( bob_liquid_balance == ( bob_init_liquid_balance - escrow_bond ) );
       BOOST_REQUIRE( candice_liquid_balance == ( candice_init_liquid_balance - escrow_bond ) );
       BOOST_REQUIRE( dan_liquid_balance == ( dan_init_liquid_balance - escrow_bond ) );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: approval of escrow transfer proposal" );
 
@@ -1259,10 +1203,10 @@ BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_USD );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_USD );
-      candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_USD );
-      dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_USD );
+      alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_USD );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_USD );
+      candice_liquid_balance = get_liquid_balance( "candice", SYMBOL_USD );
+      dan_liquid_balance = get_liquid_balance( "dan", SYMBOL_USD );
 
       BOOST_REQUIRE( alice_liquid_balance == ( alice_init_liquid_balance - bob_purchase.order_value ) );
       BOOST_REQUIRE( bob_liquid_balance == ( bob_init_liquid_balance + bob_purchase.order_value ) );
@@ -1270,13 +1214,9 @@ BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
       BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance );
 
       const auto& escrow_idx = db.get_index< escrow_index >().indices().get< by_from_id >();
-      auto escrow_itr = escrow_idx.find( std::make_tuple( "bob", string( "cfebe3a5-4b06-4dcb-916c-d8737f600701" ) ) );
+      auto escrow_itr = escrow_idx.find( std::make_tuple( account_name_type( "bob" ), string( "cfebe3a5-4b06-4dcb-916c-d8737f600701" ) ) );
 
       BOOST_REQUIRE( escrow_itr == escrow_idx.end() );
-      BOOST_REQUIRE( candice_mediator.last_escrow_from == release.escrow_from );
-      BOOST_REQUIRE( to_string( candice_mediator.last_escrow_id ) == release.escrow_id );
-      BOOST_REQUIRE( dan_mediator.last_escrow_from == release.escrow_from );
-      BOOST_REQUIRE( to_string( dan_mediator.last_escrow_id ) == release.escrow_id );
 
       validate_database();
 
@@ -1288,31 +1228,33 @@ BOOST_AUTO_TEST_CASE( product_operation_sequence_tests )
 }
 
 
-BOOST_AUTO_TEST_CASE( auction_operation_sequence_tests )
+BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "├── Testing: AUCTION OPERATION SEQUENCE" );
+      BOOST_TEST_MESSAGE( "├── Testing: PRODUCT AUCTION OPERATION SEQUENCE" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: creation of product auction" );
 
       const median_chain_property_object& median_props = db.get_median_chain_properties();
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
-      fund( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "alice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "bob", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       
-      fund( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "candice", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "dan", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_stake( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       
       signed_transaction tx;
 
@@ -1329,11 +1271,11 @@ BOOST_AUTO_TEST_CASE( auction_operation_sequence_tests )
       auction.product_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       auction.reserve_bid = asset( 25 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       auction.maximum_bid = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
-      auction.delivery_variants = { "Standard", "Express" };
+      auction.delivery_variants = { "standard", "express" };
       auction.delivery_details = "Standard: Shipped within 3 working days. Express: Shipped next day.";
       auction.delivery_prices = { asset( 2 * BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( 5 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) };
-      auction.final_bid_time = now() + fc::days(7);
-      auction.completion_time = now() + fc::days(7);
+      auction.final_bid_time = now() + fc::days(8);
+      auction.completion_time = now() + fc::days(8);
       auction.validate();
 
       tx.operations.push_back( auction );
@@ -1344,7 +1286,7 @@ BOOST_AUTO_TEST_CASE( auction_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const product_auction_sale_object& alice_auction = db.get_product_auction_sale( "alice", string( "b65388d9-a99a-49a8-9f2e-761246a1d777" ) );
+      const product_auction_sale_object& alice_auction = db.get_product_auction_sale( account_name_type( "alice" ), string( "b65388d9-a99a-49a8-9f2e-761246a1d777" ) );
 
       BOOST_REQUIRE( auction.account == alice_auction.account );
       BOOST_REQUIRE( auction.auction_id == to_string( alice_auction.auction_id ) );
@@ -1365,8 +1307,6 @@ BOOST_AUTO_TEST_CASE( auction_operation_sequence_tests )
          BOOST_REQUIRE( auction.delivery_prices[i] == alice_auction.delivery_prices[i] );
       }
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: Creation of auction" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Bid on auction" );
@@ -1384,7 +1324,7 @@ BOOST_AUTO_TEST_CASE( auction_operation_sequence_tests )
       bid.memo = "Delivery memo";
       bid.json = "{ \"valid\": true }";
       bid.shipping_address = "1 Flinders Street Melbourne 3000 VIC";
-      bid.delivery_variant = "Standard";
+      bid.delivery_variant = "standard";
       bid.delivery_details = "Leave Widget on doorstep.";
       bid.validate();
 
@@ -1395,7 +1335,7 @@ BOOST_AUTO_TEST_CASE( auction_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const product_auction_bid_object& bob_bid = db.get_product_auction_bid( "bob", string( "4cf6928b-32be-4a77-a900-bbb8e97d1cb8" ) );
+      const product_auction_bid_object& bob_bid = db.get_product_auction_bid( account_name_type( "bob" ), string( "4cf6928b-32be-4a77-a900-bbb8e97d1cb8" ) );
 
       BOOST_REQUIRE( bid.buyer == bob_bid.buyer );
       BOOST_REQUIRE( bid.bid_id == to_string( bob_bid.bid_id ) );
@@ -1462,15 +1402,14 @@ BOOST_AUTO_TEST_CASE( auction_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const mediator_object& candice_mediator = db.get_mediator( "candice" );
-      const mediator_object& dan_mediator = db.get_mediator( "dan" );
+      asset alice_init_liquid_balance = get_liquid_balance( "alice", SYMBOL_USD );
+      asset bob_init_liquid_balance = get_liquid_balance( "bob", SYMBOL_USD );
+      asset candice_init_liquid_balance = get_liquid_balance( "candice", SYMBOL_USD );
+      asset dan_init_liquid_balance = get_liquid_balance( "dan", SYMBOL_USD );
 
-      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_USD );
-      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_USD );
-      asset candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_USD );
-      asset dan_init_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_USD );
+      generate_blocks( auction.completion_time + fc::minutes(2) );
 
-      generate_blocks( auction.completion_time + fc::minutes(5) );
+      BOOST_REQUIRE( bob_bid.winning_bid );
 
       escrow_approve_operation approve;
 
@@ -1478,10 +1417,11 @@ BOOST_AUTO_TEST_CASE( auction_operation_sequence_tests )
       approve.account = "alice";
       approve.mediator = "candice";
       approve.escrow_from = "bob";
-      approve.escrow_id = "b65388d9-a99a-49a8-9f2e-761246a1d777";
+      approve.escrow_id = "4cf6928b-32be-4a77-a900-bbb8e97d1cb8";
       approve.approved = true;
       approve.validate();
 
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( approve );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -1522,7 +1462,7 @@ BOOST_AUTO_TEST_CASE( auction_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const escrow_object& bob_escrow = db.get_escrow( "bob", string( "b65388d9-a99a-49a8-9f2e-761246a1d777" ) );
+      const escrow_object& bob_escrow = db.get_escrow( account_name_type( "bob" ), string( "4cf6928b-32be-4a77-a900-bbb8e97d1cb8" ) );
       asset escrow_bond = asset( ( bob_bid.order_value().amount * median_props.escrow_bond_percent ) / PERCENT_100, bob_escrow.payment.symbol );
 
       BOOST_REQUIRE( bob_escrow.to == "alice" );
@@ -1537,17 +1477,15 @@ BOOST_AUTO_TEST_CASE( auction_operation_sequence_tests )
       BOOST_REQUIRE( bob_escrow.to_mediator_approved() == true );
       BOOST_REQUIRE( bob_escrow.is_approved() == true );
 
-      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_USD );
-      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_USD );
-      asset candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_USD );
-      asset dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_USD );
+      asset alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_USD );
+      asset bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_USD );
+      asset candice_liquid_balance = get_liquid_balance( "candice", SYMBOL_USD );
+      asset dan_liquid_balance = get_liquid_balance( "dan", SYMBOL_USD );
 
       BOOST_REQUIRE( alice_liquid_balance == ( alice_init_liquid_balance - escrow_bond ) );
       BOOST_REQUIRE( bob_liquid_balance == ( bob_init_liquid_balance - ( bob_bid.order_value() + escrow_bond ) ) );
       BOOST_REQUIRE( candice_liquid_balance == ( candice_init_liquid_balance - escrow_bond ) );
       BOOST_REQUIRE( dan_liquid_balance == ( dan_init_liquid_balance - escrow_bond ) );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: approval of escrow transfer proposal" );
 
@@ -1558,7 +1496,7 @@ BOOST_AUTO_TEST_CASE( auction_operation_sequence_tests )
       release.signatory = "bob";
       release.account = "bob";
       release.escrow_from = "bob";
-      release.escrow_id = "b65388d9-a99a-49a8-9f2e-761246a1d777";
+      release.escrow_id = "4cf6928b-32be-4a77-a900-bbb8e97d1cb8";
       release.release_percent = PERCENT_100;
       release.validate();
 
@@ -1569,10 +1507,10 @@ BOOST_AUTO_TEST_CASE( auction_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_USD );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_USD );
-      candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_USD );
-      dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_USD );
+      alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_USD );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_USD );
+      candice_liquid_balance = get_liquid_balance( "candice", SYMBOL_USD );
+      dan_liquid_balance = get_liquid_balance( "dan", SYMBOL_USD );
 
       BOOST_REQUIRE( alice_liquid_balance == ( alice_init_liquid_balance - bob_bid.order_value() ) );
       BOOST_REQUIRE( bob_liquid_balance == ( bob_init_liquid_balance + bob_bid.order_value() ) );
@@ -1580,19 +1518,15 @@ BOOST_AUTO_TEST_CASE( auction_operation_sequence_tests )
       BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance );
 
       const auto& escrow_idx = db.get_index< escrow_index >().indices().get< by_from_id >();
-      auto escrow_itr = escrow_idx.find( std::make_tuple( "bob", string( "b65388d9-a99a-49a8-9f2e-761246a1d777" ) ) );
+      auto escrow_itr = escrow_idx.find( std::make_tuple( account_name_type( "bob" ), string( "b65388d9-a99a-49a8-9f2e-761246a1d777" ) ) );
 
       BOOST_REQUIRE( escrow_itr == escrow_idx.end() );
-      BOOST_REQUIRE( candice_mediator.last_escrow_from == release.escrow_from );
-      BOOST_REQUIRE( to_string( candice_mediator.last_escrow_id ) == release.escrow_id );
-      BOOST_REQUIRE( dan_mediator.last_escrow_from == release.escrow_from );
-      BOOST_REQUIRE( to_string( dan_mediator.last_escrow_id ) == release.escrow_id );
 
       validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Release of escrow funds by FROM account" );
 
-      BOOST_TEST_MESSAGE( "├── Passed: AUCTION OPERATION SEQUENCE" );
+      BOOST_TEST_MESSAGE( "├── Passed: PRODUCT AUCTION OPERATION SEQUENCE" );
    }
    FC_LOG_AND_RETHROW()
 }

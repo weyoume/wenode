@@ -3100,8 +3100,8 @@ annotated_signed_transaction      wallet_api::activity_reward(
    string signatory,
    string account,
    string permlink,
-   uint64_t view_id,
-   uint64_t vote_id,
+   int64_t view_id,
+   int64_t vote_id,
    string interface,
    bool broadcast )
 { try {
@@ -3396,10 +3396,8 @@ annotated_signed_transaction      wallet_api::create_community_enterprise(
    string signatory,
    string creator,
    string enterprise_id,
-   string proposal_type,
    map< string, uint16_t > beneficiaries,
    vector< uint16_t > milestone_shares,
-   string investment,
    string details,
    string url,
    string json,
@@ -3417,7 +3415,6 @@ annotated_signed_transaction      wallet_api::create_community_enterprise(
    op.signatory = signatory;
    op.creator = creator;
    op.enterprise_id = enterprise_id;
-   op.proposal_type = proposal_type;
 
    for( auto b : beneficiaries )
    {
@@ -3425,7 +3422,6 @@ annotated_signed_transaction      wallet_api::create_community_enterprise(
    }
 
    op.milestone_shares = milestone_shares;
-   op.investment = investment;
    op.details = details;
    op.url = url;
    op.json = json;
@@ -4508,6 +4504,7 @@ annotated_signed_transaction      wallet_api::ad_bid(
    uint32_t requested,
    vector< string > included_audiences,
    vector< string > excluded_audiences,
+   string audience_id,
    string json,
    time_point expiration,
    bool active,
@@ -4530,6 +4527,7 @@ annotated_signed_transaction      wallet_api::ad_bid(
    op.requested = requested;
    op.included_audiences = included_audiences;
    op.excluded_audiences = excluded_audiences;
+   op.audience_id = audience_id;
    op.json = json;
    op.expiration = expiration;
    op.active = active;

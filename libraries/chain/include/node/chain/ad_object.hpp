@@ -127,8 +127,6 @@ namespace node { namespace chain {
 
          time_point                       last_updated;      ///< Time inventorys's details were last updated or inventory was delivered.
 
-         time_point                       expiration;        ///< Time that the inventory offering expires. All outstanding bids for the inventory also expire at this time. 
-
          bool                             active = true;     ///< True when active for bidding and delivery, false to deactivate.
    };
 
@@ -173,10 +171,16 @@ namespace node { namespace chain {
       public:
          template<typename Constructor, typename Allocator>
          ad_bid_object( Constructor&& c, allocator< Allocator > a ) :
-         bid_id(a), audience_id(a), campaign_id(a), creative_id(a), inventory_id(a), objective(a), json(a)
-         {
-            c(*this);
-         };
+            bid_id(a), 
+            audience_id(a), 
+            campaign_id(a), 
+            creative_id(a), 
+            inventory_id(a), 
+            objective(a), 
+            json(a)
+            {
+               c(*this);
+            };
 
          id_type                          id;
 
@@ -576,7 +580,6 @@ FC_REFLECT( node::chain::ad_inventory_object,
          (json)
          (created)
          (last_updated)
-         (expiration)
          (active)
          );
 

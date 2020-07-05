@@ -313,8 +313,8 @@ uint32_t debug_node_plugin::debug_generate_blocks(
 
          if( !producer_private_key.valid() )
          {
-            elog( "Skipping ${wit} because I don't know the private key", ("wit", scheduled_producer_name) );
-            FC_ASSERT( slot < miss_blocks+120 );
+            elog( "Skipping ${wit} because I don't know the private key",
+               ("wit", scheduled_producer_name) );
             
             continue;
          }

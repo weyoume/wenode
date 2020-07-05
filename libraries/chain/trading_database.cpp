@@ -39,6 +39,8 @@ using boost::container::flat_set;
 
 bool database::apply_order( const limit_order_object& new_order_object )
 {
+   ilog( "Applying order: \n ${o} \n",("o",new_order_object));
+
    limit_order_id_type order_id = new_order_object.id;
    asset_symbol_type sell_asset_symbol = new_order_object.sell_asset();
    asset_symbol_type recv_asset_symbol = new_order_object.receive_asset();
@@ -102,7 +104,7 @@ bool database::apply_order( const limit_order_object& new_order_object )
       return false;
    }
 
-   auto max_price = ~new_order_object.sell_price;                  // this is the opposite side (on the book)
+   price max_price = ~new_order_object.sell_price;                  // this is the opposite side (on the book)
    limit_itr = limit_price_idx.lower_bound( max_price.max() );
    auto limit_end = limit_price_idx.upper_bound( max_price );
    margin_itr = margin_price_idx.lower_bound( boost::make_tuple( false, max_price.max() ) );
@@ -243,6 +245,8 @@ bool database::apply_order( const limit_order_object& new_order_object )
 
 bool database::apply_order( const margin_order_object& new_order_object )
 {
+   ilog( "Applying order: \n ${o} \n",("o",new_order_object));
+
    margin_order_id_type order_id = new_order_object.id;
    asset_symbol_type sell_asset_symbol = new_order_object.sell_asset();
    asset_symbol_type recv_asset_symbol = new_order_object.receive_asset();
@@ -306,10 +310,10 @@ bool database::apply_order( const margin_order_object& new_order_object )
       return false;
    }
 
-   auto max_price = ~new_order_object.sell_price;                  // this is the opposite side (on the book)
+   price max_price = ~new_order_object.sell_price;                  // this is the opposite side (on the book)
    limit_itr = limit_price_idx.lower_bound( max_price.max() );
    auto limit_end = limit_price_idx.upper_bound( max_price );
-   margin_itr = margin_price_idx.lower_bound(  boost::make_tuple( false, max_price.max() ) );
+   margin_itr = margin_price_idx.lower_bound( boost::make_tuple( false, max_price.max() ) );
    auto margin_end = margin_price_idx.upper_bound( boost::make_tuple( false, max_price ) );
 
    if( check_pool )
@@ -873,7 +877,7 @@ int database::match( const limit_order_object& bid, const call_order_object& ask
 
    if( taker_to_buy > taker_for_sale ) // fill limit order
    {  
-      order_receives  = taker_for_sale * match_price; // round down here, in favor of call order
+      order_receives = taker_for_sale * match_price; // round down here, in favor of call order
 
       if( order_receives.amount == 0  )
          return 1;
@@ -913,7 +917,7 @@ int database::match( const margin_order_object& bid, const call_order_object& as
 
    if( taker_to_buy > taker_for_sale ) // fill limit order
    {  
-      order_receives  = taker_for_sale * match_price; // round down here, in favor of call order
+      order_receives = taker_for_sale * match_price; // round down here, in favor of call order
 
       if( order_receives.amount == 0  )
          return 1;
@@ -1018,6 +1022,7 @@ asset database::match( const call_order_object& call, const asset_settlement_obj
 bool database::fill_limit_order( const limit_order_object& order, const asset& pays, const asset& receives, bool cull_if_small,
    const price& fill_price, const bool is_maker, const account_name_type& match_interface )
 { try {
+   ilog( "Filling Limit Order: ${o}",("o",order));
    FC_ASSERT( order.amount_for_sale().symbol == pays.symbol );
    FC_ASSERT( pays.symbol != receives.symbol );
 
@@ -1043,6 +1048,7 @@ bool database::fill_limit_order( const limit_order_object& order, const asset& p
 
    if( pays == order.amount_for_sale() )
    {
+      ilog( "Removed: ${v}",("v",order));
       remove( order );
       return true;
    }
@@ -1072,6 +1078,7 @@ bool database::fill_limit_order( const limit_order_object& order, const asset& p
 bool database::fill_margin_order( const margin_order_object& order, const asset& pays, const asset& receives, bool cull_if_small,
    const price& fill_price, const bool is_maker, const account_name_type& match_interface )
 { try {
+   ilog( "Filling Margin Order: ${o}",("o",order));
    FC_ASSERT( order.amount_for_sale().symbol == pays.symbol );
    FC_ASSERT( pays.symbol != receives.symbol );
 
@@ -1124,6 +1131,7 @@ bool database::fill_margin_order( const margin_order_object& order, const asset&
 bool database::fill_option_order( const option_order_object& order, const asset& pays, 
    const asset& receives, const asset& opt, const price& fill_price )
 { try {
+   ilog( "Filling Option Order: ${o}",("o",order));
    FC_ASSERT( pays.symbol != receives.symbol,
       "Pays symbol and Receives symbol must not be the same." );
    FC_ASSERT( order.strike_price.strike_price == fill_price,
@@ -1156,6 +1164,7 @@ bool database::fill_option_order( const option_order_object& order, const asset&
 
    if( filled )
    {
+      ilog( "Removed: ${v}",("v",order));
       remove( order );
    }
 
@@ -1170,6 +1179,7 @@ bool database::fill_option_order( const option_order_object& order, const asset&
 bool database::fill_auction_order( const auction_order_object& order, const asset& pays, const asset& receives,
    const price& fill_price )
 { try {
+   ilog( "Filling Auction Order: ${o}",("o",order));
    FC_ASSERT( order.amount_for_sale().symbol == pays.symbol );
    FC_ASSERT( ( pays * order.limit_close_price ).amount >= receives.amount );
    FC_ASSERT( pays.symbol != receives.symbol );
@@ -1177,6 +1187,7 @@ bool database::fill_auction_order( const auction_order_object& order, const asse
    adjust_pending_supply( -pays );
    adjust_liquid_balance( order.owner, receives );
 
+   ilog( "Removed: ${v}",("v",order));
    remove( order );
    return true;
    
@@ -1190,6 +1201,7 @@ bool database::fill_auction_order( const auction_order_object& order, const asse
 bool database::fill_call_order( const call_order_object& order, const asset& pays, const asset& receives, const price& fill_price, 
    const bool is_maker, const account_name_type& match_interface, bool global_settle = false )
 { try {
+   ilog( "Filling Call Order: ${o}",("o",order));
    FC_ASSERT( order.debt_type() == receives.symbol );
    FC_ASSERT( order.collateral_type() == pays.symbol );
    FC_ASSERT( order.collateral.amount >= pays.amount );
@@ -1237,6 +1249,7 @@ bool database::fill_call_order( const call_order_object& order, const asset& pay
 
    if( collateral_freed.valid() )
    {
+      ilog( "Removed: ${v}",("v",order));
       remove( order );
    }
    
@@ -1249,6 +1262,7 @@ bool database::fill_call_order( const call_order_object& order, const asset& pay
 bool database::fill_settle_order( const asset_settlement_object& settle, const asset& pays, const asset& receives, 
    const price& fill_price, const bool is_maker, const account_name_type& match_interface )
 { try {
+   ilog( "Filling Settle Order: ${o}",("o",settle));
    FC_ASSERT( pays.symbol != receives.symbol );
    const asset_object& rec_asset = get_asset(receives.symbol);
    const account_object& owner = get_account( settle.owner );
@@ -1278,9 +1292,10 @@ bool database::fill_settle_order( const asset_settlement_object& settle, const a
    adjust_liquid_balance( settle.owner, delta);
    adjust_pending_supply( -delta );
 
-   if(filled)
+   if( filled )
    {
-      remove(settle);
+      ilog( "Removed: ${v}",("v",settle));
+      remove( settle );
    }
 
    return filled;
@@ -2303,6 +2318,9 @@ bool database::margin_check( const asset& debt, const asset& position, const ass
    FC_ASSERT( debt.symbol == credit_pool.base_symbol,
       "Incorrect credit pool for requested debt asset." );
 
+   ilog( "Begin Margin Check for - Debt: ${d} Position: ${p} Collateral: ${c} Credit Pool: ${cred} Liquidity Pool: ${liq}", 
+   ("d",debt)("p",position)("c",collateral)("cred",credit_pool)("liq",credit_asset_pool));
+
    if( collateral.symbol != SYMBOL_COIN )    // Coin derived from sale of 10 times collateral amount
    {
       collateral_coin = liquid_exchange( 10 * collateral, SYMBOL_COIN, false, false );
@@ -2331,6 +2349,7 @@ bool database::margin_check( const asset& debt, const asset& position, const ass
       }
       else       // Pool does not have enough debt asset 
       {
+         ilog("Margin Check failed: Pool does not have enough debt asset.");
          return false;
       }
       
@@ -2338,6 +2357,7 @@ bool database::margin_check( const asset& debt, const asset& position, const ass
       {
          // If too much debt is outstanding on the specified debt asset, compared with available liquidity to Coin
          // Prevent margin liquidations from running out of available debt asset liquidity
+         ilog("Margin Check failed: Insufficient debt asset liquidity.");
          return false;
       }
    }
@@ -2350,15 +2370,18 @@ bool database::margin_check( const asset& debt, const asset& position, const ass
    {
       if( ( collateral_coin + position_coin ) >= debt_coin )    // Order 10 times requested would be insolvent due to illiquidity
       {
+         ilog("Margin Check successful.");
          return true;     // Requested margin order passes all credit checks 
       }
       else        
       {
+         ilog("Margin Check failed: Insufficient collateral and position asset liquidity.");
          return false;
       }
    }
    else
    {
+      ilog("Margin Check failed: Insufficient credit asset liquidity.");
       return false;
    }
 } FC_CAPTURE_AND_RETHROW( (debt)(position)(collateral)(credit_pool) ) }
@@ -2675,6 +2698,7 @@ void database::liquidate_credit_loan( const credit_loan_object& loan )
       c.base_balance += debt_liquidated;
    });
 
+   ilog( "Removed: ${v}",("v",loan));
    remove( loan );
 
 } FC_CAPTURE_AND_RETHROW() }
@@ -2730,7 +2754,9 @@ void database::clear_expired_transactions()
    const auto& dedupe_index = transaction_idx.indices().get< by_expiration >();
    while( ( !dedupe_index.empty() ) && ( head_block_time() > dedupe_index.begin()->expiration ) )
    {
-      remove( *dedupe_index.begin() );
+      const transaction_object& txn = *dedupe_index.begin();
+      // ilog( "Removed: ${v}",("v",txn));
+      remove( txn );
    }
 }
 
@@ -2741,6 +2767,7 @@ void database::clear_expired_transactions()
  */
 bool database::exercise_option( const asset& option, const account_object& account )
 { try {
+   ilog("Exercising Option asset: ${s}",("s",option));
    FC_ASSERT( option.amount % BLOCKCHAIN_PRECISION == 0, 
       "Option assets can only be exercised in units of 1." );
    
@@ -2848,6 +2875,7 @@ bool database::exercise_option( const asset& option, const account_object& accou
 */
 void database::globally_settle_asset( const asset_object& mia, const price& settlement_price )
 { try {
+   ilog("Globally Settling asset: ${s}",("s",mia.symbol));
    const asset_stablecoin_data_object& stablecoin = get_stablecoin_data( mia.symbol );
    FC_ASSERT( !stablecoin.has_settlement(),
       "Black swan already occurred, it should not happen again" );
@@ -2959,6 +2987,7 @@ void database::cancel_bid( const asset_collateral_bid_object& bid, bool create_v
       vop.debt = asset( 0, bid.debt.symbol );
       push_virtual_operation( vop );
    }
+   ilog( "Removed: ${v}",("v",bid));
    remove( bid );
 }
 
@@ -2987,6 +3016,7 @@ void database::execute_bid( const asset_collateral_bid_object& bid, share_type d
 
    push_virtual_operation( ebo );
 
+   ilog( "Removed: ${v}",("v",bid));
    remove( bid );
 }
 
@@ -2994,6 +3024,7 @@ void database::execute_bid( const asset_collateral_bid_object& bid, share_type d
 void database::cancel_settle_order( const asset_settlement_object& order, bool create_virtual_op )
 {
    adjust_liquid_balance( order.owner, order.balance );
+   ilog( "Removed: ${v}",("v",order));
    remove( order );
 }
 
@@ -3002,7 +3033,8 @@ void database::cancel_limit_order( const limit_order_object& order )
 {
    asset refunded = order.amount_for_sale();
    adjust_liquid_balance( order.seller, refunded );
-   remove(order);
+   ilog( "Removed: ${v}",("v",order));
+   remove( order );
 }
 
 /**
@@ -3017,6 +3049,7 @@ void database::cancel_limit_order( const limit_order_object& order )
  */
 void database::close_margin_order( const margin_order_object& order )
 {
+   ilog("Closing Margin order: ${s}",("s",order));
    const account_object& owner = get_account( order.owner );
    asset collateral = order.collateral;
    asset to_repay = order.debt;
@@ -3111,7 +3144,7 @@ void database::close_margin_order( const margin_order_object& order )
       c.base_balance += to_repay;
       c.borrowed_balance -= to_repay;
    });
-
+   ilog( "Removed: ${v}",("v",order));
    remove( order );
 }
 
@@ -3119,6 +3152,7 @@ void database::close_auction_order( const auction_order_object& order )
 {
    asset refunded = order.amount_for_sale();
    adjust_liquid_balance( order.owner, refunded );
+   ilog( "Removed: ${v}",("v",order));
    remove( order );
 }
 
@@ -3127,6 +3161,7 @@ void database::close_option_order( const option_order_object& order )
 {
    asset refunded = order.amount_for_sale();
    adjust_liquid_balance( order.owner, refunded );
+   ilog( "Removed: ${v}",("v",order));
    remove( order );
 }
 
@@ -3166,6 +3201,8 @@ bool database::maybe_cull_small_order( const margin_order_object& order )
  */
 bool database::check_call_orders( const asset_object& mia, bool enable_black_swan, bool for_new_limit_order )
 { try {
+   ilog( "Checking call orders: ${s}",("s",mia.symbol));
+
    if( !mia.is_market_issued() )
    {
       return false;
@@ -3177,7 +3214,7 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
    {
       return false;
    }
-   if( stablecoin.current_feed.settlement_price.is_null() ) 
+   if( stablecoin.current_feed.settlement_price.is_null() )
    {
       return false;
    }
@@ -3218,7 +3255,7 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
 
       const call_order_object& call_order = *call_collateral_itr;
 
-      if( ( stablecoin.current_maintenance_collateralization < call_order.collateralization() ) ) 
+      if( ( stablecoin.current_maintenance_collateralization < call_order.collateralization() ) )
       {
          return margin_called;
       }
@@ -3254,7 +3291,7 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
          order_receives = usd_to_buy.multiply_and_round_up( match_price ); // round up, in favor of limit order
       }
 
-      call_pays  = order_receives;
+      call_pays = order_receives;
       order_pays = call_receives;
 
       fill_call_order( call_order, call_pays, call_receives, match_price, for_new_limit_order, limit_order.interface, false );
@@ -3283,6 +3320,7 @@ bool database::check_call_orders( const asset_object& mia, bool enable_black_swa
  */
 bool database::check_for_blackswan( const asset_object& mia, bool enable_black_swan, const asset_stablecoin_data_object* stablecoin_ptr )
 {
+   ilog("Checking for Black Swan: ${s}",("s",mia.symbol));
    if( !mia.is_market_issued() )       // Asset must be market issued
    {
       return false;

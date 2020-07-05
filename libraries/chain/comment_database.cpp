@@ -539,7 +539,8 @@ void database::update_comment_metrics()
    const auto& comment_idx = get_index< comment_index >().indices().get< by_time >();
    auto comment_itr = comment_idx.lower_bound( true );                                   // Finds first root post in time index
    
-   while( comment_itr != comment_idx.end() && (now < (comment_itr->created + METRIC_CALC_TIME) ) ) // Iterates over all root posts in last 30 days
+   while( comment_itr != comment_idx.end() &&
+      ( now < (comment_itr->created + METRIC_CALC_TIME ) ) ) // Iterates over all root posts in last 30 days
    {
       const comment_object& comment = *comment_itr;
       comments.push_back( &comment );                          // Add comment pointer to vector
@@ -657,7 +658,7 @@ void database::update_comment_metrics()
       push_virtual_operation( update_featured_feed_operation( now ) );
    }
 
-   ilog( "Updated Comment Metrics: ${m}", ("m", comment_metrics) );
+   ilog( "Updated Comment Metrics: ${m}", ("m", comment_metrics ) );
 } FC_CAPTURE_AND_RETHROW() }
 
 

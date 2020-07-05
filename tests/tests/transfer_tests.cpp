@@ -33,27 +33,30 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful transfer" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan)(elon)(corp) );
 
-      fund_stake( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "bob", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "bob", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "candice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "candice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "dan", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "dan", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "elon", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "elon", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "elon", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "elon", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      fund_stake( "corp", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "corp", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      generate_blocks( TOTAL_PRODUCERS );
+
+      asset alice_init_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_init_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       signed_transaction tx;
 
@@ -74,8 +77,8 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - transfer.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + transfer.amount );
@@ -87,14 +90,14 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when no signatures" );
 
       tx.operations.push_back( transfer );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_missing_active_auth );
+      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_missing_active_auth );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when no signatures" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when signed by a signature not in the account's active authority" );
 
       tx.sign( alice_private_posting_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_missing_active_auth );
+      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_missing_active_auth );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when signed by a signature not in the account's active authority" );
 
@@ -103,7 +106,7 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
       tx.signatures.clear();
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_duplicate_sig );
+      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_duplicate_sig );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when duplicate signatures" );
 
@@ -112,7 +115,10 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
       tx.signatures.clear();
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_irrelevant_sig );
+      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_irrelevant_sig );
+
+      tx.operations.clear();
+      tx.signatures.clear();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when signed by an additional signature not in the creator's authority" );
 
@@ -124,11 +130,13 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
 
       account_update_operation update_op;
 
+      update_op.signatory = "corp";
       update_op.account = "corp";
       update_op.active_auth = authority( 2, "alice", 1, "bob", 1, "candice", 1 );
+      update_op.validate();
 
       tx.operations.push_back( update_op );
-      tx.sign( corp_private_active_key, db.get_chain_id() );
+      tx.sign( corp_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -139,22 +147,21 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
       transfer.to = "candice";
 
       tx.operations.push_back( transfer );
-
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       signature_type alice_sig = tx.signatures.back();
 
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_missing_active_auth );
+      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_missing_active_auth );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when multi-sig signed by insufficient threshold" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when multi-sig signed by too many signatures" );
 
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
       signature_type bob_sig = tx.signatures.back();
 
       tx.sign( candice_private_active_key, db.get_chain_id() );
       signature_type candice_sig = tx.signatures.back();
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), tx_irrelevant_sig );
+      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), tx_irrelevant_sig );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when multi-sig signed by too many signatures" );
 
@@ -163,7 +170,7 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
       tx.signatures.clear();
       tx.signatures.push_back( alice_sig );
       tx.signatures.push_back( bob_sig );
-      db.push_transaction( tx, 0 );
+      db.push_transaction( tx, database::skip_transaction_dupe_check );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: success when multi-sig signed by 2 of 3 keys" );
 
@@ -172,14 +179,14 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
       tx.signatures.clear();
       tx.signatures.push_back( alice_sig );
       tx.signatures.push_back( candice_sig );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), fc::exception );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when multi-sig signature is reused from previous operation" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: larger transfer amount send" );
 
-      alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      asset candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      alice_init_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      asset candice_init_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
 
       transfer.signatory = "alice";
       transfer.from = "alice";
@@ -195,8 +202,8 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      asset candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      asset candice_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - transfer.amount );
       BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance + transfer.amount );
@@ -207,13 +214,13 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when sending greater than liquid balance" );
 
-      alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      alice_init_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      candice_init_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
 
       transfer.signatory = "alice";
       transfer.from = "alice";
       transfer.to = "candice";
-      transfer.amount = asset( 10000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      transfer.amount = asset( 20000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       transfer.memo = "Hello";
       transfer.validate();
       
@@ -230,8 +237,8 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: sending exactly entire liquid balance" );
 
-      alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      alice_init_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      candice_init_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
 
       transfer.signatory = "alice";
       transfer.from = "alice";
@@ -247,8 +254,8 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      candice_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - transfer.amount );
       BOOST_REQUIRE( alice_liquid_balance.amount == 0 );
@@ -260,8 +267,8 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure transferring with zero liquid balance" );
 
-      alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
+      alice_init_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      candice_init_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
 
       transfer.signatory = "alice";
       transfer.from = "alice";
@@ -295,24 +302,24 @@ BOOST_AUTO_TEST_CASE( transfer_request_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful transfer request" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
-      ACTORS( (alice)(bob)(candice)(dan)(elon)(corp) );
+      fund_stake( "alice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "bob", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "bob", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "candice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "candice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "dan", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "dan", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "elon", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "elon", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "elon", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "elon", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      generate_blocks( TOTAL_PRODUCERS );
 
       signed_transaction tx;
 
@@ -336,7 +343,7 @@ BOOST_AUTO_TEST_CASE( transfer_request_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const transfer_request_object& req_obj = db.get_transfer_request( "alice", string( "4d7248b3-c89d-4bce-8e5f-547c75b5628e" ) );
+      const transfer_request_object& req_obj = db.get_transfer_request( account_name_type( "alice" ), string( "4d7248b3-c89d-4bce-8e5f-547c75b5628e" ) );
 
       BOOST_REQUIRE( req_obj.amount == request.amount );
       BOOST_REQUIRE( req_obj.to == request.to );
@@ -349,8 +356,8 @@ BOOST_AUTO_TEST_CASE( transfer_request_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: accept transfer request" );
 
-      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset alice_init_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_init_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       transfer_accept_operation accept;
 
@@ -368,14 +375,14 @@ BOOST_AUTO_TEST_CASE( transfer_request_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance + request.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance - request.amount );
 
       const auto& req_idx = db.get_index< transfer_request_index >().indices().get< by_request_id >();
-      auto req_itr = req_idx.find( boost::make_tuple( "bob", string( "4d7248b3-c89d-4bce-8e5f-547c75b5628e" ) ) );
+      auto req_itr = req_idx.find( boost::make_tuple( account_name_type( "bob" ), string( "4d7248b3-c89d-4bce-8e5f-547c75b5628e" ) ) );
       BOOST_REQUIRE( req_itr == req_idx.end() );
 
       validate_database();
@@ -384,7 +391,8 @@ BOOST_AUTO_TEST_CASE( transfer_request_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when requesting greater than liquid balance" );
 
-      request.amount = asset( 10000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      request.amount = asset( 20000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      request.validate();
       
       tx.operations.push_back( request );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -399,10 +407,14 @@ BOOST_AUTO_TEST_CASE( transfer_request_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: requesting exactly entire liquid balance" );
 
-      alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      alice_init_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      bob_init_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
-      request.amount = alice_init_liquid_balance;
+      request.amount = bob_init_liquid_balance;
+      request.request_id = "ba8a97bb-f36b-4f80-a70d-610edc8a1f0d";
+      request.expiration = now() + fc::days(7);
+      request.requested = true;
+      request.validate();
       
       tx.operations.push_back( request );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -411,12 +423,21 @@ BOOST_AUTO_TEST_CASE( transfer_request_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      accept.request_id = "ba8a97bb-f36b-4f80-a70d-610edc8a1f0d";
 
-      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - request.amount );
-      BOOST_REQUIRE( alice_liquid_balance.amount == 0 );
-      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + request.amount );
+      tx.operations.push_back( accept );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
+
+      BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance + request.amount );
+      BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance - request.amount );
+      BOOST_REQUIRE( bob_liquid_balance.amount == 0 );
 
       validate_database();
 
@@ -424,8 +445,8 @@ BOOST_AUTO_TEST_CASE( transfer_request_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure requesting transfer with zero liquid balance" );
 
-      alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      alice_init_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      bob_init_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );      // Bob has no funds remaining
 
       request.amount = asset( 1 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       
@@ -454,27 +475,27 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful recurring transfer creation and completion" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
-      ACTORS( (alice)(bob)(candice)(dan)(elon)(corp) );
+      fund_stake( "alice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "bob", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "bob", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "candice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "candice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "dan", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "dan", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "elon", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "elon", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "elon", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "elon", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      generate_blocks( TOTAL_PRODUCERS );
 
-      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset alice_init_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_init_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       signed_transaction tx;
 
@@ -502,7 +523,7 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "alice", string( "5072f90d-bbd9-4688-99c3-74721f58009c" ) );
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( account_name_type( "alice" ), string( "5072f90d-bbd9-4688-99c3-74721f58009c" ) );
 
       BOOST_REQUIRE( transfer_obj.from == transfer.from );
       BOOST_REQUIRE( transfer_obj.to == transfer.to );
@@ -512,28 +533,28 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
       BOOST_REQUIRE( transfer_obj.payments == transfer.payments );
       BOOST_REQUIRE( transfer_obj.payments_remaining == transfer.payments );
       BOOST_REQUIRE( transfer_obj.interval == transfer.interval );
-      BOOST_REQUIRE( transfer_obj.next_transfer == transfer.begin + transfer.interval );
+      BOOST_REQUIRE( transfer_obj.next_transfer == transfer.begin );
 
-      generate_blocks( transfer_obj.begin - BLOCK_INTERVAL );
+      generate_blocks( transfer_obj.begin  - BLOCK_INTERVAL, true );
 
-      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance );
 
       generate_block();
 
-      alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - transfer.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + transfer.amount );
 
-      generate_blocks( transfer_obj.end - BLOCK_INTERVAL );
+      generate_blocks( transfer_obj.end - BLOCK_INTERVAL, true );
 
-      alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - 9 * transfer.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + 9 * transfer.amount );
@@ -542,25 +563,23 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
 
       generate_block();
 
-      alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - 10 * transfer.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + 10 * transfer.amount );
 
       const auto& transfer_idx = db.get_index< transfer_recurring_index >().indices().get< by_transfer_id >();
-      auto transfer_itr = transfer_idx.find( std::make_tuple( "alice", string( "5072f90d-bbd9-4688-99c3-74721f58009c" ) ) );
+      auto transfer_itr = transfer_idx.find( std::make_tuple( account_name_type( "alice" ), string( "5072f90d-bbd9-4688-99c3-74721f58009c" ) ) );
 
       BOOST_REQUIRE( transfer_itr == transfer_idx.end() );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: successful recurring transfer creation and completion" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful fill or kill cancellation" );
 
-      alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      alice_init_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      bob_init_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       transfer.transfer_id = "e614fa1b-e50d-4f80-90a0-698022170e5d";
       transfer.amount = alice_init_liquid_balance;
@@ -573,7 +592,7 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const transfer_recurring_object& transfer_obj2 = db.get_transfer_recurring( "alice", string( "e614fa1b-e50d-4f80-90a0-698022170e5d" ) );
+      const transfer_recurring_object& transfer_obj2 = db.get_transfer_recurring( account_name_type( "alice" ), string( "e614fa1b-e50d-4f80-90a0-698022170e5d" ) );
 
       BOOST_REQUIRE( transfer_obj2.from == transfer.from );
       BOOST_REQUIRE( transfer_obj2.to == transfer.to );
@@ -583,29 +602,29 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
       BOOST_REQUIRE( transfer_obj2.payments == transfer.payments );
       BOOST_REQUIRE( transfer_obj2.payments_remaining == transfer.payments );
       BOOST_REQUIRE( transfer_obj2.interval == transfer.interval );
-      BOOST_REQUIRE( transfer_obj2.next_transfer == transfer.begin + transfer.interval );
+      BOOST_REQUIRE( transfer_obj2.next_transfer == transfer.begin );
       BOOST_REQUIRE( transfer_obj2.fill_or_kill == true );
 
-      generate_blocks( transfer_obj2.begin - BLOCK_INTERVAL );
+      generate_blocks( transfer_obj2.begin - BLOCK_INTERVAL, true );
 
-      alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance );
 
       generate_block();
 
-      alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - transfer.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + transfer.amount );
 
-      generate_blocks( transfer_obj2.begin + transfer_obj2.interval - BLOCK_INTERVAL );
+      generate_blocks( transfer_obj2.begin + transfer_obj2.interval - BLOCK_INTERVAL, true );
 
-      alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - transfer.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + transfer.amount );
@@ -615,11 +634,9 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
       generate_block();
 
       // Fill or kill will cause cancellation
-      transfer_itr = transfer_idx.find( std::make_tuple( "alice", string( "5072f90d-bbd9-4688-99c3-74721f58009c" ) ) );
+      transfer_itr = transfer_idx.find( std::make_tuple( account_name_type( "alice" ), string( "5072f90d-bbd9-4688-99c3-74721f58009c" ) ) );
 
       BOOST_REQUIRE( transfer_itr == transfer_idx.end() );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: successful fill or kill cancellation" );
 
@@ -629,7 +646,7 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
       transfer.from = "candice";
       transfer.to = "bob";
       transfer.transfer_id = "c5a13b05-6b5b-4870-9184-41d96fd99e85";
-      transfer.amount = asset( 10000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      transfer.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       
       tx.operations.push_back( transfer );
       tx.sign( candice_private_active_key, db.get_chain_id() );
@@ -638,14 +655,12 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when sending greater than liquid balance" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: sending exactly entire liquid balance" );
 
-      asset candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
-      bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset candice_init_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
+      bob_init_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       transfer.amount = candice_init_liquid_balance;
       
@@ -656,7 +671,7 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const transfer_recurring_object& transfer_obj3 = db.get_transfer_recurring( "candice", string( "c5a13b05-6b5b-4870-9184-41d96fd99e85" ) );
+      const transfer_recurring_object& transfer_obj3 = db.get_transfer_recurring( account_name_type( "candice" ), string( "c5a13b05-6b5b-4870-9184-41d96fd99e85" ) );
 
       BOOST_REQUIRE( transfer_obj3.from == transfer.from );
       BOOST_REQUIRE( transfer_obj3.to == transfer.to );
@@ -666,28 +681,28 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
       BOOST_REQUIRE( transfer_obj3.payments == transfer.payments );
       BOOST_REQUIRE( transfer_obj3.payments_remaining == transfer.payments );
       BOOST_REQUIRE( transfer_obj3.interval == transfer.interval );
-      BOOST_REQUIRE( transfer_obj3.next_transfer == transfer.begin + transfer.interval );
+      BOOST_REQUIRE( transfer_obj3.next_transfer == transfer.begin );
 
-      generate_blocks( transfer_obj3.begin - BLOCK_INTERVAL );
+      generate_blocks( transfer_obj3.begin - BLOCK_INTERVAL, true );
 
-      asset candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset candice_liquid_balance = get_liquid_balance( "candice" , SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance );
 
       generate_block();
 
-      candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      candice_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance - transfer.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + transfer.amount );
 
-      generate_blocks( transfer_obj3.begin + transfer_obj3.interval - BLOCK_INTERVAL );
+      generate_blocks( transfer_obj3.begin + transfer_obj3.interval - BLOCK_INTERVAL, true );
 
-      candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      candice_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance - transfer.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + transfer.amount );
@@ -696,8 +711,8 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
 
       generate_block();
 
-      candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      candice_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance - transfer.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + transfer.amount );
@@ -712,8 +727,8 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure transferring with zero liquid balance" );
 
-      candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
-      bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      candice_init_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
+      bob_init_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       transfer.amount = asset( 1 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       transfer.transfer_id = "9d5e1655-ba79-433f-92bd-5615bec0cf9d";
@@ -731,8 +746,8 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful recurring transfer extension" );
 
-      asset dan_init_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
-      bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset dan_init_liquid_balance = get_liquid_balance( "dan", SYMBOL_COIN );
+      bob_init_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       transfer.transfer_id = "e614fa1b-e50d-4f80-90a0-698022170e5d";
       transfer.amount = dan_init_liquid_balance;
@@ -746,7 +761,7 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const transfer_recurring_object& transfer_obj4 = db.get_transfer_recurring( "dan", string( "e614fa1b-e50d-4f80-90a0-698022170e5d" ) );
+      const transfer_recurring_object& transfer_obj4 = db.get_transfer_recurring( account_name_type( "dan" ), string( "e614fa1b-e50d-4f80-90a0-698022170e5d" ) );
 
       BOOST_REQUIRE( transfer_obj4.from == transfer.from );
       BOOST_REQUIRE( transfer_obj4.to == transfer.to );
@@ -761,26 +776,26 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
 
       time_point prev_end = transfer_obj4.end;
 
-      generate_blocks( transfer_obj4.begin - BLOCK_INTERVAL );
+      generate_blocks( transfer_obj4.begin - BLOCK_INTERVAL, true );
 
-      asset dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset dan_liquid_balance = get_liquid_balance( "dan", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance );
 
       generate_block();
 
-      dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      dan_liquid_balance = get_liquid_balance( "dan", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance - transfer.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + transfer.amount );
 
-      generate_blocks( transfer_obj4.begin + transfer_obj4.interval - BLOCK_INTERVAL );
+      generate_blocks( transfer_obj4.begin + transfer_obj4.interval - BLOCK_INTERVAL, true );
 
-      dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      dan_liquid_balance = get_liquid_balance( "dan", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance - transfer.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + transfer.amount );
@@ -789,8 +804,8 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
 
       generate_block();
 
-      dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      dan_liquid_balance = get_liquid_balance( "dan", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance - transfer.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + transfer.amount );
@@ -818,35 +833,35 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful recurring transfer request" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
-      ACTORS( (alice)(bob)(candice)(dan)(elon)(corp) );
+      fund_stake( "alice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "alice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "bob", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "bob", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "candice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "candice", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "dan", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "dan", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "elon", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "elon", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( "elon", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( "elon", asset( 100000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      generate_blocks( TOTAL_PRODUCERS );
 
-      asset alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      asset bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset alice_init_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_init_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       signed_transaction tx;
 
       transfer_recurring_request_operation request;
 
-      request.signatory = "alice";
-      request.from = "alice";
+      request.signatory = "bob";
       request.to = "bob";
+      request.from = "alice";
       request.amount = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       request.request_id = "db631874-fc87-4cff-a0da-3a87b069b4c6";
       request.memo = "Hello";
@@ -861,13 +876,13 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
       
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( request );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      const transfer_recurring_request_object& request_obj = db.get_transfer_recurring_request( "alice", string( "db631874-fc87-4cff-a0da-3a87b069b4c6" ) );
+      const transfer_recurring_request_object& request_obj = db.get_transfer_recurring_request( account_name_type( "bob" ), string( "db631874-fc87-4cff-a0da-3a87b069b4c6" ) );
 
       BOOST_REQUIRE( request_obj.from == request.from );
       BOOST_REQUIRE( request_obj.to == request.to );
@@ -877,29 +892,27 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
       BOOST_REQUIRE( request_obj.payments == request.payments );
       BOOST_REQUIRE( request_obj.interval == request.interval );
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: successful recurring transfer request" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: accept recurring transfer request" );
 
       transfer_recurring_accept_operation accept;
 
-      accept.signatory = "bob";
-      accept.to = "bob";
+      accept.signatory = "alice";
       accept.from = "alice";
+      accept.to = "bob";
       accept.request_id = "db631874-fc87-4cff-a0da-3a87b069b4c6";
       accept.accepted = true;
       accept.validate();
       
       tx.operations.push_back( accept );
-      tx.sign( bob_private_active_key, db.get_chain_id() );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( "alice", string( "db631874-fc87-4cff-a0da-3a87b069b4c6" ) );
+      const transfer_recurring_object& transfer_obj = db.get_transfer_recurring( account_name_type( "alice" ), string( "db631874-fc87-4cff-a0da-3a87b069b4c6" ) );
 
       BOOST_REQUIRE( transfer_obj.from == request.from );
       BOOST_REQUIRE( transfer_obj.to == request.to );
@@ -909,30 +922,30 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
       BOOST_REQUIRE( transfer_obj.payments == request.payments );
       BOOST_REQUIRE( transfer_obj.payments_remaining == request.payments );
       BOOST_REQUIRE( transfer_obj.interval == request.interval );
-      BOOST_REQUIRE( transfer_obj.next_transfer == request.begin + request.interval );
+      BOOST_REQUIRE( transfer_obj.next_transfer == request.begin );
       BOOST_REQUIRE( transfer_obj.extensible == false );
       BOOST_REQUIRE( transfer_obj.fill_or_kill == false );
       
-      generate_blocks( transfer_obj.begin - BLOCK_INTERVAL );
+      generate_blocks( transfer_obj.begin - BLOCK_INTERVAL, true );
 
-      asset alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      asset bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance );
 
       generate_block();
 
-      alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - request.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + request.amount );
 
-      generate_blocks( transfer_obj.end - BLOCK_INTERVAL );
+      generate_blocks( transfer_obj.end - BLOCK_INTERVAL, true );
 
-      alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - 9 * request.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + 9 * request.amount );
@@ -941,25 +954,23 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
 
       generate_block();
 
-      alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - 10 * request.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + 10 * request.amount );
 
       const auto& transfer_idx = db.get_index< transfer_recurring_index >().indices().get< by_transfer_id >();
-      auto transfer_itr = transfer_idx.find( std::make_tuple( "alice", string( "db631874-fc87-4cff-a0da-3a87b069b4c6" ) ) );
+      auto transfer_itr = transfer_idx.find( std::make_tuple( account_name_type( "alice" ), string( "db631874-fc87-4cff-a0da-3a87b069b4c6" ) ) );
 
       BOOST_REQUIRE( transfer_itr == transfer_idx.end() );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: successful recurring transfer creation and completion" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful fill or kill cancellation" );
 
-      alice_init_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      alice_init_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      bob_init_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       request.request_id = "e614fa1b-e50d-4f80-90a0-698022170e5d";
       request.amount = alice_init_liquid_balance;
@@ -973,7 +984,7 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const transfer_recurring_request_object& request_obj2 = db.get_transfer_recurring_request( "alice", string( "e614fa1b-e50d-4f80-90a0-698022170e5d" ) );
+      const transfer_recurring_request_object& request_obj2 = db.get_transfer_recurring_request( account_name_type( "alice" ), string( "e614fa1b-e50d-4f80-90a0-698022170e5d" ) );
 
       BOOST_REQUIRE( request_obj2.from == request.from );
       BOOST_REQUIRE( request_obj2.to == request.to );
@@ -996,7 +1007,7 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const transfer_recurring_object& transfer_obj2 = db.get_transfer_recurring( "alice", string( "e614fa1b-e50d-4f80-90a0-698022170e5d" ) );
+      const transfer_recurring_object& transfer_obj2 = db.get_transfer_recurring( account_name_type( "alice" ), string( "e614fa1b-e50d-4f80-90a0-698022170e5d" ) );
 
       BOOST_REQUIRE( transfer_obj2.from == request.from );
       BOOST_REQUIRE( transfer_obj2.to == request.to );
@@ -1009,26 +1020,26 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
       BOOST_REQUIRE( transfer_obj2.next_transfer == request.begin + request.interval );
       BOOST_REQUIRE( transfer_obj2.fill_or_kill == true );
 
-      generate_blocks( transfer_obj2.begin - BLOCK_INTERVAL );
+      generate_blocks( transfer_obj2.begin - BLOCK_INTERVAL, true );
 
-      alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance );
 
       generate_block();
 
-      alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - request.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + request.amount );
 
-      generate_blocks( transfer_obj2.begin + transfer_obj2.interval - BLOCK_INTERVAL );
+      generate_blocks( transfer_obj2.begin + transfer_obj2.interval - BLOCK_INTERVAL, true );
 
-      alice_liquid_balance = db.get_liquid_balance( "alice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_liquid_balance == alice_init_liquid_balance - request.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + request.amount );
@@ -1038,11 +1049,9 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
       generate_block();
 
       // Fill or kill will cause cancellation
-      transfer_itr = transfer_idx.find( std::make_tuple( "alice", string( "e614fa1b-e50d-4f80-90a0-698022170e5d" ) ) );
+      transfer_itr = transfer_idx.find( std::make_tuple( account_name_type( "alice" ), string( "e614fa1b-e50d-4f80-90a0-698022170e5d" ) ) );
 
       BOOST_REQUIRE( transfer_itr == transfer_idx.end() );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: successful fill or kill cancellation" );
 
@@ -1052,7 +1061,7 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
       request.from = "candice";
       request.to = "bob";
       request.request_id = "c6d1839b-d504-42c5-b9de-92092abbe836";
-      request.amount = asset( 10000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      request.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       request.fill_or_kill = false;
       request.extensible = false;
       
@@ -1063,14 +1072,12 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when requesting greater than liquid balance" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: sending exactly entire liquid balance" );
 
-      asset candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
-      bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset candice_init_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
+      bob_init_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       request.amount = candice_init_liquid_balance;
       
@@ -1094,7 +1101,7 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const transfer_recurring_object& transfer_obj3 = db.get_transfer_recurring( "candice", string( "c6d1839b-d504-42c5-b9de-92092abbe836" ) );
+      const transfer_recurring_object& transfer_obj3 = db.get_transfer_recurring( account_name_type( "candice" ), string( "c6d1839b-d504-42c5-b9de-92092abbe836" ) );
 
       BOOST_REQUIRE( transfer_obj3.from == request.from );
       BOOST_REQUIRE( transfer_obj3.to == request.to );
@@ -1106,26 +1113,26 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
       BOOST_REQUIRE( transfer_obj3.interval == request.interval );
       BOOST_REQUIRE( transfer_obj3.next_transfer == request.begin + request.interval );
 
-      generate_blocks( transfer_obj3.begin - BLOCK_INTERVAL );
+      generate_blocks( transfer_obj3.begin - BLOCK_INTERVAL, true );
 
-      asset candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset candice_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance );
 
       generate_block();
 
-      candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      candice_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance - request.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + request.amount );
 
-      generate_blocks( transfer_obj3.begin + transfer_obj3.interval - BLOCK_INTERVAL );
+      generate_blocks( transfer_obj3.begin + transfer_obj3.interval - BLOCK_INTERVAL, true );
 
-      candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      candice_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance - request.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + request.amount );
@@ -1134,8 +1141,8 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
 
       generate_block();
 
-      candice_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      candice_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance - request.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + request.amount );
@@ -1144,14 +1151,12 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
       BOOST_REQUIRE( transfer_obj3.payments_remaining == 8 );   
       BOOST_REQUIRE( transfer_obj3.next_transfer == transfer_obj3.begin + fc::microseconds( 2 * transfer_obj3.interval.count() ) );
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: sending exactly entire liquid balance" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure transferring with zero liquid balance" );
 
-      candice_init_liquid_balance = db.get_liquid_balance( "candice", SYMBOL_COIN );
-      bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      candice_init_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
+      bob_init_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       request.amount = asset( 1 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       request.request_id = "639d3cdd-7620-4cce-a1b2-6ae359d47a17";
@@ -1163,14 +1168,12 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure transferring with zero liquid balance" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful recurring transfer extension" );
 
-      asset dan_init_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
-      bob_init_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset dan_init_liquid_balance = get_liquid_balance( "dan", SYMBOL_COIN );
+      bob_init_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       request.signatory = "dan";
       request.from = "dan";
@@ -1199,7 +1202,7 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const transfer_recurring_object& transfer_obj4 = db.get_transfer_recurring( "dan", string( "639d3cdd-7620-4cce-a1b2-6ae359d47a17" ) );
+      const transfer_recurring_object& transfer_obj4 = db.get_transfer_recurring( account_name_type( "dan" ), string( "639d3cdd-7620-4cce-a1b2-6ae359d47a17" ) );
 
       BOOST_REQUIRE( transfer_obj4.from == request.from );
       BOOST_REQUIRE( transfer_obj4.to == request.to );
@@ -1214,26 +1217,26 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
 
       time_point prev_end = transfer_obj4.end;
 
-      generate_blocks( transfer_obj4.begin - BLOCK_INTERVAL );
+      generate_blocks( transfer_obj4.begin - BLOCK_INTERVAL, true );
 
-      asset dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      asset dan_liquid_balance = get_liquid_balance( "dan", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance );
 
       generate_block();
 
-      dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      dan_liquid_balance = get_liquid_balance( "dan", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance - request.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + request.amount );
 
-      generate_blocks( transfer_obj4.begin + transfer_obj4.interval - BLOCK_INTERVAL );
+      generate_blocks( transfer_obj4.begin + transfer_obj4.interval - BLOCK_INTERVAL, true );
 
-      dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      dan_liquid_balance = get_liquid_balance( "dan", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance - request.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + request.amount );
@@ -1242,8 +1245,8 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
 
       generate_block();
 
-      dan_liquid_balance = db.get_liquid_balance( "dan", SYMBOL_COIN );
-      bob_liquid_balance = db.get_liquid_balance( "bob", SYMBOL_COIN );
+      dan_liquid_balance = get_liquid_balance( "dan", SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
       BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance - request.amount );
       BOOST_REQUIRE( bob_liquid_balance == bob_init_liquid_balance + request.amount );

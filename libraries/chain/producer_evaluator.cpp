@@ -166,7 +166,7 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
          p.owner = miner_account;
          p.props = o.props;
          p.signing_key = ok;
-         p.mining_count = 1;
+         p.mining_count = 0;
          p.mining_power = BLOCKCHAIN_PRECISION;
          p.last_mining_update = now;
       });
@@ -175,15 +175,15 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
    {
       FC_ASSERT( !o.new_owner_key.valid(),
          "Cannot specify an owner key unless creating new mined account." );
-
-      const producer_object& cur_producer = _db.get_producer( miner_account );
+      const producer_object* cur_producer = _db.find_producer( miner_account );
+      FC_ASSERT( cur_producer != nullptr,
+         "Account: ${p} must be active to mine proofs of work.",("p",miner_account) );
+      FC_ASSERT( cur_producer->active,
+         "Producer: ${p} must be active to mine proofs of work.",("p",miner_account) );
       
-      _db.modify( cur_producer, [&]( producer_object& p )
+      _db.modify( *cur_producer, [&]( producer_object& p )
       {
-         p.mining_count++;
          p.props = o.props;
-         p.decay_weights( now, median_props );    // Decay and increment mining power for the miner. 
-         p.mining_power += BLOCKCHAIN_PRECISION;
       });
    }
 

@@ -281,8 +281,7 @@ namespace node { namespace chain {
 
       const producer_object& producer_create(
          const string& owner,
-         const private_key_type& owner_key,
-         const public_key_type& signing_key
+         const private_key_type& owner_key
       );
 
       const producer_vote_object& producer_vote(
@@ -296,11 +295,17 @@ namespace node { namespace chain {
          const string& permlink
       );
 
-      void fund( const string& account_name, const asset& amount );
+      void generate_liquid( const string& account_name, const asset& amount );
+
+      void generate_stake( const string& from, const asset& amount );
+
+      void generate_reward( const string& from, const asset& amount );
+
+      void generate_savings( const string& from, const asset& amount );
+
+      void fund_liquid( const string& account_name, const asset& amount );
 
       void fund_stake( const string& from, const asset& amount );
-
-      void fund_reward( const string& from, const asset& amount );
 
       void fund_savings( const string& from, const asset& amount );
       

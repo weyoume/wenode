@@ -187,17 +187,23 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
 
       a.created = now;
       a.last_updated = now;
-      a.last_vote_time = time_point::min();
-      a.last_view_time = time_point::min();
-      a.last_share_time = time_point::min();
-      a.last_post = time_point::min();
-      a.last_root_post = time_point::min();
-      a.last_transfer_time = time_point::min();
-      a.last_activity_reward = time_point::min();
-      a.last_account_recovery = time_point::min();
-      a.last_community_created = time_point::min();
-      a.last_asset_created = time_point::min();
-      a.membership_expiration = time_point::min();
+      a.last_vote_time = now;
+      a.last_view_time = now;
+      a.last_share_time = now;
+      a.last_post = now;
+      a.last_root_post = now;
+      a.last_transfer_time = now;
+      a.last_activity_reward = now;
+      a.last_account_recovery = now;
+      a.last_community_created = now;
+      a.last_asset_created = now;
+      a.membership_expiration = time_point::maximum();
+
+      a.voting_power = PERCENT_100;
+      a.viewing_power = PERCENT_100;
+      a.sharing_power = PERCENT_100;
+      a.commenting_power = PERCENT_100;
+
       a.mined = false;
       a.can_vote = true;
       a.revenue_share = false;
@@ -282,6 +288,8 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
          a.officer_vote_count++;
       });
    }
+
+   ilog( "Registrar: ${r} created new account: ${a}",("r",o.registrar)("a",o.new_account_name));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -314,9 +322,12 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
       FC_ASSERT( account_auth.active, 
          "Account: ${s} must be active to add account authority.",("s", account_auth) );
    }
-   
-   _db.update_owner_authority( account, o.owner_auth );
 
+   if( o.owner_auth.num_auths() > 0 )
+   {
+      _db.update_owner_authority( account, o.owner_auth );
+   }
+   
    for( auto a : o.active_auth.account_auths )
    {
       const account_object& account_auth = _db.get_account( a.first );
@@ -419,9 +430,18 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
 
    _db.modify( account_auth, [&]( account_authority_object& auth )
    {
-      auth.owner_auth = o.owner_auth;
-      auth.active_auth = o.active_auth;
-      auth.posting_auth = o.posting_auth;
+      if( o.owner_auth.num_auths() > 0 )
+      {
+         auth.owner_auth = o.owner_auth;
+      }
+      if( o.active_auth.num_auths() > 0 )
+      {
+         auth.active_auth = o.active_auth;
+      }
+      if( o.posting_auth.num_auths() > 0 )
+      {
+         auth.posting_auth = o.posting_auth;
+      }
    });
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -500,6 +520,7 @@ void account_verification_evaluator::do_apply( const account_verification_operat
       }
       else
       {
+         ilog( "Removed: ${v}",("v",verification));
          _db.remove( verification );
       }
    }
@@ -827,6 +848,7 @@ void account_vote_executive_evaluator::do_apply( const account_vote_executive_op
          
          if( executive_itr != executive_idx.end() )
          {
+            ilog( "Removed: ${v}",("v",*executive_itr));
             _db.remove( *executive_itr );
          }
 
@@ -837,10 +859,12 @@ void account_vote_executive_evaluator::do_apply( const account_vote_executive_op
    {
       if( executive_itr != executive_idx.end() )
       {
+         ilog( "Removed: ${v}",("v",*executive_itr));
          _db.remove( *executive_itr );
       }
       else if( rank_itr != rank_idx.end() )
       {
+         ilog( "Removed: ${v}",("v",*rank_itr));
          _db.remove( *rank_itr );
       }
       _db.update_account_executive_votes( voter, o.business_account );
@@ -885,9 +909,11 @@ void account_vote_officer_evaluator::do_apply( const account_vote_officer_operat
       FC_ASSERT( voter.can_vote,
          "Account has declined its voting rights." );
       FC_ASSERT( bus_acc.is_authorized_vote_officer( voter.name, _db.get_account_permissions( o.business_account ) ),
-         "Account: ${a} is not authorized to vote for an Officer in business: ${b} .", ("a", o.account)("b", o.business_account));
+         "Account: ${a} is not authorized to vote for an Officer in business: ${b} .",
+         ("a", o.account)("b", o.business_account));
       FC_ASSERT( bus_acc.is_member( officer.name ),
-         "Account: ${a} must be an officer of business: ${b} before being voted as Officer.", ("a", o.officer_account)("b", o.business_account));
+         "Account: ${a} must be a member of business: ${b} before being voted as an Officer.",
+         ("a", o.officer_account)("b", o.business_account));
    }
 
    const auto& rank_idx = _db.get_index< account_officer_vote_index >().indices().get< by_account_business_rank >();
@@ -919,6 +945,7 @@ void account_vote_officer_evaluator::do_apply( const account_vote_officer_operat
          
          if( officer_itr != officer_idx.end() )
          {
+            ilog( "Removed: ${v}",("v",*officer_itr));
             _db.remove( *officer_itr );
          }
 
@@ -929,10 +956,12 @@ void account_vote_officer_evaluator::do_apply( const account_vote_officer_operat
    {
       if( officer_itr != officer_idx.end() )
       {
+         ilog( "Removed: ${v}",("v",*officer_itr));
          _db.remove( *officer_itr );
       }
       else if( rank_itr != rank_idx.end() )
       {
+         ilog( "Removed: ${v}",("v",*rank_itr));
          _db.remove( *rank_itr );
       }
       _db.update_account_officer_votes( voter, o.business_account );
@@ -966,9 +995,11 @@ void account_member_request_evaluator::do_apply( const account_member_request_op
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
 
    FC_ASSERT( !bus_acc.is_member( account.name ), 
-      "Account: ${a} is already a member of the business: ${b}.", ("a", o.account)("b", o.business_account)); 
+      "Account: ${a} is already a member of the business: ${b}.",
+      ("a", o.account)("b", o.business_account)); 
    FC_ASSERT( bus_acc.is_authorized_request( account.name, _db.get_account_permissions( o.business_account ) ), 
-      "Account: ${a} is not authorised to request to join the business account: ${b}.", ("a", o.account)("b", o.business_account) );
+      "Account: ${a} is not authorised to request to join the business account: ${b}.",
+      ("a", o.account)("b", o.business_account) );
    
    time_point now = _db.head_block_time();
    const auto& req_idx = _db.get_index< account_member_request_index >().indices().get< by_account_business >();
@@ -991,6 +1022,7 @@ void account_member_request_evaluator::do_apply( const account_member_request_op
    {
       FC_ASSERT( !o.requested,
          "Request already exists, Requested should be set to false to remove existing request." );
+      ilog( "Removed: ${v}",("v",*itr));
       _db.remove( *itr );
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
@@ -1022,9 +1054,11 @@ void account_member_invite_evaluator::do_apply( const account_member_invite_oper
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
 
    FC_ASSERT( !bus_acc.is_member( member.name ),
-      "Account: ${a} is already a member of the Business Account: ${b}.", ("a", o.member)("b", o.business_account) );
+      "Account: ${a} is already a member of the Business Account: ${b}.",
+      ("a", o.member)("b", o.business_account) );
    FC_ASSERT( bus_acc.is_authorized_invite( account.name, _db.get_account_permissions( o.business_account ) ),
-      "Account: ${a} is not authorised to send Business account: ${b} membership invitations.", ("a", o.account)("b", o.business_account) );
+      "Account: ${a} is not authorised to send Business account: ${b} membership invitations.",
+      ("a", o.account)("b", o.business_account) );
    
    time_point now = _db.head_block_time();
    const auto& inv_idx = _db.get_index< account_member_invite_index >().indices().get< by_member_business >();
@@ -1060,8 +1094,10 @@ void account_member_invite_evaluator::do_apply( const account_member_invite_oper
       auto key_itr = key_idx.find( std::make_tuple( o.member, o.business_account ) );
       if( key_itr != key_idx.end() )
       {
+         ilog( "Removed: ${v}",("v",*key_itr));
          _db.remove( *key_itr );  // Remove the account key 
       }
+      ilog( "Removed: ${v}",("v",*itr));
       _db.remove( *itr );     // Remove the invitation
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
@@ -1092,9 +1128,11 @@ void account_accept_request_evaluator::do_apply( const account_accept_request_op
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
 
    FC_ASSERT( !bus_acc.is_member( member.name ),
-      "Account: ${a} is already a member of the business account: ${b}.", ("a", o.member)("b", o.business_account) );
+      "Account: ${a} is already a member of the business account: ${b}.",
+      ("a", o.member)("b", o.business_account) );
    FC_ASSERT( bus_acc.is_authorized_invite( account.name, _db.get_account_permissions( o.business_account ) ),
-      "Account: ${a} is not authorized to accept membership requests to the business account: ${b}.", ("a", o.account)("b", o.business_account ) );
+      "Account: ${a} is not authorized to accept membership requests to the business account: ${b}.",
+      ("a", o.account)("b", o.business_account ) );
 
    const auto& req_idx = _db.get_index< account_member_request_index >().indices().get< by_account_business >();
    auto itr = req_idx.find( boost::make_tuple( o.member, o.business_account ) );
@@ -1145,7 +1183,8 @@ void account_accept_invite_evaluator::do_apply( const account_accept_invite_oper
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
 
    FC_ASSERT( !bus_acc.is_member( account.name ),
-      "Account: ${a} is already a member of the business account: ${b}.", ("a", o.account)("b", o.business_account));
+      "Account: ${a} is already a member of the business account: ${b}.",
+      ("a", o.account)("b", o.business_account));
 
    const auto& inv_idx = _db.get_index< account_member_invite_index >().indices().get< by_member_business >();
    auto itr = inv_idx.find( std::make_tuple( o.account, o.business_account ) );
@@ -1173,6 +1212,7 @@ void account_accept_invite_evaluator::do_apply( const account_accept_invite_oper
       });
    }
 
+   ilog( "Removed: ${v}",("v",invite));
    _db.remove( invite );
 
 } FC_CAPTURE_AND_RETHROW( ( o )) }
@@ -1203,9 +1243,11 @@ void account_remove_member_evaluator::do_apply( const account_remove_member_oper
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
 
    FC_ASSERT( bus_acc.is_member( member_acc.name ), 
-      "Account: ${a} is not a member of business: ${b}.", ("a", o.member)("b", o.business_account) );
+      "Account: ${a} is not a member of business: ${b}.",
+      ("a", o.member)("b", o.business_account) );
    FC_ASSERT( !bus_acc.is_executive( member_acc.name ), 
-      "Account: ${a} cannot be removed while an executive of business: ${b}.", ("a", o.member)("b", o.business_account) );
+      "Account: ${a} cannot be removed while an executive of business: ${b}.",
+      ("a", o.member)("b", o.business_account) );
 
    if( account.name != member_acc.name )     // Account can remove itself from  membership.  
    {
@@ -1224,6 +1266,8 @@ void account_remove_member_evaluator::do_apply( const account_remove_member_oper
    if( key_itr != key_idx.end() )
    {
       const account_member_key_object& key = *key_itr;
+
+      ilog( "Removed: ${v}",("v",key));
       _db.remove( key );
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
@@ -1268,11 +1312,14 @@ void account_update_list_evaluator::do_apply( const account_update_list_operatio
    if( bus_acc_ptr != nullptr )
    {
       FC_ASSERT( !bus_acc_ptr->is_member( account_name ),
-         "Account: ${a} cannot be blacklisted while a member of business: ${b}. Remove them first.", ("a", account_name)("b", o.account));
+         "Account: ${a} cannot be blacklisted while a member of business: ${b}. Remove them first.",
+         ("a", account_name)("b", o.account));
       FC_ASSERT( !bus_acc_ptr->is_officer( account_name ),
-         "Account: ${a} cannot be blacklisted while a officer of business: ${b}. Remove them first.", ("a", account_name)("b", o.account));
+         "Account: ${a} cannot be blacklisted while a officer of business: ${b}. Remove them first.",
+         ("a", account_name)("b", o.account));
       FC_ASSERT( !bus_acc_ptr->is_executive( account_name ),
-         "Account: ${a} cannot be blacklisted while an executive of business: ${b}. Remove them first.", ("a", account_name)("b", o.account));
+         "Account: ${a} cannot be blacklisted while an executive of business: ${b}. Remove them first.",
+         ("a", account_name)("b", o.account));
    }
    
    _db.modify( perm, [&]( account_permission_object& apo )
@@ -1380,6 +1427,7 @@ void account_producer_vote_evaluator::do_apply( const account_producer_vote_oper
          
          if( producer_itr != account_producer_idx.end() )
          {
+            ilog( "Removed: ${v}",("v",*producer_itr));
             _db.remove( *producer_itr );
          }
 
@@ -1390,10 +1438,12 @@ void account_producer_vote_evaluator::do_apply( const account_producer_vote_oper
    {
       if( producer_itr != account_producer_idx.end() )
       {
+         ilog( "Removed: ${v}",("v",*producer_itr));
          _db.remove( *producer_itr );
       }
       else if( rank_itr != account_rank_idx.end() )
       {
+         ilog( "Removed: ${v}",("v",*rank_itr));
          _db.remove( *rank_itr );
       }
       _db.update_producer_votes( voter );
@@ -1454,7 +1504,7 @@ void account_update_proxy_evaluator::do_apply( const account_update_proxy_operat
             "Proxy chain is too long." );
       }
 
-      _db.clear_network_votes( account );    // clear all individual vote records
+      _db.clear_network_votes( account.name );    // clear all individual vote records
 
       _db.modify( account, [&]( account_object& a )
       {
@@ -1534,6 +1584,7 @@ void request_account_recovery_evaluator::do_apply( const request_account_recover
    }
    else if( o.new_owner_authority.weight_threshold == 0 ) // Cancel Request if authority is open
    {
+      ilog( "Removed: ${v}",("v",*request));
       _db.remove( *request );
    }
    else        // Change Request
@@ -1609,7 +1660,7 @@ void recover_account_evaluator::do_apply( const recover_account_operation& o )
 
 void reset_account_evaluator::do_apply( const reset_account_operation& o )
 { try {
-   const account_name_type& signed_for = o.account_to_reset;
+   const account_name_type& signed_for = o.reset_account;
    const account_object& signatory = _db.get_account( o.signatory );
    FC_ASSERT( signatory.active, 
       "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
@@ -1622,10 +1673,14 @@ void reset_account_evaluator::do_apply( const reset_account_operation& o )
       FC_ASSERT( b.is_executive( o.signatory ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const account_object& account = _db.get_account( o.account_to_reset );
+
    const account_object& reset_account = _db.get_account( o.reset_account );
+   const account_object& account = _db.get_account( o.account_to_reset );
+   
    FC_ASSERT( reset_account.active, 
-      "Account: ${s} must be active to reset account.",("s", o.reset_account) );
+      "Account: ${s} must be active to reset account.",
+      ("s", o.reset_account) );
+   
    fc::microseconds delay = fc::days( account.reset_account_delay_days );
    time_point now = _db.head_block_time();
 
@@ -1767,6 +1822,7 @@ void decline_voting_rights_evaluator::do_apply( const decline_voting_rights_oper
       FC_ASSERT( req_itr != req_idx.end(),
          "Decline voting rights request does not yet exist for this account to cancel." );
 
+      ilog( "Removed: ${v}",("v",*req_itr));
       _db.remove( *req_itr );
    } 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -1884,7 +1940,8 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
    { 
       FC_ASSERT( !o.requested,
          "Connection currently exists, set request to false to cancel." );
- 
+
+      ilog( "Removed: ${v}",("v",*req_itr));
       _db.remove( *req_itr );
    }
 
@@ -2040,6 +2097,7 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
          afo.last_updated = now;
       });
 
+      ilog( "Removed: ${v}",("v",request));
       _db.remove( request );  // Remove initial request object
 
       ilog( "Account: ${a} accepted new connection with ${b} - \n ${c} \n",
@@ -2099,6 +2157,7 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
             afo.last_updated = now;
          });
 
+         ilog( "Removed: ${v}",("v",connection_obj));
          _db.remove( connection_obj );
       }
 
@@ -2404,8 +2463,8 @@ void activity_reward_evaluator::do_apply( const activity_reward_operation& o )
 
    const comment_metrics_object& comment_metrics = _db.get_comment_metrics();
    const comment_object& comment = _db.get_comment( o.account, o.permlink );
-   const comment_view_object& view = _db.get_comment_view( o.account, o.view_id );
-   const comment_vote_object& vote = _db.get_comment_vote( o.account, o.vote_id );
+   const comment_view_object& view = _db.get_comment_view( o.account, comment_id_type( o.view_id ) );
+   const comment_vote_object& vote = _db.get_comment_vote( o.account, comment_id_type( o.vote_id ) );
    const comment_object& view_comment = _db.get( comment_id_type( o.view_id ) );
    const comment_object& vote_comment = _db.get( comment_id_type( o.vote_id ) );
 

@@ -33,56 +33,47 @@ BOOST_AUTO_TEST_CASE( claim_reward_balance_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful reward claim" );
 
-      fund( INIT_ACCOUNT, asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      private_key_type producer_private_active_key = get_private_key( GENESIS_ACCOUNT_BASE_NAME, "active", INIT_ACCOUNT_PASSWORD );
 
-      ACTORS( (alice)(bob)(candice)(dan)(elon) );
+      generate_blocks( TOTAL_PRODUCERS );
 
-      fund( account_name_type( "alice" ), asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( account_name_type( "alice" ), asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_reward( account_name_type( "alice" ), asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
-      generate_block();
-
-      asset alice_init_liquid_balance = db.get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
-      asset alice_init_staked_balance = db.get_staked_balance( account_name_type( "alice" ), SYMBOL_COIN );
-      asset alice_init_reward_balance = db.get_reward_balance( account_name_type( "alice" ), SYMBOL_COIN );
+      asset producer_init_liquid_balance = get_liquid_balance( GENESIS_ACCOUNT_BASE_NAME, SYMBOL_COIN );
+      asset producer_init_staked_balance = get_staked_balance( GENESIS_ACCOUNT_BASE_NAME, SYMBOL_COIN );
+      asset producer_init_reward_balance = get_reward_balance( GENESIS_ACCOUNT_BASE_NAME, SYMBOL_COIN );
 
       signed_transaction tx;
 
       claim_reward_balance_operation claim;
 
-      claim.signatory = "alice";
-      claim.account = "alice";
+      claim.signatory = GENESIS_ACCOUNT_BASE_NAME;
+      claim.account = GENESIS_ACCOUNT_BASE_NAME;
       claim.reward = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       claim.validate();
 
       tx.operations.push_back( claim );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
+      tx.sign( producer_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      asset alice_liquid_balance = db.get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
-      asset alice_staked_balance = db.get_staked_balance( account_name_type( "alice" ), SYMBOL_COIN );
-      asset alice_reward_balance = db.get_reward_balance( account_name_type( "alice" ), SYMBOL_COIN );
+      asset producer_liquid_balance = get_liquid_balance( GENESIS_ACCOUNT_BASE_NAME, SYMBOL_COIN );
+      asset producer_staked_balance = get_staked_balance( GENESIS_ACCOUNT_BASE_NAME, SYMBOL_COIN );
+      asset producer_reward_balance = get_reward_balance( GENESIS_ACCOUNT_BASE_NAME, SYMBOL_COIN );
       
-      BOOST_REQUIRE( alice_liquid_balance + alice_staked_balance + alice_reward_balance == 
-         alice_init_liquid_balance + alice_init_staked_balance + alice_init_reward_balance );
-
-      generate_block();
-      validate_database();
+      BOOST_REQUIRE( producer_liquid_balance + producer_staked_balance + producer_reward_balance == 
+         producer_init_liquid_balance + producer_init_staked_balance + producer_init_reward_balance );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: successful reward claim" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when reward claim is higher than balance" );
    
-      claim.reward = asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      claim.reward = asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
 
       tx.operations.push_back( claim );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+      tx.sign( producer_private_active_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, database::skip_transaction_dupe_check ), fc::exception );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -91,29 +82,26 @@ BOOST_AUTO_TEST_CASE( claim_reward_balance_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: claiming entire reward balance" );
 
-      alice_init_liquid_balance = db.get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
-      alice_init_staked_balance = db.get_staked_balance( account_name_type( "alice" ), SYMBOL_COIN );
-      alice_init_reward_balance = db.get_reward_balance( account_name_type( "alice" ), SYMBOL_COIN );
+      producer_init_liquid_balance = get_liquid_balance( GENESIS_ACCOUNT_BASE_NAME, SYMBOL_COIN );
+      producer_init_staked_balance = get_staked_balance( GENESIS_ACCOUNT_BASE_NAME, SYMBOL_COIN );
+      producer_init_reward_balance = get_reward_balance( GENESIS_ACCOUNT_BASE_NAME, SYMBOL_COIN );
 
-      claim.reward = alice_init_reward_balance;
+      claim.reward = producer_init_reward_balance;
 
       tx.operations.push_back( claim );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
+      tx.sign( producer_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, database::skip_transaction_dupe_check );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      alice_liquid_balance = db.get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
-      alice_staked_balance = db.get_staked_balance( account_name_type( "alice" ), SYMBOL_COIN );
-      alice_reward_balance = db.get_reward_balance( account_name_type( "alice" ), SYMBOL_COIN );
+      producer_liquid_balance = get_liquid_balance( GENESIS_ACCOUNT_BASE_NAME, SYMBOL_COIN );
+      producer_staked_balance = get_staked_balance( GENESIS_ACCOUNT_BASE_NAME, SYMBOL_COIN );
+      producer_reward_balance = get_reward_balance( GENESIS_ACCOUNT_BASE_NAME, SYMBOL_COIN );
       
-      BOOST_REQUIRE( alice_liquid_balance + alice_staked_balance == 
-         alice_init_liquid_balance + alice_init_staked_balance + alice_init_reward_balance );
-      BOOST_REQUIRE( alice_reward_balance.amount == 0 );
-
-      generate_block();
-      validate_database();
+      BOOST_REQUIRE( producer_liquid_balance + producer_staked_balance == 
+         producer_init_liquid_balance + producer_init_staked_balance + producer_init_reward_balance );
+      BOOST_REQUIRE( producer_reward_balance.amount == 0 );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: claiming entire reward balance" );
 
@@ -131,26 +119,25 @@ BOOST_AUTO_TEST_CASE( stake_asset_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful asset stake" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice) );
 
-      fund_stake( account_name_type( "alice" ), asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_reward( account_name_type( "alice" ), asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "alice" ), asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
 
-      generate_block();
-
-      asset alice_init_liquid_balance = db.get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
+      generate_blocks( TOTAL_PRODUCERS );
 
       signed_transaction tx;
+
+      asset alice_init_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_init_staked_balance = get_staked_balance( "bob", SYMBOL_COIN );
 
       stake_asset_operation stake;
 
       stake.signatory = "alice";
       stake.from = "alice";
       stake.to = "bob";
-      stake.amount = alice_init_liquid_balance;
+      stake.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       stake.validate();
 
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
@@ -161,55 +148,68 @@ BOOST_AUTO_TEST_CASE( stake_asset_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const account_balance_object& balance = db.get_account_balance( account_name_type( "alice" ), SYMBOL_COIN );
+      asset alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_staked_balance = get_staked_balance( "bob", SYMBOL_COIN );
 
-      BOOST_REQUIRE( balance.stake_rate == alice_init_liquid_balance.amount / 4 );
-      BOOST_REQUIRE( balance.next_stake_time == now() + STAKE_WITHDRAW_INTERVAL );
-      BOOST_REQUIRE( balance.to_stake == alice_init_liquid_balance.amount );
-      BOOST_REQUIRE( balance.total_staked == 0 );
+      BOOST_REQUIRE( bob_staked_balance - bob_init_staked_balance == stake.amount );
+      BOOST_REQUIRE( alice_init_liquid_balance - alice_liquid_balance == stake.amount );
 
-      time_point prev_time = balance.next_stake_time;
+      stake.signatory = "alice";
+      stake.from = "alice";
+      stake.to = "alice";
+      stake.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY );
+      stake.validate();
+
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( stake );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const account_balance_object& alice_balance = db.get_account_balance( account_name_type( "alice" ), SYMBOL_EQUITY );
 
       generate_blocks( now() + STAKE_WITHDRAW_INTERVAL - BLOCK_INTERVAL );
 
-      BOOST_REQUIRE( balance.stake_rate == alice_init_liquid_balance.amount / 4 );
-      BOOST_REQUIRE( balance.next_stake_time == prev_time );
-      BOOST_REQUIRE( balance.to_stake == alice_init_liquid_balance.amount );
-      BOOST_REQUIRE( balance.total_staked == 0 );
+      BOOST_REQUIRE( alice_balance.stake_rate == stake.amount.amount / 4 );
+      BOOST_REQUIRE( alice_balance.to_stake == stake.amount.amount );
+      BOOST_REQUIRE( alice_balance.total_staked == 0 );
+
+      time_point prev_time = alice_balance.next_stake_time;
 
       generate_block();
 
-      BOOST_REQUIRE( balance.stake_rate == alice_init_liquid_balance.amount / 4 );
-      BOOST_REQUIRE( balance.next_stake_time == prev_time + STAKE_WITHDRAW_INTERVAL );
-      BOOST_REQUIRE( balance.to_stake == alice_init_liquid_balance.amount );
-      BOOST_REQUIRE( balance.total_staked == alice_init_liquid_balance.amount / 4 );
+      BOOST_REQUIRE( alice_balance.stake_rate == stake.amount.amount / 4 );
+      BOOST_REQUIRE( alice_balance.next_stake_time == prev_time + STAKE_WITHDRAW_INTERVAL );
+      BOOST_REQUIRE( alice_balance.to_stake == stake.amount.amount );
+      BOOST_REQUIRE( alice_balance.total_staked == stake.amount.amount / 4 );
 
-      prev_time = balance.next_stake_time;
-
-      generate_blocks( now() + STAKE_WITHDRAW_INTERVAL );
-
-      BOOST_REQUIRE( balance.stake_rate == alice_init_liquid_balance.amount / 4 );
-      BOOST_REQUIRE( balance.next_stake_time == prev_time + STAKE_WITHDRAW_INTERVAL );
-      BOOST_REQUIRE( balance.to_stake == alice_init_liquid_balance.amount );
-      BOOST_REQUIRE( balance.total_staked == alice_init_liquid_balance.amount / 2 );
-
-      prev_time = balance.next_stake_time;
+      prev_time = alice_balance.next_stake_time;
 
       generate_blocks( now() + STAKE_WITHDRAW_INTERVAL );
 
-      BOOST_REQUIRE( balance.stake_rate == alice_init_liquid_balance.amount / 4 );
-      BOOST_REQUIRE( balance.next_stake_time == prev_time + STAKE_WITHDRAW_INTERVAL );
-      BOOST_REQUIRE( balance.to_stake == alice_init_liquid_balance.amount );
-      BOOST_REQUIRE( balance.total_staked == 3 * ( alice_init_liquid_balance.amount / 4 ) );
+      BOOST_REQUIRE( alice_balance.stake_rate == stake.amount.amount / 4 );
+      BOOST_REQUIRE( alice_balance.next_stake_time == prev_time + STAKE_WITHDRAW_INTERVAL );
+      BOOST_REQUIRE( alice_balance.to_stake == stake.amount.amount );
+      BOOST_REQUIRE( alice_balance.total_staked == stake.amount.amount / 2 );
+
+      prev_time = alice_balance.next_stake_time;
 
       generate_blocks( now() + STAKE_WITHDRAW_INTERVAL );
 
-      BOOST_REQUIRE( balance.stake_rate == 0 );
-      BOOST_REQUIRE( balance.next_stake_time == fc::time_point::maximum() );
-      BOOST_REQUIRE( balance.to_stake == 0 );
-      BOOST_REQUIRE( balance.total_staked == 0 );
+      BOOST_REQUIRE( alice_balance.stake_rate == stake.amount.amount / 4 );
+      BOOST_REQUIRE( alice_balance.next_stake_time == prev_time + STAKE_WITHDRAW_INTERVAL );
+      BOOST_REQUIRE( alice_balance.to_stake == stake.amount.amount );
+      BOOST_REQUIRE( alice_balance.total_staked == 3 * ( stake.amount.amount / 4 ) );
 
-      BOOST_REQUIRE( balance.liquid_balance == 0 );
+      generate_blocks( now() + STAKE_WITHDRAW_INTERVAL );
+
+      BOOST_REQUIRE( alice_balance.stake_rate == 0 );
+      BOOST_REQUIRE( alice_balance.next_stake_time == fc::time_point::maximum() );
+      BOOST_REQUIRE( alice_balance.to_stake == 0 );
+      BOOST_REQUIRE( alice_balance.total_staked == 0 );
+      BOOST_REQUIRE( alice_balance.liquid_balance == 0 );
       
       validate_database();
 
@@ -229,20 +229,18 @@ BOOST_AUTO_TEST_CASE( unstake_asset_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful asset unstake" );
 
-      fund( INIT_ACCOUNT, asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice) );
 
-      fund_stake( account_name_type( "alice" ), asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "alice" ), asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "bob" ), asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "bob" ), asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "candice" ), asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "candice" ), asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      
-      asset alice_init_staked_balance = db.get_staked_balance( account_name_type( "alice" ), SYMBOL_COIN );
+      fund_stake( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      generate_blocks( TOTAL_PRODUCERS );
 
       signed_transaction tx;
 
@@ -251,7 +249,7 @@ BOOST_AUTO_TEST_CASE( unstake_asset_operation_test )
       unstake.signatory = "alice";
       unstake.from = "alice";
       unstake.to = "alice";
-      unstake.amount = alice_init_staked_balance;     // Unstake entire balance
+      unstake.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );     // Unstake entire balance
       unstake.validate();
 
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
@@ -264,63 +262,63 @@ BOOST_AUTO_TEST_CASE( unstake_asset_operation_test )
 
       const account_balance_object& alice_balance = db.get_account_balance( account_name_type( "alice" ), SYMBOL_COIN );
 
-      BOOST_REQUIRE( alice_balance.unstake_rate == alice_init_staked_balance.amount / 4 );
+      BOOST_REQUIRE( alice_balance.unstake_rate == unstake.amount.amount / 4 );
       BOOST_REQUIRE( alice_balance.next_unstake_time == now() + STAKE_WITHDRAW_INTERVAL );
-      BOOST_REQUIRE( alice_balance.to_unstake == alice_init_staked_balance.amount );
+      BOOST_REQUIRE( alice_balance.to_unstake == unstake.amount.amount );
       BOOST_REQUIRE( alice_balance.total_unstaked == 0 );
 
       time_point prev_time = alice_balance.next_unstake_time;
 
-      generate_blocks( now() + STAKE_WITHDRAW_INTERVAL - BLOCK_INTERVAL );
+      generate_blocks( now() + STAKE_WITHDRAW_INTERVAL, true );
 
-      BOOST_REQUIRE( alice_balance.unstake_rate == alice_init_staked_balance.amount / 4 );
+      BOOST_REQUIRE( alice_balance.unstake_rate == unstake.amount.amount / 4 );
       BOOST_REQUIRE( alice_balance.next_unstake_time == prev_time );
-      BOOST_REQUIRE( alice_balance.to_unstake == alice_init_staked_balance.amount );
+      BOOST_REQUIRE( alice_balance.to_unstake == unstake.amount.amount );
       BOOST_REQUIRE( alice_balance.total_unstaked == 0 );
 
       generate_block();
 
-      BOOST_REQUIRE( alice_balance.unstake_rate == alice_init_staked_balance.amount / 4 );
+      BOOST_REQUIRE( alice_balance.unstake_rate == unstake.amount.amount / 4 );
       BOOST_REQUIRE( alice_balance.next_unstake_time == prev_time + STAKE_WITHDRAW_INTERVAL );
-      BOOST_REQUIRE( alice_balance.to_unstake == alice_init_staked_balance.amount );
-      BOOST_REQUIRE( alice_balance.total_unstaked == alice_init_staked_balance.amount / 4 );
+      BOOST_REQUIRE( alice_balance.to_unstake == unstake.amount.amount );
+      BOOST_REQUIRE( alice_balance.total_unstaked == unstake.amount.amount / 4 );
+
+      prev_time = alice_balance.next_unstake_time;
+
+      generate_blocks( now() + STAKE_WITHDRAW_INTERVAL, true );
+      generate_block();
+
+      BOOST_REQUIRE( alice_balance.unstake_rate == unstake.amount.amount / 4 );
+      BOOST_REQUIRE( alice_balance.next_unstake_time == prev_time + STAKE_WITHDRAW_INTERVAL );
+      BOOST_REQUIRE( alice_balance.to_unstake == unstake.amount.amount );
+      BOOST_REQUIRE( alice_balance.total_unstaked == unstake.amount.amount / 2 );
 
       prev_time = alice_balance.next_unstake_time;
 
       generate_blocks( now() + STAKE_WITHDRAW_INTERVAL );
+      generate_block();
 
-      BOOST_REQUIRE( alice_balance.unstake_rate == alice_init_staked_balance.amount / 4 );
+      BOOST_REQUIRE( alice_balance.unstake_rate == unstake.amount.amount / 4 );
       BOOST_REQUIRE( alice_balance.next_unstake_time == prev_time + STAKE_WITHDRAW_INTERVAL );
-      BOOST_REQUIRE( alice_balance.to_unstake == alice_init_staked_balance.amount );
-      BOOST_REQUIRE( alice_balance.total_unstaked == alice_init_staked_balance.amount / 2 );
-
-      prev_time = alice_balance.next_unstake_time;
+      BOOST_REQUIRE( alice_balance.to_unstake == unstake.amount.amount );
+      BOOST_REQUIRE( alice_balance.total_unstaked == 3 * ( unstake.amount.amount / 4 ) );
 
       generate_blocks( now() + STAKE_WITHDRAW_INTERVAL );
-
-      BOOST_REQUIRE( alice_balance.unstake_rate == alice_init_staked_balance.amount / 4 );
-      BOOST_REQUIRE( alice_balance.next_unstake_time == prev_time + STAKE_WITHDRAW_INTERVAL );
-      BOOST_REQUIRE( alice_balance.to_unstake == alice_init_staked_balance.amount );
-      BOOST_REQUIRE( alice_balance.total_unstaked == 3 * ( alice_init_staked_balance.amount / 4 ) );
-
-      generate_blocks( now() + STAKE_WITHDRAW_INTERVAL );
+      generate_block();
 
       BOOST_REQUIRE( alice_balance.unstake_rate == 0 );
       BOOST_REQUIRE( alice_balance.next_unstake_time == fc::time_point::maximum() );
       BOOST_REQUIRE( alice_balance.to_unstake == 0 );
       BOOST_REQUIRE( alice_balance.total_unstaked == 0 );
       BOOST_REQUIRE( alice_balance.staked_balance == 0 );
-      
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: successful asset unstake" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: asset unstake routes" );
 
-      asset bob_init_liquid_balance = db.get_liquid_balance( account_name_type( "bob" ), SYMBOL_COIN );
-      asset bob_init_staked_balance = db.get_staked_balance( account_name_type( "bob" ), SYMBOL_COIN );
-
-      asset candice_init_liquid_balance = db.get_liquid_balance( account_name_type( "candice" ), SYMBOL_COIN );
+      asset bob_init_liquid_balance = get_liquid_balance( account_name_type( "bob" ), SYMBOL_COIN );
+      asset bob_init_staked_balance = get_staked_balance( account_name_type( "bob" ), SYMBOL_COIN );
+      asset candice_init_liquid_balance = get_liquid_balance( account_name_type( "candice" ), SYMBOL_COIN );
 
       unstake_asset_route_operation route;
 
@@ -431,17 +429,15 @@ BOOST_AUTO_TEST_CASE( transfer_to_savings_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful transfer to own savings" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice) );
 
-      fund( account_name_type( "alice" ), asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund( account_name_type( "bob" ), asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      generate_blocks( TOTAL_PRODUCERS );
 
-      fund( account_name_type( "candice" ), asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
-      asset alice_init_liquid_balance = db.get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
+      asset alice_init_liquid_balance = get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
       
       signed_transaction tx;
 
@@ -471,7 +467,7 @@ BOOST_AUTO_TEST_CASE( transfer_to_savings_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful transfer to other account's savings" );
 
-      alice_init_liquid_balance = db.get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
+      alice_init_liquid_balance = get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
 
       transfer.to = "bob";
 
@@ -492,7 +488,7 @@ BOOST_AUTO_TEST_CASE( transfer_to_savings_test )
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure with insufficient liquid funds" );
 
       transfer.to = "alice";
-      transfer.amount = asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      transfer.amount = asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
 
       tx.operations.push_back( transfer );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -520,21 +516,21 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful transfer from own savings" );
 
-      fund( INIT_ACCOUNT, asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice) );
 
-      fund( account_name_type( "alice" ), asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_savings( account_name_type( "alice" ), asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_savings( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund( account_name_type( "bob" ), asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_savings( account_name_type( "bob" ), asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_savings( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund( account_name_type( "candice" ), asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_savings( account_name_type( "candice" ), asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_savings( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      asset alice_init_liquid_balance = db.get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
-      asset alice_init_savings_balance = db.get_savings_balance( account_name_type( "alice" ), SYMBOL_COIN );
+      generate_blocks( TOTAL_PRODUCERS );
+
+      asset alice_init_liquid_balance = get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
+      asset alice_init_savings_balance = get_savings_balance( account_name_type( "alice" ), SYMBOL_COIN );
       
       signed_transaction tx;
 
@@ -566,22 +562,9 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_test )
       BOOST_REQUIRE( withdraw.amount == transfer.amount );
       BOOST_REQUIRE( withdraw.complete == now() + SAVINGS_WITHDRAW_TIME );
 
-      time_point prev_complete = withdraw.complete;
-
       const account_balance_object& alice_balance = db.get_account_balance( account_name_type( "alice" ), SYMBOL_COIN );
 
-      BOOST_REQUIRE( alice_balance.savings_balance == alice_init_savings_balance.amount - transfer.amount.amount );
-
-      generate_blocks( now() + SAVINGS_WITHDRAW_TIME - BLOCK_INTERVAL );
-
-      BOOST_REQUIRE( withdraw.from == transfer.from );
-      BOOST_REQUIRE( withdraw.to == transfer.to );
-      BOOST_REQUIRE( to_string( withdraw.memo ) == transfer.memo );
-      BOOST_REQUIRE( to_string( withdraw.request_id ) == transfer.request_id );
-      BOOST_REQUIRE( withdraw.amount == transfer.amount );
-      BOOST_REQUIRE( withdraw.complete == prev_complete );
-
-      generate_block();
+      generate_blocks( withdraw.complete );
 
       const auto& withdraw_idx = db.get_index< savings_withdraw_index >().indices().get< by_request_id >();
       auto withdraw_itr = withdraw_idx.find( boost::make_tuple( account_name_type( "alice" ), withdraw.request_id ) );
@@ -594,8 +577,8 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful transfer from savings to another account" );
 
-      alice_init_liquid_balance = db.get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
-      asset bob_init_liquid_balance = db.get_liquid_balance( account_name_type( "bob" ), SYMBOL_COIN );
+      alice_init_liquid_balance = get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
+      asset bob_init_liquid_balance = get_liquid_balance( account_name_type( "bob" ), SYMBOL_COIN );
 
       transfer.to = "bob";
 
@@ -616,7 +599,7 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_test )
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure with insufficient savings funds" );
 
       transfer.to = "alice";
-      transfer.amount = asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      transfer.amount = asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
 
       tx.operations.push_back( transfer );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -643,25 +626,25 @@ BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful asset delegation" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice) );
 
-      fund( account_name_type( "alice" ), asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( account_name_type( "alice" ), asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund( account_name_type( "bob" ), asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( account_name_type( "bob" ), asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       
-      fund( account_name_type( "candice" ), asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( account_name_type( "candice" ), asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      
-      asset alice_init_liquid_balance = db.get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
+      fund_liquid( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      generate_blocks( TOTAL_PRODUCERS );
+
+      asset alice_init_liquid_balance = get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
       asset alice_init_delegated_balance = db.get_delegated_balance( account_name_type( "alice" ), SYMBOL_COIN );
       asset alice_init_receiving_balance = db.get_receiving_balance( account_name_type( "alice" ), SYMBOL_COIN );
       share_type alice_init_voting_power = db.get_voting_power( account_name_type( "alice" ) );
 
-      asset bob_init_liquid_balance = db.get_liquid_balance( account_name_type( "bob" ), SYMBOL_COIN );
+      asset bob_init_liquid_balance = get_liquid_balance( account_name_type( "bob" ), SYMBOL_COIN );
       asset bob_init_delegated_balance = db.get_delegated_balance( account_name_type( "bob" ), SYMBOL_COIN );
       asset bob_init_receiving_balance = db.get_receiving_balance( account_name_type( "bob" ), SYMBOL_COIN );
       share_type bob_init_voting_power = db.get_voting_power( account_name_type( "bob" ) );
@@ -686,12 +669,12 @@ BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
 
       const asset_delegation_object& delegation = db.get_asset_delegation( account_name_type( "alice" ), account_name_type( "bob" ), SYMBOL_COIN );
 
-      asset alice_liquid_balance = db.get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
+      asset alice_liquid_balance = get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
       asset alice_delegated_balance = db.get_delegated_balance( account_name_type( "alice" ), SYMBOL_COIN );
       asset alice_receiving_balance = db.get_receiving_balance( account_name_type( "alice" ), SYMBOL_COIN );
       share_type alice_voting_power = db.get_voting_power( account_name_type( "alice" ) );
 
-      asset bob_liquid_balance = db.get_liquid_balance( account_name_type( "bob" ), SYMBOL_COIN );
+      asset bob_liquid_balance = get_liquid_balance( account_name_type( "bob" ), SYMBOL_COIN );
       asset bob_delegated_balance = db.get_delegated_balance( account_name_type( "bob" ), SYMBOL_COIN );
       asset bob_receiving_balance = db.get_receiving_balance( account_name_type( "bob" ), SYMBOL_COIN );
       share_type bob_voting_power = db.get_voting_power( account_name_type( "bob" ) );
@@ -709,7 +692,7 @@ BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when delegating more than staked balance" );
 
-      delegate.amount = asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      delegate.amount = asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
 
       tx.operations.push_back( delegate );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -722,7 +705,7 @@ BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure delegating staked balance that are being unstaked" );
 
-      alice_init_liquid_balance = db.get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
+      alice_init_liquid_balance = get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
       alice_init_delegated_balance = db.get_delegated_balance( account_name_type( "alice" ), SYMBOL_COIN );
       alice_init_receiving_balance = db.get_receiving_balance( account_name_type( "alice" ), SYMBOL_COIN );
       alice_init_voting_power = db.get_voting_power( account_name_type( "alice" ) );
@@ -732,7 +715,7 @@ BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
       withdraw.signatory = "alice";
       withdraw.from = "alice";
       withdraw.to = "alice";
-      withdraw.amount = asset( 90000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      withdraw.amount = asset( 9000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
 
       tx.operations.push_back( withdraw );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -741,7 +724,7 @@ BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      delegate.amount = asset( 90000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      delegate.amount = asset( 9000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       
       tx.operations.push_back( delegate );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -761,7 +744,7 @@ BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
      
       tx.operations.push_back( delegate );
       tx.sign( alice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
+      db.push_transaction( tx, database::skip_transaction_dupe_check );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -785,12 +768,12 @@ BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Remove a delegation" );
 
-      alice_init_liquid_balance = db.get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
+      alice_init_liquid_balance = get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
       alice_init_delegated_balance = db.get_delegated_balance( account_name_type( "alice" ), SYMBOL_COIN );
       alice_init_receiving_balance = db.get_receiving_balance( account_name_type( "alice" ), SYMBOL_COIN );
       alice_init_voting_power = db.get_voting_power( account_name_type( "alice" ) );
 
-      bob_init_liquid_balance = db.get_liquid_balance( account_name_type( "bob" ), SYMBOL_COIN );
+      bob_init_liquid_balance = get_liquid_balance( account_name_type( "bob" ), SYMBOL_COIN );
       bob_init_delegated_balance = db.get_delegated_balance( account_name_type( "bob" ), SYMBOL_COIN );
       bob_init_receiving_balance = db.get_receiving_balance( account_name_type( "bob" ), SYMBOL_COIN );
       bob_init_voting_power = db.get_voting_power( account_name_type( "bob" ) );
@@ -807,12 +790,12 @@ BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
       auto exp_obj = db.get_index< asset_delegation_expiration_index, by_id >().begin();
       auto end = db.get_index< asset_delegation_expiration_index, by_id >().end();
 
-      alice_liquid_balance = db.get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
+      alice_liquid_balance = get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
       alice_delegated_balance = db.get_delegated_balance( account_name_type( "alice" ), SYMBOL_COIN );
       alice_receiving_balance = db.get_receiving_balance( account_name_type( "alice" ), SYMBOL_COIN );
       alice_voting_power = db.get_voting_power( account_name_type( "alice" ) );
 
-      bob_liquid_balance = db.get_liquid_balance( account_name_type( "bob" ), SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( account_name_type( "bob" ), SYMBOL_COIN );
       bob_delegated_balance = db.get_delegated_balance( account_name_type( "bob" ), SYMBOL_COIN );
       bob_receiving_balance = db.get_receiving_balance( account_name_type( "bob" ), SYMBOL_COIN );
       bob_voting_power = db.get_voting_power( account_name_type( "bob" ) );
@@ -835,12 +818,12 @@ BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
       exp_obj = db.get_index< asset_delegation_expiration_index, by_id >().begin();
       end = db.get_index< asset_delegation_expiration_index, by_id >().end();
 
-      alice_liquid_balance = db.get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
+      alice_liquid_balance = get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
       alice_delegated_balance = db.get_delegated_balance( account_name_type( "alice" ), SYMBOL_COIN );
       alice_receiving_balance = db.get_receiving_balance( account_name_type( "alice" ), SYMBOL_COIN );
       alice_voting_power = db.get_voting_power( account_name_type( "alice" ) );
 
-      bob_liquid_balance = db.get_liquid_balance( account_name_type( "bob" ), SYMBOL_COIN );
+      bob_liquid_balance = get_liquid_balance( account_name_type( "bob" ), SYMBOL_COIN );
       bob_delegated_balance = db.get_delegated_balance( account_name_type( "bob" ), SYMBOL_COIN );
       bob_receiving_balance = db.get_receiving_balance( account_name_type( "bob" ), SYMBOL_COIN );
       bob_voting_power = db.get_voting_power( account_name_type( "bob" ) );

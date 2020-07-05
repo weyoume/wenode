@@ -534,7 +534,7 @@ namespace node { namespace chain {
                member< product_auction_sale_object, product_auction_sale_id_type, &product_auction_sale_object::id >
             >,
             composite_key_compare<
-               std::greater< time_point >, 
+               std::less< time_point >, 
                std::less< product_auction_sale_id_type >
             >
          >,

@@ -19,22 +19,22 @@ namespace node { namespace chain {
       public:
          template<typename Constructor, typename Allocator>
          account_object( Constructor&& c, allocator< Allocator > a ) : 
-         details(a), 
-         url(a),
-         image(a),
-         json(a), 
-         json_private(a),
-         first_name(a), 
-         last_name(a), 
-         gender(a), 
-         date_of_birth(a), 
-         email(a), 
-         phone(a), 
-         nationality(a),
-         pinned_permlink(a)
-         {
-            c(*this);
-         };
+            details(a), 
+            url(a),
+            image(a),
+            json(a), 
+            json_private(a),
+            first_name(a), 
+            last_name(a), 
+            gender(a), 
+            date_of_birth(a), 
+            email(a), 
+            phone(a), 
+            nationality(a),
+            pinned_permlink(a)
+            {
+               c(*this);
+            };
 
          id_type                          id;
 
@@ -84,7 +84,7 @@ namespace node { namespace chain {
 
          account_name_type                referrer;                              ///< The name of the account that originally referred the account to be created.
 
-         account_name_type                recovery_account = NULL_ACCOUNT;       ///< Account that can request recovery using a recent owner key if compromised.  
+         account_name_type                recovery_account = NULL_ACCOUNT;       ///< Account that can request recovery using a recent owner key if compromised.
 
          account_name_type                reset_account = NULL_ACCOUNT;          ///< Account that has the ability to reset owner authority after specified days of inactivity.
 
@@ -104,13 +104,13 @@ namespace node { namespace chain {
 
          uint32_t                         post_count = 0;                        ///< Total number of root posts created
 
-         uint16_t                         voting_power = PERCENT_100;            ///< current voting power of this account, falls after every vote, recovers over time.
+         uint16_t                         voting_power = PERCENT_100;            ///< Current voting power of this account, falls after every vote, recovers over time.
 
-         uint16_t                         viewing_power = PERCENT_100;           ///< current viewing power of this account, falls after every view, recovers over time.
+         uint16_t                         viewing_power = PERCENT_100;           ///< Current viewing power of this account, falls after every view, recovers over time.
 
-         uint16_t                         sharing_power = PERCENT_100;           ///< current sharing power of this account, falls after every share, recovers over time.
+         uint16_t                         sharing_power = PERCENT_100;           ///< Current sharing power of this account, falls after every share, recovers over time.
 
-         uint16_t                         commenting_power = PERCENT_100;        ///< current commenting power of this account, falls after every comment, recovers over time.
+         uint16_t                         commenting_power = PERCENT_100;        ///< Current commenting power of this account, falls after every comment, recovers over time.
 
          uint8_t                          savings_withdraw_requests = 0;         ///< Outstanding number of savings withdrawal requests
 
@@ -886,7 +886,7 @@ namespace node { namespace chain {
 
          id_type                     id;
 
-         account_name_type           owner;
+         account_name_type           owner;                      ///< Account that owns the Balance.
 
          asset_symbol_type           symbol;                     ///< Symbol of the asset that the balance corresponds to.
 
@@ -1057,11 +1057,13 @@ namespace node { namespace chain {
 
       public:
          template< typename Constructor, typename Allocator >
-         account_authority_object( Constructor&& c, allocator< Allocator > a )
-            : owner_auth( a ), active_auth( a ), posting_auth( a )
-         {
-            c( *this );
-         }
+         account_authority_object( Constructor&& c, allocator< Allocator > a ) :
+            owner_auth( a ), 
+            active_auth( a ), 
+            posting_auth( a )
+            {
+               c( *this );
+            }
 
          id_type                  id;
 

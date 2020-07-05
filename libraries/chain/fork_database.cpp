@@ -79,7 +79,7 @@ void fork_database::_push_block( const item_ptr& item )
       _head = item;
    }
 
-   ilog( "Pushed Block to Fork DB at Block Number: ${n} \n ${i} \n", ("i", item->data)("n", item->num) );
+   // ilog( "Pushed Block to Fork DB at Block Number: ${n} \n ${i} \n", ("i", item->data)("n", item->num) );
 }
 
 /**

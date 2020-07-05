@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE( valid_name_test )
    BOOST_CHECK(  is_valid_account_name( "aaa-bbb.ccc" ) );
 
    BOOST_CHECK( !is_valid_account_name( "aaa,bbb-ccc" ) );
-   BOOST_CHECK( !is_valid_account_name( "aaa_bbb-ccc" ) );
+   BOOST_CHECK( is_valid_account_name( "aaa_bbb-ccc" ) );
    BOOST_CHECK( !is_valid_account_name( "aaa-BBB-ccc" ) );
 
    BOOST_CHECK( !is_valid_account_name( "1aaa-bbb" ) );

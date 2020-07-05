@@ -2838,7 +2838,8 @@ vector< producer_api_obj > database_api_impl::get_producers_by_mining_power( str
       itr = mining_idx.iterator_to( *name_itr );
    }
 
-   while( itr != mining_idx.end() && results.size() < limit && itr->mining_count > 0 )
+   while( itr != mining_idx.end() &&
+      results.size() < limit && itr->mining_count > 0 )
    {
       results.push_back( producer_api_obj( *itr ) );
       ++itr;

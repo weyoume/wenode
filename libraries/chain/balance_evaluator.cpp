@@ -49,8 +49,8 @@ void claim_reward_balance_evaluator::do_apply( const claim_reward_balance_operat
    asset reward = _db.get_reward_balance( o.account, o.reward.symbol );
    
    FC_ASSERT( o.reward.amount <= reward.amount,
-      "Cannot claim requested reward assets. Claimed: ${c} Available: ${a}",
-      ("c", o.reward)("a", reward) );
+      "Account: ${a} Cannot claim requested reward - Claimed: ${c} Available: ${r}",
+      ("a", o.account)("c", o.reward)("r", reward) );
 
    asset shared_reward = asset( 0, o.reward.symbol );
 
@@ -112,13 +112,36 @@ void stake_asset_evaluator::do_apply( const stake_asset_operation& o )
    }
 
    const account_object& from_account = _db.get_account( o.from );
-   const account_object& to_account = o.to.size() ? _db.get_account(o.to ) : from_account;
-   const account_balance_object& account_balance = _db.get_account_balance( from_account.name, o.amount.symbol );
+   const account_object& to_account = o.to.size() ? _db.get_account( o.to ) : from_account;
    const asset_object& asset_object = _db.get_asset( o.amount.symbol );
+   const account_balance_object* account_balance_ptr = _db.find_account_balance( to_account.name, o.amount.symbol );
    time_point now = _db.head_block_time();
 
-   FC_ASSERT( _db.get_liquid_balance( from_account, o.amount.symbol) >= o.amount,
-      "Account does not have sufficient liquid balance for stake operation." );
+   if( account_balance_ptr == nullptr )     // Make balance if none exists
+   {
+      _db.create< account_balance_object >( [&]( account_balance_object& abo )
+      {
+         abo.owner = to_account.name;
+         abo.symbol = o.amount.symbol;
+         abo.stake_rate = 0;
+         abo.next_stake_time = time_point::maximum();
+         abo.to_stake = 0;
+         abo.total_staked = 0;
+         abo.unstake_rate = 0;
+         abo.next_unstake_time = time_point::maximum();
+         abo.to_unstake = 0;
+         abo.total_unstaked = 0;
+         abo.last_interest_time = now;
+      });
+   }
+
+   const account_balance_object& account_balance = _db.get_account_balance( to_account.name, o.amount.symbol );
+
+   asset liquid = _db.get_liquid_balance( o.from, o.amount.symbol );
+
+   FC_ASSERT( liquid >= o.amount,
+      "Account: ${a} does not have sufficient liquid balance: ${l} for stake amount: ${s}.",
+      ("a",o.from)("l",liquid)("s",o.amount) );
 
    if( o.amount.amount == 0 )
    {
@@ -146,6 +169,9 @@ void stake_asset_evaluator::do_apply( const stake_asset_operation& o )
       }
       else if( asset_object.stake_intervals >= 1 )
       {
+         FC_ASSERT( to_account.name == from_account.name,
+            "Cannot directly stake transfer an asset with a staking interval to another account. Please use a liquid transfer." );
+
          share_type new_stake_rate = ( o.amount.amount / asset_object.stake_intervals );
 
          FC_ASSERT( account_balance.stake_rate != new_stake_rate,
@@ -162,8 +188,11 @@ void stake_asset_evaluator::do_apply( const stake_asset_operation& o )
             abo.to_unstake = 0;
             abo.total_unstaked = 0;
          });
+
+         ilog( "Stake Asset: ${b}",("b",account_balance));
       } 
    }
+   
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -185,11 +214,31 @@ void unstake_asset_evaluator::do_apply( const unstake_asset_operation& o )
 
    const account_object& from_account = _db.get_account( o.from );
    const account_object& to_account = o.to.size() ? _db.get_account( o.to ) : from_account;
-   const account_balance_object& account_balance = _db.get_account_balance( from_account.name, o.amount.symbol );
    const asset_object& asset_object = _db.get_asset( o.amount.symbol );
+   const account_balance_object* account_balance_ptr = _db.find_account_balance( to_account.name, o.amount.symbol );
+   time_point now = _db.head_block_time();
+
+   if( account_balance_ptr == nullptr )     // Make balance if none exists
+   {
+      _db.create< account_balance_object >( [&]( account_balance_object& abo )
+      {
+         abo.owner = to_account.name;
+         abo.symbol = o.amount.symbol;
+         abo.stake_rate = 0;
+         abo.next_stake_time = time_point::maximum();
+         abo.to_stake = 0;
+         abo.total_staked = 0;
+         abo.unstake_rate = 0;
+         abo.next_unstake_time = time_point::maximum();
+         abo.to_unstake = 0;
+         abo.total_unstaked = 0;
+         abo.last_interest_time = now;
+      });
+   }
+
+   const account_balance_object& account_balance = _db.get_account_balance( to_account.name, o.amount.symbol );
    asset stake = _db.get_staked_balance( o.from, o.amount.symbol );
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
-   time_point now = _db.head_block_time();
 
    FC_ASSERT( stake >= o.amount, 
       "Account: ${a} has Insufficient Staked balance: ${s} for unstake of amount: ${w}.",
@@ -245,8 +294,11 @@ void unstake_asset_evaluator::do_apply( const unstake_asset_operation& o )
             abo.to_unstake = o.amount.amount;
             abo.total_unstaked = 0;
          });
+
+         ilog( "Unstake Asset: ${b}",("b",account_balance));
       }
    }
+   
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -291,6 +343,7 @@ void unstake_asset_route_evaluator::do_apply( const unstake_asset_route_operatio
    }
    else if( o.percent == 0 )
    {
+      ilog( "Removed: ${v}",("v",*itr));
       _db.remove( *itr );
 
       _db.modify( from, [&]( account_object& a )
@@ -395,7 +448,7 @@ void transfer_from_savings_evaluator::do_apply( const transfer_from_savings_oper
 
       _db.adjust_savings_balance( o.from, -o.amount );
 
-      _db.create< savings_withdraw_object >( [&]( savings_withdraw_object& s )
+      const savings_withdraw_object& withdraw = _db.create< savings_withdraw_object >( [&]( savings_withdraw_object& s )
       {
          s.from = o.from;
          s.to = o.to;
@@ -409,24 +462,28 @@ void transfer_from_savings_evaluator::do_apply( const transfer_from_savings_oper
       {
          a.savings_withdraw_requests++;
       });
+
+      ilog( "New Savings Withdrawal: ${s}",("s",withdraw));
    }
    else      // Savings request exists
    {
-      const savings_withdraw_object& swo = *savings_itr;
+      const savings_withdraw_object& withdraw = *savings_itr;
 
       if( o.transferred )    // Editing transfer request
       {
-         _db.modify( swo, [&]( savings_withdraw_object& s )
+         _db.modify( withdraw, [&]( savings_withdraw_object& s )
          {
             s.to = o.to;
             s.amount = o.amount;
             from_string( s.memo, o.memo );
          });
+         ilog( "Edit Savings Withdrawal: ${s}",("s",withdraw));
       }
       else     // Cancelling request
       {
-         _db.adjust_savings_balance( swo.from, swo.amount );
-         _db.remove( swo );
+         _db.adjust_savings_balance( withdraw.from, withdraw.amount );
+         ilog( "Removed: ${v}",("v",withdraw));
+         _db.remove( withdraw );
          
          _db.modify( from_account, [&]( account_object& a )
          {
@@ -518,6 +575,7 @@ void delegate_asset_evaluator::do_apply( const delegate_asset_operation& o )
       
       if( o.amount.amount == 0 )
       {
+         ilog( "Removed: ${v}",("v",delegation));
          _db.remove( delegation );
       }
    }

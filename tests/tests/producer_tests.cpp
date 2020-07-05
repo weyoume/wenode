@@ -33,14 +33,13 @@ BOOST_AUTO_TEST_CASE( producer_update_operation_tests )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Create new Producer" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice) );
 
-      fund( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_stake( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+
+      generate_blocks( TOTAL_PRODUCERS );
       
       signed_transaction tx;
 
@@ -72,7 +71,7 @@ BOOST_AUTO_TEST_CASE( producer_update_operation_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const producer_object& alice_producer = db.get_producer( alice.name );
+      const producer_object& alice_producer = db.get_producer( account_name_type( "alice" ) );
 
       alice_producer.props.validate();
 
@@ -85,7 +84,6 @@ BOOST_AUTO_TEST_CASE( producer_update_operation_tests )
       BOOST_REQUIRE( alice_producer.latitude == producer_update.latitude );
       BOOST_REQUIRE( alice_producer.longitude == producer_update.longitude );
       BOOST_REQUIRE( alice_producer.signing_key == public_key_type( producer_update.block_signing_key ) );
-      BOOST_REQUIRE( alice_producer.created == now() );
       BOOST_REQUIRE( alice_producer.last_commit_height == 0);
       BOOST_REQUIRE( alice_producer.last_commit_id == block_id_type() );
       BOOST_REQUIRE( alice_producer.total_blocks == 0 );
@@ -94,7 +92,6 @@ BOOST_AUTO_TEST_CASE( producer_update_operation_tests )
       BOOST_REQUIRE( alice_producer.mining_power == 0 );
       BOOST_REQUIRE( alice_producer.mining_count == 0 );
       BOOST_REQUIRE( alice_producer.recent_txn_stake_weight == 0 );
-      BOOST_REQUIRE( alice_producer.last_txn_stake_weight_update == now() );
       BOOST_REQUIRE( alice_producer.accumulated_activity_stake == 0 );
       BOOST_REQUIRE( alice_producer.total_missed == 0 );
       BOOST_REQUIRE( alice_producer.last_aslot == 0 );
@@ -144,7 +141,6 @@ BOOST_AUTO_TEST_CASE( producer_update_operation_tests )
       BOOST_REQUIRE( alice_producer.latitude == producer_update.latitude );
       BOOST_REQUIRE( alice_producer.longitude == producer_update.longitude );
       BOOST_REQUIRE( alice_producer.signing_key == public_key_type( producer_update.block_signing_key ) );
-      BOOST_REQUIRE( alice_producer.created == now() );
       BOOST_REQUIRE( alice_producer.last_commit_height == 0);
       BOOST_REQUIRE( alice_producer.last_commit_id == block_id_type() );
       BOOST_REQUIRE( alice_producer.total_blocks == 0 );
@@ -153,7 +149,6 @@ BOOST_AUTO_TEST_CASE( producer_update_operation_tests )
       BOOST_REQUIRE( alice_producer.mining_power == 0 );
       BOOST_REQUIRE( alice_producer.mining_count == 0 );
       BOOST_REQUIRE( alice_producer.recent_txn_stake_weight == 0 );
-      BOOST_REQUIRE( alice_producer.last_txn_stake_weight_update == now() );
       BOOST_REQUIRE( alice_producer.accumulated_activity_stake == 0 );
       BOOST_REQUIRE( alice_producer.total_missed == 0 );
       BOOST_REQUIRE( alice_producer.last_aslot == 0 );
@@ -164,7 +159,7 @@ BOOST_AUTO_TEST_CASE( producer_update_operation_tests )
       BOOST_REQUIRE( alice_producer.mining_virtual_position == 0 );
       BOOST_REQUIRE( alice_producer.mining_virtual_scheduled_time == fc::uint128_t::max_value() );
       BOOST_REQUIRE( alice_producer.props.maximum_block_size == producer_update.props.maximum_block_size );
-      BOOST_REQUIRE( alice_producer.props.credit_min_interest == producer_update.props.credit_variable_interest );
+      BOOST_REQUIRE( alice_producer.props.credit_min_interest == producer_update.props.credit_min_interest );
       BOOST_REQUIRE( alice_producer.props.credit_variable_interest == producer_update.props.credit_variable_interest );
 
       validate_database();
@@ -185,57 +180,54 @@ BOOST_AUTO_TEST_CASE( proof_of_work_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Create proof of work" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice) );
 
-      fund( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_stake( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      producer_create( alice.name, alice_private_owner_key, alice_public_owner_key );
+      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "alice", alice_private_owner_key );
+      producer_vote( "alice", alice_private_owner_key );
 
-      generate_block();
+      generate_blocks( TOTAL_PRODUCERS );
       
       signed_transaction tx;
-
-      uint128_t target_pow = db.pow_difficulty();
-      block_id_type head_block_id = db.head_block_id();
-
-      x11_proof_of_work work;
-
-      work.create( head_block_id, alice.name, 0 );
-      
-      for( auto n = 1; work.pow_summary >= target_pow; n++ )
-      {
-         work.create( head_block_id, alice.name, n );
-      }
-
-      proof_of_work_operation proof;
-
-      proof.work = work;
 
       chain_properties chain_props;
       chain_props.validate();
 
-      proof.props = chain_props;
-      proof.validate();
+      for( int i = 0; i<10; i++ )
+      {
+         uint128_t target_pow = db.pow_difficulty();
+         block_id_type head_block_id = db.head_block_id();
+         x11_proof_of_work work;
+         proof_of_work_operation proof;
 
-      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( proof );
-      db.push_transaction( tx, 0 );
+         work.create( head_block_id, "alice", 0 );
+      
+         for( auto n = 1; work.pow_summary >= target_pow; n++ )
+         {
+            work.create( head_block_id, "alice", n );
+         }
 
-      tx.operations.clear();
-      tx.signatures.clear();
+         proof.work = work;
+         proof.props = chain_props;
+         proof.validate();
 
-      const producer_object& alice_producer = db.get_producer( alice.name );
+         tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+         tx.operations.push_back( proof );
+         tx.sign( alice_private_active_key, db.get_chain_id() );
+         db.push_transaction( tx, 0 );
 
+         tx.operations.clear();
+         tx.signatures.clear();
+
+         generate_block();
+      }
+
+      const producer_object& alice_producer = db.get_producer( account_name_type( "alice" ) );
       alice_producer.props.validate();
 
       BOOST_REQUIRE( alice_producer.active == true );
       BOOST_REQUIRE( alice_producer.mining_power > 0 );
-      BOOST_REQUIRE( alice_producer.mining_count == 1 );
-      BOOST_REQUIRE( alice_producer.last_mining_update == now() );
       
       validate_database();
 
@@ -255,94 +247,41 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Verify block" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
-      fund( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_stake( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      producer_create( alice.name, alice_private_owner_key, alice_public_owner_key );
+      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      producer_create( "alice", alice_private_owner_key );
+      producer_vote( "alice", alice_private_owner_key );
 
-      fund( bob.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( bob.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( bob.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_stake( bob.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_liquid( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      producer_create( "bob", bob_private_owner_key );
+      producer_vote( "bob", bob_private_owner_key );
       
-      fund( candice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( candice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( candice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_stake( candice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_liquid( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      producer_create( "candice", candice_private_owner_key );
+      producer_vote( "candice", candice_private_owner_key );
 
-      fund( dan.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( dan.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( dan.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_stake( dan.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_liquid( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      producer_create( "dan", dan_private_owner_key );
+      producer_vote( "dan", dan_private_owner_key );
 
-      fund( elon.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( elon.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( elon.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_stake( elon.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-
-      generate_block();
+      fund_liquid( "elon", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "elon", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "elon", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      producer_create( "elon", elon_private_owner_key );
+      producer_vote( "elon", elon_private_owner_key );
       
       signed_transaction tx;
-
-      account_producer_vote_operation vote;
-
-      vote.signatory = "alice";
-      vote.account = "alice";
-      vote.producer = "alice";
-      vote.vote_rank = 1;
-      vote.validate();
-
-      tx.operations.push_back( vote );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      vote.signatory = "bob";
-      vote.account = "bob";
-
-      tx.operations.push_back( vote );
-      tx.sign( bob_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      vote.signatory = "candice";
-      vote.account = "candice";
-
-      tx.operations.push_back( vote );
-      tx.sign( candice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      vote.signatory = "dan";
-      vote.account = "dan";
-
-      tx.operations.push_back( vote );
-      tx.sign( dan_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      vote.signatory = "elon";
-      vote.account = "elon";
-
-      tx.operations.push_back( vote );
-      tx.sign( elon_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
+      
+      generate_blocks( TOTAL_PRODUCERS );
 
       verify_block_operation verify;
 
@@ -351,9 +290,8 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
       verify.block_id = db.head_block_id();
       verify.validate();
 
-      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      
       tx.operations.push_back( verify );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -362,30 +300,31 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
 
       uint64_t block_height = protocol::block_header::num_from_id( verify.block_id );
 
-      const block_validation_object& validation = db.get_block_validation( alice.name, block_height );
+      const block_validation_object& validation = db.get_block_validation( account_name_type( "alice" ), block_height );
 
       BOOST_REQUIRE( validation.producer == verify.producer );
       BOOST_REQUIRE( validation.block_id == verify.block_id );
       BOOST_REQUIRE( validation.block_height == block_height );
       BOOST_REQUIRE( validation.committed == false );
-      BOOST_REQUIRE( validation.created == now() );
 
       account_create_operation create;
 
       create.signatory = "alice";
       create.registrar = "alice";
+      create.referrer = "alice";
       create.new_account_name = "newuser";
       create.owner_auth = authority( 1, alice_public_owner_key, 1 );
       create.active_auth = authority( 2, alice_public_active_key, 2 );
       create.posting_auth = authority( 1, alice_public_posting_key, 1 );
-      create.secure_public_key = string( alice_public_posting_key );
-      create.connection_public_key = string( alice_public_posting_key );
-      create.friend_public_key = string( alice_public_posting_key );
-      create.companion_public_key = string( alice_public_posting_key );
+      create.secure_public_key = string( alice_public_secure_key );
+      create.connection_public_key = string( alice_public_connection_key );
+      create.friend_public_key = string( alice_public_friend_key );
+      create.companion_public_key = string( alice_public_companion_key );
       create.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       create.validate();
 
       flat_set< transaction_id_type > verifications;
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
 
       for( auto i = 0; i < 100; i++ )
       {
@@ -396,43 +335,35 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
          tx.sign( alice_private_owner_key, db.get_chain_id() );
          db.push_transaction( tx, 0 );
 
-         tx.operations.clear();
-         tx.signatures.clear();
-
-         fund( name, asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+         fund_liquid( name, asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
          fund_stake( name, asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-         producer_create( name, alice_private_active_key, alice_public_active_key );
 
-         vote.signatory = name;
-         vote.account = name;
-         vote.producer = name;
-
-         tx.operations.push_back( vote );
-         tx.sign( alice_private_active_key, db.get_chain_id() );
-         db.push_transaction( tx, 0 );
+         producer_create( name, alice_private_active_key );
+         producer_vote( name, alice_private_owner_key );
 
          tx.operations.clear();
          tx.signatures.clear();
+      }
+
+      generate_blocks( TOTAL_PRODUCERS );
+      verify.block_id = db.head_block_id();
+
+      for( auto i = 0; i < 100; i++ )
+      {
+         string name = "newuser"+fc::to_string( i );
 
          verify.signatory = name;
          verify.producer = name;
-
-         tx.sign( alice_private_active_key, db.get_chain_id() );
+         
          tx.operations.push_back( verify );
+         tx.sign( alice_private_active_key, db.get_chain_id() );
          db.push_transaction( tx, 0 );
 
          verifications.insert( tx.id() );
 
          tx.operations.clear();
          tx.signatures.clear();
-
-         if( i % 20 == 0 )
-         {
-            generate_block();
-         }
       }
-      
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Verify block" );
 
@@ -463,7 +394,6 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
       BOOST_REQUIRE( validation.block_height == block_height );
       BOOST_REQUIRE( validation.commitment_stake == commit.commitment_stake );
       BOOST_REQUIRE( validation.committed == true );
-      BOOST_REQUIRE( validation.commit_time == now() );
       
       validate_database();
 

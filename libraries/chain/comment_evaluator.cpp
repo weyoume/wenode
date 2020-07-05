@@ -129,17 +129,17 @@ void comment_evaluator::do_apply( const comment_operation& o )
          "Community Name: ${b} not found.", ("b", o.community ));
       const community_object& community = *community_ptr;
       feed_reach_type community_feed_type = feed_reach_type::COMMUNITY_FEED;
-      const community_member_object& community_member = _db.get_community_member( community.name );
+      const community_member_object& community_member = _db.get_community_member( o.community );
 
       if( o.parent_author == ROOT_POST_PARENT )
       {
          FC_ASSERT( community_member.is_authorized_author( o.author ), 
-            "User ${u} is not authorized to post in the community ${b}.",("b", community.name)("u", auth.name));
+            "User ${u} is not authorized to post in the community ${b}.",("b", o.community)("u", auth.name));
       }
       else
       {
          FC_ASSERT( community_member.is_authorized_interact( o.author ), 
-            "User ${u} is not authorized to interact with posts in the community ${b}.",("b", community.name)("u", auth.name));
+            "User ${u} is not authorized to interact with posts in the community ${b}.",("b", o.community)("u", auth.name));
       }
       
       switch( community.community_privacy )
@@ -265,7 +265,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
       {
          FC_ASSERT( o.magnet.size() >= 1 || o.ipfs.size() >= 1,
             "Comment rejected: Video post must contain at least one IPFS or magnet referenced video file." );
-         FC_ASSERT( o.title.size() >=1,
+         FC_ASSERT( o.title.size() >= 1,
             "Comment rejected: Should include title in video post." );
          if( community_ptr != nullptr )
          {
@@ -276,9 +276,9 @@ void comment_evaluator::do_apply( const comment_operation& o )
       break;
       case post_format_type::LINK_POST:
       {
-         FC_ASSERT( o.url.size() >=1,
+         FC_ASSERT( o.url.size() >= 1,
             "Comment rejected: Link post must contain at least a valid url link." );
-         FC_ASSERT( o.title.size() >=1,
+         FC_ASSERT( o.title.size() >= 1,
             "Comment rejected: Should include title in link post." );
          if( community_ptr != nullptr )
          {
@@ -360,7 +360,8 @@ void comment_evaluator::do_apply( const comment_operation& o )
    {
       parent = &_db.get_comment( o.parent_author, o.parent_permlink );
       FC_ASSERT( parent->depth < MAX_COMMENT_DEPTH, 
-         "Comment is nested ${x} posts deep, maximum depth is ${y}.", ("x",parent->depth)("y",MAX_COMMENT_DEPTH) );
+         "Comment is nested ${x} posts deep, maximum depth is ${y}.", 
+         ("x",parent->depth)("y",MAX_COMMENT_DEPTH) );
    }
       
    if( itr == by_permlink_idx.end() )             // Post does not yet exist, creating new post
@@ -596,6 +597,11 @@ void comment_evaluator::do_apply( const comment_operation& o )
             com.interface = o.interface;
          }
 
+         if( o.title.size() )
+         {
+            from_string( com.title, o.title );
+         }
+
          if( o.ipfs.size() )
          {
             from_string( com.ipfs, o.ipfs );
@@ -650,6 +656,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
             from_string( com.parent_permlink, o.parent_permlink );
             from_string( com.category, o.parent_permlink );
             com.root_comment = com.id;
+            com.root = true;
          }
          else       // New comment
          {
@@ -661,7 +668,11 @@ void comment_evaluator::do_apply( const comment_operation& o )
             com.reward = reward;
             com.weight = weight;
             com.max_weight = max_weight;
+            com.root = false;
          }
+
+         ilog( "Author: ${a} Created post ID: ${i} Title: ${t} Permlink: ${p} Post type: ${type} Community: ${c}", 
+            ("a", o.author)("p", o.permlink )("t",o.title)("type",format_type)("c",o.community)("i",id) );
       });
 
       id = new_comment.id;
@@ -785,7 +796,10 @@ void comment_evaluator::do_apply( const comment_operation& o )
             {
                from_string( com.url, o.url );  
             }
-
+            if( o.title.size() )
+            {
+               from_string( com.title, o.title );
+            }
             if( o.ipfs.size() )
             {
                from_string( com.ipfs, o.ipfs );
@@ -825,7 +839,10 @@ void comment_evaluator::do_apply( const comment_operation& o )
          {
             _db.clear_comment_feeds( comment );
             _db.add_comment_to_feeds( comment );
-         } 
+         }
+
+         ilog( "Author: ${a} Edited post ID: ${i} Title: ${t} Permlink: ${p} Post type: ${type} Community: ${c}", 
+      ("a", o.author)("p", o.permlink )("t",o.title)("type",format_type)("c",o.community)("i",id) );
       } 
       else
       {
@@ -839,8 +856,9 @@ void comment_evaluator::do_apply( const comment_operation& o )
             com.reach = feed_reach_type::NO_FEED;
             from_string( com.json, "" );
             from_string( com.url, "" );
-            com.ipfs.clear();
-            com.magnet.clear();
+            from_string( com.title, "" );
+            from_string( com.ipfs, "" );
+            from_string( com.magnet, "" );
             from_string( com.language, "" );
             com.public_key = public_key_type();
             from_string( com.body, "" );
@@ -849,10 +867,6 @@ void comment_evaluator::do_apply( const comment_operation& o )
          _db.clear_comment_feeds( comment );
       }
    }
-
-   ilog( "Author: ${a} Created post: ${p}", 
-      ("a", o.author)("p", o.permlink ) );
-
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -986,9 +1000,10 @@ void vote_evaluator::do_apply( const vote_operation& o )
    const auto& comment_vote_idx = _db.get_index< comment_vote_index >().indices().get< by_comment_voter >();
    auto itr = comment_vote_idx.find( std::make_tuple( comment.id, voter.name ) );
 
-   int64_t elapsed_seconds = (now - voter.last_vote_time).to_seconds();
-   FC_ASSERT( elapsed_seconds >= MIN_VOTE_INTERVAL.to_seconds(), 
-      "Can only vote once every ${s} seconds.", ("s", MIN_VOTE_INTERVAL) );
+   int64_t elapsed_seconds = ( now - voter.last_vote_time ).to_seconds();
+   FC_ASSERT( elapsed_seconds >= MIN_VOTE_INTERVAL.to_seconds(),
+      "Can only vote once every ${s} seconds. Elapsed Seconds: ${e}",
+         ("s", MIN_VOTE_INTERVAL.to_seconds())("e",elapsed_seconds) );
    int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / median_props.vote_recharge_time.to_seconds();
    int16_t current_power = std::min( int64_t(voter.voting_power + regenerated_power), int64_t(PERCENT_100) );
    
@@ -1259,6 +1274,9 @@ void vote_evaluator::do_apply( const vote_operation& o )
          }
       });
    }
+
+   ilog( "Account: ${v} Voted on post - author: ${a} permlink: ${p} voting power: ${vp}", 
+      ("a", o.author)("p", o.permlink )("v", o.voter)("vp",voter.voting_power) );
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
@@ -1316,17 +1334,20 @@ void view_evaluator::do_apply( const view_operation& o )
    int64_t elapsed_seconds = ( now - viewer.last_view_time ).to_seconds();
 
    FC_ASSERT( elapsed_seconds >= MIN_VIEW_INTERVAL.to_seconds(), 
-      "Can only view once every ${s} seconds.", ("s", MIN_VIEW_INTERVAL) );
-   int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / median_props.view_recharge_time.to_seconds();
-   int16_t current_power = std::min( int64_t( viewer.viewing_power + regenerated_power ), int64_t(PERCENT_100) );
+      "Can only view once every ${s} seconds. Elapsed Seconds: ${e}",
+         ("s", MIN_VIEW_INTERVAL.to_seconds())("e",elapsed_seconds) );
+   int16_t regenerated_power = ( PERCENT_100 * elapsed_seconds ) / median_props.view_recharge_time.to_seconds();
+   int16_t current_power = std::min( int64_t( viewer.viewing_power + regenerated_power ), int64_t( PERCENT_100 ) );
 
    FC_ASSERT( current_power > 0, 
       "Account currently does not have any viewing power." );
 
-   int16_t max_view_denom = median_props.view_reserve_rate * ( median_props.view_recharge_time.count() / fc::days(1).count() );    // Weights the viewing power with the network reserve ratio and recharge time
+   // Weights the viewing power with the network reserve ratio and recharge time
+
+   int16_t max_view_denom = int16_t( median_props.view_reserve_rate ) * int16_t( median_props.view_recharge_time.to_seconds() / fc::days(1).to_seconds() );    
    FC_ASSERT( max_view_denom > 0, 
-      "View denominiator must be greater than zero.");
-   int16_t used_power = (current_power + max_view_denom - 1) / max_view_denom;
+      "View denominiator must be greater than zero." );
+   int16_t used_power = ( current_power + max_view_denom - 1 ) / max_view_denom;
    FC_ASSERT( used_power <= current_power, 
       "Account does not have enough power to view." );
    
@@ -1503,8 +1524,12 @@ void view_evaluator::do_apply( const view_operation& o )
          });
       }
 
+      ilog( "Removed: ${v}",("v",*itr));
       _db.remove( *itr );
    }
+
+   ilog( "Account: ${v} Viewed post - author: ${a} permlink: ${p} viewing power: ${vp}", 
+      ("a", o.author)("p", o.permlink )("v", o.viewer)("vp",viewer.viewing_power) );
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
@@ -1562,7 +1587,7 @@ void share_evaluator::do_apply( const share_operation& o )
    FC_ASSERT( elapsed_seconds >= MIN_SHARE_INTERVAL.to_seconds(), 
       "Can only share once every ${s} seconds.", ("s", MIN_SHARE_INTERVAL) );
    int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / median_props.share_recharge_time.to_seconds();
-   int16_t current_power = std::min( int64_t(sharer.sharing_power + regenerated_power), int64_t(PERCENT_100) );
+   int16_t current_power = std::min( int64_t( sharer.sharing_power + regenerated_power ), int64_t( PERCENT_100 ) );
    FC_ASSERT( current_power > 0, 
       "Account currently does not have any sharing power." );
 
@@ -1744,11 +1769,15 @@ void share_evaluator::do_apply( const share_operation& o )
          });
       }
 
-      // Remove all blog and feed objects that the account has created for the original share operation. 
+      // Remove all blog and feed objects that the account has created for the original share operation.
       _db.remove_shared_comment( sharer.name, comment );
 
+      ilog( "Removed: ${v}",("v",*itr));
       _db.remove( *itr );
    }
+
+   ilog( "Account: ${v} Shared post - author: ${a} permlink: ${p} sharing power: ${sp}", 
+      ("a", o.author)("p", o.permlink )("v", o.sharer)("sp",sharer.sharing_power) );
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
@@ -1872,6 +1901,7 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
       }
       else    // deleting moderation tag
       {
+         ilog( "Removed: ${v}",("v",*mod_itr));
          _db.remove( *mod_itr );
       }
    }

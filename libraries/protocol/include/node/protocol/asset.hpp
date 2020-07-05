@@ -14,8 +14,8 @@ namespace node { namespace protocol {
    /**
     * Valid symbols can contain [A-Z0-9], and '.'
     * They must start with [A, Z]
-    * They must end with [A, Z] before HF_620 or [A-Z0-9] after it
-    * They can contain a maximum of five '.'
+    * They must end with [A-Z0-9]
+    * They can contain a maximum of ten '.'
     */
    inline bool is_valid_symbol( const string& symbol )
    {
@@ -41,7 +41,7 @@ namespace node { namespace protocol {
          if( c == '.' )
          {
             dot_count++;
-            if( dot_count > 5 )
+            if( dot_count > 10 )
             {
                return false;
             }
@@ -83,11 +83,31 @@ namespace node { namespace protocol {
 
       string to_string()const;
 
-      int64_t precision_value()const;
+      int64_t precision_value()const
+      {
+         static int64_t table[] = {
+            1, 
+            10, 
+            100, 
+            1000, 
+            10000,
+            100000, 
+            1000000, 
+            10000000, 
+            100000000ll,
+            1000000000ll, 
+            10000000000ll,
+            100000000000ll, 
+            1000000000000ll,
+            10000000000000ll, 
+            100000000000000ll
+            };
+         return table[ precision ];
+      }
 
       double to_real()const
       {
-         return double( amount.value ) / double( precision );
+         return double( amount.value ) / double( precision_value() );
       }
 
       asset amount_from_string( string amount_string )const;     ///< Convert a string amount to an asset object with this asset's type

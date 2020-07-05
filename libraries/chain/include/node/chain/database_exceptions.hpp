@@ -57,7 +57,7 @@
    }                                                                          \
    catch( ... )                                                               \
    {                                                                          \
-      wlog( "Caught unexpected exception in plugin" );                        \
+      /*@TODO: Plugin debug wlog( "Caught unexpected exception in plugin" ); */    \
    }
 
 namespace node { namespace chain {

@@ -410,15 +410,13 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, clean_database_fixture )
 {
    try
    {
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob) );
 
       generate_block();
 
       BOOST_TEST_MESSAGE( "Create transaction" );
 
-      fund( alice.name, asset( 1000000, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000, SYMBOL_COIN ) );
 
       transfer_operation op;
 
@@ -483,13 +481,11 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, clean_database_fixture )
 
 BOOST_FIXTURE_TEST_CASE( double_sign_check, clean_database_fixture )
 { try {
-   fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
    generate_block();
    ACTOR(bob);
 
-   fund( GENESIS_ACCOUNT_BASE_NAME, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-   fund( bob.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+   fund_liquid( GENESIS_ACCOUNT_BASE_NAME, asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+   fund_liquid( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
    share_type amount = 1000;
 
@@ -543,11 +539,9 @@ BOOST_FIXTURE_TEST_CASE( pop_block_twice, clean_database_fixture )
 {
    try
    {
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob) );
 
-      fund( alice.name, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       uint32_t skip_flags = (
            database::skip_producer_signature
@@ -768,9 +762,8 @@ BOOST_FIXTURE_TEST_CASE( generate_block_size, clean_database_fixture )
       generate_block();
 
       signed_transaction tx;
-      
 
-      fund( GENESIS_ACCOUNT_BASE_NAME, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( GENESIS_ACCOUNT_BASE_NAME, asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       transfer_operation op;
 

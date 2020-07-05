@@ -35,28 +35,28 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful community creation" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
-      fund_stake( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "elon" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "elon" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       signed_transaction tx;
 
       community_create_operation create;
+
+      generate_blocks( now() + fc::days(2), true );
 
       create.signatory = "alice";
       create.founder = "alice";
@@ -151,8 +151,6 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       BOOST_REQUIRE( dan_community.community_privacy == community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY );
       BOOST_REQUIRE( dan_community.created == now() );
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: successful community creation" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when community created before MIN_COMMUNITY_CREATE_INTERVAL has passed" );
@@ -172,8 +170,6 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when community created before MIN_COMMUNITY_CREATE_INTERVAL has passed" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: success after MIN_COMMUNITY_CREATE_INTERVAL has passed" );
@@ -184,13 +180,9 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       generate_blocks(10);
 
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-
       tx.operations.push_back( create );
       tx.sign( alice_private_active_key, db.get_chain_id() );
-
       db.push_transaction( tx, 0 );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: success after MIN_COMMUNITY_CREATE_INTERVAL has passed" );
 
@@ -207,10 +199,7 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
 
       tx.operations.push_back( create );
       tx.sign( elon_private_active_key, db.get_chain_id() );
-
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when community name already exists" );
 
@@ -228,29 +217,24 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: founder community update sequence" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
-      fund_stake( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund_stake( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund_stake( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund_stake( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund_stake( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "elon" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund_stake( account_name_type( "elon" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund( account_name_type( "elon" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      generate_blocks( now() + fc::days(2), true );
 
       signed_transaction tx;
 
@@ -377,6 +361,9 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       comment.public_key = string( candice_public_posting_key );
       comment.community = "candiceprivatecommunity";
 
+      options.reach = "community";
+      comment.options = options;
+
       tx.operations.push_back( comment );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -396,13 +383,14 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      generate_blocks( now() + MIN_COMMUNITY_UPDATE_INTERVAL );
+      generate_blocks( now() + MIN_COMMUNITY_UPDATE_INTERVAL + fc::minutes(1) );
 
       community_update_operation update;
 
       update.signatory = "alice";
       update.account = "alice";
       update.community = "aliceopencommunity";
+      update.community_public_key = string( alice_public_posting_key );
       update.json = "{ \"valid\": true }";
       update.json_private = "{ \"valid\": true }";
       update.details = "updated details";
@@ -519,7 +507,6 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       BOOST_REQUIRE( dan_community.name == update.community );
       BOOST_REQUIRE( to_string( dan_community.details ) == update.details );
       BOOST_REQUIRE( to_string( dan_community.url ) == update.url );
-      BOOST_REQUIRE( dan_community.created == now() );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: success after MIN_COMMUNITY_UPDATE_INTERVAL has passed" );
 
@@ -537,45 +524,53 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: founder invite members" );
 
-      fund( INIT_ACCOUNT, asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)
+         (jayme)(kathryn)(leonie)(margot)(natalie) );
 
-      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme)(kathryn)(leonie)(margot)(natalie) );
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "alice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "bob" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "candice" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "dan" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "elon" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "elon" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "fred", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "fred" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "fred" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "george", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "george" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "george" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "haz", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "haz" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "haz" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "isabelle", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "isabelle" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "isabelle" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "jayme", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "jayme" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "jayme" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "kathryn", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "kathryn" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "kathryn" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      fund_stake( account_name_type( "leonie" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      fund( account_name_type( "leonie" ), asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      string alice_private_connection_wif = graphene::utilities::key_to_wif( alice_private_connection_key );
+      string bob_private_connection_wif = graphene::utilities::key_to_wif( bob_private_connection_key );
+      string candice_private_connection_wif = graphene::utilities::key_to_wif( candice_private_connection_key );
+      string dan_private_connection_wif = graphene::utilities::key_to_wif( dan_private_connection_key );
+      string elon_private_connection_wif = graphene::utilities::key_to_wif( elon_private_connection_key );
+      string fred_private_connection_wif = graphene::utilities::key_to_wif( fred_private_connection_key );
+
+      generate_blocks( now() + fc::days(2), true );
 
       signed_transaction tx;
 
@@ -585,7 +580,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       create.founder = "alice";
       create.name = "aliceopencommunity";
       create.community_privacy = "open_public";
-      create.community_public_key = string( alice_public_posting_key );
+      create.community_public_key = string( alice_public_connection_key );
       create.json = "{ \"valid\": true }";
       create.json_private = "{ \"valid\": true }";
       create.details = "details";
@@ -621,7 +616,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       create.founder = "bob";
       create.name = "bobpubliccommunity";
       create.community_privacy = "exclusive_public";
-      create.community_public_key = string( bob_public_posting_key );
+      create.community_public_key = string( bob_public_connection_key );
       create.validate();
 
       tx.operations.push_back( create );
@@ -648,7 +643,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       create.founder = "candice";
       create.name = "candiceprivatecommunity";
       create.community_privacy = "open_private";
-      create.community_public_key = string( candice_public_posting_key );
+      create.community_public_key = string( candice_public_connection_key );
       create.validate();
 
       tx.operations.push_back( create );
@@ -675,7 +670,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       create.founder = "dan";
       create.name = "danexclusivecommunity";
       create.community_privacy = "exclusive_private";
-      create.community_public_key = string( dan_public_posting_key );
+      create.community_public_key = string( dan_public_connection_key );
       create.validate();
 
       tx.operations.push_back( create );
@@ -705,7 +700,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       invite.member = "elon";
       invite.community = "aliceopencommunity";
       invite.message = "Hello";
-      invite.encrypted_community_key = string( alice_public_posting_key );
+      invite.encrypted_community_key = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, elon_public_secure_key, alice_private_connection_wif );
       invite.invited = true;
       invite.validate();
 
@@ -729,7 +724,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       invite.signatory = "bob";
       invite.account = "bob";
       invite.community = "bobpubliccommunity";
-      invite.encrypted_community_key = string( bob_public_posting_key );
+      invite.encrypted_community_key = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, elon_public_secure_key, bob_private_connection_wif );
    
       tx.operations.push_back( invite );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
@@ -749,7 +744,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       invite.signatory = "candice";
       invite.account = "candice";
       invite.community = "candiceprivatecommunity";
-      invite.encrypted_community_key = string( candice_public_posting_key );
+      invite.encrypted_community_key = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, elon_public_secure_key, candice_private_connection_wif );
    
       tx.operations.push_back( invite );
       tx.sign( candice_private_active_key, db.get_chain_id() );
@@ -769,7 +764,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       invite.signatory = "dan";
       invite.account = "dan";
       invite.community = "danexclusivecommunity";
-      invite.encrypted_community_key = string( dan_public_posting_key );
+      invite.encrypted_community_key = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, elon_public_secure_key, dan_private_connection_wif );
    
       tx.operations.push_back( invite );
       tx.sign( dan_private_posting_key, db.get_chain_id() );
@@ -790,7 +785,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       invite.account = "dan";
       invite.member = "fred";
       invite.community = "danexclusivecommunity";
-      invite.encrypted_community_key = string( dan_public_posting_key );
+      invite.encrypted_community_key = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, fred_public_secure_key, dan_private_connection_wif );
    
       tx.operations.push_back( invite );
       tx.sign( dan_private_posting_key, db.get_chain_id() );
@@ -807,8 +802,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: founder invite members" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when non-member sends invites" );
@@ -818,7 +811,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       invite.member = "george";
       invite.community = "aliceopencommunity";
       invite.message = "Hello";
-      invite.encrypted_community_key = string( alice_public_posting_key );
+      invite.encrypted_community_key = get_encrypted_message( elon_private_secure_key, elon_public_secure_key, george_public_secure_key, alice_private_connection_wif );
       invite.invited = true;
 
       tx.operations.push_back( invite );
@@ -830,7 +823,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       invite.member = "haz";
       invite.community = "bobpubliccommunity";
-      invite.encrypted_community_key = string( bob_public_posting_key );
+      invite.encrypted_community_key = get_encrypted_message( elon_private_secure_key, elon_public_secure_key, haz_public_secure_key, bob_private_connection_wif );
    
       tx.operations.push_back( invite );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
@@ -841,7 +834,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       invite.member = "isabelle";
       invite.community = "candiceprivatecommunity";
-      invite.encrypted_community_key = string( candice_public_posting_key );
+      invite.encrypted_community_key = get_encrypted_message( elon_private_secure_key, elon_public_secure_key, isabelle_public_secure_key, candice_private_connection_wif );
    
       tx.operations.push_back( invite );
       tx.sign( elon_private_active_key, db.get_chain_id() );
@@ -852,7 +845,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       invite.member = "jayme";
       invite.community = "danexclusivecommunity";
-      invite.encrypted_community_key = string( dan_public_posting_key );
+      invite.encrypted_community_key = get_encrypted_message( elon_private_secure_key, elon_public_secure_key, jayme_public_secure_key, dan_private_connection_wif );
    
       tx.operations.push_back( invite );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
@@ -860,8 +853,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when non-member sends invites" );
 
@@ -877,7 +868,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       request.validate();
 
       tx.operations.push_back( request );
-      tx.sign( fred_private_active_key, db.get_chain_id() );
+      tx.sign( fred_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       const auto& request_idx = db.get_index< community_join_request_index >().indices().get< by_account_community >();
@@ -895,7 +886,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       request.community = "bobpubliccommunity";
    
       tx.operations.push_back( request );
-      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      tx.sign( fred_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       request_itr = request_idx.find( boost::make_tuple( account_name_type( "fred" ), community_name_type( "bobpubliccommunity" ) ) );
@@ -911,7 +902,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       request.community = "candiceprivatecommunity";
    
       tx.operations.push_back( request );
-      tx.sign( candice_private_posting_key, db.get_chain_id() );
+      tx.sign( fred_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       request_itr = request_idx.find( boost::make_tuple( account_name_type( "fred" ), community_name_type( "candiceprivatecommunity" ) ) );
@@ -927,7 +918,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       request.community = "danexclusivecommunity";
    
       tx.operations.push_back( request );
-      tx.sign( dan_private_posting_key, db.get_chain_id() );
+      tx.sign( fred_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // No join requests for exclusive community
 
       request_itr = request_idx.find( boost::make_tuple( account_name_type( "fred" ), community_name_type( "danexclusivecommunity" ) ) );
@@ -936,8 +927,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: community join request" );
 
@@ -1023,8 +1012,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: accept invite by incoming member" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: founder accept join request" );
@@ -1081,8 +1068,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: founder accept join request" );
 
@@ -1152,8 +1137,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: handling member sending invites" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: founder add moderator" );
@@ -1214,8 +1197,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: founder add moderator" );
 
@@ -1283,8 +1264,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: founder vote moderator" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: handling moderator sending invites and failure when repeated invite" );
@@ -1323,6 +1302,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
+      tx.operations.clear();
+      tx.signatures.clear();
+
       invite_itr = invite_idx.find( boost::make_tuple( account_name_type( "isabelle" ), community_name_type( "candiceprivatecommunity" ) ) );
 
       BOOST_REQUIRE( invite_itr != invite_idx.end() );
@@ -1330,22 +1312,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       BOOST_REQUIRE( invite_itr->member == invite.member );
       BOOST_REQUIRE( invite_itr->community == invite.community );
       BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      invite.member = "jayme";
-      invite.community = "danexclusivecommunity";
-      invite.encrypted_community_key = string( dan_public_posting_key );
-   
-      tx.operations.push_back( invite );
-      tx.sign( elon_private_posting_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Member cannot send invitations
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: handling moderator sending invites and failure when repeated invite" );
 
@@ -1408,8 +1374,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: founder add administrator" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: handling administrators sending invites and failure when repeated invite" );
@@ -1470,11 +1434,11 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: handling moderator sending invites and failure when repeated invite" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: comment creation handling for members and non-members" );
+
+      generate_blocks( now() + fc::minutes(11), true );
 
       comment_operation comment;
 
@@ -1487,10 +1451,11 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
       comment.url = "https://www.url.com";
       comment.community = "aliceopencommunity";
-      comment.tags.push_back( tag_name_type( "test" )  );
+      comment.public_key = string();
+      comment.tags.push_back( "test" );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
-      comment.parent_author = "";
+      comment.parent_author = ROOT_POST_PARENT;
       comment.parent_permlink = "lorem";
       comment.json = "{ \"valid\": true }";
       comment.latitude = 37.8136;
@@ -1522,6 +1487,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.signatory = "haz";
       comment.author = "haz";
       comment.community = "bobpubliccommunity";
+      comment.public_key = string();
 
       tx.operations.push_back( comment );
       tx.sign( haz_private_posting_key, db.get_chain_id() );
@@ -1533,6 +1499,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.signatory = "isabelle";
       comment.author = "isabelle";
       comment.community = "candiceprivatecommunity";
+      comment.public_key = string( candice_public_connection_key );
+      options.reach = "community";
+      comment.options = options;
 
       tx.operations.push_back( comment );
       tx.sign( isabelle_private_posting_key, db.get_chain_id() );
@@ -1544,6 +1513,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.signatory = "jayme";
       comment.author = "jayme";
       comment.community = "danexclusivecommunity";
+      comment.public_key = string( dan_public_connection_key );
+      options.reach = "community";
+      comment.options = options;
 
       tx.operations.push_back( comment );
       tx.sign( jayme_private_posting_key, db.get_chain_id() );
@@ -1555,6 +1527,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.signatory = "alice";
       comment.author = "alice";
       comment.community = "aliceopencommunity";
+      comment.public_key = string();
+      options.reach = "tag";
+      comment.options = options;
 
       tx.operations.push_back( comment );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
@@ -1570,6 +1545,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.signatory = "bob";
       comment.author = "bob";
       comment.community = "bobpubliccommunity";
+      comment.public_key = string();
+      options.reach = "tag";
+      comment.options = options;
 
       tx.operations.push_back( comment );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
@@ -1585,6 +1563,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.signatory = "candice";
       comment.author = "candice";
       comment.community = "candiceprivatecommunity";
+      comment.public_key = string( candice_public_connection_key );
+      options.reach = "community";
+      comment.options = options;
 
       tx.operations.push_back( comment );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
@@ -1601,6 +1582,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.signatory = "dan";
       comment.author = "dan";
       comment.community = "danexclusivecommunity";
+      comment.public_key = string( dan_public_connection_key );
+      options.reach = "community";
+      comment.options = options;
 
       tx.operations.push_back( comment );
       tx.sign( dan_private_posting_key, db.get_chain_id() );
@@ -1613,8 +1597,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: comment creation handling for members and non-members" );
 
@@ -1679,8 +1661,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: comment vote handling before becoming members" );
 
@@ -1753,8 +1733,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: comment view handling before becoming members" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: comment share handling before becoming members" );
@@ -1775,6 +1753,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       db.push_transaction( tx, 0 );
 
       const comment_share_object& george_share = db.get_comment_share( account_name_type( "george" ), alice_comment.id );
+
       BOOST_REQUIRE( george_share.sharer == share.sharer );
       BOOST_REQUIRE( george_share.comment == alice_comment.id );
       BOOST_REQUIRE( george_share.interface == share.interface );
@@ -1822,8 +1801,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: comment share handling before becoming members" );
 
@@ -1877,12 +1854,15 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      generate_blocks( now() + MIN_ROOT_COMMENT_INTERVAL );
+      generate_blocks( now() + fc::minutes(2), true );
 
       comment.signatory = "george";
       comment.author = "george";
       comment.community = "aliceopencommunity";
       comment.permlink = "ipsum";
+      comment.public_key = string();
+      options.reach = "tag";
+      comment.options = options;
 
       tx.operations.push_back( comment );
       tx.sign( george_private_posting_key, db.get_chain_id() );
@@ -1899,6 +1879,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.signatory = "haz";
       comment.author = "haz";
       comment.community = "bobpubliccommunity";
+      comment.public_key = string();
+      options.reach = "tag";
+      comment.options = options;
 
       tx.operations.push_back( comment );
       tx.sign( haz_private_posting_key, db.get_chain_id() );
@@ -1915,6 +1898,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.signatory = "isabelle";
       comment.author = "isabelle";
       comment.community = "candiceprivatecommunity";
+      comment.public_key = string( candice_public_connection_key );
+      options.reach = "community";
+      comment.options = options;
 
       tx.operations.push_back( comment );
       tx.sign( isabelle_private_posting_key, db.get_chain_id() );
@@ -1931,6 +1917,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.signatory = "jayme";
       comment.author = "jayme";
       comment.community = "danexclusivecommunity";
+      comment.public_key = string( dan_public_connection_key );
+      options.reach = "community";
+      comment.options = options;
 
       tx.operations.push_back( comment );
       tx.sign( jayme_private_posting_key, db.get_chain_id() );
@@ -1943,8 +1932,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: comment creation handling by members" );
 
@@ -2014,8 +2001,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: comment vote handling by members" );
 
@@ -2098,8 +2083,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: comment view handling by members" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: comment share handling by members" );
@@ -2176,8 +2159,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: comment share handling by members" );
 
@@ -2265,8 +2246,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: moderator tag by community moderator" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: administrator add moderator" );
@@ -2319,8 +2298,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: administrator add moderator" );
 
@@ -2407,8 +2384,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: administrator update community" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: founder remove moderator" );
@@ -2472,8 +2447,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: founder remove moderator" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: founder remove member" );
@@ -2534,8 +2507,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: founder remove moderator" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: community subscription" );
@@ -2591,8 +2562,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: community subscription" );
 
@@ -2654,8 +2623,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: founder blacklist account" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: transfer community ownership" );
@@ -2715,8 +2682,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: transfer community ownership" );
 

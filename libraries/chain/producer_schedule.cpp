@@ -704,7 +704,7 @@ void update_producer_schedule( database& db )
 
       update_median_producer_props( db );
 
-      ilog( "Updating Producer Schedule: ${p}", ("p", pso ) );
+      // ilog( "Updated Producer Schedule: \n ${p} \n", ("p", pso ) );
    }
 }
 

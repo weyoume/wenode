@@ -66,7 +66,7 @@ class debug_node_plugin : public node::app::plugin
             
          itr->second.emplace_back( callback );
 
-         fc::optional<chain::signed_block> head_block = db.fetch_block_by_id( head_id );
+         fc::optional< chain::signed_block > head_block = db.fetch_block_by_id( head_id );
          FC_ASSERT( head_block.valid(), 
             "Head Block is not valid: ${b}", ("b",head_block) );
 

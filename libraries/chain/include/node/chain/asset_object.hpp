@@ -579,9 +579,9 @@ namespace node { namespace chain {
             vector<std::reference_wrapper<const price_feed>> current_feeds;
 
             // find feeds that were alive at current_time
-            for( const pair<account_name_type, pair<time_point,price_feed>>& f : feeds )
+            for( const pair< account_name_type, pair< time_point, price_feed > >& f : feeds )
             {
-               if( (current_time - f.second.first).to_seconds() < feed_lifetime.to_seconds() &&
+               if( ( current_time - f.second.first ).to_seconds() < feed_lifetime.to_seconds() &&
                   f.second.first != time_point() )
                {
                   current_feeds.emplace_back(f.second.second);
@@ -779,6 +779,7 @@ namespace node { namespace chain {
          } FC_CAPTURE_AND_RETHROW( ( delta ) ) };
    };
 
+
    /**
     * Bond assets enable a business account to borrow funds for a fixed interest rate and duration.
     * 
@@ -942,7 +943,7 @@ namespace node { namespace chain {
     * 
     * Each month's distribution must be fully backed by the redemption pool.
     */
-   class asset_stimulus_data_object : public object < asset_stimulus_data_object_type, asset_stimulus_data_object>
+   class asset_stimulus_data_object : public object < asset_stimulus_data_object_type, asset_stimulus_data_object >
    {
       asset_stimulus_data_object() = delete;
 
@@ -1138,13 +1139,9 @@ namespace node { namespace chain {
             {
                return price( balance_a, balance_b);
             }
-            else if( base == symbol_b )
-            {
-               return price( balance_b, balance_a );
-            }
             else
             {
-               return price();
+               return price( balance_b, balance_a );
             }
          }
 
@@ -1156,14 +1153,11 @@ namespace node { namespace chain {
             {
                return hour_median_price;
             }
-            else if( base == symbol_b )
+            else
             {
                return ~hour_median_price;
             }
-            else
-            {
-               return price();
-            }
+            
          }
 
          price                       base_day_median_price( const asset_symbol_type& base )const   ///< daily median price with specified asset as base
@@ -1174,13 +1168,9 @@ namespace node { namespace chain {
             {
                return day_median_price;
             }
-            else if( base == symbol_b )
-            {
-               return ~day_median_price;
-            }
             else
             {
-               return price();
+               return ~day_median_price;
             }
          }
 
@@ -1198,7 +1188,7 @@ namespace node { namespace chain {
             }
             else
             {
-               return asset();
+               return asset( 0, symbol );
             }
          }
    };

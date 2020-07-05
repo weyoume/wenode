@@ -55,16 +55,18 @@ namespace node { namespace chain {
 
          template< typename Constructor, typename Allocator >
          producer_object( Constructor&& c, allocator< Allocator > a ) :
-         details(a), url(a), json(a)
-         {
-            c( *this );
-         }
+            details(a), 
+            url(a), 
+            json(a)
+            {
+               c( *this );
+            }
 
          id_type                      id;
 
          account_name_type            owner;                                 ///< The name of the account that has authority over this producer.
 
-         bool                         active;                                ///< True if the producer is actively seeking to produce blocks, set false to deactivate the producer and remove from production.
+         bool                         active = true;                         ///< True if the producer is actively seeking to produce blocks, set false to deactivate the producer and remove from production.
 
          producer_schedule_type       schedule = none;                       ///< How the producer was scheduled the last time it was scheduled.
 
@@ -82,29 +84,29 @@ namespace node { namespace chain {
 
          public_key_type              signing_key;                           ///< The key used to sign blocks on behalf of this producer.
 
-         uint64_t                     last_commit_height;                    ///< Block height that has been most recently committed by the producer
+         uint64_t                     last_commit_height = 0;                ///< Block height that has been most recently committed by the producer
 
          block_id_type                last_commit_id = block_id_type();      ///< Block ID of the height that was most recently committed by the producer. 
 
-         uint32_t                     total_blocks;                          ///< Accumulated number of blocks produced.
+         uint32_t                     total_blocks = 0;                      ///< Accumulated number of blocks produced.
 
-         share_type                   voting_power;                          ///< The total weighted voting power that supports the producer. 
+         share_type                   voting_power = 0;                      ///< The total weighted voting power that supports the producer. 
 
-         uint32_t                     vote_count;                            ///< The number of accounts that have voted for the producer.
+         uint32_t                     vote_count = 0;                        ///< The number of accounts that have voted for the producer.
 
-         share_type                   mining_power;                          ///< The amount of proof of work difficulty accumulated by the miner over the prior 7 days.
+         share_type                   mining_power = 0;                      ///< The amount of proof of work difficulty accumulated by the miner over the prior 7 days.
 
-         uint32_t                     mining_count;                          ///< Accumulated number of proofs of work published.
+         uint32_t                     mining_count = 0;                      ///< Accumulated number of proofs of work published.
 
          time_point                   last_mining_update;                    ///< Time that the account last updated its mining power.
 
          time_point                   last_pow_time;                         ///< Time that the miner last created a proof of work.
 
-         uint128_t                    recent_txn_stake_weight;               ///< Rolling average Amount of transaction stake weight contained that the producer has included in blocks over the prior 7 days.
+         uint128_t                    recent_txn_stake_weight = 0;           ///< Rolling average Amount of transaction stake weight contained that the producer has included in blocks over the prior 7 days.
 
          time_point                   last_txn_stake_weight_update;          ///< Time that the recent bandwith and txn stake were last updated.
 
-         uint128_t                    accumulated_activity_stake;            ///< Recent amount of activity reward stake for the prime producer. 
+         uint128_t                    accumulated_activity_stake = 0;        ///< Recent amount of activity reward stake for the prime producer. 
 
          uint32_t                     total_missed;                          ///< Number of blocks missed recently.
 
@@ -118,9 +120,9 @@ namespace node { namespace chain {
 
          uint128_t                    voting_virtual_scheduled_time = fc::uint128::max_value();         ///< Expected virtual time of next scheduled block production.
 
-         uint128_t                    mining_virtual_last_update;             ///< Virtual time of last mining update.
+         uint128_t                    mining_virtual_last_update;            ///< Virtual time of last mining update.
 
-         uint128_t                    mining_virtual_position;                ///< Virtual position relative to other miners.
+         uint128_t                    mining_virtual_position;               ///< Virtual position relative to other miners.
 
          uint128_t                    mining_virtual_scheduled_time = fc::uint128::max_value();          ///< Expected virtual time of next scheduled block production.
 
@@ -471,11 +473,13 @@ namespace node { namespace chain {
          ordered_unique< tag< by_height_stake >,
             composite_key< block_validation_object,
                member< block_validation_object, uint64_t, &block_validation_object::block_height >,
-               member< block_validation_object, asset, &block_validation_object::commitment_stake >
+               member< block_validation_object, asset, &block_validation_object::commitment_stake >,
+               member< block_validation_object, block_validation_id_type, &block_validation_object::id >
             >,
             composite_key_compare< 
                std::less< uint64_t >,
-               std::greater< asset >
+               std::greater< asset >,
+               std::less< block_validation_id_type >
             >
          >,
          ordered_unique< tag< by_producer_block_id >,
