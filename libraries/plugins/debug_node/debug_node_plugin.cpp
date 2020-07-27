@@ -53,32 +53,33 @@ struct debug_mine_state
    debug_mine_state();
    virtual ~debug_mine_state();
 
-   std::string                    miner_account;
-   chain::block_id_type           prev_block;
-   uint128_t                      summary_target = 0;
-   fc::promise< chain::x11_proof_of_work >::ptr work;
-   fc::mutex                      set_work_mutex;
+   std::string                                    miner_account;
+
+   chain::block_id_type                           prev_block;
+
+   chain::x11                                     pow_target;
+
+   fc::promise< chain::x11_proof_of_work >::ptr   work;
+   
+   fc::mutex                                      set_work_mutex;
 };
 
 debug_mine_state::debug_mine_state() {}
 debug_mine_state::~debug_mine_state() {}
 
-void debug_node_plugin::debug_mine_work(
-   chain::x11_proof_of_work& work,
-   uint128_t summary_target
-   )
+void debug_node_plugin::debug_mine_work( chain::x11_proof_of_work& work, chain::x11 pow_target )
 {
    std::shared_ptr< debug_mine_state > mine_state = std::make_shared< debug_mine_state >();
    mine_state->miner_account = work.input.miner_account;
    mine_state->prev_block = work.input.prev_block;
-   mine_state->summary_target = summary_target;
+   mine_state->pow_target = pow_target;
    mine_state->work = fc::promise< chain::x11_proof_of_work >::ptr( new fc::promise< chain::x11_proof_of_work >() );
 
    uint32_t thread_num = 0;
    uint32_t num_threads = _my->_mining_threads;
 
    wlog( "Mining for worker account ${a} on block ${b} with target ${t} using ${n} threads",
-      ("a", work.input.miner_account) ("b", work.input.prev_block) ("c", summary_target) ("n", num_threads) ("t", summary_target) );
+      ("a",work.input.miner_account)("b",work.input.prev_block)("t",pow_target)("n",num_threads));
 
    uint32_t nonce_start = 0;
 
@@ -92,26 +93,30 @@ void debug_node_plugin::debug_mine_work(
          chain::x11_proof_of_work work;
          std::string miner_account = mine_state->miner_account;
          chain::block_id_type prev_block = mine_state->prev_block;
-         uint128_t summary_target = mine_state->summary_target;
+         chain::x11 pow_target = mine_state->pow_target;
          wlog( "Starting thread mining at offset ${o}", ("o", nonce_offset) );
          work.input.prev_block = prev_block;
          work.input.miner_account = miner_account;
          work.input.nonce = nonce_offset;
+
          while( !(mine_state->work->ready()) )
          {
             work.create( prev_block, miner_account, work.input.nonce );
-            if( work.pow_summary < summary_target )
+            if( work.work < pow_target )
             {
-               wlog( "Found work with nonce ${n}", ("n", work.input.nonce) );
-	       fc::scoped_lock< fc::mutex > lock(mine_state->set_work_mutex);
-	       if( !mine_state->work->ready() )
-	       {
-                  mine_state->work->set_value( work );
-                  wlog( "Quitting successfully (start nonce was ${n})", ("n", nonce_offset) );
-               }
-	       else
+               wlog( "Found work with nonce ${n}",
+                  ("n", work.input.nonce));
+               fc::scoped_lock< fc::mutex > lock(mine_state->set_work_mutex);
+               if( !mine_state->work->ready() )
                {
-                  wlog( "Quitting, but other thread found nonce first (start nonce was ${n})", ("n", nonce_offset) );
+                  mine_state->work->set_value( work );
+                  wlog( "Quitting successfully (start nonce was ${n})",
+                     ("n", nonce_offset) );
+               }
+               else
+               {
+                  wlog( "Quitting, but other thread found nonce first (start nonce was ${n})",
+                     ("n", nonce_offset) );
                }
                break;
             }
@@ -353,7 +358,43 @@ uint32_t debug_node_plugin::debug_generate_blocks_until(
    else
    {
       while( db.head_block_time() < head_block_time )
+      {
          new_blocks += debug_generate_blocks( 1 );
+      }
+   }
+
+   return new_blocks;
+}
+
+uint32_t debug_node_plugin::debug_generate_until_block(
+   uint64_t head_block_num,
+   bool generate_sparsely,
+   uint32_t skip,
+   private_key_storage* key_storage )
+{
+   node::chain::database& db = database();
+
+   if( db.head_block_num() >= head_block_num )
+      return 0;
+
+   uint32_t new_blocks = 0;
+
+   if( generate_sparsely )
+   {
+      new_blocks += debug_generate_blocks( 1, skip );
+      auto slots_to_miss = head_block_num - db.head_block_num();
+      if( slots_to_miss > 1 )
+      {
+         slots_to_miss--;
+         new_blocks += debug_generate_blocks( 1, skip, slots_to_miss, key_storage );
+      }
+   }
+   else
+   {
+      while( db.head_block_num() < head_block_num )
+      {
+         new_blocks += debug_generate_blocks( 1 );
+      } 
    }
 
    return new_blocks;

@@ -2,6 +2,7 @@
 #include <fc/exception/exception.hpp>
 #include <fc/crypto/hmac.hpp>
 #include <fc/fwd_impl.hpp>
+#include <fc/bitutil.hpp>
 
 namespace node { namespace protocol {
 
@@ -72,9 +73,25 @@ namespace node { namespace protocol {
 		memcpy(_hash, data, size);
 	}
 
-	x11::x11(const string &hex_str)
+	x11::x11(const string& hex_str)
 	{
 		fc::from_hex(hex_str, (char *)_hash, sizeof(_hash));
+	}
+
+	x11::x11( uint64_t a, uint64_t b, uint64_t c, uint64_t d )
+	{
+		_hash[0] = fc::endian_reverse( a );
+		_hash[1] = fc::endian_reverse( b );
+		_hash[2] = fc::endian_reverse( c );
+		_hash[3] = fc::endian_reverse( d );
+	}
+
+	x11::x11( uint128_t a )
+	{
+		_hash[0] = fc::endian_reverse( a.hi );
+		_hash[1] = fc::endian_reverse( a.lo );
+		_hash[2] = 0;
+		_hash[3] = 0;
 	}
 
 	string x11::str() const
@@ -84,7 +101,7 @@ namespace node { namespace protocol {
 
 	x11::operator string() const { return str(); }
 
-	char *x11::data() const { return (char *)&_hash[0]; }
+	char *x11::data() const { return (char*)&_hash[0]; }
 
 	struct x11::encoder::impl
 	{
@@ -97,24 +114,24 @@ namespace node { namespace protocol {
 		reset();
 	}
 
-	x11 x11::hash( const char *d, uint32_t dlen )
+	x11 x11::hash( const char* d, uint32_t dlen )
 	{
 		encoder e;
 		e.write(d, dlen);
 		return e.result();
 	}
 
-	x11 x11::hash( const string &s )
+	x11 x11::hash( const string& s )
 	{
 		return hash( s.c_str(), s.size() );
 	}
 
-	x11 x11::hash( const x11 &s )
+	x11 x11::hash( const x11& s )
 	{
 		return hash( s.data(), sizeof(s._hash) );
 	}
 
-	void x11::encoder::write( const char *d, uint32_t dlen )
+	void x11::encoder::write( const char* d, uint32_t dlen )
 	{
 		my->ctx.hash.reserve(11);
 		static const char* pblank;
@@ -156,7 +173,7 @@ namespace node { namespace protocol {
 	x11 x11::encoder::result()
 	{
 		x11 h;
-		memcpy( h.data(), &my->ctx.hash[10], 32 );
+		memcpy( h.data(), &my->ctx.hash[10], h.data_size() );
 		return h;
 	}
 
@@ -228,7 +245,10 @@ namespace node { namespace protocol {
 		size_t offset = (size_t)(lzbits >> 3);
 		uint8_t *my_bytes = (uint8_t *)data();
 		size_t n = data_size();
-		uint32_t y = (uint32_t(my_bytes[offset]) << 0x18) | (uint32_t(offset + 1 < n ? my_bytes[offset + 1] : 0) << 0x10) | (uint32_t(offset + 2 < n ? my_bytes[offset + 2] : 0) << 0x08) | (uint32_t(offset + 3 < n ? my_bytes[offset + 3] : 0));
+		uint32_t y = (uint32_t(my_bytes[offset]) << 0x18) 
+			| (uint32_t(offset + 1 < n ? my_bytes[offset + 1] : 0) << 0x10) 
+			| (uint32_t(offset + 2 < n ? my_bytes[offset + 2] : 0) << 0x08) 
+			| (uint32_t(offset + 3 < n ? my_bytes[offset + 3] : 0));
 		//
 		// lzbits&7 == 7 : 00000001 iff nzbits&7 == 0
 		// lzbits&7 == 6 : 0000001x iff nzbits&7 == 1
@@ -315,28 +335,35 @@ namespace node { namespace protocol {
 		return sha_value._hash[0];
 	}
 
-	
+	uint128_t x11::to_uint128()const
+	{
+		uint128_t result;
+		result.hi = fc::endian_reverse_u64( _hash[ 0 ] );
+		result.lo = fc::endian_reverse_u64( _hash[ 1 ] );
+		return result;
+	}
 
 } }  // node::protocol
 
 namespace fc {
 
-	void to_variant(const node::protocol::x11 &bi, variant &v)
+	void to_variant( const node::protocol::x11& bi, fc::variant& v )
 	{
 		v = std::vector<char>((const char *)&bi, ((const char *)&bi) + sizeof(bi));
 	}
-	void from_variant(const fc::variant &v, node::protocol::x11 &bi)
+	void from_variant( const fc::variant& v, node::protocol::x11& bi )
 	{
 		std::vector<char> ve = v.as<std::vector<char>>();
-		if (ve.size())
+		if( ve.size() )
 		{
 			memcpy( &bi, ve.data(), fc::min<size_t>(ve.size(), sizeof(bi)));
 		}
 		else
+		{
 			memset( &bi, char(0), sizeof(bi));
+		}
 	}
 
 	template <>
 	unsigned int fc::hmac<node::protocol::x11>::internal_block_size() const { return 64; }
-	
 }  // fc

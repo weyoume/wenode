@@ -58,7 +58,7 @@ namespace node { namespace chain {
          
          uint16_t                           max_rating = 9;                     ///< Highest severity rating that posts in the community can have.
 
-         uint32_t                           flags = 0;                          ///< The currently active flags on the community for content settings.
+         uint32_t                           flags;                              ///< The currently active flags on the community for content settings.
 
          uint32_t                           permissions;                        ///< The flag permissions that can be activated on the community for content settings. 
 
@@ -217,7 +217,7 @@ namespace node { namespace chain {
           * accounts, communities and tags that they have in common with eachother. 
           * this value is used for the determination of post recommendations.
           */
-         share_type                                 adjacency_value( const community_member_object& m )const
+         share_type adjacency_value( const community_member_object& m )const
          {
             vector< account_name_type > common_subscribers;
             common_subscribers.reserve( subscribers.size() );
@@ -431,27 +431,27 @@ namespace node { namespace chain {
             }
          };
 
-         bool is_subscriber( const account_name_type& account )const  
+         bool is_subscriber( const account_name_type& account )const
          {
             return std::find( subscribers.begin(), subscribers.end(), account ) != subscribers.end();
          };
 
-         bool is_member( const account_name_type& account )const  
+         bool is_member( const account_name_type& account )const
          {
             return std::find( members.begin(), members.end(), account ) != members.end();
          };
       
-         bool is_moderator( const account_name_type& account )const  
+         bool is_moderator( const account_name_type& account )const
          {
             return std::find( moderators.begin(), moderators.end(), account ) != moderators.end();
          };
 
-         bool is_administrator( const account_name_type& account )const  
+         bool is_administrator( const account_name_type& account )const
          {
             return std::find( administrators.begin(), administrators.end(), account ) != administrators.end();
          };
 
-         bool is_blacklisted( const account_name_type& account )const  
+         bool is_blacklisted( const account_name_type& account )const
          {
             return std::find( blacklist.begin(), blacklist.end(), account ) != blacklist.end();
          };

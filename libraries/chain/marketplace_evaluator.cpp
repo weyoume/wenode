@@ -421,7 +421,8 @@ void product_auction_sale_evaluator::do_apply( const product_auction_sale_operat
 
          p.final_bid_time = o.final_bid_time;
          p.completion_time = o.completion_time;
-         p.winning_bid = product_auction_bid_id_type();
+         p.winning_bidder = account_name_type();
+         from_string( p.winning_bid_id, "" );
          p.created = now;
          p.last_updated = now;
       });
@@ -629,6 +630,11 @@ void product_auction_bid_evaluator::do_apply( const product_auction_bid_operatio
          p.completion_time = auction.completion_time;
          p.winning_bid = false;
       });
+
+      _db.modify( auction, [&]( product_auction_sale_object& paso )
+      {
+         paso.bid_count++;
+      });
    }
    else
    {
@@ -823,6 +829,7 @@ void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
    asset liquid = _db.get_liquid_balance( o.account, escrow.payment.symbol );
    // Escrow bond is a percentage paid as security in the event of dispute, and can be forfeited.
    asset escrow_bond = asset( ( escrow.payment.amount * median_props.escrow_bond_percent ) / PERCENT_100, escrow.payment.symbol );
+   asset from_amount = escrow.payment + escrow_bond;
 
    flat_map< account_name_type, bool > approvals = escrow.approvals;
 
@@ -851,17 +858,19 @@ void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
    {
       if( o.account == escrow.from )
       {
-         FC_ASSERT( liquid >= escrow.payment + escrow_bond,
+         FC_ASSERT( liquid >= from_amount,
             "Account cannot cover costs of escrow. Required: ${r} Available: ${a}", 
             ("r", escrow_bond)("a",liquid) );
 
-         _db.adjust_liquid_balance( o.account, -( escrow.payment + escrow_bond ) );
-         _db.adjust_pending_supply( escrow.payment + escrow_bond );
+         _db.adjust_liquid_balance( o.account, -from_amount );
+         _db.adjust_pending_supply( from_amount );
       }
       else
       {
          FC_ASSERT( liquid >= escrow_bond,
-            "Account cannot cover costs of escrow. Required: ${r} Available: ${a}", ("r", escrow_bond)("a",liquid) );
+            "Account cannot cover costs of escrow. Required: ${r} Available: ${a}",
+            ("r", escrow_bond)("a",liquid) );
+
          _db.adjust_liquid_balance( o.account, -escrow_bond );
          _db.adjust_pending_supply( escrow_bond );
       }
@@ -871,7 +880,7 @@ void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
          esc.approvals[ o.account ] = true;
          if( o.account == escrow.from )
          {
-            esc.balance += ( escrow.payment + escrow_bond );
+            esc.balance += from_amount;
             esc.from_mediator = o.mediator;     // Adds selected mediator to escrow
          }
          else if( o.account == escrow.to )
@@ -970,6 +979,9 @@ void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
       {
          esc.release_percentages[ o.account ] = o.release_percent;
       });
+
+      ilog( "Account: ${a} released escrow with release percent: ${p} \n ${e} \n",
+         ("a",o.account)("p",o.release_percent)("e",escrow));
    }
    else
    {
@@ -999,8 +1011,6 @@ void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
 
       _db.release_escrow( escrow );
    }
-
-   ilog( "Account: ${a} released escrow: \n ${e} \n",("a",o.account)("e",escrow));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 } } // node::chain

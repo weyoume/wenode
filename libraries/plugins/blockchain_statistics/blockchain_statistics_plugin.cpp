@@ -98,8 +98,8 @@ struct operation_process
             b.accounts_created++;
          }
             
-         uint128_t target = _db.pow_difficulty();
-         uint128_t estimated_hashes = uint128_t::max_value() / target;
+         x11 target_pow = _db.pow_difficulty();
+         uint128_t estimated_hashes = uint128_t::max_value() / target_pow.to_uint128();
          uint32_t delta_t;
 
          if( b.seconds == 0 )

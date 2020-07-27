@@ -80,11 +80,13 @@ namespace node { namespace chain {
 
       public:
          template< typename Constructor, typename Allocator >
-         executive_board_object( Constructor&& c, allocator< Allocator > a ) :
-         details(a), url(a), json(a)
-         {
-            c( *this );
-         }
+            executive_board_object( Constructor&& c, allocator< Allocator > a ) :
+            details(a), 
+            url(a), 
+            json(a)
+            {
+               c( *this );
+            }
 
          id_type                        id;
 
@@ -141,13 +143,13 @@ namespace node { namespace chain {
 
       public:
          template< typename Constructor, typename Allocator >
-         governance_account_object( Constructor&& c, allocator< Allocator > a ) :
-         details(a), 
-         url(a), 
-         json(a)
-         {
-            c( *this );
-         }
+            governance_account_object( Constructor&& c, allocator< Allocator > a ) :
+            details(a), 
+            url(a), 
+            json(a)
+            {
+               c( *this );
+            }
 
          id_type                        id;
 

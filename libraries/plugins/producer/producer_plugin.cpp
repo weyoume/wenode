@@ -955,7 +955,6 @@ block_mining_condition::block_mining_condition_enum producer_plugin::maybe_mine_
    chain::proof_of_work_operation op;
 
    op.work = work;
-   op.props = _mining_props;
    
    const auto& acct_idx  = db.get_index< chain::account_index >().indices().get< chain::by_name >();
    auto acct_it = acct_idx.find( work.input.miner_account );
@@ -992,8 +991,7 @@ block_mining_condition::block_mining_condition_enum producer_plugin::maybe_mine_
 
    op.validate();
    trx.operations.push_back(op);
-   trx.ref_block_num = db.head_block_num();
-   trx.ref_block_prefix = work.input.prev_block._hash[1];
+   trx.set_reference_block( db.head_block_id() );
    trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
    trx.sign( *priv, CHAIN_ID );
 
@@ -1029,7 +1027,7 @@ struct mining_state
 
    chain::block_id_type           prev_block;             ///< Recently received block. Must be at least Irreversible block num.
 
-   uint128_t                      summary_target = 0;     ///< Current Mining Difficulty of the network.
+   chain::x11                     pow_target;             ///< Current Mining Difficulty of the network.
 
    fc::promise< chain::x11_proof_of_work >::ptr work;     ///< Promise to be resolved when a valid Proof of Work is found.
 
@@ -1040,20 +1038,20 @@ mining_state::mining_state() {}
 mining_state::~mining_state() {}
 
 
-void producer_plugin::mine_proof_of_work( chain::x11_proof_of_work& work, uint128_t summary_target )
+void producer_plugin::mine_proof_of_work( chain::x11_proof_of_work& work, chain::x11 pow_target )
 {
    std::shared_ptr< mining_state > mine_state = std::make_shared< mining_state >();
    
    mine_state->miner_account = work.input.miner_account;
    mine_state->prev_block = work.input.prev_block;
-   mine_state->summary_target = summary_target;
+   mine_state->pow_target = pow_target;
    mine_state->work = fc::promise< chain::x11_proof_of_work >::ptr( new fc::promise< chain::x11_proof_of_work >() );
    
    uint32_t thread_num = 0;
    uint32_t num_threads = _my->_mining_threads;
 
    wlog( "Mining for worker account ${a} on block ${b} with target ${t} using ${n} threads",
-      ("a", work.input.miner_account) ("b", work.input.prev_block) ("c", summary_target) ("n", num_threads) ("t", summary_target) );
+      ("a",work.input.miner_account)("b",work.input.prev_block)("t",pow_target)("n",num_threads));
 
    uint32_t nonce_start = 0;
 
@@ -1069,9 +1067,10 @@ void producer_plugin::mine_proof_of_work( chain::x11_proof_of_work& work, uint12
          chain::x11_proof_of_work work;
          std::string miner_account = mine_state->miner_account;
          chain::block_id_type prev_block = mine_state->prev_block;
-         uint128_t summary_target = mine_state->summary_target;
+         chain::x11 pow_target = mine_state->pow_target;
 
-         wlog( "Starting thread mining at offset ${o}", ("o", nonce_offset) );
+         wlog( "Starting thread mining at offset ${o}",
+            ("o", nonce_offset) );
 
          work.input.prev_block = prev_block;
          work.input.miner_account = miner_account;
@@ -1083,7 +1082,7 @@ void producer_plugin::mine_proof_of_work( chain::x11_proof_of_work& work, uint12
          {
             work.create( prev_block, miner_account, work.input.nonce );
 
-            if( work.pow_summary < summary_target )
+            if( work.work < pow_target )
             {
                fc::scoped_lock< fc::mutex > lock(mine_state->set_work_mutex);     // Lock mutex to ensure other threads cannot overwrite data.
 
@@ -1097,25 +1096,22 @@ void producer_plugin::mine_proof_of_work( chain::x11_proof_of_work& work, uint12
                }
                break;
             }
-            else if( work.pow_summary < ( summary_target * 10 ) )
+            else if( work.work.to_uint128() < ( pow_target.to_uint128() * 10 ) )
             {
-               hashrate = work.input.nonce * fc::seconds(1).count() / ( time_point::now() - thread_start ).count();
-               wlog( "--- [10%] Found High Intermediate Proof of Work with nonce: ${n}", ("n", work.input.nonce) );
-               wlog( "Approximate Hashrate: ${h} Hashes Per Second.", ("h", hashrate ) );
+               hashrate = work.input.nonce / ( time_point::now() - thread_start ).to_seconds();
+               wlog( "--- [10%] Found High Intermediate Proof of Work with nonce: ${n}",
+                  ("n", work.input.nonce));
+               wlog( "Approximate Hashrate: ${h} Hashes Per Second.",
+                  ("h", hashrate ));
             }
-            else if( work.pow_summary < ( summary_target * 100 ) )
+            else if( work.work.to_uint128() < ( pow_target.to_uint128() * 100 ) )
             {
-               hashrate = work.input.nonce * fc::seconds(1).count() / ( time_point::now() - thread_start ).count();
-               wlog( "-- [1%] Found Medium Intermediate Proof of Work with nonce: ${n}", ("n", work.input.nonce) );
-               wlog( "Approximate Hashrate: ${h} Hashes Per Second.", ("h", hashrate ) );
+               hashrate = work.input.nonce / ( time_point::now() - thread_start ).to_seconds();
+               wlog( "-- [1%] Found Low Intermediate Proof of Work with nonce: ${n}",
+                  ("n", work.input.nonce));
+               wlog( "Approximate Hashrate: ${h} Hashes Per Second.",
+                  ("h", hashrate ));
             }
-            else if( work.pow_summary < ( summary_target * 1000 ) )
-            {
-               hashrate = work.input.nonce * fc::seconds(1).count() / ( time_point::now() - thread_start ).count();
-               wlog( "- [0.1%] Found Low Intermediate Proof of Work with nonce: ${n}", ("n", work.input.nonce) );
-               wlog( "Approximate Hashrate: ${h} Hashes Per Second.", ("h", hashrate ) );
-            }
-
             work.input.nonce += nonce_stride;
          }
          return;
@@ -1286,23 +1282,23 @@ block_validation_condition::block_validation_condition_enum producer_plugin::may
    const auto& validation_idx = db.get_index< chain::block_validation_index >().indices().get< chain::by_block_id >();
    auto validation_itr = validation_idx.begin();
 
-   flat_map< block_id_type, flat_set< transaction_id_type > > verifying_transactions;
+   flat_map< block_id_type, flat_set< account_name_type > > verifying_producers;
 
    size_t min_verifiers = ( IRREVERSIBLE_THRESHOLD * ( DPOS_VOTING_PRODUCERS + POW_MINING_PRODUCERS ) / PERCENT_100 );
 
    for( block_id_type id : recent_block_ids )
    {
       validation_itr = validation_idx.lower_bound( id );
-      flat_set< transaction_id_type > txns;
+      flat_set< account_name_type > prods;
       while( validation_itr != validation_idx.end() &&
          validation_itr->block_id == id )
       {
-         txns.insert( validation_itr->verify_txn );
+         prods.insert( validation_itr->producer );
          ++validation_itr;
       }
-      if( txns.size() >= min_verifiers )
+      if( prods.size() >= min_verifiers )
       {
-         verifying_transactions[ id ] = txns;
+         verifying_producers[ id ] = prods;
       }
    }
    
@@ -1323,8 +1319,7 @@ block_validation_condition::block_validation_condition_enum producer_plugin::may
             vector< public_key_type > prod_active_keys = prod_auth.active_auth.get_keys();
             signed_transaction trx;
 
-            trx.ref_block_num = db.head_block_num();
-            trx.ref_block_prefix = db.head_block_id()._hash[1];
+            trx.set_reference_block( db.head_block_id() );
             trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
 
             verify_block_operation verify;
@@ -1346,7 +1341,7 @@ block_validation_condition::block_validation_condition_enum producer_plugin::may
                }
             }
 
-            for( auto txn_ids : verifying_transactions )
+            for( auto txn_ids : verifying_producers )
             {
                commit.block_id = txn_ids.first;
                commit.verifications = txn_ids.second;

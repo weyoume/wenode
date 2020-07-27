@@ -99,7 +99,7 @@ private:
    void schedule_mining_loop();
    block_mining_condition::block_mining_condition_enum block_mining_loop();
    block_mining_condition::block_mining_condition_enum maybe_mine_proof_of_work( fc::mutable_variant_object& capture );
-   void mine_proof_of_work( chain::x11_proof_of_work& work, uint128_t summary_target );
+   void mine_proof_of_work( chain::x11_proof_of_work& work, chain::x11 pow_target );
 
    void schedule_validation_loop();
    block_validation_condition::block_validation_condition_enum block_validation_loop();

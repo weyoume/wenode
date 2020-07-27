@@ -3100,8 +3100,6 @@ annotated_signed_transaction      wallet_api::activity_reward(
    string signatory,
    string account,
    string permlink,
-   int64_t view_id,
-   int64_t vote_id,
    string interface,
    bool broadcast )
 { try {
@@ -3112,8 +3110,6 @@ annotated_signed_transaction      wallet_api::activity_reward(
    op.signatory = signatory;
    op.account = account;
    op.permlink = permlink;
-   op.view_id = view_id;
-   op.vote_id = vote_id;
    op.interface = interface;
 
    signed_transaction tx;
@@ -6501,8 +6497,7 @@ annotated_signed_transaction      wallet_api::producer_update(
 
 annotated_signed_transaction      wallet_api::proof_of_work(
    proof_of_work_type work,
-   string new_owner_key,
-   chain_properties props,
+   string new_owner_key
    bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
@@ -6511,7 +6506,6 @@ annotated_signed_transaction      wallet_api::proof_of_work(
 
    op.work = work;
    op.new_owner_key = new_owner_key;
-   op.props = props;
 
    signed_transaction tx;
    tx.operations.push_back(op);

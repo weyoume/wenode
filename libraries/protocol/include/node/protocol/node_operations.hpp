@@ -27,6 +27,7 @@ namespace node { namespace protocol {
    using node::protocol::price_feed;
    using node::protocol::option_strike;
    using node::protocol::asset_unit;
+   using node::protocol::x11;
 
 
    //============================//
@@ -833,7 +834,7 @@ namespace node { namespace protocol {
     * 2 - A recent comment transaction with at least 20% of the median number of votes and views, and vote and view power on all posts in the last 30 days.
     * 3 - A recent vote transaction.
     * 4 - A recent view transaction.
-    * 5 - At least 10 producer votes from their account.
+    * 5 - At least 10 producer votes.
     */
    struct activity_reward_operation : public base_operation
    {
@@ -842,10 +843,6 @@ namespace node { namespace protocol {
       account_name_type             account;        ///< Name of the account claiming the reward.
 
       string                        permlink;       ///< Permlink of the users recent post in the last 24h.
-
-      int64_t                       view_id;        ///< Recent comment id viewed in the last 24h.
-
-      int64_t                       vote_id;        ///< Recent comment id voted on in the last 24h.
 
       account_name_type             interface;      ///< Name of the interface account that was used to broadcast the transaction. 
 
@@ -1716,11 +1713,11 @@ namespace node { namespace protocol {
 
       string                         url;                   ///< External reference URL.
 
-      asset_symbol_type              reward_currency;       ///< The Currency asset used for content rewards in the community.
+      asset_symbol_type              reward_currency = SYMBOL_COIN;  ///< The Currency asset used for content rewards in the community.
 
-      uint16_t                       max_rating;            ///< Highest severity rating that posts in the community can have.
+      uint16_t                       max_rating = 9;        ///< Highest severity rating that posts in the community can have.
 
-      uint32_t                       flags;                 ///< The currently active flags on the community for content settings.
+      uint32_t                       flags = 0;             ///< The currently active flags on the community for content settings.
 
       uint32_t                       permissions = COMMUNITY_PERMISSION_MASK;  ///< The flag permissions that can be activated on the community for content settings.
 
@@ -1758,13 +1755,13 @@ namespace node { namespace protocol {
 
       string                         pinned_permlink;       ///< Permlink of the pinned post.
 
-      asset_symbol_type              reward_currency;       ///< The Currency asset used for content rewards in the community.
+      asset_symbol_type              reward_currency = SYMBOL_COIN;  ///< The Currency asset used for content rewards in the community.
 
-      uint16_t                       max_rating;            ///< Highest severity rating that posts in the community can have.
+      uint16_t                       max_rating = 9;        ///< Highest severity rating that posts in the community can have.
 
-      uint32_t                       flags;                 ///< The currently active flags on the community for content settings.
+      uint32_t                       flags = 0;             ///< The currently active flags on the community for content settings.
 
-      uint32_t                       permissions;           ///< The flag permissions that can be activated on the community for content settings.
+      uint32_t                       permissions = COMMUNITY_PERMISSION_MASK;  ///< The flag permissions that can be activated on the community for content settings.
 
       bool                           active = true;         ///< True when the community is active, false to deactivate. 
 
@@ -4757,11 +4754,13 @@ namespace node { namespace protocol {
 
    struct proof_of_work_input
    {
-      account_name_type             miner_account = NULL_ACCOUNT;
-
       block_id_type                 prev_block = block_id_type();
 
+      account_name_type             miner_account = NULL_ACCOUNT;
+      
       uint64_t                      nonce = 0;
+
+      string                        to_string()const;
    };
 
 
@@ -4769,9 +4768,9 @@ namespace node { namespace protocol {
    {
       proof_of_work_input           input;
 
-      uint128_t                     pow_summary = 0;
+      x11                           work;
 
-      void create( const block_id_type& prev_block, const account_name_type& account_name, uint64_t nonce );
+      void create( block_id_type prev_block, account_name_type account_name, uint64_t nonce );
       void validate()const;
    };
 
@@ -4784,9 +4783,9 @@ namespace node { namespace protocol {
 
       block_id_type                 prev_block;
 
-      uint128_t                     pow_summary = 0;
+      fc::sha256                    work;
 
-      void create( const block_id_type& recent_block, const account_name_type& account_name, uint32_t nonce );
+      void create( block_id_type recent_block, account_name_type account_name, uint64_t nonce );
       void validate() const;
    };
 
@@ -4813,8 +4812,6 @@ namespace node { namespace protocol {
       proof_of_work_type            work;              ///< Proof of work, containing a reference to a prior block, and a nonce resulting in a low hash value.
 
       fc::optional< string >        new_owner_key;     ///< If creating a new account with a proof of work, the owner key of the new account.
-
-      chain_properties              props;             ///< Chain properties values for selection of adjustable network parameters. 
 
       void                          validate()const;
       void                          get_creator_name( flat_set<account_name_type>& a )const { a.insert( work.get< x11_proof_of_work >().input.miner_account ); }
@@ -4880,9 +4877,9 @@ namespace node { namespace protocol {
 
       account_name_type                 producer;            ///< The name of the block producing account.
 
-      block_id_type                     block_id;            ///< The block id of the block being committed as irreversible to that producer. 
+      block_id_type                     block_id;            ///< The block id of the block being committed as irreversible to that producer.
 
-      flat_set< transaction_id_type >   verifications;       ///< The set of attesting transaction ids of verification transactions from currently active producers.
+      flat_set< account_name_type >     verifications;       ///< The set of attesting verifications from currently active producers.
 
       asset                             commitment_stake;    ///< The value of staked balance that the producer stakes on this commitment. Must be at least one unit of COIN. 
 
@@ -5234,8 +5231,6 @@ FC_REFLECT( node::protocol::activity_reward_operation,
          (signatory)
          (account)
          (permlink)
-         (view_id)
-         (vote_id)
          (interface)
          );
 
@@ -6541,7 +6536,7 @@ FC_REFLECT( node::protocol::producer_update_operation,
 
 FC_REFLECT( node::protocol::x11_proof_of_work,
          (input)
-         (pow_summary) 
+         (work) 
          );
 
 FC_REFLECT( node::protocol::proof_of_work_input,
@@ -6554,7 +6549,7 @@ FC_REFLECT( node::protocol::equihash_proof_of_work,
          (input)
          (proof)
          (prev_block)
-         (pow_summary) 
+         (work) 
          );
 
 FC_REFLECT_TYPENAME( node::protocol::proof_of_work_type )
@@ -6562,7 +6557,6 @@ FC_REFLECT_TYPENAME( node::protocol::proof_of_work_type )
 FC_REFLECT( node::protocol::proof_of_work_operation,
          (work)
          (new_owner_key)
-         (props) 
          );
 
 FC_REFLECT( node::protocol::verify_block_operation,

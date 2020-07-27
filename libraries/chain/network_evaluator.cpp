@@ -176,12 +176,6 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
       }
       else
       {
-         if( account_officer_itr != account_officer_idx.end() && account_type_rank_itr != account_type_rank_idx.end() )
-         {
-            FC_ASSERT( account_officer_itr->network_officer != account_type_rank_itr->network_officer, 
-               "Vote at rank is already specified network officer." );
-         }
-         
          if( account_officer_itr != account_officer_idx.end() )
          {
             ilog( "Removed: ${v}",("v",*account_officer_itr));
@@ -232,11 +226,12 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
 { try {
    const account_name_type& signed_for = o.account;
    const account_object& signatory = _db.get_account( o.signatory );
-   const account_business_object& b = _db.get_account_business( signed_for );
+   
    FC_ASSERT( signatory.active, 
       "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
    {
+      const account_business_object& b = _db.get_account_business( signed_for );
       const account_object& signed_acc = _db.get_account( signed_for );
       FC_ASSERT( signed_acc.active, 
          "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
@@ -247,10 +242,11 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
    
    const account_object& account = _db.get_account( o.account );
    const account_object& executive = _db.get_account( o.executive );
+   const account_business_object& exec_bus = _db.get_account_business( o.executive );
    FC_ASSERT( executive.active, 
       "Account: ${s} must be active to update executive board.",("s", o.executive) );
    FC_ASSERT( o.executive == o.account || 
-      b.is_authorized_network( o.account, _db.get_account_permissions( o.account ) ),
+      exec_bus.is_authorized_network( o.account, _db.get_account_permissions( o.account ) ),
       "Account is not authorized to update Executive board." );
    const governance_account_object& gov_account = _db.get_governance_account( o.executive );
    FC_ASSERT( gov_account.active, 
@@ -272,9 +268,9 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
      
    const executive_board_object* exec_ptr = _db.find_executive_board( o.executive );
 
-   FC_ASSERT( b.executive_board.CHIEF_EXECUTIVE_OFFICER.size(),
+   FC_ASSERT( exec_bus.executive_board.CHIEF_EXECUTIVE_OFFICER.size(),
       "Executive board requires chief executive officer.");
-   FC_ASSERT( b.officers.size(), 
+   FC_ASSERT( exec_bus.officers.size(), 
       "Executive board requires at least one officer." );
 
    if( exec_ptr != nullptr )      // Updating existing Executive board
@@ -307,18 +303,21 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
       // Perform Executive board eligibility checks when creating new community.
       FC_ASSERT( o.active, 
          "Executive board does not exist for this account, set active to true." );
-      FC_ASSERT( supernode.active && interface.active && gov_account.active, 
+      FC_ASSERT( supernode.active && interface.active && gov_account.active,
          "Executive board must have an active interface, supernode, and governance account." );
-      FC_ASSERT( executive.membership == membership_tier_type::TOP_MEMBERSHIP, 
-         "Account must be a top level member to create an Executive board.");  
-      FC_ASSERT( stake.amount >= 100*BLOCKCHAIN_PRECISION, 
+      FC_ASSERT( executive.membership == membership_tier_type::TOP_MEMBERSHIP,
+         "Account must be a top level member to create an Executive board.");
+      FC_ASSERT( stake.amount >= 100 * BLOCKCHAIN_PRECISION,
          "Must have a minimum stake of 100 Core assets.");
-      FC_ASSERT( gov_account.subscriber_count >= 100, 
-         "Interface requires 100 daily active users to create Executive board." );
-      FC_ASSERT( interface.daily_active_users >= 100 * PERCENT_100, 
-         "Interface requires 100 daily active users to create Executive board." );
-      FC_ASSERT( supernode.daily_active_users >= 100 * PERCENT_100, 
-         "Supernode requires 100 daily active users to create Executive board." );
+      FC_ASSERT( gov_account.subscriber_count >= 100,
+         "Governance Account requires 100 subscribers to create Executive board: ${g}",
+         ("g",gov_account));
+      FC_ASSERT( interface.daily_active_users >= 100 * PERCENT_100,
+         "Interface requires 100 daily active users to create Executive board: ${i}",
+         ("i",interface));
+      FC_ASSERT( supernode.daily_active_users >= 100 * PERCENT_100,
+         "Supernode requires 100 daily active users to create Executive board: ${s}",
+         ("s",supernode) );
       
       bool producer_check = false;
       bool dev_check = false;
@@ -357,7 +356,7 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
          }
       }
 
-      for( auto name : b.executives )
+      for( auto name : exec_bus.executives )
       {
          if( pso.is_top_voting_producer( name ) )
          {
@@ -395,7 +394,7 @@ void update_executive_board_evaluator::do_apply( const update_executive_board_op
          }  
       }
 
-      for( auto name : b.officers )
+      for( auto name : exec_bus.officers )
       {
          if( pso.is_top_voting_producer( name ) )
          {
@@ -498,39 +497,41 @@ void executive_board_vote_evaluator::do_apply( const executive_board_vote_operat
    const auto& account_rank_idx = _db.get_index< executive_board_vote_index >().indices().get< by_account_rank >();
    const auto& account_executive_idx = _db.get_index< executive_board_vote_index >().indices().get< by_account_executive >();
    auto account_rank_itr = account_rank_idx.find( boost::make_tuple( voter.name, o.vote_rank ) );   // vote at rank number
-   auto account_executive_itr = account_executive_idx.find( boost::make_tuple( voter.name, executive.account ) );    // vote for specified executive board
+   auto account_executive_itr = account_executive_idx.find( boost::make_tuple( voter.name, o.executive_board ) );    // vote for specified executive board
 
    if( o.approved )      // Adding or modifying vote
    {
-      if( account_executive_itr == account_executive_idx.end() && account_rank_itr == account_rank_idx.end() )     // No vote for executive or rank, create new vote.
+      if( account_executive_itr == account_executive_idx.end() && 
+         account_rank_itr == account_rank_idx.end() )     // No vote for executive or rank, create new vote.
       {
          FC_ASSERT( voter.executive_board_vote_count < MAX_EXEC_VOTES, 
-            "Account has voted for too many Executive boards." );
+            "Account: ${a} has voted for too many Executive boards.",
+            ("a",o.account));
 
-         _db.create< executive_board_vote_object >( [&]( executive_board_vote_object& v )
+         const executive_board_vote_object& vote = _db.create< executive_board_vote_object >( [&]( executive_board_vote_object& v )
          {
-            v.executive_board = executive.account;
+            v.executive_board = o.executive_board;
             v.account = voter.name;
             v.vote_rank = o.vote_rank;
          });
+
+         ilog( "Account: ${a} created new Executive Board Vote: ${e} Rank: ${r}",
+            ("a",vote.account)("e",vote.executive_board)("r",o.vote_rank));
          
          _db.update_executive_board_votes( voter );
       }
       else
       {
-         if( account_executive_itr != account_executive_idx.end() && account_rank_itr != account_rank_idx.end() )
-         {
-            FC_ASSERT( account_executive_itr->executive_board != account_rank_itr->executive_board, 
-               "Vote at rank is already specified Executive board." );
-         }
-         
          if( account_executive_itr != account_executive_idx.end() )
          {
             ilog( "Removed: ${v}",("v",*account_executive_itr));
             _db.remove( *account_executive_itr );
          }
 
-         _db.update_executive_board_votes( voter, o.executive_board, o.vote_rank );   // Remove existing officer vote, and add at new rank. 
+         _db.update_executive_board_votes( voter, o.executive_board, o.vote_rank );   // Remove existing officer vote, and add at new rank.
+         
+         ilog( "Account: ${a} edited Executive Board Vote: ${e} Rank: ${r}",
+            ("a",o.account)("e",o.executive_board)("r",o.vote_rank));
       }
    }
    else       // Removing existing vote
@@ -1193,19 +1194,11 @@ void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_
          
          _db.update_enterprise_approvals( account );
 
-         ilog( "Account: ${a} created new Enterprise Approval - \n ${ap} \n",
-            ("a",o.account)("ap",app));
+         ilog( "Account: ${a} created new Enterprise Approval: ${i}",
+            ("a",o.account)("i",app.enterprise_id));
       }
       else
       {
-         if( account_enterprise_itr != account_enterprise_idx.end() && 
-            account_rank_itr != account_rank_idx.end() )
-         {
-            FC_ASSERT( account_enterprise_itr->creator != account_rank_itr->creator && 
-               account_enterprise_itr->enterprise_id != account_rank_itr->enterprise_id, 
-               "Vote at rank is already specified Enterprise proposal." );
-         }
-         
          if( account_enterprise_itr != account_enterprise_idx.end() )
          {
             ilog( "Removed: ${v}",("v",*account_enterprise_itr));
@@ -1214,7 +1207,7 @@ void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_
 
          _db.update_enterprise_approvals( account, o.creator, o.enterprise_id, o.vote_rank, o.milestone );
 
-         ilog( "Account: ${a} edited enterprise proposal - creator: ${c} id: ${id} vote rank: ${r} milestone: ${m}",
+         ilog( "Account: ${a} edited enterprise proposal: creator: ${c} id: ${id} vote rank: ${r} milestone: ${m}",
             ("a",o.account)("c",o.creator)("id",o.enterprise_id)("r",o.vote_rank)("m",o.milestone));
       }
    }

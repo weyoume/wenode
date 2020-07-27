@@ -9,10 +9,7 @@
 #include <fc/crypto/base58.hpp>
 #include <fc/crypto/elliptic.hpp>
 #include <fc/crypto/aes.hpp>
-
 #include <node/plugins/debug_node/debug_node_plugin.hpp>
-
-#include <graphene/utilities/key_conversion.hpp>
 
 #include <iostream>
 
@@ -132,8 +129,9 @@ extern fc::time_point TESTING_GENESIS_TIMESTAMP;
    PREP_ACTOR(name) \
    const auto& name = account_create( BOOST_PP_STRINGIZE(name), name ## _private_secure_key, name ## _public_owner_key, \
    name ## _public_active_key, name ## _public_posting_key, name ## _public_secure_key, name ## _public_connection_key, \
-   name ## _public_friend_key, name ## _public_companion_key ); \
-   account_id_type name ## _id = name.id; (void)name ## _id;
+   name ## _public_friend_key, name ## _public_companion_key );                                                         \
+   account_id_type name ## _id = name.id; (void)name ## _id;                                                            \
+   test_accounts_set.insert( BOOST_PP_STRINGIZE(name) );
 
 #define GET_ACTOR(name) \
    const account_object& name = get_account(BOOST_PP_STRINGIZE(name)); \
@@ -176,6 +174,8 @@ namespace node { namespace chain {
       chain::database              &db;
 
       signed_transaction           trx;
+
+      flat_set<account_name_type>  test_accounts_set;
 
       fc::ecc::private_key         private_key = fc::ecc::private_key::generate();
 
@@ -234,10 +234,19 @@ namespace node { namespace chain {
       void generate_blocks( uint32_t block_count );
 
       /**
+       * @brief Generates blocks with a skip 
+       * @param block_count Number of blocks to generate
+       * @param miss_blocks Number of blocks to skip
+       */
+      void generate_blocks( uint32_t block_count, int miss_blocks );
+
+      /**
        * @brief Generates blocks until the head block time matches or exceeds timestamp
        * @param timestamp target time to generate blocks until
        */
       void generate_blocks( fc::time_point timestamp, bool miss_intermediate_blocks = true );
+
+      void generate_until_block( uint64_t head_block_num, bool miss_intermediate_blocks = true );
 
       const account_object& account_create(
          const string& name,

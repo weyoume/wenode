@@ -147,7 +147,7 @@ annotated_signed_transaction connection_request(string signatory, string account
 annotated_signed_transaction connection_accept(string signatory, string account, string requesting_account, string connection_id, string connection_type, string encrypted_key, bool connected, bool broadcast )
 annotated_signed_transaction account_follow(string signatory, string follower, string following, string interface, bool added, bool followed, bool broadcast )
 annotated_signed_transaction tag_follow(string signatory, string follower, string tag, string interface, bool added, bool followed, bool broadcast )
-annotated_signed_transaction activity_reward(string signatory, string account, string permlink, int64_t view_id, int64_t vote_id, string interface, bool broadcast )
+annotated_signed_transaction activity_reward(string signatory, string account, string permlink, string interface, bool broadcast )
 annotated_signed_transaction update_network_officer(string signatory, string account, string officer_type, string details, string url, string json, bool active, bool broadcast )
 annotated_signed_transaction network_officer_vote(string signatory, string account, string network_officer, uint16_t vote_rank, bool approved, bool broadcast )
 annotated_signed_transaction update_executive_board(string signatory, string account, string executive, asset budget, string details, string url, string json, bool active, bool broadcast )

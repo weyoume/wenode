@@ -87,16 +87,18 @@ class debug_node_plugin : public node::app::plugin
          uint32_t skip = node::chain::database::skip_nothing,
          private_key_storage* key_storage = nullptr );
 
+      uint32_t debug_generate_until_block(
+         uint64_t head_block_num,
+         bool generate_sparsely,
+         uint32_t skip = node::chain::database::skip_nothing,
+         private_key_storage* key_storage = nullptr );
+
       void set_json_object_stream( const std::string& filename );
       void flush_json_object_stream();
 
       void save_debug_updates( fc::mutable_variant_object& target );
       void load_debug_updates( const fc::variant_object& target );
-
-      void debug_mine_work(
-         chain::x11_proof_of_work& work,
-         uint128_t summary_target
-         );
+      void debug_mine_work( chain::x11_proof_of_work& work, chain::x11 pow_target );
 
       bool logging = true;
 

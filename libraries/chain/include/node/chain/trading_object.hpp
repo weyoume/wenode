@@ -304,44 +304,42 @@ namespace node { namespace chain {
 
          account_name_type       borrower;                    ///< Account that is the borrower of the stablecoin asset. 
 
-         asset                   collateral;                  ///< call_price.base.symbol, access via get_collateral
+         asset                   collateral;                  ///< Funds of backing asset held as security to back the loan of debt asset.
 
-         asset                   debt;                        ///< call_price.quote.symbol, access via get_debt
+         asset                   debt;                        ///< Funds borrowed as issuance of a stablecoin.
 
-         price                   call_price;                  ///< Collateral / Debt
+         optional< uint16_t >    target_collateral_ratio;     ///< Maximum CR to maintain when selling collateral on margin call.
 
-         optional< uint16_t >    target_collateral_ratio;     ///< Maximum CR to maintain when selling collateral on margin call
-
-         account_name_type       interface;                   ///< The interface account that created the order
+         account_name_type       interface;                   ///< The interface account that created the order.
 
          time_point              created;                     ///< Time that the order was created.
 
          time_point              last_updated;                ///< Time that the order was last modified.
 
+         price                   collateralization()const { return collateral / debt; }
+
+         double                  real_price()const 
+         { 
+            return collateralization().to_real(); 
+         }
+
+         asset                   amount_to_receive()const { return debt; }
+
+         asset                   amount_for_sale()const { return collateral; }
+
+         asset_symbol_type       debt_type()const { return debt.symbol; }
+
+         asset_symbol_type       collateral_type()const { return collateral.symbol; }
+
          pair< asset_symbol_type, asset_symbol_type > get_market()const
          {
-            auto tmp = std::make_pair( call_price.base.symbol, call_price.quote.symbol );
+            auto tmp = std::make_pair( collateralization().base.symbol, collateralization().quote.symbol );
             if( tmp.first > tmp.second ) 
             {
                std::swap( tmp.first, tmp.second );
             }
             return tmp;
          }
-
-         double                  real_price()const 
-         { 
-            return call_price.to_real(); 
-         }
-
-         asset amount_to_receive()const { return debt; }
-
-         asset amount_for_sale()const { return collateral; }
-
-         asset_symbol_type debt_type()const { return debt.symbol; }
-
-         asset_symbol_type collateral_type()const { return collateral.symbol; }
-
-         price collateralization()const { return collateral / debt; }
 
          /**
           *  Calculate maximum quantity of debt to cover to satisfy @ref target_collateral_ratio.
@@ -387,17 +385,17 @@ namespace node { namespace chain {
 
             share_type result;
          
-            if( feed_price.base.symbol != call_price.base.symbol )
+            if( feed_price.base.symbol != collateralization().base.symbol )
             {
                feed_price = ~feed_price;      // feed_price is in collateral / debt format
             }
                
-            FC_ASSERT( feed_price.base.symbol == call_price.base.symbol &&
-               feed_price.quote.symbol == call_price.quote.symbol, 
+            FC_ASSERT( feed_price.base.symbol == collateralization().base.symbol &&
+               feed_price.quote.symbol == collateralization().quote.symbol, 
                "Feed and call price must be the same asset pairing." );
 
-            FC_ASSERT( maintenance_collateralization->base.symbol == call_price.base.symbol && 
-               maintenance_collateralization->quote.symbol == call_price.quote.symbol );
+            FC_ASSERT( maintenance_collateralization->base.symbol == collateralization().base.symbol && 
+               maintenance_collateralization->quote.symbol == collateralization().quote.symbol );
             
             if( collateralization() > *maintenance_collateralization )
             {
@@ -413,13 +411,13 @@ namespace node { namespace chain {
 
             price target_collateralization = feed_price * ratio_type( tcr, COLLATERAL_RATIO_DENOM );
 
-            if( match_price.base.symbol != call_price.base.symbol )
+            if( match_price.base.symbol != collateralization().base.symbol )
             {
                match_price = ~match_price;       // match_price is in collateral / debt format
             }
 
-            FC_ASSERT( match_price.base.symbol == call_price.base.symbol
-                     && match_price.quote.symbol == call_price.quote.symbol );
+            FC_ASSERT( match_price.base.symbol == collateralization().base.symbol
+                     && match_price.quote.symbol == collateralization().quote.symbol );
 
             int256_t mp_debt_amt = match_price.quote.amount.value;
             int256_t mp_coll_amt = match_price.base.amount.value;
@@ -963,7 +961,7 @@ namespace node { namespace chain {
             member< call_order_object, call_order_id_type, &call_order_object::id > >,
          ordered_unique< tag< by_high_price >,
             composite_key< call_order_object,
-               member< call_order_object, price, &call_order_object::call_price >,
+               const_mem_fun< call_order_object, price, &call_order_object::collateralization >,
                member< call_order_object, call_order_id_type, &call_order_object::id >
             >,
             composite_key_compare< 
@@ -973,7 +971,7 @@ namespace node { namespace chain {
          >,
          ordered_unique< tag< by_low_price >,
             composite_key< call_order_object,
-               member< call_order_object, price, &call_order_object::call_price >,
+               const_mem_fun< call_order_object, price, &call_order_object::collateralization >,
                member< call_order_object, call_order_id_type, &call_order_object::id >
             >,
             composite_key_compare< 
@@ -1166,7 +1164,6 @@ FC_REFLECT( node::chain::call_order_object,
          (borrower)
          (collateral)
          (debt)
-         (call_price)
          (target_collateral_ratio)
          (interface)
          (created)

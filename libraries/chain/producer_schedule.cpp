@@ -426,7 +426,7 @@ void update_producer_schedule( database& db )
                active_mining_producers.push_back(mining_power_itr->owner);
                db.modify( *mining_power_itr, [&]( producer_object& p ) 
                { 
-                  p.schedule = producer_object::top_mining_producer; 
+                  p.schedule = producer_object::top_mining_producer;
                });
             }
          }

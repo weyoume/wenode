@@ -44,6 +44,8 @@ class debug_node_api_impl
       uint32_t debug_push_blocks( const std::string& src_filename, uint32_t count, bool skip_validate_invariants );
       uint32_t debug_generate_blocks( uint32_t count );
       uint32_t debug_generate_blocks_until( const fc::time_point& head_block_time, bool generate_sparsely );
+      uint32_t debug_generate_until_block( uint64_t head_block_num, bool generate_sparsely );
+      
       fc::optional< node::chain::signed_block > debug_pop_block();
       //void debug_push_block( const node::chain::signed_block& block );
       node::chain::producer_schedule_object debug_get_producer_schedule();
@@ -161,16 +163,6 @@ void debug_node_api_impl::debug_mine( debug_mine_result& result, const debug_min
 
    chain::proof_of_work_operation op;
    op.work = work;
-
-   if( args.props.valid() )
-   {
-      op.props = *(args.props);
-   }
-   else
-   {
-      chain::chain_properties props;
-      op.props = props;
-   }
       
    const auto& acct_idx  = db->get_index< chain::account_index >().indices().get< chain::by_name >();
    auto acct_it = acct_idx.find( args.miner_account );
@@ -199,8 +191,7 @@ void debug_node_api_impl::debug_mine( debug_mine_result& result, const debug_min
 
    chain::signed_transaction tx;
    tx.operations.push_back(op);
-   tx.ref_block_num = db->head_block_num();
-   tx.ref_block_prefix = work.input.prev_block._hash[1];
+   tx.set_reference_block( db->head_block_id() );
    tx.set_expiration( db->head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
 
    tx.sign( *priv, CHAIN_ID );
@@ -276,6 +267,12 @@ uint32_t debug_node_api_impl::debug_generate_blocks_until( const fc::time_point&
 {
    return get_plugin()->debug_generate_blocks_until( head_block_time, generate_sparsely, node::chain::database::skip_nothing, &key_storage );
 }
+
+uint32_t debug_node_api_impl::debug_generate_until_block( uint64_t head_block_num, bool generate_sparsely )
+{
+   return get_plugin()->debug_generate_until_block( head_block_num, generate_sparsely, node::chain::database::skip_nothing, &key_storage );
+}
+
 
 fc::optional< node::chain::signed_block > debug_node_api_impl::debug_pop_block()
 {
@@ -375,6 +372,11 @@ uint32_t debug_node_api::debug_generate_blocks( uint32_t count )
 uint32_t debug_node_api::debug_generate_blocks_until( fc::time_point head_block_time, bool generate_sparsely )
 {
    return my->debug_generate_blocks_until( head_block_time, generate_sparsely );
+}
+
+uint32_t debug_node_api::debug_generate_until_block( uint64_t head_block_num, bool generate_sparsely )
+{
+   return my->debug_generate_until_block( head_block_num, generate_sparsely );
 }
 
 fc::optional< node::chain::signed_block > debug_node_api::debug_pop_block()

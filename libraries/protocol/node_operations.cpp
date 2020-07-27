@@ -2,6 +2,7 @@
 #include <fc/crypto/base58.hpp>
 #include <fc/io/json.hpp>
 
+
 #include <locale>
 
 namespace node { namespace protocol {
@@ -615,11 +616,6 @@ namespace node { namespace protocol {
          validate_account_name( interface );
       }
       validate_permlink( permlink );
-
-      FC_ASSERT( view_id >= 0,
-         "View ID cannot be negative." );
-      FC_ASSERT( vote_id >= 0,
-         "Vote ID cannot be negative." );
    }
 
 
@@ -986,7 +982,7 @@ namespace node { namespace protocol {
       FC_ASSERT( beneficiaries.size() < 128, 
          "Cannot specify more than 127 beneficiaries." ); // Require size serialization fits in one byte.
 
-      for( size_t i = 1; i < beneficiaries.size(); i++ )
+      for( size_t i = 0; i < beneficiaries.size(); i++ )
       {
          validate_account_name( beneficiaries[i].account );
          FC_ASSERT( beneficiaries[i].weight <= PERCENT_100, 
@@ -994,6 +990,10 @@ namespace node { namespace protocol {
          sum += beneficiaries[i].weight;
          FC_ASSERT( sum <= PERCENT_100, 
             "Cannot allocate more than 100% of rewards to a comment" );
+      }
+
+      for( size_t i = 1; i < beneficiaries.size(); i++ )
+      {
          FC_ASSERT( beneficiaries[i - 1] < beneficiaries[i], 
             "Benficiaries must be specified in sorted order (account ascending)" );
       }
@@ -1005,6 +1005,7 @@ namespace node { namespace protocol {
       validate_account_name( author );
       validate_permlink( parent_permlink );
       validate_permlink( permlink );
+      options.validate();
 
       if( title.size() )
       {
@@ -1013,8 +1014,6 @@ namespace node { namespace protocol {
          FC_ASSERT( fc::is_utf8( title ),
          "Title is not formatted in UTF8." );
       }
-
-      options.validate();
 
       if( community.size() )
       {
@@ -1058,7 +1057,7 @@ namespace node { namespace protocol {
          validate_url( url );
       }
 
-      for( tag_name_type t : tags )
+      for( auto t : tags )
       {
          FC_ASSERT( t.size() < MAX_URL_LENGTH,
             "Tag: ${t} is too long.",("t", t) );
@@ -3059,7 +3058,7 @@ namespace node { namespace protocol {
          validate_account_name( interface );
       }
 
-      FC_ASSERT( amount.amount >= 0,
+      FC_ASSERT( amount.amount > 0,
          "Amount must be greater than or equal to zero." );
       FC_ASSERT( is_valid_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
@@ -3090,7 +3089,7 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( account );
 
-      FC_ASSERT( amount.amount >= 0,
+      FC_ASSERT( amount.amount > 0,
          "Amount must be greater than or equal to zero." );
       FC_ASSERT( is_valid_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
@@ -3122,6 +3121,8 @@ namespace node { namespace protocol {
          "Amount must be greater than or equal to zero." );
       FC_ASSERT( is_valid_symbol( collateral.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
+      FC_ASSERT( collateral.symbol != amount.symbol,
+         "Debt and Collateral must be different assets." );
    }
 
    void credit_pool_lend_operation::validate()const
@@ -3129,8 +3130,8 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( account );
 
-      FC_ASSERT( amount.amount >= 0,
-         "Amount must be greater than or equal to zero." );
+      FC_ASSERT( amount.amount > 0,
+         "Amount must be greater than zero." );
       FC_ASSERT( is_valid_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
    }
@@ -3140,7 +3141,7 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( account );
 
-      FC_ASSERT( amount.amount >= 0,
+      FC_ASSERT( amount.amount > 0,
          "Amount must be greater than zero." );
       FC_ASSERT( is_valid_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
@@ -3338,6 +3339,7 @@ namespace node { namespace protocol {
          "Symbol ${symbol} is not a valid symbol", ("symbol", block_reward.symbol) );
       FC_ASSERT( block_reward.amount >= 0,
          "Block reward must be greater than or equal to zero." );
+
       FC_ASSERT( block_reward_reduction_percent <= PERCENT_100,
          "Block Reward reduction percent must be between 0 and 100%." );
       FC_ASSERT( block_reward_reduction_days >= 0,
@@ -3776,7 +3778,6 @@ namespace node { namespace protocol {
 
    void proof_of_work_operation::validate()const
    {
-      props.validate();
       work.visit( proof_of_work_operation_validate_visitor() );
    };
 
@@ -3801,30 +3802,36 @@ namespace node { namespace protocol {
       if( !new_owner_key.valid() )
       {
          proof_of_work_operation_get_required_active_visitor vtor( a );
-         ilog("Got required active authorities from proof of work: ${w}",("w",work ) );
+         // ilog("Got required active authorities from proof of work: ${w}",("w",work ) );
          work.visit( vtor );
       }
+   }
+
+   string proof_of_work_input::to_string()const
+   {
+      return string( prev_block ) + "." + string( miner_account ) + "." + fc::to_string( nonce );
    }
 
    /**
     * X11 and ECC Signature Based Proof of Work Function:
     * 
-    * 1 - Take the hash of the Input to the proof.
-    * 2 - Get the Private key from the hash.
-    * 3 - Take the Hash of the private key.
-    * 4 - Sign the Hash of the private key, with that same private key.
+    * 1 - Take the X11 Hash of the Input to the proof.
+    * 2 - Get the Private key from the Hash of the Input.
+    * 3 - Take the Hash of the Private Key.
+    * 4 - Sign the Hash of the Private Key, with that same Private Key.
     * 5 - Take the Hash of the Signature.
     * 6 - Get the Public Key that would have signed the Hash of the Signature to result in the original signature.
     * 7 - Take the hash of both the Input to the proof and the notional public key.
     */
-   void x11_proof_of_work::create( const block_id_type& prev, const account_name_type& account_name, uint64_t n )
+   void x11_proof_of_work::create( block_id_type prev, account_name_type account_name, uint64_t n )
    {
-      input.miner_account = account_name;
       input.prev_block = prev;
+      input.miner_account = account_name;
       input.nonce = n;
 
-      x11 key_secret = x11::hash( input );
+      x11 key_secret = x11::hash( input.to_string() );
       private_key_type private_key = fc::ecc::private_key::regenerate( fc::sha256( key_secret ) );
+      string wif = key_to_wif( private_key );
 
       x11 key_hash = x11::hash( private_key );
       signature_type signature = private_key.sign_compact( fc::sha256( key_hash ) );
@@ -3832,19 +3839,24 @@ namespace node { namespace protocol {
       x11 sig_hash = x11::hash( signature );
       public_key_type recovered_pub_key = fc::ecc::public_key( signature, fc::sha256( sig_hash ) );
 
-      x11 work = x11::hash( std::make_pair( input, recovered_pub_key ) );
-      pow_summary = work.approx_log_32();
+      work = x11::hash( std::make_pair( input, recovered_pub_key ) );
+      /**
+      
+      ilog("Proof of work: \n Input: ${i} \n Key secret: ${ks} \n Private key: ${pk} \n Key hash: ${kh} \n Signature: ${sig} \n Sig hash: ${sh} \n Recovered public key: ${pub} \n Work: ${wo} \n",
+         ("i",input)("ks",key_secret)("pk",wif)("kh",key_hash)("sig",signature)("sh",sig_hash)("pub",recovered_pub_key)("wo",work));
+         
+      **/
    }
 
-   void equihash_proof_of_work::create( const block_id_type& recent_block, const account_name_type& account_name, uint32_t nonce )
+   void equihash_proof_of_work::create( block_id_type recent_block, account_name_type account_name, uint64_t nonce )
    {
-      input.miner_account = account_name;
       input.prev_block = recent_block;
+      input.miner_account = account_name;
       input.nonce = nonce;
 
-      auto seed = fc::sha256::hash( input );
+      auto seed = fc::sha256::hash( input.to_string() );
       proof = fc::equihash::proof::hash( EQUIHASH_N, EQUIHASH_K, seed );
-      pow_summary = fc::sha256::hash( proof.inputs ).approx_log_32();
+      work = fc::sha256::hash( proof.inputs );
    }
 
    void x11_proof_of_work::validate()const
@@ -3853,7 +3865,7 @@ namespace node { namespace protocol {
       x11_proof_of_work proof;
       proof.create( input.prev_block, input.miner_account, input.nonce );
 
-      FC_ASSERT( pow_summary == proof.pow_summary, 
+      FC_ASSERT( work == proof.work, 
          "Reported work does not match calculated work" );
    }
 
@@ -3869,7 +3881,7 @@ namespace node { namespace protocol {
          "Proof of work seed does not match expected seed" );
       FC_ASSERT( proof.is_valid(),
          "Proof of work is not a solution", ("block_id", input.prev_block)("miner_account", input.miner_account)("nonce", input.nonce) );
-      FC_ASSERT( pow_summary == fc::sha256::hash( proof.inputs ).approx_log_32() );
+      FC_ASSERT( work == fc::sha256::hash( proof.inputs ) );
    }
 
    void verify_block_operation::validate()const
@@ -3888,8 +3900,8 @@ namespace node { namespace protocol {
          "Symbol ${symbol} is not a valid symbol", ("symbol", commitment_stake.symbol ) );
       FC_ASSERT( commitment_stake.symbol == SYMBOL_COIN,
          "Commitment Stake must be denominated in the core asset." );
-      FC_ASSERT( verifications.size() >= IRREVERSIBLE_THRESHOLD,
-         "Insufficient Verifications for commit transaction. Please Include additional transaction IDs." );
+      FC_ASSERT( verifications.size() >= ( IRREVERSIBLE_THRESHOLD / PERCENT_1 ),
+         "Insufficient Verifiers for commit transaction. Please Include additional verifiers." );
    }
 
    void producer_violation_operation::validate()const

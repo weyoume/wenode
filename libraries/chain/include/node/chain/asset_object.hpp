@@ -1336,22 +1336,18 @@ namespace node { namespace chain {
 
             asset quote_unit( BLOCKCHAIN_PRECISION, quote_symbol );
             asset base_unit = quote_unit * mid_price;
-            price unit_price = price( base_unit, quote_unit );
-            double main_price = round_sig_figs( unit_price.to_real(), double( OPTION_SIG_FIGURES ) );
-            share_type int_price = int64_t( main_price );
-
-            share_type div = ( int_price * strike_width_percent ) / PERCENT_100;
+            share_type div = ( base_unit.amount * strike_width_percent ) / PERCENT_100;
             option_strike new_strike;
             flat_set< asset_symbol_type > new_strike_symbols;
 
             for( int i = -num_strikes; i <= num_strikes; i++ )
             {
-               new_strike = option_strike( price( asset( int_price + i * div, base_symbol ), quote_unit ), true, 100, new_date );
+               new_strike = option_strike( price( asset( base_unit.amount + i * div, base_symbol ), quote_unit ), true, 100, new_date );
                call_strikes.insert( new_strike );
                call_symbols.insert( new_strike.option_symbol() );
                new_strike_symbols.insert( new_strike.option_symbol() );
 
-               new_strike = option_strike( price( asset( int_price + i * div, base_symbol ), quote_unit ), false, 100, new_date );
+               new_strike = option_strike( price( asset( base_unit.amount + i * div, base_symbol ), quote_unit ), false, 100, new_date );
                put_strikes.insert( new_strike );
                put_symbols.insert( new_strike.option_symbol() );
                new_strike_symbols.insert( new_strike.option_symbol() );
@@ -1374,11 +1370,7 @@ namespace node { namespace chain {
 
             asset quote_unit( BLOCKCHAIN_PRECISION, quote_symbol );
             asset base_unit = quote_unit * mid_price;
-            price unit_price = price( base_unit, quote_unit );
-            double main_price = round_sig_figs( unit_price.to_real(), double( OPTION_SIG_FIGURES ) );
-            share_type int_price = int64_t( main_price );
-
-            share_type div = ( int_price * strike_width_percent ) / PERCENT_100;
+            share_type div = ( base_unit.amount * strike_width_percent ) / PERCENT_100;
             option_strike new_strike;
             flat_set< asset_symbol_type > new_strike_symbols;
 
@@ -1386,14 +1378,46 @@ namespace node { namespace chain {
             {
                for( int i = -num_strikes; i <= num_strikes; i++ )
                {
-                  new_strike = option_strike( price( asset( int_price + i * div, base_symbol ), quote_unit ), true, 100, d );
+                  new_strike = option_strike( price( asset( base_unit.amount + i * div, base_symbol ), quote_unit ), true, 100, d );
                   call_strikes.insert( new_strike );
                   call_symbols.insert( new_strike.option_symbol() );
                   new_strike_symbols.insert( new_strike.option_symbol() );
 
-                  new_strike = option_strike( price( asset( int_price + i * div, base_symbol ), quote_unit ), false, 100, d );
+                  new_strike = option_strike( price( asset( base_unit.amount + i * div, base_symbol ), quote_unit ), false, 100, d );
                   put_strikes.insert( new_strike );
                   put_symbols.insert( new_strike.option_symbol() );
+                  new_strike_symbols.insert( new_strike.option_symbol() );
+               }
+            }
+
+            return new_strike_symbols;
+         }
+
+         /**
+          * Gets a spread of strike prices at a mid_price for a set of specified dates, without adding them.
+          */
+         flat_set< asset_symbol_type >            get_strike_prices( 
+               price mid_price, 
+               flat_set< date_type > new_dates, 
+               uint16_t strike_width_percent = OPTION_STRIKE_WIDTH_PERCENT, 
+               uint16_t num_strikes = OPTION_NUM_STRIKES )const
+         {
+            FC_ASSERT( strike_width_percent * num_strikes < PERCENT_100,
+               "Strike width x num_strikes must be less than 100%, or strike prices will be negative." );
+
+            asset quote_unit( BLOCKCHAIN_PRECISION, quote_symbol );
+            asset base_unit = quote_unit * mid_price;
+            share_type div = ( base_unit.amount * strike_width_percent ) / PERCENT_100;
+            option_strike new_strike;
+            flat_set< asset_symbol_type > new_strike_symbols;
+
+            for( date_type d : new_dates )
+            {
+               for( int i = -num_strikes; i <= num_strikes; i++ )
+               {
+                  new_strike = option_strike( price( asset( base_unit.amount + i * div, base_symbol ), quote_unit ), true, 100, d );
+                  new_strike_symbols.insert( new_strike.option_symbol() );
+                  new_strike = option_strike( price( asset( base_unit.amount + i * div, base_symbol ), quote_unit ), false, 100, d );
                   new_strike_symbols.insert( new_strike.option_symbol() );
                }
             }
@@ -1447,7 +1471,6 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          asset_prediction_pool_object( Constructor&& c, allocator< Allocator > a ) :
-            outcome_assets( a.get_segment_manager() ), 
             outcome_details( a ),
             json(a),
             url(a),
@@ -1468,7 +1491,7 @@ namespace node { namespace chain {
 
          asset                                        prediction_bond_pool;     ///< Security deposit placed by the issuer on the market.
 
-         shared_vector< asset_symbol_type >           outcome_assets;           ///< Outcome asset symbols for the market.
+         flat_set< asset_symbol_type >                outcome_assets;           ///< Outcome asset symbols for the market.
 
          shared_string                                outcome_details;          ///< Description of each outcome and the resolution conditions for each asset. 
          
@@ -1906,11 +1929,13 @@ namespace node { namespace chain {
    struct by_asset_pair;
    struct by_symbol_a;
    struct by_symbol_b;
+   struct by_symbol_liquid;
 
    typedef multi_index_container<
       asset_liquidity_pool_object,
       indexed_by<
          ordered_unique< tag< by_id >, member< asset_liquidity_pool_object, asset_liquidity_pool_id_type, &asset_liquidity_pool_object::id > >,
+         ordered_unique< tag< by_symbol_liquid >, member< asset_liquidity_pool_object, asset_symbol_type, &asset_liquidity_pool_object::symbol_liquid > >,
          ordered_unique< tag< by_asset_pair >,
             composite_key< asset_liquidity_pool_object,
                member< asset_liquidity_pool_object, asset_symbol_type, &asset_liquidity_pool_object::symbol_a >,

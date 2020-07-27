@@ -6,6 +6,7 @@
 #include <fc/platform_independence.hpp>
 #include <fc/fwd.hpp>
 #include <fc/io/raw_fwd.hpp>
+#include <fc/log/logger.hpp>
 
 #include <node/protocol/sph_blake.h>
 #include <node/protocol/sph_bmw.h>
@@ -72,6 +73,8 @@ namespace node { namespace protocol {
     public:
         x11();
         explicit x11( const string& hex_str );
+        explicit x11( uint64_t a, uint64_t b, uint64_t c, uint64_t d );
+        explicit x11( uint128_t a );
         explicit x11( const char *data, size_t size );
 
         string str()const;
@@ -79,6 +82,12 @@ namespace node { namespace protocol {
 
         char*    data()const;
         size_t data_size()const { return 256 / 8; }
+
+        static x11 max_value()
+        {
+            const uint64_t max64 = std::numeric_limits<uint64_t>::max();
+            return x11( max64, max64, max64, max64 );
+        }
 
         static x11 hash( const char* d, uint32_t dlen );
         static x11 hash( const string& );
@@ -160,13 +169,19 @@ namespace node { namespace protocol {
 
         uint64_t hash64(const char* buf, size_t len);
 
+        uint128_t to_uint128()const;
+
         uint64_t _hash[4];
     };
 
-    void to_variant( const x11& bi, fc::variant& v );
-    void from_variant( const fc::variant& v, x11& bi );
-
 } }  // node:protocol
+
+namespace fc {
+
+    void to_variant( const node::protocol::x11& bi, fc::variant& v );
+
+    void from_variant( const fc::variant& v, node::protocol::x11& bi );
+}
 
 namespace std {
 
@@ -193,4 +208,6 @@ namespace boost {
 }
 
 #include <fc/reflect/reflect.hpp>
+
 FC_REFLECT_TYPENAME( node::protocol::x11 )
+FC_REFLECT_TYPENAME( node::protocol::x11_CTX )

@@ -17,6 +17,8 @@ using namespace node::protocol;
 
 #define TEST_SHARED_MEM_SIZE (1024 * 1024 * 8)
 
+/**
+
 BOOST_FIXTURE_TEST_SUITE( block_tests, clean_database_fixture )
 
 BOOST_AUTO_TEST_CASE( generate_empty_blocks )
@@ -228,7 +230,6 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
 
       PUSH_TX( db1, trx );
 
-      //*/
       // generate blocks
       // db1 : A
       // db2 : B C D
@@ -397,7 +398,7 @@ BOOST_AUTO_TEST_CASE( tapos )
       b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_producer(1), get_private_key( db1.get_scheduled_producer(1), "producer", INIT_ACCOUNT_PASSWORD ), database::skip_nothing);
       trx.signatures.clear();
       trx.sign( init_account_private_active_key, db1.get_chain_id() );
-      BOOST_REQUIRE_THROW( db1.push_transaction(trx, 0/*database::skip_transaction_signatures | database::skip_authority_check*/), fc::exception );
+      BOOST_REQUIRE_THROW( db1.push_transaction(trx, database::skip_transaction_signatures | database::skip_authority_check), fc::exception );
    } 
    catch(fc::exception& e) 
    {
@@ -807,4 +808,7 @@ BOOST_FIXTURE_TEST_CASE( generate_block_size, clean_database_fixture )
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+**/
+
 //#endif

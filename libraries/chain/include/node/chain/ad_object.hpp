@@ -19,10 +19,13 @@ namespace node { namespace chain {
       public:
          template<typename Constructor, typename Allocator>
          ad_creative_object( Constructor&& c, allocator< Allocator > a ) :
-         objective(a), creative_id(a), creative(a), json(a)
-         {
-            c(*this);
-         };
+            objective(a), 
+            creative_id(a), 
+            creative(a), 
+            json(a)
+            {
+               c(*this);
+            };
 
          id_type                     id;
 
@@ -55,10 +58,10 @@ namespace node { namespace chain {
       public:
          template<typename Constructor, typename Allocator>
          ad_campaign_object( Constructor&& c, allocator< Allocator > a ) :
-         campaign_id(a), json(a)
-         {
-            c(*this);
-         };
+            campaign_id(a), json(a)
+            {
+               c(*this);
+            };
 
          id_type                          id;
 
@@ -86,9 +89,9 @@ namespace node { namespace chain {
 
          bool                             active = true;     ///< True when active for bidding and delivery, false to deactivate.
 
-         bool                             is_agent( const account_name_type& account )const  
+         bool                             is_agent( const account_name_type& a )const  
          {
-            return agents.find( account ) != agents.end();
+            return std::find( agents.begin(), agents.end(), a ) != agents.end();
          };
    };
 
@@ -100,10 +103,12 @@ namespace node { namespace chain {
       public:
          template<typename Constructor, typename Allocator>
          ad_inventory_object( Constructor&& c, allocator< Allocator > a ) :
-         inventory_id(a), audience_id(a), json(a)
-         {
-            c(*this);
-         };
+            inventory_id(a), 
+            audience_id(a), 
+            json(a)
+            {
+               c(*this);
+            };
 
          id_type                          id;
 
@@ -158,9 +163,9 @@ namespace node { namespace chain {
 
          bool                             active = true;     ///< True when active for bidding and delivery, false to deactivate.
 
-         bool is_audience( const account_name_type& account )const  
+         bool                             is_audience( const account_name_type& a )const
          {
-            return audience.find( account ) != audience.end();
+            return std::find( audience.begin(), audience.end(), a ) != audience.end();
          };
    };
 
@@ -224,9 +229,9 @@ namespace node { namespace chain {
 
          time_point                       expiration;        ///< Time that the bid was will expire.
 
-         bool                             is_delivered( const account_name_type& account )const  
+         bool                             is_delivered( const account_name_type& a )const
          {
-            return delivered.find( account ) != delivered.end();
+            return std::find( delivered.begin(), delivered.end(), a ) != delivered.end();
          };
    };
 

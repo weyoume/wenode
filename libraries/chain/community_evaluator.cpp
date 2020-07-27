@@ -151,9 +151,6 @@ void community_update_evaluator::do_apply( const community_update_operation& o )
 
    const community_object& community = _db.get_community( o.community );
 
-   ilog( "Begin Account: ${f} updating community: \n ${c} \n",
-      ("f", o.account)("c",community) );
-
    // New permissions must be subset of old permissions.
    
    FC_ASSERT(!( o.permissions & ~community.permissions ), 
@@ -235,8 +232,8 @@ void community_update_evaluator::do_apply( const community_update_operation& o )
       co.active = o.active;
    });
 
-   ilog( "Account: ${f} updated community: \n ${c} \n",
-      ("f", o.account)("c",community) );
+   ilog( "Account: ${a} Updated community: ${c}",
+      ("a",o.account)("c",community.name) );
 
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
@@ -398,6 +395,8 @@ void community_add_mod_evaluator::do_apply( const community_add_mod_operation& o
       }
    });
 
+   ilog( "Account: ${a} added Moderator: ${m} to Community: ${c} - \n ${mem} \n",
+      ("a",o.account)("m",o.moderator)("c",o.community)("mem",community_member));
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
@@ -462,6 +461,8 @@ void community_add_admin_evaluator::do_apply( const community_add_admin_operatio
          cmo.last_updated = now;
       }
    });
+   ilog( "Account: ${a} added Administrator: ${ad} to Community: ${c} - \n ${mem} \n",
+      ("a",o.account)("ad",o.admin)("c",o.community)("mem",community_member));
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
@@ -772,20 +773,25 @@ void community_remove_member_evaluator::do_apply( const community_remove_member_
    time_point now = _db.head_block_time();
 
    FC_ASSERT( community_member.is_member( member.name ),
-      "Account: ${a} is not a member of community: ${b}.", ("a", o.member)("b", o.community));
+      "Account: ${a} is not a member of community: ${b}",
+      ("a",o.member)("b",o.community));
    FC_ASSERT( !community_member.is_moderator( member.name ),
-      "Account: ${a} cannot be removed while a moderator of community: ${b}.", ("a", o.member)("b", o.community));
+      "Account: ${a} cannot be removed while a moderator of community: ${b}",
+      ("a",o.member)("b",o.community));
    FC_ASSERT( !community_member.is_administrator( member.name ),
-      "Account: ${a} cannot be removed while an administrator of community: ${b}.", ("a", o.member)("b", o.community));
+      "Account: ${a} cannot be removed while an administrator of community: ${b}",
+      ("a",o.member)("b",o.community));
    FC_ASSERT( community_member.founder != member.name,
-      "Account: ${a} cannot be removed while the founder of community: ${b}.", ("a", o.member)("b", o.community));
+      "Account: ${a} cannot be removed while the founder of community: ${b}",
+      ("a",o.member)("b",o.community));
 
    const auto& key_idx = _db.get_index< community_member_key_index >().indices().get< by_member_community >();
 
    if( o.account != member.name )     // Account can remove itself from community membership.  
    {
       FC_ASSERT( community_member.is_authorized_blacklist( o.account ), 
-         "Account: ${a} is not authorised to remove accounts from community: ${b}.", ("a", o.account)("b", o.community)); 
+         "Account: ${a} is not authorised to remove accounts from community: ${b}.",
+         ("a",o.account)("b",o.community)); 
    }
    
    _db.modify( community_member, [&]( community_member_object& cmo )

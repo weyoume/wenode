@@ -180,54 +180,392 @@ BOOST_AUTO_TEST_CASE( proof_of_work_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Create proof of work" );
 
-      ACTORS( (alice) );
+      ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)(jayme) );
 
-      fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       producer_create( "alice", alice_private_owner_key );
-      producer_vote( "alice", alice_private_owner_key );
+
+      fund_liquid( "bob", asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "bob", asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "bob", bob_private_owner_key );
+
+      fund_liquid( "candice", asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "candice", asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "candice", candice_private_owner_key );
+
+      fund_liquid( "dan", asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "dan", asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "dan", dan_private_owner_key );
+
+      fund_liquid( "elon", asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "elon", asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "elon", elon_private_owner_key );
+
+      fund_liquid( "fred", asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "fred", asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "fred", fred_private_owner_key );
+
+      fund_liquid( "george", asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "george", asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "george", george_private_owner_key );
+
+      fund_liquid( "haz", asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "haz", asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "haz", haz_private_owner_key );
+
+      fund_liquid( "isabelle", asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "isabelle", asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "isabelle", isabelle_private_owner_key );
+
+      fund_liquid( "jayme", asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "jayme", asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      producer_create( "jayme", jayme_private_owner_key );
 
       generate_blocks( TOTAL_PRODUCERS );
       
       signed_transaction tx;
 
-      chain_properties chain_props;
-      chain_props.validate();
+      proof_of_work_operation proof;
 
-      for( int i = 0; i<10; i++ )
-      {
-         uint128_t target_pow = db.pow_difficulty();
-         block_id_type head_block_id = db.head_block_id();
-         x11_proof_of_work work;
-         proof_of_work_operation proof;
-
-         work.create( head_block_id, "alice", 0 );
-      
-         for( auto n = 1; work.pow_summary >= target_pow; n++ )
-         {
-            work.create( head_block_id, "alice", n );
-         }
-
-         proof.work = work;
-         proof.props = chain_props;
-         proof.validate();
-
-         tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-         tx.operations.push_back( proof );
-         tx.sign( alice_private_active_key, db.get_chain_id() );
-         db.push_transaction( tx, 0 );
-
-         tx.operations.clear();
-         tx.signatures.clear();
-
-         generate_block();
-      }
+      // Simulation for 10 competing Miners running for 10 days, with increasing, then decreasing difficulty.
 
       const producer_object& alice_producer = db.get_producer( account_name_type( "alice" ) );
       alice_producer.props.validate();
 
-      BOOST_REQUIRE( alice_producer.active == true );
+      const producer_object& bob_producer = db.get_producer( account_name_type( "bob" ) );
+      bob_producer.props.validate();
+
+      const producer_object& candice_producer = db.get_producer( account_name_type( "candice" ) );
+      candice_producer.props.validate();
+
+      const producer_object& dan_producer = db.get_producer( account_name_type( "dan" ) );
+      dan_producer.props.validate();
+
+      const producer_object& elon_producer = db.get_producer( account_name_type( "elon" ) );
+      elon_producer.props.validate();
+
+      const producer_object& fred_producer = db.get_producer( account_name_type( "fred" ) );
+      fred_producer.props.validate();
+
+      const producer_object& george_producer = db.get_producer( account_name_type( "george" ) );
+      george_producer.props.validate();
+
+      const producer_object& haz_producer = db.get_producer( account_name_type( "haz" ) );
+      haz_producer.props.validate();
+
+      const producer_object& isabelle_producer = db.get_producer( account_name_type( "isabelle" ) );
+      isabelle_producer.props.validate();
+
+      const producer_object& jayme_producer = db.get_producer( account_name_type( "jayme" ) );
+      jayme_producer.props.validate();
+
+      BOOST_REQUIRE( alice_producer.active );
+      BOOST_REQUIRE( alice_producer.mining_power == 0 );
+      BOOST_REQUIRE( alice_producer.mining_count == 0 );
+
+      BOOST_REQUIRE( bob_producer.active );
+      BOOST_REQUIRE( bob_producer.mining_power == 0 );
+      BOOST_REQUIRE( bob_producer.mining_count == 0 );
+
+      BOOST_REQUIRE( candice_producer.active );
+      BOOST_REQUIRE( candice_producer.mining_power == 0 );
+      BOOST_REQUIRE( candice_producer.mining_count == 0 );
+
+      BOOST_REQUIRE( dan_producer.active );
+      BOOST_REQUIRE( dan_producer.mining_power == 0 );
+      BOOST_REQUIRE( dan_producer.mining_count == 0 );
+
+      BOOST_REQUIRE( elon_producer.active );
+      BOOST_REQUIRE( elon_producer.mining_power == 0 );
+      BOOST_REQUIRE( elon_producer.mining_count == 0 );
+
+      BOOST_REQUIRE( fred_producer.active );
+      BOOST_REQUIRE( fred_producer.mining_power == 0 );
+      BOOST_REQUIRE( fred_producer.mining_count == 0 );
+
+      BOOST_REQUIRE( george_producer.active );
+      BOOST_REQUIRE( george_producer.mining_power == 0 );
+      BOOST_REQUIRE( george_producer.mining_count == 0 );
+
+      BOOST_REQUIRE( haz_producer.active );
+      BOOST_REQUIRE( haz_producer.mining_power == 0 );
+      BOOST_REQUIRE( haz_producer.mining_count == 0 );
+
+      BOOST_REQUIRE( isabelle_producer.active );
+      BOOST_REQUIRE( isabelle_producer.mining_power == 0 );
+      BOOST_REQUIRE( isabelle_producer.mining_count == 0 );
+
+      BOOST_REQUIRE( jayme_producer.active );
+      BOOST_REQUIRE( jayme_producer.mining_power == 0 );
+      BOOST_REQUIRE( jayme_producer.mining_count == 0 );
+
+      uint64_t days = 4;
+
+      x11 target_pow = db.pow_difficulty();
+      x11_proof_of_work work;
+      uint64_t n = 0;
+      block_id_type head_block_id = db.head_block_id();
+   
+      while( n < int64_t( BLOCKCHAIN_PRECISION.value ) )
+      {
+         head_block_id = db.head_block_id();
+
+         work.create( head_block_id, "alice", n );
+         if( work.work < target_pow )
+         {
+            proof.work = work;
+      
+            tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+            tx.set_reference_block( head_block_id );
+            tx.operations.push_back( proof );
+            tx.sign( alice_private_active_key, db.get_chain_id() );
+            db.push_transaction( tx, 0 );
+
+            tx.operations.clear();
+            tx.signatures.clear();
+
+            break;
+         }
+         n++;
+      }
+      
+      /**
+
+      while( ( db.head_block_num() / POW_UPDATE_BLOCK_INTERVAL ) < days )
+      {
+         target_pow = db.pow_difficulty();
+         n = 0;
+         while( n < int64_t( BLOCKCHAIN_PRECISION.value ) )
+         {
+            head_block_id = db.head_block_id();
+
+            work.create( head_block_id, "alice", n );
+            if( work.work < target_pow )
+            {
+               proof.work = work;
+         
+               tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+               tx.set_reference_block( head_block_id );
+               tx.operations.push_back( proof );
+               tx.sign( alice_private_active_key, db.get_chain_id() );
+               db.push_transaction( tx, 0 );
+
+               tx.operations.clear();
+               tx.signatures.clear();
+
+               break;
+            }
+
+            work.create( head_block_id, "bob", n );
+            if( work.work < target_pow )
+            {
+               proof.work = work;
+         
+               tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+               tx.set_reference_block( head_block_id );
+               tx.operations.push_back( proof );
+               tx.sign( bob_private_active_key, db.get_chain_id() );
+               db.push_transaction( tx, 0 );
+
+               tx.operations.clear();
+               tx.signatures.clear();
+
+               break;
+            }
+
+            work.create( head_block_id, "candice", n );
+            if( work.work < target_pow )
+            {
+               proof.work = work;
+         
+               tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+               tx.set_reference_block( head_block_id );
+               tx.operations.push_back( proof );
+               tx.sign( candice_private_active_key, db.get_chain_id() );
+               db.push_transaction( tx, 0 );
+
+               tx.operations.clear();
+               tx.signatures.clear();
+
+               break;
+            }
+
+            work.create( head_block_id, "dan", n );
+            if( work.work < target_pow )
+            {
+               proof.work = work;
+         
+               tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+               tx.set_reference_block( head_block_id );
+               tx.operations.push_back( proof );
+               tx.sign( dan_private_active_key, db.get_chain_id() );
+               db.push_transaction( tx, 0 );
+
+               tx.operations.clear();
+               tx.signatures.clear();
+
+               break;
+            }
+
+            work.create( head_block_id, "elon", n );
+            if( work.work < target_pow )
+            {
+               proof.work = work;
+         
+               tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+               tx.set_reference_block( head_block_id );
+               tx.operations.push_back( proof );
+               tx.sign( elon_private_active_key, db.get_chain_id() );
+               db.push_transaction( tx, 0 );
+
+               tx.operations.clear();
+               tx.signatures.clear();
+
+               break;
+            }
+
+            work.create( head_block_id, "fred", n );
+            if( work.work < target_pow )
+            {
+               proof.work = work;
+         
+               tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+               tx.set_reference_block( head_block_id );
+               tx.operations.push_back( proof );
+               tx.sign( fred_private_active_key, db.get_chain_id() );
+               db.push_transaction( tx, 0 );
+
+               tx.operations.clear();
+               tx.signatures.clear();
+
+               break;
+            }
+
+            work.create( head_block_id, "george", n );
+            if( work.work < target_pow )
+            {
+               proof.work = work;
+         
+               tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+               tx.set_reference_block( head_block_id );
+               tx.operations.push_back( proof );
+               tx.sign( george_private_active_key, db.get_chain_id() );
+               db.push_transaction( tx, 0 );
+
+               tx.operations.clear();
+               tx.signatures.clear();
+
+               break;
+            }
+
+            work.create( head_block_id, "haz", n );
+            if( work.work < target_pow )
+            {
+               proof.work = work;
+         
+               tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+               tx.set_reference_block( head_block_id );
+               tx.operations.push_back( proof );
+               tx.sign( haz_private_active_key, db.get_chain_id() );
+               db.push_transaction( tx, 0 );
+
+               tx.operations.clear();
+               tx.signatures.clear();
+
+               break;
+            }
+
+            work.create( head_block_id, "isabelle", n );
+            if( work.work < target_pow )
+            {
+               proof.work = work;
+         
+               tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+               tx.set_reference_block( head_block_id );
+               tx.operations.push_back( proof );
+               tx.sign( isabelle_private_active_key, db.get_chain_id() );
+               db.push_transaction( tx, 0 );
+
+               tx.operations.clear();
+               tx.signatures.clear();
+
+               break;
+            }
+
+            work.create( head_block_id, "jayme", n );
+            if( work.work < target_pow )
+            {
+               proof.work = work;
+         
+               tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+               tx.set_reference_block( head_block_id );
+               tx.operations.push_back( proof );
+               tx.sign( jayme_private_active_key, db.get_chain_id() );
+               db.push_transaction( tx, 0 );
+
+               tx.operations.clear();
+               tx.signatures.clear();
+
+               break;
+            }
+
+            n++;
+         }
+
+         uint64_t day = ( db.head_block_num() / POW_UPDATE_BLOCK_INTERVAL );
+
+         if( day < ( days / 2 ) )
+         {
+            generate_blocks( 20 * BLOCKS_PER_MINUTE );   // Difficulty should decrease when created once per 20 minutes
+         }
+         else
+         {
+            generate_blocks( 5 * BLOCKS_PER_MINUTE );    // Difficulty should increase when created once per 5 minutes
+         }
+      }
+
+      BOOST_REQUIRE( alice_producer.active );
       BOOST_REQUIRE( alice_producer.mining_power > 0 );
+      BOOST_REQUIRE( alice_producer.mining_count > 0 );
+
+      BOOST_REQUIRE( bob_producer.active );
+      BOOST_REQUIRE( bob_producer.mining_power > 0 );
+      BOOST_REQUIRE( bob_producer.mining_count > 0 );
+
+      BOOST_REQUIRE( candice_producer.active );
+      BOOST_REQUIRE( candice_producer.mining_power > 0 );
+      BOOST_REQUIRE( candice_producer.mining_count > 0 );
+
+      BOOST_REQUIRE( dan_producer.active );
+      BOOST_REQUIRE( dan_producer.mining_power > 0 );
+      BOOST_REQUIRE( dan_producer.mining_count > 0 );
+
+      BOOST_REQUIRE( elon_producer.active );
+      BOOST_REQUIRE( elon_producer.mining_power > 0 );
+      BOOST_REQUIRE( elon_producer.mining_count > 0 );
+
+      BOOST_REQUIRE( fred_producer.active );
+      BOOST_REQUIRE( fred_producer.mining_power > 0 );
+      BOOST_REQUIRE( fred_producer.mining_count > 0 );
+
+      BOOST_REQUIRE( george_producer.active );
+      BOOST_REQUIRE( george_producer.mining_power > 0 );
+      BOOST_REQUIRE( george_producer.mining_count > 0 );
+
+      BOOST_REQUIRE( haz_producer.active );
+      BOOST_REQUIRE( haz_producer.mining_power > 0 );
+      BOOST_REQUIRE( haz_producer.mining_count > 0 );
+
+      BOOST_REQUIRE( isabelle_producer.active );
+      BOOST_REQUIRE( isabelle_producer.mining_power > 0 );
+      BOOST_REQUIRE( isabelle_producer.mining_count > 0 );
+
+      BOOST_REQUIRE( jayme_producer.active );
+      BOOST_REQUIRE( jayme_producer.mining_power > 0 );
+      BOOST_REQUIRE( jayme_producer.mining_count > 0 );
+
+      **/
       
       validate_database();
 
@@ -323,8 +661,7 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
       create.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       create.validate();
 
-      flat_set< transaction_id_type > verifications;
-      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      flat_set< account_name_type > verifications;
 
       for( auto i = 0; i < 100; i++ )
       {
@@ -346,7 +683,10 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
       }
 
       generate_blocks( TOTAL_PRODUCERS );
+
       verify.block_id = db.head_block_id();
+
+      generate_block();
 
       for( auto i = 0; i < 100; i++ )
       {
@@ -359,11 +699,21 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
          tx.sign( alice_private_active_key, db.get_chain_id() );
          db.push_transaction( tx, 0 );
 
-         verifications.insert( tx.id() );
+         verifications.insert( name );
 
          tx.operations.clear();
          tx.signatures.clear();
       }
+
+      verify.signatory = "alice";
+      verify.producer = "alice";
+      
+      tx.operations.push_back( verify );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Verify block" );
 
@@ -389,11 +739,12 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_REQUIRE( validation.producer == commit.producer );
-      BOOST_REQUIRE( validation.block_id == commit.block_id );
-      BOOST_REQUIRE( validation.block_height == block_height );
-      BOOST_REQUIRE( validation.commitment_stake == commit.commitment_stake );
-      BOOST_REQUIRE( validation.committed == true );
+      const block_validation_object& new_validation = db.get_block_validation( account_name_type( "alice" ), block_height );
+
+      BOOST_REQUIRE( new_validation.block_id == commit.block_id );
+      BOOST_REQUIRE( new_validation.block_height == block_height );
+      BOOST_REQUIRE( new_validation.commitment_stake == commit.commitment_stake );
+      BOOST_REQUIRE( new_validation.committed );
       
       validate_database();
 

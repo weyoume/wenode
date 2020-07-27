@@ -66,6 +66,11 @@ class debug_node_api
       uint32_t debug_generate_blocks_until( fc::time_point head_block_time, bool generate_sparsely = true );
 
       /*
+       * Generate blocks locally until a specified head block number. Can generate them sparsely.
+       */
+      uint32_t debug_generate_until_block( uint64_t head_block_num, bool generate_sparsely = true );
+
+      /*
        * Pop a block from the blockchain, returning it
        */
       fc::optional< node::chain::signed_block > debug_pop_block();
@@ -161,6 +166,7 @@ FC_API(node::plugin::debug_node::debug_node_api,
        (debug_push_blocks)
        (debug_generate_blocks)
        (debug_generate_blocks_until)
+       (debug_generate_until_block)
        (debug_pop_block)
        //(debug_push_block)
        //(debug_update_object)

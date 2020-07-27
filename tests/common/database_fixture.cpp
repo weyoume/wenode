@@ -67,8 +67,6 @@ clean_database_fixture::clean_database_fixture()
       //ahplugin->plugin_startup();
 
       validate_database();
-
-      ilog( "Cleaned Database Fixture" );
    } 
    catch( const fc::exception& e )
    {
@@ -169,7 +167,7 @@ void database_fixture::open_database()
    {
       data_dir = fc::temp_directory( graphene::utilities::temp_directory_path() );
       db._log_hardforks = false;
-      db.open( data_dir->path(), data_dir->path(), 1024 * 1024 * 256, chainbase::database::read_write ); // 256 MB file for testing
+      db.open( data_dir->path(), data_dir->path(), 1024 * 1024 * 512, chainbase::database::read_write ); // 512 MB file for testing
    }
 }
 
@@ -190,16 +188,37 @@ void database_fixture::generate_block( uint32_t skip, int miss_blocks )
    db_plugin->debug_generate_blocks( 1, skip, miss_blocks );
 }
 
-void database_fixture::generate_blocks( uint32_t block_count = 1 )
+void database_fixture::generate_blocks( uint32_t block_count )
 {
    auto produced = db_plugin->debug_generate_blocks( block_count, default_skip, 0 );
    BOOST_REQUIRE( produced == block_count );
 }
 
+void database_fixture::generate_blocks( uint32_t block_count, int miss_blocks )
+{
+   auto produced = db_plugin->debug_generate_blocks( block_count, default_skip, miss_blocks );
+   BOOST_REQUIRE( produced == block_count );
+}
+
 void database_fixture::generate_blocks( fc::time_point timestamp, bool miss_intermediate_blocks )
 {
-   db_plugin->debug_generate_blocks_until( timestamp, miss_intermediate_blocks, default_skip );
-   BOOST_REQUIRE( ( db.head_block_time() - timestamp ) < BLOCK_INTERVAL );
+   if( timestamp < db.head_block_time() + fc::days(30))
+   {
+      db_plugin->debug_generate_blocks_until( timestamp, miss_intermediate_blocks, default_skip );
+      BOOST_REQUIRE( ( db.head_block_time() - timestamp ) < BLOCK_INTERVAL );
+   }
+   else
+   {
+      time_point month = db.head_block_time() + fc::days(30);
+      db_plugin->debug_generate_blocks_until( month, miss_intermediate_blocks, default_skip );
+      BOOST_REQUIRE( ( db.head_block_time() - month ) < BLOCK_INTERVAL );
+   }
+}
+
+void database_fixture::generate_until_block( uint64_t head_block_num, bool miss_intermediate_blocks )
+{
+   db_plugin->debug_generate_until_block( head_block_num, miss_intermediate_blocks, default_skip );
+   BOOST_REQUIRE( db.head_block_num() == head_block_num );
 }
 
 const account_object& database_fixture::account_create(

@@ -1984,8 +1984,6 @@ class wallet_api
        * @param signatory The name of the account signing the transaction.
        * @param account Name of the account claiming the reward.
        * @param permlink Permlink of the users recent post in the last 24h.
-       * @param view_id Recent comment id viewed in the last 24h.
-       * @param vote_id Recent comment id voted on in the last 24h.
        * @param interface Account of the interface facilitating the transaction broadcast.
        * @param broadcast Set True to broadcast transaction.
        */
@@ -1993,8 +1991,6 @@ class wallet_api
          string signatory,
          string account,
          string permlink,
-         uint64_t view_id,
-         uint64_t vote_id,
          string interface,
          bool broadcast );
 

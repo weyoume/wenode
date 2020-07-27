@@ -170,29 +170,35 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       {
          issuer_account_name = NULL_ACCOUNT;
 
-         _db.create< reward_fund_object >( [&]( reward_fund_object& rfo )
+         FC_ASSERT( o.options.block_reward.symbol == o.symbol,
+            "Currency asset must have a block reward denominated in the asset symbol: ${s}",
+            ("s",o.symbol));
+
+         const reward_fund_object& reward_fund = _db.create< reward_fund_object >( [&]( reward_fund_object& rfo )
          {
-            rfo.last_updated = now;
             rfo.symbol = o.symbol;
             rfo.content_constant = CONTENT_CONSTANT;
-            rfo.content_reward_balance = asset(0, o.symbol);
-            rfo.validation_reward_balance = asset(0, o.symbol);
-            rfo.txn_stake_reward_balance = asset(0, o.symbol);
-            rfo.work_reward_balance = asset(0, o.symbol);
-            rfo.activity_reward_balance = asset(0, o.symbol);
-            rfo.supernode_reward_balance = asset(0, o.symbol);
-            rfo.power_reward_balance = asset(0, o.symbol);
-            rfo.community_fund_balance = asset(0, o.symbol);
-            rfo.development_reward_balance = asset(0, o.symbol);
-            rfo.marketing_reward_balance = asset(0, o.symbol);
-            rfo.advocacy_reward_balance = asset(0, o.symbol);
-            rfo.activity_reward_balance = asset(0, o.symbol);
+            rfo.content_reward_balance = asset( 0, o.symbol );
+            rfo.validation_reward_balance = asset( 0, o.symbol );
+            rfo.txn_stake_reward_balance = asset( 0, o.symbol );
+            rfo.work_reward_balance = asset( 0, o.symbol );
+            rfo.producer_activity_reward_balance = asset( 0, o.symbol );
+            rfo.supernode_reward_balance = asset( 0, o.symbol );
+            rfo.power_reward_balance = asset( 0, o.symbol );
+            rfo.community_fund_balance = asset( 0, o.symbol );
+            rfo.development_reward_balance = asset( 0, o.symbol );
+            rfo.marketing_reward_balance = asset( 0, o.symbol );
+            rfo.advocacy_reward_balance = asset( 0, o.symbol );
+            rfo.activity_reward_balance = asset( 0, o.symbol );
+            rfo.premium_partners_fund_balance = asset( 0, o.symbol );
             rfo.recent_content_claims = 0;
-            rfo.author_reward_curve = curve_id::convergent_semi_quadratic;
-            rfo.curation_reward_curve = curve_id::convergent_semi_quadratic;
+            rfo.reward_curve = curve_id::convergent_semi_quadratic;
+            rfo.last_updated = now;
          });
 
-         _db.create< asset_currency_data_object >( [&]( asset_currency_data_object& a )
+         ilog( "Reward Fund: ${r}",("r",reward_fund));
+
+         const asset_currency_data_object& currency = _db.create< asset_currency_data_object >( [&]( asset_currency_data_object& a )
          {
             a.symbol = o.symbol;
             a.block_reward = o.options.block_reward;
@@ -215,6 +221,8 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             a.work_reward_percent = o.options.work_reward_percent;
             a.producer_activity_reward_percent = o.options.producer_activity_reward_percent;
          });
+
+         ilog( "Currency Data: ${c}",("c",currency));
       }
       break;
       case asset_property_type::STABLECOIN_ASSET:
@@ -241,7 +249,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          FC_ASSERT( o.options.asset_settlement_delay > MIN_SETTLEMENT_DELAY,
             "Force Settlement delay must be greater than network minimum." );
 
-         _db.create< asset_stablecoin_data_object >( [&]( asset_stablecoin_data_object& a )
+         const asset_stablecoin_data_object& stablecoin = _db.create< asset_stablecoin_data_object >( [&]( asset_stablecoin_data_object& a )
          {
             a.symbol = o.symbol;
             a.issuer = o.issuer;
@@ -259,6 +267,8 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             a.feeds[ o.issuer ] = make_pair( now, feed );
             a.update_median_feeds( now );
          });
+
+         ilog( "Stablecoin Data: ${s}",("s",stablecoin));
       }
       break;
       case asset_property_type::EQUITY_ASSET:
@@ -278,7 +288,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          FC_ASSERT( revenue_share_sum <= 50 * PERCENT_1,
             "Cannot share more than 50 percent of account revenue." );
 
-         _db.create< asset_equity_data_object >( [&]( asset_equity_data_object& a )
+         const asset_equity_data_object& equity = _db.create< asset_equity_data_object >( [&]( asset_equity_data_object& a )
          {
             a.symbol = o.symbol;
             a.business_account = o.issuer;
@@ -298,6 +308,8 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             a.boost_producers = o.options.boost_producers;
             a.boost_top = o.options.boost_top;
          });
+
+         ilog( "Equity Data: ${e}",("e",equity));
 
          _db.modify( issuer, [&]( account_object& a )
          {
@@ -324,7 +336,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             value_asset.asset_type == asset_property_type::STABLECOIN_ASSET, 
             "Value asset must be either a currency or stablecoin type asset." );
 
-         _db.create< asset_bond_data_object >( [&]( asset_bond_data_object& a )
+         const asset_bond_data_object& bond = _db.create< asset_bond_data_object >( [&]( asset_bond_data_object& a )
          {
             a.business_account = o.issuer;
             a.symbol = o.symbol;
@@ -334,6 +346,8 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             a.maturity_date = o.options.maturity_date;
             a.collateral_pool = asset( 0, a.value.symbol );
          });
+
+         ilog( "Bond Data: ${b}",("b",bond));
       }
       break;
       case asset_property_type::CREDIT_ASSET:
@@ -366,7 +380,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          FC_ASSERT( revenue_share_sum <= 50 * PERCENT_1,
             "Cannot share more than 50 percent of account revenue." );
 
-         _db.create< asset_credit_data_object >( [&]( asset_credit_data_object& a )
+         const asset_credit_data_object& credit = _db.create< asset_credit_data_object >( [&]( asset_credit_data_object& a )
          {
             a.business_account = o.issuer;
             a.symbol = o.symbol;
@@ -383,6 +397,8 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             a.savings_variable_interest_rate = o.options.savings_variable_interest_rate;
             a.var_interest_range = o.options.var_interest_range;
          });
+
+         ilog( "Credit Data: ${c}",("c",credit));
 
          _db.modify( issuer, [&]( account_object& a )
          {
@@ -441,7 +457,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             next_distribution_date = date_type( 1, today.month + 1, today.year );
          }
 
-         _db.create< asset_stimulus_data_object >( [&]( asset_stimulus_data_object& asdo )
+         const asset_stimulus_data_object stimulus = _db.create< asset_stimulus_data_object >( [&]( asset_stimulus_data_object& asdo )
          {
             asdo.business_account = o.issuer;
             asdo.symbol = o.symbol;
@@ -453,6 +469,8 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             asdo.distribution_amount = o.options.distribution_amount;
             asdo.next_distribution_date = next_distribution_date;
          });
+
+         ilog( "Stimulus Data: ${s}",("s",stimulus));
       }
       break;
       case asset_property_type::GATEWAY_ASSET:
@@ -474,7 +492,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
                "Ownership asset must be a Credit enabled asset type" );
          }
          
-         _db.create< asset_unique_data_object >( [&]( asset_unique_data_object& audo )
+         const asset_unique_data_object& unique = _db.create< asset_unique_data_object >( [&]( asset_unique_data_object& audo )
          {
             audo.symbol = o.symbol;
             audo.controlling_owner = o.issuer;
@@ -489,6 +507,8 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             }
             audo.access_price = o.options.access_price;
          });
+
+         ilog( "Unique Data: ${u}",("u",unique));
       }
       break;
       case asset_property_type::LIQUIDITY_POOL_ASSET:
@@ -529,7 +549,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
    {
       a.symbol = o.symbol;
       a.asset_type = asset_property;
-      a.issuer = o.issuer;
+      a.issuer = issuer_account_name;
       from_string( a.display_symbol, o.options.display_symbol );
       from_string( a.details, o.options.details );
       from_string( a.json, o.options.json );
@@ -565,7 +585,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
 
    _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
    {
-      a.issuer = o.issuer;
+      a.issuer = issuer_account_name;
       a.symbol = o.symbol;
    });
 
@@ -580,7 +600,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       
       _db.create< asset_object >( [&]( asset_object& a )
       {
-         a.issuer = o.issuer;
+         a.issuer = issuer_account_name;
          a.symbol = core_liq_symbol;
          a.asset_type = asset_property_type::LIQUIDITY_POOL_ASSET;    // Create the core liquidity pool for the new asset.
          from_string( a.display_symbol, core_liq_symbol );
@@ -618,7 +638,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
 
       _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
       {
-         a.issuer = o.issuer;
+         a.issuer = issuer_account_name;
          a.symbol = core_liq_symbol;
       });
 
@@ -627,9 +647,10 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          
       _db.create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
       {
-         a.issuer = o.issuer;
+         a.issuer = issuer_account_name;
          a.symbol_a = SYMBOL_COIN;
          a.symbol_b = o.symbol;
+         a.symbol_liquid = core_liq_symbol;
          a.balance_a = o.coin_liquidity;
          a.balance_b = init_new_asset;
          a.hour_median_price = price( a.balance_a, a.balance_b );
@@ -646,7 +667,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       
       _db.create< asset_object >( [&]( asset_object& a )
       {
-         a.issuer = o.issuer;
+         a.issuer = issuer_account_name;
          a.symbol = usd_liq_symbol;
          a.asset_type = asset_property_type::LIQUIDITY_POOL_ASSET;    // Create the USD liquidity pool for the new asset.
          from_string( a.display_symbol, usd_liq_symbol );
@@ -684,7 +705,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
 
       _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
       {
-         a.issuer = o.issuer;
+         a.issuer = issuer_account_name;
          a.symbol = usd_liq_symbol;
       });
 
@@ -693,9 +714,10 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          
       _db.create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
       {   
-         a.issuer = o.issuer;
+         a.issuer = issuer_account_name;
          a.symbol_a = SYMBOL_USD;
          a.symbol_b = o.symbol;
+         a.symbol_liquid = usd_liq_symbol;
          a.balance_a = o.usd_liquidity;
          a.balance_b = init_new_asset;
          a.hour_median_price = price( a.balance_a, a.balance_b );
@@ -712,7 +734,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       
       _db.create< asset_object >( [&]( asset_object& a )
       {
-         a.issuer = o.issuer;
+         a.issuer = issuer_account_name;
          a.symbol = credit_asset_symbol;
          a.asset_type = asset_property_type::CREDIT_POOL_ASSET; // Create the asset credit pool for the new asset.
          from_string( a.display_symbol, credit_asset_symbol );
@@ -750,7 +772,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
 
       _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
       {
-         a.issuer = o.issuer;
+         a.issuer = issuer_account_name;
          a.symbol = credit_asset_symbol;
       });
 
@@ -760,7 +782,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
 
       _db.create< asset_credit_pool_object >( [&]( asset_credit_pool_object& a )
       {
-         a.issuer = o.issuer;
+         a.issuer = issuer_account_name;
          a.base_symbol = o.symbol;   
          a.credit_symbol = credit_asset_symbol; 
          a.base_balance = init_lent_asset;
@@ -1216,7 +1238,7 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
             "Unique assets must have a maximum supply of exactly one unit." );
          FC_ASSERT( unique_obj.is_control( o.issuer ),
             "Account must be in the control list to update unique asset. (${o.issuer} != ${a.issuer})",
-            ("o.issuer", o.issuer)("asset.issuer", unique_obj.controlling_owner ) );
+            ("o.issuer", o.issuer)("asset.issuer", unique_obj.controlling_owner ));
 
          if( unique_obj.controlling_owner == o.issuer )
          {
@@ -1254,12 +1276,14 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
       from_string( a.details, o.new_options.details );
       from_string( a.json, o.new_options.json );
       from_string( a.url, o.new_options.url );
+      
       a.stake_intervals = o.new_options.stake_intervals;
       a.unstake_intervals = o.new_options.unstake_intervals;
       a.market_fee_percent = o.new_options.market_fee_percent;
       a.market_fee_share_percent = o.new_options.market_fee_share_percent;
       a.issuer_permissions = o.new_options.issuer_permissions;
       a.flags = o.new_options.flags;
+      
       a.whitelist_authorities.clear();
       a.blacklist_authorities.clear();
       a.whitelist_markets.clear();
@@ -1283,6 +1307,10 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
       }
       a.last_updated = now;
    });
+
+   ilog( "Account: ${ac} asset Update: ${a}",
+      ("ac",o.issuer)("a",asset_obj));
+
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 

@@ -36,7 +36,9 @@ namespace node { namespace chain {
 
          shared_string            memo;           ///< The memo is plain-text, encryption on the memo is advised. 
 
-         time_point               expiration;     ///< time that the request expires. 
+         time_point               expiration;     ///< Time that the request expires.
+
+         bool                     paid = false;   ///< True when the request has been paid. 
    };
 
 
@@ -47,7 +49,8 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          transfer_recurring_object( Constructor&& c, allocator< Allocator > a ) :
-         transfer_id(a), memo(a)
+         transfer_id(a), 
+         memo(a)
          {
             c( *this );
          }
@@ -338,6 +341,7 @@ FC_REFLECT( node::chain::transfer_request_object,
          (request_id)
          (memo)
          (expiration)
+         (paid)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::transfer_request_object, node::chain::transfer_request_index );

@@ -9,6 +9,26 @@
 
 namespace node { namespace chain {
 
+   /**
+    * COMMENT TYPES
+    * 
+    * TEXT_POST,        ///< A post containing a maxmium of 300 characters of text.
+    * IMAGE_POST,       ///< A post containing an IPFS media file of an image, and up to 1000 characters of description text.
+    * GIF_POST,         ///< A post containing an IPFS media file of a GIF, and up to 1000 characters of description text.
+    * VIDEO_POST,       ///< A post containing a title, an IPFS media file or bittorrent magent link of a video, and up to 1000 characters of description text.
+    * LINK_POST,        ///< A post containing a URL link, link title, and up to 1000 characters of description text.
+    * ARTICLE_POST,     ///< A post containing a title, a header image, and an unlimited amount of body text with embedded images.
+    * AUDIO_POST,       ///< A post containing a title, an IPFS link to an audio file, and up to 1000 characters of description text.
+    * FILE_POST,        ///< A post containing a title, either an IPFS link to a file, or a magnet link to a bittorrent swarm for a file, and up to 1000 characters of description text.
+    * LIVESTREAM_POST,  ///< A post containing a title, a link to a livestreaming video, and up to 1000 characters of description text.
+    */
+
+   /**
+    * Comment containing content created by an author account.
+    * 
+    * Referenced by a unique permlink.
+    * Uses one of several content type variants.
+    */
    class comment_object : public object < comment_object_type, comment_object >
    {
       comment_object() = delete;
@@ -16,21 +36,21 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          comment_object( Constructor&& c, allocator< Allocator > a ) :
-         permlink(a), 
-         title(a), 
-         body(a), 
-         ipfs( a ), 
-         magnet( a ), 
-         url(a), 
-         tags( a.get_segment_manager() ), 
-         language(a), 
-         parent_permlink(a), 
-         json(a), 
-         category(a), 
-         beneficiaries( a.get_segment_manager() )
-         {
-            c( *this );
-         }
+            permlink(a), 
+            title(a), 
+            body(a), 
+            ipfs(a), 
+            magnet(a), 
+            url(a), 
+            tags(a.get_segment_manager()), 
+            language(a), 
+            parent_permlink(a), 
+            json(a), 
+            category(a), 
+            beneficiaries(a.get_segment_manager())
+            {
+               c( *this );
+            }
 
          id_type                           id;
 
@@ -56,7 +76,7 @@ namespace node { namespace chain {
 
          connection_tier_type              reply_connection;                    ///< Replies to the comment must be connected to the author to at least this level. 
 
-         community_name_type               community;                           ///< The name of the community to which the post is uploaded to. Null string if no community. 
+         community_name_type               community;                           ///< The name of the community to which the post is uploaded to. Null string if no community.
 
          shared_vector< tag_name_type >    tags;                                ///< Set of string tags for sorting the post by.
 
@@ -66,11 +86,11 @@ namespace node { namespace chain {
 
          shared_string                     language;                            ///< String containing a two letter language code that the post is broadcast in.
 
-         id_type                           root_comment;                        ///< The root post that the comment is an ancestor of. 
+         id_type                           root_comment;                        ///< The root post that the comment is an ancestor of.
 
-         account_name_type                 parent_author;                       ///< Account that created the post this post is replying to, empty if root post. 
+         account_name_type                 parent_author;                       ///< Account that created the post this post is replying to, empty if root post.
 
-         shared_string                     parent_permlink;                     ///< permlink of the post this post is replying to, empty if root post. 
+         shared_string                     parent_permlink;                     ///< permlink of the post this post is replying to, empty if root post.
 
          shared_string                     json;                                ///< JSON metadata of the post, including Link, and additional interface specific data relating to the post.
 
@@ -148,7 +168,7 @@ namespace node { namespace chain {
 
          uint128_t                         max_weight = 0;                      ///< Used to define relative contribution of this comment to rewards.
 
-         asset                             max_accepted_payout;                 ///< USD value of the maximum payout this post will receive.
+         asset                             max_accepted_payout = MAX_ACCEPTED_PAYOUT;  ///< USD value of the maximum payout this post will receive.
 
          uint32_t                          author_reward_percent = AUTHOR_REWARD_PERCENT;
 
@@ -270,9 +290,10 @@ namespace node { namespace chain {
    
 
    /**
-    * Feed objects are used to hold the posts that have been posted or shared by the 
-    * accounts that a user follows or is connected with, the communities that they follow, or
-    * the tags that they follow. Operates like inbox.
+    * Feed holds the posts that have been posted or shared by followed or connected accounts.
+    * 
+    * Also holds posts from communities that they follow, or the tags that they follow. 
+    * Operates like an account's inbox.
     */
    class feed_object : public object< feed_object_type, feed_object >
    {
@@ -454,32 +475,33 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          moderation_tag_object( Constructor&& c, allocator< Allocator > a ) :
-         details(a)
-         {
-            c( *this );
-         }
+            tags( a.get_segment_manager() ),
+            details(a)
+            {
+               c( *this );
+            }
 
-         id_type                        id;
+         id_type                             id;
 
-         account_name_type              moderator;        ///< Name of the moderator or goverance account that created the comment tag.
+         account_name_type                   moderator;        ///< Name of the moderator or goverance account that created the comment tag.
 
-         comment_id_type                comment;          ///< ID of the comment.
+         comment_id_type                     comment;          ///< ID of the comment.
 
-         community_name_type            community;        ///< The name of the community to which the post is uploaded to.
+         community_name_type                 community;        ///< The name of the community to which the post is uploaded to.
 
-         vector< tag_name_type >        tags;             ///< Set of string tags for sorting the post by.
+         shared_vector< tag_name_type >      tags;             ///< Set of string tags for sorting the post by.
 
-         uint16_t                       rating;           ///< Moderator updated rating as to the maturity of the content, and display sensitivity. 
+         uint16_t                            rating;           ///< Moderator updated rating as to the maturity of the content, and display sensitivity. 
 
-         shared_string                  details;          ///< Explaination as to what rule the post is in contravention of and why it was tagged.
+         shared_string                       details;          ///< Explaination as to what rule the post is in contravention of and why it was tagged.
 
-         account_name_type              interface;        ///< Interface account used for the transaction.
+         account_name_type                   interface;        ///< Interface account used for the transaction.
 
-         bool                           filter;           ///< True if the post should be filtered by the community or governance address subscribers. 
+         bool                                filter;           ///< True if the post should be filtered by the community or governance address subscribers. 
 
-         time_point                     last_updated;     ///< Time the comment tag was last edited by the author.
+         time_point                          last_updated;     ///< Time the comment tag was last edited by the author.
 
-         time_point                     created;          ///< Time that the comment tag was created.
+         time_point                          created;          ///< Time that the comment tag was created.
    };
 
 
@@ -495,11 +517,11 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          list_object( Constructor&& c, allocator< Allocator > a ) :
-         list_id(a),
-         name(a)
-         {
-            c( *this );
-         }
+            list_id(a),
+            name(a)
+            {
+               c( *this );
+            }
 
          id_type                                     id;
 
@@ -547,12 +569,12 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          poll_object( Constructor&& c, allocator< Allocator > a ) :
-         poll_id(a),
-         details(a),
-         poll_options( a.get_segment_manager() )
-         {
-            c( *this );
-         }
+            poll_id(a),
+            details(a),
+            poll_options( a.get_segment_manager() )
+            {
+               c( *this );
+            }
 
          id_type                                     id;
 
@@ -726,6 +748,7 @@ namespace node { namespace chain {
    struct by_voter_comment;
    struct by_comment_weight_voter;
    struct by_voter_last_update;
+   struct by_voter_recent;
    struct by_permlink;
 
    typedef multi_index_container<
@@ -750,7 +773,21 @@ namespace node { namespace chain {
                member< comment_vote_object, time_point, &comment_vote_object::last_updated>,
                member< comment_vote_object, comment_id_type, &comment_vote_object::comment>
             >,
-            composite_key_compare< std::less< account_name_type >, std::greater< time_point >, std::less< comment_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::greater< time_point >,
+               std::less< comment_id_type >
+            >
+         >,
+         ordered_unique< tag< by_voter_recent >,
+            composite_key< comment_vote_object,
+               member< comment_vote_object, account_name_type, &comment_vote_object::voter>,
+               member< comment_vote_object, comment_vote_id_type, &comment_vote_object::id>
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::greater< comment_vote_id_type > 
+            >
          >,
          ordered_unique< tag< by_comment_weight_voter >,
             composite_key< comment_vote_object,
@@ -758,7 +795,11 @@ namespace node { namespace chain {
                member< comment_vote_object, uint128_t, &comment_vote_object::weight>,
                member< comment_vote_object, account_name_type, &comment_vote_object::voter>
             >,
-            composite_key_compare< std::less< comment_id_type >, std::greater< uint128_t >, std::less< account_name_type > >
+            composite_key_compare< 
+               std::less< comment_id_type >, 
+               std::greater< uint128_t >, 
+               std::less< account_name_type > 
+            >
          >
       >,
       allocator< comment_vote_object >
@@ -766,7 +807,7 @@ namespace node { namespace chain {
 
    struct by_comment_viewer;
    struct by_viewer_comment;
-
+   struct by_viewer_recent;
    struct by_interface_viewer;
    struct by_supernode_viewer;
    struct by_comment_weight_viewer;
@@ -785,6 +826,16 @@ namespace node { namespace chain {
             composite_key< comment_view_object,
                member< comment_view_object, account_name_type, &comment_view_object::viewer >,
                member< comment_view_object, comment_id_type, &comment_view_object::comment >
+            >
+         >,
+         ordered_unique< tag< by_viewer_recent >,
+            composite_key< comment_view_object,
+               member< comment_view_object, account_name_type, &comment_view_object::viewer >,
+               member< comment_view_object, comment_view_id_type, &comment_view_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::greater< comment_view_id_type >
             >
          >,
          ordered_unique< tag< by_interface_viewer >,

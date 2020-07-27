@@ -64,7 +64,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
       comment.url = "https://www.url.com";
       comment.community = INIT_COMMUNITY;
-      comment.tags.push_back( tag_name_type( "test" ) );
+      comment.tags.push_back( "test" );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
       comment.parent_author = ROOT_POST_PARENT;
@@ -112,7 +112,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       tx.operations.clear();
       tx.signatures.clear();
 
-      const ad_creative_object& alice_creative = db.get_ad_creative( account_name_type( "alice" ), creative.creative_id );
+      const ad_creative_object& alice_creative = db.get_ad_creative( creative.account, creative.creative_id );
 
       BOOST_REQUIRE( to_string( alice_creative.objective ) == creative.objective );
       BOOST_REQUIRE( to_string( alice_creative.creative ) == creative.creative );
@@ -142,7 +142,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       tx.operations.clear();
       tx.signatures.clear();
 
-      const ad_campaign_object& alice_campaign = db.get_ad_campaign( account_name_type( "alice" ), campaign.campaign_id );
+      const ad_campaign_object& alice_campaign = db.get_ad_campaign( campaign.account, campaign.campaign_id );
 
       BOOST_REQUIRE( alice_campaign.budget == campaign.budget );
       BOOST_REQUIRE( alice_campaign.begin == campaign.begin );
@@ -171,7 +171,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       tx.operations.clear();
       tx.signatures.clear();
 
-      const ad_audience_object& bob_audience = db.get_ad_audience( account_name_type( "bob" ), audience.audience_id );
+      const ad_audience_object& bob_audience = db.get_ad_audience( audience.account, audience.audience_id );
 
       for( auto a : audience.audience )
       {
@@ -256,7 +256,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       tx.operations.clear();
       tx.signatures.clear();
 
-      const ad_inventory_object& bob_inventory = db.get_ad_inventory( account_name_type( "bob" ), inventory.inventory_id );
+      const ad_inventory_object& bob_inventory = db.get_ad_inventory( inventory.provider, inventory.inventory_id );
 
       BOOST_REQUIRE( bob_inventory.min_price == inventory.min_price );
       BOOST_REQUIRE( bob_inventory.metric == ad_metric_type::VIEW_METRIC );
@@ -281,7 +281,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       bid.provider = "bob";
       bid.inventory_id = "19ebee83-fc57-404b-a85e-aa8e7f6bbb66";
       bid.bid_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      bid.requested = 100;
+      bid.requested = 99;
       bid.audience_id = "07c968e5-fc0f-478f-8a9c-6fe3a93eace1";
       bid.json = "{ \"valid\": true }";
       bid.expiration = ( now() + fc::days(30) );
@@ -295,7 +295,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       tx.operations.clear();
       tx.signatures.clear();
 
-      const ad_bid_object& alice_bid = db.get_ad_bid( account_name_type( "alice" ), bid.bid_id );
+      const ad_bid_object& alice_bid = db.get_ad_bid( bid.bidder, bid.bid_id );
 
       BOOST_REQUIRE( alice_bid.bid_price == bid.bid_price );
       BOOST_REQUIRE( to_string( alice_bid.campaign_id ) == bid.campaign_id );
@@ -340,7 +340,23 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
          tx.signatures.clear();
       }
 
-      generate_blocks( now() + MIN_VIEW_INTERVAL );
+      generate_blocks( now() + fc::minutes(1) );
+
+      tx.operations.push_back( audience );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );    // Update audience to include new accounts
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      bid.requested = 100;
+
+      tx.operations.push_back( bid );    // Update bid to include new audience accounts
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
    
       view_operation view;
 
@@ -363,31 +379,10 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
 
          tx.operations.clear();
          tx.signatures.clear();
+
+         generate_block();
       }
-
-      tx.operations.push_back( audience );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );    // Update audience to include new accounts
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      for( auto a : audience.audience )
-      {
-         BOOST_REQUIRE( bob_audience.is_audience( a ) );
-      }
-
-      BOOST_REQUIRE( bob_audience.audience.size() == 103 );
-
-      bid.requested = 100;
-
-      tx.operations.push_back( bid );    // Update bid to include new audience accounts
-      tx.sign( alice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
+      
       BOOST_REQUIRE( alice_bid.bid_price == bid.bid_price );
       BOOST_REQUIRE( to_string( alice_bid.campaign_id ) == bid.campaign_id );
       BOOST_REQUIRE( to_string( alice_bid.creative_id ) == bid.creative_id );
@@ -397,8 +392,6 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       BOOST_REQUIRE( alice_bid.requested == bid.requested );
       BOOST_REQUIRE( alice_bid.remaining == 50 );
       BOOST_REQUIRE( alice_bid.expiration == bid.expiration );
-      BOOST_REQUIRE( bob_inventory.remaining == 50 );
-      BOOST_REQUIRE( alice_campaign.budget == asset( 50*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: sucessful partial ad delivery" );
 
@@ -416,17 +409,17 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
          tx.operations.clear();
          tx.signatures.clear();
 
-         generate_blocks( now() + MIN_VIEW_INTERVAL );
+         generate_block();
       }
 
       const auto& bid_idx = db.get_index< ad_bid_index >().indices().get< by_bid_id >();
-      auto bid_itr = bid_idx.find( boost::make_tuple( "alice", string( "28bdc74a-097a-40d4-bf49-cc95af3eeec0" ) ) );
+      auto bid_itr = bid_idx.find( boost::make_tuple( bid.account, bid.bid_id ) );
 
       const auto& cam_idx = db.get_index< ad_campaign_index >().indices().get< by_campaign_id >();
-      auto cam_itr = cam_idx.find( boost::make_tuple( "alice", string( "da89d680-e9c4-4ae0-95e5-1f47bd1526a0" ) ) );
+      auto cam_itr = cam_idx.find( boost::make_tuple( campaign.account, campaign.campaign_id ) );
 
       const auto& inv_idx = db.get_index< ad_inventory_index >().indices().get< by_inventory_id >();
-      auto inv_itr = inv_idx.find( boost::make_tuple( "bob", string( "19ebee83-fc57-404b-a85e-aa8e7f6bbb66" ) ) );
+      auto inv_itr = inv_idx.find( boost::make_tuple( inventory.provider, inventory.inventory_id ) );
 
       BOOST_REQUIRE( bid_itr == bid_idx.end() );
       BOOST_REQUIRE( cam_itr == cam_idx.end() );

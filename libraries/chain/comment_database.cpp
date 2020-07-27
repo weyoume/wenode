@@ -39,7 +39,7 @@ using fc::flat_map;
 
 struct reward_fund_context
 {
-   uint128_t       recent_content_claims;
+   uint128_t       recent_content_claims = 0;
 
    asset           content_reward_balance;
 
@@ -319,65 +319,57 @@ asset database::distribute_comment_reward( util::comment_reward_context& ctx, co
    if( c.net_reward > 0 )
    {
       util::fill_comment_reward_context_local_state( ctx, c );
-      asset reward_tokens = get_comment_reward( ctx );
+      asset content_reward = get_comment_reward( ctx );
 
-      if( reward_tokens.amount > 0 )
+      if( content_reward.amount > 0 )
       {
-         asset voter_tokens =  ( reward_tokens * c.vote_reward_percent ) / PERCENT_100;
-         asset viewer_tokens = ( reward_tokens * c.view_reward_percent ) / PERCENT_100;
-         asset sharer_tokens = ( reward_tokens * c.share_reward_percent ) / PERCENT_100;
-         asset commenter_tokens = ( reward_tokens * c.comment_reward_percent ) / PERCENT_100;
-         asset storage_tokens = ( reward_tokens * c.storage_reward_percent ) / PERCENT_100;
-         asset moderator_tokens = ( reward_tokens * c.moderator_reward_percent ) / PERCENT_100;
+         asset voter_tokens =  ( content_reward * c.vote_reward_percent ) / PERCENT_100;
+         asset viewer_tokens = ( content_reward * c.view_reward_percent ) / PERCENT_100;
+         asset sharer_tokens = ( content_reward * c.share_reward_percent ) / PERCENT_100;
+         asset commenter_tokens = ( content_reward * c.comment_reward_percent ) / PERCENT_100;
+         asset storage_tokens = ( content_reward * c.storage_reward_percent ) / PERCENT_100;
+         asset moderator_tokens = ( content_reward * c.moderator_reward_percent ) / PERCENT_100;
          asset total_curation_tokens = voter_tokens + viewer_tokens + sharer_tokens + commenter_tokens + storage_tokens + moderator_tokens;
-         asset author_tokens = reward_tokens - total_curation_tokens;
-
-         author_tokens += pay_voters( c, voter_tokens );
-         author_tokens += pay_viewers( c, viewer_tokens );
-         author_tokens += pay_sharers( c, sharer_tokens );
-         author_tokens += pay_commenters( c, commenter_tokens );
-         author_tokens += pay_storage( c, storage_tokens );
-         author_tokens += pay_moderators( c, moderator_tokens );
-
+         asset author_reward = content_reward - total_curation_tokens;
+         author_reward += pay_voters( c, voter_tokens );
+         author_reward += pay_viewers( c, viewer_tokens );
+         author_reward += pay_sharers( c, sharer_tokens );
+         author_reward += pay_commenters( c, commenter_tokens );
+         author_reward += pay_storage( c, storage_tokens );
+         author_reward += pay_moderators( c, moderator_tokens );
          asset total_beneficiary = asset( 0, c.reward_currency );
-         claimed_reward = author_tokens + total_curation_tokens;
-
+         claimed_reward = content_reward;
+         
          for( auto b : c.beneficiaries )
          {
-            asset benefactor_tokens = ( author_tokens * b.weight ) / PERCENT_100;
-            asset reward_created = benefactor_tokens;
-            adjust_reward_balance( b.account, reward_created );
-            push_virtual_operation( 
-               comment_benefactor_reward_operation( b.account, c.author, to_string( c.permlink ), reward_created ) );
-            total_beneficiary += benefactor_tokens;
+            asset beneficiary_reward = ( author_reward * b.weight ) / PERCENT_100;
+            adjust_reward_balance( b.account, beneficiary_reward );
+            push_virtual_operation( comment_benefactor_reward_operation( b.account, c.author, to_string( c.permlink ), beneficiary_reward ) );
+            total_beneficiary += beneficiary_reward;
          }
 
-         author_tokens -= total_beneficiary;
-         asset author_reward = author_tokens;
+         author_reward -= total_beneficiary;
          adjust_reward_balance( c.author, author_reward );
-
-         asset claimed_reward_usd = asset_to_USD( claimed_reward );
+         asset claimed_reward_usd = asset_to_USD( content_reward );
          asset total_curation_usd = asset_to_USD( total_curation_tokens );
          asset total_beneficiary_usd = asset_to_USD( total_beneficiary );
-
          adjust_total_payout( c, claimed_reward_usd, total_curation_usd, total_beneficiary_usd );
-
          push_virtual_operation( content_reward_operation( c.author, to_string( c.permlink ), claimed_reward_usd ) );
          push_virtual_operation( author_reward_operation( c.author, to_string( c.permlink ), author_reward ) );
 
          modify( c, [&]( comment_object& com )
          {
-            com.content_rewards += claimed_reward;
+            com.content_rewards += content_reward;
          });
       }
    }
 
    modify( c, [&]( comment_object& com )
    {
-      if( com.cashouts_received < ( ctx.decay_rate.to_seconds() / ctx.reward_interval.to_seconds() ) &&
-        ( now - com.created ) < ctx.reward_interval )
+      if( int64_t( com.cashouts_received ) < ( ctx.decay_rate.to_seconds() / ctx.reward_interval.to_seconds() ) &&
+         now <= ( com.created + ctx.decay_rate ))
       {
-         if( com.net_reward > 0 )   // A payout is only made for positive reward.
+         if( com.net_reward > 0 )                     // A payout is only made for positive reward.
          {
             com.cashouts_received++;
             com.last_payout = now;
@@ -392,21 +384,29 @@ asset database::distribute_comment_reward( util::comment_reward_context& ctx, co
 
    push_virtual_operation( comment_payout_update_operation( c.author, to_string( c.permlink ) ) );    // Update comment metrics data
 
-   ilog( "Processed Comment Cashout - Author: ${a} Permlink: ${p} Reward: ${r}",
-      ("a",c.author)("p",c.permlink)("r",claimed_reward) );
+   ilog( "Processed Comment Cashout: Author: ${a} Permlink: ${p} \n Cashouts: ${c} \n Next Cashout Time: ${t} \n Reward: ${r} \n Context: \n ${ctx} \n",
+      ("a",c.author)("p",c.permlink)("c",c.cashouts_received)("t",c.cashout_time)("r",claimed_reward)("ctx",ctx));
    
    return claimed_reward;
+
 } FC_CAPTURE_AND_RETHROW() }
 
 
 util::comment_reward_context database::get_comment_reward_context( const reward_fund_object& reward_fund )
 {
    util::comment_reward_context ctx;
-
-   ctx.current_COIN_USD_price = get_liquidity_pool( reward_fund.symbol, SYMBOL_USD ).day_median_price;
+   if( reward_fund.symbol == SYMBOL_COIN )
+   {
+      ctx.current_COIN_USD_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).day_median_price;
+   }
+   else
+   {
+      ctx.current_COIN_USD_price = get_liquidity_pool( SYMBOL_USD, reward_fund.symbol ).day_median_price;
+   }
+   
    ctx.decay_rate = reward_fund.content_reward_decay_rate;
    ctx.reward_interval = reward_fund.content_reward_interval;
-   ctx.reward_curve = reward_fund.author_reward_curve;
+   ctx.reward_curve = reward_fund.reward_curve;
    ctx.content_constant = reward_fund.content_constant;
    return ctx;
 }
@@ -420,7 +420,6 @@ void database::process_comment_cashout()
 {
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = props.time;
-   vector< asset > reward_distributed;
 
    const auto& fund_idx = get_index< reward_fund_index >().indices().get< by_symbol >();
    auto fund_itr = fund_idx.begin();
@@ -428,21 +427,20 @@ void database::process_comment_cashout()
    while( fund_itr != fund_idx.end() )
    {
       const reward_fund_object& reward_fund = *fund_itr;
+      ++fund_itr;
       util::comment_reward_context ctx = get_comment_reward_context( reward_fund );
 
-      // Decay recent reward of post reward fund
-
-      modify( reward_fund, [&]( reward_fund_object& rfo )
+      modify( reward_fund, [&]( reward_fund_object& rfo )      
       {
          rfo.recent_content_claims -= ( rfo.recent_content_claims * ( now - rfo.last_updated ).count() ) / ctx.decay_rate.count();
          rfo.last_updated = now;
       });
 
-      // Snapshots the reward fund into a seperate object reward fund context to ensure equal execution conditions.
-
       reward_fund_context rf_ctx;
+
       rf_ctx.recent_content_claims = reward_fund.recent_content_claims;
       rf_ctx.content_reward_balance = reward_fund.content_reward_balance;
+      rf_ctx.reward_distributed = asset( 0, reward_fund.symbol );
 
       const auto& comment_idx = get_index< comment_index >().indices().get< by_currency_cashout_time >();
       auto comment_itr = comment_idx.lower_bound( reward_fund.symbol );
@@ -455,8 +453,13 @@ void database::process_comment_cashout()
          {
             uint128_t net_reward = uint128_t( comment_itr->net_reward.value );
             uint128_t reward_curve = util::evaluate_reward_curve( 
-               net_reward, comment_itr->cashouts_received, ctx.reward_curve, ctx.decay_rate, ctx.content_constant );
-            rf_ctx.recent_content_claims += reward_curve;
+               net_reward, 
+               comment_itr->cashouts_received, 
+               ctx.reward_curve, 
+               ctx.decay_rate, 
+               ctx.content_constant );
+
+            rf_ctx.recent_content_claims += reward_curve;     // Snapshots the reward fund into a seperate object reward fund context to ensure equal execution conditions.
          }
          ++comment_itr;
       }
@@ -479,10 +482,8 @@ void database::process_comment_cashout()
       modify( reward_fund, [&]( reward_fund_object& rfo )
       {
          rfo.recent_content_claims = rf_ctx.recent_content_claims;
-         rfo.content_reward_balance -= rf_ctx.reward_distributed;
+         rfo.adjust_content_reward_balance( -rf_ctx.reward_distributed );
       });
-
-      ++fund_itr;
    }
 }
 
@@ -653,12 +654,13 @@ void database::update_comment_metrics()
          cmo.vote_view_ratio = vote_view_ratio;
          cmo.vote_share_ratio = vote_share_ratio;
          cmo.vote_comment_ratio = vote_comment_ratio;
+         cmo.last_updated = now;
       });
 
       push_virtual_operation( update_featured_feed_operation( now ) );
    }
 
-   ilog( "Updated Comment Metrics: ${m}", ("m", comment_metrics ) );
+   // ilog( "Updated Comment Metrics: ${m}", ("m", comment_metrics ) );
 } FC_CAPTURE_AND_RETHROW() }
 
 

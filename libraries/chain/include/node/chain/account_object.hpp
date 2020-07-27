@@ -40,7 +40,7 @@ namespace node { namespace chain {
 
          account_name_type                name;                                  ///< Username of the account, lowercase letter and numbers and hyphens only.
 
-         shared_string                    details;                               ///< The account's Public details string.
+         shared_string                    details;                               ///< The account's Public details string. Profile Biography.
 
          shared_string                    url;                                   ///< The account's Public personal URL.
 
@@ -1920,7 +1920,8 @@ namespace node { namespace chain {
          ordered_unique< tag< by_account_business >,
             composite_key< account_member_invite_object,
                member< account_member_invite_object, account_name_type, &account_member_invite_object::account >,
-               member< account_member_invite_object, account_name_type, &account_member_invite_object::business_account >
+               member< account_member_invite_object, account_name_type, &account_member_invite_object::business_account >,
+               member< account_member_invite_object, account_name_type, &account_member_invite_object::member >
             >
          >,
          ordered_unique< tag< by_member_business >,
@@ -2294,14 +2295,20 @@ namespace node { namespace chain {
                member< account_recovery_request_object, account_name_type, &account_recovery_request_object::account_to_recover >,
                member< account_recovery_request_object, account_recovery_request_id_type, &account_recovery_request_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< account_recovery_request_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< account_recovery_request_id_type > 
+            >
          >,
          ordered_unique< tag< by_expiration >,
             composite_key< account_recovery_request_object,
                member< account_recovery_request_object, time_point, &account_recovery_request_object::expiration >,
                member< account_recovery_request_object, account_recovery_request_id_type, &account_recovery_request_object::id >
             >,
-            composite_key_compare< std::less< time_point >, std::less< account_recovery_request_id_type > >
+            composite_key_compare< 
+               std::less< time_point >, 
+               std::less< account_recovery_request_id_type > 
+            >
          >
       >,
       allocator< account_recovery_request_object >

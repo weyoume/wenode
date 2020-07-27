@@ -95,6 +95,9 @@ void producer_update_evaluator::do_apply( const producer_update_operation& o )
          p.signing_key = public_key_type( o.block_signing_key );
          p.created = now;
          p.last_updated = now;
+         p.last_mining_update = now;
+         p.last_pow_time = now;
+         p.last_txn_stake_weight_update = now;
          p.props = o.props;
          p.active = true;
       });
@@ -105,21 +108,21 @@ void producer_update_evaluator::do_apply( const producer_update_operation& o )
 void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
 { try {
    const auto& work = o.work.get< x11_proof_of_work >();
-   uint128_t target_pow = _db.pow_difficulty();
+   x11 target_pow = _db.pow_difficulty();
    account_name_type miner_account = work.input.miner_account;
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
-   const median_chain_property_object& median_props = _db.get_median_chain_properties();
    time_point now = _db.head_block_time();
    fc::optional< signed_block > prev_block = _db.fetch_block_by_id( work.input.prev_block );
 
    FC_ASSERT( prev_block.valid(),
       "Proof of Work Prev block not found on node." );
    FC_ASSERT( prev_block->block_num() > props.last_irreversible_block_num,
-      "Proof of Work done for block older than last irreversible block number." );
-   FC_ASSERT( work.pow_summary < target_pow,
-      "Insufficient work difficulty. Work: ${w}, Target: ${t} .", ("w",work.pow_summary)("t", target_pow) );
-
-   uint128_t work_difficulty = ( 1 << 30 ) / work.pow_summary;
+      "Proof of Work done for block older than last Irreversible block number." );
+   FC_ASSERT( work.work < target_pow,
+      "Insufficient work difficulty. Work: ${w} Target: ${t}",
+      ("w",work.work)("t", target_pow));
+   
+   uint128_t work_difficulty = uint128_t::max_value() / work.work.to_uint128();
 
    const auto& accounts_by_name = _db.get_index< account_index >().indices().get< by_name >();
    auto acc_itr = accounts_by_name.find( miner_account );
@@ -133,9 +136,10 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
 
       _db.create< account_object >( [&]( account_object& acc )
       {
-         acc.registrar = NULL_ACCOUNT;       // Create brand new account for miner
+         acc.registrar = NULL_ACCOUNT;
+         acc.referrer = NULL_ACCOUNT;
          acc.name = miner_account;
-         acc.recovery_account = "";          // Highest voted producer at time of recovery.
+         acc.recovery_account = "";
          acc.secure_public_key = ok;
          acc.connection_public_key = ok;
          acc.friend_public_key = ok;
@@ -150,7 +154,7 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
          acc.last_transfer_time = now;
          acc.last_activity_reward = now;
          acc.last_account_recovery = now;
-         acc.mined = true;                     // Mined account creation
+         acc.mined = true;
       });
 
       _db.create< account_authority_object >( [&]( account_authority_object& auth )
@@ -164,11 +168,12 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
       _db.create< producer_object >( [&]( producer_object& p )
       {
          p.owner = miner_account;
-         p.props = o.props;
          p.signing_key = ok;
-         p.mining_count = 0;
-         p.mining_power = BLOCKCHAIN_PRECISION;
          p.last_mining_update = now;
+         p.last_pow_time = now;
+         p.last_txn_stake_weight_update = now;
+         p.created = now;
+         p.last_updated = now;
       });
    }
    else
@@ -177,14 +182,11 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
          "Cannot specify an owner key unless creating new mined account." );
       const producer_object* cur_producer = _db.find_producer( miner_account );
       FC_ASSERT( cur_producer != nullptr,
-         "Account: ${p} must be active to mine proofs of work.",("p",miner_account) );
+         "Account: ${p} must be active to mine proofs of work.",
+         ("p",miner_account));
       FC_ASSERT( cur_producer->active,
-         "Producer: ${p} must be active to mine proofs of work.",("p",miner_account) );
-      
-      _db.modify( *cur_producer, [&]( producer_object& p )
-      {
-         p.props = o.props;
-      });
+         "Producer: ${p} must be active to mine proofs of work.",
+         ("p",miner_account));
    }
 
    _db.modify( props, [&]( dynamic_global_property_object& p )
@@ -192,7 +194,11 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
       p.total_pow + work_difficulty;
    });
 
-   _db.claim_proof_of_work_reward( miner_account );     // Rewards miner account from mining POW reward pool.
+   ilog( "Proof of Work: ${w} Input: ${n}",
+      ("w",work.work)("n",work.input.to_string()));
+
+   _db.claim_proof_of_work_reward( miner_account );
+
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -241,7 +247,7 @@ void verify_block_evaluator::do_apply( const verify_block_operation& o )
    
    if( valid_itr == valid_idx.end() )     // New verification object at this height.
    {
-      _db.create< block_validation_object >( [&]( block_validation_object& bvo )
+      const block_validation_object& val = _db.create< block_validation_object >( [&]( block_validation_object& bvo )
       {
          bvo.producer = o.producer;
          bvo.block_id = o.block_id;
@@ -251,6 +257,9 @@ void verify_block_evaluator::do_apply( const verify_block_operation& o )
          bvo.verify_txn = txn_id;
          bvo.commit_txn = transaction_id_type();
       });
+
+      ilog( "Producer: ${p} created new Validation for Block ID: ${i}",
+         ("p",o.producer)("i",val.block_id));
    }
    else   // Existing verifcation exists, Changing uncommitted block_id.
    {
@@ -267,6 +276,9 @@ void verify_block_evaluator::do_apply( const verify_block_operation& o )
          bvo.block_id = o.block_id;
          bvo.verify_txn = txn_id;
       });
+
+      ilog( "Producer: ${p} edited Validation for Block ID: ${v}",
+         ("p",o.producer)("v",val.block_id));
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -311,7 +323,11 @@ void commit_block_evaluator::do_apply( const commit_block_operation& o )
    const block_validation_object& val = *valid_itr;
 
    FC_ASSERT( val.block_id == o.block_id, 
-      "Different block ID than the verification ID, please update verification." );
+      "Different block ID than the verification ID, please update verification: ${v}",
+      ("v",val) );
+   FC_ASSERT( !val.committed,
+      "Cannot edit commited block validation: ${v}",
+      ("v",val));
 
    asset stake = _db.get_staked_balance( o.producer, SYMBOL_COIN );
 
@@ -319,40 +335,33 @@ void commit_block_evaluator::do_apply( const commit_block_operation& o )
       "Producer has insufficient staked balance to provide a commitment stake for the specified amount." );
 
    flat_set< account_name_type > verifiers;
-
-   for( transaction_id_type txn : o.verifications )  // Ensure that all included verification transactions are valid.
+   flat_set< transaction_id_type > verifications;
+   
+   for( auto name : o.verifications )         // Ensure that all included verifications are valid.
    {
-      annotated_signed_transaction verify_txn = _db.get_transaction( txn );
-      FC_ASSERT( verify_txn.operations.size(), 
-         "Transaction ID ${t} has no operations.", ("t", txn) );
-
-      for( auto op : verify_txn.operations )
+      valid_itr = valid_idx.find( boost::make_tuple( name, recent_block_num ) );
+      const block_validation_object& validation = *valid_itr;
+      const producer_object& verify_producer = _db.get_producer( name );
+      if( pso.is_top_producer( name ) && 
+         verify_producer.active && 
+         val.block_id == validation.block_id )
       {
-         if( op.which() == operation::tag< verify_block_operation >::value )
-         {
-            const verify_block_operation& verify_op = op.get< verify_block_operation >();
-            verify_op.validate();
-            const producer_object& verify_wit = _db.get_producer( verify_op.producer );
-            if( verify_op.block_id == o.block_id && 
-               pso.is_top_producer( verify_wit.owner ) )
-            {
-               verifiers.insert( verify_wit.owner );
-            }
-         }
+         verifiers.insert( verify_producer.owner );
+         verifications.insert( validation.verify_txn );
       }
    }
 
-   FC_ASSERT( verifiers.size() >=( IRREVERSIBLE_THRESHOLD * ( DPOS_VOTING_PRODUCERS + POW_MINING_PRODUCERS ) / PERCENT_100 ),
+   FC_ASSERT( verifiers.size() >= ( IRREVERSIBLE_THRESHOLD * ( DPOS_VOTING_PRODUCERS + POW_MINING_PRODUCERS ) / PERCENT_100 ),
       "Insufficient Unique Concurrent Valid Verifications for commit transaction. Please await further verifications from block producers." );
 
    const transaction_id_type& txn_id = _db.get_current_transaction_id();
 
    _db.modify( val, [&]( block_validation_object& bvo )
    {
-      bvo.committed = true;                            // Verification cannot be altered after committed. 
+      bvo.committed = true;                            // Verification cannot be altered after committed.
       bvo.commit_time = now;                           // Fastest by commit time are eligible for validation reward.
-      bvo.commitment_stake = o.commitment_stake;       // Reward is weighted by stake committed. 
-      bvo.verifications = o.verifications;
+      bvo.commitment_stake = o.commitment_stake;       // Reward is weighted by stake committed.
+      bvo.verifications = verifications;
       bvo.verifiers = verifiers;
       bvo.commit_txn = txn_id;
    });
@@ -362,6 +371,9 @@ void commit_block_evaluator::do_apply( const commit_block_operation& o )
       p.last_commit_height = recent_block_num;
       p.last_commit_id = o.block_id;
    });
+
+   ilog( "Producer: ${p} Commited block: ${v}",
+      ("p",o.producer)("v",val.block_id));
    
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 

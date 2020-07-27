@@ -98,21 +98,24 @@ void liquidity_pool_create_evaluator::do_apply( const liquidity_pool_create_oper
       a.issuer = o.account;
    });
       
-   _db.create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& alpo )
+   const asset_liquidity_pool_object& pool = _db.create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& alpo )
    {   
       alpo.issuer = o.account;
-      alpo.balance_a = amount_a;
-      alpo.balance_b = amount_b;
       alpo.symbol_a = amount_a.symbol;
       alpo.symbol_b = amount_b.symbol;
+      alpo.symbol_liquid = liquidity_asset_symbol;
+      alpo.balance_a = amount_a;
+      alpo.balance_b = amount_b;
       alpo.hour_median_price = price( alpo.balance_a, alpo.balance_b );
       alpo.day_median_price = price( alpo.balance_a, alpo.balance_b );
       alpo.price_history.push_back( price( alpo.balance_a, alpo.balance_b ) );
-      alpo.symbol_liquid = liquidity_asset_symbol;
-      alpo.balance_liquid = max;
+      alpo.balance_liquid = asset( max, liquidity_asset_symbol );
    });
 
    _db.adjust_liquid_balance( o.account, asset( max, liquidity_asset_symbol ) );
+
+   ilog( "Account: ${a} Created Liquidity Pool: \n ${p} \n",
+      ("a",o.account)("p",pool));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -135,6 +138,7 @@ void liquidity_pool_exchange_evaluator::do_apply( const liquidity_pool_exchange_
    const account_object& account = _db.get_account( o.account );
    const asset_object& first_asset = _db.get_asset( o.amount.symbol );
    const asset_object& second_asset = _db.get_asset( o.receive_asset );
+   asset liquid = _db.get_liquid_balance( o.account, o.amount.symbol );
    const account_object* int_account_ptr = nullptr;
 
    if( o.interface.size() )
@@ -174,33 +178,42 @@ void liquidity_pool_exchange_evaluator::do_apply( const liquidity_pool_exchange_
          _db.liquid_acquire( o.amount, account, liquidity_pool );
       }
    }
-   else if( o.limit_price.valid() )
-   {
-      price limit_price = *o.limit_price;
-      FC_ASSERT( limit_price < liquidity_pool.base_price( limit_price.base.symbol ), 
-         "Limit price must be lower than current liquidity pool exchange price.");
-      
-      if( int_account_ptr != nullptr )
-      {
-         _db.liquid_limit_exchange( o.amount, *o.limit_price, account, liquidity_pool, *int_account_ptr );
-      }
-      else
-      {
-         _db.liquid_limit_exchange( o.amount, *o.limit_price, account, liquidity_pool );
-      }
-   }
    else
    {
-      if( int_account_ptr != nullptr )
+      FC_ASSERT( liquid >= o.amount, 
+         "Account: ${a} has insufficient liquid balance to exchange amount: ${am}",
+         ("a",o.account)("ac",o.amount));
+
+      if( o.limit_price.valid() )
       {
-         _db.liquid_exchange( o.amount, account, liquidity_pool, *int_account_ptr );
+         price limit_price = *o.limit_price;
+         FC_ASSERT( limit_price < liquidity_pool.base_price( limit_price.base.symbol ), 
+            "Limit price must be lower than current liquidity pool exchange price.");
+         
+         if( int_account_ptr != nullptr )
+         {
+            _db.liquid_limit_exchange( o.amount, *o.limit_price, account, liquidity_pool, *int_account_ptr );
+         }
+         else
+         {
+            _db.liquid_limit_exchange( o.amount, *o.limit_price, account, liquidity_pool );
+         }
       }
       else
       {
-         _db.liquid_exchange( o.amount, account, liquidity_pool );
+         if( int_account_ptr != nullptr )
+         {
+            _db.liquid_exchange( o.amount, account, liquidity_pool, *int_account_ptr );
+         }
+         else
+         {
+            _db.liquid_exchange( o.amount, account, liquidity_pool );
+         }
       }
    }
- 
+
+   ilog( "Account: ${a} exchanged: ${am} for asset: ${s} with Liquidity Pool: \n ${p} \n",
+      ("a",o.account)("am",o.amount)("s",o.receive_asset)("p",liquidity_pool));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -242,6 +255,8 @@ void liquidity_pool_fund_evaluator::do_apply( const liquidity_pool_fund_operatio
 
    _db.liquid_fund( o.amount, account, liquidity_pool );
 
+   ilog( "Account: ${a} funded: ${am} into Liquidity Pool: \n ${p} \n",
+      ("a",o.account)("am",o.amount)("p",liquidity_pool));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -262,27 +277,12 @@ void liquidity_pool_withdraw_evaluator::do_apply( const liquidity_pool_withdraw_
    }
 
    const account_object& account = _db.get_account( o.account );
-   const asset_object& first_asset = _db.get_asset( o.amount.symbol );
-   const asset_object& second_asset = _db.get_asset( o.receive_asset );
-
-   asset_symbol_type symbol_a;
-   asset_symbol_type symbol_b;
-
-   if( first_asset.id < second_asset.id )
-   {
-      symbol_a = first_asset.symbol;
-      symbol_b = second_asset.symbol;
-   }
-   else
-   {
-      symbol_b = first_asset.symbol;
-      symbol_a = second_asset.symbol;
-   }
-
-   const asset_liquidity_pool_object& liquidity_pool = _db.get_liquidity_pool( symbol_a, symbol_b );
+   const asset_liquidity_pool_object& liquidity_pool = _db.get_liquidity_pool( o.amount.symbol );
 
    _db.liquid_withdraw( o.amount, o.receive_asset, account, liquidity_pool );
 
+   ilog( "Account: ${a} withdrew: ${am} from Liquidity Pool: \n ${p} \n",
+      ("a",o.account)("am",o.amount)("p",liquidity_pool));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -333,7 +333,7 @@ void credit_pool_collateral_evaluator::do_apply( const credit_pool_collateral_op
       _db.adjust_liquid_balance( o.account, -o.amount );
       _db.adjust_pending_supply( o.amount );
 
-      _db.create< credit_collateral_object >( [&]( credit_collateral_object& cco )
+      const credit_collateral_object& collateral = _db.create< credit_collateral_object >( [&]( credit_collateral_object& cco )
       {
          cco.owner = account.name;
          cco.symbol = collateral_asset.symbol;
@@ -341,10 +341,14 @@ void credit_pool_collateral_evaluator::do_apply( const credit_pool_collateral_op
          cco.created = now;
          cco.last_updated = now;
       });
+
+      ilog( "Account: ${a} created new collateral: \n ${p} \n",
+         ("a",o.account)("p",collateral));
    }
    else    // Collateral position exists and is being updated.
    {
       const credit_collateral_object& collateral = *col_itr;
+
       asset old_collateral = collateral.collateral;
       asset delta = o.amount - old_collateral; 
 
@@ -374,11 +378,14 @@ void credit_pool_collateral_evaluator::do_apply( const credit_pool_collateral_op
          cco.last_updated = now;
       });
 
+      ilog( "Account: ${a} updated Collateral: \n ${c} \n",
+         ("a",o.account)("c",collateral));
+
       if( collateral.collateral.amount == 0 )
       {
          ilog( "Removed: ${v}",("v",collateral));
          _db.remove( collateral );
-      }
+      } 
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -402,6 +409,18 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
    const account_object& account = _db.get_account( o.account );
    const asset_object& debt_asset = _db.get_asset( o.amount.symbol );
    const asset_object& collateral_asset = _db.get_asset( o.collateral.symbol );
+
+   FC_ASSERT( debt_asset.is_credit_enabled(),
+      "Cannot borrow debt asset: ${s}.", ("s", debt_asset.symbol) );
+   FC_ASSERT( collateral_asset.is_credit_enabled(), 
+      "Cannot collateralize asset: ${s}.", ("s", collateral_asset.symbol) );
+
+   if( o.flash_loan )
+   {
+      FC_ASSERT( o.collateral.amount == 0,
+         "Flash loan is instantaneously repaid within same transaction and does not require collateral." );
+   }
+
    const credit_collateral_object& collateral = _db.get_collateral( o.account, o.collateral.symbol );
    const asset_credit_pool_object& pool = _db.get_credit_pool( o.amount.symbol, false );
    const asset& liquid = _db.get_liquid_balance( o.account, o.amount.symbol );
@@ -411,40 +430,30 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
    time_point now = _db.head_block_time();
    asset_symbol_type symbol_a;
    asset_symbol_type symbol_b;
-
-   if( collateral_asset.symbol != debt_asset.symbol )
-   { 
-      if( debt_asset.id < collateral_asset.id )
-      {
-         symbol_a = debt_asset.symbol;
-         symbol_b = collateral_asset.symbol;
-      }
-      else
-      {
-         symbol_b = debt_asset.symbol;
-         symbol_a = collateral_asset.symbol;
-      }
-
-      const asset_liquidity_pool_object& liquidity_pool = _db.get_liquidity_pool( symbol_a, symbol_b );
-      price median_price = liquidity_pool.hour_median_price;  // Get the asset pair's liquidity pool median price for calculations.
-      min_collateral = min_collateral * median_price;
-      max_debt = max_debt * median_price;
+   asset_symbol_type symbol_liquid;
+   
+   if( debt_asset.id < collateral_asset.id )
+   {
+      symbol_a = debt_asset.symbol;
+      symbol_b = collateral_asset.symbol;
+   }
+   else
+   {
+      symbol_b = debt_asset.symbol;
+      symbol_a = collateral_asset.symbol;
    }
 
+   const asset_liquidity_pool_object& liquidity_pool = _db.get_liquidity_pool( symbol_a, symbol_b );
+   symbol_liquid = liquidity_pool.symbol_liquid;
+   price median_price = liquidity_pool.hour_median_price;  // Get the asset pair's liquidity pool median price for calculations.
+   min_collateral = min_collateral * median_price;
+   max_debt = max_debt * median_price;
+   
    FC_ASSERT( o.collateral.amount >= min_collateral.amount || o.flash_loan,
       "Collateral is insufficient to support a loan of this size." );
-   FC_ASSERT( debt_asset.is_credit_enabled(),
-      "Cannot borrow debt asset: ${s}.", ("s", debt_asset.symbol) );
-   FC_ASSERT( collateral_asset.is_credit_enabled(), 
-      "Cannot collateralize asset: ${s}.", ("s", collateral_asset.symbol) );
-   if( o.flash_loan )
-   {
-      FC_ASSERT( o.collateral.amount == 0,
-         "Flash loan is instantaneously repaid within same transaction and does not require collateral." );
-   }
-
+   
    const auto& loan_idx = _db.get_index< credit_loan_index >().indices().get< by_loan_id >();
-   auto loan_itr = loan_idx.find( boost::make_tuple( account.name, o.loan_id ) ); 
+   auto loan_itr = loan_idx.find( boost::make_tuple( o.account, o.loan_id ) );
 
    if( loan_itr == loan_idx.end() )    // Credit loan object with this ID does not exist.
    {
@@ -460,24 +469,26 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
          "Insufficient collateral balance in this asset to vest the amount requested in the loan. Please increase collateral." );
       FC_ASSERT( pool.base_balance.amount >= o.amount.amount,
          "Insufficient Available asset to borrow from credit pool. Please lower debt." );
-      
 
-      _db.create< credit_loan_object >( [&]( credit_loan_object& clo )
+      const credit_loan_object& loan = _db.create< credit_loan_object >( [&]( credit_loan_object& clo )
       {
-         clo.owner = account.name;    // Create new loan object for the account
+         clo.owner = o.account;    // Create new loan object for the account
+         from_string( clo.loan_id, o.loan_id );
          clo.debt = o.amount;
          clo.interest = asset( 0, o.amount.symbol );
          clo.collateral = o.collateral;
-         if( o.amount.symbol != o.collateral.symbol )
-         {
-            clo.loan_price = price( o.collateral, o.amount);
-            clo.liquidation_price = price( o.collateral, max_debt );
-         }
+         clo.liquidation_price = price( o.collateral, max_debt );
+         clo.symbol_a = symbol_a;
+         clo.symbol_b = symbol_b;
+         clo.symbol_liquid = symbol_liquid;
          clo.created = now;
          clo.last_updated = now;
          clo.last_interest_time = now;
          clo.flash_loan = o.flash_loan;
       });
+
+      ilog( "Account: ${a} created credit Loan: \n ${l} \n",
+         ("a",o.account)("l",loan));
 
       if( !o.flash_loan )
       {
@@ -515,13 +526,18 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
       FC_ASSERT( loan.flash_loan == o.flash_loan,
          "Flash Loan status cannot be altered. Loan must be repaid within same Transaction with 1 day of accrued interest." );
 
-      share_type interest_rate = pool.interest_rate( median_props.credit_min_interest, median_props.credit_variable_interest );     // Calulate pool's interest rate
-      share_type interest_accrued = ( loan.debt.amount * interest_rate * ( now - loan.last_interest_time ).count() ) / ( PERCENT_100 * fc::days(365).count() );
+      share_type interest_rate = pool.interest_rate( median_props.credit_min_interest, median_props.credit_variable_interest );
+      uint128_t interest_seconds = ( now - loan.last_interest_time ).to_seconds();
+
       if( o.flash_loan )
       {
-         interest_accrued = ( loan.debt.amount * interest_rate * ( fc::days(1) ).count() ) / ( PERCENT_100 * fc::days(365).count() );
+         interest_seconds = fc::days(1).to_seconds();    // Flash loan pays one day worth of interest
       }
-      asset interest_asset = asset( interest_accrued, loan.debt.symbol );      // Accrue interest on debt balance
+
+      uint128_t interest_amount = uint128_t( loan.debt.amount.value ) * uint128_t( interest_rate.value ) * uint128_t( interest_seconds );
+      interest_amount /= uint128_t( fc::days(365).to_seconds() * PERCENT_100 );
+
+      asset interest_asset = asset( interest_amount.to_uint64(), loan.debt.symbol );      // Accrue interest on debt balance
       asset interest_fees = ( interest_asset * INTEREST_FEE_PERCENT ) / PERCENT_100;
       interest_asset -= interest_fees;
       
@@ -584,11 +600,7 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
          {
             clo.debt = new_debt;           // Update to new loan parameters.
             clo.collateral = o.collateral;
-            if( loan.debt.symbol != loan.collateral.symbol )
-            {
-               clo.loan_price = price( o.collateral, o.amount);
-               clo.liquidation_price = price( o.collateral, max_debt );
-            }
+            clo.liquidation_price = price( o.collateral, max_debt );
             clo.last_updated = now;
             clo.last_interest_time = now;
          });
@@ -596,6 +608,9 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
          _db.adjust_liquid_balance( o.account, delta_debt );        // Shift newly borrowed or repaid amount with pending supply. 
          _db.adjust_pending_supply( -delta_debt );
          _db.pay_network_fees( interest_fees );
+
+         ilog( "Account: ${a} updated credit Loan: \n ${l} \n",
+            ("a",o.account)("l",loan));
       }
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -627,6 +642,8 @@ void credit_pool_lend_evaluator::do_apply( const credit_pool_lend_operation& o )
 
    _db.credit_lend( o.amount, account, credit_pool );
 
+   ilog( "Account: ${a} lent amount: ${am} to credit pool: \n ${l} \n",
+         ("a",o.account)("am",o.amount)("l",credit_pool));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -656,6 +673,8 @@ void credit_pool_withdraw_evaluator::do_apply( const credit_pool_withdraw_operat
 
    _db.credit_withdraw( o.amount, account, credit_pool );
 
+   ilog( "Account: ${a} withdrew amount: ${am} from credit pool: \n ${l} \n",
+      ("a",o.account)("am",o.amount)("l",credit_pool));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -727,7 +746,7 @@ void option_pool_create_evaluator::do_apply( const option_pool_create_operation&
       new_dates.insert( next_date );
    }
    
-   _db.create< asset_option_pool_object >( [&]( asset_option_pool_object& aopo )
+   const asset_option_pool_object& pool = _db.create< asset_option_pool_object >( [&]( asset_option_pool_object& aopo )
    {   
       aopo.issuer = o.account;
       aopo.base_symbol = base_symbol;
@@ -773,6 +792,9 @@ void option_pool_create_evaluator::do_apply( const option_pool_create_operation&
          a.symbol = s;
       });
    }
+
+   ilog( "Account: ${a} created new option pool: \n ${p} \n",
+      ("a",o.account)("p",pool));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -865,10 +887,9 @@ void prediction_pool_create_evaluator::do_apply( const prediction_pool_create_op
       appo.collateral_symbol = o.collateral_symbol;
       appo.collateral_pool = asset( 0, o.collateral_symbol );
 
-      appo.outcome_assets.reserve( outcome_assets.size() );
       for( auto out : outcome_assets )
       {
-         appo.outcome_assets.push_back( out );
+         appo.outcome_assets.insert( out );
       }
 
       from_string( appo.outcome_details, o.outcome_details );
@@ -910,10 +931,10 @@ void prediction_pool_create_evaluator::do_apply( const prediction_pool_create_op
          a.symbol = s;
       });
 
-      ilog("Created Prediction pool outcome asset: ${p}",("p",s ));
+      ilog( "Created Prediction pool outcome asset: ${p}",("p",s ));
    }
 
-   ilog("Created Prediction pool: ${p}",("p",o.prediction_symbol ));
+   ilog( "Created Prediction pool: ${p}",("p",o.prediction_symbol ));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -1076,13 +1097,16 @@ void prediction_pool_resolve_evaluator::do_apply( const prediction_pool_resolve_
       _db.adjust_liquid_balance( o.account, -o.amount );
       _db.adjust_pending_supply( o.amount );
 
-      _db.create< asset_prediction_pool_resolution_object >( [&]( asset_prediction_pool_resolution_object& a )
+      const asset_prediction_pool_resolution_object& resolution = _db.create< asset_prediction_pool_resolution_object >( [&]( asset_prediction_pool_resolution_object& a )
       {
          a.account = o.account;
          a.resolution_outcome = o.resolution_outcome;
          a.prediction_symbol = o.amount.symbol;
          a.amount = o.amount;
       });
+
+      ilog( "Account: ${a} created new prediction resolution: \n ${r} \n",
+         ("a",o.account)("r",resolution));
    }
    else
    {
@@ -1105,6 +1129,9 @@ void prediction_pool_resolve_evaluator::do_apply( const prediction_pool_resolve_
       {
          appro.amount = o.amount;
       });
+
+      ilog( "Account: ${a} updated prediction resolution: \n ${r} \n",
+         ("a",o.account)("r",resolution));
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 

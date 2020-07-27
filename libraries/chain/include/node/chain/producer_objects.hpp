@@ -2,6 +2,7 @@
 
 #include <node/protocol/authority.hpp>
 #include <node/protocol/node_operations.hpp>
+#include <node/protocol/x11.hpp>
 
 #include <node/chain/node_object_types.hpp>
 
@@ -19,6 +20,7 @@ namespace node { namespace chain {
    using node::protocol::asset_symbol_type;
    using node::protocol::share_type;
    using node::protocol::signed_transaction;
+   using node::protocol::x11;
 
    /**
     * All producers with at least 1% net positive approval and
@@ -138,7 +140,7 @@ namespace node { namespace chain {
 
          void                         decay_weights( time_point now, const median_chain_property_object& median_props )
          {
-            mining_power -= ( ( mining_power * ( now - last_mining_update ).to_seconds() ) / median_props.pow_decay_time.to_seconds() );
+            mining_power -= ( mining_power * ( now - last_mining_update ).to_seconds() ) / median_props.pow_decay_time.to_seconds();
             recent_txn_stake_weight -= ( recent_txn_stake_weight * ( now - last_txn_stake_weight_update ).to_seconds() ) / median_props.txn_stake_decay_time.to_seconds();
             last_mining_update = now;
             last_txn_stake_weight_update = now;
@@ -180,27 +182,27 @@ namespace node { namespace chain {
 
          id_type                                           id;
 
-         uint128_t                                         current_voting_virtual_time;             ///< Tracks the time used for block producer additional selection.
+         uint128_t                                         current_voting_virtual_time;               ///< Tracks the time used for block producer additional selection.
 
-         uint128_t                                         current_mining_virtual_time;             ///< Tracks the time used for block producer additional selection.
+         uint128_t                                         current_mining_virtual_time;               ///< Tracks the time used for block producer additional selection.
 
-         uint64_t                                          next_shuffle_block_num = 1;              ///< The block of the next reshuffling of producers.
+         uint64_t                                          next_shuffle_block_num = 1;                ///< The block of the next reshuffling of producers.
 
-         vector< account_name_type >                       current_shuffled_producers;              ///< Currently active block producers to be includes in the next production round.
+         vector< account_name_type >                       current_shuffled_producers;                ///< Currently active block producers to be includes in the next production round.
 
-         uint128_t                                         total_producer_voting_power;             ///< Total sum of all voting power that is voting for producers.
+         uint128_t                                         total_producer_voting_power;               ///< Total sum of all voting power that is voting for producers.
 
-         vector< account_name_type >                       top_voting_producers;                    ///< Ordered list of the highest voted producers.
+         vector< account_name_type >                       top_voting_producers;                      ///< Ordered list of the highest voted producers.
 
-         vector< account_name_type >                       top_mining_producers;                    ///< Ordered list of the highest mining producers.
+         vector< account_name_type >                       top_mining_producers;                      ///< Ordered list of the highest mining producers.
 
-         uint8_t                                           num_scheduled_producers = TOTAL_PRODUCERS;
+         uint8_t                                           num_scheduled_producers = TOTAL_PRODUCERS; ///< Amount of producing accounts that are scheduled in each round.
 
-         uint128_t                                         pow_target_difficulty = uint128_t::max_value();           ///< Proof of work summary value target, must be lower than this value.
+         x11                                               pow_target_difficulty = x11( uint128_t::max_value() / uint128_t( 1000 ) );  ///< Proof of work target, work value must be lower than this value.
 
-         uint128_t                                         recent_pow;                              ///< Rolling average amount of blocks (x prec) mined in the last 7 days.
+         uint128_t                                         recent_pow = INIT_RECENT_POW;              ///< Rolling average amount of blocks (x prec) mined in the last 7 days.
 
-         time_point                                        last_pow_update;                         ///< Time that the recent POW was last updated and decayed
+         time_point                                        last_pow_update;                           ///< Time that the recent POW was last updated and decayed.
 
          version                                           majority_version;
 

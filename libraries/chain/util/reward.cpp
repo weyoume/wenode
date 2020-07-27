@@ -84,21 +84,25 @@ uint128_t evaluate_reward_curve(
       {
          uint128_t r = reward;
          uint128_t s = content_constant;
-         int32_t d = cashouts_received;
-         int32_t t = decay_rate.to_seconds() / fc::days(1).to_seconds();
+         int64_t d = cashouts_received;
+         int64_t t = decay_rate.to_seconds() / fc::days(1).to_seconds();
+         int64_t m = std::max(int64_t(0),t-d);
+         uint128_t rs_25 = (r+s)*(r+s)*approx_sqrt(r+s);
+         uint128_t s_25 = s*s*approx_sqrt(s);
+         
          if( d >= t )
          { 
             result = 0; 
          }
          else
          {
-            result = ( std::max( 0, t-d ) * ( ( (r + s) * (r + s) * approx_sqrt(r + s) - s * s * approx_sqrt(s) ) / (r + 4 * s) ) ) / t;
+            result = (m*((rs_25-s_25)/(r+4*s)))/t;
          }
       }
       break;
    }
 
-   
+   // ilog( "Reward Curve: ${r} Reward: ${re}", ("r",result)("re",reward));
 
    return result;
 }

@@ -135,7 +135,7 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
 
    if( creative_itr == creative_idx.end() )    // Ad creative does not exist
    {
-      _db.create< ad_creative_object >( [&]( ad_creative_object& aco )
+      const ad_creative_object& creative = _db.create< ad_creative_object >( [&]( ad_creative_object& aco )
       {
          aco.account = o.account;
          aco.author = o.author;
@@ -148,10 +148,13 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
          aco.created = now;
          aco.last_updated = now;
       });
+      ilog( "Creative New Ad creative: \n ${c} \n", ("c",creative));
    }
    else  // Creative exists, editing
    {
-      _db.modify( *creative_itr, [&]( ad_creative_object& aco )
+      const ad_creative_object& creative = *creative_itr;
+
+      _db.modify( creative, [&]( ad_creative_object& aco )
       {
          aco.format_type = ad_format;
          from_string( aco.objective, o.objective );
@@ -159,7 +162,9 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
          from_string( aco.json, o.json );
          aco.active = o.active;
          aco.last_updated = now;
-      }); 
+      });
+
+      ilog( "Updated Ad creative: \n ${c} \n", ("c",creative));
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
@@ -179,7 +184,6 @@ void ad_campaign_evaluator::do_apply( const ad_campaign_operation& o )
       FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const account_object& account = _db.get_account( o.account );
 
    flat_set< account_name_type > agent_set;
    agent_set.insert( o.account );
@@ -193,10 +197,14 @@ void ad_campaign_evaluator::do_apply( const ad_campaign_operation& o )
       }
    }
 
+   const interface_object& interface = _db.get_interface( o.interface );
+   FC_ASSERT( interface.active,
+      "Ad Interface must be active." );
+   
    time_point now = _db.head_block_time();
 
    const auto& campaign_idx = _db.get_index< ad_campaign_index >().indices().get< by_campaign_id >();
-   auto campaign_itr = campaign_idx.find( boost::make_tuple( account.name, o.campaign_id ) );
+   auto campaign_itr = campaign_idx.find( boost::make_tuple( o.account, o.campaign_id ) );
 
    if( campaign_itr == campaign_idx.end() )    // Ad campaign does not exist
    {
@@ -206,13 +214,14 @@ void ad_campaign_evaluator::do_apply( const ad_campaign_operation& o )
       _db.adjust_liquid_balance( o.account, -o.budget );
       _db.adjust_pending_supply( o.budget );
 
-      _db.create< ad_campaign_object >( [&]( ad_campaign_object& aco )
+      const ad_campaign_object& campaign = _db.create< ad_campaign_object >( [&]( ad_campaign_object& aco )
       {
-         aco.account = account.name;
+         aco.account = o.account;
          from_string( aco.campaign_id, o.campaign_id );
          from_string( aco.json, o.json );
          aco.budget = o.budget;
          aco.total_bids = asset( 0, o.budget.symbol );
+         aco.interface = o.interface;
          aco.begin = o.begin;
          aco.end = o.end;
          aco.agents = agent_set;
@@ -220,6 +229,8 @@ void ad_campaign_evaluator::do_apply( const ad_campaign_operation& o )
          aco.last_updated = now;
          aco.active = o.active;
       });
+
+      ilog( "Created New Ad campaign: \n ${c} \n", ("c",campaign));
    }
    else  // campaign exists, editing
    {
@@ -244,6 +255,8 @@ void ad_campaign_evaluator::do_apply( const ad_campaign_operation& o )
          aco.last_updated = now;
          aco.active = o.active;
       });
+
+      ilog( "Updated Ad campaign: \n ${c} \n", ("c",campaign));
 
       if( campaign.budget.amount == 0 )
       {
@@ -297,7 +310,7 @@ void ad_inventory_evaluator::do_apply( const ad_inventory_operation& o )
 
    if( inventory_itr == inventory_idx.end() )    // Ad inventory does not exist
    {
-      _db.create< ad_inventory_object >( [&]( ad_inventory_object& aio )
+      const ad_inventory_object& inventory = _db.create< ad_inventory_object >( [&]( ad_inventory_object& aio )
       {
          aio.provider = o.provider;
          from_string( aio.inventory_id, o.inventory_id );
@@ -311,8 +324,10 @@ void ad_inventory_evaluator::do_apply( const ad_inventory_operation& o )
          aio.last_updated = now;
          aio.active = o.active;
       });
+
+      ilog( "New Ad Inventory: \n ${i} \n", ("i",inventory));
    }
-   else       // inventory exists, editing
+   else       // Inventory exists, editing
    {
       const ad_inventory_object& inventory = *inventory_itr;
 
@@ -333,6 +348,8 @@ void ad_inventory_evaluator::do_apply( const ad_inventory_operation& o )
          aio.last_updated = now;
          aio.active = o.active;
       });
+
+      ilog( "Updated Ad Inventory: \n ${i} \n", ("i",inventory));
 
       if( inventory.remaining == 0 )
       {
@@ -359,7 +376,6 @@ void ad_audience_evaluator::do_apply( const ad_audience_operation& o )
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   const account_object& account = _db.get_account( o.account );
    flat_set< account_name_type > audience_set;
 
    for( auto a : o.audience )   // Ensure all audience member accounts exist
@@ -381,9 +397,9 @@ void ad_audience_evaluator::do_apply( const ad_audience_operation& o )
 
    if( audience_itr == audience_idx.end() )    // Ad audience does not exist
    {
-      _db.create< ad_audience_object >( [&]( ad_audience_object& aao )
+      const ad_audience_object& audience = _db.create< ad_audience_object >( [&]( ad_audience_object& aao )
       {
-         aao.account = account.name;
+         aao.account = o.account;
          from_string( aao.audience_id, o.audience_id );
          from_string( aao.json, o.json );
          aao.audience = audience_set;
@@ -391,6 +407,9 @@ void ad_audience_evaluator::do_apply( const ad_audience_operation& o )
          aao.last_updated = now;
          aao.active = o.active;
       });
+
+      ilog( "New Ad Audience: \n ${a} \n",
+         ("a",audience));
    }
    else  // audience exists, editing
    {
@@ -402,7 +421,10 @@ void ad_audience_evaluator::do_apply( const ad_audience_operation& o )
          aao.audience = audience_set;
          aao.last_updated = now;
          aao.active = o.active;
-      }); 
+      });
+
+      ilog( "Updated Ad Audience: \n ${a} \n",
+         ("a",audience));
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
@@ -539,7 +561,7 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
       FC_ASSERT( campaign.budget >= new_total_bids,
          "Total Bids cannot exceed the budget of the campaign, please increase the budget balance of the campaign." );
 
-      _db.create< ad_bid_object >( [&]( ad_bid_object& abo )
+      const ad_bid_object& bid = _db.create< ad_bid_object >( [&]( ad_bid_object& abo )
       {
          abo.bidder = o.bidder;
          from_string( abo.bid_id, o.bid_id );
@@ -550,8 +572,10 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
          from_string( abo.creative_id, o.creative_id );
          abo.provider = o.provider;
          from_string( abo.inventory_id, o.inventory_id );
-         abo.metric = inventory.metric;
          abo.bid_price = o.bid_price;
+         abo.format = creative.format_type;
+         abo.metric = inventory.metric;
+         
          abo.objective = creative.objective;
          abo.requested = o.requested;
          abo.remaining = o.requested;
@@ -560,6 +584,8 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
          abo.last_updated = now;
          abo.expiration = o.expiration;
       });
+
+      ilog( "Created New Ad Bid: \n ${b} \n",("b",bid));
 
       _db.modify( campaign, [&]( ad_campaign_object& aco )
       {
@@ -600,7 +626,9 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
             from_string( abo.json, o.json );
             abo.last_updated = now;
             abo.expiration = o.expiration;
-         }); 
+         });
+
+         ilog( "Updated Ad Bid: \n ${b} \n", ("b",bid));
 
          if( delta_total_bids.amount != 0 )
          {

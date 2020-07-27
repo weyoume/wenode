@@ -116,14 +116,18 @@ namespace node { namespace protocol {
 
       asset& operator += ( const asset& o )
       {
-         FC_ASSERT( symbol == o.symbol );
+         FC_ASSERT( symbol == o.symbol,
+            "Assets symbols must be the same: ${a} ${b}",
+            ("a",*this)("b",o.symbol) );
          amount += o.amount;
          return *this;
       }
 
       asset& operator -= ( const asset& o )
       {
-         FC_ASSERT( symbol == o.symbol );
+         FC_ASSERT( symbol == o.symbol,
+            "Assets symbols must be the same: ${a} ${b}",
+            ("a",*this)("b",o.symbol) );
          amount -= o.amount;
          return *this;
       }
@@ -135,7 +139,9 @@ namespace node { namespace protocol {
       }
       friend bool operator < ( const asset& a, const asset& b )
       {
-         FC_ASSERT( a.symbol == b.symbol );
+         FC_ASSERT( a.symbol == b.symbol,
+            "Assets symbols must be the same: ${a} ${b}",
+            ("a",a)("b",b));
          return a.amount < b.amount;
       }
       friend bool operator <= ( const asset& a, const asset& b )
@@ -149,7 +155,10 @@ namespace node { namespace protocol {
       }
       friend bool operator > ( const asset& a, const asset& b )
       {
-         return !(a <= b);
+         FC_ASSERT( a.symbol == b.symbol,
+            "Assets symbols must be the same: ${a} ${b}",
+            ("a",a)("b",b));
+         return a.amount > b.amount;
       }
       friend bool operator >= ( const asset& a, const asset& b )
       {
@@ -158,12 +167,16 @@ namespace node { namespace protocol {
 
       friend asset operator - ( const asset& a, const asset& b )
       {
-         FC_ASSERT( a.symbol == b.symbol );
+         FC_ASSERT( a.symbol == b.symbol,
+            "Assets symbols must be the same: ${a} ${b}",
+            ("a",a)("b",b));
          return asset( a.amount - b.amount, a.symbol );
       }
       friend asset operator + ( const asset& a, const asset& b )
       {
-         FC_ASSERT( a.symbol == b.symbol );
+         FC_ASSERT( a.symbol == b.symbol,
+            "Assets symbols must be the same: ${a} ${b}",
+            ("a",a)("b",b));
          return asset( a.amount + b.amount, a.symbol );
       }
       friend asset operator * ( const asset& a, share_type b )

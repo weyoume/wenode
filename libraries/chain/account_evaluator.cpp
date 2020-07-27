@@ -1,4 +1,3 @@
-
 #include <node/chain/node_evaluator.hpp>
 #include <node/chain/database.hpp>
 #include <node/chain/custom_operation_interpreter.hpp>
@@ -246,12 +245,28 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       aao.account = o.new_account_name;
    });
 
+   if( _db.find_producer( o.registrar ) != nullptr )
+   {
+      _db.create< producer_vote_object >( [&]( producer_vote_object& wvo )
+      {
+         wvo.producer = o.registrar;
+         wvo.account = o.new_account_name;
+         wvo.vote_rank = 1;
+      });
+
+      _db.modify( new_account, [&]( account_object& a )
+      {
+         a.producer_vote_count++;
+      });
+   }
+
    if( _db.find_network_officer( o.registrar ) != nullptr )
    {
       _db.create< network_officer_vote_object >( [&]( network_officer_vote_object& novo )
       {
          novo.network_officer = o.registrar;
          novo.account = o.new_account_name;
+         novo.vote_rank = 1;
       });
 
       _db.modify( new_account, [&]( account_object& a )
@@ -266,30 +281,16 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       {
          ebvo.executive_board = o.registrar;
          ebvo.account = o.new_account_name;
+         ebvo.vote_rank = 1;
       });
 
       _db.modify( new_account, [&]( account_object& a )
       {
-         a.officer_vote_count++;
+         a.executive_board_vote_count++;
       });
    }
 
-   if( _db.find_producer( o.registrar ) != nullptr )
-   {
-      _db.create< producer_vote_object >( [&]( producer_vote_object& wvo )
-      {
-         wvo.producer = o.registrar;
-         wvo.account = o.new_account_name;
-         wvo.vote_rank = 1;
-      });
-
-      _db.modify( new_account, [&]( account_object& a )
-      {
-         a.officer_vote_count++;
-      });
-   }
-
-   ilog( "Registrar: ${r} created new account: ${a}",("r",o.registrar)("a",o.new_account_name));
+   // ilog( "Registrar: ${r} created new account: ${a}",("r",o.registrar)("a",o.new_account_name));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -761,7 +762,8 @@ void account_membership_evaluator::do_apply( const account_membership_operation&
       else
       {
          a.recurring_membership = 0;
-      } 
+      }
+      a.last_updated = now;
    });
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -1470,6 +1472,7 @@ void account_update_proxy_evaluator::do_apply( const account_update_proxy_operat
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& account = _db.get_account( o.account );
+   time_point now = _db.head_block_time();
    
    FC_ASSERT( account.proxy != o.proxy,
       "Proxy must change." );
@@ -1509,6 +1512,7 @@ void account_update_proxy_evaluator::do_apply( const account_update_proxy_operat
       _db.modify( account, [&]( account_object& a )
       {
          a.proxy = o.proxy;
+         a.last_updated = now;
       });
 
       _db.modify( new_proxy, [&]( account_object& a )
@@ -1521,6 +1525,7 @@ void account_update_proxy_evaluator::do_apply( const account_update_proxy_operat
       _db.modify( account, [&]( account_object& a )
       {
          a.proxy = PROXY_TO_SELF_ACCOUNT;
+         a.last_updated = now;
       });
    }
 
@@ -1654,6 +1659,7 @@ void recover_account_evaluator::do_apply( const recover_account_operation& o )
    _db.modify( account, [&]( account_object& a )
    {
       a.last_account_recovery = now;
+      a.last_updated = now;
    });
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -1674,30 +1680,44 @@ void reset_account_evaluator::do_apply( const reset_account_operation& o )
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   const account_object& reset_account = _db.get_account( o.reset_account );
    const account_object& account = _db.get_account( o.account_to_reset );
    
-   FC_ASSERT( reset_account.active, 
-      "Account: ${s} must be active to reset account.",
-      ("s", o.reset_account) );
+   FC_ASSERT( account.reset_account == o.reset_account,
+      "Reset account does not match reset account on account." );
    
    fc::microseconds delay = fc::days( account.reset_account_delay_days );
    time_point now = _db.head_block_time();
 
-   FC_ASSERT( ( now - account.last_post ) > delay,
-      "Account must be inactive to be reset." );
-   FC_ASSERT( ( now - account.last_root_post ) > delay,
-      "Account must be inactive to be reset." );
-   FC_ASSERT( ( now - account.last_vote_time ) > delay,
-      "Account must be inactive to be reset." );
-   FC_ASSERT( ( now - account.last_view_time ) > delay,
-      "Account must be inactive to be reset." );
-   FC_ASSERT( ( now - account.last_vote_time ) > delay,
-      "Account must be inactive to be reset." );
-   FC_ASSERT( account.reset_account == o.reset_account,
-      "Reset account does not match reset account on account." );
+   FC_ASSERT( now > ( account.last_updated + delay ),
+      "Account must be inactive to be reset. Last updated at: ${t}",
+      ("t",account.last_updated));
+   
+   FC_ASSERT( now > ( account.last_vote_time + delay ),
+      "Account must be inactive to be reset. Last Vote made at: ${t}",
+      ("t",account.last_vote_time));
+   FC_ASSERT( now > ( account.last_view_time + delay ),
+      "Account must be inactive to be reset. Last View made at: ${t}",
+      ("t",account.last_view_time));
+   FC_ASSERT( now > ( account.last_share_time + delay ),
+      "Account must be inactive to be reset. Last Share made at: ${t}",
+      ("t",account.last_share_time));
 
+   FC_ASSERT( now > ( account.last_post + delay ),
+      "Account must be inactive to be reset. Last Comment made at: ${t}",
+      ("t",account.last_post));
+   FC_ASSERT( now > ( account.last_root_post + delay ),
+      "Account must be inactive to be reset. Last Root Post made at: ${t}",
+      ("t",account.last_root_post));
+
+   FC_ASSERT( now > ( account.last_transfer_time + delay ),
+      "Account must be inactive to be reset. Last Transfer made at: ${t}",
+      ("t",account.last_transfer_time));
+   FC_ASSERT( now > ( account.last_activity_reward + delay ),
+      "Account must be inactive to be reset. Last Activity Reward made at: ${t}",
+      ("t",account.last_activity_reward));
+   
    _db.update_owner_authority( account, o.new_owner_authority );
+   
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -1719,9 +1739,11 @@ void set_reset_account_evaluator::do_apply( const set_reset_account_operation& o
 
    const account_object& account = _db.get_account( o.account );
    const account_object& new_reset_account = _db.get_account( o.new_reset_account );
-   FC_ASSERT( new_reset_account.active, 
-      "Account: ${s} must be active to become new reset account.",("s", o.new_reset_account) );
+   time_point now = _db.head_block_time();
 
+   FC_ASSERT( new_reset_account.active,
+      "Account: ${s} must be active to become new reset account.",
+      ("s", o.new_reset_account) );
    FC_ASSERT( account.reset_account != o.new_reset_account,
       "Reset account must change." );
    
@@ -1729,7 +1751,11 @@ void set_reset_account_evaluator::do_apply( const set_reset_account_operation& o
    {
       a.reset_account = o.new_reset_account;
       a.reset_account_delay_days = o.days;
+      a.last_updated = now;
    });
+
+   ilog("Account: ${a} reset account updated to: ${r}",
+      ("a",o.account)("r",o.new_reset_account));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -1766,6 +1792,9 @@ void change_recovery_account_evaluator::do_apply( const change_recovery_account_
          req.recovery_account = o.new_recovery_account;
          req.effective_on = now + OWNER_AUTH_RECOVERY_PERIOD;
       });
+      
+      ilog("Account: ${a} Requested to change recovery account to: ${n}",
+         ("a",o.account_to_recover)("n",o.new_recovery_account));
    }
    else if( account_to_recover.recovery_account != o.new_recovery_account ) // Change existing request
    {
@@ -2450,31 +2479,32 @@ void activity_reward_evaluator::do_apply( const activity_reward_operation& o )
 
    time_point now = _db.head_block_time();
    const account_object& account = _db.get_account( o.account );
-
+   FC_ASSERT( now >= ( account.last_activity_reward + fc::days(1) ),
+      "Can only claim activity reward once per 24 hours." );
    FC_ASSERT( account.producer_vote_count >= MIN_ACTIVITY_PRODUCERS,
       "Account: ${a} must have at least 10 producer votes to claim activity reward. Votes: ${v}",
       ("a", o.account)("v", account.producer_vote_count) );
 
-   asset stake = _db.get_staked_balance( o.account, SYMBOL_EQUITY );
-
-   FC_ASSERT( stake.amount >= BLOCKCHAIN_PRECISION,
-      "Account: ${a} must have at least one staked equity asset to claim activity reward. Stake: ${s}",
-      ("a", o.account)("s", stake ) );
-
    const comment_metrics_object& comment_metrics = _db.get_comment_metrics();
    const comment_object& comment = _db.get_comment( o.account, o.permlink );
-   const comment_view_object& view = _db.get_comment_view( o.account, comment_id_type( o.view_id ) );
-   const comment_vote_object& vote = _db.get_comment_vote( o.account, comment_id_type( o.vote_id ) );
-   const comment_object& view_comment = _db.get( comment_id_type( o.view_id ) );
-   const comment_object& vote_comment = _db.get( comment_id_type( o.vote_id ) );
 
-   FC_ASSERT( comment.id != vote_comment.id,
-      "Created post and voted must must be different comments." );
-   FC_ASSERT( comment.id != view_comment.id,
-      "Created post and voted must must be different comments." );
-   FC_ASSERT( view_comment.id != vote_comment.id,
-      "Viewed post and voted must must be different comments." );
+   const auto& recent_vote_idx = _db.get_index< comment_vote_index >().indices().get< by_voter_recent >();
+   auto recent_vote_itr = recent_vote_idx.lower_bound( o.account );
 
+   const auto& recent_view_idx = _db.get_index< comment_view_index >().indices().get< by_viewer_recent >();
+   auto recent_view_itr = recent_view_idx.lower_bound( o.account );
+
+   FC_ASSERT( recent_vote_itr != recent_vote_idx.end(),
+      "Account must create a comment vote before claiming acivity reward." );
+   FC_ASSERT( recent_view_itr != recent_view_idx.end(),
+      "Account must create a comment view before claiming acivity reward." );
+   
+   const comment_vote_object& vote = *recent_vote_itr;
+   const comment_view_object& view = *recent_view_itr;
+
+   ilog("Claiming Activity reward for Comment: ${c} ${p} Vote: ${v} View: ${vi}",
+      ("c",comment.author)("p",comment.permlink)("v",vote)("vi",view));
+   
    FC_ASSERT( uint32_t( comment.net_votes ) >= ( comment_metrics.median_vote_count / 5 ),
       "Referred recent Post should have at least 20% of median number of votes." );
    FC_ASSERT( comment.view_count >= ( comment_metrics.median_view_count / 5 ),
@@ -2483,19 +2513,15 @@ void activity_reward_evaluator::do_apply( const activity_reward_operation& o )
       "Referred recent Post should have at least 20% of median vote power." );
    FC_ASSERT( comment.view_power >= ( comment_metrics.median_view_power / 5 ),
       "Referred recent Post should have at least 20% of median view power." );
-
-   FC_ASSERT( now < ( account.last_activity_reward + fc::days(1) ),
-      "Can only claim activity reward once per 24 hours." );
-   FC_ASSERT( now < ( comment.created + fc::days(1) ),
-      "Referred Recent Post should have been made in the last 24 hours." );
-   FC_ASSERT( now < ( view.created + fc::days(1) ),
-      "Referred Recent View should have been made in the last 24 hours." );
-   FC_ASSERT( now < ( vote.created + fc::days(1) ),
-      "Referred Recent Vote should have been made in the last 24 hours." );
+   FC_ASSERT( now <= ( comment.created + fc::days(1) ),
+      "Recent Post should have been made in the last 24 hours." );
+   FC_ASSERT( now <= ( view.created + fc::days(1) ),
+      "Most Recent View should have been made in the last 24 hours." );
+   FC_ASSERT( now <= ( vote.created + fc::days(1) ),
+      "Most Recent Vote should have been made in the last 24 hours." );
 
    const auto& vote_idx = _db.get_index< producer_vote_index >().indices().get< by_account_rank >();
    auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, 1 ) );     // Gets top voted producer of account.
-
    const producer_object& producer = _db.get_producer( vote_itr->producer );
 
    _db.claim_activity_reward( account, producer, comment.reward_currency );

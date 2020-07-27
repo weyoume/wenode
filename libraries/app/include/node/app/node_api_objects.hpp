@@ -187,14 +187,13 @@ struct reward_fund_api_obj
       advocacy_reward_balance( o.advocacy_reward_balance ),
       activity_reward_balance( o.activity_reward_balance ),
       premium_partners_fund_balance( o.premium_partners_fund_balance ),
-      total_pending_reward_balance( o.total_pending_reward_balance ),
+      total_pending_reward_balance( o.total_pending_reward_balance() ),
       recent_content_claims( o.recent_content_claims ),
       recent_activity_claims( o.recent_activity_claims ),
       content_constant( o.content_constant ),
       content_reward_decay_rate( o.content_reward_decay_rate ),
       content_reward_interval( o.content_reward_interval ),
-      author_reward_curve( o.author_reward_curve ),
-      curation_reward_curve( o.curation_reward_curve ),
+      reward_curve( o.reward_curve ),
       last_updated( o.last_updated ){}
 
    reward_fund_api_obj(){}
@@ -220,8 +219,7 @@ struct reward_fund_api_obj
    uint128_t               content_constant;                                          ///< Contstant added to content claim shares.
    fc::microseconds        content_reward_decay_rate;                                 ///< Time taken to distribute all content rewards.
    fc::microseconds        content_reward_interval;                                   ///< Time between each individual distribution of content rewards. 
-   curve_id                author_reward_curve;                                       ///< Type of reward curve used for author content reward calculation. 
-   curve_id                curation_reward_curve;                                     ///< Type of reward curve used for curation content reward calculation.
+   curve_id                reward_curve;                                              ///< Type of reward curve used for author content reward calculation. 
    time_point              last_updated;                                              ///< Time that the reward fund was last updated. 
 };
 
@@ -2312,7 +2310,8 @@ struct transfer_request_api_obj
       amount( o.amount ),
       request_id( to_string( o.request_id ) ),
       memo( to_string( o.memo ) ),
-      expiration( o.expiration ){}
+      expiration( o.expiration ),
+      paid( o.paid ){}
 
    transfer_request_api_obj(){}
 
@@ -2321,8 +2320,9 @@ struct transfer_request_api_obj
    account_name_type                      from;           ///< Account that is being requested to accept the transfer.
    asset                                  amount;         ///< The amount of asset to transfer.
    string                                 request_id;     ///< uuidv4 of the request transaction.
-   string                                 memo;           ///< The memo is plain-text, encryption on the memo is advised. 
-   time_point                             expiration;     ///< time that the request expires. 
+   string                                 memo;           ///< The memo is plain-text, encryption on the memo is advised.
+   time_point                             expiration;     ///< time that the request expires.
+   bool                                   paid;           ///< True when the request has been paid.
 };
 
 
@@ -2578,7 +2578,10 @@ struct product_auction_sale_api_obj
       delivery_details( to_string( o.delivery_details ) ),
       final_bid_time( o.final_bid_time ),
       completion_time( o.completion_time ),
-      winning_bid( o.winning_bid ),
+      bid_count( o.bid_count ),
+      winning_bidder( o.winning_bidder ),
+      winning_bid_id( to_string( o.winning_bid_id ) ),
+      completed( o.completed ),
       created( o.created ),
       last_updated( o.last_updated )
       {
@@ -2610,7 +2613,10 @@ struct product_auction_sale_api_obj
    vector< asset >                       delivery_prices;        ///< The price for each variant of delivery.
    time_point                            final_bid_time;         ///< No more bids will be accepted after this time. Concealed bids must be revealed before completion time.
    time_point                            completion_time;        ///< Time that the auction will select the winning bidder, or end if no bids.
-   product_auction_bid_id_type           winning_bid;            ///< ID of the winning bid after completion time.
+   uint32_t                              bid_count = 0;          ///< Number of bids placed on the auction.
+   account_name_type                     winning_bidder;         ///< Name of the account the created the winning bid.
+   string                                winning_bid_id;         ///< uuidv4 of the winning bid.
+   bool                                  completed;              ///< True when the auction is completed.
    time_point                            created;                ///< Time that the order was created.
    time_point                            last_updated;           ///< Time that the order was last updated.
 };
@@ -2853,7 +2859,7 @@ struct call_order_api_obj
       borrower( o.borrower ),
       collateral( o.collateral ),
       debt( o.debt ),
-      call_price( o.call_price ),
+      collateralization( o.collateralization() ),
       target_collateral_ratio( *o.target_collateral_ratio ),
       interface( o.interface ),
       real_price( o.real_price() ){}
@@ -2862,9 +2868,9 @@ struct call_order_api_obj
 
    call_order_id_type      id;
    account_name_type       borrower;
-   asset                   collateral;                  ///< call_price.base.symbol, access via get_collateral.
-   asset                   debt;                        ///< call_price.quote.symbol, access via get_debt
-   price                   call_price;                  ///< Collateral / Debt
+   asset                   collateral;                  ///< Funds of backing asset held as security to back the loan of debt asset.
+   asset                   debt;                        ///< Funds borrowed as issuance of a stablecoin.
+   price                   collateralization;                  ///< Collateral / Debt
    uint16_t                target_collateral_ratio;     ///< maximum CR to maintain when selling collateral on margin call
    account_name_type       interface;                   ///< The interface account that created the order
    double                  real_price;                  ///< Real decimal price of the order.
@@ -3627,10 +3633,11 @@ struct credit_loan_api_obj
       debt( o.debt ),
       interest( o.interest ),
       collateral( o.collateral ),
-      loan_price( o.loan_price ),
+      loan_price( o.loan_price() ),
       liquidation_price( o.liquidation_price ),
       symbol_a( o.symbol_a ),
       symbol_b( o.symbol_b ),
+      symbol_liquid( o.symbol_liquid ),
       last_interest_rate( o.last_interest_rate.value ),
       created( o.created ),
       last_updated( o.last_updated ){}
@@ -3647,6 +3654,7 @@ struct credit_loan_api_obj
    price                      liquidation_price;       ///< Collateral / max_debt value. Rises when collateral/debt market price falls.
    asset_symbol_type          symbol_a;                ///< The symbol of asset A in the debt / collateral exchange pair.
    asset_symbol_type          symbol_b;                ///< The symbol of asset B in the debt / collateral exchange pair.
+   asset_symbol_type          symbol_liquid;           ///< The symbol of the liquidity pool that underlies the loan object. 
    int64_t                    last_interest_rate;      ///< Updates the interest rate of the loan hourly. 
    time_point                 created;                 ///< Time that the loan was taken out.
    time_point                 last_updated;            ///< Time that the loan was last updated, and interest was accrued.
@@ -3948,13 +3956,11 @@ FC_REFLECT( node::app::reward_fund_api_obj,
          (advocacy_reward_balance)
          (activity_reward_balance)
          (premium_partners_fund_balance)
-         (total_pending_reward_balance)
          (recent_content_claims)
          (recent_activity_claims)
          (content_constant)
          (content_reward_decay_rate)
-         (author_reward_curve)
-         (curation_reward_curve)
+         (reward_curve)
          (last_updated)
          );
 
@@ -4782,6 +4788,7 @@ FC_REFLECT( node::app::transfer_request_api_obj,
          (request_id)
          (memo)
          (expiration)
+         (paid)
          );
 
 FC_REFLECT( node::app::transfer_recurring_api_obj,
@@ -4899,7 +4906,10 @@ FC_REFLECT( node::app::product_auction_sale_api_obj,
          (delivery_prices)
          (final_bid_time)
          (completion_time)
-         (winning_bid)
+         (bid_count)
+         (winning_bidder)
+         (winning_bid_id)
+         (completed)
          (created)
          (last_updated)
          );
@@ -5012,7 +5022,7 @@ FC_REFLECT( node::app::call_order_api_obj,
          (borrower)
          (collateral)
          (debt)
-         (call_price)
+         (collateralization)
          (target_collateral_ratio)
          (interface)
          (real_price)
@@ -5322,6 +5332,7 @@ FC_REFLECT( node::app::credit_loan_api_obj,
          (liquidation_price)
          (symbol_a)
          (symbol_b)
+         (symbol_liquid)
          (last_interest_rate)
          (created)
          (last_updated)

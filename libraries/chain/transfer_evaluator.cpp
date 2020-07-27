@@ -177,7 +177,7 @@ void transfer_request_evaluator::do_apply( const transfer_request_operation& o )
       FC_ASSERT( o.requested, 
          "Transfer request does not exist to cancel, set requested to true." );
 
-      _db.create< transfer_request_object >( [&]( transfer_request_object& tro )
+      const transfer_request_object& request = _db.create< transfer_request_object >( [&]( transfer_request_object& tro )
       {
          tro.to = o.to;
          tro.from = o.from;
@@ -186,12 +186,17 @@ void transfer_request_evaluator::do_apply( const transfer_request_operation& o )
          tro.amount = o.amount;
          tro.expiration = now + TRANSFER_REQUEST_DURATION;
       });
+
+      ilog( "Account: ${a} created Transfer Request: \n ${r} \n",
+         ("a",o.to)("r",request));
    }
    else
    {
+      const transfer_request_object& request = *req_itr;
+
       if( o.requested )
       {
-         _db.modify( *req_itr, [&]( transfer_request_object& tro )
+         _db.modify( request, [&]( transfer_request_object& tro )
          {
             from_string( tro.memo, o.memo );
             tro.amount = o.amount;
@@ -199,8 +204,8 @@ void transfer_request_evaluator::do_apply( const transfer_request_operation& o )
       }
       else
       {
-         ilog( "Removed: ${v}",("v",*req_itr));
-         _db.remove( *req_itr );
+         ilog( "Removed: ${v}",("v",request));
+         _db.remove( request );
       }
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
@@ -226,7 +231,7 @@ void transfer_accept_evaluator::do_apply( const transfer_accept_operation& o )
    const account_object& to_account = _db.get_account( o.to );
 
    FC_ASSERT( to_account.active, 
-      "Account: ${s} must be active to receive transfer.",("s", o.to) );
+      "Account: ${a} must be active to receive transfer.",("a", o.to) );
 
    const transfer_request_object& request = _db.get_transfer_request( o.to, o.request_id );
    const asset_object& asset_obj = _db.get_asset( request.amount.symbol );
@@ -254,10 +259,18 @@ void transfer_accept_evaluator::do_apply( const transfer_accept_operation& o )
       _db.adjust_liquid_balance( request.from, -request.amount );
       _db.adjust_liquid_balance( request.to, request.amount );
 
+      _db.modify( request, [&]( transfer_request_object& tro )
+      {
+         tro.paid = true;
+      });
+
       _db.modify( from_account, [&]( account_object& a )
       {
          a.last_transfer_time = now;
       });
+
+      ilog( "Account: ${a} accepted Transfer Request: \n ${r} \n",
+         ("a",o.from)("r",request));
    }
    else
    {
@@ -312,10 +325,10 @@ void transfer_recurring_evaluator::do_apply( const transfer_recurring_operation&
       FC_ASSERT( o.begin > now,
          "Begin time must be in the future." );
 
-      _db.create< transfer_recurring_object >( [&]( transfer_recurring_object& tro )
+      const transfer_recurring_object& recurring = _db.create< transfer_recurring_object >( [&]( transfer_recurring_object& tro )
       {
-         tro.to = to_account.name;
          tro.from = from_account.name;
+         tro.to = to_account.name;
          from_string( tro.memo, o.memo );
          from_string( tro.transfer_id, o.transfer_id );
          tro.amount = o.amount;
@@ -328,16 +341,21 @@ void transfer_recurring_evaluator::do_apply( const transfer_recurring_operation&
          tro.extensible = o.extensible;
          tro.fill_or_kill = o.fill_or_kill;
       });
+
+      ilog( "Account: ${a} created new recurring transfer: \n ${r} \n",
+         ("a",o.from)("r",recurring));
    }
    else
    {
+      const transfer_recurring_object& recurring = *recurring_itr;
+
       if( o.active )
       {
-         int32_t prev_remaining = recurring_itr->payments_remaining;
+         int32_t prev_remaining = recurring.payments_remaining;
          int32_t delta_remaining = o.payments - prev_remaining;
          int32_t new_remaining = prev_remaining += delta_remaining;
-         time_point next_transfer = recurring_itr->next_transfer;
-         time_point init_begin = recurring_itr->begin;
+         time_point next_transfer = recurring.next_transfer;
+         time_point init_begin = recurring.begin;
          time_point new_end = next_transfer + fc::microseconds( o.interval.count() * ( new_remaining - 1 ) );
 
          FC_ASSERT( new_end > now,
@@ -349,7 +367,7 @@ void transfer_recurring_evaluator::do_apply( const transfer_recurring_operation&
                "Cannot change payment begin time after payment has already begun." );
          }
 
-         _db.modify( *recurring_itr, [&]( transfer_recurring_object& tro )
+         _db.modify( recurring, [&]( transfer_recurring_object& tro )
          {
             tro.interval = o.interval;
             from_string( tro.memo, o.memo );
@@ -364,8 +382,8 @@ void transfer_recurring_evaluator::do_apply( const transfer_recurring_operation&
       }
       else
       {
-         ilog( "Removed: ${v}",("v",*recurring_itr));
-         _db.remove( *recurring_itr );
+         ilog( "Removed: ${v}",("v",recurring));
+         _db.remove( recurring );
       }
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -417,7 +435,7 @@ void transfer_recurring_request_evaluator::do_apply( const transfer_recurring_re
       FC_ASSERT( o.expiration <= o.begin,
          "Expiration time must be before or equal to begin time." );
 
-      _db.create< transfer_recurring_request_object >( [&]( transfer_recurring_request_object& trro )
+      const transfer_recurring_request_object& request = _db.create< transfer_recurring_request_object >( [&]( transfer_recurring_request_object& trro )
       {
          trro.to = o.to;
          trro.from = o.from;
@@ -432,9 +450,14 @@ void transfer_recurring_request_evaluator::do_apply( const transfer_recurring_re
          trro.extensible = o.extensible;
          trro.fill_or_kill = o.fill_or_kill;
       });
+
+      ilog( "Account: ${a} created new recurring transfer request: \n ${r} \n",
+         ("a",o.to)("r",request));
    }
    else
    {
+      const transfer_recurring_request_object& request = *req_itr;
+
       if( o.requested )
       {
          _db.modify( *req_itr, [&]( transfer_recurring_request_object& trro )
@@ -451,8 +474,8 @@ void transfer_recurring_request_evaluator::do_apply( const transfer_recurring_re
       }
       else
       {
-         ilog( "Removed: ${v}",("v",*req_itr));
-         _db.remove( *req_itr );
+         ilog( "Removed: ${v}",("v",request));
+         _db.remove( request );
       }
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -499,10 +522,10 @@ void transfer_recurring_accept_evaluator::do_apply( const transfer_recurring_acc
    
    if( o.accepted )   // Accepting transfer by creating new transfer.
    {
-      _db.create< transfer_recurring_object >( [&]( transfer_recurring_object& tro )
+      const transfer_recurring_object& recurring = _db.create< transfer_recurring_object >( [&]( transfer_recurring_object& tro )
       {
-         tro.to = request.to;
          tro.from = request.from;
+         tro.to = request.to;
          tro.memo = request.memo;
          tro.transfer_id = request.request_id;  // Request id becomes new transfer ID
          tro.amount = request.amount;
@@ -515,12 +538,14 @@ void transfer_recurring_accept_evaluator::do_apply( const transfer_recurring_acc
          tro.extensible = request.extensible;
          tro.fill_or_kill = request.fill_or_kill;
       });
+
+      ilog( "Account: ${a} accepted recurring transfer Request: \n ${r} \n",
+         ("a",o.from)("r",recurring));
    }
-   else    // Rejecting recurring transfer request.
-   {
-      ilog( "Removed: ${v}",("v",request));
-      _db.remove( request );
-   }
+
+   ilog( "Removed: ${v}",("v",request));
+   _db.remove( request );
+
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
 

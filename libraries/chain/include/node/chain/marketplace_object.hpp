@@ -165,10 +165,11 @@ namespace node { namespace chain {
             url(a), 
             json(a), 
             product_details(a), 
-            product_image( a ), 
+            product_image(a), 
             delivery_variants( a.get_segment_manager() ), 
-            delivery_details( a ), 
-            delivery_prices( a.get_segment_manager() )
+            delivery_details(a), 
+            delivery_prices( a.get_segment_manager() ),
+            winning_bid_id(a)
             {
                c( *this );
             }
@@ -205,7 +206,13 @@ namespace node { namespace chain {
 
          time_point                            completion_time;        ///< Time that the auction will select the winning bidder, or end if no bids.
 
-         product_auction_bid_id_type           winning_bid;            ///< ID of the winning bid after completion time.
+         uint32_t                              bid_count = 0;          ///< Number of bids placed on the auction.
+
+         account_name_type                     winning_bidder;         ///< Account name of the winning bidder.
+
+         shared_string                         winning_bid_id;         ///< The uuidv4 identifying the auction.
+
+         bool                                  completed = false;      ///< True when the auction is completed.
 
          time_point                            created;                ///< Time that the order was created.
 
@@ -254,15 +261,15 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          product_auction_bid_object( Constructor&& c, allocator< Allocator > a ) :
-         bid_id(a), 
-         auction_id(a), 
-         memo(a), 
-         json(a), 
-         shipping_address(a),
-         delivery_details(a)
-         {
-            c( *this );
-         }
+            bid_id(a), 
+            auction_id(a), 
+            memo(a), 
+            json(a), 
+            shipping_address(a),
+            delivery_details(a)
+            {
+               c( *this );
+            }
 
          id_type                           id;
 
@@ -530,11 +537,13 @@ namespace node { namespace chain {
          >,
          ordered_unique< tag< by_completion_time >,
             composite_key< product_auction_sale_object,
+               member< product_auction_sale_object, bool, &product_auction_sale_object::completed >,
                member< product_auction_sale_object, time_point, &product_auction_sale_object::completion_time >,
                member< product_auction_sale_object, product_auction_sale_id_type, &product_auction_sale_object::id >
             >,
             composite_key_compare<
-               std::less< time_point >, 
+               std::less< bool >,
+               std::less< time_point >,
                std::less< product_auction_sale_id_type >
             >
          >,
@@ -544,7 +553,7 @@ namespace node { namespace chain {
                member< product_auction_sale_object, product_auction_sale_id_type, &product_auction_sale_object::id >
             >,
             composite_key_compare< 
-               std::greater< time_point >, 
+               std::greater< time_point >,
                std::less< product_auction_sale_id_type >
             >
          >
@@ -756,7 +765,9 @@ FC_REFLECT( node::chain::product_auction_sale_object,
          (delivery_prices)
          (final_bid_time)
          (completion_time)
-         (winning_bid)
+         (winning_bidder)
+         (winning_bid_id)
+         (completed)
          (created)
          (last_updated)
          );

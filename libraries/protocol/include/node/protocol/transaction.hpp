@@ -9,7 +9,7 @@ namespace node { namespace protocol {
 
    struct transaction
    {
-      uint64_t             ref_block_num = 0;
+      uint16_t             ref_block_num = 0;
 
       uint64_t             ref_block_prefix = 0;
 

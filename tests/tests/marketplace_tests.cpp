@@ -64,15 +64,16 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       transfer.escrow_expiration = now() + fc::days(8);
       transfer.validate();
 
-      tx.operations.push_back( transfer );
+      tx.set_reference_block( db.head_block_id() );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( transfer );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      const escrow_object& escrow1 = db.get_escrow( account_name_type( "alice" ), string( "6b3b3da0-660a-41a1-b6a2-221a71c0cc17" ) );
+      const escrow_object& escrow1 = db.get_escrow( transfer.from, transfer.escrow_id );
 
       BOOST_REQUIRE( escrow1.to == transfer.to );
       BOOST_REQUIRE( escrow1.from == transfer.from );
@@ -250,7 +251,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance );
 
       const auto& escrow_idx = db.get_index< escrow_index >().indices().get< by_from_id >();
-      auto escrow_itr = escrow_idx.find( std::make_tuple( account_name_type( "alice" ), string( "6b3b3da0-660a-41a1-b6a2-221a71c0cc17" ) ) );
+      auto escrow_itr = escrow_idx.find( std::make_tuple( transfer.from, transfer.escrow_id ) );
 
       BOOST_REQUIRE( escrow_itr == escrow_idx.end() );
 
@@ -333,7 +334,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const escrow_object& escrow2 = db.get_escrow( account_name_type( "alice" ), string( "01eee083-5680-4740-ada3-46adda0994bd" ) );
+      const escrow_object& escrow2 = db.get_escrow( transfer.from, transfer.escrow_id );
 
       BOOST_REQUIRE( escrow2.to == transfer.to );
       BOOST_REQUIRE( escrow2.from == transfer.from );
@@ -369,7 +370,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      escrow_itr = escrow_idx.find( std::make_tuple( account_name_type( "alice" ), string( "01eee083-5680-4740-ada3-46adda0994bd" ) ) );
+      escrow_itr = escrow_idx.find( std::make_tuple( transfer.from, transfer.escrow_id ) );
 
       BOOST_REQUIRE( escrow_itr == escrow_idx.end() );
 
@@ -390,7 +391,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const escrow_object& escrow3 = db.get_escrow( account_name_type( "alice" ), string( "8ebbd965-739a-48dd-abeb-67d0363fdae8" ) );
+      const escrow_object& escrow3 = db.get_escrow( transfer.from, transfer.escrow_id );
 
       BOOST_REQUIRE( escrow3.to == transfer.to );
       BOOST_REQUIRE( escrow3.from == transfer.from );
@@ -398,9 +399,10 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       BOOST_REQUIRE( escrow3.acceptance_time == transfer.acceptance_time );
       BOOST_REQUIRE( escrow3.escrow_expiration == transfer.escrow_expiration );
 
-      generate_blocks( transfer.acceptance_time + BLOCK_INTERVAL );
+      generate_blocks( transfer.acceptance_time, true );
+      generate_block();
 
-      escrow_itr = escrow_idx.find( std::make_tuple( account_name_type( "alice" ), string( "8ebbd965-739a-48dd-abeb-67d0363fdae8" ) ) );
+      escrow_itr = escrow_idx.find( std::make_tuple( transfer.from, transfer.escrow_id ) );
 
       BOOST_REQUIRE( escrow_itr == escrow_idx.end() );
 
@@ -417,6 +419,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       transfer.escrow_expiration = now() + fc::days(8);
       
       tx.operations.push_back( transfer );
+      tx.set_reference_block( db.head_block_id() );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -457,7 +460,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const escrow_object& escrow4 = db.get_escrow( account_name_type( "alice" ), string( "98351a27-d0d7-456a-b732-4fb414a0e639" ) );
+      const escrow_object& escrow4 = db.get_escrow( transfer.from, transfer.escrow_id );
 
       BOOST_REQUIRE( escrow4.to == transfer.to );
       BOOST_REQUIRE( escrow4.from == transfer.from );
@@ -773,7 +776,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      for( account_name_type m : escrow4.mediators )
+      for( auto m : db.get_escrow( transfer.from, transfer.escrow_id ).mediators )
       {
          release.signatory = m;
          release.account = m;
@@ -791,7 +794,10 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
          BOOST_REQUIRE( release_percentages[ m ] == release.release_percent );
       }
 
-      escrow_itr = escrow_idx.find( std::make_tuple( account_name_type( "alice" ), string( "98351a27-d0d7-456a-b732-4fb414a0e639" ) ) );
+      generate_blocks( db.get_escrow( transfer.from, transfer.escrow_id ).dispute_release_time, true );
+      generate_block();
+
+      escrow_itr = escrow_idx.find( std::make_tuple( transfer.from, transfer.escrow_id ) );
 
       BOOST_REQUIRE( escrow_itr == escrow_idx.end() );
 
@@ -808,6 +814,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       transfer.escrow_expiration = now() + fc::days(8);
       
       tx.operations.push_back( transfer );
+      tx.set_reference_block( db.head_block_id() );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -862,9 +869,10 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      generate_blocks( transfer.escrow_expiration + BLOCK_INTERVAL, true );
+      generate_blocks( transfer.escrow_expiration, true );
+      generate_block();
 
-      const escrow_object& escrow5 = db.get_escrow( account_name_type( "alice" ), string( "efab7764-63af-4e6a-95e4-b4dd7c23e40b" ) );
+      const escrow_object& escrow5 = db.get_escrow( transfer.from, transfer.escrow_id );
 
       escrow_bond = asset( ( escrow5.payment.amount * median_props.escrow_bond_percent ) / PERCENT_100, escrow5.payment.symbol );
 
@@ -875,7 +883,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       BOOST_REQUIRE( escrow5.payment == transfer.amount );
       BOOST_REQUIRE( escrow5.acceptance_time == transfer.acceptance_time );
       BOOST_REQUIRE( escrow5.escrow_expiration == transfer.escrow_expiration );
-      BOOST_REQUIRE( escrow5.dispute_release_time == now() + ESCROW_DISPUTE_DURATION );
+      BOOST_REQUIRE( escrow5.dispute_release_time == time_point::maximum() );
       BOOST_REQUIRE( escrow5.balance == escrow5.payment + 4 * escrow_bond );
       BOOST_REQUIRE( escrow5.from_approved() == true );
       BOOST_REQUIRE( escrow5.to_approved() == true );
@@ -888,9 +896,10 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       dispute.escrow_from = "alice";
       dispute.escrow_id = "efab7764-63af-4e6a-95e4-b4dd7c23e40b";
 
+      tx.set_reference_block( db.head_block_id() );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( dispute );
       tx.sign( bob_private_active_key, db.get_chain_id() );
-      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       tx.operations.clear();
@@ -913,7 +922,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      escrow_itr = escrow_idx.find( std::make_tuple( account_name_type( "alice" ), string( "efab7764-63af-4e6a-95e4-b4dd7c23e40b" ) ) );
+      escrow_itr = escrow_idx.find( std::make_tuple( transfer.from, transfer.escrow_id ) );
 
       BOOST_REQUIRE( escrow_itr == escrow_idx.end() );
 
@@ -1157,6 +1166,7 @@ BOOST_AUTO_TEST_CASE( product_sale_operation_sequence_tests )
       tx.signatures.clear();
 
       const escrow_object& bob_escrow = db.get_escrow( account_name_type( "bob" ), string( "cfebe3a5-4b06-4dcb-916c-d8737f600701" ) );
+
       asset escrow_bond = asset( ( bob_purchase.order_value.amount * median_props.escrow_bond_percent ) / PERCENT_100, bob_escrow.payment.symbol );
 
       BOOST_REQUIRE( bob_escrow.to == "alice" );
@@ -1167,25 +1177,25 @@ BOOST_AUTO_TEST_CASE( product_sale_operation_sequence_tests )
       BOOST_REQUIRE( bob_escrow.acceptance_time == purchase.acceptance_time );
       BOOST_REQUIRE( bob_escrow.escrow_expiration == purchase.escrow_expiration );
       BOOST_REQUIRE( bob_escrow.balance == bob_escrow.payment + 4 * escrow_bond );
-      BOOST_REQUIRE( bob_escrow.from_approved() == true );
-      BOOST_REQUIRE( bob_escrow.to_approved() == true );
-      BOOST_REQUIRE( bob_escrow.from_mediator_approved() == true );
-      BOOST_REQUIRE( bob_escrow.to_mediator_approved() == true );
-      BOOST_REQUIRE( bob_escrow.is_approved() == true );
+      BOOST_REQUIRE( bob_escrow.from_approved() );
+      BOOST_REQUIRE( bob_escrow.to_approved() );
+      BOOST_REQUIRE( bob_escrow.from_mediator_approved() );
+      BOOST_REQUIRE( bob_escrow.to_mediator_approved() );
+      BOOST_REQUIRE( bob_escrow.is_approved() );
 
       asset alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_USD );
       asset bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_USD );
       asset candice_liquid_balance = get_liquid_balance( "candice", SYMBOL_USD );
       asset dan_liquid_balance = get_liquid_balance( "dan", SYMBOL_USD );
 
-      BOOST_REQUIRE( alice_liquid_balance == ( alice_init_liquid_balance - ( bob_purchase.order_value + escrow_bond ) ) );
-      BOOST_REQUIRE( bob_liquid_balance == ( bob_init_liquid_balance - escrow_bond ) );
+      BOOST_REQUIRE( alice_liquid_balance == ( alice_init_liquid_balance - escrow_bond ) );
+      BOOST_REQUIRE( bob_liquid_balance == ( bob_init_liquid_balance - ( bob_escrow.payment + escrow_bond ) ) );
       BOOST_REQUIRE( candice_liquid_balance == ( candice_init_liquid_balance - escrow_bond ) );
       BOOST_REQUIRE( dan_liquid_balance == ( dan_init_liquid_balance - escrow_bond ) );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: approval of escrow transfer proposal" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: standard release of escrow funds by FROM account" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Release of escrow funds by FROM account" );
 
       escrow_release_operation release;
 
@@ -1208,8 +1218,8 @@ BOOST_AUTO_TEST_CASE( product_sale_operation_sequence_tests )
       candice_liquid_balance = get_liquid_balance( "candice", SYMBOL_USD );
       dan_liquid_balance = get_liquid_balance( "dan", SYMBOL_USD );
 
-      BOOST_REQUIRE( alice_liquid_balance == ( alice_init_liquid_balance - bob_purchase.order_value ) );
-      BOOST_REQUIRE( bob_liquid_balance == ( bob_init_liquid_balance + bob_purchase.order_value ) );
+      BOOST_REQUIRE( alice_liquid_balance == ( alice_init_liquid_balance + bob_purchase.order_value ) );
+      BOOST_REQUIRE( bob_liquid_balance == ( bob_init_liquid_balance - bob_purchase.order_value ) );
       BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance );
       BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance );
 
@@ -1286,7 +1296,7 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const product_auction_sale_object& alice_auction = db.get_product_auction_sale( account_name_type( "alice" ), string( "b65388d9-a99a-49a8-9f2e-761246a1d777" ) );
+      const product_auction_sale_object& alice_auction = db.get_product_auction_sale( auction.account, auction.auction_id );
 
       BOOST_REQUIRE( auction.account == alice_auction.account );
       BOOST_REQUIRE( auction.auction_id == to_string( alice_auction.auction_id ) );
@@ -1300,6 +1310,7 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       BOOST_REQUIRE( auction.completion_time == alice_auction.completion_time );
       BOOST_REQUIRE( auction.product_image == to_string( alice_auction.product_image ) );
       BOOST_REQUIRE( auction.delivery_details == to_string( alice_auction.delivery_details ) );
+      BOOST_REQUIRE( !alice_auction.completed );
 
       for( size_t i = 0; i < auction.delivery_variants.size(); i++ )
       {
@@ -1335,7 +1346,7 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const product_auction_bid_object& bob_bid = db.get_product_auction_bid( account_name_type( "bob" ), string( "4cf6928b-32be-4a77-a900-bbb8e97d1cb8" ) );
+      const product_auction_bid_object& bob_bid = db.get_product_auction_bid( bid.buyer, bid.bid_id );
 
       BOOST_REQUIRE( bid.buyer == bob_bid.buyer );
       BOOST_REQUIRE( bid.bid_id == to_string( bob_bid.bid_id ) );
@@ -1407,8 +1418,12 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       asset candice_init_liquid_balance = get_liquid_balance( "candice", SYMBOL_USD );
       asset dan_init_liquid_balance = get_liquid_balance( "dan", SYMBOL_USD );
 
-      generate_blocks( auction.completion_time + fc::minutes(2) );
+      generate_blocks( db.get_product_auction_sale( auction.account, auction.auction_id ).completion_time, true );
+      generate_block();
 
+      BOOST_REQUIRE( db.get_product_auction_sale( auction.account, auction.auction_id ).completed );
+      BOOST_REQUIRE( db.get_product_auction_sale( auction.account, auction.auction_id ).winning_bidder == bob_bid.buyer );
+      BOOST_REQUIRE( db.get_product_auction_sale( auction.account, auction.auction_id ).winning_bid_id == bob_bid.bid_id );
       BOOST_REQUIRE( bob_bid.winning_bid );
 
       escrow_approve_operation approve;
@@ -1429,6 +1444,8 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
+      generate_block();
+
       approve.signatory = "bob";
       approve.account = "bob";
       approve.mediator = "dan";
@@ -1439,6 +1456,8 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      generate_block();
 
       approve.signatory = "candice";
       approve.account = "candice";
@@ -1451,6 +1470,8 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
+      generate_block();
+
       approve.signatory = "dan";
       approve.account = "dan";
       approve.mediator = "dan";
@@ -1462,7 +1483,10 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const escrow_object& bob_escrow = db.get_escrow( account_name_type( "bob" ), string( "4cf6928b-32be-4a77-a900-bbb8e97d1cb8" ) );
+      generate_block();
+
+      const escrow_object& bob_escrow = db.get_escrow( approve.escrow_from, approve.escrow_id );
+
       asset escrow_bond = asset( ( bob_bid.order_value().amount * median_props.escrow_bond_percent ) / PERCENT_100, bob_escrow.payment.symbol );
 
       BOOST_REQUIRE( bob_escrow.to == "alice" );
@@ -1500,12 +1524,16 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       release.release_percent = PERCENT_100;
       release.validate();
 
+      tx.set_reference_block( db.head_block_id() );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( release );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      generate_block();
 
       alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_USD );
       bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_USD );
@@ -1518,8 +1546,7 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance );
 
       const auto& escrow_idx = db.get_index< escrow_index >().indices().get< by_from_id >();
-      auto escrow_itr = escrow_idx.find( std::make_tuple( account_name_type( "bob" ), string( "b65388d9-a99a-49a8-9f2e-761246a1d777" ) ) );
-
+      auto escrow_itr = escrow_idx.find( std::make_tuple( release.escrow_from, release.escrow_id ) );
       BOOST_REQUIRE( escrow_itr == escrow_idx.end() );
 
       validate_database();

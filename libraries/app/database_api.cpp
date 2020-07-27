@@ -5257,7 +5257,11 @@ vector< account_moderation > database_api_impl::get_account_moderation( string a
       account_moderation amod;
       amod.author = comment.author;
       amod.permlink = to_string( comment.permlink );
-      amod.tags = itr->tags;
+      amod.tags.reserve( itr->tags.size() );
+      for( auto t : itr->tags )
+      {
+         amod.tags.push_back( t );
+      }
       amod.rating = itr->rating;
       amod.details = to_string( itr->details );
       amod.filter = itr->filter;

@@ -551,8 +551,8 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
          coo.borrower = o.owner;
          coo.collateral = o.collateral;
          coo.debt = o.debt;
-         coo.call_price = price( asset( 1, o.collateral.symbol ), asset( 1, o.debt.symbol ) );
          coo.target_collateral_ratio = *o.target_collateral_ratio;
+         coo.interface = o.interface;
          coo.created = now;
          coo.last_updated = now;
       });
@@ -563,7 +563,8 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
    else        // updating existing debt position
    {
       const call_order_object& call = *call_itr;
-      ilog( "Account: ${a} begin editing call order: ${c}",("a",o.owner)("c",call));
+      ilog( "Account: ${a} begin editing call order: ${c}",
+         ("a",o.owner)("c",call));
 
       asset delta_collateral = o.collateral - call.collateral;
       asset delta_debt = o.debt - call.debt;

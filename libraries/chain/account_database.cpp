@@ -260,7 +260,7 @@ void database::update_account_reputations()
 /**
  * Pays an account its activity reward shares from the reward pool.
  */
-asset database::claim_activity_reward( const account_object& account, 
+asset database::claim_activity_reward( const account_object& account,
    const producer_object& producer, asset_symbol_type currency_symbol )
 { try {
    const asset_currency_data_object& currency = get_currency_data( currency_symbol );
@@ -272,6 +272,10 @@ asset database::claim_activity_reward( const account_object& account,
    auto decay_rate = RECENT_REWARD_DECAY_RATE;
    price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
    share_type activity_shares = BLOCKCHAIN_PRECISION;
+
+   FC_ASSERT( abo.staked_balance >= BLOCKCHAIN_PRECISION,
+      "Account: ${a} must have at least one staked equity asset to claim activity reward. Stake: ${s}",
+      ("a", account.name)("s",abo.staked_balance));
 
    if( abo.staked_balance >= 10 * BLOCKCHAIN_PRECISION )
    {
@@ -333,7 +337,6 @@ asset database::claim_activity_reward( const account_object& account,
 void database::update_owner_authority( const account_object& account, const authority& owner_authority )
 {
    time_point now = head_block_time();
-
    const account_authority_object& auth = get< account_authority_object, by_account >( account.name );
 
    create< owner_authority_history_object >( [&]( owner_authority_history_object& h )
@@ -349,8 +352,8 @@ void database::update_owner_authority( const account_object& account, const auth
       a.last_owner_update = now;
    });
 
-   ilog( "Updated Owner Authority Account: \n ${a} \n New Authority: \n ${o} \n", 
-      ("a", account)("o",owner_authority) );
+   ilog( "Updated Owner Authority Account: ${a} New Authority: \n ${o} \n",
+      ("a", account.name)("o",auth));
 }
 
 /**
@@ -560,6 +563,7 @@ void database::update_executive_board_votes( const account_object& account, cons
       {
          new_vote_rank++;
       }
+      
       if( vote.vote_rank != new_vote_rank )
       {
          modify( vote, [&]( executive_board_vote_object& v )
@@ -567,6 +571,7 @@ void database::update_executive_board_votes( const account_object& account, cons
             v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
          });
       }
+
       new_vote_rank++;
       ++vote_itr;
    }
@@ -887,12 +892,14 @@ void database::update_account_officer_votes( const account_object& account, cons
 
 void database::account_recovery_processing()
 {
+   time_point now = head_block_time();
+
    // Clear expired recovery requests
    const auto& rec_req_idx = get_index< account_recovery_request_index >().indices().get< by_expiration >();
    auto rec_req = rec_req_idx.begin();
 
    while( rec_req != rec_req_idx.end() && 
-      rec_req->expiration <= head_block_time() )
+      rec_req->expiration <= now )
    {
       ilog( "Removed: ${v}",("v",*rec_req));
       remove( *rec_req );
@@ -900,10 +907,11 @@ void database::account_recovery_processing()
    }
 
    // Clear invalid historical authorities
-   const auto& hist_idx = get_index< owner_authority_history_index >().indices(); //by id
+   const auto& hist_idx = get_index< owner_authority_history_index >().indices();
    auto hist = hist_idx.begin();
 
-   while( hist != hist_idx.end() && time_point( hist->last_valid_time + OWNER_AUTH_RECOVERY_PERIOD ) < head_block_time() )
+   while( hist != hist_idx.end() && 
+      time_point( hist->last_valid_time + OWNER_AUTH_RECOVERY_PERIOD ) <= now )
    {
       ilog( "Removed: ${v}",("v",*hist));
       remove( *hist );
@@ -914,12 +922,19 @@ void database::account_recovery_processing()
    const auto& change_req_idx = get_index< change_recovery_account_request_index >().indices().get< by_effective_date >();
    auto change_req = change_req_idx.begin();
 
-   while( change_req != change_req_idx.end() && change_req->effective_on <= head_block_time() )
+   while( change_req != change_req_idx.end() && 
+      change_req->effective_on <= now )
    {
-      modify( get_account( change_req->account_to_recover ), [&]( account_object& a )
+      const account_object& account = get_account( change_req->account_to_recover );
+
+      modify( account, [&]( account_object& a )
       {
          a.recovery_account = change_req->recovery_account;
       });
+
+      ilog( "Account: ${a} updated recovery account to: ${v}",
+         ("a",account.name)("v",account.recovery_account));
+
       ilog( "Removed: ${v}",("v",*change_req));
       remove( *change_req );
       change_req = change_req_idx.begin();
@@ -1015,11 +1030,13 @@ void database::process_decline_voting_rights()
    while( req_itr != req_idx.end() && 
       req_itr->effective_date <= now )
    {
-      const account_object& account = get_account( req_itr->account );
-
+      const decline_voting_rights_request_object& request = *req_itr;
+      const account_object& account = get_account( request.account );
+      ++req_itr;
+   
       clear_network_votes( account.name );
 
-      for( auto proxy : account.proxied )   // Remove all accounts proxied to the acocunt.
+      for( auto proxy : account.proxied )   // Remove all accounts proxied to the account.
       {
          modify( get_account( proxy ), [&]( account_object& a )
          {
@@ -1034,10 +1051,11 @@ void database::process_decline_voting_rights()
          a.proxied.clear();
       });
 
-      ilog( "Removed: ${v}",("v",*req_itr));
-      remove( *req_itr );
+      ilog( "Account: ${a} Processed Decline Voting Rights Request: \n ${r} \n",
+         ("a",account.name)("r",request));
 
-      ilog( "Account: ${a} Processed Decline Voting Rights", ("a",req_itr->account));
+      ilog( "Removed: ${v}",("v",request));
+      remove( request );
    }
 }
 

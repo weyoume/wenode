@@ -29,6 +29,7 @@ namespace node { namespace chain {
    using node::protocol::option_strike;
    using node::protocol::price_feed;
    using node::protocol::asset_unit;
+   using node::protocol::x11;
 
    using node::protocol::share_type;
    using node::protocol::ratio_type;
@@ -255,15 +256,15 @@ namespace node { namespace chain {
 
          asset                      interest;                ///< Total Amount of interest accrued on the loan. 
 
-         asset                      collateral;              ///< Amount of an asset to use as collateral for the loan. 
-
-         price                      loan_price;              ///< Collateral / Debt. Must be higher than liquidation price to remain solvent. 
+         asset                      collateral;              ///< Amount of an asset to use as collateral for the loan.             
 
          price                      liquidation_price;       ///< Collateral / max_debt value. Rises when collateral/debt market price falls.
 
          asset_symbol_type          symbol_a;                ///< The symbol of asset A in the debt / collateral exchange pair.
 
          asset_symbol_type          symbol_b;                ///< The symbol of asset B in the debt / collateral exchange pair.
+
+         asset_symbol_type          symbol_liquid;           ///< The symbol of the liquidity pool that underlies the loan object. 
 
          share_type                 last_interest_rate;      ///< Updates the interest rate of the loan hourly. 
 
@@ -279,7 +280,9 @@ namespace node { namespace chain {
 
          asset_symbol_type          collateral_asset()const { return collateral.symbol; }
 
-         price                      liquidation_spread()const { return loan_price - liquidation_price; }
+         price                      loan_price()const { return collateral / debt; }     ///< Collateral / Debt. Must be higher than liquidation price to remain solvent. 
+
+         price                      liquidation_spread()const { return loan_price() - liquidation_price; }
 
          pair< asset_symbol_type, asset_symbol_type > get_market()const
          {
@@ -297,10 +300,11 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          savings_withdraw_object( Constructor&& c, allocator< Allocator > a ) :
-         memo(a), request_id(a)
-         {
-            c( *this );
-         }
+            memo(a), 
+            request_id(a)
+            {
+               c( *this );
+            }
 
          id_type                 id;
 
@@ -390,33 +394,31 @@ namespace node { namespace chain {
 
          asset_symbol_type       symbol;                                                    ///< Currency symbol of the asset that the reward fund issues.
 
-         asset                   content_reward_balance;                                    ///< Balance awaiting distribution to content creators.
+         asset                   content_reward_balance = asset( 0, symbol );               ///< Balance awaiting distribution to content creators.
 
-         asset                   validation_reward_balance;                                 ///< Balance distributed to block validating producers. 
+         asset                   validation_reward_balance = asset( 0, symbol );            ///< Balance distributed to block validating producers.
 
-         asset                   txn_stake_reward_balance;                                  ///< Balance distributed to block producers based on the stake weighted transactions in each block.
+         asset                   txn_stake_reward_balance = asset( 0, symbol );             ///< Balance distributed to block producers based on the stake weighted transactions in each block.
 
-         asset                   work_reward_balance;                                       ///< Balance distributed to each proof of work block producer. 
+         asset                   work_reward_balance = asset( 0, symbol );                  ///< Balance distributed to each proof of work block producer.
 
-         asset                   producer_activity_reward_balance;                          ///< Balance distributed to producers that receive activity reward votes.
+         asset                   producer_activity_reward_balance = asset( 0, symbol );     ///< Balance distributed to producers that receive activity reward votes.
 
-         asset                   supernode_reward_balance;                                  ///< Balance distributed to supernodes, based on stake weighted comment views.
+         asset                   supernode_reward_balance = asset( 0, symbol );             ///< Balance distributed to supernodes, based on stake weighted comment views.
 
-         asset                   power_reward_balance;                                      ///< Balance distributed to staked units of the currency.
+         asset                   power_reward_balance = asset( 0, symbol );                 ///< Balance distributed to staked units of the currency.
 
-         asset                   community_fund_balance;                                    ///< Balance distributed to community proposal funds on the currency. 
+         asset                   community_fund_balance = asset( 0, symbol );               ///< Balance distributed to community proposal funds on the currency. 
 
-         asset                   development_reward_balance;                                ///< Balance distributed to elected developers. 
+         asset                   development_reward_balance = asset( 0, symbol );           ///< Balance distributed to elected developers. 
 
-         asset                   marketing_reward_balance;                                  ///< Balance distributed to elected marketers. 
+         asset                   marketing_reward_balance = asset( 0, symbol );             ///< Balance distributed to elected marketers. 
 
-         asset                   advocacy_reward_balance;                                   ///< Balance distributed to elected advocates. 
+         asset                   advocacy_reward_balance = asset( 0, symbol );              ///< Balance distributed to elected advocates. 
 
-         asset                   activity_reward_balance;                                   ///< Balance distributed to content creators that are active each day. 
+         asset                   activity_reward_balance = asset( 0, symbol );              ///< Balance distributed to content creators that are active each day. 
 
-         asset                   premium_partners_fund_balance;                             ///< Receives income from memberships, distributed to premium creators. 
-
-         asset                   total_pending_reward_balance;                              ///< Total of all reward balances. 
+         asset                   premium_partners_fund_balance = asset( 0, symbol );        ///< Receives income from memberships, distributed to premium creators. 
 
          uint128_t               recent_content_claims = 0;                                 ///< Recently claimed content reward balance shares.
 
@@ -428,101 +430,133 @@ namespace node { namespace chain {
 
          fc::microseconds        content_reward_interval = CONTENT_REWARD_INTERVAL;         ///< Time between each individual distribution of content rewards. 
 
-         curve_id                author_reward_curve = convergent_semi_quadratic;           ///< Type of reward curve used for author content reward calculation. 
+         curve_id                reward_curve = convergent_semi_quadratic;                  ///< Type of reward curve used for author content reward calculation. 
 
-         curve_id                curation_reward_curve = convergent_semi_quadratic;         ///< Type of reward curve used for curation content reward calculation.
+         time_point              last_updated;                                              ///< Time that the reward fund was last updated.
 
-         time_point              last_updated;                                              ///< Time that the reward fund was last updated. 
+         asset                   total_pending_reward_balance()const                        ///< Total of all reward balances. 
+         {
+            return content_reward_balance + validation_reward_balance + txn_stake_reward_balance + 
+               work_reward_balance + activity_reward_balance + supernode_reward_balance + power_reward_balance + 
+               community_fund_balance + development_reward_balance + marketing_reward_balance + advocacy_reward_balance + 
+               activity_reward_balance + premium_partners_fund_balance;
+         }        
 
          void                    adjust_content_reward_balance( const asset& delta )
          { try {
-            FC_ASSERT( delta.symbol == symbol );
+            FC_ASSERT( delta.symbol == symbol,
+               "Symbol: ${s} Delta: ${d}",
+               ("s",symbol)("d",delta.symbol));
             content_reward_balance += delta;
-            total_pending_reward_balance += delta;
+            FC_ASSERT( content_reward_balance.amount >= 0 );
          } FC_CAPTURE_AND_RETHROW() }
 
          void                    adjust_validation_reward_balance( const asset& delta )
          { try {
-            FC_ASSERT( delta.symbol == symbol );
+            FC_ASSERT( delta.symbol == symbol,
+               "Symbol: ${s} Delta: ${d}",
+               ("s",symbol)("d",delta.symbol));
             validation_reward_balance += delta;
-            total_pending_reward_balance += delta;
+            FC_ASSERT( validation_reward_balance.amount >= 0 );
          } FC_CAPTURE_AND_RETHROW() }
 
          void                    adjust_txn_stake_reward_balance( const asset& delta )
          { try {
-            FC_ASSERT( delta.symbol == symbol );
+            FC_ASSERT( delta.symbol == symbol,
+               "Symbol: ${s} Delta: ${d}",
+               ("s",symbol)("d",delta.symbol));
             txn_stake_reward_balance += delta;
-            total_pending_reward_balance += delta;
+            FC_ASSERT( content_reward_balance.amount >= 0 );
          } FC_CAPTURE_AND_RETHROW() }
 
          void                    adjust_work_reward_balance( const asset& delta )
          { try {
-            FC_ASSERT( delta.symbol == symbol );
+            FC_ASSERT( delta.symbol == symbol,
+               "Symbol: ${s} Delta: ${d}",
+               ("s",symbol)("d",delta.symbol));
             work_reward_balance += delta;
-            total_pending_reward_balance += delta;
+            FC_ASSERT( content_reward_balance.amount >= 0 );
          } FC_CAPTURE_AND_RETHROW() }
 
          void                    adjust_producer_activity_reward_balance( const asset& delta )
          { try {
-            FC_ASSERT( delta.symbol == symbol );
-            activity_reward_balance += delta;
-            total_pending_reward_balance += delta;
+            FC_ASSERT( delta.symbol == symbol,
+               "Symbol: ${s} Delta: ${d}",
+               ("s",symbol)("d",delta.symbol));
+            producer_activity_reward_balance += delta;
+            FC_ASSERT( content_reward_balance.amount >= 0 );
          } FC_CAPTURE_AND_RETHROW() }
 
          void                    adjust_supernode_reward_balance( const asset& delta )
          { try {
-            FC_ASSERT( delta.symbol == symbol );
+            FC_ASSERT( delta.symbol == symbol,
+               "Symbol: ${s} Delta: ${d}",
+               ("s",symbol)("d",delta.symbol));
             supernode_reward_balance += delta;
-            total_pending_reward_balance += delta;
+            FC_ASSERT( content_reward_balance.amount >= 0 );
          } FC_CAPTURE_AND_RETHROW() }
 
          void                    adjust_power_reward_balance( const asset& delta )
          { try {
-            FC_ASSERT( delta.symbol == symbol );
+            FC_ASSERT( delta.symbol == symbol,
+               "Symbol: ${s} Delta: ${d}",
+               ("s",symbol)("d",delta.symbol));
             power_reward_balance += delta;
-            total_pending_reward_balance += delta;
+            FC_ASSERT( content_reward_balance.amount >= 0 );
          } FC_CAPTURE_AND_RETHROW() }
 
          void                    adjust_community_fund_balance( const asset& delta )
          { try {
-            FC_ASSERT( delta.symbol == symbol );
+            FC_ASSERT( delta.symbol == symbol,
+               "Symbol: ${s} Delta: ${d}",
+               ("s",symbol)("d",delta.symbol));
             community_fund_balance += delta;
-            total_pending_reward_balance += delta;
+            FC_ASSERT( content_reward_balance.amount >= 0 );
          } FC_CAPTURE_AND_RETHROW() }
 
          void                    adjust_development_reward_balance( const asset& delta )
          { try {
-            FC_ASSERT( delta.symbol == symbol );
+            FC_ASSERT( delta.symbol == symbol,
+               "Symbol: ${s} Delta: ${d}",
+               ("s",symbol)("d",delta.symbol));
             development_reward_balance += delta;
-            total_pending_reward_balance += delta;
+            FC_ASSERT( content_reward_balance.amount >= 0 );
          } FC_CAPTURE_AND_RETHROW() }
 
          void                    adjust_marketing_reward_balance( const asset& delta )
          { try {
-            FC_ASSERT( delta.symbol == symbol );
+            FC_ASSERT( delta.symbol == symbol,
+               "Symbol: ${s} Delta: ${d}",
+               ("s",symbol)("d",delta.symbol));
             marketing_reward_balance += delta;
-            total_pending_reward_balance += delta;
+            FC_ASSERT( content_reward_balance.amount >= 0 );
          } FC_CAPTURE_AND_RETHROW() }
 
          void                    adjust_advocacy_reward_balance( const asset& delta )
          { try {
-            FC_ASSERT( delta.symbol == symbol );
+            FC_ASSERT( delta.symbol == symbol,
+               "Symbol: ${s} Delta: ${d}",
+               ("s",symbol)("d",delta.symbol));
             advocacy_reward_balance += delta;
-            total_pending_reward_balance += delta;
+            FC_ASSERT( content_reward_balance.amount >= 0 );
          } FC_CAPTURE_AND_RETHROW() }
 
          void                    adjust_activity_reward_balance( const asset& delta )
          { try {
-            FC_ASSERT( delta.symbol == symbol );
+            FC_ASSERT( delta.symbol == symbol,
+               "Symbol: ${s} Delta: ${d}",
+               ("s",symbol)("d",delta.symbol));
             activity_reward_balance += delta;
-            total_pending_reward_balance += delta;
+            FC_ASSERT( content_reward_balance.amount >= 0 );
          } FC_CAPTURE_AND_RETHROW() }
 
          void                    adjust_premium_partners_fund_balance( const asset& delta )
          { try {
-            FC_ASSERT( delta.symbol == symbol );
+            FC_ASSERT( delta.symbol == symbol,
+               "Symbol: ${s} Delta: ${d}",
+               ("s",symbol)("d",delta.symbol));
             premium_partners_fund_balance += delta;
-            total_pending_reward_balance += delta;
+            FC_ASSERT( content_reward_balance.amount >= 0 );
          } FC_CAPTURE_AND_RETHROW() }
    };
 
@@ -742,7 +776,7 @@ namespace node { namespace chain {
          ordered_unique< tag< by_owner_price >,
             composite_key< credit_loan_object,
                member< credit_loan_object, account_name_type, &credit_loan_object::owner >,
-               member< credit_loan_object, price, &credit_loan_object::loan_price >,
+               const_mem_fun< credit_loan_object, price, &credit_loan_object::loan_price >,
                member< credit_loan_object, credit_loan_id_type, &credit_loan_object::id >
             >,
             composite_key_compare< 
@@ -919,10 +953,10 @@ FC_REFLECT( node::chain::credit_loan_object,
          (debt)
          (interest)
          (collateral)
-         (loan_price)
          (liquidation_price)
          (symbol_a)
          (symbol_b)
+         (symbol_liquid)
          (last_interest_rate)
          (created)
          (last_updated)
@@ -986,13 +1020,11 @@ FC_REFLECT( node::chain::reward_fund_object,
          (advocacy_reward_balance)
          (activity_reward_balance)
          (premium_partners_fund_balance)
-         (total_pending_reward_balance)
          (recent_content_claims)
          (recent_activity_claims)
          (content_constant)
          (content_reward_decay_rate)
-         (author_reward_curve)
-         (curation_reward_curve)
+         (reward_curve)
          (last_updated)
          );
 

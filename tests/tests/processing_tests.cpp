@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE( recent_content_claims_decay_test )
       uint128_t alice_reward_curve = util::evaluate_reward_curve(
          uint128_t( alice_comment.net_reward.value ),
          alice_comment.cashouts_received,
-         rf.author_reward_curve,
+         rf.reward_curve,
          median_props.content_reward_decay_rate,
          rf.content_constant );
 

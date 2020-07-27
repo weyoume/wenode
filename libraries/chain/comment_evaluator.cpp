@@ -72,7 +72,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
    time_point now = _db.head_block_time();
    const auto& by_permlink_idx = _db.get_index< comment_index >().indices().get< by_permlink >();
-   auto itr = by_permlink_idx.find( boost::make_tuple( o.author, o.permlink ) );
+   auto comment_itr = by_permlink_idx.find( boost::make_tuple( o.author, o.permlink ) );
    const account_object& auth = _db.get_account( o.author );
    comment_options options = o.options;
 
@@ -345,7 +345,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
    {
       const account_object* acc = _db.find< account_object, by_name >( b.account );
       FC_ASSERT( acc != nullptr,
-         "Beneficiary \"${a}\" must exist.", ("a", b.account) );
+         "Beneficiary: ${a} must exist.", ("a", b.account) );
    }
    
    share_type reward = 0;
@@ -364,7 +364,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          ("x",parent->depth)("y",MAX_COMMENT_DEPTH) );
    }
       
-   if( itr == by_permlink_idx.end() )             // Post does not yet exist, creating new post
+   if( comment_itr == by_permlink_idx.end() )         // Post does not yet exist, creating new post
    {
       if( o.parent_author == ROOT_POST_PARENT )       // Post is a new root post
       {
@@ -481,7 +481,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          }
 
          const reward_fund_object& reward_fund = _db.get_reward_fund( root.reward_currency );
-         auto curve = reward_fund.curation_reward_curve;
+         auto curve = reward_fund.reward_curve;
          int64_t elapsed_seconds = ( now - auth.last_post ).to_seconds();
          int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / median_props.comment_recharge_time.to_seconds();
          int16_t current_power = std::min( int64_t( auth.commenting_power + regenerated_power), int64_t(PERCENT_100) );
@@ -568,9 +568,6 @@ void comment_evaluator::do_apply( const comment_operation& o )
 
       const comment_object& new_comment = _db.create< comment_object >( [&]( comment_object& com )
       {
-         validate_permlink( o.parent_permlink );
-         validate_permlink( o.permlink );
-         
          com.author = o.author;
          com.rating = options.rating;
          com.community = o.community;
@@ -591,27 +588,22 @@ void comment_evaluator::do_apply( const comment_operation& o )
          {
             com.public_key = public_key_type();
          }
-         
          if( o.interface != account_name_type() )
          {
             com.interface = o.interface;
          }
-
          if( o.title.size() )
          {
             from_string( com.title, o.title );
          }
-
          if( o.ipfs.size() )
          {
             from_string( com.ipfs, o.ipfs );
          }
-
          if( o.magnet.size() )
          {
             from_string( com.magnet, o.magnet );
          }
-
          for( auto tag : o.tags )
          {
             com.tags.push_back( tag );
@@ -628,6 +620,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          from_string( com.url, o.url );
 
          com.reward_currency = options.reward_currency;
+         com.content_rewards = asset( 0, options.reward_currency );
          com.max_accepted_payout = options.max_accepted_payout;
          com.percent_liquid = options.percent_liquid;
          com.allow_replies = options.allow_replies;
@@ -641,7 +634,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          com.active = now;
          com.last_payout = fc::time_point::min();
 
-         com.cashout_time = com.created + median_props.content_reward_interval;
+         com.cashout_time = now + median_props.content_reward_interval;
          com.author_reward_percent = median_props.author_reward_percent;
          com.vote_reward_percent = median_props.vote_reward_percent;
          com.view_reward_percent = median_props.view_reward_percent;
@@ -670,12 +663,12 @@ void comment_evaluator::do_apply( const comment_operation& o )
             com.max_weight = max_weight;
             com.root = false;
          }
-
-         ilog( "Author: ${a} Created post ID: ${i} Title: ${t} Permlink: ${p} Post type: ${type} Community: ${c}", 
-            ("a", o.author)("p", o.permlink )("t",o.title)("type",format_type)("c",o.community)("i",id) );
       });
 
       id = new_comment.id;
+
+      ilog( "Author: ${a} Created post ID: ${i} Title: ${t} Permlink: ${p} Post type: ${type} Community: ${c}", 
+            ("a",o.author)("p",o.permlink )("t",o.title)("type",format_type)("c",o.community)("i",id));
 
       while( parent != nullptr )        // Increments the children counter on all ancestor comments, and bumps active time.
       {
@@ -684,7 +677,6 @@ void comment_evaluator::do_apply( const comment_operation& o )
             p.children++;
             p.active = now;
          });
-
          if( parent->parent_author != ROOT_POST_PARENT )
          {
             parent = &_db.get_comment( parent->parent_author, parent->parent_permlink );
@@ -700,26 +692,34 @@ void comment_evaluator::do_apply( const comment_operation& o )
 
       if( community_ptr != nullptr )
       {
-         _db.modify( *community_ptr, [&]( community_object& bo )
+         _db.modify( *community_ptr, [&]( community_object& c )
          {
-            if ( o.parent_author == ROOT_POST_PARENT )
+            if( o.parent_author == ROOT_POST_PARENT )
             {
-               bo.post_count++;
-               bo.last_root_post = now;
+               c.post_count++;
+               c.last_root_post = now;
             }
             else 
             {
-               bo.comment_count++;
+               c.comment_count++;
             }
-            bo.last_post = now;
+            c.last_post = now;
          });
       }  
    }
    else           // Post found, editing or deleting existing post.
    {
-      const comment_object& comment = *itr;
-
-      if( options.beneficiaries.size() )
+      const comment_object& comment = *comment_itr;
+      id = comment.id;
+      ilog( "Initial Beneficiaries: ");
+      for( auto b : comment.beneficiaries )
+      {
+         ilog("${b}",("b",b));
+      }
+      ilog( "New Beneficiaries: \n ${nb} \n",
+         ("nb",options.beneficiaries));
+      
+      if( options.beneficiaries.size() > 0 )
       {
          FC_ASSERT( comment.beneficiaries.size() == 0,
             "Comment already has beneficiaries specified." );
@@ -744,7 +744,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
       FC_ASSERT( comment.max_accepted_payout >= options.max_accepted_payout,
          "A comment cannot accept a greater payout." );
       FC_ASSERT( comment.percent_liquid >= options.percent_liquid,
-         "A comment cannot accept a greater percent USD." );
+         "A comment cannot accept a greater percent Liquid." );
 
       if( !o.deleted )     // Editing post
       {
@@ -763,7 +763,6 @@ void comment_evaluator::do_apply( const comment_operation& o )
             com.comment_price = o.comment_price;
             com.premium_price = o.premium_price;
             com.reply_connection = reply_connection;
-            com.reward_currency = options.reward_currency;
             com.max_accepted_payout = options.max_accepted_payout;
             com.percent_liquid = options.percent_liquid;
             com.allow_replies = options.allow_replies;
@@ -788,11 +787,11 @@ void comment_evaluator::do_apply( const comment_operation& o )
                FC_ASSERT( equal( com.parent_permlink, o.parent_permlink ), 
                   "The permlink of a comment cannot change." );
             }       
-            if( o.json.size() && fc::is_utf8( o.json ) )
+            if( o.json.size() )
             {
                from_string( com.json, o.json );  
             }
-            if( o.url.size() && fc::is_utf8( o.url ) )
+            if( o.url.size() )
             {
                from_string( com.url, o.url );  
             }
@@ -808,9 +807,15 @@ void comment_evaluator::do_apply( const comment_operation& o )
             {
                from_string( com.magnet, o.magnet );
             }
+            com.tags.clear();
             for( auto tag : o.tags )
             {
                com.tags.push_back( tag );
+            }
+            com.beneficiaries.clear();
+            for( auto b : options.beneficiaries )
+            {
+               com.beneficiaries.push_back( b );
             }
             if( o.language.size() ) 
             {
@@ -820,18 +825,13 @@ void comment_evaluator::do_apply( const comment_operation& o )
             {
                com.public_key = public_key_type( o.public_key );
             }
-            
+            else
+            {
+               com.public_key = public_key_type();
+            }
             if( o.body.size() )
             {  
-               if( !fc::is_utf8( o.body ) )
-               {
-                  idump(("invalid utf8")(o.body));
-                  from_string( com.body, fc::prune_invalid_utf8( o.body ) );
-               } 
-               else 
-               { 
-                  from_string( com.body, o.body ); 
-               }
+               from_string( com.body, o.body );
             }
          });
 
@@ -841,9 +841,9 @@ void comment_evaluator::do_apply( const comment_operation& o )
             _db.add_comment_to_feeds( comment );
          }
 
-         ilog( "Author: ${a} Edited post ID: ${i} Title: ${t} Permlink: ${p} Post type: ${type} Community: ${c}", 
-      ("a", o.author)("p", o.permlink )("t",o.title)("type",format_type)("c",o.community)("i",id) );
-      } 
+         ilog( "Author: ${a} Edited Post ID: ${i} Title: ${t} Permlink: ${p} Post type: ${type} Community: ${c} Options: ${op}", 
+            ("i",id)("t",o.title)("a",o.author)("p",o.permlink)("type",format_type)("c",o.community)("op",options));
+      }
       else
       {
          _db.modify( comment, [&]( comment_object& com )
@@ -862,6 +862,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
             from_string( com.language, "" );
             com.public_key = public_key_type();
             from_string( com.body, "" );
+            com.cashout_time = fc::time_point::maximum();
          });
         
          _db.clear_comment_feeds( comment );
@@ -995,7 +996,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
    }
 
    const reward_fund_object& reward_fund = _db.get_reward_fund( comment.reward_currency );
-   auto curve = reward_fund.curation_reward_curve;
+   auto curve = reward_fund.reward_curve;
 
    const auto& comment_vote_idx = _db.get_index< comment_vote_index >().indices().get< by_comment_voter >();
    auto itr = comment_vote_idx.find( std::make_tuple( comment.id, voter.name ) );
@@ -1082,6 +1083,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
          cv.comment = comment.id;
          cv.reward = reward;
          cv.vote_percent = o.weight;
+         cv.created = now;
          cv.last_updated = now;
          if( o.interface.size() )
          {
@@ -1313,7 +1315,7 @@ void view_evaluator::do_apply( const view_operation& o )
 
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
    const reward_fund_object& reward_fund = _db.get_reward_fund( comment.reward_currency );
-   auto curve = reward_fund.curation_reward_curve;
+   auto curve = reward_fund.reward_curve;
 
    const supernode_object* supernode_ptr = nullptr;
    const interface_object* interface_ptr = nullptr;
@@ -1366,24 +1368,18 @@ void view_evaluator::do_apply( const view_operation& o )
 
       if( supernode_ptr != nullptr )
       {
-         auto supernode_view_itr = supernode_view_idx.lower_bound( std::make_tuple( o.supernode, viewer.name ) );
-         if( supernode_view_itr == supernode_view_idx.end() )   // No view exists
+         auto supernode_view_itr = supernode_view_idx.find( std::make_tuple( o.supernode, o.viewer ) );
+         if( supernode_view_itr == supernode_view_idx.end() || 
+            ( ( supernode_view_itr->created + fc::days(1) ) < now ) )
          {
-            _db.adjust_view_weight( *supernode_ptr, vp, true );    // Adds voting power to the supernode view weight once per day per user. 
-         }
-         else if( ( supernode_view_itr->created + fc::days(1) ) < now )     // Latest view is more than 1 day old
-         {
-            _db.adjust_view_weight( *supernode_ptr, vp, true );    // Adds voting power to the supernode view weight once per day per user. 
+            _db.adjust_view_weight( *supernode_ptr, vp, true );
          }
       }
       if( interface_ptr != nullptr )
       {
-         auto interface_view_itr = interface_view_idx.lower_bound( std::make_tuple( o.interface, viewer.name ) );
-         if( interface_view_itr == interface_view_idx.end() )   // No view exists
-         {
-            _db.adjust_interface_users( *interface_ptr, true );
-         }
-         else if( ( interface_view_itr->created + fc::days(1) ) < now )    // Latest View is more than 1 day old
+         auto interface_view_itr = interface_view_idx.find( std::make_tuple( o.interface, o.viewer ) );
+         if( interface_view_itr == interface_view_idx.end() || 
+            ( ( interface_view_itr->created + fc::days(1) ) <= now ) )
          {
             _db.adjust_interface_users( *interface_ptr, true );
          }
@@ -1528,8 +1524,8 @@ void view_evaluator::do_apply( const view_operation& o )
       _db.remove( *itr );
    }
 
-   ilog( "Account: ${v} Viewed post - author: ${a} permlink: ${p} viewing power: ${vp}", 
-      ("a", o.author)("p", o.permlink )("v", o.viewer)("vp",viewer.viewing_power) );
+   ilog( "Account: ${v} Viewed post - Author: ${a} Permlink: ${p} Interface: ${i} Viewing power: ${vp}",
+      ("a",o.author)("p",o.permlink )("v",o.viewer)("i",o.interface)("vp",viewer.viewing_power));
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
@@ -1577,7 +1573,7 @@ void share_evaluator::do_apply( const share_operation& o )
 
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
    const reward_fund_object& reward_fund = _db.get_reward_fund( comment.reward_currency );
-   auto curve = reward_fund.curation_reward_curve;
+   auto curve = reward_fund.reward_curve;
    time_point now = _db.head_block_time();
    
    const auto& comment_share_idx = _db.get_index< comment_share_index >().indices().get< by_comment_sharer >();
@@ -1591,9 +1587,11 @@ void share_evaluator::do_apply( const share_operation& o )
    FC_ASSERT( current_power > 0, 
       "Account currently does not have any sharing power." );
 
-   int16_t max_share_denom = median_props.share_reserve_rate * (median_props.share_recharge_time.count() / fc::days(1).count() );    // Weights the sharing power with the network reserve ratio and recharge time
+   // Weights the sharing power with the network reserve ratio and recharge time
+
+   int16_t max_share_denom = int16_t( median_props.share_reserve_rate ) * int16_t( median_props.share_recharge_time.to_seconds() / fc::days(1).to_seconds() );
    FC_ASSERT( max_share_denom > 0 );
-   int16_t used_power = (current_power + max_share_denom - 1) / max_share_denom;
+   int16_t used_power = ( current_power + max_share_denom - 1 ) / max_share_denom;
    FC_ASSERT( used_power <= current_power,   
       "Account does not have enough power to share." );
    share_type vp = _db.get_voting_power( sharer );         // Gets the user's voting power from their Equity and Staked coin balances to weight the share.
@@ -1863,7 +1861,7 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
          mto.comment = comment.id;
          mto.community = comment.community;
 
-         for( tag_name_type t : o.tags )
+         for( auto t : o.tags )
          {
             mto.tags.push_back( t );
          }
@@ -1885,7 +1883,7 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
       {
          _db.modify( *mod_itr, [&]( moderation_tag_object& mto )
          {
-            for( tag_name_type t : o.tags )
+            for( auto t : o.tags )
             {
                mto.tags.push_back( t );
             }
@@ -1901,7 +1899,8 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
       }
       else    // deleting moderation tag
       {
-         ilog( "Removed: ${v}",("v",*mod_itr));
+         ilog( "Removed Moderation Tag: Moderator: ${m} - Comment: ${c} - Details: ${d}",
+         ("m",mod_itr->moderator)("c",mod_itr->comment)("d",mod_itr->details));
          _db.remove( *mod_itr );
       }
    }

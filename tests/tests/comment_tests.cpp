@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      generate_blocks( TOTAL_PRODUCERS );
+      generate_blocks( BLOCKS_PER_DAY );
 
       comment_operation comment;
 
@@ -76,12 +76,14 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       options.post_type = "article";
       options.reach = "tag";
       options.rating = 1;
+      options.max_accepted_payout = MAX_ACCEPTED_PAYOUT;
       comment.options = options;
       comment.validate();
 
       signed_transaction tx;
 
-      tx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.operations.push_back( comment );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
@@ -114,6 +116,8 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       tx.signatures.clear();
       tx.operations.clear();
+
+      generate_block();
 
       const comment_object& alice_comment = db.get_comment( account_name_type( "alice" ), string( "lorem" ) );
 
@@ -187,6 +191,8 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       comment.parent_permlink = "foobar";
       comment.validate();
 
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.operations.push_back( comment );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -198,6 +204,12 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: posting a comment on previous comment" );
 
+      options.post_type = "article";
+      options.reach = "tag";
+      options.rating = 1;
+      options.max_accepted_payout = MAX_ACCEPTED_PAYOUT;
+      comment.options = options;
+      
       comment.parent_permlink = "lorem";
 
       tx.operations.push_back( comment );
@@ -352,24 +364,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: posting a comment on additional previous comment" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: modifying a comment" );
-
-      comment.title = "foo";
-      comment.body = "bar";
-      comment.validate();
-
-      tx.operations.push_back( comment );
-      tx.sign( candice_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.signatures.clear();
-      tx.operations.clear();
-
-      BOOST_REQUIRE( comment.title == to_string( candice_comment.title ) );
-      BOOST_REQUIRE( comment.body == to_string( candice_comment.body ) );
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: modifying a comment" );
-
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure posting again within time limit" );
 
       comment.permlink = "sit";
@@ -470,9 +464,13 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_TEST_MESSAGE( "│   ├── Testing: specifying a non-existent benefactor" );
 
       options.beneficiaries.clear();
+      options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "alice" ), PERCENT_1 ) );
       options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "doug" ), PERCENT_1 ) );
 
-      options.validate();
+      options.post_type = "article";
+      options.reach = "tag";
+      options.rating = 1;
+      options.max_accepted_payout = MAX_ACCEPTED_PAYOUT;
       comment.options = options;
       
       tx.operations.push_back( comment );
@@ -502,14 +500,11 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
       
       options.beneficiaries.clear();
-      options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "bob" ), 25 * PERCENT_1 ) );
       options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "alice" ), 50 * PERCENT_1 ) );
-
-      options.validate();
+      options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "bob" ), 25 * PERCENT_1 ) );
+      
       comment.options = options;
 
       tx.operations.clear();
@@ -517,7 +512,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       tx.operations.push_back( comment );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx ), fc::exception );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -530,7 +525,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       comment.author = "bob";
       comment.permlink = "ipsum";
       comment.parent_author = "alice";
-      comment.parent_permlink = "foobar";
+      comment.parent_permlink = "lorem";
       comment.validate();
 
       tx.operations.push_back( comment );
@@ -540,41 +535,110 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       tx.signatures.clear();
       tx.operations.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: success when altering beneficiaries before voting" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when there are already beneficiaries" );
 
       options.beneficiaries.clear();
       options.beneficiaries.push_back( beneficiary_route_type( account_name_type( "candice" ), 25 * PERCENT_1 ) );
+
       comment.options = options;
+      comment.validate();
 
       tx.operations.push_back( comment );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx ), fc::exception );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
       tx.signatures.clear();
       tx.operations.clear();
+
+      generate_blocks( 10 );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when there are already beneficiaries" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Payout and verify rewards were split properly" );
 
+      vote.signatory = "alice";
+      vote.voter = "alice";
+      vote.author = "alice";
+      vote.permlink = "lorem";
+
       tx.operations.push_back( vote );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      tx.signatures.clear();
       tx.operations.clear();
+      tx.signatures.clear();
 
-      validate_database();
+      generate_blocks( 10 );
 
-      time_point cashout_time = candice_comment.cashout_time;
+      vote.signatory = "bob";
+      vote.voter = "bob";
+      vote.author = "bob";
+      vote.permlink = "ipsum";
 
-      generate_blocks( cashout_time - BLOCK_INTERVAL );
+      tx.operations.push_back( vote );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( candice_comment.cashouts_received == 0 );
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      generate_blocks( 10 );
+
+      vote.signatory = "candice";
+      vote.voter = "candice";
+      vote.author = "candice";
+      vote.permlink = "dolor";
+
+      tx.operations.push_back( vote );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      generate_blocks( 10 );
+
+      vote.signatory = "candice";
+      vote.voter = "candice";
+      vote.author = "alice";
+      vote.permlink = "lorem";
+
+      tx.operations.push_back( vote );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      generate_blocks( 10 );
+
+      vote.signatory = "alice";
+      vote.voter = "alice";
+      vote.author = "bob";
+      vote.permlink = "ipsum";
+
+      tx.operations.push_back( vote );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      generate_blocks( 10 );
+
+      vote.signatory = "bob";
+      vote.voter = "bob";
+      vote.author = "candice";
+      vote.permlink = "dolor";
+
+      tx.operations.push_back( vote );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
 
       asset alice_reward = get_reward_balance( "alice", SYMBOL_COIN );
       asset bob_reward = get_reward_balance( "bob", SYMBOL_COIN );
@@ -584,9 +648,12 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( bob_reward.amount == 0 );
       BOOST_REQUIRE( candice_reward.amount == 0 );
 
+      generate_blocks( now() + fc::hours(24), true );
       generate_block();
 
-      BOOST_REQUIRE( candice_comment.cashouts_received == 1 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 1 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 1 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 1 );
 
       alice_reward = get_reward_balance( "alice", SYMBOL_COIN );
       bob_reward = get_reward_balance( "bob", SYMBOL_COIN );
@@ -596,7 +663,208 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( bob_reward.amount > 0 );
       BOOST_REQUIRE( candice_reward.amount > 0 );
 
-      BOOST_REQUIRE( bob_reward + candice_reward == alice_reward );
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 2 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 2 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 2 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 3 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 3 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 3 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 4 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 4 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 4 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 5 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 5 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 5 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 6 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 6 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 6 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 7 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 7 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 7 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 8 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 8 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 8 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 9 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 9 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 9 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 10 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 10 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 10 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 11 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 11 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 11 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 12 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 12 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 12 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 13 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 13 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 13 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 14 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 14 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 14 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 15 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 15 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 15 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 16 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 16 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 16 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 17 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 17 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 17 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 18 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 18 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 18 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 19 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 19 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 19 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 20 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 20 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 20 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 21 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 21 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 21 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 22 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 22 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 22 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 23 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 23 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 23 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 24 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 24 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 24 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 25 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 25 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 25 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 26 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 26 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 26 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 27 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 27 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 27 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 28 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 28 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 28 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 29 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 29 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 29 );
+
+      generate_blocks( now() + fc::hours(24), true );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_comment( account_name_type( "alice" ), string( "lorem" ) ).cashouts_received == 30 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "bob" ), string( "ipsum" ) ).cashouts_received == 30 );
+      BOOST_REQUIRE( db.get_comment( account_name_type( "candice" ), string( "dolor" ) ).cashouts_received == 30 );
 
       validate_database();
 
@@ -1006,6 +1274,8 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      uint16_t old_viewing_power = bob.viewing_power;
+
       view_operation view;
 
       view.signatory = "bob";
@@ -1020,35 +1290,30 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
-      generate_blocks(10);
+      tx.operations.clear();
+      tx.signatures.clear();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when viewing a non-existent comment" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful view" );
 
-      uint16_t old_viewing_power = bob.viewing_power;
-
       view.permlink = "lorem";
-
-      tx.operations.clear();
-      tx.signatures.clear();
 
       tx.operations.push_back( view );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
+      tx.operations.clear();
+      tx.signatures.clear();
+
       const comment_object& alice_comment = db.get_comment( account_name_type( "alice" ), string( "lorem" ) );
+      const comment_view_object& bob_view = db.get_comment_view( account_name_type( "bob" ), alice_comment.id );
 
-      auto bob_view_itr = view_idx.find( std::make_tuple( alice_comment.id, account_name_type( "bob" ) ) );
-      int64_t max_view_denom = median_props.view_reserve_rate * ( median_props.view_recharge_time.count() / fc::days(1).count() );
+      int16_t max_view_denom = int16_t( median_props.view_reserve_rate ) * int16_t( median_props.view_recharge_time.to_seconds() / fc::days(1).to_seconds() );    
+      int16_t used_power = ( bob.viewing_power + max_view_denom - 1 ) / max_view_denom;
 
-      uint16_t used_power = ( PERCENT_100 + max_view_denom - 1 ) / max_view_denom;
-
+      BOOST_REQUIRE( bob_view.comment == alice_comment.id );
       BOOST_REQUIRE( bob.viewing_power == old_viewing_power - used_power );
-      BOOST_REQUIRE( alice_comment.cashout_time == alice_comment.created + CONTENT_REWARD_INTERVAL );
-      BOOST_REQUIRE( bob_view_itr != view_idx.end() );
-      BOOST_REQUIRE( bob_view_itr->weight > 0 );
-      BOOST_REQUIRE( bob_view_itr->reward > 0 );
 
       generate_blocks(10);
 
@@ -1065,7 +1330,7 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      bob_view_itr = view_idx.find( std::make_tuple( alice_comment.id, account_name_type( "bob" ) ) );
+      auto bob_view_itr = view_idx.find( std::make_tuple( alice_comment.id, account_name_type( "bob" ) ) );
 
       BOOST_REQUIRE( bob_view_itr == view_idx.end() );
       
@@ -1161,6 +1426,9 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
+      tx.operations.clear();
+      tx.signatures.clear();
+
       generate_blocks(10);
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when sharing a non-existent comment" );
@@ -1171,26 +1439,22 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
 
       share.permlink = "lorem";
 
-      tx.operations.clear();
-      tx.signatures.clear();
-
       tx.operations.push_back( share );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
+      tx.operations.clear();
+      tx.signatures.clear();
+
       const comment_object& alice_comment = db.get_comment( account_name_type( "alice" ), string( "lorem" ) );
+      const comment_share_object& bob_share = db.get_comment_share( account_name_type( "bob" ), alice_comment.id );
 
-      auto bob_share_itr = share_idx.find( std::make_tuple( alice_comment.id, account_name_type( "bob" ) ) );
-      int64_t max_share_denom = median_props.share_reserve_rate * ( median_props.share_recharge_time.count() / fc::days(1).count() );
-
-      uint16_t used_power = ( PERCENT_100 + max_share_denom - 1 ) / max_share_denom;
+      int16_t max_share_denom = int16_t( median_props.share_reserve_rate ) * int16_t( median_props.share_recharge_time.to_seconds() / fc::days(1).to_seconds() );
+      int16_t used_power = ( bob.sharing_power + max_share_denom - 1 ) / max_share_denom;
 
       BOOST_REQUIRE( bob.sharing_power == old_sharing_power - used_power );
-      BOOST_REQUIRE( alice_comment.cashout_time == alice_comment.created + CONTENT_REWARD_INTERVAL );
-      BOOST_REQUIRE( bob_share_itr != share_idx.end() );
-      BOOST_REQUIRE( bob_share_itr->weight > 0 );
-      BOOST_REQUIRE( bob_share_itr->reward > 0 );
-
+      BOOST_REQUIRE( bob_share.comment == alice_comment.id );
+      
       generate_blocks(10);
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: successful share to follow feed" );
@@ -1198,15 +1462,12 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
       BOOST_TEST_MESSAGE( "│   ├── Testing: removing share" );
 
       share.shared = false;
-      
-      tx.operations.clear();
-      tx.signatures.clear();
 
       tx.operations.push_back( share );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      bob_share_itr = share_idx.find( std::make_tuple( alice_comment.id, account_name_type( "bob" ) ) );
+      auto bob_share_itr = share_idx.find( std::make_tuple( alice_comment.id, account_name_type( "bob" ) ) );
 
       BOOST_REQUIRE( bob_share_itr == share_idx.end() );
       
@@ -1548,8 +1809,6 @@ BOOST_AUTO_TEST_CASE( poll_operation_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       const poll_object& alice_poll = db.get_poll( account_name_type( "alice" ), string( "2aafe6cf-8d37-4467-a8ce-d55d12a3f492" ) );
 

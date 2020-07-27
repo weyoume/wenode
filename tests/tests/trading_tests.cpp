@@ -31,7 +31,7 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
    {
       BOOST_TEST_MESSAGE( "├── Testing: LIMIT ORDER" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: creation of limit order" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: creation of limit orderbook" );
 
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz) );
 
@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const limit_order_object& alice_order = db.get_limit_order( account_name_type( "alice" ), string( "db35cabd-2aee-41b1-84ab-7372c4b6f8e5" ) );
+      const limit_order_object& alice_order = db.get_limit_order( limit.owner, limit.order_id );
 
       BOOST_REQUIRE( alice_order.seller == limit.owner );
       BOOST_REQUIRE( alice_order.for_sale == limit.amount_to_sell.amount );
@@ -83,10 +83,10 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
       BOOST_REQUIRE( alice_order.expiration == limit.expiration );
       BOOST_REQUIRE( alice_order.amount_for_sale() == limit.amount_to_sell );
       BOOST_REQUIRE( alice_order.amount_to_receive() == limit.amount_to_sell * limit.exchange_rate );
-      
-      validate_database();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: creation of limit order" );
+      generate_block();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: creation of limit orderbook" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when account does not have required funds" );
 
@@ -99,8 +99,6 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when account does not have required funds" );
 
@@ -116,8 +114,6 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when amount to sell is 0" );
 
@@ -135,8 +131,6 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when fill or kill order is not filled" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Filling existing limit order fully, but the new order partially" );
@@ -145,7 +139,7 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
       limit.owner = "bob";
       limit.order_id = "10f11157-9460-4505-b346-28e5b9ed77ed";
       limit.amount_to_sell = asset( 2000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
-      limit.exchange_rate = price( asset( 1, SYMBOL_USD ), asset( 1, SYMBOL_COIN ) );
+      limit.exchange_rate = price( asset( 11, SYMBOL_USD ), asset( 10, SYMBOL_COIN ) );
       limit.expiration = now() + fc::days( 30 );
       limit.interface = INIT_ACCOUNT;
       limit.fill_or_kill = false;
@@ -158,7 +152,7 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const limit_order_object& bob_order = db.get_limit_order( account_name_type( "bob" ), string( "10f11157-9460-4505-b346-28e5b9ed77ed" ) );
+      const limit_order_object& bob_order = db.get_limit_order( limit.owner, limit.order_id );
 
       BOOST_REQUIRE( bob_order.seller == limit.owner );
       BOOST_REQUIRE( bob_order.sell_price == limit.exchange_rate );
@@ -171,6 +165,8 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
       auto limit_itr = limit_idx.find( std::make_tuple( account_name_type( "alice" ), string( "db35cabd-2aee-41b1-84ab-7372c4b6f8e5" ) ) );
 
       BOOST_REQUIRE( limit_itr == limit_idx.end() );
+
+      generate_block();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Filling existing limit order fully, but the new order partially" );
 
@@ -193,7 +189,9 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      limit_itr = limit_idx.find( std::make_tuple( account_name_type( "candice" ), string( "ad3cf087-bf74-41d8-9ff5-6e302fff2446" ) ) );
+      generate_block();
+
+      limit_itr = limit_idx.find( std::make_tuple( limit.owner, limit.order_id ) );
 
       BOOST_REQUIRE( limit_itr == limit_idx.end() );
 
@@ -205,7 +203,6 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
    }
    FC_LOG_AND_RETHROW()
 }
-
 
 
 BOOST_AUTO_TEST_CASE( margin_order_operation_test )
@@ -287,6 +284,8 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      generate_block();
+
       credit_pool_lend_operation lend;
 
       lend.signatory = "elon";
@@ -311,6 +310,8 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      generate_block();
 
       credit_pool_collateral_operation collateral;
 
@@ -346,6 +347,8 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      generate_block();
+
       margin_order_operation margin;
 
       margin.signatory = "alice";
@@ -368,7 +371,7 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const margin_order_object& alice_order = db.get_margin_order( account_name_type( "alice" ), string( "db35cabd-2aee-41b1-84ab-7372c4b6f8e5" ) );
+      const margin_order_object& alice_order = db.get_margin_order( margin.owner, margin.order_id );
 
       BOOST_REQUIRE( alice_order.owner == margin.owner );
       BOOST_REQUIRE( alice_order.collateral == margin.collateral );
@@ -452,7 +455,7 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const margin_order_object& bob_order = db.get_margin_order( account_name_type( "bob" ), string( "10f11157-9460-4505-b346-28e5b9ed77ed" ) );
+      const margin_order_object& bob_order = db.get_margin_order( margin.owner, margin.order_id );
 
       BOOST_REQUIRE( bob_order.owner == margin.owner );
       BOOST_REQUIRE( bob_order.collateral == margin.collateral );
@@ -532,7 +535,7 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const margin_order_object& candice_order = db.get_margin_order( account_name_type( "candice" ), string( "60790f19-2046-4b7e-98ef-bab36153a945" ) );
+      const margin_order_object& candice_order = db.get_margin_order( margin.owner, margin.order_id );
 
       BOOST_REQUIRE( candice_order.debt == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       BOOST_REQUIRE( candice_order.position == candice_order.debt * candice_order.sell_price );
@@ -569,7 +572,7 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      margin_itr = margin_idx.find( std::make_tuple( account_name_type( "candice" ), string( "60790f19-2046-4b7e-98ef-bab36153a945" ) ) );
+      margin_itr = margin_idx.find( std::make_tuple( margin.owner, margin.order_id ) );
 
       BOOST_REQUIRE( margin_itr == margin_idx.end() );
       
@@ -874,7 +877,6 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
       BOOST_REQUIRE( alice_order.borrower == call.owner );
       BOOST_REQUIRE( alice_order.collateral == call.collateral );
       BOOST_REQUIRE( alice_order.debt == call.debt );
-      BOOST_REQUIRE( alice_order.call_price == price( asset( 1, call.collateral.symbol ), asset( 1, call.debt.symbol ) ) );
       BOOST_REQUIRE( alice_order.interface == call.interface );
       BOOST_REQUIRE( alice_order.created == now() );
       BOOST_REQUIRE( alice_order.last_updated == now() );
@@ -901,7 +903,6 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
       BOOST_REQUIRE( alice_order.borrower == call.owner );
       BOOST_REQUIRE( alice_order.collateral == call.collateral );
       BOOST_REQUIRE( alice_order.debt == call.debt );
-      BOOST_REQUIRE( alice_order.call_price == price( asset( 1, call.collateral.symbol ), asset( 1, call.debt.symbol ) ) );
       BOOST_REQUIRE( alice_order.interface == call.interface );
       BOOST_REQUIRE( alice_order.last_updated == now() );
       BOOST_REQUIRE( alice_order.amount_for_sale() == call.collateral );
@@ -1115,20 +1116,20 @@ BOOST_AUTO_TEST_CASE( option_order_operation_test )
       fund_stake( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
 
-      fund_liquid( "elon", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_stake( "elon", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_liquid( "elon", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_liquid( "elon", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "elon", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "elon", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       
       signed_transaction tx;
 
       option_order_operation option;
 
-      date_type today = date_type( now() + fc::days(60) );
-
       option.signatory = "alice";
       option.owner = "alice";
       option.order_id = "f0ed4510-b852-43ae-a383-3a9940a1f14b";
-      option_strike strike = option_strike( price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) ), true, 100, date_type( 1, today.month, today.year ) );
+
+      option_strike strike = option_strike( price( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ), asset( BLOCKCHAIN_PRECISION, SYMBOL_USD  ) ), true, 100, date_type( 1, 12, 2020 ) );
+      
       option.options_issued = asset( 10 * BLOCKCHAIN_PRECISION, strike.option_symbol() );
       option.interface = INIT_ACCOUNT;
       option.validate();
@@ -1147,11 +1148,9 @@ BOOST_AUTO_TEST_CASE( option_order_operation_test )
       BOOST_REQUIRE( to_string( alice_order.order_id ) == option.order_id );
       BOOST_REQUIRE( alice_order.option_position == option.options_issued );
       BOOST_REQUIRE( alice_order.interface == option.interface );
-      BOOST_REQUIRE( alice_order.underlying_amount == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      BOOST_REQUIRE( alice_order.exercise_amount == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      BOOST_REQUIRE( alice_order.underlying_amount == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      BOOST_REQUIRE( alice_order.exercise_amount == asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       BOOST_REQUIRE( alice_order.created == now() );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Creation of option order" );
 
@@ -1167,13 +1166,10 @@ BOOST_AUTO_TEST_CASE( option_order_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when account does not have required underlying funds" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Exercising Option assets" );
 
-      asset init_alice_liquid_usd = get_liquid_balance( "alice", SYMBOL_USD );
       asset init_alice_liquid_coin = get_liquid_balance( "alice", SYMBOL_COIN );
 
       asset init_bob_liquid_usd = get_liquid_balance( "bob", SYMBOL_USD );
@@ -1189,7 +1185,7 @@ BOOST_AUTO_TEST_CASE( option_order_operation_test )
       transfer.validate();
 
       tx.operations.push_back( transfer );
-      tx.sign( bob_private_active_key, db.get_chain_id() );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1213,23 +1209,20 @@ BOOST_AUTO_TEST_CASE( option_order_operation_test )
       asset bob_liquid_coin = get_liquid_balance( "bob", SYMBOL_COIN );
       asset bob_liquid_option = get_liquid_balance( "bob", strike.option_symbol() );
 
-      asset alice_liquid_usd = get_liquid_balance( "alice", SYMBOL_USD );
       asset alice_liquid_coin = get_liquid_balance( "alice", SYMBOL_COIN );
       asset alice_liquid_option = get_liquid_balance( "alice", strike.option_symbol() );
 
-      BOOST_REQUIRE( bob_liquid_usd == init_bob_liquid_usd - asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      BOOST_REQUIRE( bob_liquid_coin == init_bob_liquid_coin + asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      BOOST_REQUIRE( bob_liquid_usd == init_bob_liquid_usd + asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      BOOST_REQUIRE( bob_liquid_coin == init_bob_liquid_coin - asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       BOOST_REQUIRE( bob_liquid_option.amount == 0 );
 
-      BOOST_REQUIRE( alice_liquid_usd == init_alice_liquid_usd + asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      BOOST_REQUIRE( alice_liquid_coin == init_alice_liquid_coin + asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       BOOST_REQUIRE( alice_liquid_option == asset( 5 * BLOCKCHAIN_PRECISION, strike.option_symbol() ) );
 
       BOOST_REQUIRE( alice_order.option_position == asset( 5 * BLOCKCHAIN_PRECISION, strike.option_symbol() ) );
-      BOOST_REQUIRE( alice_order.underlying_amount == asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      BOOST_REQUIRE( alice_order.exercise_amount == asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      BOOST_REQUIRE( alice_order.underlying_amount == asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      BOOST_REQUIRE( alice_order.exercise_amount == asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       BOOST_REQUIRE( alice_order.created == now() );
-      
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Exercising Option assets" );
 

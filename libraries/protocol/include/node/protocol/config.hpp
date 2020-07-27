@@ -51,7 +51,6 @@
 
 #define LIQUIDITY_ASSET_PREFIX          "LIQUID."
 #define CREDIT_ASSET_PREFIX             "CREDIT."
-#define OPTION_ASSET_PREFIX             "OPT"
 #define OPTION_ASSET_CALL               "CALL"
 #define OPTION_ASSET_PUT                "PUT"
 
@@ -71,12 +70,12 @@
 #define PERCENT_1                       (PERCENT_100/100)               // 1% as percentage integer
 #define PERCENT_10_OF_PERCENT_1         (PERCENT_100/1000)              // 0.1% as percentage integer
 
-#define GENESIS_TIME                    fc::time_point(fc::microseconds(1588839092000000))    // 7th May 2020 network launch time 1588839092000000
-#define MINING_TIME                     fc::time_point(fc::microseconds(1588839092000000))    // 7th May 2020 network launch time
+#define GENESIS_TIME                    fc::time_point(fc::microseconds(1588839092000000))           // 7th May 2020 network launch time 1588839092000000
+#define MINING_TIME                     fc::time_point(fc::microseconds(1588839092000000))           // 7th May 2020 network launch time
 
-#define INIT_COIN_SUPPLY                (0)                                                  // Zero MeCoin preissuance
-#define INIT_EQUITY_SUPPLY              share_type( 10000000 * BLOCKCHAIN_PRECISION )        // 10 Million Supply of WYM.
-#define MAX_ASSET_SUPPLY                share_type( 50000000000 * BLOCKCHAIN_PRECISION )     // 50 Billion max asset supply.
+#define INIT_COIN_SUPPLY                (0)                                                          // Zero MeCoin preissuance
+#define INIT_EQUITY_SUPPLY              share_type( 10000000 * BLOCKCHAIN_PRECISION )                // 10 Million Supply of WYM.
+#define MAX_ASSET_SUPPLY                share_type( 50000000000 * BLOCKCHAIN_PRECISION )             // 50 Billion max asset supply.
 
 #define BLOCK_INTERVAL                  fc::microseconds(788400)                                     // 0.7884 Seconds per block, resulting in exactly 40 Million blocks per year.
 #define BLOCKS_PER_YEAR                 uint64_t(40000000)                                           // 40 Million blocks per year.
@@ -84,26 +83,27 @@
 #define BLOCKS_PER_HOUR                 uint64_t(fc::hours(1).count() / BLOCK_INTERVAL.count())      // Approximately 4,466 Blocks per hour.
 #define BLOCKS_PER_MINUTE               uint64_t(fc::minutes(1).count() / BLOCK_INTERVAL.count())    // Approximately 76 Blocks per minute.
 
-#define ANNUAL_COIN_ISSUANCE            asset( 1 * BILLION * BLOCKCHAIN_PRECISION, SYMBOL_COIN)      // 1 Billion MEC issued per year
-#define BLOCK_REWARD                    (ANNUAL_COIN_ISSUANCE / BLOCKS_PER_YEAR)                     // 50 MeCoin issued per block
-#define MAX_ACCEPTED_PAYOUT             asset( BILLION * BLOCKCHAIN_PRECISION, SYMBOL_USD )          // Maximum amount accepted as a content reward payout
+#define ANNUAL_COIN_ISSUANCE            asset( 1 * BILLION * BLOCKCHAIN_PRECISION, SYMBOL_COIN)      // 1 Billion MEC issued per year.
+#define BLOCK_REWARD                    (ANNUAL_COIN_ISSUANCE / BLOCKS_PER_YEAR)                     // 25 MeCoin issued per block.
+#define MAX_ACCEPTED_PAYOUT             asset( BILLION * BLOCKCHAIN_PRECISION, SYMBOL_USD )          // Maximum amount accepted as a content reward payout.
 
-#define PRODUCER_TICK_INTERVAL                fc::microseconds(197100)  // Time taken between block producer ticks, at which they check for producer new blocks
-#define MINING_TICK_INTERVAL                  fc::seconds(5)            // Time taken between mining ticks, updates the recent block after this time
-#define VALIDATION_TICK_INTERVAL              fc::seconds(1)            // Time taken between mining ticks, updates the recent block after this time
-#define IRREVERSIBLE_THRESHOLD                (67 * PERCENT_1)          // Blocks produced become irrervsible after approval by this percentage of active producers. 
-#define POW_TARGET_TIME                       fc::minutes(10)           // Aim for approximately one proof of work every 10 minutes to be produced. 
-#define POW_DECAY_TIME                        fc::days(7)               // Averaging time of one week for adjusting proof of work difficulty. 
-#define POW_UPDATE_BLOCK_INTERVAL             (1 * BLOCKS_PER_HOUR)     // Updates the mining dificulty once per hour.            
-#define POA_BLOCK_INTERVAL                    (8 * BLOCKS_PER_HOUR)     // Distributes the proof of activity reward every 8 hours to the highest activity voted producer. 
-#define TXN_STAKE_BLOCK_INTERVAL              (1 * BLOCKS_PER_HOUR)     // Transaction stake rewards are distributed each hour.
-#define TXN_STAKE_DECAY_TIME                  fc::days(7)               // Transaction stake is averaged over a rolling 7 day window. 
-#define NETWORK_OFFICER_BLOCK_INTERVAL        (BLOCKS_PER_DAY)          // Distributes network officer rewards once every day.
+#define PRODUCER_TICK_INTERVAL                fc::microseconds(197100)    // Time taken between block producer ticks, at which they check for producer new blocks.
+#define MINING_TICK_INTERVAL                  fc::seconds(5)              // Time taken between mining ticks, updates the recent block after this time.
+#define VALIDATION_TICK_INTERVAL              fc::seconds(1)              // Time taken between mining ticks, updates the recent block after this time.
+#define IRREVERSIBLE_THRESHOLD                (67 * PERCENT_1)            // Blocks produced become irrervsible after approval by this percentage of active producers.
+#define POW_TARGET_TIME                       fc::minutes(10)             // Aim for approximately one proof of work every 10 minutes to be produced.
+#define POW_DECAY_TIME                        fc::days(7)                 // Averaging time of one week for adjusting proof of work difficulty.
+#define INIT_RECENT_POW                       (BLOCKCHAIN_PRECISION.value * POW_DECAY_TIME.to_seconds()) / POW_TARGET_TIME.to_seconds();
+#define POW_UPDATE_BLOCK_INTERVAL             (BLOCKS_PER_DAY)            // Updates the mining dificulty once per day.
+#define POA_BLOCK_INTERVAL                    (BLOCKS_PER_DAY)            // Distributes the proof of activity reward every 8 hours to the highest activity voted producer. 
+#define TXN_STAKE_BLOCK_INTERVAL              (BLOCKS_PER_DAY)            // Transaction stake rewards are distributed each day.
+#define TXN_STAKE_DECAY_TIME                  fc::days(7)                 // Transaction stake is averaged over a rolling 7 day window. 
+#define NETWORK_OFFICER_BLOCK_INTERVAL        (BLOCKS_PER_DAY)            // Distributes network officer rewards once every day.
 #define NETWORK_OFFICER_ACTIVE_SET            (50)
-#define EXECUTIVE_BOARD_BLOCK_INTERVAL        (BLOCKS_PER_DAY)          // Distributes network officer rewards once every day.
+#define EXECUTIVE_BOARD_BLOCK_INTERVAL        (BLOCKS_PER_DAY)            // Distributes network officer rewards once every day.
 #define MIN_EXEC_CREDIT_PRICE                 price( asset( 9, SYMBOL_USD), asset( 10, SYMBOL_CREDIT))     // $0.90 minimum credit price to pay executive budgets
-#define SUPERNODE_BLOCK_INTERVAL              (BLOCKS_PER_DAY)          // Distributes supernode rewards once every day.
-#define SUPERNODE_DECAY_TIME                  fc::days(7)               // Averages supernode file weight over 7 days.
+#define SUPERNODE_BLOCK_INTERVAL              (BLOCKS_PER_DAY)            // Distributes supernode rewards once every day.
+#define SUPERNODE_DECAY_TIME                  fc::days(7)                 // Averages supernode file weight over 7 days.
 
 #define GOVERNANCE_VOTE_THRESHOLD_PERCENT             (PERCENT_1)         // Governance Accounts require 1% of network voting power to be approved for profile account creation.
 #define GOVERNANCE_VOTE_THRESHOLD_AMOUNT              (25)                // Governance Accounts proposals require 25 individual votes to be approved for profile account creation.
@@ -306,9 +306,9 @@
 #define CREDIT_INTEREST_RATE                   (5 * PERCENT_1)               // 5% Initial Interest rate for network credit assets.
 #define CREDIT_MIN_INTEREST                    (PERCENT_1)                   // 1% interest PA minimum component on credit pools.
 #define CREDIT_VARIABLE_INTEREST               (4* PERCENT_1)                // 4% interest PA variable component on credit pools.
-#define CREDIT_INTERVAL                        fc::hours(1)                  // Interest rate compounds once per hour.
-#define CREDIT_INTERVAL_BLOCKS                 uint64_t( CREDIT_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Interest payments for credit assets compound hourly.
-#define INTEREST_MIN_AMOUNT                    (100)                         // Minimum units of asset required to pay interest in credit pools each block.
+#define CREDIT_INTERVAL_BLOCKS                 (BLOCKS_PER_DAY)              // Interest payments for credit assets compound daily.
+#define INTEREST_MIN_AMOUNT                    (1000)                        // Minimum units of asset required to pay interest in credit pools each block.
+#define INTEREST_MIN_INTERVAL                  fc::hours(1)                  // Minimum time interval to check and update credit loans.
 #define MARKET_MAX_CREDIT_RATIO                (50 * PERCENT_1)              // Total Margin and borrow positions are limited to 50% of the maximum collateral and debt liquidity.
 
 #define BOND_COLLATERALIZATION_PERCENT         (20 * PERCENT_1)              // Percentage of bond face value required for collateral.

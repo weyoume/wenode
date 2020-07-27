@@ -110,7 +110,7 @@ namespace node { namespace chain {
          bool                                   is_known_block( const block_id_type& id )const;
          bool                                   is_known_transaction( const transaction_id_type& id )const;
          
-         uint128_t                              pow_difficulty()const;
+         x11                                    pow_difficulty()const;
          block_id_type                          find_block_id_for_num( uint64_t block_num )const;
          block_id_type                          get_block_id_for_num( uint64_t block_num )const;
          optional<signed_block>                 fetch_block_by_id( const block_id_type& id )const;
@@ -1064,6 +1064,7 @@ namespace node { namespace chain {
          void _apply_transaction( const signed_transaction& trx );
          void apply_operation( const operation& op );
          void update_stake(const signed_transaction& trx );
+         void check_flash_loans();
 
          ///Steps involved in applying a new block
 

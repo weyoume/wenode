@@ -142,8 +142,10 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const asset_liquidity_pool_object& pool = db.get_liquidity_pool( "ALICECOIN", "BOBCOIN" );
-      asset_symbol_type liquidity_asset_symbol = string( LIQUIDITY_ASSET_PREFIX )+"ALICECOIN.BOBCOIN";
+      const asset_liquidity_pool_object& pool = db.get_liquidity_pool( asset_symbol_type( "ALICECOIN" ), asset_symbol_type( "BOBCOIN" ) );
+
+      asset_symbol_type liquidity_asset_symbol = string( LIQUIDITY_ASSET_PREFIX ) + string( "ALICECOIN.BOBCOIN" );
+
       share_type max = std::max( pool_create.first_amount.amount, pool_create.second_amount.amount );
 
       BOOST_REQUIRE( pool.issuer == pool_create.account );
@@ -153,8 +155,6 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
       BOOST_REQUIRE( pool.balance_b == pool_create.second_amount );
       BOOST_REQUIRE( pool.symbol_liquid == liquidity_asset_symbol );
       BOOST_REQUIRE( pool.balance_liquid == asset( max, liquidity_asset_symbol ) );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Creation of a new liquidity pool" );
 
@@ -220,8 +220,6 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when account does not have required funds" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when acquiring more than available from pool" );
@@ -235,8 +233,6 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when acquiring more than available from pool" );
 
@@ -252,8 +248,6 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: failure when exchange amount is 0" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Add funds to the liquidity pool" );
@@ -263,7 +257,7 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
       fund.signatory = "alice";
       fund.account = "alice";
       fund.amount = asset( 1000 * BLOCKCHAIN_PRECISION, "ALICECOIN" );
-      fund.pair_asset = liquidity_asset_symbol;
+      fund.pair_asset = "BOBCOIN";
       fund.validate();
 
       tx.operations.push_back( fund );
@@ -273,13 +267,11 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: Add funds to the liquidity pool" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure adding funds to the liquidity pool without sufficient funds" );
 
-      fund.amount = asset( 100000, "ALICECOIN" );
+      fund.amount = asset( 100000 * BLOCKCHAIN_PRECISION, "ALICECOIN" );
 
       tx.operations.push_back( fund );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -287,8 +279,6 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure adding funds to the liquidity pool without sufficient funds" );
 
@@ -302,8 +292,6 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure adding funds to the liquidity pool when amount is 0" );
 
@@ -324,8 +312,6 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: Withdraw funds from the liquidity pool" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when withdrawing too many funds from the liquidity pool" );
@@ -339,8 +325,6 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when withdrawing too many funds from the liquidity pool" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when withdrawing 0 amount from the liquidity pool" );
@@ -353,8 +337,6 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when withdrawing 0 amount from the liquidity pool" );
 
@@ -377,45 +359,35 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       fund_liquid( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
-      fund_stake( "alice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
       producer_create( "alice", alice_private_owner_key );
       producer_vote( "alice", alice_private_owner_key );
 
       fund_liquid( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_stake( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       fund_liquid( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
-      fund_stake( "bob", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
       producer_create( "bob", bob_private_owner_key );
       producer_vote( "bob", bob_private_owner_key );
       
       fund_liquid( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_stake( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       fund_liquid( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
-      fund_stake( "candice", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
       producer_create( "candice", candice_private_owner_key );
       producer_vote( "candice", candice_private_owner_key );
 
       fund_liquid( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_stake( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       fund_liquid( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
-      fund_stake( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
       producer_create( "dan", dan_private_owner_key );
       producer_vote( "dan", dan_private_owner_key );
 
       fund_liquid( "elon", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "elon", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "elon", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_stake( "elon", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_liquid( "elon", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
-      fund_stake( "elon", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+      fund_liquid( "elon", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
       producer_create( "elon", elon_private_owner_key );
       producer_vote( "elon", elon_private_owner_key );
 
@@ -439,6 +411,8 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      generate_block();
+
       fund.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       fund.pair_asset = SYMBOL_COIN;
 
@@ -448,6 +422,8 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      generate_block();
 
       fund.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       fund.pair_asset = SYMBOL_CREDIT;
@@ -459,6 +435,8 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      generate_block();
+
       fund.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT );
       fund.pair_asset = SYMBOL_COIN;
 
@@ -468,6 +446,8 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      generate_block();
 
       asset_publish_feed_operation feed;
 
@@ -485,6 +465,8 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      generate_block();
+
       feed.signatory = "bob";
       feed.publisher = "bob";
 
@@ -494,6 +476,8 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      generate_block();
 
       feed.signatory = "candice";
       feed.publisher = "candice";
@@ -505,6 +489,8 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      generate_block();
+
       feed.signatory = "dan";
       feed.publisher = "dan";
 
@@ -514,6 +500,8 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      generate_block();
 
       credit_pool_collateral_operation collateral;
 
@@ -529,15 +517,13 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const credit_collateral_object& alice_collateral = db.get_collateral( account_name_type( "alice" ), SYMBOL_COIN );
+      const credit_collateral_object& alice_collateral = db.get_collateral( collateral.account, SYMBOL_COIN );
 
       BOOST_REQUIRE( alice_collateral.owner == collateral.account );
       BOOST_REQUIRE( alice_collateral.symbol == collateral.amount.symbol );
       BOOST_REQUIRE( alice_collateral.collateral == collateral.amount );
       BOOST_REQUIRE( alice_collateral.created == now() );
       BOOST_REQUIRE( alice_collateral.last_updated == now() );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Create credit collateral position" );
 
@@ -552,7 +538,7 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
+      generate_block();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when making a credit collateral position without sufficient balance" );
 
@@ -568,11 +554,9 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.signatures.clear();
 
       const auto& col_idx = db.get_index< credit_collateral_index >().indices().get< by_owner_symbol >();
-      auto col_itr = col_idx.find( std::make_tuple( account_name_type( "alice" ), SYMBOL_COIN ) );
+      auto col_itr = col_idx.find( std::make_tuple( collateral.account, SYMBOL_COIN ) );
 
-      BOOST_REQUIRE( col_itr == col_idx.end() );
-
-      validate_database();
+      BOOST_REQUIRE( col_itr != col_idx.end() );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when amount of collateral is not changed" );
 
@@ -587,21 +571,23 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      col_itr = col_idx.find( std::make_tuple( account_name_type( "alice" ), SYMBOL_COIN ) );
+      generate_block();
+
+      col_itr = col_idx.find( std::make_tuple( collateral.account, SYMBOL_COIN ) );
 
       BOOST_REQUIRE( col_itr == col_idx.end() );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Removing Collateral position" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Lending funds to credit pool" );
 
+      asset init_base_balance = db.get_credit_pool( SYMBOL_USD, false ).base_balance;
+
       credit_pool_lend_operation lend;
 
       lend.signatory = "bob";
       lend.account = "bob";
-      lend.amount = asset( 50000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      lend.amount = asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
 
       tx.operations.push_back( lend );
       tx.sign( bob_private_active_key, db.get_chain_id() );
@@ -610,10 +596,12 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      generate_block();
+
       const asset_credit_pool_object& usd_credit_pool = db.get_credit_pool( SYMBOL_USD, false );
 
       BOOST_REQUIRE( usd_credit_pool.base_symbol == lend.amount.symbol );
-      BOOST_REQUIRE( usd_credit_pool.base_balance == lend.amount );
+      BOOST_REQUIRE( usd_credit_pool.base_balance == init_base_balance + lend.amount );
       BOOST_REQUIRE( usd_credit_pool.borrowed_balance.amount == 0 );
       asset_symbol_type usd_credit_symbol = usd_credit_pool.credit_symbol;
    
@@ -633,8 +621,6 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when insufficient balance to lend" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when lending 0" );
@@ -647,8 +633,6 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when lending 0" );
 
@@ -663,15 +647,13 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when lending credit pool asset" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Creation of Borrowing order from credit pool" );
 
       collateral.signatory = "alice";
       collateral.account = "alice";
-      collateral.amount = asset( 20000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      collateral.amount = asset( 2000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
 
       tx.operations.push_back( collateral );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -680,12 +662,16 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      generate_block();
+
+      init_base_balance = db.get_credit_pool( SYMBOL_USD, false ).base_balance;
+
       credit_pool_borrow_operation borrow;
 
       borrow.signatory = "alice";
       borrow.account = "alice";
-      borrow.amount = asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
-      borrow.collateral = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      borrow.amount = asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      borrow.collateral = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       borrow.loan_id = "7d8f6c1a-0409-416f-9e07-f60c46381a92";
       borrow.validate();
 
@@ -696,24 +682,22 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_REQUIRE( usd_credit_pool.base_balance == lend.amount - borrow.amount );
+      BOOST_REQUIRE( usd_credit_pool.base_balance == init_base_balance - borrow.amount );
       BOOST_REQUIRE( usd_credit_pool.borrowed_balance == borrow.amount );
 
-      const credit_loan_object& alice_loan = db.get_loan( account_name_type( "alice" ), string( "7d8f6c1a-0409-416f-9e07-f60c46381a92" ) );
+      const credit_loan_object& alice_loan = db.get_loan( borrow.account, borrow.loan_id );
 
       BOOST_REQUIRE( alice_loan.debt == borrow.amount );
       BOOST_REQUIRE( alice_loan.collateral == borrow.collateral );
 
-      BOOST_REQUIRE( alice_collateral.collateral == collateral.amount - borrow.collateral );
-      BOOST_REQUIRE( alice_collateral.last_updated == now() );
-
-      validate_database();
+      BOOST_REQUIRE( db.get_collateral( collateral.account, SYMBOL_COIN ).collateral == collateral.amount - borrow.collateral );
+      BOOST_REQUIRE( db.get_collateral( collateral.account, SYMBOL_COIN ).last_updated == now() );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Creation of Borrowing order from credit pool" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Updating Borrowing order to increase loan debt" );
 
-      borrow.amount = asset( 7500 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      borrow.amount = asset( 750 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       
       tx.operations.push_back( borrow );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -722,16 +706,10 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_REQUIRE( usd_credit_pool.base_balance == lend.amount - borrow.amount );
       BOOST_REQUIRE( usd_credit_pool.borrowed_balance == borrow.amount );
 
       BOOST_REQUIRE( alice_loan.debt == borrow.amount );
       BOOST_REQUIRE( alice_loan.collateral == borrow.collateral );
-
-      BOOST_REQUIRE( alice_collateral.collateral == collateral.amount - borrow.collateral );
-      BOOST_REQUIRE( alice_collateral.last_updated == now() );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Updating Borrowing order to increase loan debt" );
 
@@ -746,14 +724,12 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when updating borrowing order to remove collateral" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when updating borrowing order to less than minimum collateral ratio" );
 
-      borrow.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
-      borrow.collateral = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      borrow.amount = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      borrow.collateral = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       
       tx.operations.push_back( borrow );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -762,17 +738,17 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when updating borrowing order to less than minimum collateral ratio" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Withdrawing funds from credit pool" );
+
+      init_base_balance = db.get_credit_pool( SYMBOL_USD, false ).base_balance;
 
       credit_pool_withdraw_operation withdraw;
 
       withdraw.signatory = "bob";
       withdraw.account = "bob";
-      withdraw.amount = asset( 5000 * BLOCKCHAIN_PRECISION, usd_credit_symbol );
+      withdraw.amount = asset( 500 * BLOCKCHAIN_PRECISION, usd_credit_symbol );
       withdraw.validate();
 
       tx.operations.push_back( withdraw );
@@ -782,13 +758,7 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_REQUIRE( usd_credit_pool.base_symbol == lend.amount.symbol );
-      BOOST_REQUIRE( usd_credit_pool.credit_symbol == withdraw.amount.symbol );
-      BOOST_REQUIRE( usd_credit_pool.base_balance == lend.amount - borrow.amount - withdraw.amount );
-      BOOST_REQUIRE( usd_credit_pool.borrowed_balance == borrow.amount );
-   
-      tx.operations.clear();
-      tx.signatures.clear();
+      generate_block();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Withdrawing funds from credit pool" );
 
@@ -833,9 +803,9 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Failure when withdrawing funds using reserve asset instead of credit pool asset" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: Closing out loan after 7 days" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Closing out loan after 1 day" );
 
-      generate_blocks( 7 * BLOCKS_PER_DAY );
+      generate_blocks(  BLOCKS_PER_DAY );
 
       borrow.amount = asset( 0, SYMBOL_USD );
       borrow.collateral = asset( 0, SYMBOL_COIN );
@@ -850,7 +820,7 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       BOOST_REQUIRE( usd_credit_pool.borrowed_balance.amount == 0 );
 
       const auto& loan_idx = db.get_index< credit_loan_index >().indices().get< by_loan_id >();
-      auto loan_itr = loan_idx.find( std::make_tuple( account_name_type( "alice" ), string( "7d8f6c1a-0409-416f-9e07-f60c46381a92" ) ) );
+      auto loan_itr = loan_idx.find( std::make_tuple( borrow.account, borrow.loan_id ) );
 
       BOOST_REQUIRE( loan_itr == loan_idx.end() );
 
@@ -858,14 +828,12 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       BOOST_REQUIRE( alice_collateral.last_updated == now() );
       BOOST_REQUIRE( alice.loan_default_balance.amount == 0  );
 
-      validate_database();
-
       BOOST_TEST_MESSAGE( "│   ├── Passed: Closing out loan after 7 days" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Loan Default liquidation" );
 
-      borrow.amount = asset( 7500 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
-      borrow.collateral = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      borrow.amount = asset( 750 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      borrow.collateral = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       borrow.loan_id = "ab853d22-e03d-46f5-9437-93f5fb4ea7df";
       
       tx.operations.push_back( borrow );
@@ -877,13 +845,15 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       BOOST_REQUIRE( usd_credit_pool.borrowed_balance.amount == 0 );
 
-      const credit_loan_object& alice_loan2 = db.get_loan( account_name_type( "alice" ), string( "ab853d22-e03d-46f5-9437-93f5fb4ea7df" ) );
+      const credit_loan_object& alice_loan2 = db.get_loan( borrow.account, borrow.loan_id  );
 
       BOOST_REQUIRE( alice_loan2.debt == borrow.amount );
       BOOST_REQUIRE( alice_loan2.collateral == borrow.collateral );
 
       BOOST_REQUIRE( alice_collateral.collateral == collateral.amount );
       BOOST_REQUIRE( alice_collateral.last_updated == now() );
+
+      generate_block();
 
       feed.signatory = "alice";
       feed.publisher = "alice";
@@ -895,12 +865,18 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
+      tx.operations.clear();
+      tx.signatures.clear();
+
       feed.signatory = "bob";
       feed.publisher = "bob";
 
       tx.operations.push_back( feed );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
 
       feed.signatory = "candice";
       feed.publisher = "candice";
@@ -909,6 +885,9 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
+      tx.operations.clear();
+      tx.signatures.clear();
+
       feed.signatory = "dan";
       feed.publisher = "dan";
 
@@ -916,21 +895,22 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
+      tx.operations.clear();
+      tx.signatures.clear();
+
       generate_block();     // Price halved, loan is insolvent, and is liquidated and network credit is issued to repurchase usd
 
-      loan_itr = loan_idx.find( std::make_tuple( account_name_type( "alice" ), string( "ab853d22-e03d-46f5-9437-93f5fb4ea7df" ) ) );
+      loan_itr = loan_idx.find( std::make_tuple( borrow.account, borrow.loan_id ) );
 
       BOOST_REQUIRE( loan_itr == loan_idx.end() );
       BOOST_REQUIRE( alice.loan_default_balance.amount > 0  );
-
-      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Loan Default liquidation" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when borrowing with loan default balance outstanding" );
 
-      borrow.amount = asset( 7500 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
-      borrow.collateral = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      borrow.amount = asset( 750 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      borrow.collateral = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       borrow.loan_id = "f44cf0e4-66d8-4225-a93a-80ca69300606";
       
       tx.operations.push_back( borrow );
@@ -955,10 +935,12 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      generate_block();
+
       BOOST_REQUIRE( alice.loan_default_balance.amount == 0  );
 
-      borrow.amount = asset( 7500 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
-      borrow.collateral = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      borrow.amount = asset( 750 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      borrow.collateral = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       borrow.loan_id = "f44cf0e4-66d8-4225-a93a-80ca69300606";
       
       tx.operations.push_back( borrow );
@@ -1018,7 +1000,7 @@ BOOST_AUTO_TEST_CASE( prediction_pool_operation_sequence_test )
       create.json = "{ \"valid\": true }";
       create.url = "https://www.url.com";
       create.details = "Details";
-      create.outcome_time = now() + fc::days(8);
+      create.outcome_time = now() + fc::days(7);
       create.prediction_bond = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       create.validate();
 
@@ -1058,7 +1040,7 @@ BOOST_AUTO_TEST_CASE( prediction_pool_operation_sequence_test )
       create.json = "{ \"valid\": true }";
       create.url = "https://www.url.com";
       create.details = "Details";
-      create.outcome_time = now() + fc::days(30);
+      create.outcome_time = now() + fc::days(7);
       create.prediction_bond = asset( 20000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       create.validate();
 
@@ -1121,14 +1103,17 @@ BOOST_AUTO_TEST_CASE( prediction_pool_operation_sequence_test )
       BOOST_TEST_MESSAGE( "│   ├── Testing: Resolve Prediction Pool" );
 
       asset init_alice_liquid_coin = get_liquid_balance( "alice", SYMBOL_COIN );
+      asset init_bob_liquid_coin = get_liquid_balance( "bob", SYMBOL_COIN );
+      asset init_alice_liquid_prediction = get_liquid_balance( "alice", asset_symbol_type( "PREDICTION" ) );
 
-      generate_blocks( prediction.outcome_time + fc::minutes(1) );
+      generate_blocks( db.get_prediction_pool( asset_symbol_type( "PREDICTION" ) ).outcome_time, true );
+      generate_block();
 
       prediction_pool_resolve_operation resolve;
 
       resolve.signatory = "alice";
       resolve.account = "alice";
-      resolve.amount = asset( 100 * BLOCKCHAIN_PRECISION, asset_symbol_type( "PREDICTION" ) );
+      resolve.amount = init_alice_liquid_prediction;
       resolve.resolution_outcome = asset_symbol_type( "PREDICTION.YES" );
       resolve.validate();
       
@@ -1147,20 +1132,20 @@ BOOST_AUTO_TEST_CASE( prediction_pool_operation_sequence_test )
       BOOST_REQUIRE( resolution.prediction_symbol == resolve.amount.symbol );
       BOOST_REQUIRE( resolution.resolution_outcome == resolve.resolution_outcome );
 
-      validate_database();
-
-      generate_blocks( prediction.resolution_time + fc::minutes(1), true );
+      generate_blocks( db.get_prediction_pool( asset_symbol_type( "PREDICTION" ) ).resolution_time, true );
+      generate_block();
 
       asset alice_liquid_coin = get_liquid_balance( "alice", SYMBOL_COIN );
+      asset bob_liquid_coin = get_liquid_balance( "bob", SYMBOL_COIN );
+
+      asset alice_liquid_prediction = get_liquid_balance( "alice", "PREDICTION" );
       asset bob_liquid_prediction = get_liquid_balance( "bob", "PREDICTION.YES" );
       asset candice_liquid_prediction = get_liquid_balance( "candice", "PREDICTION.NO" );
 
-      const asset_prediction_pool_object* pool_ptr = db.find_prediction_pool( asset_symbol_type( "PREDICTION" ) );
-      const asset_prediction_pool_resolution_object* resolution_ptr = db.find_prediction_pool_resolution( account_name_type( "alice" ), asset_symbol_type( "PREDICTION" ) );
-      
-      BOOST_REQUIRE( pool_ptr == nullptr );
-      BOOST_REQUIRE( resolution_ptr == nullptr );
       BOOST_REQUIRE( alice_liquid_coin == init_alice_liquid_coin + asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      BOOST_REQUIRE( bob_liquid_coin == init_bob_liquid_coin + asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      BOOST_REQUIRE( alice_liquid_prediction.amount == 0 );
       BOOST_REQUIRE( bob_liquid_prediction.amount == 0 );
       BOOST_REQUIRE( candice_liquid_prediction.amount == 0 );
 
