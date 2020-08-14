@@ -229,7 +229,7 @@ namespace node {
       enum class asset_property_type : int
       {
          CURRENCY_ASSET,         ///< Cryptocurrency that is issued by the network, starts from zero supply, issuing account is the null account, cannot be issued by any accounts. 
-         STANDARD_ASSET,         ///< Regular asset, can be transferred and staked, saved, and delegated.
+         STANDARD_ASSET,         ///< Regular asset, can be transferred and staked, saved, and delegated. Can be used as a depository gateway asset.
          STABLECOIN_ASSET,       ///< Asset backed by collateral that tracks the value of an external asset. Redeemable at any time with settlement.
          EQUITY_ASSET,           ///< Asset issued by a business account that distributes a dividend from incoming revenue, and has voting power over a business accounts transactions.
          BOND_ASSET,             ///< Asset issued by a business account, partially backed by collateral, that pays a coupon rate and is redeemed after maturity.
@@ -239,7 +239,6 @@ namespace node {
          CREDIT_POOL_ASSET,      ///< Asset that is backed by deposits of the base asset, used for borrowing funds from the pool, used as collateral to borrow base asset.
          OPTION_ASSET,           ///< Asset that enables the execution of a trade at a specific strike price until an expiration date. 
          PREDICTION_ASSET,       ///< Asset backed by an underlying collateral claim, on the condition that a prediction market resolve in a particular outcome.
-         GATEWAY_ASSET,          ///< Asset backed by deposits with an exchange counterparty of another asset or currency.
          UNIQUE_ASSET            ///< Asset with a supply of one, contains metadata relating to the ownership of a unique non-fungible asset.
       };
 
@@ -256,7 +255,6 @@ namespace node {
          "credit_pool",
          "option",
          "prediction",
-         "gateway",
          "unique"
       };
 
@@ -488,9 +486,7 @@ namespace node {
          STAKED_BALANCE,
          REWARD_BALANCE,
          SAVINGS_BALANCE,
-         VESTING_BALANCE,
-         DELEGATED_BALANCE,
-         RECEIVING_BALANCE
+         VESTING_BALANCE
       };
 
       const static vector< string > account_balance_values =
@@ -499,9 +495,7 @@ namespace node {
          "staked",
          "reward",
          "savings",
-         "vesting",
-         "delegated",
-         "receiving"
+         "vesting"
       };
 
       enum class asset_issuer_permission_flags : int
@@ -516,14 +510,15 @@ namespace node {
          disable_credit              = 128,     ///< The asset cannot be lent into a credit pool, Disabling margin and credit loan orders.
          disable_liquid              = 256,     ///< The asset cannot be used to create a liquidity pool.
          disable_options             = 512,     ///< The asset cannot be used to issue options assets.
-         disable_escrow              = 1024,    ///< Disable escrow transfers and marketplace trades using the asset.
-         disable_force_settle        = 2048,    ///< Disable force settling of stablecoins, only global settle may return collateral.
-         disable_confidential        = 4096,    ///< Asset cannot be used with confidential transactions.
-         disable_auction             = 8192,    ///< Disable creation of auction orders for the asset.
-         producer_fed_asset          = 16384,   ///< Allow the asset to be price food to be published by top voting producers.
-         global_settle               = 32768,   ///< Allow the stablecoin issuer to force a global settlement: Set in permissions, but not flags.
-         governance_oversight        = 65536,   ///< Asset update, issuer transfer and issuance require the account's governance address to approve.
-         immutable_properties        = 131072   ///< Disable any future asset options updates or changes to flags.
+         disable_unique              = 1024,    ///< The asset cannot be used as a unique asset ownership asset.
+         disable_escrow              = 2048,    ///< Disable escrow transfers and marketplace trades using the asset.
+         disable_force_settle        = 4096,    ///< Disable force settling of stablecoins, only global settle may return collateral.
+         disable_confidential        = 8192,    ///< Asset cannot be used with confidential transactions.
+         disable_auction             = 16384,   ///< Disable creation of auction orders for the asset.
+         producer_fed_asset          = 32768,   ///< Allow the asset to be price food to be published by top voting producers.
+         disable_global_settle       = 65536,   ///< The stablecoin issuer cannot force a global settlement.
+         governance_oversight        = 131072,  ///< Asset update, issuer transfer and issuance require the account's governance address to approve.
+         immutable_properties        = 262144   ///< Disable any future asset options updates or changes to flags.
       };
 
       const static uint32_t ASSET_ISSUER_PERMISSION_MASK =
@@ -537,12 +532,13 @@ namespace node {
          | int( asset_issuer_permission_flags::disable_credit )
          | int( asset_issuer_permission_flags::disable_liquid )
          | int( asset_issuer_permission_flags::disable_options )
+         | int( asset_issuer_permission_flags::disable_unique )
          | int( asset_issuer_permission_flags::disable_escrow )
          | int( asset_issuer_permission_flags::disable_force_settle )
          | int( asset_issuer_permission_flags::disable_confidential )
          | int( asset_issuer_permission_flags::disable_auction )
          | int( asset_issuer_permission_flags::producer_fed_asset )
-         | int( asset_issuer_permission_flags::global_settle )
+         | int( asset_issuer_permission_flags::disable_global_settle )
          | int( asset_issuer_permission_flags::governance_oversight )
          | int( asset_issuer_permission_flags::immutable_properties );
 
@@ -560,7 +556,7 @@ namespace node {
          disable_article_posts       = 512,      ///< Community does not allow article type posts.
          disable_audio_posts         = 1024,     ///< Community does not allow audio type posts.
          disable_file_posts          = 2048,     ///< Community does not allow file type posts.
-         disable_livestream_posts    = 4096     ///< Community does not allow livestream type posts.
+         disable_livestream_posts    = 4096      ///< Community does not allow livestream type posts.
       };
 
       const static uint32_t COMMUNITY_PERMISSION_MASK =
@@ -722,7 +718,6 @@ namespace node {
       };
 
 
-      
 
 } };  // node::protocol
 
@@ -798,7 +793,6 @@ FC_REFLECT_ENUM( node::protocol::asset_property_type,
          (CREDIT_POOL_ASSET)
          (OPTION_ASSET)
          (PREDICTION_ASSET)
-         (GATEWAY_ASSET)
          (UNIQUE_ASSET)
          );
 
@@ -889,6 +883,13 @@ FC_REFLECT_ENUM( node::protocol::post_time_type,
          (LAST_YEAR)
          );
 
+FC_REFLECT_ENUM( node::protocol::account_balance_type,
+         (LIQUID_BALANCE)
+         (STAKED_BALANCE)
+         (REWARD_BALANCE)
+         (SAVINGS_BALANCE)
+         (VESTING_BALANCE)
+         );
 
 FC_REFLECT_ENUM( node::protocol::asset_issuer_permission_flags,
          (balance_whitelist)
@@ -901,12 +902,13 @@ FC_REFLECT_ENUM( node::protocol::asset_issuer_permission_flags,
          (disable_credit)
          (disable_liquid)
          (disable_options)
+         (disable_unique)
          (disable_escrow)
          (disable_force_settle)
          (disable_confidential)
          (disable_auction)
          (producer_fed_asset)
-         (global_settle)
+         (disable_global_settle)
          (governance_oversight)
          (immutable_properties)
          );

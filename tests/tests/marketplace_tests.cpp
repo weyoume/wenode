@@ -15,6 +15,7 @@ using namespace node::chain;
 using namespace node::protocol;
 using std::string;
 
+
 BOOST_FIXTURE_TEST_SUITE( marketplace_operation_tests, clean_database_fixture );
 
 
@@ -1421,10 +1422,12 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       generate_blocks( db.get_product_auction_sale( auction.account, auction.auction_id ).completion_time, true );
       generate_block();
 
+      const product_auction_bid_object& new_bob_bid = db.get_product_auction_bid( bid.buyer, bid.bid_id );
+
       BOOST_REQUIRE( db.get_product_auction_sale( auction.account, auction.auction_id ).completed );
-      BOOST_REQUIRE( db.get_product_auction_sale( auction.account, auction.auction_id ).winning_bidder == bob_bid.buyer );
-      BOOST_REQUIRE( db.get_product_auction_sale( auction.account, auction.auction_id ).winning_bid_id == bob_bid.bid_id );
-      BOOST_REQUIRE( bob_bid.winning_bid );
+      BOOST_REQUIRE( db.get_product_auction_sale( auction.account, auction.auction_id ).winning_bidder == new_bob_bid.buyer );
+      BOOST_REQUIRE( db.get_product_auction_sale( auction.account, auction.auction_id ).winning_bid_id == new_bob_bid.bid_id );
+      BOOST_REQUIRE( new_bob_bid.winning_bid );
 
       escrow_approve_operation approve;
 
@@ -1444,8 +1447,6 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      generate_block();
-
       approve.signatory = "bob";
       approve.account = "bob";
       approve.mediator = "dan";
@@ -1456,8 +1457,6 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
 
       tx.operations.clear();
       tx.signatures.clear();
-
-      generate_block();
 
       approve.signatory = "candice";
       approve.account = "candice";
@@ -1470,8 +1469,6 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      generate_block();
-
       approve.signatory = "dan";
       approve.account = "dan";
       approve.mediator = "dan";
@@ -1483,17 +1480,16 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      generate_block();
-
       const escrow_object& bob_escrow = db.get_escrow( approve.escrow_from, approve.escrow_id );
+      const product_auction_bid_object& new_bob_bid_2 = db.get_product_auction_bid( bid.buyer, bid.bid_id );
 
-      asset escrow_bond = asset( ( bob_bid.order_value().amount * median_props.escrow_bond_percent ) / PERCENT_100, bob_escrow.payment.symbol );
+      asset escrow_bond = asset( ( new_bob_bid_2.order_value().amount * median_props.escrow_bond_percent ) / PERCENT_100, bob_escrow.payment.symbol );
 
       BOOST_REQUIRE( bob_escrow.to == "alice" );
       BOOST_REQUIRE( bob_escrow.from == "bob" );
       BOOST_REQUIRE( bob_escrow.to_mediator == "candice" );
       BOOST_REQUIRE( bob_escrow.from_mediator == "dan" );
-      BOOST_REQUIRE( bob_escrow.payment == bob_bid.order_value() );
+      BOOST_REQUIRE( bob_escrow.payment == new_bob_bid_2.order_value() );
       BOOST_REQUIRE( bob_escrow.balance == bob_escrow.payment + 4 * escrow_bond );
       BOOST_REQUIRE( bob_escrow.from_approved() == true );
       BOOST_REQUIRE( bob_escrow.to_approved() == true );
@@ -1507,9 +1503,11 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       asset dan_liquid_balance = get_liquid_balance( "dan", SYMBOL_USD );
 
       BOOST_REQUIRE( alice_liquid_balance == ( alice_init_liquid_balance - escrow_bond ) );
-      BOOST_REQUIRE( bob_liquid_balance == ( bob_init_liquid_balance - ( bob_bid.order_value() + escrow_bond ) ) );
+      BOOST_REQUIRE( bob_liquid_balance == ( bob_init_liquid_balance - ( new_bob_bid_2.order_value() + escrow_bond ) ) );
       BOOST_REQUIRE( candice_liquid_balance == ( candice_init_liquid_balance - escrow_bond ) );
       BOOST_REQUIRE( dan_liquid_balance == ( dan_init_liquid_balance - escrow_bond ) );
+
+      generate_block();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: approval of escrow transfer proposal" );
 
@@ -1533,15 +1531,13 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      generate_block();
-
       alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_USD );
       bob_liquid_balance = get_liquid_balance( "bob", SYMBOL_USD );
       candice_liquid_balance = get_liquid_balance( "candice", SYMBOL_USD );
       dan_liquid_balance = get_liquid_balance( "dan", SYMBOL_USD );
 
-      BOOST_REQUIRE( alice_liquid_balance == ( alice_init_liquid_balance - bob_bid.order_value() ) );
-      BOOST_REQUIRE( bob_liquid_balance == ( bob_init_liquid_balance + bob_bid.order_value() ) );
+      BOOST_REQUIRE( alice_liquid_balance == ( alice_init_liquid_balance + new_bob_bid_2.order_value() ) );
+      BOOST_REQUIRE( bob_liquid_balance == ( bob_init_liquid_balance - new_bob_bid_2.order_value() ) );
       BOOST_REQUIRE( candice_liquid_balance == candice_init_liquid_balance );
       BOOST_REQUIRE( dan_liquid_balance == dan_init_liquid_balance );
 

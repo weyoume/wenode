@@ -66,6 +66,7 @@ struct median_chain_property_api_obj
 {
    median_chain_property_api_obj( const chain::median_chain_property_object& o ) :
       id( o.id ),
+      reward_curve( o.reward_curve ),
       account_creation_fee( o.account_creation_fee ),
       asset_coin_liquidity( o.asset_coin_liquidity ),
       asset_usd_liquidity( o.asset_usd_liquidity ),
@@ -86,15 +87,6 @@ struct median_chain_property_api_obj
       membership_base_price( o.membership_base_price ),
       membership_mid_price( o.membership_mid_price ),
       membership_top_price( o.membership_top_price ),
-      author_reward_percent( o.author_reward_percent ),
-      vote_reward_percent( o.vote_reward_percent ),
-      view_reward_percent( o.view_reward_percent ),
-      share_reward_percent( o.share_reward_percent ),
-      comment_reward_percent( o.comment_reward_percent ),
-      storage_reward_percent( o.storage_reward_percent ),
-      moderator_reward_percent( o.moderator_reward_percent ),
-      content_reward_decay_rate( o.content_reward_decay_rate ),
-      content_reward_interval( o.content_reward_interval ),
       vote_reserve_rate( o.vote_reserve_rate ),
       view_reserve_rate( o.view_reserve_rate ),
       share_reserve_rate( o.share_reserve_rate ),
@@ -117,6 +109,7 @@ struct median_chain_property_api_obj
    median_chain_property_api_obj(){}
 
    median_chain_property_id_type         id;
+   comment_reward_curve                  reward_curve;                         ///< The components of the comment reward distribution curve.
    asset                                 account_creation_fee;                 ///< Minimum fee required to create a new account by staking.
    asset                                 asset_coin_liquidity;                 ///< Coin liquidity required to create a new asset.
    asset                                 asset_usd_liquidity;                  ///< USD liquidity required to create a new asset.
@@ -137,15 +130,6 @@ struct median_chain_property_api_obj
    asset                                 membership_base_price;                ///< The price for standard membership per month.
    asset                                 membership_mid_price;                 ///< The price for Mezzanine membership per month.
    asset                                 membership_top_price;                 ///< The price for top level membership per month.
-   uint32_t                              author_reward_percent;                ///< The percentage of content rewards distributed to post authors.
-   uint32_t                              vote_reward_percent;                  ///< The percentage of content rewards distributed to post voters.
-   uint32_t                              view_reward_percent;                  ///< The percentage of content rewards distributed to post viewers.
-   uint32_t                              share_reward_percent;                 ///< The percentage of content rewards distributed to post sharers.
-   uint32_t                              comment_reward_percent;               ///< The percentage of content rewards distributed to post commenters.
-   uint32_t                              storage_reward_percent;               ///< The percentage of content rewards distributed to viewing supernodes.
-   uint32_t                              moderator_reward_percent;             ///< The percentage of content rewards distributed to community moderators.
-   fc::microseconds                      content_reward_decay_rate;            ///< The time over which content rewards are distributed
-   fc::microseconds                      content_reward_interval;              ///< Time taken per distribution of content rewards.
    uint32_t                              vote_reserve_rate;                    ///< The number of votes regenerated per day.
    uint32_t                              view_reserve_rate;                    ///< The number of views regenerated per day.
    uint32_t                              share_reserve_rate;                   ///< The number of shares regenerated per day.
@@ -174,6 +158,7 @@ struct reward_fund_api_obj
    reward_fund_api_obj( const chain::reward_fund_object& o ) :
       id( o.id ),
       symbol( o.symbol ),
+      total_pending_reward_balance( o.total_pending_reward_balance() ),
       content_reward_balance( o.content_reward_balance ),
       validation_reward_balance( o.validation_reward_balance ),
       txn_stake_reward_balance( o.txn_stake_reward_balance ),
@@ -187,19 +172,15 @@ struct reward_fund_api_obj
       advocacy_reward_balance( o.advocacy_reward_balance ),
       activity_reward_balance( o.activity_reward_balance ),
       premium_partners_fund_balance( o.premium_partners_fund_balance ),
-      total_pending_reward_balance( o.total_pending_reward_balance() ),
       recent_content_claims( o.recent_content_claims ),
       recent_activity_claims( o.recent_activity_claims ),
-      content_constant( o.content_constant ),
-      content_reward_decay_rate( o.content_reward_decay_rate ),
-      content_reward_interval( o.content_reward_interval ),
-      reward_curve( o.reward_curve ),
       last_updated( o.last_updated ){}
 
    reward_fund_api_obj(){}
 
    reward_fund_id_type     id;
    asset_symbol_type       symbol;                                                    ///< Currency symbol of the asset that the reward fund issues.
+   asset                   total_pending_reward_balance;                              ///< Total of all reward balances. 
    asset                   content_reward_balance;                                    ///< Balance awaiting distribution to content creators.
    asset                   validation_reward_balance;                                 ///< Balance distributed to block validating producers. 
    asset                   txn_stake_reward_balance;                                  ///< Balance distributed to block producers based on the stake weighted transactions in each block.
@@ -213,13 +194,8 @@ struct reward_fund_api_obj
    asset                   advocacy_reward_balance;                                   ///< Balance distributed to elected advocates. 
    asset                   activity_reward_balance;                                   ///< Balance distributed to content creators that are active each day. 
    asset                   premium_partners_fund_balance;                             ///< Receives income from memberships, distributed to premium creators. 
-   asset                   total_pending_reward_balance;                              ///< Total of all reward balances. 
    uint128_t               recent_content_claims;                                     ///< Recently claimed content reward balance shares.
    uint128_t               recent_activity_claims;                                    ///< Recently claimed activity reward balance shares.
-   uint128_t               content_constant;                                          ///< Contstant added to content claim shares.
-   fc::microseconds        content_reward_decay_rate;                                 ///< Time taken to distribute all content rewards.
-   fc::microseconds        content_reward_interval;                                   ///< Time between each individual distribution of content rewards. 
-   curve_id                reward_curve;                                              ///< Type of reward curve used for author content reward calculation. 
    time_point              last_updated;                                              ///< Time that the reward fund was last updated. 
 };
 
@@ -238,7 +214,8 @@ struct account_api_obj
       name( a.name ),
       details( to_string( a.details ) ),
       url( to_string( a.url ) ),
-      image( to_string( a.image ) ),
+      profile_image( to_string( a.profile_image ) ),
+      cover_image( to_string( a.cover_image ) ),
       json( to_string( a.json ) ),
       json_private( to_string( a.json_private ) ),
       first_name( to_string( a.first_name ) ),
@@ -248,6 +225,8 @@ struct account_api_obj
       email( to_string( a.email ) ),
       phone( to_string( a.phone ) ),
       nationality( to_string( a.nationality ) ),
+      relationship( to_string( a.relationship ) ),
+      political_alignment( to_string( a.political_alignment ) ),
       pinned_permlink( to_string( a.pinned_permlink ) ),
       membership( membership_tier_values[ int( a.membership ) ] ),
       secure_public_key( a.secure_public_key ),
@@ -322,6 +301,10 @@ struct account_api_obj
             }
 
          }
+         for( auto t : a.interests )
+         {
+            interests.push_back( t );
+         }
          for( auto name : a.proxied )
          {
             proxied.push_back( name );
@@ -334,7 +317,8 @@ struct account_api_obj
    account_name_type                name;                                  ///< Username of the account, lowercase letter and numbers and hyphens only.
    string                           details;                               ///< The account's Public details string.
    string                           url;                                   ///< The account's Public personal URL.
-   string                           image;                                 ///< IPFS Reference of the Public profile image of the account.
+   string                           profile_image;                         ///< IPFS Reference of the Public profile image of the account.
+   string                           cover_image;                           ///< IPFS Reference of the Public cover image of the account.
    string                           json;                                  ///< The JSON string of additional Public profile information.
    string                           json_private;                          ///< The JSON string of additional encrypted profile information. Encrypted with connection key.
    string                           first_name;                            ///< Encrypted First name of the user. Encrypted with connection key.
@@ -344,7 +328,10 @@ struct account_api_obj
    string                           email;                                 ///< Encrypted Email address of the user. Encrypted with connection key.
    string                           phone;                                 ///< Encrypted Phone Number of the user. Encrypted with connection key.
    string                           nationality;                           ///< Encrypted Country of user's residence. Encrypted with connection key.
-   string                           pinned_permlink;                       ///< Post pinned to the top of the account's profile. 
+   string                           relationship;                          ///< Encrypted Relationship status of the account. Encrypted with connection key.
+   string                           political_alignment;                   ///< Encrypted Political alignment. Encrypted with connection key.
+   string                           pinned_permlink;                       ///< Post permlink pinned to the top of the account's profile.
+   vector< tag_name_type >          interests;                             ///< Set of tags of the interests of the user.
    string                           membership;                            ///< Level of account membership.
    public_key_type                  secure_public_key;                     ///< Key used for receiving incoming encrypted direct messages and key exchanges.
    public_key_type                  connection_public_key;                 ///< Key used for encrypting posts for connection level visibility. 
@@ -388,7 +375,7 @@ struct account_api_obj
    uint16_t                         recurring_membership;                  ///< Amount of months membership should be automatically renewed for on expiration
    time_point                       created;                               ///< Time that the account was created.
    time_point                       membership_expiration;                 ///< Time that the account has its current membership subscription until.
-   time_point                       last_updated;                   ///< Time that the account's details were last updated.
+   time_point                       last_updated;                          ///< Time that the account's details were last updated.
    time_point                       last_vote_time;                        ///< Time that the account last voted on a comment.
    time_point                       last_view_time;                        ///< Time that the account last viewed a post.
    time_point                       last_share_time;                       ///< Time that the account last viewed a post.
@@ -417,7 +404,8 @@ struct account_concise_api_obj
       id( a.id ),
       name( a.name ),
       details( to_string( a.details ) ),
-      image( to_string( a.image ) ),
+      profile_image( to_string( a.profile_image ) ),
+      cover_image( to_string( a.cover_image ) ),
       membership( membership_tier_values[ int( a.membership ) ] ),
       follower_count( a.follower_count ),
       following_count( a.following_count ),
@@ -431,7 +419,8 @@ struct account_concise_api_obj
    account_id_type                  id;
    account_name_type                name;                                  ///< Username of the account, lowercase letter and numbers and hyphens only.
    string                           details;                               ///< User's account details.
-   string                           image;                                 ///< Account's public profile image IPFS reference.
+   string                           profile_image;                         ///< Account's public profile image IPFS reference.
+   string                           cover_image;                           ///< Account's public cover image IPFS reference.
    string                           membership;                            ///< Level of account membership.
    uint32_t                         follower_count;                        ///< Number of account followers.
    uint32_t                         following_count;                       ///< Number of accounts that the account follows. 
@@ -458,7 +447,6 @@ struct account_verification_api_obj
    account_name_type                     verifier_account;              ///< Name of the Account with the profile.
    account_name_type                     verified_account;              ///< Name of the account being verifed.
    string                                shared_image;                  ///< IPFS reference to an image containing both people and the current
-   signature_type                        image_signature;               ///< Signature of shared_image, that validates to verified_profile_public_key.
    time_point                            created;                       ///< Time of verification.
    time_point                            last_updated;                  ///< Time that the verifcation was last updated. 
 };
@@ -1364,12 +1352,8 @@ struct comment_api_obj
       weight( o.weight ),
       max_weight( o.max_weight ),
       max_accepted_payout( o.max_accepted_payout ),
-      author_reward_percent( o.author_reward_percent ),
-      vote_reward_percent( o.vote_reward_percent ),
-      share_reward_percent( o.share_reward_percent ),
-      comment_reward_percent( o.comment_reward_percent ),
-      storage_reward_percent( o.storage_reward_percent ),
-      moderator_reward_percent( o.moderator_reward_percent ),
+      reward_currency( o.reward_currency ),
+      reward_curve( o.reward_curve ),
       allow_replies( o.allow_replies ),
       allow_votes( o.allow_votes ),
       allow_views( o.allow_views ),
@@ -1378,9 +1362,13 @@ struct comment_api_obj
       root( o.root ),
       deleted( o.deleted )
       {
-         for( auto tag: o.tags )
+         for( auto tag : o.tags )
          {
             tags.push_back( tag );
+         }
+         for( auto name : o.collaborating_authors )
+         {
+            collaborating_authors.push_back( name );
          }
          for( auto pr: o.payments_received )
          {
@@ -1407,7 +1395,8 @@ struct comment_api_obj
    string                         reach;                        ///< The reach of the post across followers, connections, friends and companions.
    string                         reply_connection;             ///< Level of connection that can reply to the comment. 
    community_name_type            community;                    ///< The name of the community to which the post is uploaded to. Null string if no community. 
-   vector< tag_name_type >        tags;                         ///< Set of string tags for sorting the post by.
+   vector< tag_name_type >        tags;                         ///< Set of tags for sorting the post by.
+   vector< account_name_type >    collaborating_authors;        ///< Set of accounts for sorting the post by.
    string                         body;                         ///< String containing text for display when the post is opened.
    string                         ipfs;                         ///< String containing a display image or video file as an IPFS file hash.
    string                         magnet;                       ///< String containing a bittorrent magnet link to a file swarm.
@@ -1457,20 +1446,15 @@ struct comment_api_obj
    uint128_t                      weight;                       ///< Used to define the comment curation reward this comment receives.
    uint128_t                      max_weight;                   ///< Used to define relative contribution of this comment to rewards.
    asset                          max_accepted_payout;          ///< USD value of the maximum payout this post will receive
-   uint32_t                       author_reward_percent;
-   uint32_t                       vote_reward_percent;
-   uint32_t                       view_reward_percent;
-   uint32_t                       share_reward_percent;
-   uint32_t                       comment_reward_percent;
-   uint32_t                       storage_reward_percent;
-   uint32_t                       moderator_reward_percent;
-   bool                           allow_replies;               ///< allows a post to receive replies.
-   bool                           allow_votes;                 ///< allows a post to receive votes.
-   bool                           allow_views;                 ///< allows a post to receive views.
-   bool                           allow_shares;                ///< allows a post to receive shares.
-   bool                           allow_curation_rewards;      ///< Allows a post to distribute curation rewards.
-   bool                           root;                        ///< True if post is a root post. 
-   bool                           deleted;                     ///< True if author selects to remove from display in all interfaces, removed from API node distribution, cannot be interacted with.
+   asset_symbol_type              reward_currency;              ///< The currency asset that the post can earn content rewards in.
+   comment_reward_curve           reward_curve;                 ///< The components of the reward curve determined at the time of creating the post.
+   bool                           allow_replies;                ///< allows a post to receive replies.
+   bool                           allow_votes;                  ///< allows a post to receive votes.
+   bool                           allow_views;                  ///< allows a post to receive views.
+   bool                           allow_shares;                 ///< allows a post to receive shares.
+   bool                           allow_curation_rewards;       ///< Allows a post to distribute curation rewards.
+   bool                           root;                         ///< True if post is a root post. 
+   bool                           deleted;                      ///< True if author selects to remove from display in all interfaces, removed from API node distribution, cannot be interacted with.
 };
 
 
@@ -2988,7 +2972,6 @@ struct asset_dynamic_data_api_obj
    asset_dynamic_data_api_obj( const chain::asset_dynamic_data_object& a ) :
       id( a.id ),
       symbol( a.symbol ),
-      issuer( a.issuer ),
       total_supply( a.get_total_supply().amount.value ),
       liquid_supply( a.liquid_supply.value ),
       staked_supply( a.staked_supply.value ),
@@ -3004,7 +2987,6 @@ struct asset_dynamic_data_api_obj
 
    asset_dynamic_data_id_type      id;
    asset_symbol_type               symbol;                    ///< Consensus enforced unique Ticker symbol string for this asset.
-   account_name_type               issuer;                    ///< Name of the account which issued this asset.
    int64_t                         total_supply;              ///< The total outstanding supply of the asset.
    int64_t                         liquid_supply;             ///< The current liquid supply of the asset.
    int64_t                         staked_supply;             ///< The current staked supply of the asset.
@@ -3075,7 +3057,6 @@ struct stablecoin_data_api_obj
    stablecoin_data_api_obj( const chain::asset_stablecoin_data_object& b ):
       id( b.id ),
       symbol( b.symbol ),
-      issuer( b.issuer ),
       backing_asset( b.backing_asset ),
       current_feed( b.current_feed ),
       current_feed_publication_time( b.current_feed_publication_time ),
@@ -3098,7 +3079,6 @@ struct stablecoin_data_api_obj
 
    asset_stablecoin_data_id_type                           id;
    asset_symbol_type                                       symbol;                                  ///< The symbol of the stablecoin that this object belongs to
-   account_name_type                                       issuer;                                  ///< The account name of the issuer 
    asset_symbol_type                                       backing_asset;                           ///< The collateral backing asset of the stablecoin
    map<account_name_type, pair<time_point,price_feed>>     feeds;                                   ///< Feeds published for this asset. 
    price_feed                                              current_feed;                            ///< Currently active price feed, median of values from the currently active feeds.
@@ -3346,7 +3326,6 @@ struct liquidity_pool_api_obj
 {
    liquidity_pool_api_obj( const chain::asset_liquidity_pool_object& p ):
       id( p.id ),
-      issuer( p.issuer ),
       symbol_a( p.symbol_a ),
       symbol_b( p.symbol_b ),
       symbol_liquid( p.symbol_liquid ),
@@ -3365,7 +3344,6 @@ struct liquidity_pool_api_obj
    liquidity_pool_api_obj(){}
 
    asset_liquidity_pool_id_type           id; 
-   account_name_type                      issuer;                        ///< Name of the account which created the liquidity pool.
    asset_symbol_type                      symbol_a;                      ///< Ticker symbol string of the asset with the lower ID. Must be core asset if one asset is core.
    asset_symbol_type                      symbol_b;                      ///< Ticker symbol string of the asset with the higher ID.
    asset_symbol_type                      symbol_liquid;                 ///< Ticker symbol of the pool's liquidity pool asset. 
@@ -3383,7 +3361,6 @@ struct credit_pool_api_obj
 {
    credit_pool_api_obj( const chain::asset_credit_pool_object& p ):
       id( p.id ),
-      issuer( p.issuer ),
       base_symbol( p.base_symbol ),
       credit_symbol( p.credit_symbol ),
       base_balance( p.base_balance ),
@@ -3395,7 +3372,6 @@ struct credit_pool_api_obj
    credit_pool_api_obj(){}
 
    asset_credit_pool_id_type         id; 
-   account_name_type                 issuer;                 ///< Name of the account which created the credit pool.
    asset_symbol_type                 base_symbol;            ///< Ticker symbol string of the base asset being lent and borrowed.
    asset_symbol_type                 credit_symbol;          ///< Ticker symbol string of the credit asset for use as collateral to borrow the base asset.
    asset                             base_balance;           ///< Balance of the base asset that is available for loans and redemptions. 
@@ -3411,7 +3387,6 @@ struct option_pool_api_obj
 {
    option_pool_api_obj( const chain::asset_option_pool_object& p ):
       id( p.id ),
-      issuer( p.issuer ),
       base_symbol( p.base_symbol ),
       quote_symbol( p.quote_symbol )
       {
@@ -3436,7 +3411,6 @@ struct option_pool_api_obj
    option_pool_api_obj(){}
 
    asset_option_pool_id_type              id; 
-   account_name_type                      issuer;            ///< Name of the account which created the option pool.
    asset_symbol_type                      base_symbol;       ///< Symbol of the base asset of the trading pair.
    asset_symbol_type                      quote_symbol;      ///< Symbol of the quote asset of the trading pair.
    vector< asset_symbol_type >            call_symbols;      ///< Symbols of the call options at currently active strikes.
@@ -3451,7 +3425,6 @@ struct prediction_pool_api_obj
 {
    prediction_pool_api_obj( const chain::asset_prediction_pool_object& p ):
       id( p.id ),
-      issuer( p.issuer ),
       prediction_symbol( p.prediction_symbol ),
       collateral_symbol( p.collateral_symbol ),
       collateral_pool( p.collateral_pool ),
@@ -3472,7 +3445,6 @@ struct prediction_pool_api_obj
    prediction_pool_api_obj(){}
 
    asset_prediction_pool_id_type                id; 
-   account_name_type                            issuer;                   ///< Name of the account which created the prediction market pool.
    asset_symbol_type                            prediction_symbol;        ///< Ticker symbol of the prediction pool primary asset.
    asset_symbol_type                            collateral_symbol;        ///< Ticker symbol of the collateral asset backing the prediction market.
    asset                                        collateral_pool;          ///< Funds accumulated by outcome asset positions for distribution to winning outcome.
@@ -3512,7 +3484,6 @@ struct distribution_api_obj
 {
    distribution_api_obj( const chain::asset_distribution_object& p ):
       id( p.id ),
-      issuer( p.issuer ),
       distribution_asset( p.distribution_asset ),
       fund_asset( p.fund_asset ),
       details( to_string( p.details ) ),
@@ -3549,7 +3520,6 @@ struct distribution_api_obj
    distribution_api_obj(){}
 
    asset_distribution_id_type                 id; 
-   account_name_type                          issuer;                                ///< Name of the account which created the distribution market pool.
    asset_symbol_type                          distribution_asset;                    ///< Asset that is generated by the distribution.
    asset_symbol_type                          fund_asset;                            ///< Ticker symbol of the asset being accepted for distribution assets.
    string                                     details;                               ///< Description of the distribution process.
@@ -3891,6 +3861,7 @@ FC_REFLECT_DERIVED( node::app::dynamic_global_property_api_obj, (node::chain::dy
 
 FC_REFLECT( node::app::median_chain_property_api_obj,
          (id)
+         (reward_curve)
          (account_creation_fee)
          (asset_coin_liquidity)
          (asset_usd_liquidity)
@@ -3911,15 +3882,6 @@ FC_REFLECT( node::app::median_chain_property_api_obj,
          (membership_base_price)
          (membership_mid_price)
          (membership_top_price)
-         (author_reward_percent)
-         (vote_reward_percent)
-         (view_reward_percent)
-         (share_reward_percent)
-         (comment_reward_percent)
-         (storage_reward_percent)
-         (moderator_reward_percent)
-         (content_reward_decay_rate)
-         (content_reward_interval)
          (vote_reserve_rate)
          (view_reserve_rate)
          (share_reserve_rate)
@@ -3943,6 +3905,8 @@ FC_REFLECT( node::app::median_chain_property_api_obj,
 
 FC_REFLECT( node::app::reward_fund_api_obj,
          (id)
+         (symbol)
+         (total_pending_reward_balance)
          (content_reward_balance)
          (validation_reward_balance) 
          (txn_stake_reward_balance) 
@@ -3958,9 +3922,6 @@ FC_REFLECT( node::app::reward_fund_api_obj,
          (premium_partners_fund_balance)
          (recent_content_claims)
          (recent_activity_claims)
-         (content_constant)
-         (content_reward_decay_rate)
-         (reward_curve)
          (last_updated)
          );
 
@@ -3975,9 +3936,11 @@ FC_REFLECT( node::app::account_api_obj,
          (id)
          (name)
          (details)
+         (url)
+         (profile_image)
+         (cover_image)
          (json)
          (json_private)
-         (url)
          (first_name)
          (last_name)
          (gender)
@@ -3985,12 +3948,18 @@ FC_REFLECT( node::app::account_api_obj,
          (email)
          (phone)
          (nationality)
+         (relationship)
+         (political_alignment)
          (pinned_permlink)
+         (interests)
          (membership)
          (secure_public_key)
          (connection_public_key)
          (friend_public_key)
          (companion_public_key)
+         (owner_auth)
+         (active_auth)
+         (posting_auth)
          (proxy)
          (proxied)
          (registrar)
@@ -4022,6 +3991,7 @@ FC_REFLECT( node::app::account_api_obj,
          (officer_vote_count)
          (executive_board_vote_count)
          (governance_subscriptions)
+         (enterprise_approval_count)
          (recurring_membership)
          (created)
          (membership_expiration)
@@ -4050,7 +4020,8 @@ FC_REFLECT( node::app::account_concise_api_obj,
          (id)
          (name)
          (details)
-         (image)
+         (profile_image)
+         (cover_image)
          (membership)
          (follower_count)
          (following_count)
@@ -4088,6 +4059,23 @@ FC_REFLECT( node::app::account_business_api_obj,
          (active)
          (created)
          (last_updated)
+         );
+
+FC_REFLECT( node::app::account_executive_vote_api_obj,
+         (id)
+         (account)
+         (business_account)
+         (executive_account)
+         (role)
+         (vote_rank)
+         );
+
+FC_REFLECT( node::app::account_officer_vote_api_obj,
+         (id)
+         (account)
+         (business_account)
+         (officer_account)
+         (vote_rank)
          );
 
 FC_REFLECT( node::app::account_permission_api_obj,
@@ -4390,6 +4378,7 @@ FC_REFLECT( node::app::comment_api_obj,
          (reply_connection)
          (community)
          (tags)
+         (collaborating_authors)
          (body)
          (ipfs)
          (magnet)
@@ -4413,6 +4402,7 @@ FC_REFLECT( node::app::comment_api_obj,
          (created)
          (active)
          (last_payout)
+         (author_reputation)
          (depth)
          (children)
          (net_votes)
@@ -4438,13 +4428,8 @@ FC_REFLECT( node::app::comment_api_obj,
          (weight)
          (max_weight)
          (max_accepted_payout)
-         (author_reward_percent)
-         (vote_reward_percent)
-         (view_reward_percent)
-         (share_reward_percent)
-         (comment_reward_percent)
-         (storage_reward_percent)
-         (moderator_reward_percent)
+         (reward_currency)
+         (reward_curve)
          (allow_replies)
          (allow_votes)
          (allow_views)
@@ -4861,6 +4846,7 @@ FC_REFLECT( node::app::product_sale_api_obj,
          (product_details)
          (product_image)
          (product_prices)
+         (wholesale_discount)
          (stock_available)
          (delivery_variants)
          (delivery_details)
@@ -4973,6 +4959,7 @@ FC_REFLECT( node::app::limit_order_api_obj,
          (sell_price)
          (interface)
          (created)
+         (last_updated)
          (expiration)
          (real_price)
          );
@@ -5100,7 +5087,6 @@ FC_REFLECT( node::app::currency_data_api_obj,
 FC_REFLECT( node::app::stablecoin_data_api_obj,
          (id)
          (symbol)
-         (issuer)
          (backing_asset)
          (feeds)
          (current_feed)
@@ -5211,7 +5197,6 @@ FC_REFLECT( node::app::unique_data_api_obj,
 
 FC_REFLECT( node::app::liquidity_pool_api_obj,
          (id)
-         (issuer)
          (symbol_a)
          (symbol_b)
          (symbol_liquid)
@@ -5225,7 +5210,6 @@ FC_REFLECT( node::app::liquidity_pool_api_obj,
 
 FC_REFLECT( node::app::credit_pool_api_obj,
          (id)
-         (issuer)
          (base_symbol)
          (credit_symbol)
          (base_balance)
@@ -5237,7 +5221,6 @@ FC_REFLECT( node::app::credit_pool_api_obj,
 
 FC_REFLECT( node::app::option_pool_api_obj,
          (id)
-         (issuer)
          (base_symbol)
          (quote_symbol)
          (call_symbols)
@@ -5248,7 +5231,6 @@ FC_REFLECT( node::app::option_pool_api_obj,
 
 FC_REFLECT( node::app::prediction_pool_api_obj,
          (id)
-         (issuer)
          (prediction_symbol)
          (collateral_symbol)
          (collateral_pool)
@@ -5272,7 +5254,6 @@ FC_REFLECT( node::app::prediction_pool_resolution_api_obj,
 
 FC_REFLECT( node::app::distribution_api_obj,
          (id)
-         (issuer)
          (distribution_asset)
          (fund_asset)
          (details)

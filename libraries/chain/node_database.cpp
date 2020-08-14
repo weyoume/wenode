@@ -210,9 +210,8 @@ void database::init_genesis()
       rfo.advocacy_reward_balance = asset( 0, SYMBOL_COIN );
       rfo.activity_reward_balance = asset( 0, SYMBOL_COIN );
       rfo.premium_partners_fund_balance = asset( 0, SYMBOL_COIN );
-      rfo.content_constant = CONTENT_CONSTANT;
       rfo.recent_content_claims = 0;
-      rfo.reward_curve = curve_id::convergent_semi_quadratic;
+      rfo.recent_activity_claims = 0;
       rfo.last_updated = now;
    });
 
@@ -243,7 +242,7 @@ void database::init_genesis()
       from_string( a.json_private, "" );
       from_string( a.details, INIT_DETAILS );
       from_string( a.url, INIT_URL );
-      from_string( a.image, INIT_IMAGE );
+      from_string( a.profile_image, INIT_IMAGE );
       a.membership = membership_tier_type::TOP_MEMBERSHIP;
       a.membership_expiration = time_point::maximum();
       a.mined = true;
@@ -299,7 +298,7 @@ void database::init_genesis()
       from_string( a.json_private, "" );
       from_string( a.details, INIT_DETAILS );
       from_string( a.url, INIT_URL );
-      from_string( a.image, INIT_IMAGE );
+      from_string( a.profile_image, INIT_IMAGE );
       a.membership = membership_tier_type::TOP_MEMBERSHIP;
       a.membership_expiration = time_point::maximum();
       a.mined = true;
@@ -460,7 +459,7 @@ void database::init_genesis()
       from_string( a.json_private, "" );
       from_string( a.details, INIT_DETAILS );
       from_string( a.url, INIT_URL );
-      from_string( a.image, INIT_IMAGE );
+      from_string( a.profile_image, INIT_IMAGE );
       a.membership = membership_tier_type::TOP_MEMBERSHIP;
       a.membership_expiration = time_point::maximum();
       a.mined = true;
@@ -516,7 +515,7 @@ void database::init_genesis()
       from_string( a.json_private, "" );
       from_string( a.details, INIT_DETAILS );
       from_string( a.url, INIT_URL );
-      from_string( a.image, INIT_IMAGE );
+      from_string( a.profile_image, INIT_IMAGE );
       a.membership = membership_tier_type::TOP_MEMBERSHIP;
       a.membership_expiration = time_point::maximum();
       a.mined = true;
@@ -571,7 +570,7 @@ void database::init_genesis()
       from_string( a.json_private, "" );
       from_string( a.details, INIT_DETAILS );
       from_string( a.url, INIT_URL );
-      from_string( a.image, INIT_IMAGE );
+      from_string( a.profile_image, INIT_IMAGE );
       a.membership = membership_tier_type::TOP_MEMBERSHIP;
       a.membership_expiration = time_point::maximum();
       a.mined = true;
@@ -624,7 +623,7 @@ void database::init_genesis()
       from_string( a.json_private, "" );
       from_string( a.details, INIT_DETAILS );
       from_string( a.url, INIT_URL );
-      from_string( a.image, INIT_IMAGE );
+      from_string( a.profile_image, INIT_IMAGE );
       a.membership = membership_tier_type::TOP_MEMBERSHIP;
       a.membership_expiration = time_point::maximum();
       a.mined = true;
@@ -673,7 +672,6 @@ void database::init_genesis()
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
    {
       a.symbol = SYMBOL_COIN;
-      a.issuer = NULL_ACCOUNT;
    });
 
    create< asset_currency_data_object >( [&]( asset_currency_data_object& a )
@@ -722,7 +720,6 @@ void database::init_genesis()
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
    {
       a.symbol = SYMBOL_EQUITY;
-      a.issuer = INIT_ACCOUNT;
    });
 
    create< asset_equity_data_object >( [&]( asset_equity_data_object& a )
@@ -767,13 +764,11 @@ void database::init_genesis()
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
    {
       a.symbol = SYMBOL_USD;
-      a.issuer = NULL_ACCOUNT;
    });
 
    create< asset_stablecoin_data_object >( [&]( asset_stablecoin_data_object& a )
    {
       a.symbol = SYMBOL_USD;
-      a.issuer = NULL_ACCOUNT;
       a.backing_asset = SYMBOL_COIN;
       a.current_feed_publication_time = now;
       a.feed_lifetime = PRICE_FEED_LIFETIME;
@@ -810,7 +805,6 @@ void database::init_genesis()
    create< asset_dynamic_data_object >([&](asset_dynamic_data_object& a) 
    {
       a.symbol = SYMBOL_CREDIT;
-      a.issuer = INIT_ACCOUNT;
    });
 
    create< asset_credit_data_object >( [&]( asset_credit_data_object& a )
@@ -869,7 +863,7 @@ void database::init_genesis()
          from_string( a.json_private, "" );
          from_string( a.details, INIT_DETAILS );
          from_string( a.url, INIT_URL );
-         from_string( a.image, INIT_IMAGE );
+         from_string( a.profile_image, INIT_IMAGE );
          a.membership = membership_tier_type::TOP_MEMBERSHIP;
          a.membership_expiration = time_point::maximum();
          a.mined = true;
@@ -1038,13 +1032,11 @@ void database::init_genesis()
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
    {
-      a.issuer = NULL_ACCOUNT;
       a.symbol = coin_equity_symbol;
    });
 
    create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
    {   
-      a.issuer = NULL_ACCOUNT;
       a.symbol_a = SYMBOL_COIN;
       a.symbol_b = SYMBOL_EQUITY;
       a.symbol_liquid = coin_equity_symbol;
@@ -1058,7 +1050,6 @@ void database::init_genesis()
 
    const asset_option_pool_object& coin_equity_option = create< asset_option_pool_object >( [&]( asset_option_pool_object& aopo )
    {   
-      aopo.issuer = NULL_ACCOUNT;
       aopo.base_symbol = SYMBOL_COIN;
       aopo.quote_symbol = SYMBOL_EQUITY;
       aopo.add_strike_prices( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) / asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ), new_dates );
@@ -1088,13 +1079,11 @@ void database::init_genesis()
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
    {
-      a.issuer = NULL_ACCOUNT;
       a.symbol = coin_usd_symbol;
    });
 
    create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
    {   
-      a.issuer = NULL_ACCOUNT;
       a.symbol_a = SYMBOL_COIN;
       a.symbol_b = SYMBOL_USD;
       a.symbol_liquid = coin_usd_symbol;
@@ -1108,7 +1097,6 @@ void database::init_genesis()
 
    const asset_option_pool_object& coin_usd_option = create< asset_option_pool_object >( [&]( asset_option_pool_object& aopo )
    {   
-      aopo.issuer = NULL_ACCOUNT;
       aopo.base_symbol = SYMBOL_COIN;
       aopo.quote_symbol = SYMBOL_USD;
       aopo.add_strike_prices( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) / asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), new_dates );
@@ -1138,13 +1126,11 @@ void database::init_genesis()
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
    {
-      a.issuer = NULL_ACCOUNT;
       a.symbol = coin_credit_symbol;
    });
 
    create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
    {   
-      a.issuer = NULL_ACCOUNT;
       a.symbol_a = SYMBOL_COIN;
       a.symbol_b = SYMBOL_CREDIT;
       a.symbol_liquid = coin_credit_symbol;
@@ -1158,7 +1144,6 @@ void database::init_genesis()
 
    const asset_option_pool_object& coin_credit_option = create< asset_option_pool_object >( [&]( asset_option_pool_object& aopo )
    {   
-      aopo.issuer = NULL_ACCOUNT;
       aopo.base_symbol = SYMBOL_COIN;
       aopo.quote_symbol = SYMBOL_CREDIT;
       aopo.add_strike_prices( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) / asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ), new_dates );
@@ -1188,13 +1173,11 @@ void database::init_genesis()
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
    {
-      a.issuer = NULL_ACCOUNT;
       a.symbol = equity_usd_symbol;
    });
       
    create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
    {   
-      a.issuer = NULL_ACCOUNT;
       a.symbol_a = SYMBOL_EQUITY;
       a.symbol_b = SYMBOL_USD;
       a.symbol_liquid = equity_usd_symbol;
@@ -1208,7 +1191,6 @@ void database::init_genesis()
 
    const asset_option_pool_object& equity_usd_option = create< asset_option_pool_object >( [&]( asset_option_pool_object& aopo )
    {   
-      aopo.issuer = NULL_ACCOUNT;
       aopo.base_symbol = SYMBOL_EQUITY;
       aopo.quote_symbol = SYMBOL_USD;
       aopo.add_strike_prices( asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) / asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), new_dates );
@@ -1238,13 +1220,11 @@ void database::init_genesis()
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
    {
-      a.issuer = NULL_ACCOUNT;
       a.symbol = equity_credit_symbol;
    });
       
    create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
    {   
-      a.issuer = NULL_ACCOUNT;
       a.symbol_a = SYMBOL_EQUITY;
       a.symbol_b = SYMBOL_CREDIT;
       a.symbol_liquid = equity_credit_symbol;
@@ -1258,7 +1238,6 @@ void database::init_genesis()
 
    const asset_option_pool_object& equity_credit_option = create< asset_option_pool_object >( [&]( asset_option_pool_object& aopo )
    {   
-      aopo.issuer = NULL_ACCOUNT;
       aopo.base_symbol = SYMBOL_EQUITY;
       aopo.quote_symbol = SYMBOL_CREDIT;
       aopo.add_strike_prices( asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) / asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ), new_dates );
@@ -1288,13 +1267,11 @@ void database::init_genesis()
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
    {
-      a.issuer = NULL_ACCOUNT;
       a.symbol = usd_credit_symbol;
    });
 
    create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
    {   
-      a.issuer = NULL_ACCOUNT;
       a.symbol_a = SYMBOL_USD;
       a.symbol_b = SYMBOL_CREDIT;
       a.symbol_liquid = usd_credit_symbol;
@@ -1308,7 +1285,6 @@ void database::init_genesis()
 
    const asset_option_pool_object& usd_credit_option = create< asset_option_pool_object >( [&]( asset_option_pool_object& aopo )
    {   
-      aopo.issuer = NULL_ACCOUNT;
       aopo.base_symbol = SYMBOL_USD;
       aopo.quote_symbol = SYMBOL_CREDIT;
       aopo.add_strike_prices( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) / asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ), new_dates );
@@ -1320,8 +1296,6 @@ void database::init_genesis()
    {
       option_strikes.insert( s );
    }
-
-   // ilog( "Creating Option assets for: ${s}",("s",option_strikes));
 
    adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
    adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
@@ -1364,7 +1338,6 @@ void database::init_genesis()
 
       create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
       {
-         a.issuer = NULL_ACCOUNT;
          a.symbol = s;
       });
    }
@@ -1382,13 +1355,11 @@ void database::init_genesis()
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
    {
-      a.issuer = NULL_ACCOUNT;
       a.symbol = credit_asset_coin_symbol;
    });
 
    create< asset_credit_pool_object >( [&]( asset_credit_pool_object& a )
    {
-      a.issuer = NULL_ACCOUNT;
       a.base_symbol = SYMBOL_COIN;
       a.credit_symbol = credit_asset_coin_symbol;
       a.base_balance = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -1412,13 +1383,11 @@ void database::init_genesis()
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
    {
-      a.issuer = NULL_ACCOUNT;
       a.symbol = credit_asset_equity_symbol;
    });
 
    create< asset_credit_pool_object >( [&]( asset_credit_pool_object& a )
    {
-      a.issuer = NULL_ACCOUNT;
       a.base_symbol = SYMBOL_EQUITY;
       a.credit_symbol = credit_asset_equity_symbol;
       a.base_balance = asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY );
@@ -1442,13 +1411,11 @@ void database::init_genesis()
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
    {
-      a.issuer = NULL_ACCOUNT;
       a.symbol = credit_asset_usd_symbol;
    });
 
    create< asset_credit_pool_object >( [&]( asset_credit_pool_object& a )
    {
-      a.issuer = NULL_ACCOUNT;
       a.base_symbol = SYMBOL_USD;
       a.credit_symbol = credit_asset_usd_symbol;
       a.base_balance = asset( BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -1472,13 +1439,11 @@ void database::init_genesis()
 
    create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
    {
-      a.issuer = NULL_ACCOUNT;
       a.symbol = credit_asset_credit_symbol;
    });
 
    create< asset_credit_pool_object >( [&]( asset_credit_pool_object& a )
    {
-      a.issuer = NULL_ACCOUNT;
       a.base_symbol = SYMBOL_CREDIT;
       a.credit_symbol = credit_asset_credit_symbol;
       a.base_balance = asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT );
@@ -2897,12 +2862,12 @@ const asset_distribution_object* database::find_asset_distribution( const asset_
 
 const asset_distribution_balance_object& database::get_asset_distribution_balance( const account_name_type& name, const asset_symbol_type& symbol )const
 { try {
-   return get< asset_distribution_balance_object, by_account >( boost::make_tuple( name, symbol ) );
+   return get< asset_distribution_balance_object, by_account_distribution >( boost::make_tuple( name, symbol ) );
 } FC_CAPTURE_AND_RETHROW( (name)(symbol) ) }
 
 const asset_distribution_balance_object* database::find_asset_distribution_balance( const account_name_type& name, const asset_symbol_type& symbol )const
 {
-   return find< asset_distribution_balance_object, by_account >( boost::make_tuple( name, symbol ) );
+   return find< asset_distribution_balance_object, by_account_distribution >( boost::make_tuple( name, symbol ) );
 }
 
 const savings_withdraw_object& database::get_savings_withdraw( const account_name_type& owner, const shared_string& request_id )const
@@ -3030,21 +2995,16 @@ asset database::USD_to_asset( const asset& a ) const
  * Returns the asset value of the comment reward
  * from a specified comment reward context.
  */
-asset database::get_comment_reward( const util::comment_reward_context& ctx ) const
+asset database::get_comment_reward( const comment_object& c, const util::comment_reward_context& ctx ) const
 { try {
-   FC_ASSERT( ctx.reward.value > 0 );
+   FC_ASSERT( c.net_reward.value > 0 );
    FC_ASSERT( ctx.recent_content_claims > 0 );
    FC_ASSERT( ctx.total_reward_fund.amount.value > 0 );
 
    uint256_t rf = util::to256( uint128_t( ctx.total_reward_fund.amount.value ) );
    uint256_t total_claims = util::to256( ctx.recent_content_claims );
-
-   uint256_t claim = util::to256( util::evaluate_reward_curve( 
-      uint128_t( ctx.reward.value ),
-      ctx.cashouts_received,
-      ctx.reward_curve,
-      ctx.decay_rate,
-      ctx.content_constant ) );
+   uint128_t reward_curve = util::evaluate_reward_curve( c );
+   uint256_t claim = util::to256( reward_curve );
 
    uint256_t payout_uint256 = ( rf * claim ) / total_claims;
    FC_ASSERT( payout_uint256 <= util::to256( uint128_t( std::numeric_limits<int64_t>::max() ) ) );
@@ -3056,20 +3016,17 @@ asset database::get_comment_reward( const util::comment_reward_context& ctx ) co
       payout = 0;
    }
 
-   asset max_reward_coin = ctx.max_reward * ctx.current_COIN_USD_price;
+   asset max_reward_coin = c.max_accepted_payout * ctx.current_COIN_USD_price;
    payout = std::min( payout, share_type( max_reward_coin.amount.value ) );
    reward_value = asset( payout, ctx.total_reward_fund.symbol );
 
    FC_ASSERT( reward_value.amount <= ctx.total_reward_fund.amount,
       "Reward Value: ${v} is greater than total reward fund: ${f}",
-      ("v",reward_value)("f",ctx.total_reward_fund));
-
-   ilog( "Getting Comment Reward: ${r} \n Context: ${ctx} \n",
-      ("r",reward_value)("ctx",ctx));
+      ("v",reward_value.to_string())("f",ctx.total_reward_fund.to_string()));
 
    return reward_value;
 
-} FC_CAPTURE_AND_RETHROW( (ctx) ) }
+} FC_CAPTURE_AND_RETHROW( (c)(ctx) ) }
 
 
 const hardfork_property_object& database::get_hardfork_property_object()const
@@ -3287,8 +3244,6 @@ bool database::_push_block( const signed_block& new_block )
       _fork_db.remove(new_block.id());
       throw;
    }
-
-   // ilog( "Pushed Block: ${b}", ("b", new_block.id() ) );
 
    return false;
 } FC_CAPTURE_AND_RETHROW( ( new_block ) ) }
@@ -3588,12 +3543,8 @@ account_name_type database::get_scheduled_producer( uint64_t slot_num )const
 {
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    const producer_schedule_object& pso = get_producer_schedule();
-
    uint64_t current_aslot = props.current_aslot + slot_num;
    account_name_type scheduled_producer = pso.current_shuffled_producers[ current_aslot % pso.num_scheduled_producers ];
-
-   // ilog( "Get Scheduled Producer: ASlot: ${s} Producer: ${p}", ("s", current_aslot)("p", scheduled_producer ) );
-
    return scheduled_producer;
 }
 
@@ -3621,9 +3572,6 @@ fc::time_point database::get_slot_time( uint64_t slot_num )const
    int64_t head_block_abs_slot = dgpo.time.time_since_epoch().count() / interval;
    fc::time_point head_slot_time = fc::time_point( fc::microseconds( head_block_abs_slot * interval ) );
    fc::time_point slot_time = head_slot_time + fc::microseconds( slot_num * interval );
-
-   // ilog( "Get Slot Time: Slot: ${s} Time: ${t}", ("s", slot_num)("t", slot_time ) );
-
    return slot_time;
 }
 
@@ -3964,7 +3912,7 @@ void database::update_business_account( const account_business_object& business 
       b.executive_board = exec_set;
    });
 
-   // ilog( "Updated Business Account: ${b}",("b",business ) );
+   ilog( "Updated Business Account: ${b}",("b",business ) );
 
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -3977,8 +3925,6 @@ void database::update_business_account_set()
 { try {
    if( (head_block_num() % SET_UPDATE_BLOCK_INTERVAL) != 0 )    // Runs once per day
       return;
-
-   // ilog( "Update business account set" );
 
    const auto& business_idx = get_index< account_business_index >().indices().get< by_account >();
    auto business_itr = business_idx.begin();
@@ -4010,6 +3956,8 @@ void database::process_stablecoins()
    while( stablecoin_itr != stablecoin_idx.end() )
    {
       const asset_stablecoin_data_object& stablecoin = *stablecoin_itr;
+      ++stablecoin_itr;
+
       const asset_object& asset_obj = get_asset( stablecoin.symbol );
       uint32_t flags = asset_obj.flags;
       uint64_t feed_lifetime = stablecoin.feed_lifetime.to_seconds();
@@ -4021,7 +3969,7 @@ void database::process_stablecoins()
 
       modify( stablecoin, [&]( asset_stablecoin_data_object& abdo )
       {
-         abdo.force_settled_volume = 0; // Reset all BitAsset force settlement volumes to zero
+         abdo.force_settled_volume = 0;        // Reset all BitAsset force settlement volumes to zero
 
          if ( ( flags & int( asset_issuer_permission_flags::producer_fed_asset ) ) &&
               feed_lifetime < head_epoch_seconds )            // if smartcoin && check overflow
@@ -4040,7 +3988,6 @@ void database::process_stablecoins()
             }
          }
       });
-      ++stablecoin_itr;
    }
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -4227,25 +4174,28 @@ void database::update_proof_of_work_target()
 
    if( recent_pow > 0 )
    {
-      ilog( "Updating Proof of Work Difficulty:" );
-      ilog( "Recent POW:  ${r}",("r",recent_pow));
+      ilog( "=======================================================" );
+      ilog( "========== Updating Proof of Work Difficulty ==========" );
+      ilog( "=======================================================" );
+
+      ilog( "   --> Recent POW:     ${r}",("r",recent_pow));
       uint128_t base = uint128_t::max_value();
-      ilog( "Base:        ${b}",("b",base));
+      ilog( "   --> Base:           ${b}",("b",base));
       uint128_t dif = std::max( init.to_uint128(), uint128_t( 10 ));
-      ilog( "Dif:         ${b}",("b",dif));
+      ilog( "   --> Dif:            ${b}",("b",dif));
       uint128_t coefficient = std::max( base / dif, uint128_t( 10 ));
-      ilog( "Coefficient: ${b}",("b",coefficient));
+      ilog( "   --> Coefficient:    ${b}",("b",coefficient));
       uint128_t target_pow = ( BLOCKCHAIN_PRECISION.value * median_props.pow_decay_time.to_seconds() ) / median_props.pow_target_time.to_seconds();
-      ilog( "Target POW:  ${b}",("b",target_pow));
+      ilog( "   --> Target POW:     ${b}",("b",target_pow));
       uint128_t mult = std::max( coefficient * recent_pow, target_pow );
-      ilog( "Mult:        ${b}",("b",mult));
+      ilog( "   --> Mult:           ${b}",("b",mult));
       uint128_t div = std::max( mult / target_pow, uint128_t( 10 ));
-      ilog( "Div:         ${b}",("b",div));
+      ilog( "   --> Div:            ${b}",("b",div));
       uint128_t target = base / div;
-      ilog( "Target:      ${b}",("b",target));
+      ilog( "   --> Target:         ${b}",("b",target));
       x11 pow_target_difficulty = x11( target );
-      ilog( "Init:        ${i}",("i",init));
-      ilog( "Final:       ${d}",("d",pow_target_difficulty));
+      ilog( "   --> Init:           ${i}",("i",init));
+      ilog( "   --> Final:          ${d}",("d",pow_target_difficulty));
 
       modify( pso, [&]( producer_schedule_object& pso )
       {
@@ -5196,8 +5146,8 @@ void database::process_credit_updates()
                   total_interest += interest;
                }
 
-               ilog( "Credit Loan Updated: ${i} Interest paid: \n ${l} \n",
-                  ("i",interest)("l",loan));
+               ilog( "Credit Loan Interest paid: ${i} Total Interest: ${t} Last Interest Rate: ${r}",
+                  ("i",interest.to_string())("t",loan.interest.to_string())("r",fc::to_string( loan.real_interest_rate() ).substr(0,5) + "%") );
 
                if( loan.loan_price() < loan.liquidation_price )    // If loan falls below liquidation price
                {
@@ -5206,10 +5156,6 @@ void database::process_credit_updates()
             }
          }
       }
-
-      asset interest_fees = ( total_interest * INTEREST_FEE_PERCENT ) / PERCENT_100;
-      total_interest -= interest_fees;
-      pay_network_fees( interest_fees );     // Pays Fee to network revenue from sum of all interest earned by the credit pool
 
       modify( credit_pool, [&]( asset_credit_pool_object& c )
       {
@@ -5265,7 +5211,7 @@ void database::process_product_auctions()
 
    while( auction_itr != auction_idx.end() &&
       !auction_itr->completed &&
-      auction_itr->completion_time >= now )
+      auction_itr->completion_time <= now )
    {
       const product_auction_sale_object& auction = *auction_itr;
       ilog( "Processing Product Auction - Account: ${a} - ID: ${id} - Type: ${t} - Bid Count: ${c}",
@@ -6288,8 +6234,6 @@ void database::update_transaction_stake( const producer_object& signing_producer
       p.last_txn_stake_weight_update = now;
    });
 
-   // ilog( "Producer: ${p} Updated transaction stake: ${t}", 
-      // ( "t", transaction_stake )( "p", signing_producer.owner ) );
 } FC_CAPTURE_AND_RETHROW() }
 
 void database::apply_operation(const operation& op)
@@ -6417,8 +6361,6 @@ void database::update_signing_producer( const producer_object& signing_producer,
       p.last_confirmed_block_num = new_block.block_num();
       p.total_blocks++;
    });
-
-   // ilog( "Update signing producer: ${p}", ("p", signing_producer.owner ) );
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -6517,8 +6459,6 @@ void database::update_last_irreversible_block()
    }
 
    _fork_db.set_max_size( props.head_block_number - commit_height + 1 );
-
-   // ilog( "Update last irreversible block: ${b}", ("b",commit_height) );
 
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -6785,18 +6725,50 @@ asset database::pay_trading_fees( const account_object& taker, const asset& rece
    const account_name_type& maker_int, const account_name_type& taker_int )
 { try {
    asset total_fees = ( receives * TRADING_FEE_PERCENT ) / PERCENT_100;
-   const account_object& m_interface = get_account( maker_int );
-   const account_object& t_interface = get_account( taker_int );
-   
+   asset network_fee = ( total_fees * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
    asset maker_interface_share = ( total_fees * MAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
    asset taker_interface_share = ( total_fees * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
-   asset network_fee = ( total_fees * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
+   asset maker_paid = asset( 0, receives.symbol );
+   asset taker_paid = asset( 0, receives.symbol );
 
-   asset maker_paid = pay_fee_share( m_interface, maker_interface_share, true );
-   asset taker_paid = pay_fee_share( t_interface, taker_interface_share, true );
+   if( maker_int.size() )
+   {
+      const account_object& m_int_acc = get_account( maker_int );
+      const interface_object& m_interface = get_interface( maker_int );
+
+      FC_ASSERT( m_int_acc.active && m_interface.active, 
+         "Maker Interface: ${i} must be active",
+         ("i",maker_int) );
+
+      maker_paid = pay_fee_share( m_int_acc, maker_interface_share, true );
+   }
+   else
+   {
+      network_fee += maker_interface_share;
+   }
+   
+   if( taker_int.size() )
+   {
+      const account_object& t_int_acc = get_account( taker_int );
+      const interface_object& t_interface = get_interface( taker_int );
+
+      FC_ASSERT( t_int_acc.active && t_interface.active, 
+         "Taker Interface: ${i} must be active",
+         ("i",taker_int) );
+
+      taker_paid = pay_fee_share( t_int_acc, taker_interface_share, true );
+   }
+   else
+   {
+      network_fee += taker_interface_share;
+   }
+   
    pay_network_fees( taker, network_fee );
 
    asset total_paid = network_fee + maker_paid + taker_paid;
+
+   ilog( "Account: ${a} paid trading fees: ${p}",
+      ("a",taker.name)("p",total_paid.to_string()));
    return total_paid;
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -6822,6 +6794,8 @@ asset database::pay_advertising_delivery( const account_object& provider, const 
    asset fees_paid = network_fee + demand_paid + audience_paid;
 
    adjust_liquid_balance( provider.name, value - fees_paid );
+   ilog( "Account: ${a} paid advertising delivery: ${v}",
+      ("a",provider.name)("v",value.to_string()));
 
    return value;
 } FC_CAPTURE_AND_RETHROW() }
@@ -7190,7 +7164,7 @@ void database::clear_expired_operations()
          if( mia_stablecoin.has_settlement() )
          {
             ilog( "Canceling a force settlement because of black swan" );
-            cancel_settle_order( order, true );
+            cancel_settle_order( order );
             continue;
          }
 
@@ -7212,7 +7186,8 @@ void database::clear_expired_operations()
          {
             ilog("Canceling a force settlement in ${asset} because settlement price is null",
                  ("asset", mia_object.symbol));
-            cancel_settle_order(order, true);
+
+            cancel_settle_order( order );
             continue;
          }
          
@@ -7261,7 +7236,7 @@ void database::clear_expired_operations()
             if( order.balance.amount == 0 )
             {
                wlog( "0 settlement detected" );
-               cancel_settle_order( order, true );
+               cancel_settle_order( order );
                break;
             }
             asset new_settled = match(*itr, order, settlement_price, max_settlement, settlement_fill_price);

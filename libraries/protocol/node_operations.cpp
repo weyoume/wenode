@@ -77,13 +77,23 @@ namespace node { namespace protocol {
          validate_url( url );
       }
       
-      if( image.size() > 0 )
+      if( profile_image.size() > 0 )
       {
-         FC_ASSERT( image.size() < MAX_STRING_LENGTH,
+         FC_ASSERT( profile_image.size() < MAX_STRING_LENGTH,
          "Image is too long." );
-         FC_ASSERT( fc::is_utf8( image ), 
+         FC_ASSERT( fc::is_utf8( profile_image ), 
             "Image is not formatted in UTF8." );
-         FC_ASSERT( image.size() == 46 && image[0] == 'Q' && image[1] == 'm',
+         FC_ASSERT( profile_image.size() == 46 && profile_image[0] == 'Q' && profile_image[1] == 'm',
+            "Image rejected: IPFS string should be 46 characters long and begin with 'Qm'." );
+      }
+
+      if( cover_image.size() > 0 )
+      {
+         FC_ASSERT( cover_image.size() < MAX_STRING_LENGTH,
+         "Image is too long." );
+         FC_ASSERT( fc::is_utf8( cover_image ), 
+            "Image is not formatted in UTF8." );
+         FC_ASSERT( cover_image.size() == 46 && cover_image[0] == 'Q' && cover_image[1] == 'm',
             "Image rejected: IPFS string should be 46 characters long and begin with 'Qm'." );
       }
 
@@ -155,6 +165,29 @@ namespace node { namespace protocol {
             "Nationality is too long." );
          FC_ASSERT( fc::is_utf8( nationality ), 
             "Nationality is not formatted in UTF8." );
+      }
+
+      if( relationship.size() > 0 )
+      { 
+         FC_ASSERT( relationship.size() < MAX_STRING_LENGTH,
+            "Relationship is too long." );
+         FC_ASSERT( fc::is_utf8( relationship ), 
+            "Relationship is not formatted in UTF8." );
+      }
+
+      if( political_alignment.size() > 0 )
+      { 
+         FC_ASSERT( political_alignment.size() < MAX_STRING_LENGTH,
+            "Political Alignment is too long." );
+         FC_ASSERT( fc::is_utf8( relationship ), 
+            "Political Alignment is not formatted in UTF8." );
+      }
+
+      FC_ASSERT( interests.size() <= 10,
+         "Can include up to 10 interests." );
+      for( auto i : interests )
+      {
+         validate_tag_name( i );
       }
 
       FC_ASSERT( secure_public_key.size() < MAX_URL_LENGTH,
@@ -210,13 +243,23 @@ namespace node { namespace protocol {
          validate_url( url );
       }
       
-      if( image.size() > 0 )
+      if( profile_image.size() > 0 )
       {
-         FC_ASSERT( image.size() < MAX_STRING_LENGTH,
-         "Image is too long." );
-         FC_ASSERT( fc::is_utf8( image ), 
+         FC_ASSERT( profile_image.size() < MAX_STRING_LENGTH,
+            "Image is too long." );
+         FC_ASSERT( fc::is_utf8( profile_image ), 
             "Image is not formatted in UTF8." );
-         FC_ASSERT( image.size() == 46 && image[0] == 'Q' && image[1] == 'm',
+         FC_ASSERT( profile_image.size() == 46 && profile_image[0] == 'Q' && profile_image[1] == 'm',
+            "Image rejected: IPFS string should be 46 characters long and begin with 'Qm'." );
+      }
+
+      if( cover_image.size() > 0 )
+      {
+         FC_ASSERT( cover_image.size() < MAX_STRING_LENGTH,
+            "Image is too long." );
+         FC_ASSERT( fc::is_utf8( cover_image ), 
+            "Image is not formatted in UTF8." );
+         FC_ASSERT( cover_image.size() == 46 && cover_image[0] == 'Q' && cover_image[1] == 'm',
             "Image rejected: IPFS string should be 46 characters long and begin with 'Qm'." );
       }
 
@@ -288,6 +331,29 @@ namespace node { namespace protocol {
             "Nationality is too long." );
          FC_ASSERT( fc::is_utf8( nationality ), 
             "Nationality is not formatted in UTF8." );
+      }
+
+      if( relationship.size() > 0 )
+      { 
+         FC_ASSERT( relationship.size() < MAX_STRING_LENGTH,
+            "Relationship is too long." );
+         FC_ASSERT( fc::is_utf8( relationship ), 
+            "Relationship is not formatted in UTF8." );
+      }
+
+      if( political_alignment.size() > 0 )
+      { 
+         FC_ASSERT( political_alignment.size() < MAX_STRING_LENGTH,
+            "Political Alignment is too long." );
+         FC_ASSERT( fc::is_utf8( relationship ), 
+            "Political Alignment is not formatted in UTF8." );
+      }
+      
+      FC_ASSERT( interests.size() <= 10,
+         "Can include up to 10 interests." );
+      for( auto i : interests )
+      {
+         validate_tag_name( i );
       }
 
       if( secure_public_key.size() )
@@ -958,6 +1024,42 @@ namespace node { namespace protocol {
    //=====================================//
 
 
+   void comment_reward_curve::validate()const
+   {
+      FC_ASSERT( constant_factor >= 0 && vote_reward_percent <= CONTENT_CONSTANT * uint128_t(1000),
+         "Constant factor must be between 0 and CONTENT_CONSTANT * 1000." );
+
+      FC_ASSERT( sqrt_percent <= PERCENT_100,
+         "Square Root percent must be between 0 and PERCENT_100." );
+      FC_ASSERT( linear_percent <= PERCENT_100,
+         "Linear percent must be between 0 and PERCENT_100." );
+      FC_ASSERT( semi_quadratic_percent <= PERCENT_100,
+         "Semi-Quadratic percent must be between 0 and PERCENT_100." );
+      FC_ASSERT( quadratic_percent <= PERCENT_100,
+         "Quadratic percent must be between 0 and PERCENT_100." );
+      FC_ASSERT( ( sqrt_percent + linear_percent + semi_quadratic_percent + quadratic_percent ) >= PERCENT_100,
+         "Sum of reward curve percentages must be at least PERCENT_100." );
+
+      FC_ASSERT( reward_interval_amount >= 1 && reward_interval_amount <= 1000,
+         "Content reward interval amount must be between 1 and 1000." );
+      FC_ASSERT( reward_interval_hours >= 1 && reward_interval_hours <= 1000,
+         "Content reward interval hours be between 1 and 1000." );
+
+      FC_ASSERT( vote_reward_percent >= PERCENT_10_OF_PERCENT_1 && vote_reward_percent <= 20 * PERCENT_1,
+         "Vote reward percent must be between PERCENT_10_OF_PERCENT_1 and 20 * PERCENT_1." );
+      FC_ASSERT( view_reward_percent >= PERCENT_10_OF_PERCENT_1 && view_reward_percent <= 20 * PERCENT_1,
+         "View reward percent must be between PERCENT_10_OF_PERCENT_1 and 20 * PERCENT_1." );
+      FC_ASSERT( share_reward_percent >= PERCENT_10_OF_PERCENT_1 && share_reward_percent <= 20 * PERCENT_1,
+         "Share reward percent must be between PERCENT_10_OF_PERCENT_1 and 20 * PERCENT_1." );
+      FC_ASSERT( comment_reward_percent >= PERCENT_10_OF_PERCENT_1 && comment_reward_percent <= 20 * PERCENT_1,
+         "Comment reward percent must be between PERCENT_10_OF_PERCENT_1 and 20 * PERCENT_1." );
+      FC_ASSERT( storage_reward_percent >= PERCENT_10_OF_PERCENT_1 && storage_reward_percent <= 10 * PERCENT_1,
+         "Storage reward percent must be between PERCENT_10_OF_PERCENT_1 and 10 * PERCENT_1." );
+      FC_ASSERT( moderator_reward_percent >= PERCENT_10_OF_PERCENT_1 && moderator_reward_percent <= 10 * PERCENT_1,
+         "Moderator reward percent must be between PERCENT_10_OF_PERCENT_1 and 10 * PERCENT_1." );
+   }
+
+
    void comment_options::validate()const
    {
       FC_ASSERT( percent_liquid <= PERCENT_100, 
@@ -982,20 +1084,22 @@ namespace node { namespace protocol {
       FC_ASSERT( beneficiaries.size() < 128, 
          "Cannot specify more than 127 beneficiaries." ); // Require size serialization fits in one byte.
 
-      for( size_t i = 0; i < beneficiaries.size(); i++ )
+      for( auto b : beneficiaries )
       {
-         validate_account_name( beneficiaries[i].account );
-         FC_ASSERT( beneficiaries[i].weight <= PERCENT_100, 
+         validate_account_name( b.account );
+         FC_ASSERT( b.weight <= PERCENT_100, 
             "Cannot allocate more than 100% of rewards to one account" );
-         sum += beneficiaries[i].weight;
+         sum += b.weight;
          FC_ASSERT( sum <= PERCENT_100, 
             "Cannot allocate more than 100% of rewards to a comment" );
       }
 
-      for( size_t i = 1; i < beneficiaries.size(); i++ )
+      beneficiary_route_type prev;
+      for( auto b : beneficiaries )
       {
-         FC_ASSERT( beneficiaries[i - 1] < beneficiaries[i], 
-            "Benficiaries must be specified in sorted order (account ascending)" );
+         FC_ASSERT( prev < b,
+            "Benficiaries must be specified in sorted order (account ascending) with no duplicate names" );
+         prev = b;
       }
    }
 
@@ -1059,8 +1163,6 @@ namespace node { namespace protocol {
 
       for( auto t : tags )
       {
-         FC_ASSERT( t.size() < MAX_URL_LENGTH,
-            "Tag: ${t} is too long.",("t", t) );
          validate_tag_name( t );
       }
 
@@ -2501,7 +2603,7 @@ namespace node { namespace protocol {
 
       for( auto a : wholesale_discount )
       {
-         FC_ASSERT( a.second >= 0 && a.second <= PERCENT_100,
+         FC_ASSERT( a.second <= PERCENT_100,
             "Wholesale Discount must be a percentage between 0 and PERCENT_100." );
       }
 
@@ -3307,10 +3409,6 @@ namespace node { namespace protocol {
 
       FC_ASSERT( !( issuer_permissions & ~ASSET_ISSUER_PERMISSION_MASK ) );
 
-      // The global_settle flag may never be set (this is a permission only)
-
-      FC_ASSERT( !( flags & int( asset_issuer_permission_flags::global_settle ) ) );
-
       if( !whitelist_authorities.empty() || !blacklist_authorities.empty() )
       {
          FC_ASSERT( flags & int( asset_issuer_permission_flags::balance_whitelist ) );
@@ -3495,12 +3593,21 @@ namespace node { namespace protocol {
          "Symbol ${symbol} is not a valid symbol", ("symbol", usd_liquidity.symbol) );
       FC_ASSERT( is_valid_symbol( credit_liquidity.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", credit_liquidity.symbol) );
-      FC_ASSERT( credit_liquidity.amount > 0,
-         "Credit Liquidity must be greater than zero." );
+      
       FC_ASSERT( coin_liquidity.symbol == SYMBOL_COIN, 
          "Asset must have initial liquidity in the COIN asset." );
       FC_ASSERT( usd_liquidity.symbol == SYMBOL_USD, 
          "Asset must have initial liquidity in the USD asset." );
+      FC_ASSERT( credit_liquidity.symbol == symbol,
+         "Credit Liquidity must be at least zero." );
+
+      FC_ASSERT( coin_liquidity.amount >= 0,
+         "Coin Liquidity must be at least zero." );
+      FC_ASSERT( usd_liquidity.amount >= 0,
+         "USD Liquidity must be at least zero." );
+      FC_ASSERT( credit_liquidity.amount >= 0,
+         "Credit Liquidity must be at least zero." );
+      
       FC_ASSERT( asset_type.size() < MAX_URL_LENGTH,
          "Asset Type is invalid." );
       FC_ASSERT( fc::is_utf8( asset_type ),
@@ -3605,7 +3712,7 @@ namespace node { namespace protocol {
          validate_account_name( a.name );
          FC_ASSERT( a.units > 0, 
             "Asset unit amount must be greater than 0." );
-         FC_ASSERT( a.vesting_time > GENESIS_TIME, 
+         FC_ASSERT( a.vesting_time >= GENESIS_TIME, 
             "Vesting time must be after genesis time." );
       }
 
@@ -3703,7 +3810,7 @@ namespace node { namespace protocol {
       FC_ASSERT( is_valid_symbol( asset_to_settle ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", asset_to_settle ) );
       FC_ASSERT( asset_to_settle == settle_price.base.symbol,
-         "Asset to settle must be the same asset as base fo settlement price." );
+         "Asset to settle must be the same asset as base of settlement price." );
    }
 
    void asset_collateral_bid_operation::validate()const
@@ -3725,6 +3832,109 @@ namespace node { namespace protocol {
    //=====================================//
    // === Block Production Operations === //
    //=====================================//
+
+
+   void chain_properties::validate() const
+   {
+      FC_ASSERT( account_creation_fee.symbol == SYMBOL_COIN,
+            "Acccount creation fee must be in the core asset." );
+      FC_ASSERT( account_creation_fee >= MIN_ACCOUNT_CREATION_FEE,
+         "Account creation fee must be at least 1 Unit of core asset." );
+      FC_ASSERT( asset_coin_liquidity.symbol == SYMBOL_COIN,
+         "Asset COIN liquidity must be in the core asset." );
+      FC_ASSERT( asset_coin_liquidity >= MIN_ASSET_COIN_LIQUIDITY,
+         "Asset COIN liquidity must be at least 10 units of COIN." );
+      FC_ASSERT( asset_usd_liquidity.symbol == SYMBOL_USD,
+         "Asset USD liquidity must be in the USD asset." );
+      FC_ASSERT( asset_usd_liquidity >= MIN_ASSET_USD_LIQUIDITY,
+         "Asset USD liquidity must be at least 10 units of USD." );
+      FC_ASSERT( maximum_block_size >= MIN_BLOCK_SIZE_LIMIT,
+         "Maximum blocksize must be greater than minimum limit requirement." );
+      FC_ASSERT( pow_target_time >= fc::minutes(1) && pow_target_time <= fc::hours(1),
+         "POW target time must be between 1 minute and 1 hour." );
+      FC_ASSERT( pow_decay_time >= fc::days(1) && pow_decay_time <= fc::days(30),
+         "POW Decay time must be between 1 and 30 days." );
+      FC_ASSERT( txn_stake_decay_time >= fc::days(1) && txn_stake_decay_time <= fc::days(30),
+         "Transaction Stake Decay time must be between 1 and 30 days." );
+      FC_ASSERT( escrow_bond_percent >= 0 && escrow_bond_percent <= PERCENT_100,
+         "Credit interest rate must be between 0 and PERCENT_100." );
+      FC_ASSERT( credit_interest_rate >= 0 && credit_interest_rate <= PERCENT_100,
+         "Credit interest rate must be between 0 and PERCENT_100." );
+      FC_ASSERT( credit_open_ratio >= PERCENT_100 && credit_open_ratio <= PERCENT_100 * 2,
+         "Credit interest rate must be PERCENT_100 and 2 * PERCENT_100." );
+      FC_ASSERT( credit_liquidation_ratio >= PERCENT_100 && credit_liquidation_ratio <= PERCENT_100 * 2,
+         "Credit interest rate must be PERCENT_100 and 2 * PERCENT_100." );
+      FC_ASSERT( credit_min_interest >= 0 && credit_min_interest <= PERCENT_100,
+         "Credit min interest rate must be between 0 and PERCENT_100." );
+      FC_ASSERT( credit_variable_interest >= 0 && credit_variable_interest <= PERCENT_100,
+         "Credit variable interest rate must be between 0 and PERCENT_100." );
+      FC_ASSERT( market_max_credit_ratio >= 0 && market_max_credit_ratio <= PERCENT_100,
+         "Market max credit ratio must be between 0 and PERCENT_100." );
+      FC_ASSERT( margin_open_ratio >= PERCENT_1 && margin_open_ratio <= PERCENT_100,
+         "Margin Open Ratio must be between PERCENT_1 and PERCENT_100." );
+      FC_ASSERT( margin_liquidation_ratio >= PERCENT_1 && margin_liquidation_ratio <= PERCENT_100,
+         "Margin Liquidation Ratio must be between PERCENT_1 and PERCENT_100." );
+      FC_ASSERT( maximum_asset_feed_publishers >= MAX_ASSET_FEED_PUBLISHERS / 10 &&
+         maximum_asset_feed_publishers <= MAX_ASSET_FEED_PUBLISHERS * 10,
+         "Maximum asset feed publishers must be between 10 and 1000." );
+      FC_ASSERT( membership_base_price >= MEMBERSHIP_FEE_BASE / 25 && membership_base_price <= MEMBERSHIP_FEE_BASE * 100,
+         "Membership base price must be between $0.10 and $250.00." );
+      FC_ASSERT( membership_base_price.symbol == SYMBOL_USD,
+         "Membership base price must be in the USD asset." );
+      FC_ASSERT( membership_mid_price >= MEMBERSHIP_FEE_MID / 25 && membership_mid_price <= MEMBERSHIP_FEE_MID * 100,
+         "Membership mid price must be between $1.00 and $2500.00." );
+      FC_ASSERT( membership_mid_price.symbol == SYMBOL_USD,
+         "Membership mid price must be in the USD asset." );
+      FC_ASSERT( membership_top_price >= MEMBERSHIP_FEE_TOP / 25 && membership_top_price <= MEMBERSHIP_FEE_TOP * 100,
+         "Membership top price must be between $10.00 and $25000.00." );
+      FC_ASSERT( membership_top_price.symbol == SYMBOL_USD,
+         "Membership top price must be in the USD asset." );
+
+      FC_ASSERT( vote_reserve_rate >= 1 && vote_reserve_rate <= 10000,
+         "Vote reserve rate must be between 1 and 10000." );
+      FC_ASSERT( view_reserve_rate >= 1 && view_reserve_rate <= 10000,
+         "View reserve rate must be between 1 and 10000." );
+      FC_ASSERT( share_reserve_rate >= 1 && share_reserve_rate <= 10000,
+         "Share reserve rate must be between 1 and 10000." );
+      FC_ASSERT( comment_reserve_rate >= 1 && comment_reserve_rate <= 10000,
+         "Comment reserve rate must be between 1 and 10000." );
+
+      FC_ASSERT( vote_recharge_time >= fc::days(1) && vote_recharge_time <= fc::days(365),
+         "Vote Recharge time must be between 1 and 365 days." );
+      FC_ASSERT( view_recharge_time >= fc::days(1) && view_recharge_time <= fc::days(365),
+         "View Recharge time must be between 1 and 365 days." );
+      FC_ASSERT( share_recharge_time >= fc::days(1) && share_recharge_time <= fc::days(365),
+         "Share Recharge time must be between 1 and 365 days." );
+      FC_ASSERT( comment_recharge_time >= fc::days(1) && comment_recharge_time <= fc::days(365),
+         "Comment Recharge time must be between 1 and 365 days." );
+      FC_ASSERT( curation_auction_decay_time >= fc::minutes(1) && curation_auction_decay_time <= fc::days(1),
+         "Curation auction decay time must be between 1 minute and 1 day." );
+
+      FC_ASSERT( vote_curation_decay >= 1 && vote_curation_decay <= 100000,
+         "Vote curation decay must be between 1 and 100,000." );
+      FC_ASSERT( view_curation_decay >= 1 && view_curation_decay <= 100000,
+         "View curation decay must be between 1 and 100,000." );
+      FC_ASSERT( share_curation_decay >= 1 && share_curation_decay <= 100000,
+         "Share curation decay must be between 1 and 100,000." );
+      FC_ASSERT( comment_curation_decay >= 1 && comment_curation_decay <= 100000,
+         "Comment curation decay must be between 1 and 100,000." );
+
+      FC_ASSERT( supernode_decay_time >= fc::days(1) && supernode_decay_time <= fc::days(365),
+         "Supernode Decay time must be between 1 and 365 days." );
+      FC_ASSERT( enterprise_vote_percent_required >= 0 && enterprise_vote_percent_required <= PERCENT_100,
+         "Enterprise vote percent required must be between 0 and PERCENT_100." );
+      FC_ASSERT( maximum_asset_whitelist_authorities >= MAX_ASSET_WHITELIST_AUTHORITIES && 
+         maximum_asset_whitelist_authorities <= 10 * MAX_ASSET_WHITELIST_AUTHORITIES,
+         "Executive types amount must be between 1000 and 10,000." );
+      FC_ASSERT( max_stake_intervals >= MAX_ASSET_STAKE_INTERVALS && max_stake_intervals <= 100 * MAX_ASSET_STAKE_INTERVALS,
+         "Max stake intervals must be between 104 and 10400." );
+      FC_ASSERT( max_unstake_intervals >= MAX_ASSET_UNSTAKE_INTERVALS && max_unstake_intervals <= 100 * MAX_ASSET_UNSTAKE_INTERVALS,
+         "Max unstake intervals must be between 104 and 10400." );
+      FC_ASSERT( max_exec_budget.symbol == SYMBOL_CREDIT,
+         "Max Excutive Budget must be in the CREDIT asset." );
+      FC_ASSERT( max_exec_budget >= MAX_EXEC_BUDGET,
+         "Max Excutive Budget must be less than or equal to 1,000,000 MCR." );
+   }
 
 
    void producer_update_operation::validate() const

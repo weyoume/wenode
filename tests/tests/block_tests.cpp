@@ -19,7 +19,7 @@ using namespace node::protocol;
 
 /**
 
-BOOST_FIXTURE_TEST_SUITE( block_tests, clean_database_fixture )
+BOOST_FIXTURE_TEST_SUITE( block_tests, clean_database_fixture );
 
 BOOST_AUTO_TEST_CASE( generate_empty_blocks )
 {
@@ -809,6 +809,5 @@ BOOST_FIXTURE_TEST_CASE( generate_block_size, clean_database_fixture )
 
 BOOST_AUTO_TEST_SUITE_END()
 
-**/
 
-//#endif
+*/

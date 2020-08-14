@@ -59,10 +59,27 @@ clean_database_fixture::clean_database_fixture()
 
       db.set_hardfork( NUM_HARDFORKS );
 
-      generate_liquid( INIT_ACCOUNT, asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      generate_liquid( INIT_ACCOUNT, asset( 3000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       generate_liquid( INIT_ACCOUNT, asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-      generate_liquid( INIT_ACCOUNT, asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
       generate_liquid( INIT_ACCOUNT, asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+
+      call_order_operation call;
+
+      call.signatory = INIT_ACCOUNT;
+      call.owner = INIT_ACCOUNT;
+      call.collateral = asset( 2000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );  // 2x collateralization
+      call.debt = asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      call.interface = INIT_ACCOUNT;
+      call.validate();
+
+      trx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      trx.set_reference_block( db.head_block_id() );
+      trx.operations.push_back( call );
+      trx.sign( init_account_private_active_key, db.get_chain_id() );
+      db.push_transaction( trx, 0 );
+
+      trx.operations.clear();
+      trx.signatures.clear();
 
       //ahplugin->plugin_startup();
 
@@ -202,14 +219,14 @@ void database_fixture::generate_blocks( uint32_t block_count, int miss_blocks )
 
 void database_fixture::generate_blocks( fc::time_point timestamp, bool miss_intermediate_blocks )
 {
-   if( timestamp < db.head_block_time() + fc::days(30))
+   if( timestamp < db.head_block_time() + fc::days(90))
    {
       db_plugin->debug_generate_blocks_until( timestamp, miss_intermediate_blocks, default_skip );
       BOOST_REQUIRE( ( db.head_block_time() - timestamp ) < BLOCK_INTERVAL );
    }
    else
    {
-      time_point month = db.head_block_time() + fc::days(30);
+      time_point month = db.head_block_time() + fc::days(90);
       db_plugin->debug_generate_blocks_until( month, miss_intermediate_blocks, default_skip );
       BOOST_REQUIRE( ( db.head_block_time() - month ) < BLOCK_INTERVAL );
    }
@@ -240,7 +257,8 @@ const account_object& database_fixture::account_create(
       op.registrar = INIT_ACCOUNT;
       op.new_account_name = new_account_name;
       op.referrer = INIT_ACCOUNT;
-      op.image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      op.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      op.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       op.details = "Account Details";
       op.url = "https://www.url.com";
       op.json = "{ \"valid\": true }";
@@ -252,6 +270,8 @@ const account_object& database_fixture::account_create(
       op.email = get_encrypted_message( private_secure_key, public_secure_key, public_connection_key, "#firstname.lastname@email.com" );
       op.phone = get_encrypted_message( private_secure_key, public_secure_key, public_connection_key, "#0400111222" );
       op.nationality = get_encrypted_message( private_secure_key, public_secure_key, public_connection_key, "#Australia" );
+      op.relationship = get_encrypted_message( private_secure_key, public_secure_key, public_connection_key, "#In a Relationship" );
+      op.political_alignment = get_encrypted_message( private_secure_key, public_secure_key, public_connection_key, "#Centrist" );
       op.owner_auth = authority( 1, public_owner_key, 1 );
       op.active_auth = authority( 1, public_active_key, 1 );
       op.posting_auth = authority( 1, public_posting_key, 1 );
@@ -275,6 +295,7 @@ const account_object& database_fixture::account_create(
       trx.operations.push_back( op );
       
       trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      trx.set_reference_block( db.head_block_id() );
       trx.sign( init_account_private_owner_key, db.get_chain_id() );
       trx.validate();
       db.push_transaction( trx, 0 );
@@ -324,6 +345,7 @@ const community_object& database_fixture::community_create(
       trx.operations.push_back( op );
       
       trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      trx.set_reference_block( db.head_block_id() );
       trx.sign( founder_key, db.get_chain_id() );
       trx.validate();
       db.push_transaction( trx, 0 );
@@ -367,6 +389,7 @@ const asset_object& database_fixture::asset_create(
       trx.operations.push_back( op );
       
       trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      trx.set_reference_block( db.head_block_id() );
       trx.sign( issuer_key, db.get_chain_id() );
       trx.validate();
       db.push_transaction( trx, 0 );
@@ -401,6 +424,7 @@ const producer_object& database_fixture::producer_create(
 
       trx.operations.push_back( op );
       trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      trx.set_reference_block( db.head_block_id() );
       trx.sign( owner_key, db.get_chain_id() );
       trx.validate();
       db.push_transaction( trx, 0 );
@@ -434,6 +458,7 @@ const producer_vote_object& database_fixture::producer_vote(
 
       trx.operations.push_back( op );
       trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      trx.set_reference_block( db.head_block_id() );
       trx.sign( owner_key, db.get_chain_id() );
       trx.validate();
       db.push_transaction( trx, 0 );
@@ -466,7 +491,7 @@ const comment_object& database_fixture::comment_create(
       op.public_key = "";
       op.language = "en";
       op.interface = INIT_ACCOUNT;
-      op.tags.push_back( "test" );
+      op.tags.push_back( tag_name_type( "test" ) );
       op.json = "{ \"valid\": true }";
       op.url = "https://www.url.com";
       op.latitude = 37.8136;
@@ -487,6 +512,7 @@ const comment_object& database_fixture::comment_create(
       op.validate();
       trx.operations.push_back( op );
       trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      trx.set_reference_block( db.head_block_id() );
       trx.sign( author_key, db.get_chain_id() );
       trx.validate();
       db.push_transaction( trx, 0 );
@@ -544,6 +570,7 @@ void database_fixture::fund_liquid(
    trx.operations.push_back( op );
    
    trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+   trx.set_reference_block( db.head_block_id() );
    trx.sign( init_account_private_active_key, db.get_chain_id() );
    trx.validate();
    db.push_transaction( trx, 0 );
@@ -566,6 +593,7 @@ void database_fixture::fund_stake(
    trx.operations.push_back( op );
    
    trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+   trx.set_reference_block( db.head_block_id() );
    trx.sign( init_account_private_active_key, db.get_chain_id() );
    trx.validate();
    db.push_transaction( trx, 0 );
@@ -589,6 +617,7 @@ void database_fixture::fund_savings(
    trx.operations.push_back( op );
    
    trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+   trx.set_reference_block( db.head_block_id() );
    trx.sign( init_account_private_active_key, db.get_chain_id() );
    trx.validate();
    db.push_transaction( trx, 0 );

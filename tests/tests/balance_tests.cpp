@@ -590,15 +590,15 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_test )
       BOOST_REQUIRE( withdraw1.amount == transfer.amount );
       BOOST_REQUIRE( withdraw1.complete == now() + SAVINGS_WITHDRAW_TIME );
 
-      const auto& withdraw_idx = db.get_index< savings_withdraw_index >().indices().get< by_request_id >();
-
       generate_blocks( withdraw1.complete, true );
       generate_block();
 
       asset alice_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
       asset alice_savings_balance = get_savings_balance( "alice", SYMBOL_COIN );
 
-      auto withdraw_itr = withdraw_idx.find( boost::make_tuple( transfer.from, withdraw1.request_id ) );
+      const auto& withdraw_idx = db.get_index< savings_withdraw_index >().indices().get< by_request_id >();
+
+      auto withdraw_itr = withdraw_idx.find( boost::make_tuple( transfer.from, transfer.request_id ) );
 
       BOOST_REQUIRE( withdraw_itr == withdraw_idx.end() );
 
@@ -857,7 +857,7 @@ BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
       BOOST_REQUIRE( exp_obj->delegator == delegate.delegator );
       BOOST_REQUIRE( exp_obj->delegatee == delegate.delegatee );
       BOOST_REQUIRE( exp_obj->amount == alice_init_delegated_balance );
-      BOOST_REQUIRE( exp_obj->expiration == now() + CONTENT_REWARD_INTERVAL );
+      BOOST_REQUIRE( exp_obj->expiration == now() + fc::days(1) );
       
       BOOST_REQUIRE( alice_delegated_balance.amount == bob_receiving_balance.amount );
 

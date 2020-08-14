@@ -1417,7 +1417,8 @@ class wallet_api
        * @param reset_account Account able to reset the owner key after inactivity.
        * @param details The account's details string.
        * @param url The account's selected personal URL.
-       * @param image The account's Public profile image.
+       * @param profile_image The account's Public profile image IPFS reference.
+       * @param cover_image The account's Public cover image IPFS reference.
        * @param json The JSON string of public profile information.
        * @param json_private The JSON string of encrypted profile information.
        * @param first_name The user's Encrypted first name. 
@@ -1427,6 +1428,7 @@ class wallet_api
        * @param email The user's Encrypted email address.
        * @param phone The user's Encrypted phone number.
        * @param nationality The user's Encrypted country of residence.
+       * @param relationship The user's Encrypted relationship status.
        * @param owner The account authority required for changing the active and posting authorities.
        * @param active The account authority required for sending payments and trading.
        * @param posting The account authority required for posting content and voting.
@@ -1450,7 +1452,8 @@ class wallet_api
          string reset_account,
          string details,
          string url,
-         string image,
+         string profile_image,
+         string cover_image,
          string json,
          string json_private,
          string first_name,
@@ -1460,6 +1463,7 @@ class wallet_api
          string email,
          string phone,
          string nationality,
+         string relationship,
          authority owner,
          authority active,
          authority posting,
@@ -1481,7 +1485,8 @@ class wallet_api
        * @param account The name of the new account.
        * @param details The account's details string.
        * @param url The account's selected personal URL.
-       * @param image The account's Public profile image.
+       * @param profile_image The account's Public profile image IPFS reference.
+       * @param cover_image The account's Public cover image IPFS reference.
        * @param json The JSON string of public profile information.
        * @param json_private The JSON string of encrypted profile information.
        * @param first_name The user's Encrypted first name. 
@@ -1491,6 +1496,7 @@ class wallet_api
        * @param email The user's Encrypted email address.
        * @param phone The user's Encrypted phone number.
        * @param nationality The user's Encrypted country of residence.
+       * @param relationship The user's Encrypted relationship status.
        * @param pinned_permlink The permlink of the pinned comment of the author's blog.
        * @param owner_auth The account authority required for changing the active and posting authorities.
        * @param active_auth The account authority required for sending payments and trading.
@@ -1507,7 +1513,8 @@ class wallet_api
          string account,
          string details,
          string url,
-         string image,
+         string profile_image,
+         string cover_image,
          string json,
          string json_private,
          string first_name,
@@ -1517,6 +1524,7 @@ class wallet_api
          string email,
          string phone,
          string nationality,
+         string relationship,
          string pinned_permlink,
          authority owner_auth,
          authority active_auth,

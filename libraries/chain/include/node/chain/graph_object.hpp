@@ -532,6 +532,7 @@ FC_REFLECT( node::chain::graph_edge_property_object,
          (account)
          (edge_type)
          (graph_privacy)
+         (edge_permission)
          (from_node_types)
          (to_node_types)
          (details)

@@ -110,19 +110,19 @@ extern fc::time_point TESTING_GENESIS_TIMESTAMP;
 #define INVOKE(test) ((struct test*)this)->test_method(); trx.clear()
 
 #define PREP_ACTOR(name) \
-   private_key_type name ## _private_owner_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "ownerpassword" );             \
-   private_key_type name ## _private_active_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "activepassword" );           \
-   private_key_type name ## _private_posting_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "postingpassword" );         \
-   private_key_type name ## _private_secure_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "securepassword" );           \
-   private_key_type name ## _private_connection_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "connectionpassword" );   \
-   private_key_type name ## _private_friend_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "friendpassword" );           \
-   private_key_type name ## _private_companion_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "companionpassword" );     \
-   public_key_type name ## _public_owner_key = name ## _private_owner_key.get_public_key();                                                              \
-   public_key_type name ## _public_active_key = name ## _private_active_key.get_public_key();                                                            \
-   public_key_type name ## _public_posting_key = name ## _private_posting_key.get_public_key();                                                          \
-   public_key_type name ## _public_secure_key = name ## _private_secure_key.get_public_key();                                                            \
-   public_key_type name ## _public_connection_key = name ## _private_connection_key.get_public_key();                                                    \
-   public_key_type name ## _public_friend_key = name ## _private_friend_key.get_public_key();                                                            \
+   private_key_type name ## _private_owner_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "owner" + INIT_ACCOUNT_PASSWORD );             \
+   private_key_type name ## _private_active_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "active" + INIT_ACCOUNT_PASSWORD );           \
+   private_key_type name ## _private_posting_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "posting" + INIT_ACCOUNT_PASSWORD );         \
+   private_key_type name ## _private_secure_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "secure" + INIT_ACCOUNT_PASSWORD );           \
+   private_key_type name ## _private_connection_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "connection" + INIT_ACCOUNT_PASSWORD );   \
+   private_key_type name ## _private_friend_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "friend" + INIT_ACCOUNT_PASSWORD );           \
+   private_key_type name ## _private_companion_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + "companion" + INIT_ACCOUNT_PASSWORD );     \
+   public_key_type name ## _public_owner_key = name ## _private_owner_key.get_public_key();                                                                              \
+   public_key_type name ## _public_active_key = name ## _private_active_key.get_public_key();                                                                            \
+   public_key_type name ## _public_posting_key = name ## _private_posting_key.get_public_key();                                                                          \
+   public_key_type name ## _public_secure_key = name ## _private_secure_key.get_public_key();                                                                            \
+   public_key_type name ## _public_connection_key = name ## _private_connection_key.get_public_key();                                                                    \
+   public_key_type name ## _public_friend_key = name ## _private_friend_key.get_public_key();                                                                            \
    public_key_type name ## _public_companion_key = name ## _private_companion_key.get_public_key();                                                          
 
 #define ACTOR(name) \

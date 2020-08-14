@@ -148,7 +148,6 @@ namespace node { namespace protocol {
       {
          return (a == b) || (a < b);
       }
-
       friend bool operator != ( const asset& a, const asset& b )
       {
          return !(a == b);
@@ -164,7 +163,6 @@ namespace node { namespace protocol {
       {
          return !(a < b);
       }
-
       friend asset operator - ( const asset& a, const asset& b )
       {
          FC_ASSERT( a.symbol == b.symbol,
@@ -205,15 +203,18 @@ namespace node { namespace protocol {
     */
    struct price
    {
-      price(const asset& base = asset(), const asset& quote = asset())
-         : base(base),quote(quote){}
+      price( 
+         asset base = asset(), 
+         asset quote = asset() ) : 
+         base(base),
+         quote(quote){}
 
-      asset base;    ///< The Asset unit of account of the price.
+      asset base;     ///< The Asset unit of account of the price. 10 MEC
 
-      asset quote;   ///< The Asset being valued in units of the Base asset. 
+      asset quote;   ///< The Asset being valued in units of the Base asset. 20 MUSD
 
-      static price max(asset_symbol_type base, asset_symbol_type quote );
-      static price min(asset_symbol_type base, asset_symbol_type quote );
+      static price max( asset_symbol_type base, asset_symbol_type quote );
+      static price min( asset_symbol_type base, asset_symbol_type quote );
 
       price max()const { return price::max( base.symbol, quote.symbol ); }
       price min()const { return price::min( base.symbol, quote.symbol ); }
@@ -223,7 +224,7 @@ namespace node { namespace protocol {
 
       double to_real()const { return double(base.amount.value)/double(quote.amount.value); }
 
-      string to_string()const;
+      string to_string()const { return fc::to_string( to_real() ).substr( 0, 8 ) + " " + quote.symbol + "/" + base.symbol; };
    };
 
    price operator / ( const asset& base, const asset& quote );

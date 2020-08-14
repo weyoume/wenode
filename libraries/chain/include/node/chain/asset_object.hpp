@@ -26,7 +26,6 @@ namespace node { namespace chain {
     * CREDIT_POOL_ASSET,      ///< Asset that is backed by deposits of the base asset, used for borrowing funds from the pool, used as collateral to borrow base asset.
     * OPTION_ASSET,           ///< Asset that enables the execution of a trade at a specific strike price until an expiration date. 
     * PREDICTION_ASSET,       ///< Asset backed by an underlying collateral claim, on the condition that a prediction market resolve in a particular outcome.
-    * GATEWAY_ASSET,          ///< Asset backed by deposits with an exchange counterparty of another asset or currency.
     * UNIQUE_ASSET            ///< Asset with a supply of one, contains metadata relating to the ownership of a unique non-fungible asset.
     */
 
@@ -129,7 +128,83 @@ namespace node { namespace chain {
                   case asset_property_type::CREDIT_ASSET:
                   case asset_property_type::EQUITY_ASSET:
                   case asset_property_type::STABLECOIN_ASSET:
-                  case asset_property_type::GATEWAY_ASSET:
+                  {
+                     return true;
+                  }
+                  default:
+                  {
+                     return false;
+                  }
+               }
+            }
+            else
+            {
+               return false;
+            }
+         }
+
+         bool is_liquid_enabled()const                               ///< True if this asset can be used in liquidity pools, and liquid exchange orders.
+         {
+            if( enable_liquid() )
+            {
+               switch( asset_type )
+               {
+                  case asset_property_type::STANDARD_ASSET:
+                  case asset_property_type::CURRENCY_ASSET:
+                  case asset_property_type::CREDIT_ASSET:
+                  case asset_property_type::EQUITY_ASSET:
+                  case asset_property_type::STABLECOIN_ASSET:
+                  {
+                     return true;
+                  }
+                  default:
+                  {
+                     return false;
+                  }
+               }
+            }
+            else
+            {
+               return false;
+            }
+         }
+
+         bool is_option_enabled()const                               ///< True if this asset can be used in option pools, and option orders.
+         {
+            if( enable_options() )
+            {
+               switch( asset_type )
+               {
+                  case asset_property_type::STANDARD_ASSET:
+                  case asset_property_type::CURRENCY_ASSET:
+                  case asset_property_type::CREDIT_ASSET:
+                  case asset_property_type::EQUITY_ASSET:
+                  case asset_property_type::STABLECOIN_ASSET:
+                  {
+                     return true;
+                  }
+                  default:
+                  {
+                     return false;
+                  }
+               }
+            }
+            else
+            {
+               return false;
+            }
+         }
+
+         bool is_unique_enabled()const                               ///< True if this asset can be used as a unique ownership asset
+         {
+            if( enable_unique() )
+            {
+               switch( asset_type )
+               {
+                  case asset_property_type::STANDARD_ASSET:
+                  case asset_property_type::CURRENCY_ASSET:
+                  case asset_property_type::EQUITY_ASSET:
+                  case asset_property_type::UNIQUE_ASSET:
                   {
                      return true;
                   }
@@ -204,14 +279,19 @@ namespace node { namespace chain {
             return !( flags & int( asset_issuer_permission_flags::disable_credit ) );
          }
 
-         bool enable_liquid()const              ///< true if the asset can be included in liquidity pools and use liquidity pool orders
+         bool enable_liquid()const              ///< true if the asset can be included in liquidity pools and use liquidity pool orders.
          { 
             return !( flags & int( asset_issuer_permission_flags::disable_liquid ) );
          }
 
-         bool enable_options()const              ///< true if the asset can be included in option pools and generate option asset derivatives
+         bool enable_options()const              ///< true if the asset can be included in option pools and generate option asset derivatives.
          { 
             return !( flags & int( asset_issuer_permission_flags::disable_options ) );
+         }
+
+         bool enable_unique()const              ///< true if the asset can be used as a unique ownership asset
+         { 
+            return !( flags & int( asset_issuer_permission_flags::disable_unique ) );
          }
 
          bool enable_escrow()const              ///< true if the asset can be used in escrow transfers and marketplace purchases
@@ -239,9 +319,9 @@ namespace node { namespace chain {
             return ( flags & int( asset_issuer_permission_flags::producer_fed_asset ) );
          }
 
-         bool can_global_settle()const         ///< true if the issuer of this market-issued asset may globally settle the asset
+         bool can_global_settle()const         ///< true if the issuer of this market-issued asset may globally settle the stablecoin asset
          { 
-            return ( flags & int( asset_issuer_permission_flags::global_settle ) );
+            return !( flags & int( asset_issuer_permission_flags::disable_global_settle ) );
          }
 
          bool require_governance()const         ///< true if the governance account of the issuer must approve asset issuance and changes
@@ -252,15 +332,6 @@ namespace node { namespace chain {
          bool immutable_properties()const       ///< true if the asset cannot be modified after creation
          { 
             return ( flags & int( asset_issuer_permission_flags::immutable_properties ) );
-         }
-         
-         void validate()const                    ///< UIAs may not have force settlement, or global settlements
-         {
-            if( !is_market_issued() )
-            {
-               FC_ASSERT(!(flags & int( asset_issuer_permission_flags::disable_force_settle )  || flags & int( asset_issuer_permission_flags::global_settle ) ) );
-               FC_ASSERT(!(issuer_permissions & int( asset_issuer_permission_flags::disable_force_settle ) || issuer_permissions & int( asset_issuer_permission_flags::global_settle ) ) );
-            }
          }
    };
 
@@ -286,8 +357,6 @@ namespace node { namespace chain {
 
          asset_symbol_type              symbol;                        ///< Ticker symbol string for this asset.
 
-         account_name_type              issuer;                        ///< The asset issuing account. 
-
          share_type                     liquid_supply = 0;             ///< The current liquid supply of the asset.
 
          share_type                     staked_supply = 0;             ///< The current staked supply of the asset.
@@ -302,7 +371,7 @@ namespace node { namespace chain {
          
          share_type                     receiving_supply = 0;          ///< The current receiving supply supply of the asset, should equal delegated.
 
-         share_type                     pending_supply = 0;            ///< The current supply contained in pending network objects and funds.
+         share_type                     pending_supply = 0;            ///< The current supply contained in pending network objects and funds outside of account balances.
 
          share_type                     confidential_supply = 0;       ///< The current confidential asset supply.
 
@@ -505,8 +574,6 @@ namespace node { namespace chain {
 
          asset_symbol_type         symbol;                                        ///< The symbol of the stablecoin that this object belongs to
 
-         account_name_type         issuer;                                        ///< The account name of the issuer 
-
          asset_symbol_type         backing_asset;                                 ///< The collateral backing asset of the stablecoin
 
          flat_map< account_name_type, pair< time_point, price_feed > >  feeds;    ///< Feeds published for this asset. 
@@ -551,12 +618,14 @@ namespace node { namespace chain {
             return share_type( volume.to_uint64());
          }
 
-         bool                      has_settlement()const    ///< True if there has been a black swan
-         { 
-            return !settlement_price.is_null();    
+         bool                      has_settlement()const              ///< True if there has been a black swan
+         {
+            // ilog( "Checking Settlement price: ${p}",("p",settlement_price.to_string()));
+
+            return !( settlement_price.is_null() );
          }   
 
-         time_point                feed_expiration_time()const    ///< The time when current_feed would expire
+         time_point                feed_expiration_time()const       ///< The time when current_feed would expire
          {
             return current_feed_publication_time + feed_lifetime;   
          }
@@ -661,6 +730,11 @@ namespace node { namespace chain {
          time_point             last_updated;      ///< Time that the settlement was last modified.
 
          asset_symbol_type      settlement_asset_symbol()const { return balance.symbol; }
+
+         string                 to_string()const
+         {
+            return balance.to_string() + " - " + owner;
+         }
    };
 
 
@@ -680,27 +754,32 @@ namespace node { namespace chain {
             c( *this );
          }
 
-         id_type               id;
+         id_type                id;
 
-         account_name_type     bidder;           ///< Bidding Account name.
+         account_name_type      bidder;           ///< Bidding Account name.
 
-         asset                 collateral;       ///< Collateral bidded to obtain debt from a global settlement.
+         asset                  collateral;       ///< Collateral bidded to obtain debt from a global settlement.
 
-         asset                 debt;             ///< Debt requested for bid.
+         asset                  debt;             ///< Debt requested for bid.
 
-         time_point            created;          ///< Time that the bid was created.
+         time_point             created;          ///< Time that the bid was created.
 
-         time_point            last_updated;     ///< Time that the bid was last adjusted.
+         time_point             last_updated;     ///< Time that the bid was last adjusted.
 
-         price                 inv_swan_price()const
+         price                  inv_swan_price()const
          {
-            return price( collateral, debt );    ///< Collateral / Debt.
+            return price( collateral, debt );     ///< Collateral / Debt.
          }
 
-         asset_symbol_type     debt_type()const 
+         asset_symbol_type      debt_type()const 
          { 
             return debt.symbol;
-         } 
+         }
+
+         string                 to_string()const
+         {
+            return collateral.to_string() + " @ " + inv_swan_price().to_string() + " - " + bidder;
+         }
    };
 
 
@@ -804,7 +883,7 @@ namespace node { namespace chain {
     * Because of the fixed interest rate, the value of the asset may diverge from the face value,
     * and most of the credit risk should be expressed in the market price of the bond.
     */
-   class asset_bond_data_object : public object < asset_bond_data_object_type, asset_bond_data_object>
+   class asset_bond_data_object : public object < asset_bond_data_object_type, asset_bond_data_object >
    {
       asset_bond_data_object() = delete;
 
@@ -1040,8 +1119,6 @@ namespace node { namespace chain {
 
          asset                                access_price;                ///< Price per day for all accounts in the access list.
 
-         asset                                purchase_price;              ///< Price at which the current owner is willing to sell the unique asset at.
-
          share_type                           access_price_amount()const
          {
             return access_price.amount;
@@ -1105,8 +1182,6 @@ namespace node { namespace chain {
          }
 
          id_type                    id; 
-
-         account_name_type          issuer;                        ///< Name of the account which created the liquidity pool.
 
          asset_symbol_type          symbol_a;                      ///< Ticker symbol string of the asset with the lower ID. Must be core asset if one asset is core.
 
@@ -1191,6 +1266,12 @@ namespace node { namespace chain {
                return asset( 0, symbol );
             }
          }
+
+         string                      to_string()const
+         {
+            return symbol_liquid + " - A: " + balance_a.to_string() + " - B: " + balance_b.to_string() + " - L: " + balance_liquid.to_string() +
+               " - Current: " + current_price().to_string() + " - Hourly: " + hour_median_price.to_string() + " - Daily: " + day_median_price.to_string();
+         }
    };
 
    /**
@@ -1222,8 +1303,6 @@ namespace node { namespace chain {
 
          id_type                    id; 
 
-         account_name_type          issuer;                 ///< Name of the account which created the credit pool.
-
          asset_symbol_type          base_symbol;            ///< Ticker symbol string of the base asset being lent and borrowed.
 
          asset_symbol_type          credit_symbol;          ///< Ticker symbol string of the credit asset for use as collateral to borrow the base asset.
@@ -1248,6 +1327,22 @@ namespace node { namespace chain {
             return share_type( std::min( uint64_t( 
                min + var * ( ( borrowed_balance.amount.value + BLOCKCHAIN_PRECISION.value ) / 
                ( base_balance.amount.value + BLOCKCHAIN_PRECISION.value ) ) ), uint64_t( 50 * PERCENT_1 ) ) );
+         }
+
+         double                     real_price()const
+         {
+            return current_price().to_real();
+         }
+
+         double                     real_interest_rate()const
+         {
+            return double(last_interest_rate.value)/double(100);
+         }
+
+         string                     to_string()const
+         {
+            return credit_symbol + " - Base: " + base_balance.to_string() + " - Borrowed: " + borrowed_balance.to_string() + " - Credit: " + credit_balance.to_string() +
+               " - Current: " + current_price().to_string() + " - Last Interest Rate: " + fc::to_string( real_interest_rate() ).substr(0,5) + "%";
          }
    };
 
@@ -1278,8 +1373,6 @@ namespace node { namespace chain {
          }
 
          id_type                                id; 
-
-         account_name_type                      issuer;            ///< Name of the account which created the option pool.
 
          asset_symbol_type                      base_symbol;       ///< Symbol of the base asset of the trading pair.
 
@@ -1481,8 +1574,6 @@ namespace node { namespace chain {
 
          id_type                                      id;
 
-         account_name_type                            issuer;                   ///< Name of the account which created the prediction market pool.
-
          asset_symbol_type                            prediction_symbol;        ///< Ticker symbol of the prediction pool primary asset.
 
          asset_symbol_type                            collateral_symbol;        ///< Ticker symbol of the collateral asset backing the prediction market.
@@ -1564,16 +1655,14 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          asset_distribution_object( Constructor&& c, allocator< Allocator > a ) :
-         details(a), 
-         url(a), 
-         json(a)
-         {
-            c( *this );
-         }
+            details(a), 
+            url(a), 
+            json(a)
+            {
+               c( *this );
+            }
 
          id_type                                    id;
-
-         account_name_type                          issuer;                                ///< Name of the account which created the distribution market pool.
 
          asset_symbol_type                          distribution_asset;                    ///< Asset that is generated by the distribution.
 
@@ -1611,7 +1700,7 @@ namespace node { namespace chain {
 
          share_type                                 max_input_balance_units;               ///< Maximum fund units that each sender can contribute in an individual balance.
          
-         asset                                      total_distributed;                     ///< Amount of distirbution asset generated and distributed to all fund balances.
+         asset                                      total_distributed;                     ///< Amount of distribution asset generated and distributed to all fund balances.
 
          asset                                      total_funded;                          ///< Amount of fund asset funded by all incoming fund balances.
          
@@ -2056,10 +2145,9 @@ namespace node { namespace chain {
    typedef multi_index_container<
       asset_distribution_object,
       indexed_by<
-         ordered_unique< tag<by_id>, member< asset_distribution_object, asset_distribution_id_type, &asset_distribution_object::id > >,
-         ordered_unique< tag<by_issuer>, member< asset_distribution_object, account_name_type, &asset_distribution_object::issuer > >,
-         ordered_unique< tag<by_symbol>, member< asset_distribution_object, asset_symbol_type, &asset_distribution_object::distribution_asset > >,
-         ordered_unique< tag<by_fund_symbol>,
+         ordered_unique< tag< by_id >, member< asset_distribution_object, asset_distribution_id_type, &asset_distribution_object::id > >,
+         ordered_unique< tag< by_symbol >, member< asset_distribution_object, asset_symbol_type, &asset_distribution_object::distribution_asset > >,
+         ordered_unique< tag< by_fund_symbol >,
             composite_key< asset_distribution_object,
                member< asset_distribution_object, asset_symbol_type, &asset_distribution_object::fund_asset >,
                member< asset_distribution_object, asset_distribution_id_type, &asset_distribution_object::id > 
@@ -2081,17 +2169,23 @@ namespace node { namespace chain {
       allocator< asset_distribution_object >
    > asset_distribution_index;
 
-   struct by_account;
+   struct by_account_distribution;
+   struct by_distribution_account;
 
    typedef multi_index_container<
       asset_distribution_balance_object,
       indexed_by<
          ordered_unique< tag< by_id >, member< asset_distribution_balance_object, asset_distribution_balance_id_type, &asset_distribution_balance_object::id > >,
-         ordered_unique< tag< by_symbol >, member< asset_distribution_balance_object, asset_symbol_type, &asset_distribution_balance_object::distribution_asset > >,
-         ordered_unique< tag< by_account >,
+         ordered_unique< tag< by_account_distribution >,
             composite_key< asset_distribution_balance_object,
                member< asset_distribution_balance_object, account_name_type, &asset_distribution_balance_object::sender >,
                member< asset_distribution_balance_object, asset_symbol_type, &asset_distribution_balance_object::distribution_asset > 
+            >
+         >,
+         ordered_unique< tag< by_distribution_account >,
+            composite_key< asset_distribution_balance_object,
+               member< asset_distribution_balance_object, asset_symbol_type, &asset_distribution_balance_object::distribution_asset >,
+               member< asset_distribution_balance_object, account_name_type, &asset_distribution_balance_object::sender >
             >
          >
       >, 
@@ -2130,7 +2224,6 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::asset_object, node::chain::asset_index );
 FC_REFLECT( node::chain::asset_dynamic_data_object,
          (id)
          (symbol)
-         (issuer)
          (liquid_supply)
          (staked_supply)
          (reward_supply)
@@ -2173,7 +2266,6 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::asset_currency_data_object, node::chain::
 FC_REFLECT( node::chain::asset_stablecoin_data_object,
          (id)
          (symbol)
-         (issuer)
          (backing_asset)
          (feeds)
          (current_feed)
@@ -2300,7 +2392,6 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::asset_unique_data_object, node::chain::as
 
 FC_REFLECT( node::chain::asset_liquidity_pool_object,
          (id)
-         (issuer)
          (symbol_a)
          (symbol_b)
          (symbol_liquid)
@@ -2316,7 +2407,6 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::asset_liquidity_pool_object, node::chain:
 
 FC_REFLECT( node::chain::asset_credit_pool_object,
          (id)
-         (issuer)
          (base_symbol)
          (credit_symbol)
          (base_balance)
@@ -2330,7 +2420,6 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::asset_credit_pool_object, node::chain::as
 
 FC_REFLECT( node::chain::asset_option_pool_object,
          (id)
-         (issuer)
          (base_symbol)
          (quote_symbol)
          (call_symbols)
@@ -2343,7 +2432,6 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::asset_option_pool_object, node::chain::as
 
 FC_REFLECT( node::chain::asset_prediction_pool_object,
          (id)
-         (issuer)
          (prediction_symbol)
          (collateral_symbol)
          (collateral_pool)
@@ -2371,7 +2459,6 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::asset_prediction_pool_resolution_object, 
 
 FC_REFLECT( node::chain::asset_distribution_object,
          (id)
-         (issuer)
          (distribution_asset)
          (fund_asset)
          (details)

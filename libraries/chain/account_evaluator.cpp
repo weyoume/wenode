@@ -134,15 +134,6 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
    {
       a.name = o.new_account_name;
       a.registrar = registrar.name;
-
-      if( o.recovery_account.size() )
-      {
-         a.recovery_account = o.recovery_account;
-      }
-      if( o.reset_account.size() )
-      {
-         a.reset_account = o.reset_account;
-      }
       if( o.referrer.size() )
       {
          a.referrer = o.referrer;
@@ -151,10 +142,20 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       {
          a.proxy = o.proxy;
       }
+      if( o.recovery_account.size() )
+      {
+         a.recovery_account = o.recovery_account;
+      }
+      if( o.reset_account.size() )
+      {
+         a.reset_account = o.reset_account;
+      }
+      
 
       from_string( a.details, o.details );
       from_string( a.url, o.url );
-      from_string( a.image, o.image );
+      from_string( a.profile_image, o.profile_image );
+      from_string( a.cover_image, o.cover_image );
       from_string( a.json, o.json );
       from_string( a.json_private, o.json_private );
       from_string( a.first_name, o.first_name );
@@ -164,6 +165,13 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       from_string( a.email, o.email );
       from_string( a.phone, o.phone );
       from_string( a.nationality, o.nationality );
+      from_string( a.relationship, o.relationship );
+      from_string( a.political_alignment, o.political_alignment );
+
+      for( auto t : o.interests )
+      {
+         a.interests.insert( t );
+      }
       
       a.membership = membership_tier_type::NONE;
 
@@ -382,9 +390,13 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
       {
          from_string( a.url, o.url );
       }
-      if( o.image.size() > 0 )
+      if( o.profile_image.size() > 0 )
       {
-         from_string( a.image, o.image );
+         from_string( a.profile_image, o.profile_image );
+      }
+      if( o.cover_image.size() > 0 )
+      {
+         from_string( a.cover_image, o.cover_image );
       }
       if( o.json.size() > 0 )
       {
@@ -422,9 +434,22 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
       {
          from_string( a.nationality, o.nationality );
       }
+      if( o.relationship.size() > 0 )
+      {
+         from_string( a.relationship, o.relationship );
+      }
+      if( o.political_alignment.size() > 0 )
+      {
+         from_string( a.political_alignment, o.political_alignment );
+      }
       if( o.pinned_permlink.size() > 0 )
       {
          from_string( a.pinned_permlink, o.pinned_permlink );
+      }
+      a.interests.clear();
+      for( auto t : o.interests )
+      {
+         a.interests.insert( t );
       }
       a.active = o.active;
    });
@@ -787,10 +812,12 @@ void account_vote_executive_evaluator::do_apply( const account_vote_executive_op
    const account_object& voter = _db.get_account( o.account );
    const account_object& executive = _db.get_account( o.executive_account );
    FC_ASSERT( executive.active, 
-      "Account: ${s} must be active to be voted for.",("s", o.executive_account) );
+      "Account: ${s} must be active to be voted for.",
+      ("s", o.executive_account));
    const account_object& business = _db.get_account( o.business_account );
    FC_ASSERT( business.active, 
-      "Account: ${s} must be active to accept executive votes.",("s", o.business_account) );
+      "Account: ${s} must be active to accept executive votes.",
+      ("s",o.business_account));
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
    share_type voting_power = _db.get_equity_voting_power( o.account, bus_acc );
 
@@ -803,7 +830,8 @@ void account_vote_executive_evaluator::do_apply( const account_vote_executive_op
       FC_ASSERT( voter.can_vote,
          "Account has declined its voting rights." );
       FC_ASSERT( bus_acc.is_authorized_vote_executive( voter.name, _db.get_account_permissions( o.business_account ) ),
-         "Account: ${a} is not authorized to vote for an Officer in business: ${b} .", ("a", o.account)("b", o.business_account));
+         "Account: ${a} is not authorized to vote for an Officer in Business: ${b}.",
+         ("a", o.account)("b", o.business_account));
       FC_ASSERT( bus_acc.is_officer( executive.name ),
          "Account: ${a} must be an officer of business: ${b} before being voted as Executive.",
          ("a", o.executive_account)("b", o.business_account) );
@@ -899,7 +927,8 @@ void account_vote_officer_evaluator::do_apply( const account_vote_officer_operat
       "Account: ${s} must be active to be voted for.",("s", o.officer_account) );
    const account_object& business = _db.get_account( o.business_account );
    FC_ASSERT( business.active, 
-      "Account: ${s} must be active to accept officer votes.",("s", o.business_account) );
+      "Account: ${s} must be active to accept officer votes.",
+      ("s", o.business_account));
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
    share_type voting_power = _db.get_equity_voting_power( o.account, bus_acc );
 
@@ -1238,23 +1267,26 @@ void account_remove_member_evaluator::do_apply( const account_remove_member_oper
    const account_object& account = _db.get_account( o.account ); 
    const account_object& member_acc = _db.get_account( o.member );
    FC_ASSERT( member_acc.active, 
-      "Account: ${s} must be active to accept member requests.",("s", o.member) );
+      "Account: ${s} must be active to accept member requests.",
+      ("s", o.member) );
    const account_object& business = _db.get_account( o.business_account );
    FC_ASSERT( business.active, 
-      "Account: ${s} must be active to remove members.",("s", o.business_account) );
+      "Account: ${s} must be active to remove members.",
+      ("s", o.business_account) );
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
 
    FC_ASSERT( bus_acc.is_member( member_acc.name ), 
       "Account: ${a} is not a member of business: ${b}.",
       ("a", o.member)("b", o.business_account) );
    FC_ASSERT( !bus_acc.is_executive( member_acc.name ), 
-      "Account: ${a} cannot be removed while an executive of business: ${b}.",
+      "Account: ${a} cannot be removed while an executive of Business: ${b}",
       ("a", o.member)("b", o.business_account) );
 
    if( account.name != member_acc.name )     // Account can remove itself from  membership.  
    {
       FC_ASSERT( bus_acc.is_authorized_blacklist( o.account, _db.get_account_permissions( o.business_account ) ), 
-         "Account: ${a} is not authorised to remove accounts from the business: ${b}.", ("a", o.account)("b", o.business_account)); 
+         "Account: ${a} is not authorised to remove accounts from the Business: ${b}",
+         ("a", o.account)("b", o.business_account)); 
    }
 
    const auto& key_idx = _db.get_index< account_member_key_index >().indices().get< by_member_business >();

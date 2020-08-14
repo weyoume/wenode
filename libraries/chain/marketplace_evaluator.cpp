@@ -988,7 +988,7 @@ void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
       FC_ASSERT( o.account == escrow.from || 
          o.account == escrow.to,
          "Only Sender: ${f} and receiver: ${t} can release funds from a non-disputed escrow",
-         ("f", escrow.from)("t", escrow.to ) );
+         ("f",escrow.from)("t", escrow.to));
 
       if( escrow.escrow_expiration > now )     // If escrow expires and there is no dispute, either party can release funds to either party.
       {

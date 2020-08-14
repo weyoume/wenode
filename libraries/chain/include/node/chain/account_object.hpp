@@ -19,18 +19,21 @@ namespace node { namespace chain {
       public:
          template<typename Constructor, typename Allocator>
          account_object( Constructor&& c, allocator< Allocator > a ) : 
-            details(a), 
+            details(a),
             url(a),
-            image(a),
-            json(a), 
+            profile_image(a),
+            cover_image(a),
+            json(a),
             json_private(a),
-            first_name(a), 
-            last_name(a), 
-            gender(a), 
-            date_of_birth(a), 
-            email(a), 
-            phone(a), 
+            first_name(a),
+            last_name(a),
+            gender(a),
+            date_of_birth(a),
+            email(a),
+            phone(a),
             nationality(a),
+            relationship(a),
+            political_alignment(a),
             pinned_permlink(a)
             {
                c(*this);
@@ -44,7 +47,9 @@ namespace node { namespace chain {
 
          shared_string                    url;                                   ///< The account's Public personal URL.
 
-         shared_string                    image;                                 ///< IPFS Reference of the Public profile image of the account.
+         shared_string                    profile_image;                         ///< IPFS Reference of the Public profile image of the account.
+
+         shared_string                    cover_image;                           ///< IPFS Reference of the Public cover image of the account.
 
          shared_string                    json;                                  ///< The JSON string of additional Public profile information.
 
@@ -64,7 +69,13 @@ namespace node { namespace chain {
 
          shared_string                    nationality;                           ///< Encrypted Country of user's residence. Encrypted with connection key.
 
-         shared_string                    pinned_permlink;                       ///< Post permlink pinned to the top of the account's profile. 
+         shared_string                    relationship;                          ///< Encrypted Relationship status of the account. Encrypted with connection key.
+
+         shared_string                    political_alignment;                   ///< Encrypted Political alignment. Encrypted with connection key.
+         
+         shared_string                    pinned_permlink;                       ///< Post permlink pinned to the top of the account's profile.
+
+         flat_set< tag_name_type >        interests;                             ///< Set of tags of the interests of the user.
          
          membership_tier_type             membership;                            ///< Level of account membership.
 
@@ -241,7 +252,8 @@ namespace node { namespace chain {
  
          bool is_authorized_transfer( const account_name_type& name, const asset_object& asset_obj )const          ///< Determines if an asset is authorized for transfer with an accounts permissions object. 
          {
-            bool fast_check = !( asset_obj.flags & int( asset_issuer_permission_flags::balance_whitelist ) );
+            bool fast_check = !asset_obj.require_balance_whitelist() && !asset_obj.is_transfer_restricted();
+
             fast_check &= !( whitelisted_assets.size() );
             fast_check &= !( blacklisted_assets.size() );
             fast_check &= !( whitelisted_accounts.size() );
@@ -250,6 +262,11 @@ namespace node { namespace chain {
             if( fast_check )
             {
                return true; // The asset does not require transfer permission, and the account does not use an asset whitelist or blacklist
+            }
+
+            if( asset_obj.is_transfer_restricted() )
+            {
+               return asset_obj.issuer == name || asset_obj.issuer == account;
             }
 
             if( blacklisted_accounts.size() )
@@ -2434,10 +2451,11 @@ FC_REFLECT( node::chain::account_object,
          (id)
          (name)
          (details)
+         (url)
+         (profile_image)
+         (cover_image)
          (json)
          (json_private)
-         (url)
-         (image)
          (first_name)
          (last_name)
          (gender)
@@ -2445,7 +2463,10 @@ FC_REFLECT( node::chain::account_object,
          (email)
          (phone)
          (nationality)
+         (relationship)
+         (political_alignment)
          (pinned_permlink)
+         (interests)
          (membership)
          (secure_public_key)
          (connection_public_key)
@@ -2715,6 +2736,7 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::asset_delegation_object, node::chain::ass
 FC_REFLECT( node::chain::asset_delegation_expiration_object,
          (id)
          (delegator)
+         (delegatee)
          (amount)
          (expiration)
          );

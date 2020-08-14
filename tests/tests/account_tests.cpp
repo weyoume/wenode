@@ -103,6 +103,8 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       create.email = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_connection_key, string( "#alice@gmail.com" ) );
       create.phone = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_connection_key, string( "#0400111222" ) );
       create.nationality = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_connection_key, string( "#Australia" ) );
+      create.relationship = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_connection_key, string( "#In a Relationship" ) );
+      create.political_alignment = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_connection_key, string( "#Centrist" ) );
       create.owner_auth = authority( 1, alice_public_owner_key, 1 );
       create.active_auth = authority( 2, alice_public_active_key, 2 );
       create.posting_auth = authority( 1, alice_public_posting_key, 1 );
@@ -188,6 +190,8 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
       create.email = get_encrypted_message( ionstudios_private_secure_key, ionstudios_public_secure_key, ionstudios_public_connection_key, string( "#ionstudios@gmail.com" ) );
       create.phone = get_encrypted_message( ionstudios_private_secure_key, ionstudios_public_secure_key, ionstudios_public_connection_key, string( "#0400111222" ) );
       create.nationality = get_encrypted_message( ionstudios_private_secure_key, ionstudios_public_secure_key, ionstudios_public_connection_key, string( "#Australia" ) );
+      create.relationship = get_encrypted_message( ionstudios_private_secure_key, ionstudios_public_secure_key, ionstudios_public_connection_key, string( "#In a Relationship" ) );
+      create.political_alignment = get_encrypted_message( ionstudios_private_secure_key, ionstudios_public_secure_key, ionstudios_public_connection_key, string( "#Centrist" ) );
       create.owner_auth = authority( 1, ionstudios_public_owner_key, 1 );
       create.active_auth = authority( 2, ionstudios_public_active_key, 2 );
       create.posting_auth = authority( 1, ionstudios_public_posting_key, 1 );
@@ -2037,7 +2041,7 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       comment.language = "en";
       comment.public_key = "";
       comment.interface = INIT_ACCOUNT;
-      comment.tags.push_back( "test" );
+      comment.tags.push_back( tag_name_type( "test" ) );
       comment.json = "{ \"valid\": true }";
       comment.latitude = 37.8136;
       comment.longitude = 144.9631;

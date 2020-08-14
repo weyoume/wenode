@@ -15,7 +15,8 @@ using namespace node::chain;
 using namespace node::protocol;
 using std::string;
 
-BOOST_FIXTURE_TEST_SUITE( producer_operation_tests, clean_database_fixture );
+
+BOOST_FIXTURE_TEST_SUITE( producer_operation_tests, clean_database_fixture )
 
 
 
@@ -300,11 +301,9 @@ BOOST_AUTO_TEST_CASE( proof_of_work_operation_test )
       BOOST_REQUIRE( jayme_producer.mining_power == 0 );
       BOOST_REQUIRE( jayme_producer.mining_count == 0 );
 
-      uint64_t days = 4;
-
       x11 target_pow = db.pow_difficulty();
       x11_proof_of_work work;
-      uint64_t n = 0;
+      int64_t n = 0;
       block_id_type head_block_id = db.head_block_id();
    
       while( n < int64_t( BLOCKCHAIN_PRECISION.value ) )
@@ -331,6 +330,8 @@ BOOST_AUTO_TEST_CASE( proof_of_work_operation_test )
       }
       
       /**
+      
+      uint64_t days = 4;
 
       while( ( db.head_block_num() / POW_UPDATE_BLOCK_INTERVAL ) < days )
       {
@@ -565,7 +566,7 @@ BOOST_AUTO_TEST_CASE( proof_of_work_operation_test )
       BOOST_REQUIRE( jayme_producer.mining_power > 0 );
       BOOST_REQUIRE( jayme_producer.mining_count > 0 );
 
-      **/
+      */
       
       validate_database();
 

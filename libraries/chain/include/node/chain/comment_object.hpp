@@ -42,12 +42,12 @@ namespace node { namespace chain {
             ipfs(a), 
             magnet(a), 
             url(a), 
-            tags(a.get_segment_manager()), 
+            tags(), 
             language(a), 
             parent_permlink(a), 
             json(a), 
             category(a), 
-            beneficiaries(a.get_segment_manager())
+            beneficiaries()
             {
                c( *this );
             }
@@ -78,7 +78,9 @@ namespace node { namespace chain {
 
          community_name_type               community;                           ///< The name of the community to which the post is uploaded to. Null string if no community.
 
-         shared_vector< tag_name_type >    tags;                                ///< Set of string tags for sorting the post by.
+         flat_set< tag_name_type >         tags;                                ///< Set of string tags for sorting the post by.
+
+         flat_set< account_name_type >     collaborating_authors;               ///< Accounts that are able to edit the post as shared authors.
 
          account_name_type                 interface;                           ///< Name of the interface account that was used to broadcast the transaction and view the post.
 
@@ -108,7 +110,7 @@ namespace node { namespace chain {
 
          flat_map< account_name_type, flat_map< asset_symbol_type, asset > >  payments_received;    ///< Map of all transfers received that referenced this comment. 
 
-         shared_vector< beneficiary_route_type > beneficiaries;                 ///< Vector of beneficiary routes that receive a content reward distribution.
+         flat_set< beneficiary_route_type > beneficiaries;                      ///< Vector of beneficiary routes that receive a content reward distribution.
          
          time_point                        last_updated;                        ///< The time the comment was last edited by the author
 
@@ -170,21 +172,9 @@ namespace node { namespace chain {
 
          asset                             max_accepted_payout = MAX_ACCEPTED_PAYOUT;  ///< USD value of the maximum payout this post will receive.
 
-         uint32_t                          author_reward_percent = AUTHOR_REWARD_PERCENT;
-
-         uint32_t                          vote_reward_percent = VOTE_REWARD_PERCENT;
-
-         uint32_t                          view_reward_percent = VIEW_REWARD_PERCENT;
-
-         uint32_t                          share_reward_percent = SHARE_REWARD_PERCENT;
-
-         uint32_t                          comment_reward_percent = COMMENT_REWARD_PERCENT;
-
-         uint32_t                          storage_reward_percent = STORAGE_REWARD_PERCENT;
-
-         uint32_t                          moderator_reward_percent = MODERATOR_REWARD_PERCENT;
-
          asset_symbol_type                 reward_currency = SYMBOL_COIN;      ///< The currency asset that the post can earn content rewards in.
+
+         comment_reward_curve              reward_curve = comment_reward_curve();  ///< The components of the reward curve determined at the time of creating the post.
 
          bool                              allow_replies = true;               ///< allows a post to receive replies.
 
@@ -285,6 +275,34 @@ namespace node { namespace chain {
             {
                return true;     // No premium price, allow all comments.
             }
+         }
+
+         bool                              is_collaborating_author( account_name_type name )const
+         {
+            return std::find( collaborating_authors.begin(), collaborating_authors.end(), name ) != collaborating_authors.end();
+         }
+
+         /**
+          * Prints the Content of the post
+          */
+         string comment_string()const
+         {
+            string result;
+            result += ( "Post: >>" + fc::to_string( id._id ) + "\n" );
+            result += ( "Author: @" + author + "/" + to_string( permlink ) + "\n" );
+            result += ( "Community: " + community + "\n" );
+            result += ( "Title: " + to_string( title ) + "\n" );
+            result += ( to_string( body ) + "\n" );
+            result += ( "tags: " );
+            for( auto t : tags )
+            {
+               result += ( "#" + t + " " );
+            }
+            result += ( "\n" );
+            result += ( "ipfs: " + to_string( ipfs ) + "\n" );
+            result += ( "magnet: " + to_string( magnet ) + "\n" );
+            result += ( "url: " + to_string( url ) + "\n" );
+            return result;
          }
    };
    
@@ -475,7 +493,6 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          moderation_tag_object( Constructor&& c, allocator< Allocator > a ) :
-            tags( a.get_segment_manager() ),
             details(a)
             {
                c( *this );
@@ -489,7 +506,7 @@ namespace node { namespace chain {
 
          community_name_type                 community;        ///< The name of the community to which the post is uploaded to.
 
-         shared_vector< tag_name_type >      tags;             ///< Set of string tags for sorting the post by.
+         flat_set< tag_name_type >           tags;             ///< Set of string tags for sorting the post by.
 
          uint16_t                            rating;           ///< Moderator updated rating as to the maturity of the content, and display sensitivity. 
 
@@ -1481,6 +1498,7 @@ FC_REFLECT( node::chain::comment_object,
          (reply_connection)
          (community)
          (tags)
+         (collaborating_authors)
          (interface)
          (rating)
          (language)
@@ -1526,14 +1544,8 @@ FC_REFLECT( node::chain::comment_object,
          (weight)
          (max_weight)
          (max_accepted_payout)
-         (author_reward_percent)
-         (vote_reward_percent)
-         (view_reward_percent)
-         (share_reward_percent)
-         (comment_reward_percent)
-         (storage_reward_percent)
-         (moderator_reward_percent)
          (reward_currency)
+         (reward_curve)
          (allow_replies)
          (allow_votes)
          (allow_views)
@@ -1579,6 +1591,7 @@ FC_REFLECT( node::chain::comment_vote_object,
          (id)
          (voter)
          (comment)
+         (interface)
          (weight)
          (max_weight)
          (reward)

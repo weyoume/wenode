@@ -49,59 +49,67 @@ namespace node { namespace protocol {
    {
       account_name_type             signatory;
 
-      account_name_type             registrar;                     ///< Account registering the new account, usually an interface.
+      account_name_type             registrar;                              ///< Account registering the new account, usually an interface.
 
-      account_name_type             new_account_name;              ///< The name of the new account.
+      account_name_type             new_account_name;                       ///< The name of the new account.
 
-      account_name_type             referrer;                      ///< the account that lead to the creation of the new account, by way of referral link.
+      account_name_type             referrer;                               ///< the account that lead to the creation of the new account, by way of referral link.
 
-      account_name_type             proxy;                         ///< Account that the new account will delegate its voting power to.
+      account_name_type             proxy;                                  ///< Account that the new account will delegate its voting power to.
 
-      account_name_type             recovery_account;              ///< Account that can execute a recovery operation, in the event that the owner key is compromised. 
+      account_name_type             recovery_account;                       ///< Account that can execute a recovery operation, in the event that the owner key is compromised. 
 
-      account_name_type             reset_account;                 ///< Account that has the ability to execute a reset operation after 60 days of inactivity.
+      account_name_type             reset_account;                          ///< Account that has the ability to execute a reset operation after 60 days of inactivity.
 
-      string                        details;                       ///< The account's details string.
+      string                        details;                                ///< The account's Public details string. Profile Biography.
 
-      string                        url;                           ///< The account's selected personal URL. 
+      string                        url;                                    ///< The account's Public personal URL.
 
-      string                        image;                         ///< IPFS Reference of the profile image of the account. 
+      string                        profile_image;                          ///< IPFS Reference of the Public profile image of the account.
 
-      string                        json;                          ///< The JSON string of public profile information.
+      string                        cover_image;                            ///< IPFS Reference of the Public cover image of the account.
 
-      string                        json_private;                  ///< The JSON string of encrypted profile information. Encrypted with connection key.
+      string                        json;                                   ///< The JSON string of additional Public profile information.
 
-      string                        first_name;                    ///< Encrypted First name of the user. Encrypted with connection key.
+      string                        json_private;                           ///< The JSON string of additional encrypted profile information. Encrypted with connection key.
 
-      string                        last_name;                     ///< Encrypted Last name of the user. Encrypted with connection key.
+      string                        first_name;                             ///< Encrypted First name of the user. Encrypted with connection key.
 
-      string                        gender;                        ///< Encrypted Gender of the user. Encrypted with connection key.
+      string                        last_name;                              ///< Encrypted Last name of the user. Encrypted with connection key.
 
-      string                        date_of_birth;                 ///< Encrypted Date of birth of the user. Format: DD-MM-YYYY. Encrypted with connection key.
+      string                        gender;                                 ///< Encrypted Gender of the user. Encrypted with connection key.
 
-      string                        email;                         ///< Encrypted Email address of the user. Encrypted with connection key.
+      string                        date_of_birth;                          ///< Encrypted Date of birth of the user. Format: DD-MM-YYYY. Encrypted with connection key.
 
-      string                        phone;                         ///< Encrypted Phone Number of the user. Encrypted with connection key.
+      string                        email;                                  ///< Encrypted Email address of the user. Encrypted with connection key.
 
-      string                        nationality;                   ///< Encrypted Country of user's residence. Encrypted with connection key.
+      string                        phone;                                  ///< Encrypted Phone Number of the user. Encrypted with connection key.
 
-      authority                     owner_auth;                    ///< The account authority required for changing the active and posting authorities.
+      string                        nationality;                            ///< Encrypted Country of user's residence. Encrypted with connection key.
 
-      authority                     active_auth;                   ///< The account authority required for sending payments and trading.
+      string                        relationship;                           ///< Encrypted Relationship status of the account. Encrypted with connection key.
 
-      authority                     posting_auth;                  ///< The account authority required for posting content and voting.
+      string                        political_alignment;                    ///< Encrypted Political alignment. Encrypted with connection key.
 
-      string                        secure_public_key;             ///< The secure encryption key for content only visible to this account.
+      vector< tag_name_type >       interests;                              ///< Set of tags of the interests of the user.
 
-      string                        connection_public_key;         ///< The connection public key used for encrypting Connection level content.
+      authority                     owner_auth;                             ///< The account authority required for changing the active and posting authorities.
 
-      string                        friend_public_key;             ///< The connection public key used for encrypting Friend level content.
+      authority                     active_auth;                            ///< The account authority required for sending payments and trading.
 
-      string                        companion_public_key;          ///< The connection public key used for encrypting Companion level content.
+      authority                     posting_auth;                           ///< The account authority required for posting content and voting.
 
-      asset                         fee;                           ///< Account creation fee for stake on the new account.
+      string                        secure_public_key;                      ///< The secure encryption key for content only visible to this account.
 
-      asset                         delegation;                    ///< Initial amount delegated to the new account.
+      string                        connection_public_key;                  ///< The connection public key used for encrypting Connection level content.
+
+      string                        friend_public_key;                      ///< The connection public key used for encrypting Friend level content.
+
+      string                        companion_public_key;                   ///< The connection public key used for encrypting Companion level content.
+
+      asset                         fee;                                    ///< Account creation fee for stake on the new account.
+
+      asset                         delegation;                             ///< Initial amount delegated to the new account.
 
       void                          validate()const;
       void                          get_required_owner_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -118,11 +126,13 @@ namespace node { namespace protocol {
 
       account_name_type             account;                       ///< Name of the account to update.
 
-      string                        details;                       ///< The account's Public details string.
+      string                        details;                       ///< The account's Public details string. Profile Biography.
 
       string                        url;                           ///< The account's Public personal URL.
 
-      string                        image;                         ///< IPFS Reference of the Public profile image of the account.
+      string                        profile_image;                 ///< IPFS Reference of the Public profile image of the account.
+
+      string                        cover_image;                   ///< IPFS Reference of the Public cover image of the account.
 
       string                        json;                          ///< The JSON string of additional Public profile information.
 
@@ -142,6 +152,14 @@ namespace node { namespace protocol {
 
       string                        nationality;                   ///< Encrypted Country of user's residence. Encrypted with connection key.
 
+      string                        relationship;                  ///< Encrypted Relationship status of the account. Encrypted with connection key.
+
+      string                        political_alignment;           ///< Encrypted Political alignment. Encrypted with connection key.
+      
+      string                        pinned_permlink;               ///< Post permlink pinned to the top of the account's profile.
+
+      vector< tag_name_type >       interests;                     ///< Set of tags of the interests of the user.
+
       authority                     owner_auth;                    ///< Creates a new owner authority for the account, changing the key and account auths required to sign transactions.
 
       authority                     active_auth;                   ///< Creates a new active authority for the account, changing the key and account auths required to sign transactions.
@@ -155,8 +173,6 @@ namespace node { namespace protocol {
       string                        friend_public_key;             ///< The connection public key used for encrypting Friend level content.
 
       string                        companion_public_key;          ///< The connection public key used for encrypting Companion level content.
-
-      string                        pinned_permlink;               ///< Permlink of the users pinned post.
 
       bool                          active = true;                 ///< True when account is active. False to set account as inactive.
 
@@ -1310,6 +1326,56 @@ namespace node { namespace protocol {
    };
 
    /**
+    * Contains all the parameters for calculating the 
+    * content reward distribution for a post.
+    * Snapshots the reward curve conditions at the time the
+    * post is created for consistent calculation for duration of 
+    * reward decay rate.
+    */
+   struct comment_reward_curve
+   {
+      uint128_t                         constant_factor = CONTENT_CONSTANT;                         ///< Constant added to reward value for reward curve calculation.
+
+      uint16_t                          sqrt_percent = 0;                                           ///< Weighting percentage of the Square Root component of the reward curve.
+
+      uint16_t                          linear_percent = 0;                                         ///< Weighting percentage of the Linear component of the reward curve.
+
+      uint16_t                          semi_quadratic_percent = PERCENT_100;                       ///< Weighting percentage of the Semi-Quadratic component of the reward curve.
+
+      uint16_t                          quadratic_percent = 0;                                      ///< Weighting percentage of the Quadratic component of the reward curve.
+
+      uint16_t                          reward_interval_amount = CONTENT_REWARD_INTERVAL_AMOUNT;    ///< Number of reward intervals for distribution.
+
+      uint16_t                          reward_interval_hours = CONTENT_REWARD_INTERVAL_HOURS;      ///< Number of hours for each content reward interval.
+
+      uint16_t                          author_reward_percent = AUTHOR_REWARD_PERCENT;              ///< Percentage of Content rewards that are paid to the Author.
+
+      uint16_t                          vote_reward_percent = VOTE_REWARD_PERCENT;                  ///< Percentage of Content rewards that are paid to all Voters.
+
+      uint16_t                          view_reward_percent = VIEW_REWARD_PERCENT;                  ///< Percentage of Content rewards that are paid to all Viewers.
+
+      uint16_t                          share_reward_percent = SHARE_REWARD_PERCENT;                ///< Percentage of Content rewards that are paid to all Sharers.
+
+      uint16_t                          comment_reward_percent = COMMENT_REWARD_PERCENT;            ///< Percentage of Content rewards that are paid to all Commenters.
+
+      uint16_t                          storage_reward_percent = STORAGE_REWARD_PERCENT;            ///< Percentage of Content rewards that are paid to Viewer Supernodes.
+
+      uint16_t                          moderator_reward_percent = MODERATOR_REWARD_PERCENT;        ///< Percentage of Content rewards that are paid to Community Moderators.
+
+      fc::microseconds                  reward_interval()const
+      {
+         return fc::hours( reward_interval_hours );
+      }
+
+      fc::microseconds                  reward_duration()const
+      {
+         return fc::hours( reward_interval_hours * reward_interval_amount );
+      }
+
+      void validate()const;
+   };
+
+   /**
     * Allows authors to update properties associated with their post.
     * 
     * The max_accepted_payout may be decreased, but never increased.
@@ -1415,6 +1481,8 @@ namespace node { namespace protocol {
       string                         parent_permlink;      ///< Permlink of the post this post is replying to, empty if root post.
 
       vector< tag_name_type >        tags;                 ///< Set of string tags for sorting the post by.
+
+      vector< account_name_type >    collaborating_authors;   ///< Set of string tags for sorting the post by.
 
       string                         json;                 ///< json string of additional interface specific data relating to the post.
 
@@ -4480,6 +4548,8 @@ namespace node { namespace protocol {
 
    struct chain_properties
    {
+      comment_reward_curve   reward_curve = comment_reward_curve();                         ///< The Parameters defining the content reward distribution curve.
+
       asset                  account_creation_fee = MIN_ACCOUNT_CREATION_FEE;               ///< Minimum fee required to create a new account by staking.
 
       asset                  asset_coin_liquidity = MIN_ASSET_COIN_LIQUIDITY;               ///< Minimum COIN required to create a new asset.
@@ -4520,24 +4590,6 @@ namespace node { namespace protocol {
 
       asset                  membership_top_price = MEMBERSHIP_FEE_TOP;                     ///< The price for top level membership per month.
 
-      uint32_t               author_reward_percent = AUTHOR_REWARD_PERCENT;                 ///< The percentage of content rewards distributed to post authors.
-
-      uint32_t               vote_reward_percent = VOTE_REWARD_PERCENT;                     ///< The percentage of content rewards distributed to post voters.
-
-      uint32_t               view_reward_percent = VIEW_REWARD_PERCENT;                     ///< The percentage of content rewards distributed to post viewers.
-
-      uint32_t               share_reward_percent = SHARE_REWARD_PERCENT;                   ///< The percentage of content rewards distributed to post sharers.
-
-      uint32_t               comment_reward_percent = COMMENT_REWARD_PERCENT;               ///< The percentage of content rewards distributed to post commenters.
-
-      uint32_t               storage_reward_percent = STORAGE_REWARD_PERCENT;               ///< The percentage of content rewards distributed to viewing supernodes.
-
-      uint32_t               moderator_reward_percent = MODERATOR_REWARD_PERCENT;           ///< The percentage of content rewards distributed to community moderators.
-
-      fc::microseconds       content_reward_decay_rate = CONTENT_REWARD_DECAY_RATE;         ///< The time over which content rewards are distributed
-
-      fc::microseconds       content_reward_interval = CONTENT_REWARD_INTERVAL;             ///< Time taken per distribution of content rewards.
-
       uint32_t               vote_reserve_rate = VOTE_RESERVE_RATE;                         ///< The number of votes regenerated per day.
 
       uint32_t               view_reserve_rate = VIEW_RESERVE_RATE;                         ///< The number of views regenerated per day.
@@ -4576,125 +4628,7 @@ namespace node { namespace protocol {
 
       asset                  max_exec_budget = MAX_EXEC_BUDGET;                             ///< Maximum budget that an executive board can claim.
 
-      void validate()const
-      {
-         FC_ASSERT( account_creation_fee.symbol == SYMBOL_COIN,
-            "Acccount creation fee must be in the core asset." );
-         FC_ASSERT( account_creation_fee >= MIN_ACCOUNT_CREATION_FEE,
-            "Account creation fee must be at least 1 Unit of core asset." );
-         FC_ASSERT( asset_coin_liquidity.symbol == SYMBOL_COIN,
-            "Asset COIN liquidity must be in the core asset." );
-         FC_ASSERT( asset_coin_liquidity >= MIN_ASSET_COIN_LIQUIDITY,
-            "Asset COIN liquidity must be at least 10 units of COIN." );
-         FC_ASSERT( asset_usd_liquidity.symbol == SYMBOL_USD,
-            "Asset USD liquidity must be in the USD asset." );
-         FC_ASSERT( asset_usd_liquidity >= MIN_ASSET_USD_LIQUIDITY,
-            "Asset USD liquidity must be at least 10 units of USD." );
-         FC_ASSERT( maximum_block_size >= MIN_BLOCK_SIZE_LIMIT,
-            "Maximum blocksize must be greater than minimum limit requirement." );
-         FC_ASSERT( pow_target_time >= fc::minutes(1) && pow_target_time <= fc::hours(1),
-            "POW target time must be between 1 minute and 1 hour." );
-         FC_ASSERT( pow_decay_time >= fc::days(1) && pow_decay_time <= fc::days(30),
-            "POW Decay time must be between 1 and 30 days." );
-         FC_ASSERT( txn_stake_decay_time >= fc::days(1) && txn_stake_decay_time <= fc::days(30),
-            "Transaction Stake Decay time must be between 1 and 30 days." );
-         FC_ASSERT( escrow_bond_percent >= 0 && escrow_bond_percent <= PERCENT_100,
-            "Credit interest rate must be between 0 and PERCENT_100." );
-         FC_ASSERT( credit_interest_rate >= 0 && credit_interest_rate <= PERCENT_100,
-            "Credit interest rate must be between 0 and PERCENT_100." );
-         FC_ASSERT( credit_open_ratio >= PERCENT_100 && credit_open_ratio <= PERCENT_100 * 2,
-            "Credit interest rate must be PERCENT_100 and 2 * PERCENT_100." );
-         FC_ASSERT( credit_liquidation_ratio >= PERCENT_100 && credit_liquidation_ratio <= PERCENT_100 * 2,
-            "Credit interest rate must be PERCENT_100 and 2 * PERCENT_100." );
-         FC_ASSERT( credit_min_interest >= 0 && credit_min_interest <= PERCENT_100,
-            "Credit min interest rate must be between 0 and PERCENT_100." );
-         FC_ASSERT( credit_variable_interest >= 0 && credit_variable_interest <= PERCENT_100,
-            "Credit variable interest rate must be between 0 and PERCENT_100." );
-         FC_ASSERT( market_max_credit_ratio >= 0 && market_max_credit_ratio <= PERCENT_100,
-            "Market max credit ratio must be between 0 and PERCENT_100." );
-         FC_ASSERT( margin_open_ratio >= PERCENT_1 && margin_open_ratio <= PERCENT_100,
-            "Margin Open Ratio must be between PERCENT_1 and PERCENT_100." );
-         FC_ASSERT( margin_liquidation_ratio >= PERCENT_1 && margin_liquidation_ratio <= PERCENT_100,
-            "Margin Liquidation Ratio must be between PERCENT_1 and PERCENT_100." );
-         FC_ASSERT( maximum_asset_feed_publishers >= MAX_ASSET_FEED_PUBLISHERS / 10 &&
-            maximum_asset_feed_publishers <= MAX_ASSET_FEED_PUBLISHERS * 10,
-            "Maximum asset feed publishers must be between 10 and 1000." );
-         FC_ASSERT( membership_base_price >= MEMBERSHIP_FEE_BASE / 25 && membership_base_price <= MEMBERSHIP_FEE_BASE * 100,
-            "Membership base price must be between $0.10 and $250.00." );
-         FC_ASSERT( membership_base_price.symbol == SYMBOL_USD,
-            "Membership base price must be in the USD asset." );
-         FC_ASSERT( membership_mid_price >= MEMBERSHIP_FEE_MID / 25 && membership_mid_price <= MEMBERSHIP_FEE_MID * 100,
-            "Membership mid price must be between $1.00 and $2500.00." );
-         FC_ASSERT( membership_mid_price.symbol == SYMBOL_USD,
-            "Membership mid price must be in the USD asset." );
-         FC_ASSERT( membership_top_price >= MEMBERSHIP_FEE_TOP / 25 && membership_top_price <= MEMBERSHIP_FEE_TOP * 100,
-            "Membership top price must be between $10.00 and $25000.00." );
-         FC_ASSERT( membership_top_price.symbol == SYMBOL_USD,
-            "Membership top price must be in the USD asset." );
-
-         FC_ASSERT( vote_reward_percent >= PERCENT_10_OF_PERCENT_1 && vote_reward_percent <= 20 * PERCENT_1,
-            "Vote reward percent must be between PERCENT_10_OF_PERCENT_1 and 20 * PERCENT_1." );
-         FC_ASSERT( view_reward_percent >= PERCENT_10_OF_PERCENT_1 && view_reward_percent <= 20 * PERCENT_1,
-            "View reward percent must be between PERCENT_10_OF_PERCENT_1 and 20 * PERCENT_1." );
-         FC_ASSERT( share_reward_percent >= PERCENT_10_OF_PERCENT_1 && share_reward_percent <= 20 * PERCENT_1,
-            "Share reward percent must be between PERCENT_10_OF_PERCENT_1 and 20 * PERCENT_1." );
-         FC_ASSERT( comment_reward_percent >= PERCENT_10_OF_PERCENT_1 && comment_reward_percent <= 20 * PERCENT_1,
-            "Comment reward percent must be between PERCENT_10_OF_PERCENT_1 and 20 * PERCENT_1." );
-         FC_ASSERT( storage_reward_percent >= PERCENT_10_OF_PERCENT_1 && storage_reward_percent <= 10 * PERCENT_1,
-            "Storage reward percent must be between PERCENT_10_OF_PERCENT_1 and 10 * PERCENT_1." );
-         FC_ASSERT( moderator_reward_percent >= PERCENT_10_OF_PERCENT_1 && moderator_reward_percent <= 10 * PERCENT_1,
-            "Moderator reward percent must be between PERCENT_10_OF_PERCENT_1 and 10 * PERCENT_1." );
-
-         FC_ASSERT( content_reward_decay_rate >= fc::days(1) && content_reward_decay_rate <= fc::days(365),
-            "Content reward decay rate must be between 1 and 365 days." );
-         FC_ASSERT( content_reward_interval >= fc::hours(1) && content_reward_interval <= fc::days(7),
-            "Content reward interval must be between 1 hour and 7 days." );
-
-         FC_ASSERT( vote_reserve_rate >= 1 && vote_reserve_rate <= 10000,
-            "Vote reserve rate must be between 1 and 10000." );
-         FC_ASSERT( view_reserve_rate >= 1 && view_reserve_rate <= 10000,
-            "View reserve rate must be between 1 and 10000." );
-         FC_ASSERT( share_reserve_rate >= 1 && share_reserve_rate <= 10000,
-            "Share reserve rate must be between 1 and 10000." );
-         FC_ASSERT( comment_reserve_rate >= 1 && comment_reserve_rate <= 10000,
-            "Comment reserve rate must be between 1 and 10000." );
-
-         FC_ASSERT( vote_recharge_time >= fc::days(1) && vote_recharge_time <= fc::days(365),
-            "Vote Recharge time must be between 1 and 365 days." );
-         FC_ASSERT( view_recharge_time >= fc::days(1) && view_recharge_time <= fc::days(365),
-            "View Recharge time must be between 1 and 365 days." );
-         FC_ASSERT( share_recharge_time >= fc::days(1) && share_recharge_time <= fc::days(365),
-            "Share Recharge time must be between 1 and 365 days." );
-         FC_ASSERT( comment_recharge_time >= fc::days(1) && comment_recharge_time <= fc::days(365),
-            "Comment Recharge time must be between 1 and 365 days." );
-         FC_ASSERT( curation_auction_decay_time >= fc::minutes(1) && curation_auction_decay_time <= fc::days(1),
-            "Curation auction decay time must be between 1 minute and 1 day." );
-
-         FC_ASSERT( vote_curation_decay >= 1 && vote_curation_decay <= 100000,
-            "Vote curation decay must be between 1 and 100,000." );
-         FC_ASSERT( view_curation_decay >= 1 && view_curation_decay <= 100000,
-            "View curation decay must be between 1 and 100,000." );
-         FC_ASSERT( share_curation_decay >= 1 && share_curation_decay <= 100000,
-            "Share curation decay must be between 1 and 100,000." );
-         FC_ASSERT( comment_curation_decay >= 1 && comment_curation_decay <= 100000,
-            "Comment curation decay must be between 1 and 100,000." );
-
-         FC_ASSERT( supernode_decay_time >= fc::days(1) && supernode_decay_time <= fc::days(365),
-            "Supernode Decay time must be between 1 and 365 days." );
-         FC_ASSERT( enterprise_vote_percent_required >= 0 && enterprise_vote_percent_required <= PERCENT_100,
-            "Enterprise vote percent required must be between 0 and PERCENT_100." );
-         FC_ASSERT( maximum_asset_whitelist_authorities >= MAX_ASSET_WHITELIST_AUTHORITIES && 
-            maximum_asset_whitelist_authorities <= 10 * MAX_ASSET_WHITELIST_AUTHORITIES,
-            "Executive types amount must be between 1000 and 10,000." );
-         FC_ASSERT( max_stake_intervals >= MAX_ASSET_STAKE_INTERVALS && max_stake_intervals <= 100 * MAX_ASSET_STAKE_INTERVALS,
-            "Max stake intervals must be between 104 and 10400." );
-         FC_ASSERT( max_unstake_intervals >= MAX_ASSET_UNSTAKE_INTERVALS && max_unstake_intervals <= 100 * MAX_ASSET_UNSTAKE_INTERVALS,
-            "Max unstake intervals must be between 104 and 10400." );
-         FC_ASSERT( max_exec_budget.symbol == SYMBOL_CREDIT,
-            "Max Excutive Budget must be in the CREDIT asset." );
-         FC_ASSERT( max_exec_budget >= MAX_EXEC_BUDGET,
-            "Max Excutive Budget must be less than or equal to 1,000,000 MCR." );
-      };
+      void validate()const;
    };
 
    /**
@@ -4993,7 +4927,8 @@ FC_REFLECT( node::protocol::account_create_operation,
          (reset_account)
          (details)
          (url)
-         (image)
+         (profile_image)
+         (cover_image)
          (json)
          (json_private)
          (first_name)
@@ -5003,6 +4938,9 @@ FC_REFLECT( node::protocol::account_create_operation,
          (email)
          (phone)
          (nationality)
+         (relationship)
+         (political_alignment)
+         (interests)
          (owner_auth)
          (active_auth)
          (posting_auth)
@@ -5019,7 +4957,8 @@ FC_REFLECT( node::protocol::account_update_operation,
          (account)
          (details)
          (url)
-         (image)
+         (profile_image)
+         (cover_image)
          (json)
          (json_private)
          (first_name)
@@ -5029,6 +4968,10 @@ FC_REFLECT( node::protocol::account_update_operation,
          (email)
          (phone)
          (nationality)
+         (relationship)
+         (political_alignment)
+         (pinned_permlink)
+         (interests)
          (owner_auth)
          (active_auth)
          (posting_auth)
@@ -5036,7 +4979,6 @@ FC_REFLECT( node::protocol::account_update_operation,
          (connection_public_key)
          (friend_public_key)
          (companion_public_key)
-         (pinned_permlink)
          (active)
          );
 
@@ -5394,6 +5336,23 @@ FC_REFLECT( node::protocol::comment_options,
          (beneficiaries)
          );
 
+FC_REFLECT( node::protocol::comment_reward_curve,
+         (constant_factor)
+         (sqrt_percent)
+         (linear_percent)
+         (semi_quadratic_percent)
+         (quadratic_percent)
+         (reward_interval_amount)
+         (reward_interval_hours)
+         (author_reward_percent)
+         (vote_reward_percent)
+         (view_reward_percent)
+         (share_reward_percent)
+         (comment_reward_percent)
+         (storage_reward_percent)
+         (moderator_reward_percent)
+         );
+
 FC_REFLECT( node::protocol::comment_operation,
          (signatory)
          (author)
@@ -5415,6 +5374,7 @@ FC_REFLECT( node::protocol::comment_operation,
          (parent_author)
          (parent_permlink)
          (tags)
+         (collaborating_authors)
          (json)
          (options)
          (deleted)
@@ -5530,6 +5490,10 @@ FC_REFLECT( node::protocol::community_create_operation,
          (json_private)
          (details)
          (url)
+         (reward_currency)
+         (max_rating)
+         (flags)
+         (permissions)
          );
 
 FC_REFLECT( node::protocol::community_update_operation,
@@ -5543,6 +5507,10 @@ FC_REFLECT( node::protocol::community_update_operation,
          (url)
          (pinned_author)
          (pinned_permlink)
+         (reward_currency)
+         (max_rating)
+         (flags)
+         (permissions)
          (active)
          );
 
@@ -5655,6 +5623,7 @@ FC_REFLECT( node::protocol::community_event_attend_operation,
          (signatory)
          (account)
          (community)
+         (interested)
          (attending)
          (not_attending)
          );
@@ -6016,7 +5985,7 @@ FC_REFLECT( node::protocol::product_sale_operation,
 FC_REFLECT( node::protocol::product_purchase_operation, 
          (signatory)
          (buyer)
-         (product_id)
+         (order_id)
          (seller)
          (product_id)
          (order_variants)
@@ -6056,6 +6025,7 @@ FC_REFLECT( node::protocol::product_auction_bid_operation,
          (seller)
          (auction_id)
          (bid_price_commitment)
+         (blinding_factor)
          (public_bid_amount)
          (memo)
          (json)
@@ -6346,6 +6316,19 @@ FC_REFLECT( node::protocol::asset_options,
          (savings_fixed_interest_rate)
          (savings_variable_interest_rate)
          (var_interest_range)
+         (ownership_asset)
+         (control_list)
+         (access_list)
+         (access_price)
+         (value)
+         (collateralization)
+         (coupon_rate_percent)
+         (maturity_date)
+         (redemption_asset)
+         (redemption_price)
+         (distribution_list)
+         (redemption_list)
+         (distribution_amount)
          );
 
 FC_REFLECT( node::protocol::asset_create_operation,
@@ -6471,6 +6454,7 @@ FC_REFLECT( node::protocol::asset_collateral_bid_operation,
 
 
 FC_REFLECT( node::protocol::chain_properties,
+         (reward_curve)
          (account_creation_fee)
          (asset_coin_liquidity)
          (asset_usd_liquidity)
@@ -6491,15 +6475,6 @@ FC_REFLECT( node::protocol::chain_properties,
          (membership_base_price)
          (membership_mid_price)
          (membership_top_price)
-         (author_reward_percent)
-         (vote_reward_percent)
-         (view_reward_percent)
-         (share_reward_percent)
-         (comment_reward_percent)
-         (storage_reward_percent)
-         (moderator_reward_percent)
-         (content_reward_decay_rate)
-         (content_reward_interval)
          (vote_reserve_rate)
          (view_reserve_rate)
          (share_reserve_rate)

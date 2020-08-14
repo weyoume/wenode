@@ -118,7 +118,7 @@ void database::process_asset_staking()
       });
 
       ilog( "Processed Asset Unstaking: ${s} - ${f}",
-         ("s",unstake_asset)("f",from_account_balance.owner));
+         ("s",unstake_asset.to_string())("f",from_account_balance.owner));
    }
 
    auto stake_itr = stake_idx.begin();
@@ -162,7 +162,7 @@ void database::process_asset_staking()
       });
 
       ilog( "Processed Asset Staking: ${s} : ${f}",
-         ("s",stake_asset)("f",from_account_balance.owner));
+         ("s",stake_asset.to_string())("f",from_account_balance.owner));
    }
 
    auto vesting_itr = vesting_idx.begin();
@@ -282,10 +282,12 @@ void database::process_savings_withdraws()
          withdraw.to, 
          withdraw.amount, 
          to_string( withdraw.request_id ), 
-         to_string( withdraw.memo )) 
+         to_string( withdraw.memo ))
       );
 
-      ilog( "Removed: ${v}",("v",withdraw));
+      ilog( "Processed Savings Withdrawal from account: ${f} to recipient: ${t} of amount: ${a}",
+         ("f",withdraw.from)("t",withdraw.to)("a",withdraw.amount.to_string()) );
+
       remove( withdraw );
    }
 }
@@ -425,19 +427,21 @@ void database::process_bond_interest()
          const account_balance_object& balance = *balance_itr;
          ++balance_itr;
 
-         asset interest = asset( ( bond.value.amount * balance.get_total_balance().amount * bond.coupon_rate_percent * ( now - balance.last_interest_time ).to_seconds() ) / fc::days(365).to_seconds(), bond.value.symbol );
+         uint128_t interest_seconds = ( now - balance.last_interest_time ).to_seconds();
+         uint128_t interest_amount = uint128_t( bond.value.amount.value ) * uint128_t( balance.get_total_balance().amount.value ) * uint128_t( bond.coupon_rate_percent ) * interest_seconds;
+         interest_amount /= uint128_t( fc::days(365).to_seconds() * PERCENT_100 );
+         asset interest = asset( share_type( interest_amount.to_uint64() ), bond.value.symbol );
          total_interest += interest;
+
+         asset interest_fees = ( interest * INTEREST_FEE_PERCENT ) / PERCENT_100;
+         total_interest_fees += interest_fees;
+         
+         adjust_liquid_balance( balance.owner, ( interest - interest_fees ) );
 
          modify( balance, [&]( account_balance_object& b )
          {
             b.last_interest_time = now;
          });
-
-         asset interest_fees = ( interest * INTEREST_FEE_PERCENT ) / PERCENT_100;
-         interest -= interest_fees;
-         total_interest_fees += interest_fees;
-         
-         adjust_liquid_balance( balance.owner, interest );
       }
 
       adjust_liquid_balance( bond.business_account, -total_interest );
@@ -662,8 +666,8 @@ void database::process_credit_interest()
          
          ++balance_itr;
 
-         ilog( "Account: ${a} Earned Credit interest: Liquid: ${l} - Staked: ${staked} - Savings: ${s}",
-            ("a",balance.owner)("l",liquid_interest)("staked",staked_interest)("s",savings_interest ) );
+         ilog( "Account: ${a} Earned Credit interest: Seconds: ${sec} - Liquid: ${l} - Staked: ${staked} - Savings: ${s}",
+            ("a",balance.owner)("sec",elapsed_sec)("l",liquid_interest.to_string())("staked",staked_interest.to_string())("s",savings_interest.to_string()));
       }
 
       modify( dyn_data, [&]( asset_dynamic_data_object& d )
@@ -904,7 +908,6 @@ void database::process_option_assets()
 
          create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
          {
-            a.issuer = NULL_ACCOUNT;
             a.symbol = s;
          });
       }
@@ -1008,7 +1011,7 @@ void database::close_prediction_pool( const asset_prediction_pool_object& pool )
       }
 
       ilog( "Account: ${a} received resolving amount: ${am}",
-         ("a",resolution.account)("am",pool_split));
+         ("a",resolution.account)("am",pool_split.to_string()));
 
       adjust_liquid_balance( resolution.account, pool_split );
       prediction_bond_remaining -= pool_split;
@@ -1033,7 +1036,7 @@ void database::close_prediction_pool( const asset_prediction_pool_object& pool )
       }
 
       ilog( "Account: ${a} received prediction outcome amount: ${am}",
-         ("a",balance.owner)("am",pool_split));
+         ("a",balance.owner)("am",pool_split.to_string()));
 
       adjust_liquid_balance( balance.owner, pool_split );
       collateral_remaining -= pool_split;
@@ -1173,35 +1176,45 @@ void database::process_unique_assets()
       }
 
       auto balance_itr = balance_idx.lower_bound( unique.ownership_asset );
-      flat_map < account_name_type, share_type > unique_map;
-      share_type total_unique_shares = 0;
+      flat_map< account_name_type, uint128_t > unique_map;
+      uint128_t total_unique_shares = 0;
       
-      asset distributed = asset( 0, unique.access_price.symbol );
+      asset remaining = revenue_pool;
 
       while( balance_itr != balance_idx.end() &&
          balance_itr->symbol == unique.ownership_asset &&
-         balance_itr->staked_balance > 0 )
+         balance_itr->staked_balance.value > 0 )
       {
          const account_balance_object& balance = *balance_itr;
          ++balance_itr;
-         total_unique_shares += balance.staked_balance;
-         unique_map[ balance_itr->owner ] = balance.staked_balance;
+         total_unique_shares += balance.staked_balance.value;
+         unique_map[ balance_itr->owner ] = balance.staked_balance.value;
       }
       
       // Pay access fees to each ownership asset stakeholder proportionally.
 
       for( auto b : unique_map )
       {
-         asset unique_reward = ( revenue_pool * b.second ) / total_unique_shares; 
+         uint128_t reward_amount = ( revenue_pool.amount.value * b.second ) / total_unique_shares;
+         asset unique_reward = asset( reward_amount.to_uint64(), unique.access_price.symbol );
+         if( unique_reward > remaining )
+         {
+            unique_reward = remaining;
+         }
          adjust_reward_balance( b.first, unique_reward );
-         distributed += unique_reward;
+         remaining -= unique_reward;
+      }
+
+      if( remaining.amount.value > 0 )
+      {
+         adjust_reward_balance( unique.controlling_owner, remaining );
       }
    }
 } FC_CAPTURE_AND_RETHROW() }
 
 
 /**
- * Processes all asset distribution rounds.
+ * Processes asset distribution rounds.
  * 
  * 1 - Checks for asset distributions that have reached their next round time.
  * 2 - Checks if they have reached their soft cap input amount.
@@ -1212,17 +1225,10 @@ void database::process_unique_assets()
  */
 void database::process_asset_distribution()
 { try {
-   if( (head_block_num() % DISTRIBUTION_INTERVAL_BLOCKS ) != 0 )
-   { 
-      return; 
-   }
 
    time_point now = head_block_time();
-
-   // ilog( "Process Asset Distribution" );
-
    const auto& distribution_idx = get_index< asset_distribution_index >().indices().get< by_next_round_time >();
-   const auto& balance_idx = get_index< asset_distribution_balance_index >().indices().get< by_symbol >();
+   const auto& balance_idx = get_index< asset_distribution_balance_index >().indices().get< by_distribution_account >();
    auto distribution_itr = distribution_idx.begin();
    auto balance_itr = balance_idx.begin();
 
@@ -1230,8 +1236,10 @@ void database::process_asset_distribution()
       now >= distribution_itr->next_round_time )
    {
       const asset_distribution_object& distribution = *distribution_itr;
-      ++distribution_itr;
 
+      ilog( "Begin Processing Asset Distribution: ${d}",
+         ("d",distribution.distribution_asset));
+      
       asset total_input = asset( 0, distribution.fund_asset );
       share_type total_input_units = 0;
       share_type max_output_units = distribution.max_output_distribution_units();
@@ -1252,7 +1260,9 @@ void database::process_asset_distribution()
 
       bool distributed = false;
 
-      if( total_input_units >= distribution.min_input_fund_units )     // Passed the minimum to distribute
+      // Passed the minimum to distribute
+
+      if( total_input_units >= distribution.min_input_fund_units )
       {
          flat_set< asset_unit > input_fund_unit = distribution.input_fund_unit;
          flat_set< asset_unit > output_distribution_unit = distribution.output_distribution_unit;
@@ -1288,6 +1298,7 @@ void database::process_asset_distribution()
             for( asset_unit u : input_fund_unit )   // Pay incoming assets to the input asset unit accounts
             {
                input_account = u.name;
+               asset input_asset = asset( input_units * u.units, distribution.fund_asset );
 
                balance_type = account_balance_type::LIQUID_BALANCE;
 
@@ -1309,22 +1320,22 @@ void database::process_asset_distribution()
                {
                   case account_balance_type::LIQUID_BALANCE:
                   {
-                     adjust_liquid_balance( input_account, asset( input_units * u.units, distribution.fund_asset ) );
+                     adjust_liquid_balance( input_account, input_asset );
                   }
                   break;
                   case account_balance_type::STAKED_BALANCE:
                   {
-                     adjust_staked_balance( input_account, asset( input_units * u.units, distribution.fund_asset ) );
+                     adjust_staked_balance( input_account, input_asset );
                   }
                   break;
                   case account_balance_type::REWARD_BALANCE:
                   {
-                     adjust_reward_balance( input_account, asset( input_units * u.units, distribution.fund_asset ) );
+                     adjust_reward_balance( input_account, input_asset );
                   }
                   break;
                   case account_balance_type::SAVINGS_BALANCE:
                   {
-                     adjust_savings_balance( input_account, asset( input_units * u.units, distribution.fund_asset ) );
+                     adjust_savings_balance( input_account, input_asset );
                   }
                   break;
                   case account_balance_type::VESTING_BALANCE:
@@ -1344,12 +1355,16 @@ void database::process_asset_distribution()
                   }
                }
 
+               ilog( "Account: ${a} Received Distribution Input: ${i}",
+                  ("a",input_account)("i",input_asset.to_string()) );
+
                total_funded += balance.amount;
             }
 
-            for( asset_unit u : output_distribution_unit )     // Pay newly distirbuted assets to the asset output unit accounts
+            for( asset_unit u : output_distribution_unit )     // Pay newly distributed assets to the asset output unit accounts
             {
                output_account = u.name;
+               asset output_asset = asset( output_units * u.units, distribution.distribution_asset );
 
                if( u.name == ASSET_UNIT_SENDER )
                {
@@ -1371,22 +1386,22 @@ void database::process_asset_distribution()
                {
                   case account_balance_type::LIQUID_BALANCE:
                   {
-                     adjust_liquid_balance( output_account, asset( output_units * u.units, distribution.distribution_asset ) );
+                     adjust_liquid_balance( output_account, output_asset );
                   }
                   break;
                   case account_balance_type::STAKED_BALANCE:
                   {
-                     adjust_staked_balance( output_account, asset( output_units * u.units, distribution.distribution_asset ) );
+                     adjust_staked_balance( output_account, output_asset );
                   }
                   break;
                   case account_balance_type::REWARD_BALANCE:
                   {
-                     adjust_reward_balance( output_account, asset( output_units * u.units, distribution.distribution_asset ) );
+                     adjust_reward_balance( output_account, output_asset );
                   }
                   break;
                   case account_balance_type::SAVINGS_BALANCE:
                   {
-                     adjust_savings_balance( output_account, asset( output_units * u.units, distribution.distribution_asset ) );
+                     adjust_savings_balance( output_account, output_asset );
                   }
                   break;
                   case account_balance_type::VESTING_BALANCE:
@@ -1406,8 +1421,11 @@ void database::process_asset_distribution()
                      break;
                   }
                }
+
+               ilog( "Account: ${a} Received Distribution Output: ${o}",
+                  ("a",output_account)("o",output_asset.to_string()) );
                
-               total_distributed += asset( output_units * u.units, distribution.distribution_asset );
+               total_distributed += output_asset;
             }
 
             ilog( "Removed: ${v}",("v",balance));
@@ -1421,21 +1439,27 @@ void database::process_asset_distribution()
       {
          if( distributed )
          {
-            ado.intervals_paid++;    // Increment days paid if the round was sucessfully distirbuted
+            ado.intervals_paid++;    // Increment days paid if the round was sucessfully distributed
          }
          else
          {
             ado.intervals_missed++;
          }
+         
          ado.next_round_time += fc::days( ado.distribution_interval_days );
          ado.total_distributed += total_distributed;
          ado.total_funded += total_funded;
       });
 
-      // If the distribution has reached its final round, or missed its final max missed amount, refund all existing balances.
+      ++distribution_itr;
 
-      if( distribution.intervals_paid == distribution.distribution_rounds &&
-         distribution.intervals_missed == distribution.max_intervals_missed )
+      ilog( "Processed Asset Distribution: \n ${d} \n",
+         ("d",distribution));
+
+      // If the distribution has reached its final round, or missed its final max missed amount, refund all outstanding balances.
+
+      if( distribution.intervals_paid >= distribution.distribution_rounds &&
+         distribution.intervals_missed >= distribution.max_intervals_missed )
       {
          balance_itr = balance_idx.lower_bound( distribution.distribution_asset );
 
@@ -1445,6 +1469,7 @@ void database::process_asset_distribution()
             const asset_distribution_balance_object& balance = *balance_itr;
             ++balance_itr;
             adjust_liquid_balance( balance.sender, balance.amount );
+            adjust_pending_supply( -balance.amount );
             ilog( "Removed: ${v}",("v",balance));
             remove( balance );
          }
@@ -2354,7 +2379,7 @@ void database::update_expired_feeds()
 
       if( !stablecoin.current_feed.settlement_price.is_null() && !( stablecoin.current_feed == old_median_feed ) ) // `==` check is safe here
       {
-         asset_ptr = find_asset(stablecoin.symbol);
+         asset_ptr = find_asset( stablecoin.symbol );
          check_call_orders( *asset_ptr, true, false );
       }
    } 
@@ -2435,6 +2460,7 @@ void database::process_bids( const asset_stablecoin_data_object& bad )
             debt = to_cover;
             collateral = remaining_fund.amount;
          }
+
          to_cover -= debt;
          remaining_fund.amount -= collateral;
          execute_bid( bid, debt, collateral, bad.current_feed );
@@ -2447,6 +2473,10 @@ void database::process_bids( const asset_stablecoin_data_object& bad )
 
       cancel_bids_and_revive_mpa( to_revive, bad );
    }
+
+   ilog( "Processed Stablecoin Collateral bids: ${s}",
+      ("s",bad.symbol));
+      
 } FC_CAPTURE_AND_RETHROW() }
 
 

@@ -54,6 +54,9 @@ void comment_evaluator::do_apply( const comment_operation& o )
 { try {
    const account_name_type& signed_for = o.author;
    const account_object& signatory = _db.get_account( o.signatory );
+   const auto& comment_idx = _db.get_index< comment_index >().indices().get< by_permlink >();
+   auto comment_itr = comment_idx.find( boost::make_tuple( o.author, o.permlink ) );
+   
    FC_ASSERT( signatory.active, 
       "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
@@ -61,18 +64,25 @@ void comment_evaluator::do_apply( const comment_operation& o )
       const account_object& signed_acc = _db.get_account( signed_for );
       FC_ASSERT( signed_acc.active, 
          "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
+
+      bool collaborator = false;
+      bool business = false;
+      if( comment_itr != comment_idx.end() )
+      {
+         collaborator = comment_itr->is_collaborating_author( o.signatory );
+      }
+      else
+      {
+         const account_business_object& b = _db.get_account_business( signed_for );
+         business = b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) );
+      }
+      FC_ASSERT( collaborator || business, 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   ilog("Begin creating comment: Author: ${a} Created post: ${p}",
-      ("a",o.author)("p",o.permlink ));
-
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
    time_point now = _db.head_block_time();
-   const auto& by_permlink_idx = _db.get_index< comment_index >().indices().get< by_permlink >();
-   auto comment_itr = by_permlink_idx.find( boost::make_tuple( o.author, o.permlink ) );
+   
    const account_object& auth = _db.get_account( o.author );
    comment_options options = o.options;
 
@@ -80,10 +90,12 @@ void comment_evaluator::do_apply( const comment_operation& o )
    {
       const account_object& interface_acc = _db.get_account( o.interface );
       FC_ASSERT( interface_acc.active, 
-         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+         "Interface: ${s} must be active to broadcast transaction.",
+         ("s", o.interface) );
       const interface_object& interface = _db.get_interface( o.interface );
       FC_ASSERT( interface.active, 
-         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+         "Interface: ${s} must be active to broadcast transaction.",
+         ("s", o.interface) );
    }
 
    feed_reach_type reach_type = feed_reach_type::FOLLOW_FEED;
@@ -364,7 +376,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          ("x",parent->depth)("y",MAX_COMMENT_DEPTH) );
    }
       
-   if( comment_itr == by_permlink_idx.end() )         // Post does not yet exist, creating new post
+   if( comment_itr == comment_idx.end() )         // Post does not yet exist, creating new post
    {
       if( o.parent_author == ROOT_POST_PARENT )       // Post is a new root post
       {
@@ -480,8 +492,8 @@ void comment_evaluator::do_apply( const comment_operation& o )
             }
          }
 
-         const reward_fund_object& reward_fund = _db.get_reward_fund( root.reward_currency );
-         auto curve = reward_fund.reward_curve;
+         _db.get_reward_fund( root.reward_currency );
+         
          int64_t elapsed_seconds = ( now - auth.last_post ).to_seconds();
          int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / median_props.comment_recharge_time.to_seconds();
          int16_t current_power = std::min( int64_t( auth.commenting_power + regenerated_power), int64_t(PERCENT_100) );
@@ -496,8 +508,8 @@ void comment_evaluator::do_apply( const comment_operation& o )
             "Account does not have enough power to comment." );
          
          reward = ( voting_power.value * used_power) / PERCENT_100;
-         
-         uint128_t old_power = std::max( uint128_t( root.comment_power.value ), uint128_t(0) );  // Record comment value before applying comment
+
+         uint128_t old_weight = util::evaluate_reward_curve( root );
 
          _db.modify( root, [&]( comment_object& c )
          {
@@ -505,25 +517,12 @@ void comment_evaluator::do_apply( const comment_operation& o )
             c.comment_power += reward;
          });
 
-         uint128_t new_power = std::max( uint128_t( root.comment_power.value ), uint128_t(0) );   // record new net reward after applying comment
+         uint128_t new_weight = util::evaluate_reward_curve( root );
+
          bool curation_reward_eligible = reward > 0 && root.cashout_time != fc::time_point::maximum() && root.allow_curation_rewards;
             
          if( curation_reward_eligible )
          {
-            uint128_t old_weight = util::evaluate_reward_curve( 
-               old_power, 
-               root.cashouts_received, 
-               curve, 
-               median_props.content_reward_decay_rate, 
-               reward_fund.content_constant
-            );
-            uint128_t new_weight = util::evaluate_reward_curve(
-               new_power,
-               root.cashouts_received, 
-               curve, 
-               median_props.content_reward_decay_rate,
-               reward_fund.content_constant
-               );       
             uint128_t max_comment_weight = new_weight - old_weight;   // Gets the difference in content reward weight before and after the comment occurs.
 
             _db.modify( root, [&]( comment_object& c )
@@ -580,6 +579,9 @@ void comment_evaluator::do_apply( const comment_operation& o )
          com.latitude = o.latitude;
          com.longitude = o.longitude;
 
+         from_string( com.language, o.language );
+         from_string( com.permlink, o.permlink );
+
          if( o.public_key.size() )
          {
             com.public_key = public_key_type( o.public_key );
@@ -604,45 +606,48 @@ void comment_evaluator::do_apply( const comment_operation& o )
          {
             from_string( com.magnet, o.magnet );
          }
+         if( o.body.size() )
+         {
+            from_string( com.body, o.body );
+         }
+         if( o.json.size() )
+         {
+            from_string( com.json, o.json );
+         }
+         if( o.url.size() )
+         {
+            from_string( com.url, o.url );
+         }
+
          for( auto tag : o.tags )
          {
-            com.tags.push_back( tag );
+            com.tags.insert( tag );
+         }
+         for( auto name : o.collaborating_authors )
+         {
+            com.collaborating_authors.insert( name );
          }
          for( auto b : options.beneficiaries )
          {
-            com.beneficiaries.push_back( b );
+            com.beneficiaries.insert( b );
          }
-
-         from_string( com.language, o.language );
-         from_string( com.permlink, o.permlink );
-         from_string( com.body, o.body );
-         from_string( com.json, o.json );
-         from_string( com.url, o.url );
-
-         com.reward_currency = options.reward_currency;
-         com.content_rewards = asset( 0, options.reward_currency );
-         com.max_accepted_payout = options.max_accepted_payout;
-         com.percent_liquid = options.percent_liquid;
-         com.allow_replies = options.allow_replies;
-         com.allow_votes = options.allow_votes;
-         com.allow_views = options.allow_views;
-         com.allow_shares = options.allow_shares;
-         com.allow_curation_rewards = options.allow_curation_rewards;
 
          com.last_updated = now;
          com.created = now;
          com.active = now;
          com.last_payout = fc::time_point::min();
-
-         com.cashout_time = now + median_props.content_reward_interval;
-         com.author_reward_percent = median_props.author_reward_percent;
-         com.vote_reward_percent = median_props.vote_reward_percent;
-         com.view_reward_percent = median_props.view_reward_percent;
-         com.share_reward_percent = median_props.share_reward_percent;
-         com.comment_reward_percent = median_props.comment_reward_percent;
-         com.storage_reward_percent = median_props.storage_reward_percent;
-         com.moderator_reward_percent = median_props.moderator_reward_percent;
-
+         com.content_rewards = asset( 0, options.reward_currency );
+         com.max_accepted_payout = options.max_accepted_payout;
+         com.percent_liquid = options.percent_liquid;
+         com.cashout_time = now + median_props.reward_curve.reward_interval();
+         com.reward_currency = options.reward_currency;
+         com.reward_curve = median_props.reward_curve;
+         com.allow_replies = options.allow_replies;
+         com.allow_votes = options.allow_votes;
+         com.allow_views = options.allow_views;
+         com.allow_shares = options.allow_shares;
+         com.allow_curation_rewards = options.allow_curation_rewards;
+         
          if ( o.parent_author == ROOT_POST_PARENT )     // New Root post
          {
             com.parent_author = "";
@@ -667,8 +672,8 @@ void comment_evaluator::do_apply( const comment_operation& o )
 
       id = new_comment.id;
 
-      ilog( "Author: ${a} Created post ID: ${i} Title: ${t} Permlink: ${p} Post type: ${type} Community: ${c}", 
-            ("a",o.author)("p",o.permlink )("t",o.title)("type",format_type)("c",o.community)("i",id));
+      ilog( "Author: ${a} Created new post: \n ${c} \n",
+         ("a",o.author)("c",new_comment) );
 
       while( parent != nullptr )        // Increments the children counter on all ancestor comments, and bumps active time.
       {
@@ -807,17 +812,24 @@ void comment_evaluator::do_apply( const comment_operation& o )
             {
                from_string( com.magnet, o.magnet );
             }
+
             com.tags.clear();
             for( auto tag : o.tags )
             {
-               com.tags.push_back( tag );
+               com.tags.insert( tag );
+            }
+            com.collaborating_authors.clear();
+            for( auto name : o.collaborating_authors )
+            {
+               com.collaborating_authors.insert( name );
             }
             com.beneficiaries.clear();
             for( auto b : options.beneficiaries )
             {
-               com.beneficiaries.push_back( b );
+               com.beneficiaries.insert( b );
             }
-            if( o.language.size() ) 
+
+            if( o.language.size() )
             {
                from_string( com.language, o.language );
             }
@@ -841,8 +853,8 @@ void comment_evaluator::do_apply( const comment_operation& o )
             _db.add_comment_to_feeds( comment );
          }
 
-         ilog( "Author: ${a} Edited Post ID: ${i} Title: ${t} Permlink: ${p} Post type: ${type} Community: ${c} Options: ${op}", 
-            ("i",id)("t",o.title)("a",o.author)("p",o.permlink)("type",format_type)("c",o.community)("op",options));
+         ilog( "Author: ${a} Edited post: \n ${c} \n",
+         ("a",o.author)("c",comment) );
       }
       else
       {
@@ -995,8 +1007,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
          "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
    }
 
-   const reward_fund_object& reward_fund = _db.get_reward_fund( comment.reward_currency );
-   auto curve = reward_fund.reward_curve;
+   _db.get_reward_fund( comment.reward_currency );
 
    const auto& comment_vote_idx = _db.get_index< comment_vote_index >().indices().get< by_comment_voter >();
    auto itr = comment_vote_idx.find( std::make_tuple( comment.id, voter.name ) );
@@ -1025,8 +1036,6 @@ void vote_evaluator::do_apply( const vote_operation& o )
       "Voting weight is too small, please accumulate more voting power." );
    share_type reward = o.weight < 0 ? -abs_reward : abs_reward; // Determines the sign of abs_reward for upvote and downvote
 
-   const comment_object& root = _db.get( comment.root_comment );
-
    if( itr == comment_vote_idx.end() )   // New vote is being added to emtpy index
    {
       FC_ASSERT( o.weight != 0, 
@@ -1041,7 +1050,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
          a.post_vote_count++;
       });
 
-      uint128_t old_power = std::max( uint128_t(comment.vote_power.value ), uint128_t(0));
+      uint128_t old_weight = util::evaluate_reward_curve( comment );
 
       _db.modify( comment, [&]( comment_object& c )
       {
@@ -1057,25 +1066,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
          } 
       });
 
-      uint128_t new_power = std::max( uint128_t(comment.vote_power.value ), uint128_t(0));
-
-      /** this verifies uniqueness of voter
-       *
-       *  cv.weight / c.total_vote_weight ==> % of reward increase that is accounted for by the vote
-       *
-       *  W(R) = B * R / ( R + 2S )
-       *  W(R) is bounded above by B. B is fixed at 2^64 - 1, so all weights fit in a 64 bit integer.
-       *
-       *  The equation for an individual vote is:
-       *    W(R_N) - W(R_N-1), which is the delta increase of proportional weight
-       *
-       *  c.total_vote_weight =
-       *    W(R_1) - W(R_0) +
-       *    W(R_2) - W(R_1) + ...
-       *    W(R_N) - W(R_N-1) = W(R_N) - W(R_0)
-       *
-       *  Since W(R_0) = 0, c.total_vote_weight is also bounded above by B and will always fit in a 64 bit integer.
-       */
+      uint128_t new_weight = util::evaluate_reward_curve( comment );
 
       _db.create< comment_vote_object >( [&]( comment_vote_object& cv )
       {
@@ -1094,21 +1085,6 @@ void vote_evaluator::do_apply( const vote_operation& o )
          
          if( curation_reward_eligible )
          {
-            uint128_t old_weight = util::evaluate_reward_curve(
-               old_power, 
-               root.cashouts_received, 
-               curve, 
-               median_props.content_reward_decay_rate, 
-               reward_fund.content_constant
-            );
-            uint128_t new_weight = util::evaluate_reward_curve(
-               new_power,
-               root.cashouts_received, 
-               curve, 
-               median_props.content_reward_decay_rate, 
-               reward_fund.content_constant
-            );
-
             uint128_t max_vote_weight = new_weight - old_weight;
 
             _db.modify( comment, [&]( comment_object& c )
@@ -1192,8 +1168,8 @@ void vote_evaluator::do_apply( const vote_operation& o )
          a.last_vote_time = now;                          // Update last vote time
       });
 
-      uint128_t old_power = std::max( uint128_t( comment.vote_power.value ), uint128_t(0));  // Record net reward before new vote is applied
-
+      uint128_t old_weight = util::evaluate_reward_curve( comment );
+               
       _db.modify( comment, [&]( comment_object& c )
       {
          c.net_reward -= itr->reward;
@@ -1216,7 +1192,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
             c.net_votes -= 2;
       });
 
-      uint128_t new_power = std::max( uint128_t( comment.vote_power.value ), uint128_t(0));    // Record net reward after new vote is applied
+      uint128_t new_weight = util::evaluate_reward_curve( comment );
 
       _db.modify( *itr, [&]( comment_vote_object& cv )
       {
@@ -1229,21 +1205,6 @@ void vote_evaluator::do_apply( const vote_operation& o )
          
          if( curation_reward_eligible )
          {
-            uint128_t old_weight = util::evaluate_reward_curve(
-               old_power, 
-               root.cashouts_received, 
-               curve, 
-               median_props.content_reward_decay_rate, 
-               reward_fund.content_constant
-            );
-            uint128_t new_weight = util::evaluate_reward_curve(
-               new_power,
-               root.cashouts_received, 
-               curve, 
-               median_props.content_reward_decay_rate, 
-               reward_fund.content_constant
-            );
-
             uint128_t max_vote_weight = new_weight - old_weight;
 
             _db.modify( comment, [&]( comment_object& c )
@@ -1314,8 +1275,7 @@ void view_evaluator::do_apply( const view_operation& o )
    }
 
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
-   const reward_fund_object& reward_fund = _db.get_reward_fund( comment.reward_currency );
-   auto curve = reward_fund.reward_curve;
+   _db.get_reward_fund( comment.reward_currency );
 
    const supernode_object* supernode_ptr = nullptr;
    const interface_object* interface_ptr = nullptr;
@@ -1352,9 +1312,7 @@ void view_evaluator::do_apply( const view_operation& o )
    int16_t used_power = ( current_power + max_view_denom - 1 ) / max_view_denom;
    FC_ASSERT( used_power <= current_power, 
       "Account does not have enough power to view." );
-   
    share_type reward = ( vp.value * used_power ) / PERCENT_100;
-   const comment_object& root = _db.get( comment.root_comment );       // If root post, gets the posts own object.
 
    if( itr == comment_view_idx.end() )   // New view is being added 
    {
@@ -1391,7 +1349,7 @@ void view_evaluator::do_apply( const view_operation& o )
          a.last_view_time = now;
       });
 
-      uint128_t old_power = std::max( uint128_t( comment.view_power.value ), uint128_t(0) );  // Record reward value before applying view transaction
+      uint128_t old_weight = util::evaluate_reward_curve( comment );
 
       _db.modify( comment, [&]( comment_object& c )
       {
@@ -1400,7 +1358,7 @@ void view_evaluator::do_apply( const view_operation& o )
          c.view_count++;
       });
 
-      uint128_t new_power = std::max( uint128_t( comment.view_power.value ), uint128_t(0) );   // record new net reward after viewing
+      uint128_t new_weight = util::evaluate_reward_curve( comment );
 
       if( community_ptr != nullptr )
       {
@@ -1429,20 +1387,6 @@ void view_evaluator::do_apply( const view_operation& o )
             
          if( curation_reward_eligible )
          {
-            uint128_t old_weight = util::evaluate_reward_curve(
-               old_power, 
-               root.cashouts_received, 
-               curve, 
-               median_props.content_reward_decay_rate, 
-               reward_fund.content_constant
-            );
-            uint128_t new_weight = util::evaluate_reward_curve(
-               new_power,
-               root.cashouts_received, 
-               curve, 
-               median_props.content_reward_decay_rate, 
-               reward_fund.content_constant
-            );
             uint128_t max_view_weight = new_weight - old_weight;  // Gets the difference in content reward weight before and after the view occurs.
 
             _db.modify( comment, [&]( comment_object& c )
@@ -1572,8 +1516,8 @@ void share_evaluator::do_apply( const share_operation& o )
    }
 
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
-   const reward_fund_object& reward_fund = _db.get_reward_fund( comment.reward_currency );
-   auto curve = reward_fund.reward_curve;
+   _db.get_reward_fund( comment.reward_currency );
+
    time_point now = _db.head_block_time();
    
    const auto& comment_share_idx = _db.get_index< comment_share_index >().indices().get< by_comment_sharer >();
@@ -1596,7 +1540,6 @@ void share_evaluator::do_apply( const share_operation& o )
       "Account does not have enough power to share." );
    share_type vp = _db.get_voting_power( sharer );         // Gets the user's voting power from their Equity and Staked coin balances to weight the share.
    share_type reward = ( vp.value * used_power ) / PERCENT_100;
-   const comment_object& root = _db.get( comment.root_comment );       // If root post, gets the posts own object.
 
    if( itr == comment_share_idx.end() )   // New share is being added to emtpy index
    {
@@ -1611,7 +1554,7 @@ void share_evaluator::do_apply( const share_operation& o )
          a.last_share_time = now;
       });
 
-      uint128_t old_power = std::max( uint128_t( comment.share_power.value ), uint128_t(0) );  // Record reward value before applying share transaction
+      uint128_t old_weight = util::evaluate_reward_curve( comment );
 
       _db.modify( comment, [&]( comment_object& c )
       {
@@ -1628,7 +1571,7 @@ void share_evaluator::do_apply( const share_operation& o )
          });
       }
 
-      uint128_t new_power = std::max( uint128_t( comment.share_power.value ), uint128_t(0));   // record new net reward after sharing
+      uint128_t new_weight = util::evaluate_reward_curve( comment );
 
       // Create comment share object for tracking share.
       _db.create< comment_share_object >( [&]( comment_share_object& cs )    
@@ -1646,21 +1589,6 @@ void share_evaluator::do_apply( const share_operation& o )
   
          if( curation_reward_eligible )
          {
-            uint128_t old_weight = util::evaluate_reward_curve(
-               old_power, 
-               root.cashouts_received, 
-               curve, 
-               median_props.content_reward_decay_rate, 
-               reward_fund.content_constant
-            );
-            uint128_t new_weight = util::evaluate_reward_curve(
-               new_power,
-               root.cashouts_received, 
-               curve, 
-               median_props.content_reward_decay_rate, 
-               reward_fund.content_constant
-            );
-
             uint128_t max_share_weight = new_weight - old_weight;  // Gets the difference in content reward weight before and after the share occurs.
 
             _db.modify( comment, [&]( comment_object& c )
@@ -1863,7 +1791,7 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
 
          for( auto t : o.tags )
          {
-            mto.tags.push_back( t );
+            mto.tags.insert( t );
          }
          if( o.interface.size() )
          {
@@ -1883,9 +1811,10 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
       {
          _db.modify( *mod_itr, [&]( moderation_tag_object& mto )
          {
+            mto.tags.clear();
             for( auto t : o.tags )
             {
-               mto.tags.push_back( t );
+               mto.tags.insert( t );
             }
             if( o.interface.size() )
             {

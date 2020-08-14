@@ -16,7 +16,6 @@ using namespace node::protocol;
 using std::string;
 
 
-
 BOOST_FIXTURE_TEST_SUITE( community_operation_tests, clean_database_fixture );
 
 
@@ -309,7 +308,7 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       comment.url = "https://www.url.com";
       comment.community = "aliceopencommunity";
       comment.public_key = "";
-      comment.tags.push_back( "test" );
+      comment.tags.push_back( tag_name_type( "test" ) );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
       comment.parent_author = "";
@@ -1428,7 +1427,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.url = "https://www.url.com";
       comment.community = "aliceopencommunity";
       comment.public_key = string();
-      comment.tags.push_back( "test" );
+      comment.tags.push_back( tag_name_type( "test" ) );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
       comment.parent_author = ROOT_POST_PARENT;
@@ -2146,7 +2145,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tag.moderator = "elon";
       tag.author = "george";
       tag.permlink = "ipsum";
-      tag.tags.push_back( "nsfw" );
+      tag.tags.push_back( tag_name_type( "nsfw" ) );
       tag.rating = 9;
       tag.details = "Post is NSFW";
       tag.interface = INIT_ACCOUNT;
@@ -2163,7 +2162,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       BOOST_REQUIRE( tag_itr != tag_idx.end() );
       BOOST_REQUIRE( to_string( tag_itr->details ) == tag.details );
-      BOOST_REQUIRE( tag_itr->tags[0] == tag.tags[0] );
       BOOST_REQUIRE( tag_itr->filter == tag.filter );
       BOOST_REQUIRE( tag_itr->created == now() );
 
@@ -2180,7 +2178,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       BOOST_REQUIRE( tag_itr != tag_idx.end() );
       BOOST_REQUIRE( to_string( tag_itr->details ) == tag.details );
-      BOOST_REQUIRE( tag_itr->tags[0] == tag.tags[0] );
       BOOST_REQUIRE( tag_itr->filter == tag.filter );
       BOOST_REQUIRE( tag_itr->created == now() );
 
@@ -2197,7 +2194,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       BOOST_REQUIRE( tag_itr != tag_idx.end() );
       BOOST_REQUIRE( to_string( tag_itr->details ) == tag.details );
-      BOOST_REQUIRE( tag_itr->tags[0] == tag.tags[0] );
       BOOST_REQUIRE( tag_itr->filter == tag.filter );
       BOOST_REQUIRE( tag_itr->created == now() );
 
@@ -2214,7 +2210,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       BOOST_REQUIRE( tag_itr != tag_idx.end() );
       BOOST_REQUIRE( to_string( tag_itr->details ) == tag.details );
-      BOOST_REQUIRE( tag_itr->tags[0] == tag.tags[0] );
       BOOST_REQUIRE( tag_itr->filter == tag.filter );
       BOOST_REQUIRE( tag_itr->created == now() );
 

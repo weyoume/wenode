@@ -608,6 +608,7 @@ FC_REFLECT( node::app::discussion_query,
          (sort_time)
          (feed_type)
          (blog_type)
+         (post_include_time)
          (include_private)
          (max_rating)
          (limit)
@@ -630,6 +631,12 @@ FC_REFLECT( node::app::search_query,
          (account)
          (query)
          (limit)
+         (margin_percent)
+         (include_accounts)
+         (include_communities)
+         (include_tags)
+         (include_assets)
+         (include_posts)
          );
 
 FC_REFLECT( node::app::ad_query,

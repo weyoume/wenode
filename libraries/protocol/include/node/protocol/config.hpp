@@ -29,11 +29,11 @@
 		#define INIT_PRIVATE_KEY                             (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("accountNameownerpassword")))) // accountName + permission + password
 		#define INIT_PUBLIC_KEY_STR                          (std::string( node::protocol::public_key_type(INIT_PRIVATE_KEY.get_public_key() ) ) )
 	#else
-		#define INIT_PUBLIC_KEY_STR                         "WYM7sbABVQcfuGVS6bXrnt8DRKi58YUWKWM7bVLTj8xvfZBVKfhoU"
+		#define INIT_PUBLIC_KEY_STR                          "WYM7sbABVQcfuGVS6bXrnt8DRKi58YUWKWM7bVLTj8xvfZBVKfhoU"
 	#endif
 	
-	#define CHAIN_ID                                        (fc::sha256::hash("WeYouMe"))
-	#define ADDRESS_PREFIX                                  "WYM"
+	#define CHAIN_ID                                         fc::sha256::hash("WeYouMe")
+	#define ADDRESS_PREFIX                                   "WYM"
 	#define OWNER_AUTH_RECOVERY_PERIOD                       fc::days(30)
 	#define ACCOUNT_RECOVERY_REQUEST_EXPIRATION_PERIOD       fc::days(1)
 	#define OWNER_UPDATE_LIMIT                               fc::minutes(60)
@@ -145,8 +145,6 @@
 #define GENESIS_PRODUCER_AMOUNT                   (120)
 #define TOTAL_PRODUCERS                           (GENESIS_PRODUCER_AMOUNT)
 #define GENESIS_EXTRA_PRODUCERS                   (200-GENESIS_PRODUCER_AMOUNT)
-#define GENESIS_ACCOUNT_COIN_STAKE		          (1 * BLOCKCHAIN_PRECISION)
-#define GENESIS_ACCOUNT_COIN                      (1 * BLOCKCHAIN_PRECISION)
 #define DPOS_VOTING_PRODUCERS                     (50)    // The Top 50 Highest voted producers are selected for block production each round
 #define POW_MINING_PRODUCERS                      (50)    // The top 50 Highest producing miners are selected for block production each round
 #define DPOS_VOTING_ADDITIONAL_PRODUCERS          (10)    // 10 Additional producers are randomly selected for block production each round, according to stake voting weight
@@ -171,18 +169,15 @@
 #define MIN_ROOT_COMMENT_INTERVAL       fc::seconds(60)       // 60 seconds
 #define MIN_REPLY_INTERVAL              fc::seconds(15)       // 15 seconds
 
-#define FREE_TRANSACTIONS_WITH_NEW_ACCOUNT   100
 #define BANDWIDTH_AVERAGE_WINDOW             fc::days(7)                // 1 week averaging window for the calculation of bandwidth reserve ratio
 #define BANDWIDTH_PRECISION                  share_type(1000000)         // 1 million decimal places for bandwidth units
 #define MAX_BODY_SIZE                        (1024 * 1024 * 128 )  // 128 mb of body text limit
 #define MAX_COMMENT_DEPTH                    0xffff // 64k
 #define SOFT_MAX_COMMENT_DEPTH               0xff // 255
 #define MAX_RESERVE_RATIO                    (20000)
-
-#define MIN_ACCOUNT_CREATION_FEE             asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN )
-#define MIN_ASSET_COIN_LIQUIDITY             asset( 10*BLOCKCHAIN_PRECISION, SYMBOL_COIN )
-#define MIN_ASSET_USD_LIQUIDITY              asset( 10*BLOCKCHAIN_PRECISION, SYMBOL_USD )
-
+#define MIN_ACCOUNT_CREATION_FEE             asset(BLOCKCHAIN_PRECISION, SYMBOL_COIN)
+#define MIN_ASSET_COIN_LIQUIDITY             asset(10*BLOCKCHAIN_PRECISION, SYMBOL_COIN)
+#define MIN_ASSET_USD_LIQUIDITY              asset(10*BLOCKCHAIN_PRECISION, SYMBOL_USD)
 #define CREATE_ACCOUNT_DELEGATION_RATIO      2
 #define CREATE_ACCOUNT_DELEGATION_TIME       fc::days(1)
 #define EQUIHASH_N                           140
@@ -212,10 +207,10 @@
 #define COMMENT_REWARD_PERCENT           (5 * PERCENT_1)
 #define STORAGE_REWARD_PERCENT           (5 * PERCENT_1)
 #define MODERATOR_REWARD_PERCENT         (5 * PERCENT_1)
-#define CONTENT_REWARD_DECAY_RATE        fc::days(30)          // 30 days of content reward payouts for posts. 
-#define CONTENT_REWARD_INTERVAL          fc::days(1)           // 1 day between post content rewards.
+#define CONTENT_REWARD_INTERVAL_AMOUNT   (30)                                   // 30 days of content reward payouts for posts. 
+#define CONTENT_REWARD_INTERVAL_HOURS    (24)                                   // 24 hours between post content rewards.
 #define CONTENT_CONSTANT                 uint128_t(2000000000000)
-#define MIN_PAYOUT_USD                   (asset( BLOCKCHAIN_PRECISION / 100 , SYMBOL_USD)) // Minimum payout of $0.01 USD worth of rewards.
+#define MIN_PAYOUT_USD                   asset( BLOCKCHAIN_PRECISION / 100 , SYMBOL_USD)           // Minimum payout of $0.01 USD worth of rewards.
 
 // Block Producer reward allocation percentages:
 // 40% of producer rewards are shared equally between top selected producers.
@@ -242,9 +237,9 @@
 #define DEMAND_ADVERTISING_FEE_PERCENT     (25 * PERCENT_1) // Percentage of advertising fee that is shared with the advertising purchaser's interface: 25%
 #define AUDIENCE_ADVERTISING_FEE_PERCENT   (25 * PERCENT_1) // Percentage of advertising fee that is shared with the audience of the delivery: 25%
 
-#define MEMBERSHIP_FEE_BASE                (asset( ( 5 * BLOCKCHAIN_PRECISION ) / 2, SYMBOL_USD)) // Monthly Price of Standard membership: $2.50 USD
-#define MEMBERSHIP_FEE_MID                 (asset( 25 * BLOCKCHAIN_PRECISION, SYMBOL_USD)) // Monthly Price of Mezzanine membership: $25.00 USD
-#define MEMBERSHIP_FEE_TOP                 (asset( 250 * BLOCKCHAIN_PRECISION, SYMBOL_USD)) // Monthly Price of Top Level membership: $250.00 USD
+#define MEMBERSHIP_FEE_BASE                asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_USD)  // Monthly Price of Standard membership: $10.00 USD
+#define MEMBERSHIP_FEE_MID                 asset( 25 * BLOCKCHAIN_PRECISION, SYMBOL_USD)  // Monthly Price of Mezzanine membership: $25.00 USD
+#define MEMBERSHIP_FEE_TOP                 asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_USD) // Monthly Price of Top Level membership: $100.00 USD
 #define NETWORK_MEMBERSHIP_FEE_PERCENT     (50 * PERCENT_1) // Percentage of membership spend that is consumed as network revenue: 50%
 #define INTERFACE_MEMBERSHIP_FEE_PERCENT   (25 * PERCENT_1) // Percentage of membership spend that is shared with the purchaser's interface: 25%
 #define PARTNERS_MEMBERSHIP_FEE_PERCENT    (25 * PERCENT_1) // Percentage of membership spend that is distributed to premium content partners: 25%
@@ -272,8 +267,6 @@
 #define INTERFACE_SUBSCRIPTION_FEE_PERCENT     (25 * PERCENT_1)  // Percentage of subscription fee shared with the purchaser's interface: 50%
 #define NODE_SUBSCRIPTION_FEE_PERCENT          (25 * PERCENT_1)  // Percentage of subscription fee shared with hosting supernodes: 50%
 
-#define INTEREST_FEE_PERCENT                   (5*PERCENT_1)     // Percentage of interest paid in network fees: 5%
-
 #define MIN_ACTIVITY_PRODUCERS                 (10)              // Accounts need at least 10 producer votes to claim activity reward. 
 #define ACTIVITY_BOOST_STANDARD_PERCENT        (125 * PERCENT_1) // Boost activty reward by 25%
 #define ACTIVITY_BOOST_MID_PERCENT             (150 * PERCENT_1) // Boost activty reward by 50%
@@ -292,7 +285,7 @@
 #define MAX_GOV_ACCOUNTS                       (5)
 #define MAX_EXEC_VOTES                         (10)
 #define MAX_OFFICER_VOTES                      (150)
-#define MAX_EXEC_BUDGET                        asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT )
+#define MAX_EXEC_BUDGET                        asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT )       // Maximum daily executive board budget of 1,000,000 MCR
 #define COLLATERAL_RATIO_DENOM                 (1000)
 #define MIN_COLLATERAL_RATIO                   (1001)                        // Lower than this could result in divide by 0.
 #define MAX_COLLATERAL_RATIO                   (32000)                       // Higher than this is unnecessary and may exceed int16 storage.
@@ -310,11 +303,7 @@
 #define INTEREST_MIN_AMOUNT                    (1000)                        // Minimum units of asset required to pay interest in credit pools each block.
 #define INTEREST_MIN_INTERVAL                  fc::hours(1)                  // Minimum time interval to check and update credit loans.
 #define MARKET_MAX_CREDIT_RATIO                (50 * PERCENT_1)              // Total Margin and borrow positions are limited to 50% of the maximum collateral and debt liquidity.
-
-#define BOND_COLLATERALIZATION_PERCENT         (20 * PERCENT_1)              // Percentage of bond face value required for collateral.
-#define BOND_COUPON_RATE_PERCENT               (5 * PERCENT_1)               // Interest rate paid on bond assets.
-#define BOND_COUPON_INTERVAL                   fc::days(7)                   // Processes Bond Asset coupon interest rate each week.
-#define BOND_COUPON_INTERVAL_BLOCKS            uint64_t( BOND_COUPON_INTERVAL.count() / BLOCK_INTERVAL.count() )  // One week time period of paying bond coupons.
+#define INTEREST_FEE_PERCENT                   (5*PERCENT_1)                 // Percentage of interest paid in network fees: 5%
 
 #define EQUITY_MIN_PRODUCERS                   (10)                          // Accounts need at least 10 producer votes to claim equity reward.
 #define EQUITY_BOOST_PRODUCERS                 (50)                          // Boost when account has min 50 producer votes.
@@ -329,7 +318,10 @@
 #define LIQUID_DIVIDEND_PERCENT                (10 * PERCENT_1)              // percentage of equity dividends distributed to liquid balances.
 #define STAKED_DIVIDEND_PERCENT                (80 * PERCENT_1)              // percentage of equity dividends distributed to staked balances.
 #define SAVINGS_DIVIDEND_PERCENT               (10 * PERCENT_1)              // percentage of equity dividends distirbuted to savings balances.
-
+#define BOND_COLLATERALIZATION_PERCENT         (20 * PERCENT_1)              // Percentage of bond face value required for collateral.
+#define BOND_COUPON_RATE_PERCENT               (5 * PERCENT_1)               // Interest rate paid on bond assets.
+#define BOND_COUPON_INTERVAL                   fc::days(7)                   // Processes Bond Asset coupon interest rate each week.
+#define BOND_COUPON_INTERVAL_BLOCKS            uint64_t( BOND_COUPON_INTERVAL.count() / BLOCK_INTERVAL.count() )  // One week time period of paying bond coupons.
 #define CREDIT_BUYBACK_INTERVAL                fc::days(7)                   // Processes Credit asset buybacks once per week.
 #define CREDIT_BUYBACK_INTERVAL_BLOCKS         uint64_t( CREDIT_BUYBACK_INTERVAL.count() / BLOCK_INTERVAL.count() )  // One week time period of buying back credit assets.
 #define BUYBACK_SHARE_PERCENT                  (5 * PERCENT_1)               // Percentage of incoming assets added to the buyback pool.
@@ -340,19 +332,17 @@
 #define SAVINGS_FIXED_INTEREST_RATE            (1 * PERCENT_1)               // Fixed component of Interest rate of the asset for savings balances.
 #define SAVINGS_VARIABLE_INTEREST_RATE         (5 * PERCENT_1)               // Variable component of Interest rate of the asset for savings balances.
 #define VAR_INTEREST_RANGE                     (50 * PERCENT_1)              // Range of buyback price deviation for max and min variable interest rate.
+
 #define AUCTION_INTERVAL                       fc::days(1)                   // Time period between auction order clearance.
 #define AUCTION_INTERVAL_BLOCKS                uint64_t( AUCTION_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Clears auction orders once per day.
-
 #define OPTION_INTERVAL                        fc::days(1)                   // Time period between option updates.
 #define OPTION_INTERVAL_BLOCKS                 uint64_t( OPTION_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Checks for Option expirations and renews strike prices once per day.
 #define OPTION_NUM_STRIKES                     (10)                          // Each option asset generates 10 strike prices above and below the midpoint
 #define OPTION_STRIKE_WIDTH_PERCENT            (5 * PERCENT_1)               // Option strike prices are 5% of the mid price apart.
 #define OPTION_ASSET_MULTIPLE                  (100)                         // Option assets use a multiple of 100 underlying assets per unit.
 #define OPTION_SIG_FIGURES                     (2)                           // Option mid prices are rounded to 2 significant figures. 
-
 #define STIMULUS_INTERVAL                      fc::days(1)                   // Time period between stimulus updates.
-#define STIMULUS_INTERVAL_BLOCKS               uint64_t( STIMULUS_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Checks for stimulus expirations and distributions once per day.
-
+#define STIMULUS_INTERVAL_BLOCKS               uint64_t( STIMULUS_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Checks for stimulus expirations and distributions once per day
 #define DISTRIBUTION_INTERVAL                  fc::days(1)
 #define DISTRIBUTION_INTERVAL_BLOCKS           uint64_t( DISTRIBUTION_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Distributes asset distributions once per day.
 #define UNIQUE_INTERVAL                        fc::days(1)
@@ -370,7 +360,7 @@
 #define MAX_TRANSACTION_SIZE                   (1024 * 64)
 #define MIN_BLOCK_SIZE_LIMIT                   (MAX_TRANSACTION_SIZE)
 #define MAX_BLOCK_SIZE                         (MAX_TRANSACTION_SIZE * 10000) // MAX_TRANSACTION_SIZE*10000 per block
-#define MIN_BLOCK_SIZE                         115
+#define MIN_BLOCK_SIZE                         131
 #define MIN_FEED_LIFETIME                      fc::seconds(60)
 #define MIN_SETTLEMENT_DELAY                   fc::seconds(60)
 #define CONNECTION_REQUEST_DURATION            fc::days(7)
@@ -407,11 +397,6 @@
 #define TEMP_ACCOUNT                    account_name_type("temp")                   // Represents the canonical account with WILDCARD authority (anybody can access funds in temp account)
 #define PROXY_TO_SELF_ACCOUNT           ""                                          // Represents the canonical account for specifying you will vote for directly (as opposed to a proxy)
 #define ROOT_POST_PARENT                (account_name_type())                       // Represents the canonical root post parent account
-#define COMMUNITY_ACCOUNT               account_name_type("community")              // Represents the Community Enterprise Fund
-#define EXECUTIVE_ACCOUNT               account_name_type("executive")              // Represents the Executive board
-#define DEVELOPMENT_ACCOUNT             account_name_type("development")            // Represents the Development Team
-#define MARKETING_ACCOUNT               account_name_type("marketing")              // Represents the Marketing Team
-#define ADVOCACY_ACCOUNT                account_name_type("advocacy")               // Represents the Advocacy Team
 #define ANON_ACCOUNT                    account_name_type("anonymous")              // Represents the Anonymous Account - open for all to post with - password is "anonymouspassword" publicly known and cannot be changed
 #define ANON_ACCOUNT_PASSWORD           "anonymouspassword"
 #define ASSET_UNIT_SENDER               account_name_type("sender")

@@ -145,6 +145,8 @@ void database::process_membership_updates()
  * member: The account that is paying to upgrade to a membership level.
  * payment: The asset being received as payment.
  * interface: The owner account of the interface that sold the membership.
+ * 
+ * TODO: Premium Partners fund + Premium content credits
  */
 asset database::pay_membership_fees( const account_object& member, const asset& mem_payment, const account_object& interface )
 { try {
@@ -271,7 +273,7 @@ asset database::claim_activity_reward( const account_object& account,
    time_point now = props.time;
    auto decay_rate = RECENT_REWARD_DECAY_RATE;
    price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
-   share_type activity_shares = BLOCKCHAIN_PRECISION;
+   uint128_t activity_shares = BLOCKCHAIN_PRECISION.value;
 
    FC_ASSERT( abo.staked_balance >= BLOCKCHAIN_PRECISION,
       "Account: ${a} must have at least one staked equity asset to claim activity reward. Stake: ${s}",
@@ -297,12 +299,14 @@ asset database::claim_activity_reward( const account_object& account,
    // Decay recent claims of activity reward fund and add new shares of this claim.
    modify( reward_fund, [&]( reward_fund_object& rfo )   
    {
-      rfo.recent_activity_claims -= ( rfo.recent_activity_claims * ( now - rfo.last_updated ).to_seconds() ) / decay_rate.to_seconds();
+      rfo.recent_activity_claims -= ( rfo.recent_activity_claims * ( now - rfo.last_updated ).count() ) / decay_rate.count();
       rfo.last_updated = now;
-      rfo.recent_activity_claims += activity_shares.value;
-   }); 
+      rfo.recent_activity_claims += activity_shares;
+   });
 
-   asset activity_reward = asset( ( reward_fund.activity_reward_balance.amount * activity_shares ) / int64_t( reward_fund.recent_activity_claims.to_uint64() ), currency_symbol );
+   uint128_t reward_shares_amount = ( uint128_t( reward_fund.activity_reward_balance.amount.value ) * activity_shares ) / uint128_t( reward_fund.recent_activity_claims.to_uint64() );
+
+   asset activity_reward = asset( share_type( reward_shares_amount.to_uint64() ), currency_symbol );
 
    modify( reward_fund, [&]( reward_fund_object& rfo )
    {
@@ -325,8 +329,8 @@ asset database::claim_activity_reward( const account_object& account,
 
    modify( producer, [&]( producer_object& p )
    {
-      p.accumulated_activity_stake += voting_power;
       p.decay_weights( now, median_props );
+      p.accumulated_activity_stake += voting_power;
    });
 
    return activity_reward;

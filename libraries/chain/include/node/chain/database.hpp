@@ -134,7 +134,7 @@ namespace node { namespace chain {
          asset                                  asset_to_USD( const asset& a ) const;
          asset                                  USD_to_asset( const price& p, const asset& a ) const;
          asset                                  USD_to_asset( const asset& a ) const;
-         asset                                  get_comment_reward( const util::comment_reward_context& ctx ) const;
+         asset                                  get_comment_reward( const comment_object& comment, const util::comment_reward_context& ctx ) const;
          
          const node_property_object&            get_node_properties()const;
 
@@ -804,9 +804,7 @@ namespace node { namespace chain {
 
          asset pay_content_rewards( asset reward );
 
-         asset distribute_comment_reward( util::comment_reward_context& ctx, const comment_object& comment );
-
-         util::comment_reward_context get_comment_reward_context( const reward_fund_object& reward_fund );
+         asset distribute_comment_reward( const comment_object& c, util::comment_reward_context& ctx );
 
          void process_comment_cashout();
 
@@ -1036,12 +1034,12 @@ namespace node { namespace chain {
 
          void cancel_bids_and_revive_mpa( const asset_object& stablecoin, const asset_stablecoin_data_object& bad );
 
-         void cancel_bid(const asset_collateral_bid_object& bid, bool create_virtual_op);
+         void cancel_bid(const asset_collateral_bid_object& bid );
 
          void execute_bid( const asset_collateral_bid_object& bid, share_type debt, 
             share_type collateral_from_fund, const price_feed& current_feed );
 
-         void cancel_settle_order(const asset_settlement_object& order, bool create_virtual_op );
+         void cancel_settle_order(const asset_settlement_object& order );
 
          void cancel_limit_order( const limit_order_object& order );
 

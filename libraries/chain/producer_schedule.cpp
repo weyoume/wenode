@@ -195,58 +195,92 @@ void update_median_producer_props( database& db )
 
       // Sort the content reward splits by median, and adjust author rewards to be the remainder of the percentages
 
-      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-      {
-         return a->props.vote_reward_percent < b->props.vote_reward_percent;
-      });
-      mcpo.vote_reward_percent = active[ offset ]->props.vote_reward_percent;
+      comment_reward_curve curve;
 
       std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
       {
-         return a->props.view_reward_percent < b->props.view_reward_percent;
+         return a->props.reward_curve.constant_factor < b->props.reward_curve.constant_factor;
       });
-      mcpo.view_reward_percent = active[ offset ]->props.view_reward_percent;
+      curve.constant_factor = active[ offset ]->props.reward_curve.constant_factor;
 
       std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
       {
-         return a->props.share_reward_percent < b->props.share_reward_percent;
+         return a->props.reward_curve.sqrt_percent < b->props.reward_curve.sqrt_percent;
       });
-      mcpo.share_reward_percent = active[ offset ]->props.share_reward_percent;
+      curve.sqrt_percent = active[ offset ]->props.reward_curve.sqrt_percent;
 
       std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
       {
-         return a->props.comment_reward_percent < b->props.comment_reward_percent;
+         return a->props.reward_curve.linear_percent < b->props.reward_curve.linear_percent;
       });
-      mcpo.comment_reward_percent = active[ offset ]->props.comment_reward_percent;
+      curve.linear_percent = active[ offset ]->props.reward_curve.linear_percent;
 
       std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
       {
-         return a->props.storage_reward_percent < b->props.storage_reward_percent;
+         return a->props.reward_curve.semi_quadratic_percent < b->props.reward_curve.semi_quadratic_percent;
       });
-      mcpo.storage_reward_percent = active[ offset ]->props.storage_reward_percent;
+      curve.semi_quadratic_percent = active[ offset ]->props.reward_curve.semi_quadratic_percent;
 
       std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
       {
-         return a->props.moderator_reward_percent < b->props.moderator_reward_percent;
+         return a->props.reward_curve.quadratic_percent < b->props.reward_curve.quadratic_percent;
       });
-      mcpo.moderator_reward_percent = active[ offset ]->props.moderator_reward_percent;
-
-      uint32_t author_reward_percent = PERCENT_100 - ( mcpo.vote_reward_percent + mcpo.view_reward_percent +
-         mcpo.share_reward_percent + mcpo.comment_reward_percent + mcpo.storage_reward_percent + mcpo.moderator_reward_percent );
-
-      mcpo.author_reward_percent = author_reward_percent;
+      curve.quadratic_percent = active[ offset ]->props.reward_curve.quadratic_percent;
 
       std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
       {
-         return a->props.content_reward_decay_rate < b->props.content_reward_decay_rate;
+         return a->props.reward_curve.reward_interval_amount < b->props.reward_curve.reward_interval_amount;
       });
-      mcpo.content_reward_decay_rate = active[ offset ]->props.content_reward_decay_rate;
+      curve.reward_interval_amount = active[ offset ]->props.reward_curve.reward_interval_amount;
 
       std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
       {
-         return a->props.content_reward_interval < b->props.content_reward_interval;
+         return a->props.reward_curve.reward_interval_hours < b->props.reward_curve.reward_interval_hours;
       });
-      mcpo.content_reward_interval = active[ offset ]->props.content_reward_interval;
+      curve.reward_interval_hours = active[ offset ]->props.reward_curve.reward_interval_hours;
+
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.reward_curve.vote_reward_percent < b->props.reward_curve.vote_reward_percent;
+      });
+      curve.vote_reward_percent = active[ offset ]->props.reward_curve.vote_reward_percent;
+
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.reward_curve.view_reward_percent < b->props.reward_curve.view_reward_percent;
+      });
+      curve.view_reward_percent = active[ offset ]->props.reward_curve.view_reward_percent;
+
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.reward_curve.share_reward_percent < b->props.reward_curve.share_reward_percent;
+      });
+      curve.share_reward_percent = active[ offset ]->props.reward_curve.share_reward_percent;
+
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.reward_curve.comment_reward_percent < b->props.reward_curve.comment_reward_percent;
+      });
+      curve.comment_reward_percent = active[ offset ]->props.reward_curve.comment_reward_percent;
+
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.reward_curve.storage_reward_percent < b->props.reward_curve.storage_reward_percent;
+      });
+      curve.storage_reward_percent = active[ offset ]->props.reward_curve.storage_reward_percent;
+
+      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
+      {
+         return a->props.reward_curve.moderator_reward_percent < b->props.reward_curve.moderator_reward_percent;
+      });
+      curve.moderator_reward_percent = active[ offset ]->props.reward_curve.moderator_reward_percent;
+
+      uint16_t author_reward_percent = PERCENT_100 - ( curve.vote_reward_percent + curve.view_reward_percent +
+         curve.share_reward_percent + curve.comment_reward_percent + curve.storage_reward_percent + curve.moderator_reward_percent );
+
+      curve.author_reward_percent = author_reward_percent;
+
+      mcpo.reward_curve = curve;
 
       std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
       {

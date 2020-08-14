@@ -161,13 +161,15 @@ void transfer_request_evaluator::do_apply( const transfer_request_operation& o )
 
    asset from_liquid = _db.get_liquid_balance( o.from, o.amount.symbol );
 
+   FC_ASSERT( asset_obj.can_request_transfer(),
+      "Transfer is not authorized, asset permisssions do not premit transfer requests." );
    FC_ASSERT( to_account_permissions.is_authorized_transfer( o.from, asset_obj ),
       "Transfer is not authorized, due to recipient account's asset permisssions." );
    FC_ASSERT( from_account_permissions.is_authorized_transfer( o.to, asset_obj ),
       "Transfer is not authorized, due to sender account's asset permisssions." );
    FC_ASSERT( from_liquid.amount >= o.amount.amount,
          "Account: ${a} does not have sufficient funds: ${b} for transfer of amount: ${m}.",
-         ("a",o.from)("b",from_liquid)("m",o.amount) );
+         ("a",o.from)("b",from_liquid.to_string())("m",o.amount.to_string()) );
 
    const auto& req_idx = _db.get_index< transfer_request_index >().indices().get< by_request_id >();
    auto req_itr = req_idx.find( boost::make_tuple( o.to, o.request_id ) );
@@ -215,6 +217,13 @@ void transfer_accept_evaluator::do_apply( const transfer_accept_operation& o )
 { try {
    const account_name_type& signed_for = o.from;
    const account_object& signatory = _db.get_account( o.signatory );
+   const account_object& from_account = _db.get_account( o.from );
+   const account_object& to_account = _db.get_account( o.to );
+   FC_ASSERT( to_account.active, 
+      "Account: ${a} must be active to receive transfer.",
+      ("a",o.to));
+   const transfer_request_object& request = _db.get_transfer_request( o.to, o.request_id );
+   const asset_object& asset_obj = _db.get_asset( request.amount.symbol );
    FC_ASSERT( signatory.active, 
       "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
@@ -222,19 +231,18 @@ void transfer_accept_evaluator::do_apply( const transfer_accept_operation& o )
       const account_object& signed_acc = _db.get_account( signed_for );
       FC_ASSERT( signed_acc.active, 
          "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+      bool accept = asset_obj.issuer_accept_requests() && o.signatory == asset_obj.issuer;
+      bool business = false;
+      if( !accept )
+      {
+         const account_business_object& b = _db.get_account_business( signed_for );
+         business = b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) );
+      }
+      FC_ASSERT( accept || business,
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",
+         ("s", o.signatory)("a", signed_for) );
    }
-
-   const account_object& from_account = _db.get_account( o.from );
-   const account_object& to_account = _db.get_account( o.to );
-
-   FC_ASSERT( to_account.active, 
-      "Account: ${a} must be active to receive transfer.",("a", o.to) );
-
-   const transfer_request_object& request = _db.get_transfer_request( o.to, o.request_id );
-   const asset_object& asset_obj = _db.get_asset( request.amount.symbol );
+   
    time_point now = _db.head_block_time();
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
    const account_permission_object& from_account_permissions = _db.get_account_permissions( o.from );
@@ -245,6 +253,8 @@ void transfer_accept_evaluator::do_apply( const transfer_accept_operation& o )
          "Unique asset must be transferred as a single unit asset." );
    }
 
+   FC_ASSERT( asset_obj.can_request_transfer(),
+      "Transfer is not authorized, asset permisssions do not permit transfer requests." );
    FC_ASSERT( to_account_permissions.is_authorized_transfer( o.from, asset_obj ),
       "Transfer is not authorized, due to recipient account's asset permisssions" );
    FC_ASSERT( from_account_permissions.is_authorized_transfer( o.to, asset_obj ),
@@ -306,6 +316,8 @@ void transfer_recurring_evaluator::do_apply( const transfer_recurring_operation&
    const account_permission_object& from_account_permissions = _db.get_account_permissions( o.from );
    asset from_liquid = _db.get_liquid_balance( o.from, o.amount.symbol );
 
+   FC_ASSERT( asset_obj.can_recurring_transfer(),
+      "Transfer is not authorized, asset permisssions do not permit recurring transfer." );
    FC_ASSERT( from_liquid >= o.amount,
       "Account: ${f} does not have sufficient funds for transfer amount.",("f", o.from) );
    FC_ASSERT( to_account_permissions.is_authorized_transfer( o.from, asset_obj ),
@@ -414,6 +426,11 @@ void transfer_recurring_request_evaluator::do_apply( const transfer_recurring_re
    const account_permission_object& from_account_permissions = _db.get_account_permissions( o.from );
    asset from_liquid = _db.get_liquid_balance( o.from, o.amount.symbol );
 
+   FC_ASSERT( asset_obj.can_request_transfer(),
+      "Transfer is not authorized, asset permisssions do not permit transfer requests." );
+   FC_ASSERT( asset_obj.can_recurring_transfer(),
+      "Transfer is not authorized, asset permisssions do not permit recurring transfer." );
+
    FC_ASSERT( to_account_permissions.is_authorized_transfer( o.from, asset_obj ),
       "Transfer is not authorized, due to recipient account's asset permisssions" );
    FC_ASSERT( from_account_permissions.is_authorized_transfer( o.to, asset_obj ),
@@ -485,6 +502,12 @@ void transfer_recurring_accept_evaluator::do_apply( const transfer_recurring_acc
 { try {
    const account_name_type& signed_for = o.from;
    const account_object& signatory = _db.get_account( o.signatory );
+   const account_object& to_account = _db.get_account( o.to );
+   FC_ASSERT( to_account.active, 
+      "Account: ${s} must be active to receive transfer.",("s", o.to) );
+   const account_object& from_account = _db.get_account( o.from );
+   const transfer_recurring_request_object& request = _db.get_transfer_recurring_request( to_account.name, o.request_id );
+   const asset_object& asset_obj = _db.get_asset( request.amount.symbol );
    FC_ASSERT( signatory.active, 
       "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
    if( o.signatory != signed_for )
@@ -492,20 +515,26 @@ void transfer_recurring_accept_evaluator::do_apply( const transfer_recurring_acc
       const account_object& signed_acc = _db.get_account( signed_for );
       FC_ASSERT( signed_acc.active, 
          "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+      bool accept = asset_obj.issuer_accept_requests() && o.signatory == asset_obj.issuer;
+      bool business = false;
+      if( !accept )
+      {
+         const account_business_object& b = _db.get_account_business( signed_for );
+         business = b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) );
+      }
+      FC_ASSERT( accept || business,
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",
+         ("s", o.signatory)("a", signed_for) );
    }
-
-   const account_object& to_account = _db.get_account( o.to );
-   FC_ASSERT( to_account.active, 
-      "Account: ${s} must be active to receive transfer.",("s", o.to) );
-   const account_object& from_account = _db.get_account( o.from );
-   const transfer_recurring_request_object& request = _db.get_transfer_recurring_request( to_account.name, o.request_id );
-   const asset_object& asset_obj = _db.get_asset( request.amount.symbol );
+   
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
    const account_permission_object& from_account_permissions = _db.get_account_permissions( o.from );
    asset from_liquid = _db.get_liquid_balance( request.from, request.amount.symbol );
+
+   FC_ASSERT( asset_obj.can_request_transfer(),
+      "Transfer is not authorized, asset permisssions do not permit transfer requests." );
+   FC_ASSERT( asset_obj.can_recurring_transfer(),
+      "Transfer is not authorized, asset permisssions do not permit recurring transfer." );
 
    FC_ASSERT( to_account_permissions.is_authorized_transfer( o.from, asset_obj ),
       "Transfer is not authorized, due to recipient account's asset permisssions" );

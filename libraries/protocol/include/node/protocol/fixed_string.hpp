@@ -72,10 +72,14 @@ class fixed_string
       {
          Storage d;
          if( str.size() <= sizeof(d) )
+         {
             memcpy( (char*)&d, str.c_str(), str.size() );
+         }
          else
+         {
             memcpy( (char*)&d, str.c_str(), sizeof(d) );
-
+         }
+         
          data = boost::endian::big_to_native( d );
       }
 
@@ -85,12 +89,14 @@ class fixed_string
          size_t s;
 
          if( *(((const char*)&d) + sizeof(d) - 1) )
+         {
             s = sizeof(d);
+         }
          else
+         {
             s = strnlen( (const char*)&d, sizeof(d) );
-
+         }
          const char* self = (const char*)&d;
-
          return std::string( self, self + s );
       }
 
@@ -98,7 +104,9 @@ class fixed_string
       {
          Storage d = boost::endian::native_to_big( data );
          if( *(((const char*)&d) + sizeof(d) - 1) )
+         {
             return sizeof(d);
+         }
          return strnlen( (const char*)&d, sizeof(d) );
       }
 
@@ -141,26 +149,35 @@ typedef fixed_string< fc::erpair< fc::uint128_t, fc::uint128_t > >  fixed_string
 
 } } // node::protocol
 
-namespace fc { namespace raw {
+namespace fc { 
+   namespace raw {
 
-   template< typename Stream, typename Storage >
-   inline void pack( Stream& s, const node::protocol::fixed_string< Storage >& u )
+      template< typename Stream, typename Storage >
+      inline void pack( Stream& s, const node::protocol::fixed_string< Storage >& u )
+      {
+         pack( s, std::string( u ) );
+      }
+
+      template< typename Stream, typename Storage >
+      inline void unpack( Stream& s, node::protocol::fixed_string< Storage >& u )
+      {
+         std::string str;
+         unpack( s, str );
+         u = str;
+      }
+
+   } // raw
+
+   template< typename Storage >
+   void to_variant( const node::protocol::fixed_string< Storage >& s, variant& v ) 
    {
-      pack( s, std::string( u ) );
+      v = std::string( s ); 
    }
 
-   template< typename Stream, typename Storage >
-   inline void unpack( Stream& s, node::protocol::fixed_string< Storage >& u )
-   {
-      std::string str;
-      unpack( s, str );
-      u = str;
+   template< typename Storage >
+   void from_variant( const variant& v, node::protocol::fixed_string< Storage >& s ) 
+   { 
+      s = v.as_string(); 
    }
 
-} // raw
-   template< typename Storage >
-   void to_variant(   const node::protocol::fixed_string< Storage >& s, variant& v ) { v = std::string( s ); }
-
-   template< typename Storage >
-   void from_variant( const variant& v, node::protocol::fixed_string< Storage >& s ) { s = v.as_string(); }
 } // fc

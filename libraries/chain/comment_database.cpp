@@ -311,24 +311,24 @@ asset database::pay_moderators( const comment_object& c, const asset& max_reward
  * splits rewards between the author and the voters, viewers, 
  * sharers, supernodes, and moderators.
  */
-asset database::distribute_comment_reward( util::comment_reward_context& ctx, const comment_object& c )
+asset database::distribute_comment_reward( const comment_object& c, util::comment_reward_context& ctx )
 { try {
    asset claimed_reward = asset( 0, c.reward_currency );
+   
    time_point now = head_block_time();
 
    if( c.net_reward > 0 )
    {
-      util::fill_comment_reward_context_local_state( ctx, c );
-      asset content_reward = get_comment_reward( ctx );
+      asset content_reward = get_comment_reward( c, ctx );
 
       if( content_reward.amount > 0 )
       {
-         asset voter_tokens =  ( content_reward * c.vote_reward_percent ) / PERCENT_100;
-         asset viewer_tokens = ( content_reward * c.view_reward_percent ) / PERCENT_100;
-         asset sharer_tokens = ( content_reward * c.share_reward_percent ) / PERCENT_100;
-         asset commenter_tokens = ( content_reward * c.comment_reward_percent ) / PERCENT_100;
-         asset storage_tokens = ( content_reward * c.storage_reward_percent ) / PERCENT_100;
-         asset moderator_tokens = ( content_reward * c.moderator_reward_percent ) / PERCENT_100;
+         asset voter_tokens =  ( content_reward * c.reward_curve.vote_reward_percent ) / PERCENT_100;
+         asset viewer_tokens = ( content_reward * c.reward_curve.view_reward_percent ) / PERCENT_100;
+         asset sharer_tokens = ( content_reward * c.reward_curve.share_reward_percent ) / PERCENT_100;
+         asset commenter_tokens = ( content_reward * c.reward_curve.comment_reward_percent ) / PERCENT_100;
+         asset storage_tokens = ( content_reward * c.reward_curve.storage_reward_percent ) / PERCENT_100;
+         asset moderator_tokens = ( content_reward * c.reward_curve.moderator_reward_percent ) / PERCENT_100;
          asset total_curation_tokens = voter_tokens + viewer_tokens + sharer_tokens + commenter_tokens + storage_tokens + moderator_tokens;
          asset author_reward = content_reward - total_curation_tokens;
          author_reward += pay_voters( c, voter_tokens );
@@ -366,15 +366,17 @@ asset database::distribute_comment_reward( util::comment_reward_context& ctx, co
 
    modify( c, [&]( comment_object& com )
    {
-      if( int64_t( com.cashouts_received ) < ( ctx.decay_rate.to_seconds() / ctx.reward_interval.to_seconds() ) &&
-         now <= ( com.created + ctx.decay_rate ))
+      int16_t max_cashouts = c.reward_curve.reward_interval_amount;
+      time_point max_cashout_time = c.created + fc::microseconds( c.reward_curve.reward_duration().count() * 2 );
+
+      if( int16_t( com.cashouts_received ) < max_cashouts && now < max_cashout_time )
       {
-         if( com.net_reward > 0 )                     // A payout is only made for positive reward.
+         if( com.net_reward > 0 )      // A payout is only made for positive reward.
          {
             com.cashouts_received++;
             com.last_payout = now;
          }
-         com.cashout_time += ctx.reward_interval;     // Bump reward interval to next time.
+         com.cashout_time += c.reward_curve.reward_interval();      // Bump reward interval to next time.
       }
       else
       {
@@ -384,32 +386,13 @@ asset database::distribute_comment_reward( util::comment_reward_context& ctx, co
 
    push_virtual_operation( comment_payout_update_operation( c.author, to_string( c.permlink ) ) );    // Update comment metrics data
 
-   ilog( "Processed Comment Cashout: Author: ${a} Permlink: ${p} \n Cashouts: ${c} \n Next Cashout Time: ${t} \n Reward: ${r} \n Context: \n ${ctx} \n",
-      ("a",c.author)("p",c.permlink)("c",c.cashouts_received)("t",c.cashout_time)("r",claimed_reward)("ctx",ctx));
+   ilog( "Processed Comment Cashout: Author: ${a} Permlink: ${p} Cashouts: ${c} Next Cashout Time: ${t} Reward: ${r}",
+      ("a",c.author)("p",c.permlink)("c",c.cashouts_received)("t",c.cashout_time)("r",claimed_reward.to_string()) );
    
    return claimed_reward;
 
 } FC_CAPTURE_AND_RETHROW() }
 
-
-util::comment_reward_context database::get_comment_reward_context( const reward_fund_object& reward_fund )
-{
-   util::comment_reward_context ctx;
-   if( reward_fund.symbol == SYMBOL_COIN )
-   {
-      ctx.current_COIN_USD_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).day_median_price;
-   }
-   else
-   {
-      ctx.current_COIN_USD_price = get_liquidity_pool( SYMBOL_USD, reward_fund.symbol ).day_median_price;
-   }
-   
-   ctx.decay_rate = reward_fund.content_reward_decay_rate;
-   ctx.reward_interval = reward_fund.content_reward_interval;
-   ctx.reward_curve = reward_fund.reward_curve;
-   ctx.content_constant = reward_fund.content_constant;
-   return ctx;
-}
 
 
 /**
@@ -419,71 +402,88 @@ util::comment_reward_context database::get_comment_reward_context( const reward_
 void database::process_comment_cashout()
 {
    const dynamic_global_property_object& props = get_dynamic_global_properties();
+   const median_chain_property_object& median_props = get_median_chain_properties();
    time_point now = props.time;
-
+   
    const auto& fund_idx = get_index< reward_fund_index >().indices().get< by_symbol >();
    auto fund_itr = fund_idx.begin();
+
+   const auto& comment_idx = get_index< comment_index >().indices().get< by_currency_cashout_time >();
+   auto comment_itr = comment_idx.begin();
 
    while( fund_itr != fund_idx.end() )
    {
       const reward_fund_object& reward_fund = *fund_itr;
       ++fund_itr;
-      util::comment_reward_context ctx = get_comment_reward_context( reward_fund );
-
-      modify( reward_fund, [&]( reward_fund_object& rfo )      
-      {
-         rfo.recent_content_claims -= ( rfo.recent_content_claims * ( now - rfo.last_updated ).count() ) / ctx.decay_rate.count();
-         rfo.last_updated = now;
-      });
-
-      reward_fund_context rf_ctx;
-
-      rf_ctx.recent_content_claims = reward_fund.recent_content_claims;
-      rf_ctx.content_reward_balance = reward_fund.content_reward_balance;
-      rf_ctx.reward_distributed = asset( 0, reward_fund.symbol );
-
-      const auto& comment_idx = get_index< comment_index >().indices().get< by_currency_cashout_time >();
-      auto comment_itr = comment_idx.lower_bound( reward_fund.symbol );
-      
-      while( comment_itr != comment_idx.end() && 
-         comment_itr->cashout_time <= now && 
-         comment_itr->reward_currency == reward_fund.symbol )
-      {
-         if( comment_itr->net_reward > 0 )
-         {
-            uint128_t net_reward = uint128_t( comment_itr->net_reward.value );
-            uint128_t reward_curve = util::evaluate_reward_curve( 
-               net_reward, 
-               comment_itr->cashouts_received, 
-               ctx.reward_curve, 
-               ctx.decay_rate, 
-               ctx.content_constant );
-
-            rf_ctx.recent_content_claims += reward_curve;     // Snapshots the reward fund into a seperate object reward fund context to ensure equal execution conditions.
-         }
-         ++comment_itr;
-      }
 
       comment_itr = comment_idx.lower_bound( reward_fund.symbol );
 
-      ctx.recent_content_claims = rf_ctx.recent_content_claims;
-      ctx.total_reward_fund = rf_ctx.content_reward_balance;
+      // Find if there is a comment to cashout
 
-      // Allocates reward balances to accounts from the comment reward context
-
-      while( comment_itr != comment_idx.end() && 
-         comment_itr->cashout_time <= now &&
+      if( comment_itr != comment_idx.end() && 
+         comment_itr->cashout_time <= now && 
          comment_itr->reward_currency == reward_fund.symbol )
       {
-         rf_ctx.reward_distributed += distribute_comment_reward( ctx, *comment_itr );
-         ++comment_itr;
-      }
+         util::comment_reward_context ctx;
 
-      modify( reward_fund, [&]( reward_fund_object& rfo )
-      {
-         rfo.recent_content_claims = rf_ctx.recent_content_claims;
-         rfo.adjust_content_reward_balance( -rf_ctx.reward_distributed );
-      });
+         if( reward_fund.symbol == SYMBOL_COIN )
+         {
+            ctx.current_COIN_USD_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).day_median_price;
+         }
+         else
+         {
+            ctx.current_COIN_USD_price = get_liquidity_pool( SYMBOL_USD, reward_fund.symbol ).day_median_price;
+         }
+
+         modify( reward_fund, [&]( reward_fund_object& rfo )      
+         {
+            rfo.decay_recent_content_claims( now, median_props );
+         });
+
+         reward_fund_context rf_ctx;
+
+         rf_ctx.recent_content_claims = reward_fund.recent_content_claims;
+         rf_ctx.content_reward_balance = reward_fund.content_reward_balance;
+         rf_ctx.reward_distributed = asset( 0, reward_fund.symbol );
+
+         // Snapshots the reward fund into a seperate object reward fund context to ensure equal execution conditions.
+         
+         while( comment_itr != comment_idx.end() && 
+            comment_itr->cashout_time <= now && 
+            comment_itr->reward_currency == reward_fund.symbol )
+         {
+            const comment_object& comment = *comment_itr;
+            ++comment_itr;
+
+            if( comment.net_reward > 0 )
+            {
+               uint128_t reward_curve = util::evaluate_reward_curve( comment );
+               rf_ctx.recent_content_claims += reward_curve;
+            }
+         }
+
+         comment_itr = comment_idx.lower_bound( reward_fund.symbol );
+
+         ctx.recent_content_claims = rf_ctx.recent_content_claims;
+         ctx.total_reward_fund = rf_ctx.content_reward_balance;
+
+         // Allocates reward balances to accounts from the comment reward context
+
+         while( comment_itr != comment_idx.end() && 
+            comment_itr->cashout_time <= now &&
+            comment_itr->reward_currency == reward_fund.symbol )
+         {
+            const comment_object& comment = *comment_itr;
+            ++comment_itr;
+            rf_ctx.reward_distributed += distribute_comment_reward( comment, ctx );
+         }
+
+         modify( reward_fund, [&]( reward_fund_object& rfo )
+         {
+            rfo.recent_content_claims = rf_ctx.recent_content_claims;
+            rfo.adjust_content_reward_balance( -rf_ctx.reward_distributed );
+         });
+      }
    }
 }
 

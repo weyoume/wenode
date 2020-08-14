@@ -12,23 +12,20 @@ namespace node { namespace chain {
    
    using node::protocol::asset;
    using node::protocol::price;
+   using node::protocol::price_feed;
    using node::protocol::option_strike;
    using node::protocol::asset_unit;
    using node::protocol::authority;
    using node::protocol::signed_transaction;
    using node::protocol::operation;
 
+   using node::protocol::comment_reward_curve;
    using node::protocol::chain_properties;
    using node::protocol::digest_type;
    using node::protocol::public_key_type;
    using node::protocol::version;
    using node::protocol::hardfork_version;
 
-   using node::protocol::price;
-   using node::protocol::asset;
-   using node::protocol::option_strike;
-   using node::protocol::price_feed;
-   using node::protocol::asset_unit;
    using node::protocol::x11;
 
    using node::protocol::share_type;
@@ -97,6 +94,8 @@ namespace node { namespace chain {
 
          id_type                id;
 
+         comment_reward_curve   reward_curve = comment_reward_curve();                         ///< The Parameters defining the content reward distribution curve.
+
          asset                  account_creation_fee = MIN_ACCOUNT_CREATION_FEE;               ///< Minimum fee required to create a new account by staking.
 
          asset                  asset_coin_liquidity = MIN_ASSET_COIN_LIQUIDITY;               ///< Minimum COIN required to create a new asset.
@@ -136,24 +135,6 @@ namespace node { namespace chain {
          asset                  membership_mid_price = MEMBERSHIP_FEE_MID;                     ///< The price for Mezzanine membership per month.
 
          asset                  membership_top_price = MEMBERSHIP_FEE_TOP;                     ///< The price for top level membership per month.
-
-         uint32_t               author_reward_percent = AUTHOR_REWARD_PERCENT;                 ///< The percentage of content rewards distributed to post authors.
-
-         uint32_t               vote_reward_percent = VOTE_REWARD_PERCENT;                     ///< The percentage of content rewards distributed to post voters.
-
-         uint32_t               view_reward_percent = VIEW_REWARD_PERCENT;                     ///< The percentage of content rewards distributed to post viewers.
-
-         uint32_t               share_reward_percent = SHARE_REWARD_PERCENT;                   ///< The percentage of content rewards distributed to post sharers.
-
-         uint32_t               comment_reward_percent = COMMENT_REWARD_PERCENT;               ///< The percentage of content rewards distributed to post commenters.
-
-         uint32_t               storage_reward_percent = STORAGE_REWARD_PERCENT;               ///< The percentage of content rewards distributed to viewing supernodes.
-
-         uint32_t               moderator_reward_percent = MODERATOR_REWARD_PERCENT;           ///< The percentage of content rewards distributed to community moderators.
-
-         fc::microseconds       content_reward_decay_rate = CONTENT_REWARD_DECAY_RATE;         ///< The time over which content rewards are distributed
-
-         fc::microseconds       content_reward_interval = CONTENT_REWARD_INTERVAL;             ///< Time taken per distribution of content rewards.
 
          uint32_t               vote_reserve_rate = VOTE_RESERVE_RATE;                         ///< The number of votes regenerated per day.
 
@@ -284,6 +265,11 @@ namespace node { namespace chain {
 
          price                      liquidation_spread()const { return loan_price() - liquidation_price; }
 
+         double                     real_interest_rate()const
+         {
+            return double(last_interest_rate.value)/double(100);
+         }
+
          pair< asset_symbol_type, asset_symbol_type > get_market()const
          {
             return debt.symbol < collateral.symbol ?
@@ -369,16 +355,6 @@ namespace node { namespace chain {
    };
 
 
-   enum curve_id
-   {
-      quadratic,                   ///< Returns the square of the reward, with a constant added
-      quadratic_curation,          ///< Returns an amount converging to linear with reward
-      linear,                      ///< Returns exactly the reward, without using constant
-      square_root,                 ///< returns exactly the square root of reward
-      convergent_semi_quadratic    ///< Returns an amount converging to the reward, to the power of 1.5, which decays over the time period specified
-   };
-
-
    class reward_fund_object : public object< reward_fund_object_type, reward_fund_object >
    {
       reward_fund_object() = delete;
@@ -424,15 +400,14 @@ namespace node { namespace chain {
 
          uint128_t               recent_activity_claims = 0;                                ///< Recently claimed activity reward balance shares.
 
-         uint128_t               content_constant = CONTENT_CONSTANT;                       ///< Contstant added to content claim shares.
-
-         fc::microseconds        content_reward_decay_rate = CONTENT_REWARD_DECAY_RATE;     ///< Time taken to distribute all content rewards.
-
-         fc::microseconds        content_reward_interval = CONTENT_REWARD_INTERVAL;         ///< Time between each individual distribution of content rewards. 
-
-         curve_id                reward_curve = convergent_semi_quadratic;                  ///< Type of reward curve used for author content reward calculation. 
-
          time_point              last_updated;                                              ///< Time that the reward fund was last updated.
+
+         void                    decay_recent_content_claims( time_point now, const median_chain_property_object& props )
+         {
+            uint128_t decay = ( recent_content_claims * ( now - last_updated ).count() ) / props.reward_curve.reward_duration().count();
+            recent_content_claims -= decay;
+            last_updated = now;
+         }
 
          asset                   total_pending_reward_balance()const                        ///< Total of all reward balances. 
          {
@@ -883,6 +858,7 @@ namespace node { namespace chain {
 
 FC_REFLECT( node::chain::median_chain_property_object,
          (id)
+         (reward_curve)
          (account_creation_fee)
          (asset_coin_liquidity)
          (asset_usd_liquidity)
@@ -903,15 +879,6 @@ FC_REFLECT( node::chain::median_chain_property_object,
          (membership_base_price)
          (membership_mid_price)
          (membership_top_price)
-         (author_reward_percent)
-         (vote_reward_percent)
-         (view_reward_percent)
-         (share_reward_percent)
-         (comment_reward_percent)
-         (storage_reward_percent)
-         (moderator_reward_percent)
-         (content_reward_decay_rate)
-         (content_reward_interval)
          (vote_reserve_rate)
          (view_reserve_rate)
          (share_reserve_rate)
@@ -997,16 +964,9 @@ FC_REFLECT( node::chain::decline_voting_rights_request_object,
             
 CHAINBASE_SET_INDEX_TYPE( node::chain::decline_voting_rights_request_object, node::chain::decline_voting_rights_request_index );
 
-FC_REFLECT_ENUM( node::chain::curve_id,
-         (quadratic)
-         (quadratic_curation)
-         (linear)
-         (square_root)
-         (convergent_semi_quadratic)
-         );
-
 FC_REFLECT( node::chain::reward_fund_object,
          (id)
+         (symbol)
          (content_reward_balance)
          (validation_reward_balance) 
          (txn_stake_reward_balance) 
@@ -1022,9 +982,6 @@ FC_REFLECT( node::chain::reward_fund_object,
          (premium_partners_fund_balance)
          (recent_content_claims)
          (recent_activity_claims)
-         (content_constant)
-         (content_reward_decay_rate)
-         (reward_curve)
          (last_updated)
          );
 

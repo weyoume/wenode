@@ -2300,7 +2300,8 @@ annotated_signed_transaction      wallet_api::account_create(
    string reset_account,
    string details,
    string url,
-   string image,
+   string profile_image,
+   string cover_image,
    string json,
    string json_private,
    string first_name,
@@ -2310,6 +2311,8 @@ annotated_signed_transaction      wallet_api::account_create(
    string email,
    string phone,
    string nationality,
+   string relationship,
+   string political_alignment,
    authority owner_auth,
    authority active_auth,
    authority posting_auth,
@@ -2337,7 +2340,8 @@ annotated_signed_transaction      wallet_api::account_create(
    op.reset_account = reset_account;
    op.details = details;
    op.url = url;
-   op.image = image;
+   op.profile_image = profile_image;
+   op.cover_image = cover_image;
    op.json = json;
    op.json_private = json_private;
    op.first_name = first_name;
@@ -2347,6 +2351,8 @@ annotated_signed_transaction      wallet_api::account_create(
    op.email = email;
    op.phone = phone;
    op.nationality = nationality;
+   op.relationship = relationship;
+   op.political_alignment = political_alignment;
    op.fee = fee;
    op.delegation = delegation;
 
@@ -2423,7 +2429,8 @@ annotated_signed_transaction      wallet_api::account_update(
    string account,
    string details,
    string url,
-   string image,
+   string profile_image,
+   string cover_image,
    string json,
    string json_private,
    string first_name,
@@ -2433,6 +2440,8 @@ annotated_signed_transaction      wallet_api::account_update(
    string email,
    string phone,
    string nationality,
+   string relationship,
+   string political_alignment,
    string pinned_permlink,
    authority owner_auth,
    authority active_auth,
@@ -2452,7 +2461,8 @@ annotated_signed_transaction      wallet_api::account_update(
    op.account = account;
    op.details = details;
    op.url = url;
-   op.image = image;
+   op.profile_image = profile_image;
+   op.cover_image = cover_image;
    op.json = json;
    op.json_private = json_private;
    op.first_name = first_name;
@@ -2462,6 +2472,8 @@ annotated_signed_transaction      wallet_api::account_update(
    op.email = email;
    op.phone = phone;
    op.nationality = nationality;
+   op.relationship = relationship;
+   op.political_alignment = political_alignment;
    op.pinned_permlink = pinned_permlink;
    op.owner_auth = owner_auth;
    op.active_auth = active_auth;
@@ -3519,6 +3531,7 @@ annotated_signed_transaction      wallet_api::comment(
    string parent_author, 
    string parent_permlink, 
    vector< string > tags,
+   vector< string > collaborating_authors,
    string json,
    comment_options options,
    bool deleted,
@@ -3571,6 +3584,20 @@ annotated_signed_transaction      wallet_api::comment(
    for( tag_name_type t : t_set )
    {
       op.tags.push_back( t );
+   }
+
+   set< account_name_type > c_set;
+
+   for( string n : collaborating_authors )
+   {
+      c_set.insert( account_name_type( n ) );
+   }
+
+   op.collaborating_authors.reserve( c_set.size() );
+
+   for( account_name_type n : c_set )
+   {
+      op.collaborating_authors.push_back( n );
    }
 
    op.json = json;

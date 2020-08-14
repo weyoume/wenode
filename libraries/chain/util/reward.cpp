@@ -35,74 +35,45 @@ uint64_t approx_sqrt( const uint128_t& x )
    return result;
 }
 
-void fill_comment_reward_context_local_state( comment_reward_context& ctx, const comment_object& comment )
-{
-   ctx.reward = comment.net_reward;
-   ctx.cashouts_received = comment.cashouts_received;
-   ctx.max_reward = comment.max_accepted_payout;
-}
-
 
 /**
  * Determines the value of the comment's reward curve value, based on its
  * net reward value, and past payout details, and the variables of the network.
  */
-uint128_t evaluate_reward_curve( 
-   const uint128_t& reward,
-   const uint32_t cashouts_received,
-   const curve_id& curve,
-   const fc::microseconds decay_rate,
-   const uint128_t& content_constant )
+uint128_t evaluate_reward_curve( const comment_object& c )
 {
    uint128_t result = 0;
-
-   switch( curve )
+   if( c.net_reward.value <= 0 )
    {
-      case quadratic:
-      {
-         uint128_t reward_plus_s = reward + content_constant;
-         result = reward_plus_s * reward_plus_s - content_constant * content_constant;
-      }
-      break;
-      case quadratic_curation:
-      {
-         uint128_t two_alpha = content_constant * 2;
-         result = uint128_t( reward.lo, 0 ) / ( two_alpha + reward );
-      }
-      break;
-      case linear:
-      {
-         result = reward;
-      }  
-      break;
-      case square_root:
-      {
-         result = approx_sqrt( reward );
-      } 
-      break;
-      case convergent_semi_quadratic:     // Returns amount converging to reward to the power of 1.5, linearly decaying over the specified payout days.
-      {
-         uint128_t r = reward;
-         uint128_t s = content_constant;
-         int64_t d = cashouts_received;
-         int64_t t = decay_rate.to_seconds() / fc::days(1).to_seconds();
-         int64_t m = std::max(int64_t(0),t-d);
-         uint128_t rs_25 = (r+s)*(r+s)*approx_sqrt(r+s);
-         uint128_t s_25 = s*s*approx_sqrt(s);
-         
-         if( d >= t )
-         { 
-            result = 0; 
-         }
-         else
-         {
-            result = (m*((rs_25-s_25)/(r+4*s)))/t;
-         }
-      }
-      break;
+      return result;
    }
+   comment_reward_curve curve = c.reward_curve;
+   uint128_t r = uint128_t( c.net_reward.value );
+   uint128_t s = curve.constant_factor;
+   int64_t d = c.cashouts_received;
+   int64_t t = curve.reward_interval_amount;
+   int64_t m = std::max(int64_t(0),t-d);
 
-   // ilog( "Reward Curve: ${r} Reward: ${re}", ("r",result)("re",reward));
+   uint128_t rs_3 = (r+s)*(r+s)*(r+s);
+   uint128_t s_3 = s*s*s;
+   uint128_t quad = ((rs_3-s_3)*uint128_t(curve.quadratic_percent))/uint128_t(PERCENT_100);
+
+   uint128_t rs_25 = (r+s)*(r+s)*approx_sqrt(r+s);
+   uint128_t s_25 = s*s*approx_sqrt(s);
+   uint128_t semi_quad = ((rs_25-s_25)*uint128_t(curve.semi_quadratic_percent))/uint128_t(PERCENT_100);
+
+   uint128_t rs_2 = (r+s)*(r+s);
+   uint128_t s_2 = s*s;
+   uint128_t linear = ((rs_2-s_2)*uint128_t(curve.linear_percent))/uint128_t(PERCENT_100);
+
+   uint128_t rs_15 = (r+s)*approx_sqrt(r+s);
+   uint128_t s_15 = s*approx_sqrt(s);
+   uint128_t sq_rt = ((rs_15-s_15)*uint128_t(curve.sqrt_percent))/uint128_t(PERCENT_100);
+   
+   if( d < t )
+   {
+      result = (m*((quad+semi_quad+linear+sq_rt)/(r+4*s)))/t;
+   }
 
    return result;
 }

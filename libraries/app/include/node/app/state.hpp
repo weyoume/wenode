@@ -161,10 +161,10 @@ namespace node { namespace app {
       vector< withdraw_route >                                              withdraw_routes;
       vector< savings_withdraw_api_obj >                                    savings_withdrawals_from;
       vector< savings_withdraw_api_obj >                                    savings_withdrawals_to;
-      vector< asset_delegation_api_obj >                                    asset_delegations_from;
-      vector< asset_delegation_api_obj >                                    asset_delegations_to;
-      vector< asset_delegation_expiration_api_obj >                         asset_expirations_from;
-      vector< asset_delegation_expiration_api_obj >                         asset_expirations_to;
+      vector< asset_delegation_api_obj >                                    delegations_from;
+      vector< asset_delegation_api_obj >                                    delegations_to;
+      vector< asset_delegation_expiration_api_obj >                         expirations_from;
+      vector< asset_delegation_expiration_api_obj >                         expirations_to;
    };
 
    struct key_state
@@ -244,10 +244,6 @@ namespace node { namespace app {
    {
       business_account_state(){}
       business_account_state( const account_business_object& a ):account_business_api_obj( a ){}
-
-      vector< account_name_type >                                                                member_businesses;
-      vector< account_name_type >                                                                officer_businesses;
-      vector< account_name_type >                                                                executive_businesses;
 
       map< account_name_type, account_request_api_obj >                                          incoming_requests;
       map< account_name_type, account_invite_api_obj >                                           incoming_invites;
@@ -684,6 +680,13 @@ FC_REFLECT( node::app::balance_state,
          (confidential_balances)
          (distribution_balances)
          (prediction_resolutions)
+         (withdraw_routes)
+         (savings_withdrawals_from)
+         (savings_withdrawals_to)
+         (delegations_from)
+         (delegations_to)
+         (expirations_from)
+         (expirations_to)
          );
 
 FC_REFLECT( node::app::operation_state,
@@ -699,12 +702,16 @@ FC_REFLECT( node::app::operation_state,
          (moderation_history)
          (community_history)
          (ad_history)
+         (graph_history)
          (transfer_history)
          (balance_history)
+         (product_history)
          (escrow_history)
          (trading_history)
          (liquidity_history)
          (credit_history)
+         (option_history)
+         (prediction_history)
          (asset_history)
          (network_history)
          (other_history)
@@ -737,16 +744,19 @@ FC_REFLECT( node::app::connection_state,
          (companions)
          (incoming_requests)
          (outgoing_requests)
+         (incoming_verifications)
+         (outgoing_verifications)
          );
 
 FC_REFLECT( node::app::business_account_state,
-         (member_businesses)
-         (officer_businesses)
-         (executive_businesses)
          (incoming_requests)
          (incoming_invites)
+         (incoming_executive_votes)
+         (incoming_officer_votes)
          (outgoing_requests)
          (outgoing_invites)
+         (outgoing_executive_votes)
+         (outgoing_officer_votes)
          );
 
 FC_REFLECT( node::app::account_network_state,
@@ -802,6 +812,8 @@ FC_REFLECT_DERIVED( node::app::extended_account, ( node::app::account_api_obj ),
          (top_shared)
          (permissions)
          (tags_usage)
+         (recovery)
+         (owner_history)
          (operations)
          );
 
@@ -829,7 +841,7 @@ FC_REFLECT_DERIVED( node::app::extended_asset, ( node::app::asset_api_obj ),
          (receiving_supply)
          (pending_supply)
          (confidential_supply)
-         (distribution)
+         (currency)
          (stablecoin)
          (equity)
          (bond)
@@ -842,6 +854,8 @@ FC_REFLECT_DERIVED( node::app::extended_asset, ( node::app::asset_api_obj ),
          (option_pools)
          (prediction)
          (resolutions)
+         (distribution)
+         (distribution_balances)
          );
 
 FC_REFLECT( node::app::message_state,

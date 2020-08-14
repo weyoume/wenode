@@ -48,7 +48,6 @@ namespace node { namespace chain {
  * CREDIT_POOL_ASSET,      ///< Asset that is backed by deposits of the base asset, used for borrowing funds from the pool, used as collateral to borrow base asset.
  * OPTION_ASSET,           ///< Asset that enables the execution of a trade at a specific strike price until an expiration date. 
  * PREDICTION_ASSET,       ///< Asset backed by an underlying collateral claim, on the condition that a prediction market resolve in a particular outcome.
- * GATEWAY_ASSET,          ///< Asset backed by deposits with an exchange counterparty of another asset or currency.
  * UNIQUE_ASSET            ///< Asset with a supply of one, contains metadata relating to the ownership of a unique non-fungible asset.
  */
 
@@ -104,14 +103,6 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       usd_liq.amount = share_type( usd_liq.amount.value << uint16_t( 8 - asset_length ) );
    }
 
-   FC_ASSERT( o.coin_liquidity >= coin_liq, 
-      "Asset has insufficient initial COIN liquidity." );
-   FC_ASSERT( o.usd_liquidity >= usd_liq, 
-      "Asset has insufficient initial USD liquidity." );
-   FC_ASSERT( liquid_coin >= o.coin_liquidity, 
-      "Issuer has insufficient coin balance to provide specified initial liquidity." );
-   FC_ASSERT( liquid_usd >= o.usd_liquidity, 
-      "Issuer has insufficient USD balance to provide specified initial liquidity." );
    FC_ASSERT( o.options.whitelist_authorities.size() <= median_props.maximum_asset_whitelist_authorities,
       "Too many Whitelist authorities." );
    FC_ASSERT( o.options.blacklist_authorities.size() <= median_props.maximum_asset_whitelist_authorities,
@@ -174,10 +165,18 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             "Currency asset must have a block reward denominated in the asset symbol: ${s}",
             ("s",o.symbol));
 
+         FC_ASSERT( o.coin_liquidity >= coin_liq, 
+            "Asset has insufficient initial COIN liquidity." );
+         FC_ASSERT( o.usd_liquidity >= usd_liq, 
+            "Asset has insufficient initial USD liquidity." );
+         FC_ASSERT( liquid_coin >= o.coin_liquidity, 
+            "Issuer has insufficient coin balance to provide specified initial liquidity." );
+         FC_ASSERT( liquid_usd >= o.usd_liquidity, 
+            "Issuer has insufficient USD balance to provide specified initial liquidity." );
+
          const reward_fund_object& reward_fund = _db.create< reward_fund_object >( [&]( reward_fund_object& rfo )
          {
             rfo.symbol = o.symbol;
-            rfo.content_constant = CONTENT_CONSTANT;
             rfo.content_reward_balance = asset( 0, o.symbol );
             rfo.validation_reward_balance = asset( 0, o.symbol );
             rfo.txn_stake_reward_balance = asset( 0, o.symbol );
@@ -192,7 +191,6 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             rfo.activity_reward_balance = asset( 0, o.symbol );
             rfo.premium_partners_fund_balance = asset( 0, o.symbol );
             rfo.recent_content_claims = 0;
-            rfo.reward_curve = curve_id::convergent_semi_quadratic;
             rfo.last_updated = now;
          });
 
@@ -227,6 +225,8 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       break;
       case asset_property_type::STABLECOIN_ASSET:
       {
+         
+
          const asset_object& backing_asset = _db.get_asset( o.options.backing_asset );
          if( backing_asset.is_market_issued() )
          {
@@ -252,7 +252,6 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          const asset_stablecoin_data_object& stablecoin = _db.create< asset_stablecoin_data_object >( [&]( asset_stablecoin_data_object& a )
          {
             a.symbol = o.symbol;
-            a.issuer = o.issuer;
             a.backing_asset = o.options.backing_asset;
             a.current_feed_publication_time = now;
             a.feed_lifetime = o.options.feed_lifetime;
@@ -268,14 +267,54 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             a.update_median_feeds( now );
          });
 
-         ilog( "Stablecoin Data: ${s}",("s",stablecoin));
+         asset init_stablecoin_supply = asset( o.coin_liquidity.amount + o.usd_liquidity.amount + o.credit_liquidity.amount, o.symbol );
+         asset init_collateral = init_stablecoin_supply * stablecoin.current_maintenance_collateralization;
+         asset liquid_collateral = _db.get_liquid_balance( o.issuer, init_collateral.symbol );
+
+         FC_ASSERT( liquid_collateral >= init_collateral, 
+            "Issuer has insufficient initial collateral asset to back stablecoin initial balances. Required: ${r} Actual: ${a}",
+            ("r",init_collateral.to_string())("a",liquid_collateral.to_string()) );
+
+         _db.adjust_liquid_balance( o.issuer, -init_collateral );
+         _db.adjust_pending_supply( init_collateral );
+
+         const call_order_object& call = _db.create< call_order_object >( [&]( call_order_object& coo )
+         {
+            coo.borrower = o.issuer;
+            coo.collateral = init_collateral;
+            coo.debt = init_stablecoin_supply;
+            coo.created = now;
+            coo.last_updated = now;
+         });
+
+         FC_ASSERT( o.coin_liquidity >= coin_liq, 
+            "Asset has insufficient initial COIN liquidity." );
+         FC_ASSERT( o.usd_liquidity >= usd_liq, 
+            "Asset has insufficient initial USD liquidity." );
+         FC_ASSERT( liquid_coin >= o.coin_liquidity, 
+            "Issuer has insufficient COIN balance to provide specified initial liquidity." );
+         FC_ASSERT( liquid_usd >= o.usd_liquidity, 
+            "Issuer has insufficient USD balance to provide specified initial liquidity." );
+
+         ilog( "Stablecoin Data: \n ${s} \n Created Call: \n ${c} \n",
+            ("s",stablecoin)("c",call) );
       }
       break;
       case asset_property_type::EQUITY_ASSET:
       {
+         FC_ASSERT( o.coin_liquidity >= coin_liq, 
+            "Asset has insufficient initial COIN liquidity." );
+         FC_ASSERT( o.usd_liquidity >= usd_liq, 
+            "Asset has insufficient initial USD liquidity." );
+         FC_ASSERT( liquid_coin >= o.coin_liquidity, 
+            "Issuer has insufficient coin balance to provide specified initial liquidity." );
+         FC_ASSERT( liquid_usd >= o.usd_liquidity, 
+            "Issuer has insufficient USD balance to provide specified initial liquidity." );
+
          const account_business_object& abo = _db.get_account_business( o.issuer );
          FC_ASSERT( abo.account == o.issuer, 
-            "Account: ${s} must be a business account to create an equity asset.",("s", o.issuer) );
+            "Account: ${s} must be a business account to create an equity asset.",
+            ("s", o.issuer) );
          uint16_t revenue_share_sum = o.options.dividend_share_percent;
          for( auto share : abo.equity_revenue_shares )
          {
@@ -327,9 +366,11 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       {
          const account_business_object& abo = _db.get_account_business( o.issuer );
          FC_ASSERT( abo.account == o.issuer, 
-            "Account: ${s} must be a business account to create a bond asset.",("s", o.issuer) );
-         FC_ASSERT( time_point( o.options.maturity_date ) > ( now + fc::days(30) ),
-            "Bond Maturity date must be at least 30 days in the future." );
+            "Account: ${s} must be a business account to create a bond asset.",
+            ("s", o.issuer) );
+         FC_ASSERT( o.options.maturity_date > date_type( now + fc::days(30) ),
+            "Bond Maturity date must be at least 30 days in the future. Maturity date: ${d} Current date: ${t}",
+            ("d",o.options.maturity_date)("t",date_type(now)));
          
          const asset_object& value_asset = _db.get_asset( o.options.value.symbol );
          FC_ASSERT( value_asset.asset_type == asset_property_type::CURRENCY_ASSET || 
@@ -352,6 +393,15 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       break;
       case asset_property_type::CREDIT_ASSET:
       {
+         FC_ASSERT( o.coin_liquidity >= coin_liq, 
+            "Asset has insufficient initial COIN liquidity." );
+         FC_ASSERT( o.usd_liquidity >= usd_liq, 
+            "Asset has insufficient initial USD liquidity." );
+         FC_ASSERT( liquid_coin >= o.coin_liquidity, 
+            "Issuer has insufficient coin balance to provide specified initial liquidity." );
+         FC_ASSERT( liquid_usd >= o.usd_liquidity, 
+            "Issuer has insufficient USD balance to provide specified initial liquidity." );
+
          const account_business_object& abo = _db.get_account_business( o.issuer );
          FC_ASSERT( abo.account == o.issuer, 
             "Account: ${s} must be a business account to create a credit asset.",("s", o.issuer) );
@@ -457,7 +507,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             next_distribution_date = date_type( 1, today.month + 1, today.year );
          }
 
-         const asset_stimulus_data_object stimulus = _db.create< asset_stimulus_data_object >( [&]( asset_stimulus_data_object& asdo )
+         const asset_stimulus_data_object& stimulus = _db.create< asset_stimulus_data_object >( [&]( asset_stimulus_data_object& asdo )
          {
             asdo.business_account = o.issuer;
             asdo.symbol = o.symbol;
@@ -471,13 +521,6 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          });
 
          ilog( "Stimulus Data: ${s}",("s",stimulus));
-      }
-      break;
-      case asset_property_type::GATEWAY_ASSET:
-      {
-         const account_business_object& abo = _db.get_account_business( o.issuer );
-         FC_ASSERT( abo.account == o.issuer, 
-            "Account: ${s} must be a business account to create a gateway asset.",("s", o.issuer) );
       }
       break;
       case asset_property_type::UNIQUE_ASSET:
@@ -585,7 +628,6 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
 
    _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
    {
-      a.issuer = issuer_account_name;
       a.symbol = o.symbol;
    });
 
@@ -638,7 +680,6 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
 
       _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
       {
-         a.issuer = issuer_account_name;
          a.symbol = core_liq_symbol;
       });
 
@@ -647,7 +688,6 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          
       _db.create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
       {
-         a.issuer = issuer_account_name;
          a.symbol_a = SYMBOL_COIN;
          a.symbol_b = o.symbol;
          a.symbol_liquid = core_liq_symbol;
@@ -705,7 +745,6 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
 
       _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
       {
-         a.issuer = issuer_account_name;
          a.symbol = usd_liq_symbol;
       });
 
@@ -713,8 +752,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       init_liquid_asset = asset( o.usd_liquidity.amount, usd_liq_symbol);   // Creates equivalent supply of the liquidity pool asset for liquidity injection.
          
       _db.create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
-      {   
-         a.issuer = issuer_account_name;
+      {
          a.symbol_a = SYMBOL_USD;
          a.symbol_b = o.symbol;
          a.symbol_liquid = usd_liq_symbol;
@@ -772,7 +810,6 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
 
       _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
       {
-         a.issuer = issuer_account_name;
          a.symbol = credit_asset_symbol;
       });
 
@@ -782,7 +819,6 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
 
       _db.create< asset_credit_pool_object >( [&]( asset_credit_pool_object& a )
       {
-         a.issuer = issuer_account_name;
          a.base_symbol = o.symbol;   
          a.credit_symbol = credit_asset_symbol; 
          a.base_balance = init_lent_asset;
@@ -919,7 +955,10 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
    time_point now = _db.head_block_time();
 
    const asset_object& asset_obj = _db.get_asset( o.asset_to_update );
-    FC_ASSERT( ( asset_obj.last_updated + MIN_ASSET_UPDATE_INTERVAL ) <= now, 
+
+   FC_ASSERT( !asset_obj.immutable_properties(),
+      "Asset has Immutable Properties and cannot be altered after creation." );
+   FC_ASSERT( ( asset_obj.last_updated + MIN_ASSET_UPDATE_INTERVAL ) <= now, 
       "Can only update asset once per 10 minutes." );
    const asset_dynamic_data_object& dyn_data = _db.get_dynamic_data( o.asset_to_update );
 
@@ -956,7 +995,7 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
          itr != idx.end() && itr->settlement_asset_symbol() == o.asset_to_update;
          itr = idx.lower_bound( o.asset_to_update ) )
       {
-         _db.cancel_settle_order( *itr, true );
+         _db.cancel_settle_order( *itr );
       }
    }
 
@@ -1088,10 +1127,14 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
       break;
       case asset_property_type::BOND_ASSET:
       {
+         FC_ASSERT( o.issuer == asset_obj.issuer,
+            "Only Issuer can update asset. (${o.issuer} != ${a.issuer})",
+            ("o.issuer", o.issuer)("asset.issuer", asset_obj.issuer) );
+
          const account_business_object& abo = _db.get_account_business( o.issuer );
          FC_ASSERT( abo.account == o.issuer, 
             "Account: ${s} must be a business account to create a credit asset.",("s", o.issuer) );
-         FC_ASSERT( time_point( o.new_options.maturity_date ) > ( now + fc::days(30) ),
+         FC_ASSERT( o.new_options.maturity_date > date_type( now + fc::days(30) ),
             "Maturity must be at least 30 days in the future." );
          
          const asset_object& value_asset = _db.get_asset( o.new_options.value.symbol );
@@ -1221,13 +1264,6 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
          FC_ASSERT( false, "Cannot Edit Option asset." );
       }
       break;
-      case asset_property_type::GATEWAY_ASSET:
-      {
-         FC_ASSERT( o.issuer == asset_obj.issuer,
-            "Only Issuer can update asset. (${o.issuer} != ${a.issuer})",
-            ("o.issuer", o.issuer)("asset.issuer", asset_obj.issuer) );
-      }
-      break;
       case asset_property_type::UNIQUE_ASSET:
       {
          const asset_unique_data_object& unique_obj = _db.get_unique_data( o.asset_to_update );
@@ -1350,7 +1386,8 @@ void asset_issue_evaluator::do_apply( const asset_issue_operation& o )
    if( asset_obj.asset_type == asset_property_type::BOND_ASSET )
    {
       const asset_bond_data_object& bond_obj = _db.get_bond_data( o.asset_to_issue.symbol );
-      asset bond_collateral = ( bond_obj.value * o.asset_to_issue.amount * bond_obj.collateralization )  / ( BLOCKCHAIN_PRECISION * PERCENT_100 );
+      price collateral_price = price( asset( BLOCKCHAIN_PRECISION, o.asset_to_issue.symbol ), bond_obj.value );
+      asset bond_collateral = ( ( o.asset_to_issue * collateral_price ) * bond_obj.collateralization ) / PERCENT_100;
       asset liquid = _db.get_liquid_balance( o.issuer, bond_obj.value.symbol );
       FC_ASSERT( liquid >= bond_collateral,
          "Insufficient Collateral liquid balance to issue requested quantity of bond assets." );
@@ -1375,6 +1412,9 @@ void asset_issue_evaluator::do_apply( const asset_issue_operation& o )
    }
 
    _db.adjust_liquid_balance( o.issue_to_account, o.asset_to_issue );
+
+   ilog( "Account: ${a} Issued new asset: ${am} to account: ${i} Current Liquid Supply: ${ls} Current Total Supply: ${ts}",
+      ("a",o.issuer)("am",o.asset_to_issue.to_string() )("i",o.issue_to_account)("ls",asset_dyn_data.get_liquid_supply().to_string())("ts",asset_dyn_data.get_total_supply().to_string()));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -1395,19 +1435,43 @@ void asset_reserve_evaluator::do_apply( const asset_reserve_operation& o )
    }
 
    const asset_object& asset_obj = _db.get_asset( o.amount_to_reserve.symbol );
-   const account_object& from_account = _db.get_account( o.payer );
    const account_permission_object& from_account_permissions = _db.get_account_permissions( o.payer );
    const asset_dynamic_data_object& asset_dyn_data = _db.get_dynamic_data( asset_obj.symbol );
+   asset liquid = _db.get_liquid_balance( o.payer, o.amount_to_reserve.symbol );
 
+   FC_ASSERT( liquid >= o.amount_to_reserve,
+      "Cannot reserve more of an asset than account's liquid balance. Required: ${r} Actual: ${a}",
+      ("r",o.amount_to_reserve.to_string())("a",liquid.to_string()) );
    FC_ASSERT( !asset_obj.is_market_issued(),
-      "Cannot reserve ${s} because it is a market-issued asset",
+      "Cannot reserve asset: ${s} because it is a market-issued asset",
       ("s",o.amount_to_reserve.symbol) );
    FC_ASSERT( from_account_permissions.is_authorized_transfer( o.payer, asset_obj ),
       "The recipient account is not authorized to reserve the asset.");
    FC_ASSERT( ( asset_dyn_data.get_total_supply().amount - o.amount_to_reserve.amount ) >= 0,
       "Cannot reserve more of an asset than its current total supply." );
 
-   _db.adjust_liquid_balance( from_account, -o.amount_to_reserve );
+   if( asset_obj.asset_type == asset_property_type::BOND_ASSET )
+   {
+      // Redeem bond for underlying collateral split
+      const asset_bond_data_object& bond_obj = _db.get_bond_data( o.amount_to_reserve.symbol );
+      price collateral_price = bond_obj.collateral_pool / asset_dyn_data.get_total_supply();
+      asset bond_collateral = o.amount_to_reserve * collateral_price;
+      
+      _db.adjust_liquid_balance( o.payer, bond_collateral );
+
+      _db.modify( bond_obj, [&]( asset_bond_data_object& abdo )
+      {
+         abdo.collateral_pool -= bond_collateral;
+      });
+   }
+   else if( asset_obj.asset_type == asset_property_type::UNIQUE_ASSET )
+   {
+      FC_ASSERT( false,
+         "Cannot reserve Unique Asset." );
+   }
+
+   _db.adjust_liquid_balance( o.payer, -o.amount_to_reserve );
+
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -1429,17 +1493,168 @@ void asset_update_issuer_evaluator::do_apply( const asset_update_issuer_operatio
 
    const asset_object& asset_obj = _db.get_asset( o.asset_to_update );
    const account_object& new_issuer_account = _db.get_account( o.new_issuer );
-   FC_ASSERT( new_issuer_account.active, 
-      "Account: ${s} must be active to become new issuer.",("s", o.new_issuer) );
 
-   FC_ASSERT( o.issuer == asset_obj.issuer,
-      "Invalid issuer for asset (${o.issuer} != ${a.issuer})",
-      ("o.issuer", o.issuer)("asset.issuer", asset_obj.issuer) );
+   FC_ASSERT( new_issuer_account.active, 
+      "Account: ${s} must be active to become new issuer.",
+      ("s",o.new_issuer));
+
+   const account_permission_object& new_issuer_permissions = _db.get_account_permissions( o.new_issuer );
+   const account_permission_object& issuer_permissions = _db.get_account_permissions( o.issuer );
+
+   FC_ASSERT( !asset_obj.immutable_properties(),
+      "Asset Has Immutable Properties and cannot be altered after creation." );
+   FC_ASSERT( new_issuer_permissions.is_authorized_transfer( o.issuer, asset_obj ),
+      "Asset Issuer Transfer is not authorized, due to recipient account's asset permisssions." );
+   FC_ASSERT( issuer_permissions.is_authorized_transfer( o.new_issuer, asset_obj ),
+      "Asset Issuer Transfer is not authorized, due to sender account's asset permisssions." );
+
+
+   switch( asset_obj.asset_type )  // Asset specific requirements
+   {
+      case asset_property_type::CURRENCY_ASSET:
+      {
+         FC_ASSERT( false, "Cannot Edit Currency asset." );
+      }
+      break;
+      case asset_property_type::STANDARD_ASSET:
+      {
+         FC_ASSERT( o.issuer == asset_obj.issuer,
+            "Only Current Asset Issuer: ${i} can update asset to new issuer.",
+            ("i", asset_obj.issuer));
+      }
+      break;
+      case asset_property_type::STABLECOIN_ASSET:
+      {
+         FC_ASSERT( o.issuer == asset_obj.issuer,
+            "Only Current Asset Issuer: ${i} can update asset to new issuer.",
+            ("i", asset_obj.issuer));
+      }
+      break;
+      case asset_property_type::EQUITY_ASSET:
+      {
+         FC_ASSERT( o.issuer == asset_obj.issuer,
+            "Only Current Asset Issuer: ${i} can update asset to new issuer.",
+            ("i", asset_obj.issuer));
+
+         const account_business_object& new_issuer_bus_acc = _db.get_account_business( o.new_issuer );
+
+         FC_ASSERT( new_issuer_bus_acc.active,
+            "Issuer: ${i} must have active business account.",
+            ("i", o.new_issuer));
+
+         const asset_equity_data_object& equity_obj = _db.get_equity_data( o.asset_to_update );
+
+         _db.modify( equity_obj, [&]( asset_equity_data_object& a )
+         {
+            a.business_account = o.new_issuer;
+         });
+      }
+      break;
+      case asset_property_type::BOND_ASSET:
+      {
+         FC_ASSERT( o.issuer == asset_obj.issuer,
+            "Only Current Asset Issuer: ${i} can update asset to new issuer.",
+            ("i", asset_obj.issuer));
+            
+         const account_business_object& new_issuer_bus_acc = _db.get_account_business( o.new_issuer );
+
+         FC_ASSERT( new_issuer_bus_acc.active,
+            "Issuer: ${i} must have active business account.",
+            ("i", o.new_issuer));
+
+         const asset_bond_data_object& bond_obj = _db.get_bond_data( o.asset_to_update );
+         const asset_dynamic_data_object& bond_dyn_data = _db.get_dynamic_data( o.asset_to_update );
+
+         FC_ASSERT( bond_dyn_data.get_total_supply().amount == 0, 
+            "Cannot update Bond issuer while outstanding Supply exists. All bonds must mature before transfer." );
+         
+         _db.modify( bond_obj, [&]( asset_bond_data_object& a )
+         {
+            a.business_account = o.new_issuer;
+         });
+      }
+      break;
+      case asset_property_type::CREDIT_ASSET:
+      {
+         FC_ASSERT( o.issuer == asset_obj.issuer,
+            "Only Current Asset Issuer: ${i} can update asset to new issuer.",
+            ("i", asset_obj.issuer));
+
+         const account_business_object& new_issuer_bus_acc = _db.get_account_business( o.new_issuer );
+
+         FC_ASSERT( new_issuer_bus_acc.active,
+            "Issuer: ${i} must have active business account.",
+            ("i", o.new_issuer));
+
+         const asset_credit_data_object& credit_obj = _db.get_credit_data( o.asset_to_update );
+         const asset_dynamic_data_object& credit_dyn_data = _db.get_dynamic_data( o.asset_to_update );
+
+         FC_ASSERT( credit_dyn_data.get_total_supply().amount == 0, 
+            "Cannot update Credit issuer while outstanding Supply exists. All Credits must be repurchased before transfer." );
+
+         _db.modify( credit_obj, [&]( asset_credit_data_object& a )
+         {
+            a.business_account = o.new_issuer;
+         });
+      }
+      break;
+      case asset_property_type::STIMULUS_ASSET:
+      {
+         FC_ASSERT( o.issuer == asset_obj.issuer,
+            "Only Current Asset Issuer: ${i} can update asset to new issuer.",
+            ("i", asset_obj.issuer));
+
+         const account_business_object& new_issuer_bus_acc = _db.get_account_business( o.new_issuer );
+
+         FC_ASSERT( new_issuer_bus_acc.active,
+            "Issuer: ${i} must have active business account.",
+            ("i", o.new_issuer));
+
+         const asset_stimulus_data_object& stimulus_obj = _db.get_stimulus_data( o.asset_to_update );
+         
+         _db.modify( stimulus_obj, [&]( asset_stimulus_data_object& a )
+         {
+            a.business_account = o.new_issuer;
+         });
+      }
+      break;
+      case asset_property_type::LIQUIDITY_POOL_ASSET:
+      {
+         FC_ASSERT( false, "Cannot Edit Liquidity Pool asset." );
+      }
+      break;
+      case asset_property_type::CREDIT_POOL_ASSET:
+      {
+         FC_ASSERT( false, "Cannot Edit Credit pool asset." );
+      }
+      break;
+      case asset_property_type::OPTION_ASSET:
+      {
+         FC_ASSERT( false, "Cannot Edit Option asset." );
+      }
+      break;
+      case asset_property_type::UNIQUE_ASSET:
+      {
+         FC_ASSERT( o.issuer == asset_obj.issuer,
+            "Only Current Asset Issuer: ${i} can update asset to new issuer.",
+            ("i", asset_obj.issuer));
+      }
+      break;
+      default:
+      {
+         FC_ASSERT( false, "Invalid Asset type." );
+      }
+      break;
+   }
 
    _db.modify( asset_obj, [&]( asset_object& a ) 
    {
       a.issuer = o.new_issuer;
    });
+
+   ilog( "Updated Asset Issuer: ${i}",
+      ("i",o.new_issuer));
+
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -1476,9 +1691,8 @@ void asset_distribution_evaluator::do_apply( const asset_distribution_operation&
       FC_ASSERT( o.begin_time >= ( now + fc::days(30) ),
          "Asset Distribution begin time must be at least 30 days in the future." );
 
-      _db.create< asset_distribution_object >( [&]( asset_distribution_object& ado )
+      const asset_distribution_object& distribution = _db.create< asset_distribution_object >( [&]( asset_distribution_object& ado )
       {
-         ado.issuer = o.issuer;
          ado.distribution_asset = o.distribution_asset;
          ado.fund_asset = o.fund_asset;
          from_string( ado.details, o.details );
@@ -1512,6 +1726,9 @@ void asset_distribution_evaluator::do_apply( const asset_distribution_operation&
          ado.created = now;
          ado.last_updated = now;
       });
+
+      ilog( "Account: ${a} created New Asset Distribution: \n ${d} \n",
+         ("a",o.issuer)("d",distribution));
    }
    else
    {
@@ -1550,6 +1767,9 @@ void asset_distribution_evaluator::do_apply( const asset_distribution_operation&
          ado.next_round_time = ado.begin_time + fc::days( ado.distribution_interval_days );
          ado.last_updated = now;
       });
+
+      ilog( "Account: ${a} edited Asset Distribution: \n ${d} \n",
+         ("a",o.issuer)("d",distribution));
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -1571,26 +1791,28 @@ void asset_distribution_fund_evaluator::do_apply( const asset_distribution_fund_
    }
 
    const asset_distribution_object& distribution = _db.get_asset_distribution( o.distribution_asset );
-
    time_point now = _db.head_block_time();
-
    share_type input_units = o.amount.amount / distribution.input_unit_amount();
 
+   FC_ASSERT( now >= distribution.begin_time,
+      "Cannot create Distribution balance before begin time: ${t}.",
+      ("t", distribution.begin_time) );
    FC_ASSERT( o.amount.symbol == distribution.fund_asset,
-      "Asset Distribution accepts funding asset ${s}.", ("s", distribution.fund_asset) );
+      "Asset Distribution accepts funding asset ${s}.",
+      ("s", distribution.fund_asset) );
    FC_ASSERT( o.amount.amount % distribution.input_unit_amount() == 0,
-      "Asset Distribution funding amount must be a multiple of the input asset unit: ${a} % ${u} == 0.", 
+      "Asset Distribution funding amount must be a multiple of the input asset unit: ${a} % ${u} == 0.",
       ("a", o.amount.amount )("u", distribution.input_unit_amount()) );
    FC_ASSERT( input_units >= distribution.min_input_balance_units,
-      "Asset Distribution funding amount must be at least the minimum number of input asset units: ${a} >= ${u}.", 
+      "Asset Distribution funding amount must be at least the minimum number of input asset units: ${a} >= ${u}.",
       ("a", input_units )("u", distribution.min_input_balance_units) );
    FC_ASSERT( input_units <= distribution.max_input_balance_units,
-      "Asset Distribution funding amount must be at most the maximum number of input asset units: ${a} <= ${u}.", 
+      "Asset Distribution funding amount must be at most the maximum number of input asset units: ${a} <= ${u}.",
       ("a", input_units )("u", distribution.max_input_balance_units) );
 
    asset liquid = _db.get_liquid_balance( o.sender, o.amount.symbol );
    
-   auto& distribution_balance_idx =_db.get_index< asset_distribution_balance_index >().indices().get< by_account >();
+   auto& distribution_balance_idx =_db.get_index< asset_distribution_balance_index >().indices().get< by_account_distribution >();
    auto distribution_balance_itr = distribution_balance_idx.find( boost::make_tuple( o.sender, o.distribution_asset ) );
 
    if( distribution_balance_itr == distribution_balance_idx.end() )
@@ -1601,7 +1823,7 @@ void asset_distribution_fund_evaluator::do_apply( const asset_distribution_fund_
       _db.adjust_liquid_balance( o.sender, -o.amount );
       _db.adjust_pending_supply( o.amount );
 
-      _db.create< asset_distribution_balance_object >( [&]( asset_distribution_balance_object& a )
+      const asset_distribution_balance_object& balance = _db.create< asset_distribution_balance_object >( [&]( asset_distribution_balance_object& a )
       {
          a.sender = o.sender;
          a.distribution_asset = o.distribution_asset;
@@ -1609,6 +1831,9 @@ void asset_distribution_fund_evaluator::do_apply( const asset_distribution_fund_
          a.created = now;
          a.last_updated = now;
       });
+
+      ilog( "Account: ${a} created New Asset Distribution Balance: \n ${b} \n",
+         ("a",o.sender)("b",balance));
    }
    else
    {
@@ -1689,13 +1914,15 @@ void asset_stimulus_fund_evaluator::do_apply( const asset_stimulus_fund_operatio
 
    const asset_object& stimulus_asset = _db.get_asset( o.stimulus_asset );
    const asset_object& redemption_asset = _db.get_asset( o.amount.symbol );
-   const asset_stimulus_data_object& stimulus = _db.get_stimulus_data( o.stimulus_asset );
-   
+
    FC_ASSERT( stimulus_asset.asset_type == asset_property_type::STIMULUS_ASSET, 
-      "Can only fund stimulus type assets: ${s} is not a stimulus asset.",("s", o.stimulus_asset ) );
+      "Can only Fund Stimulus Assets: ${s} is not a stimulus asset.",
+      ("s", o.stimulus_asset ) );
    FC_ASSERT( redemption_asset.asset_type == asset_property_type::CURRENCY_ASSET || 
       redemption_asset.asset_type == asset_property_type::STABLECOIN_ASSET, 
       "Redemption asset must be either a currency or stablecoin type asset." );
+
+   const asset_stimulus_data_object& stimulus = _db.get_stimulus_data( o.stimulus_asset );
 
    asset liquid = _db.get_liquid_balance( o.account, redemption_asset.symbol );
 
@@ -1730,6 +1957,11 @@ void asset_update_feed_producers_evaluator::do_apply( const asset_update_feed_pr
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
    time_point now = _db.head_block_time();
    const asset_object& asset_obj = _db.get_asset( o.asset_to_update );
+
+   FC_ASSERT( asset_obj.asset_type == asset_property_type::STABLECOIN_ASSET,
+      "Cannot Update Feed Producers for asset: ${s} Asset is not a Stablecoin.",
+      ("s",o.asset_to_update) );
+
    const asset_stablecoin_data_object& stablecoin_to_update = _db.get_stablecoin_data( o.asset_to_update );
    
    FC_ASSERT( o.new_feed_producers.size() <= median_props.maximum_asset_feed_publishers,
@@ -1788,9 +2020,10 @@ void asset_publish_feed_evaluator::do_apply( const asset_publish_feed_operation&
    
    const asset_object& base = _db.get_asset( o.symbol );     // Verify that this feed is for a market-issued asset and that asset is backed by the base.
    time_point now = _db.head_block_time();
-   
-   FC_ASSERT( base.is_market_issued(),
-      "Can only publish price feeds for market-issued assets" );
+
+   FC_ASSERT( base.asset_type == asset_property_type::STABLECOIN_ASSET,
+      "Cannot Publish Price feed for asset: ${s} Asset is not a Stablecoin.",
+      ("s",o.symbol) );
 
    const asset_stablecoin_data_object& stablecoin = _db.get_stablecoin_data( base.symbol );
 
@@ -1849,7 +2082,7 @@ void asset_publish_feed_evaluator::do_apply( const asset_publish_feed_operation&
    }
 
    ilog("Account: ${a} published price feed: ${f}",
-      ("a",o.publisher)("f",o.feed));
+      ("a",o.publisher)("f",o.feed.settlement_price.to_string()));
 } FC_CAPTURE_AND_RETHROW(( o )) }
 
 
@@ -1873,8 +2106,9 @@ void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
    const asset_dynamic_data_object& mia_dyn = _db.get_dynamic_data( o.amount.symbol );
    time_point now = _db.head_block_time();
 
-   FC_ASSERT( asset_to_settle.is_market_issued(),
-      "Cannot settle a non-market issued asset." );
+   FC_ASSERT( asset_to_settle.asset_type == asset_property_type::STABLECOIN_ASSET,
+      "Cannot Settle asset: ${s} Asset is not a Stablecoin.",
+      ("s",o.amount.symbol) );
 
    const asset_stablecoin_data_object& stablecoin = _db.get_stablecoin_data( o.amount.symbol );
 
@@ -1884,7 +2118,8 @@ void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
    asset liquid = _db.get_liquid_balance( o.account, asset_to_settle.symbol );
    
    FC_ASSERT( liquid >= o.amount,
-      "Account does not have enough of the asset to settle the requested amount." );
+      "Account does not have enough of the asset to settle the requested amount. Required: ${r} Actual: ${a}",
+      ("r",o.amount.to_string())("a",liquid.to_string()) );
 
    if( stablecoin.has_settlement() )   // Asset has been globally settled. 
    {
@@ -1935,8 +2170,9 @@ void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
             "Amount to settle must be greater than zero when creating new settlement order." );
 
          _db.adjust_liquid_balance( o.account, -o.amount );
+         _db.adjust_pending_supply( o.amount );
 
-         _db.create< asset_settlement_object >([&]( asset_settlement_object& fso ) 
+         const asset_settlement_object& settle = _db.create< asset_settlement_object >([&]( asset_settlement_object& fso ) 
          {
             fso.owner = o.account;
             fso.balance = o.amount;
@@ -1945,12 +2181,17 @@ void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
             fso.created = now;
             fso.last_updated = now;
          });
+
+         ilog( "Account: ${a} Created new asset settlement order: ${o}",
+            ("a",o.account)("o",settle.to_string()) );
       }
       else
       {
          const asset_settlement_object& settle = *settle_itr;
          asset delta = o.amount - settle.balance;
+
          _db.adjust_liquid_balance( o.account, -delta );
+         _db.adjust_pending_supply( delta );
 
          if( o.amount.amount == 0 )
          {
@@ -1965,6 +2206,9 @@ void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
                fso.settlement_date = settlement_time;
                fso.last_updated = now;
             });
+
+            ilog( "Account: ${a} edited asset settlement order: ${o}",
+               ("a",o.account)("o",settle.to_string()) );
          }
       }
    }
@@ -1989,8 +2233,9 @@ void asset_global_settle_evaluator::do_apply( const asset_global_settle_operatio
 
    const asset_object& asset_to_settle = _db.get_asset( o.asset_to_settle );
 
-   FC_ASSERT( asset_to_settle.is_market_issued(),
-      "Can only globally settle market-issued assets." );
+   FC_ASSERT( asset_to_settle.asset_type == asset_property_type::STABLECOIN_ASSET,
+      "Cannot Globally settle asset: ${s} Asset is not a Stablecoin.",
+      ("s",o.asset_to_settle) );
    FC_ASSERT( asset_to_settle.can_global_settle(),
       "The global_settle permission of this asset is disabled." );
    FC_ASSERT( asset_to_settle.issuer == o.issuer,
@@ -2097,7 +2342,7 @@ void asset_collateral_bid_evaluator::do_apply( const asset_collateral_bid_operat
       }
       else     // Removing bid
       {
-         _db.cancel_bid( bid, false );
+         _db.cancel_bid( bid );
       }
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }

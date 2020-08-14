@@ -907,24 +907,6 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             results.back().business = business_account_state( *business_itr );
          }
 
-         while( business_itr != business_idx.end() )
-         {
-            if( business_itr->is_executive( name ) )
-            {
-               results.back().business.executive_businesses.push_back( business_itr->account );
-            }
-            else if( business_itr->is_officer( name ) )
-            {
-               results.back().business.officer_businesses.push_back( business_itr->account );
-            }
-            else if( business_itr->is_member( name ) )
-            {
-               results.back().business.member_businesses.push_back( business_itr->account );
-            }
-            
-            ++business_itr;
-         }
-
          auto incoming_account_exec_itr = incoming_account_exec_idx.lower_bound( name );
          while( incoming_account_exec_itr != incoming_account_exec_idx.end() && 
             incoming_account_exec_itr->executive_account == name )
@@ -1659,7 +1641,7 @@ vector< balance_state > database_api_impl::get_balances( vector< string > names 
       while( delegation_from_itr != delegation_from_idx.end() && 
          delegation_from_itr->delegator == name )
       {
-         bstate.asset_delegations_from.push_back( *delegation_from_itr );
+         bstate.delegations_from.push_back( *delegation_from_itr );
          ++delegation_from_itr;
       }
 
@@ -1667,7 +1649,7 @@ vector< balance_state > database_api_impl::get_balances( vector< string > names 
       while( delegation_to_itr != delegation_to_idx.end() && 
          delegation_to_itr->delegatee == name )
       {
-         bstate.asset_delegations_to.push_back( *delegation_to_itr );
+         bstate.delegations_to.push_back( *delegation_to_itr );
          ++delegation_to_itr;
       }
 
@@ -1675,7 +1657,7 @@ vector< balance_state > database_api_impl::get_balances( vector< string > names 
       while( expiration_from_itr != expiration_from_idx.end() && 
          expiration_from_itr->delegator == name )
       {
-         bstate.asset_expirations_from.push_back( *expiration_from_itr );
+         bstate.expirations_from.push_back( *expiration_from_itr );
          ++expiration_from_itr;
       }
 
@@ -1683,7 +1665,7 @@ vector< balance_state > database_api_impl::get_balances( vector< string > names 
       while( expiration_to_itr != expiration_to_idx.end() && 
          expiration_to_itr->delegator == name )
       {
-         bstate.asset_expirations_to.push_back( *expiration_to_itr );
+         bstate.expirations_to.push_back( *expiration_to_itr );
          ++expiration_to_itr;
       }
 
@@ -2338,7 +2320,7 @@ vector< extended_asset > database_api_impl::get_assets( vector< string > assets 
          results.back().distribution = distribution_api_obj( *distribution_itr );
       }
 
-      const auto& balance_idx = _db.get_index< asset_distribution_balance_index >().indices().get< by_symbol >();
+      const auto& balance_idx = _db.get_index< asset_distribution_balance_index >().indices().get< by_distribution_account >();
       auto balance_itr = balance_idx.find( asset );
       if( balance_itr != balance_idx.end() )
       {
@@ -5389,9 +5371,9 @@ discussion database_api::get_content( string author, string permlink )const
 
 discussion database_api_impl::get_content( string author, string permlink )const
 {
-   const auto& by_permlink_idx = _db.get_index< comment_index >().indices().get< by_permlink >();
-   auto itr = by_permlink_idx.find( boost::make_tuple( author, permlink ) );
-   if( itr != by_permlink_idx.end() )
+   const auto& comment_idx = _db.get_index< comment_index >().indices().get< by_permlink >();
+   auto itr = comment_idx.find( boost::make_tuple( author, permlink ) );
+   if( itr != comment_idx.end() )
    {
       discussion results(*itr);
 
@@ -5419,10 +5401,10 @@ vector< discussion > database_api::get_content_replies( string author, string pe
 vector< discussion > database_api_impl::get_content_replies( string author, string permlink )const
 {
    account_name_type acc_name = account_name_type( author );
-   const auto& by_permlink_idx = _db.get_index< comment_index >().indices().get< by_parent >();
-   auto itr = by_permlink_idx.find( boost::make_tuple( acc_name, permlink ) );
+   const auto& comment_idx = _db.get_index< comment_index >().indices().get< by_parent >();
+   auto itr = comment_idx.find( boost::make_tuple( acc_name, permlink ) );
    vector< discussion > results;
-   while( itr != by_permlink_idx.end() && 
+   while( itr != comment_idx.end() && 
       itr->parent_author == author && 
       to_string( itr->parent_permlink ) == permlink )
    {

@@ -148,7 +148,6 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
 
       share_type max = std::max( pool_create.first_amount.amount, pool_create.second_amount.amount );
 
-      BOOST_REQUIRE( pool.issuer == pool_create.account );
       BOOST_REQUIRE( pool.symbol_a == pool_create.first_amount.symbol );
       BOOST_REQUIRE( pool.symbol_b == pool_create.second_amount.symbol );
       BOOST_REQUIRE( pool.balance_a == pool_create.first_amount );
@@ -384,10 +383,10 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       producer_create( "dan", dan_private_owner_key );
       producer_vote( "dan", dan_private_owner_key );
 
-      fund_liquid( "elon", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "elon", asset( 500000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "elon", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_liquid( "elon", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
-      fund_liquid( "elon", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+      fund_liquid( "elon", asset( 200000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+      fund_liquid( "elon", asset( 200000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
       producer_create( "elon", elon_private_owner_key );
       producer_vote( "elon", elon_private_owner_key );
 
@@ -399,11 +398,12 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       fund.signatory = "elon";
       fund.account = "elon";
-      fund.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      fund.amount = asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       fund.pair_asset = SYMBOL_USD;
       fund.validate();
 
       tx.operations.push_back( fund );
+      tx.set_reference_block( db.head_block_id() );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( elon_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -413,7 +413,7 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       generate_block();
 
-      fund.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      fund.amount = asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       fund.pair_asset = SYMBOL_COIN;
 
       tx.operations.push_back( fund );
@@ -425,7 +425,7 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       generate_block();
 
-      fund.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      fund.amount = asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       fund.pair_asset = SYMBOL_CREDIT;
 
       tx.operations.push_back( fund );
@@ -437,7 +437,7 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       generate_block();
 
-      fund.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT );
+      fund.amount = asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT );
       fund.pair_asset = SYMBOL_COIN;
 
       tx.operations.push_back( fund );
@@ -614,7 +614,7 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       lend.amount = asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
 
-      tx.operations.push_back( collateral );
+      tx.operations.push_back( lend );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
@@ -627,7 +627,7 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       lend.amount = asset( 0, SYMBOL_USD );
 
-      tx.operations.push_back( collateral );
+      tx.operations.push_back( lend );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
@@ -640,7 +640,7 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       lend.amount = asset( 5000, usd_credit_symbol );
 
-      tx.operations.push_back( collateral );
+      tx.operations.push_back( lend );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
@@ -653,11 +653,13 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       collateral.signatory = "alice";
       collateral.account = "alice";
-      collateral.amount = asset( 2000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      collateral.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
 
+      tx.set_reference_block( db.head_block_id() );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( collateral );
       tx.sign( alice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
+      db.push_transaction( tx, database::skip_transaction_dupe_check );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -676,14 +678,16 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       borrow.validate();
 
       tx.operations.push_back( borrow );
+      tx.set_reference_block( db.head_block_id() );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_REQUIRE( usd_credit_pool.base_balance == init_base_balance - borrow.amount );
-      BOOST_REQUIRE( usd_credit_pool.borrowed_balance == borrow.amount );
+      BOOST_REQUIRE( db.get_credit_pool( SYMBOL_USD, false ).base_balance == init_base_balance - borrow.amount );
+      BOOST_REQUIRE( db.get_credit_pool( SYMBOL_USD, false ).borrowed_balance == borrow.amount );
 
       const credit_loan_object& alice_loan = db.get_loan( borrow.account, borrow.loan_id );
 
@@ -697,7 +701,7 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Updating Borrowing order to increase loan debt" );
 
-      borrow.amount = asset( 750 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      borrow.amount = asset( 800 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       
       tx.operations.push_back( borrow );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -706,10 +710,10 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_REQUIRE( usd_credit_pool.borrowed_balance == borrow.amount );
+      BOOST_REQUIRE( db.get_credit_pool( SYMBOL_USD, false ).borrowed_balance == borrow.amount );
 
-      BOOST_REQUIRE( alice_loan.debt == borrow.amount );
-      BOOST_REQUIRE( alice_loan.collateral == borrow.collateral );
+      BOOST_REQUIRE( db.get_loan( borrow.account, borrow.loan_id ).debt == borrow.amount );
+      BOOST_REQUIRE( db.get_loan( borrow.account, borrow.loan_id ).collateral == borrow.collateral );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Updating Borrowing order to increase loan debt" );
 
@@ -748,7 +752,7 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       withdraw.signatory = "bob";
       withdraw.account = "bob";
-      withdraw.amount = asset( 500 * BLOCKCHAIN_PRECISION, usd_credit_symbol );
+      withdraw.amount = asset( 50000 * BLOCKCHAIN_PRECISION, usd_credit_symbol );
       withdraw.validate();
 
       tx.operations.push_back( withdraw );
@@ -805,35 +809,36 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Closing out loan after 1 day" );
 
-      generate_blocks(  BLOCKS_PER_DAY );
+      generate_blocks( BLOCKS_PER_DAY );
 
       borrow.amount = asset( 0, SYMBOL_USD );
       borrow.collateral = asset( 0, SYMBOL_COIN );
       
       tx.operations.push_back( borrow );
+      tx.set_reference_block( db.head_block_id() );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_REQUIRE( usd_credit_pool.borrowed_balance.amount == 0 );
+      BOOST_REQUIRE( db.get_credit_pool( SYMBOL_USD, false ).borrowed_balance.amount == 0 );
 
       const auto& loan_idx = db.get_index< credit_loan_index >().indices().get< by_loan_id >();
       auto loan_itr = loan_idx.find( std::make_tuple( borrow.account, borrow.loan_id ) );
 
       BOOST_REQUIRE( loan_itr == loan_idx.end() );
 
-      BOOST_REQUIRE( alice_collateral.collateral == collateral.amount );
-      BOOST_REQUIRE( alice_collateral.last_updated == now() );
-      BOOST_REQUIRE( alice.loan_default_balance.amount == 0  );
+      BOOST_REQUIRE( db.get_collateral( collateral.account, SYMBOL_COIN ).collateral == collateral.amount );
+      BOOST_REQUIRE( db.get_collateral( collateral.account, SYMBOL_COIN ).last_updated == now() );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Closing out loan after 7 days" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Loan Default liquidation" );
 
-      borrow.amount = asset( 750 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
-      borrow.collateral = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      borrow.amount = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      borrow.collateral = asset( 1500 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       borrow.loan_id = "ab853d22-e03d-46f5-9437-93f5fb4ea7df";
       
       tx.operations.push_back( borrow );
@@ -843,77 +848,80 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_REQUIRE( usd_credit_pool.borrowed_balance.amount == 0 );
+      generate_blocks( BLOCKS_PER_HOUR );
 
-      const credit_loan_object& alice_loan2 = db.get_loan( borrow.account, borrow.loan_id  );
+      const credit_loan_object& alice_loan2 = db.get_loan( borrow.account, borrow.loan_id );
 
       BOOST_REQUIRE( alice_loan2.debt == borrow.amount );
       BOOST_REQUIRE( alice_loan2.collateral == borrow.collateral );
 
-      BOOST_REQUIRE( alice_collateral.collateral == collateral.amount );
-      BOOST_REQUIRE( alice_collateral.last_updated == now() );
+      BOOST_REQUIRE( db.get_loan( borrow.account, borrow.loan_id ).debt == borrow.amount );
+      BOOST_REQUIRE( db.get_loan( borrow.account, borrow.loan_id ).collateral == borrow.collateral );
 
       generate_block();
 
-      feed.signatory = "alice";
-      feed.publisher = "alice";
-      feed.symbol = SYMBOL_USD;
-      feed.feed.settlement_price = price( asset(1,SYMBOL_USD),asset(2,SYMBOL_COIN) );    // 1:2 ratio, price halved
-      
-      tx.operations.push_back( feed );
-      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
+      liquidity_pool_exchange_operation exchange;
 
-      tx.operations.clear();
-      tx.signatures.clear();
+      exchange.signatory = "elon";
+      exchange.account = "elon";
+      exchange.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      exchange.receive_asset = SYMBOL_USD;
+      exchange.interface = INIT_ACCOUNT;
+      exchange.acquire = false;
+      exchange.validate();
 
-      feed.signatory = "bob";
-      feed.publisher = "bob";
+      for( int i = 0; i < 5; i++ )
+      {
+         tx.set_reference_block( db.head_block_id() );
+         tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+         tx.operations.push_back( exchange );
+         tx.sign( elon_private_active_key, db.get_chain_id() );
+         db.push_transaction( tx, 0 );
 
-      tx.operations.push_back( feed );
-      tx.sign( bob_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
+         tx.operations.clear();
+         tx.signatures.clear();
 
-      tx.operations.clear();
-      tx.signatures.clear();
+         generate_blocks( BLOCKS_PER_HOUR );
+      }
 
-      feed.signatory = "candice";
-      feed.publisher = "candice";
-
-      tx.operations.push_back( feed );
-      tx.sign( candice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      feed.signatory = "dan";
-      feed.publisher = "dan";
-
-      tx.operations.push_back( feed );
-      tx.sign( dan_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      generate_block();     // Price halved, loan is insolvent, and is liquidated and network credit is issued to repurchase usd
+      // Price halved, loan is insolvent, and is liquidated and network credit is issued to repurchase USD
 
       loan_itr = loan_idx.find( std::make_tuple( borrow.account, borrow.loan_id ) );
 
       BOOST_REQUIRE( loan_itr == loan_idx.end() );
-      BOOST_REQUIRE( alice.loan_default_balance.amount > 0  );
+
+      asset alice_loan_default_balance = db.get_account( account_name_type( "alice" ) ).loan_default_balance;
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Loan Default liquidation" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when borrowing with loan default balance outstanding" );
 
-      borrow.amount = asset( 750 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
-      borrow.collateral = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      exchange.signatory = "elon";
+      exchange.account = "elon";
+      exchange.amount = asset( 50000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      exchange.receive_asset = SYMBOL_COIN;
+      exchange.interface = INIT_ACCOUNT;
+      exchange.acquire = false;
+      exchange.validate();
+
+      tx.set_reference_block( db.head_block_id() );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( exchange );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      generate_blocks( BLOCKS_PER_HOUR );
+      
+      borrow.amount = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      borrow.collateral = asset( 1500 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       borrow.loan_id = "f44cf0e4-66d8-4225-a93a-80ca69300606";
       
       tx.operations.push_back( borrow );
+      tx.set_reference_block( db.head_block_id() );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
 
@@ -926,7 +934,7 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       collateral.signatory = "alice";
       collateral.account = "alice";
-      collateral.amount = alice.loan_default_balance;
+      collateral.amount = alice_loan_default_balance;
 
       tx.operations.push_back( collateral );
       tx.sign( alice_private_active_key, db.get_chain_id() );
@@ -937,10 +945,12 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       generate_block();
 
-      BOOST_REQUIRE( alice.loan_default_balance.amount == 0  );
+      alice_loan_default_balance = db.get_account( account_name_type( "alice" ) ).loan_default_balance;
 
-      borrow.amount = asset( 750 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
-      borrow.collateral = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      BOOST_REQUIRE( alice_loan_default_balance.amount == 0  );
+
+      borrow.amount = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      borrow.collateral = asset( 1500 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       borrow.loan_id = "f44cf0e4-66d8-4225-a93a-80ca69300606";
       
       tx.operations.push_back( borrow );
@@ -1015,7 +1025,6 @@ BOOST_AUTO_TEST_CASE( prediction_pool_operation_sequence_test )
       const asset_prediction_pool_object& prediction = db.get_prediction_pool( asset_symbol_type( "PREDICTION" ) );
       const asset_object& prediction_asset = db.get_asset( asset_symbol_type( "PREDICTION" ) );
 
-      BOOST_REQUIRE( create.account == prediction.issuer );
       BOOST_REQUIRE( create.prediction_symbol == prediction.prediction_symbol );
       BOOST_REQUIRE( create.collateral_symbol == prediction.collateral_symbol );
       BOOST_REQUIRE( create.outcome_details == to_string( prediction.outcome_details ) );
@@ -1118,6 +1127,7 @@ BOOST_AUTO_TEST_CASE( prediction_pool_operation_sequence_test )
       resolve.validate();
       
       tx.operations.push_back( resolve );
+      tx.set_reference_block( db.head_block_id() );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );

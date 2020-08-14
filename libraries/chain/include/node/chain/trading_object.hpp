@@ -75,9 +75,21 @@ namespace node { namespace chain {
             return sell_price.quote.symbol;
          }
 
-         double               real_price()const 
+         double               real_price()const
          { 
             return sell_price.to_real();
+         }
+
+         string               to_string()const
+         {
+            if( real_price() >= double(1) )
+            {
+               return amount_for_sale().to_string() + " @ " + sell_price.to_string() + " - " + seller;
+            }
+            else
+            {
+               return amount_for_sale().to_string() + " @ " + (~sell_price).to_string() + " - " + seller;
+            }
          }
    };
 
@@ -103,7 +115,7 @@ namespace node { namespace chain {
 
          id_type                    id;
 
-         account_name_type          owner;                       ///< Margin order owners account name
+         account_name_type          owner;                       ///< Margin order owners account name.
 
          shared_string              order_id;                    ///< UUIDv4 Unique Identifier of the order for each account.
 
@@ -119,7 +131,7 @@ namespace node { namespace chain {
 
          asset                      position;                    ///< Minimum amount of asset to receive as margin position.
 
-         asset                      position_balance;            ///< Amount of asset currently held within the order that has filled.                     
+         asset                      position_balance;            ///< Amount of asset currently held within the order that has filled.
 
          share_type                 collateralization;           ///< Percentage ratio of ( Collateral + position_balance + debt_balance - debt ) / debt. Position is liquidated when ratio falls below liquidation requirement 
 
@@ -129,47 +141,37 @@ namespace node { namespace chain {
 
          time_point                 last_updated;                ///< Time that the details of the order was last updated.
 
-         time_point                 last_interest_time;          ///< Time that interest was last compounded on the margin order. 
+         time_point                 last_interest_time;          ///< Time that interest was last compounded on the margin order.
 
          time_point                 expiration;                  ///< Expiration time of the order.
 
-         asset                      unrealized_value = asset(0, debt.symbol);   ///< Current profit or loss that the position is holding.
+         asset                      unrealized_value;            ///< Current profit or loss that the position is holding.
 
-         share_type                 last_interest_rate = 0;      ///< The interest rate that was last applied to the order.
+         share_type                 last_interest_rate;          ///< The interest rate that was last applied to the order.
 
          bool                       liquidating = false;         ///< Set to true to place the margin order back into the orderbook and liquidate the position at sell price.
 
-         price                      stop_loss_price = price::min(sell_price.base.symbol, sell_price.quote.symbol);          ///< Price at which the position will be force liquidated if it falls into a net loss.
+         price                      stop_loss_price;             ///< Price at which the position will be force liquidated if it falls into a net loss.
 
-         price                      take_profit_price = price::max(sell_price.base.symbol, sell_price.quote.symbol);         ///< Price at which the position will be force liquidated if it rises into a net profit.
+         price                      take_profit_price;           ///< Price at which the position will be force liquidated if it rises into a net profit.
 
-         price                      limit_stop_loss_price = price::min(sell_price.base.symbol, sell_price.quote.symbol);     ///< Price at which the position will be limit liquidated if it falls into a net loss.
+         price                      limit_stop_loss_price;       ///< Price at which the position will be limit liquidated if it falls into a net loss.
 
-         price                      limit_take_profit_price = price::max(sell_price.base.symbol, sell_price.quote.symbol);   ///< Price at which the position will be limit liquidated if it rises into a net profit.
+         price                      limit_take_profit_price;     ///< Price at which the position will be limit liquidated if it rises into a net profit.
 
-         pair< asset_symbol_type, asset_symbol_type > get_market()const
-         {
-            return sell_price.base.symbol < sell_price.quote.symbol ?
-               std::make_pair( sell_price.base.symbol, sell_price.quote.symbol ) :
-               std::make_pair( sell_price.quote.symbol, sell_price.base.symbol );
-         }
+         asset_symbol_type          debt_asset()const { return debt.symbol; }
 
-         asset_symbol_type debt_asset()const
-         { 
-            return debt.symbol;
-         }
+         asset_symbol_type          position_asset()const { return position.symbol; }
 
-         asset_symbol_type position_asset()const 
-         { 
-            return position.symbol; 
-         }
+         asset_symbol_type          collateral_asset()const { return collateral.symbol; }
 
-         asset_symbol_type collateral_asset()const
-         { 
-            return collateral.symbol; 
-         } 
+         asset_symbol_type          sell_asset()const { return sell_price.base.symbol; }
 
-         asset                amount_for_sale()const   
+         asset_symbol_type          receive_asset()const { return sell_price.quote.symbol; }
+
+         double                     real_price()const { return sell_price.to_real(); }
+
+         asset                      amount_for_sale()const   
          { 
             if( liquidating )
             {
@@ -181,33 +183,58 @@ namespace node { namespace chain {
             }
          }
 
-         asset                amount_to_receive()const { return amount_for_sale() * sell_price; }
+         asset                      amount_to_receive()const { return amount_for_sale() * sell_price; }
 
-         bool                 filled()const
+         double                     real_interest_rate()const
+         {
+            return double(last_interest_rate.value)/double(100);
+         }
+
+         bool                       filled()const
          { 
             if( liquidating )
             {
-               return position_balance.amount == 0;    ///< No position left to sell
+               // ilog( "Margin order liquidating filled check: Position Balance: ${p} ${ps} Debt Balance: ${d} ${ds} Filled: ${f}",
+               //   ("p",position_balance.amount)("ps",position_balance.symbol)("d",debt_balance.amount)("ds",debt_balance.symbol)("f",position_balance.amount == 0));
+
+               return position_balance.amount == 0;
             }
             else
             {
-               return debt_balance.amount == 0;     ///< No debt left to sell.
+               // ilog( "Margin order filled check: Position Balance: ${p} ${ps} Debt Balance: ${d} ${ds} Filled: ${f}",
+               //   ("p",position_balance.amount)("ps",position_balance.symbol)("d",debt_balance.amount)("ds",debt_balance.symbol)("f",debt_balance.amount == 0));
+
+               return debt_balance.amount == 0;
             }
          }
 
-         asset_symbol_type    sell_asset()const
-         { 
-            return sell_price.base.symbol; 
+         pair< asset_symbol_type, asset_symbol_type > get_market()const
+         {
+            return sell_price.base.symbol < sell_price.quote.symbol ?
+               std::make_pair( sell_price.base.symbol, sell_price.quote.symbol ) :
+               std::make_pair( sell_price.quote.symbol, sell_price.base.symbol );
          }
 
-         asset_symbol_type    receive_asset()const
-         { 
-            return sell_price.quote.symbol; 
-         }
-
-         double               real_price()const
-         { 
-            return sell_price.to_real(); 
+         string                     to_string()const
+         {
+            string result;
+            if( real_price() >= double(1) )
+            {
+               result += amount_for_sale().to_string() + " @ " + sell_price.to_string() + " - " + owner;
+            }
+            else
+            {
+               result += amount_for_sale().to_string() + " @ " + (~sell_price).to_string() + " - " + owner;
+            }
+            if( filled() )
+            {
+               result += " - Filled";
+            }
+            if( liquidating )
+            {
+               result += " - Liquidating";
+            }
+            return result;
          }
    };
 
@@ -279,6 +306,18 @@ namespace node { namespace chain {
          { 
             return limit_close_price.to_real();
          }
+
+         string                   to_string()const
+         {
+            if( real_price() >= double(1) )
+            {
+               return amount_for_sale().to_string() + " @ " + limit_close_price.to_string() + " - " + owner;
+            }
+            else
+            {
+               return amount_for_sale().to_string() + " @ " + (~limit_close_price).to_string() + " - " + owner;
+            }
+         }
    };
 
 
@@ -341,6 +380,18 @@ namespace node { namespace chain {
             return tmp;
          }
 
+         string                   to_string()const
+         {
+            if( real_price() >= double(1) )
+            {
+               return amount_for_sale().to_string() + " @ " + collateralization().to_string() + " - " + borrower;
+            }
+            else
+            {
+               return amount_for_sale().to_string() + " @ " + (~collateralization()).to_string() + " - " + borrower;
+            }
+         }
+
          /**
           *  Calculate maximum quantity of debt to cover to satisfy @ref target_collateral_ratio.
           * 
@@ -376,12 +427,11 @@ namespace node { namespace chain {
             price match_price,
             price feed_price,
             const uint16_t maintenance_collateral_ratio,
-            const optional<price>& maintenance_collateralization = optional<price>()
-         )const 
+            const optional<price>& maintenance_collateralization = optional<price>() )const 
          { try {
 
-            ilog( "Get max debt to cover - match price: ${mp} feed price: ${fp} mcr: ${mcr} mc: ${mc}",
-               ("mp",match_price)("fp",feed_price)("mcr",maintenance_collateral_ratio)("mc",maintenance_collateralization) );
+            ilog( "Get Max Debt to cover: Match price: ${mp} Feed price: ${fp} MCR: ${mcr}",
+               ("mp",match_price.to_string())("fp",feed_price.to_string())("mcr",maintenance_collateral_ratio));
 
             share_type result;
          
@@ -399,12 +449,12 @@ namespace node { namespace chain {
             
             if( collateralization() > *maintenance_collateralization )
             {
-               result = 0;
+               return 0;
             }
                
             if( !target_collateral_ratio.valid() ) // target cr is not set
             {
-               result = debt.amount;
+               return debt.amount;
             }
                
             uint16_t tcr = std::max( *target_collateral_ratio, maintenance_collateral_ratio );    // use mcr if target cr is too small
@@ -417,7 +467,7 @@ namespace node { namespace chain {
             }
 
             FC_ASSERT( match_price.base.symbol == collateralization().base.symbol
-                     && match_price.quote.symbol == collateralization().quote.symbol );
+               && match_price.quote.symbol == collateralization().quote.symbol );
 
             int256_t mp_debt_amt = match_price.quote.amount.value;
             int256_t mp_coll_amt = match_price.base.amount.value;
@@ -427,19 +477,19 @@ namespace node { namespace chain {
 
             if( numerator < 0 ) 
             {
-               result = 0;
+               return 0;
             }
 
             int256_t denominator = fp_coll_amt * mp_debt_amt * tcr - fp_debt_amt * mp_coll_amt * COLLATERAL_RATIO_DENOM;
             if( denominator <= 0 )
             {
-               result = debt.amount;     // black swan
+               return debt.amount;     // black swan
             } 
 
             int256_t to_cover_i256 = ( numerator / denominator );
             if( to_cover_i256 >= debt.amount.value )
             { 
-               result = debt.amount;
+               return debt.amount;
             }
 
             share_type to_cover_amt = static_cast< int64_t >( to_cover_i256 );
@@ -449,7 +499,7 @@ namespace node { namespace chain {
 
             if( to_cover.amount >= debt.amount || to_pay.amount >= collateral.amount )
             {
-               result = debt.amount;
+               return debt.amount;
             }
 
             FC_ASSERT( to_pay.amount < collateral.amount && to_cover.amount < debt.amount );
@@ -457,7 +507,7 @@ namespace node { namespace chain {
 
             if( new_collateralization > target_collateralization )
             {
-               result = to_cover.amount;
+               return to_cover.amount;
             }
 
             // to_cover is too small due to rounding. deal with the fraction
@@ -488,7 +538,7 @@ namespace node { namespace chain {
 
             if( max_to_pay <= to_pay || max_to_cover <= to_cover ) // strange data. should skip binary search and go on, but doesn't help much
             { 
-               result = debt.amount; 
+               return debt.amount; 
             }
 
             FC_ASSERT( max_to_pay > to_pay && max_to_cover > to_cover );
@@ -499,18 +549,26 @@ namespace node { namespace chain {
             // try with binary search to find a good value
             // note: actually binary search can not always provide perfect result here,
             //       due to rounding, collateral ratio is not always increasing while to_pay or to_cover is increasing
+
             bool max_is_ok = false;
-            while( true )
+
+            for( int i = 0; i < 100; i++ )
             {
-               // get the mean
+               ilog( "Loop: ${i} Match Price: ${mp} To Pay: ${tp} To Cover: ${tc}",
+                  ("i",i)("mp",match_price.to_string())("tp",to_pay.to_string())("tc",to_cover.to_string()));
+
                if( match_price.base.amount < match_price.quote.amount ) // step of collateral is smaller
                {
                   to_pay.amount = ( min_to_pay.amount + max_to_pay.amount + 1 ) / 2; // should not overflow. round up here
+
                   if( to_pay.amount == max_to_pay.amount )
+                  {
                      to_cover.amount = max_to_cover.amount;
+                  }
                   else
                   {
                      to_cover = to_pay * match_price;
+
                      if( to_cover.amount >= max_to_cover.amount ) // can be true when max_is_ok is false
                      {
                         to_pay.amount = max_to_pay.amount;
@@ -526,8 +584,11 @@ namespace node { namespace chain {
                else // step of debt is smaller or equal
                {
                   to_cover.amount = ( min_to_cover.amount + max_to_cover.amount ) / 2; // should not overflow. round down here
+
                   if( to_cover.amount == max_to_cover.amount )
+                  {
                      to_pay.amount = max_to_pay.amount;
+                  }
                   else
                   {
                      to_pay = to_cover.multiply_and_round_up( match_price );
@@ -549,6 +610,7 @@ namespace node { namespace chain {
                }
 
                // check again to see if we've moved away from the minimums, if not, use the maximums directly
+
                if( to_pay.amount <= min_to_pay.amount || 
                   to_cover.amount <= min_to_cover.amount || 
                   to_pay.amount > max_to_pay.amount || 
@@ -561,7 +623,7 @@ namespace node { namespace chain {
                // check the mean
                if( to_pay.amount == max_to_pay.amount && ( max_is_ok || to_pay.amount == collateral.amount ) )
                {
-                  result = to_cover.amount;
+                  return to_cover.amount;
                }
 
                FC_ASSERT( to_pay.amount < collateral.amount && to_cover.amount < debt.amount );
@@ -569,11 +631,12 @@ namespace node { namespace chain {
                price new_collateralization = ( collateral - to_pay ) / ( debt - to_cover );
 
                // Check whether the result is good
+
                if( new_collateralization > target_collateralization )
                {
                   if( to_pay.amount == max_to_pay.amount )
                   {
-                     result = to_cover.amount;
+                     return to_cover.amount;
                   }  
                   max_to_pay.amount = to_pay.amount;
                   max_to_cover.amount = to_cover.amount;
@@ -591,24 +654,25 @@ namespace node { namespace chain {
             }
 
             // be here, max_to_cover is too small due to rounding. search forward
-            for( uint64_t d1 = 0, d2 = 1, d3 = 1; ; d1 = d2, d2 = d3, d3 = d1 + d2 ) // 1,1,2,3,5,8,...
+
+            for( uint64_t d1 = 0, d2 = 1, d3 = 1; ; d1 = d2, d2 = d3, d3 = d1 + d2 )        // 1,1,2,3,5,8,...
             {
-               if( match_price.base.amount > match_price.quote.amount ) // step of debt is smaller
+               if( match_price.base.amount > match_price.quote.amount )        // step of debt is smaller
                {
                   to_pay.amount += d2;
                   if( to_pay.amount >= collateral.amount )
                   {
-                     result = debt.amount;
+                     return debt.amount;
                   }
                   to_cover = to_pay * match_price;
                   if( to_cover.amount >= debt.amount )
                   {
-                     result = debt.amount;
+                     return debt.amount;
                   }
-                  to_pay = to_cover.multiply_and_round_up( match_price ); // stabilization
+                  to_pay = to_cover.multiply_and_round_up( match_price );      // stabilization
                   if( to_pay.amount >= collateral.amount )
                   {
-                     result = debt.amount;
+                     return debt.amount;
                   }
                }
                else // step of collateral is smaller or equal
@@ -616,17 +680,17 @@ namespace node { namespace chain {
                   to_cover.amount += d2;
                   if( to_cover.amount >= debt.amount )
                   {
-                     result = debt.amount;
+                     return debt.amount;
                   }
                   to_pay = to_cover.multiply_and_round_up( match_price );
                   if( to_pay.amount >= collateral.amount )
                   {
-                     result = debt.amount;
+                     return debt.amount;
                   }
                   to_cover = to_pay * match_price; // stabilization
                   if( to_cover.amount >= debt.amount )
                   {
-                     result = debt.amount;
+                     return debt.amount;
                   }
                }
 
@@ -635,14 +699,9 @@ namespace node { namespace chain {
 
                if( new_collateralization > target_collateralization )
                {
-                  result = to_cover.amount;
+                  return to_cover.amount;
                }
             }
-
-            ilog( "Max debt to cover: ${r}",
-               ("r",result));
-
-            return result;
       } FC_CAPTURE_AND_RETHROW() }
    };
 
@@ -712,6 +771,11 @@ namespace node { namespace chain {
          double                       real_price()const { return option_price().to_real(); }
 
          bool                         call()const { return strike_price.call; }
+
+         string                       to_string()const
+         {
+            return option_position.to_string() + " - Underlying: " + underlying_amount.to_string() + " - Strike: " + strike_price.to_string() + " - " + owner;
+         }
    };
 
 
@@ -754,10 +818,12 @@ namespace node { namespace chain {
          ordered_unique< tag< by_market >,
             composite_key< limit_order_object,
                const_mem_fun< limit_order_object, pair< asset_symbol_type, asset_symbol_type >, &limit_order_object::get_market >,
+               const_mem_fun< limit_order_object, double, &limit_order_object::real_price >,
                member< limit_order_object, limit_order_id_type, &limit_order_object::id >
             >,
             composite_key_compare< 
                std::less< pair< asset_symbol_type, asset_symbol_type > >,
+               std::less< double >,
                std::less< limit_order_id_type >
             >
          >,
@@ -822,11 +888,15 @@ namespace node { namespace chain {
          >,
          ordered_unique< tag< by_market >,
             composite_key< margin_order_object,
+               const_mem_fun< margin_order_object, bool, &margin_order_object::filled >,
                const_mem_fun< margin_order_object, pair< asset_symbol_type, asset_symbol_type >, &margin_order_object::get_market >,
+               const_mem_fun< margin_order_object, double, &margin_order_object::real_price >,
                member< margin_order_object, margin_order_id_type, &margin_order_object::id >
             >,
             composite_key_compare< 
+               std::less< bool >,
                std::less< pair< asset_symbol_type, asset_symbol_type > >,
+               std::less< double >,
                std::less< margin_order_id_type >
             >
          >,
@@ -1176,8 +1246,9 @@ FC_REFLECT( node::chain::option_order_object,
          (id)
          (owner)
          (order_id)
-         (underlying_amount)
          (option_position)
+         (underlying_amount)
+         (exercise_amount)
          (strike_price)
          (interface)
          (created)

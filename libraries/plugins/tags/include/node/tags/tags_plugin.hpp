@@ -1938,6 +1938,7 @@ FC_REFLECT( node::tags::tag_object,
          (rating)
          (language)
          (author_reputation)
+         (cashouts_received)
          (children)
          (net_votes)
          (view_count)

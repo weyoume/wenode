@@ -48,8 +48,8 @@ void liquidity_pool_create_evaluator::do_apply( const liquidity_pool_create_oper
    const asset_object& first_asset = _db.get_asset( o.first_amount.symbol );
    const asset_object& second_asset = _db.get_asset( o.second_amount.symbol );
 
-   FC_ASSERT( first_asset.is_credit_enabled() &&
-      second_asset.is_credit_enabled(),
+   FC_ASSERT( first_asset.is_liquid_enabled() &&
+      second_asset.is_liquid_enabled(),
       "Cannot make a liquidity pool asset with specifed asset pair." );
 
    asset amount_a;
@@ -95,12 +95,10 @@ void liquidity_pool_create_evaluator::do_apply( const liquidity_pool_create_oper
    _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a ) 
    {
       a.symbol = liquidity_asset_symbol;
-      a.issuer = o.account;
    });
       
    const asset_liquidity_pool_object& pool = _db.create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& alpo )
    {   
-      alpo.issuer = o.account;
       alpo.symbol_a = amount_a.symbol;
       alpo.symbol_b = amount_b.symbol;
       alpo.symbol_liquid = liquidity_asset_symbol;
@@ -115,7 +113,7 @@ void liquidity_pool_create_evaluator::do_apply( const liquidity_pool_create_oper
    _db.adjust_liquid_balance( o.account, asset( max, liquidity_asset_symbol ) );
 
    ilog( "Account: ${a} Created Liquidity Pool: \n ${p} \n",
-      ("a",o.account)("p",pool));
+      ("a",o.account)("p",pool.to_string()));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -140,6 +138,10 @@ void liquidity_pool_exchange_evaluator::do_apply( const liquidity_pool_exchange_
    const asset_object& second_asset = _db.get_asset( o.receive_asset );
    asset liquid = _db.get_liquid_balance( o.account, o.amount.symbol );
    const account_object* int_account_ptr = nullptr;
+
+   FC_ASSERT( first_asset.is_liquid_enabled() &&
+      second_asset.is_liquid_enabled(),
+      "Cannot Exchange specifed asset pair as assets are not liquid enabled" );
 
    if( o.interface.size() )
    {
@@ -182,7 +184,7 @@ void liquidity_pool_exchange_evaluator::do_apply( const liquidity_pool_exchange_
    {
       FC_ASSERT( liquid >= o.amount, 
          "Account: ${a} has insufficient liquid balance to exchange amount: ${am}",
-         ("a",o.account)("ac",o.amount));
+         ("a",o.account)("ac",o.amount.to_string()));
 
       if( o.limit_price.valid() )
       {
@@ -213,7 +215,7 @@ void liquidity_pool_exchange_evaluator::do_apply( const liquidity_pool_exchange_
    }
 
    ilog( "Account: ${a} exchanged: ${am} for asset: ${s} with Liquidity Pool: \n ${p} \n",
-      ("a",o.account)("am",o.amount)("s",o.receive_asset)("p",liquidity_pool));
+      ("a",o.account)("am",o.amount.to_string())("s",o.receive_asset)("p",liquidity_pool.to_string()));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -237,6 +239,10 @@ void liquidity_pool_fund_evaluator::do_apply( const liquidity_pool_fund_operatio
    const asset_object& first_asset = _db.get_asset( o.amount.symbol );
    const asset_object& second_asset = _db.get_asset( o.pair_asset );
 
+   FC_ASSERT( first_asset.is_liquid_enabled() &&
+      second_asset.is_liquid_enabled(),
+      "Cannot Exchange specifed asset pair as assets are not liquid enabled" );
+
    asset_symbol_type symbol_a;
    asset_symbol_type symbol_b;
 
@@ -256,7 +262,7 @@ void liquidity_pool_fund_evaluator::do_apply( const liquidity_pool_fund_operatio
    _db.liquid_fund( o.amount, account, liquidity_pool );
 
    ilog( "Account: ${a} funded: ${am} into Liquidity Pool: \n ${p} \n",
-      ("a",o.account)("am",o.amount)("p",liquidity_pool));
+      ("a",o.account)("am",o.amount.to_string())("p",liquidity_pool.to_string()));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -282,7 +288,7 @@ void liquidity_pool_withdraw_evaluator::do_apply( const liquidity_pool_withdraw_
    _db.liquid_withdraw( o.amount, o.receive_asset, account, liquidity_pool );
 
    ilog( "Account: ${a} withdrew: ${am} from Liquidity Pool: \n ${p} \n",
-      ("a",o.account)("am",o.amount)("p",liquidity_pool));
+      ("a",o.account)("am",o.amount.to_string())("p",liquidity_pool.to_string()));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -307,6 +313,9 @@ void credit_pool_collateral_evaluator::do_apply( const credit_pool_collateral_op
    const asset& liquid = _db.get_liquid_balance( o.account, o.amount.symbol );
    asset loan_default_balance = account.loan_default_balance;
    time_point now = _db.head_block_time();
+
+   FC_ASSERT( collateral_asset.is_credit_enabled(),
+      "Cannot make a collateral position with credit disabled asset." );
 
    const auto& col_idx = _db.get_index< credit_collateral_index >().indices().get< by_owner_symbol >();
    auto col_itr = col_idx.find( boost::make_tuple( account.name, o.amount.symbol ) );
@@ -411,9 +420,11 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
    const asset_object& collateral_asset = _db.get_asset( o.collateral.symbol );
 
    FC_ASSERT( debt_asset.is_credit_enabled(),
-      "Cannot borrow debt asset: ${s}.", ("s", debt_asset.symbol) );
+      "Cannot borrow debt asset: ${s}.",
+      ("s",debt_asset.symbol));
    FC_ASSERT( collateral_asset.is_credit_enabled(), 
-      "Cannot collateralize asset: ${s}.", ("s", collateral_asset.symbol) );
+      "Cannot collateralize asset: ${s}.",
+      ("s",collateral_asset.symbol));
 
    if( o.flash_loan )
    {
@@ -450,7 +461,8 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
    max_debt = max_debt * median_price;
    
    FC_ASSERT( o.collateral.amount >= min_collateral.amount || o.flash_loan,
-      "Collateral is insufficient to support a loan of this size." );
+      "Collateral amount is insufficient: ${a} Required: ${r}.",
+      ("a",o.collateral.to_string())("r",min_collateral.to_string()) );
    
    const auto& loan_idx = _db.get_index< credit_loan_index >().indices().get< by_loan_id >();
    auto loan_itr = loan_idx.find( boost::make_tuple( o.account, o.loan_id ) );
@@ -465,10 +477,12 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
          "Loan does not exist to close out. Please set non-zero amount." );
       FC_ASSERT( o.collateral.amount != 0 || o.flash_loan,
          "Loan does not exist to close out. Please set non-zero collateral." );
-      FC_ASSERT( collateral.collateral.amount >= o.collateral.amount || o.flash_loan ,
-         "Insufficient collateral balance in this asset to vest the amount requested in the loan. Please increase collateral." );
-      FC_ASSERT( pool.base_balance.amount >= o.amount.amount,
-         "Insufficient Available asset to borrow from credit pool. Please lower debt." );
+      FC_ASSERT( collateral.collateral >= o.collateral || o.flash_loan,
+         "Insufficient collateral balance. Required: ${r} Actual: ${a}",
+         ("r",o.collateral.to_string())("a",collateral.collateral.to_string()) );
+      FC_ASSERT( pool.base_balance >= o.amount,
+         "Insufficient Base Balance to borrow from credit pool. Required: ${r} Actual: ${a}",
+         ("r",o.amount.to_string())("a",pool.base_balance.to_string()) );
 
       const credit_loan_object& loan = _db.create< credit_loan_object >( [&]( credit_loan_object& clo )
       {
@@ -511,6 +525,7 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
    else    // Loan object exists and is being updated or closed out. 
    {
       const credit_loan_object& loan = *loan_itr;
+
       asset old_collateral = loan.collateral;
       asset delta_collateral = o.collateral - old_collateral;
       asset old_debt = loan.debt;
@@ -538,37 +553,37 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
       interest_amount /= uint128_t( fc::days(365).to_seconds() * PERCENT_100 );
 
       asset interest_asset = asset( interest_amount.to_uint64(), loan.debt.symbol );      // Accrue interest on debt balance
-      asset interest_fees = ( interest_asset * INTEREST_FEE_PERCENT ) / PERCENT_100;
-      interest_asset -= interest_fees;
+      asset interest_fees = ( loan.interest * INTEREST_FEE_PERCENT ) / PERCENT_100;
+      asset closing_debt = old_debt + interest_asset;
       
-      if( o.amount.amount == 0 || o.collateral.amount == 0 )   // Closing out the loan, ensure both amount and collateral are zero if one is zero. 
+      if( o.amount.amount == 0 || o.collateral.amount == 0 )         // Closing out the loan, ensure both amount and collateral are zero if one is zero. 
       {
          FC_ASSERT( o.amount.amount == 0 && 
             o.collateral.amount == 0,
             "Both collateral and amount must be set to zero to close out loan." );
 
-         asset closing_debt = old_debt + interest_asset;
-
-         _db.adjust_liquid_balance( o.account, -( closing_debt + interest_fees ) );    // Return debt to the pending supply of the credit pool.
+         _db.adjust_liquid_balance( o.account, -closing_debt );       // Return debt to the pending supply of the credit pool.
          _db.adjust_pending_supply( closing_debt );
-         _db.pay_network_fees( interest_fees );
+         _db.pay_network_fees( interest_fees );                       // Pay network fees on interest accrued in loan lifetime.
 
          if( !o.flash_loan )
          {
             _db.modify( collateral, [&]( credit_collateral_object& cco )
             {
-               cco.collateral += old_collateral;     // Return collateral to the account's collateral balance.
+               cco.collateral += old_collateral;        // Return collateral to the account's collateral balance.
                cco.last_updated = now;
             });
          }
 
          _db.modify( pool, [&]( asset_credit_pool_object& acpo )
          {
-            acpo.borrowed_balance -= old_debt;    // Transfer the borrowed balance back to the base balance, with interest. 
-            acpo.base_balance += closing_debt;
+            acpo.borrowed_balance -= old_debt;       // Transfer the borrowed balance back to the base balance, less interest fees. 
+            acpo.base_balance += ( closing_debt - interest_fees );
          });
 
-         ilog( "Removed: ${v}",("v",loan));
+         ilog( "Closing Loan: \n ${l} \n Credit Pool: \n ${p} \n",
+            ("l",loan)("p",pool.to_string()));
+
          _db.remove( loan );
       }
       else      // modifying the loan or repaying partially. 
@@ -598,7 +613,7 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
 
          _db.modify( loan, [&]( credit_loan_object& clo )
          {
-            clo.debt = new_debt;           // Update to new loan parameters.
+            clo.debt = new_debt;                     // Update to new loan parameters.
             clo.collateral = o.collateral;
             clo.liquidation_price = price( o.collateral, max_debt );
             clo.last_updated = now;
@@ -607,10 +622,9 @@ void credit_pool_borrow_evaluator::do_apply( const credit_pool_borrow_operation&
 
          _db.adjust_liquid_balance( o.account, delta_debt );        // Shift newly borrowed or repaid amount with pending supply. 
          _db.adjust_pending_supply( -delta_debt );
-         _db.pay_network_fees( interest_fees );
 
-         ilog( "Account: ${a} updated credit Loan: \n ${l} \n",
-            ("a",o.account)("l",loan));
+         ilog( "Account: ${a} updated credit Loan: \n ${l} \n Credit Pool: \n ${p} \n",
+            ("a",o.account)("l",loan)("p",pool.to_string()));
       }
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -636,14 +650,15 @@ void credit_pool_lend_evaluator::do_apply( const credit_pool_lend_operation& o )
    const asset_object& asset_obj = _db.get_asset( o.amount.symbol );
 
    FC_ASSERT( asset_obj.is_credit_enabled(),
-      "Cannot lend asset: ${s}.", ("s", asset_obj.symbol) );
+      "Cannot lend asset: ${s}.",
+      ("s",asset_obj.symbol) );
 
    const asset_credit_pool_object& credit_pool = _db.get_credit_pool( asset_obj.symbol, false );
 
    _db.credit_lend( o.amount, account, credit_pool );
 
    ilog( "Account: ${a} lent amount: ${am} to credit pool: \n ${l} \n",
-         ("a",o.account)("am",o.amount)("l",credit_pool));
+      ("a",o.account)("am",o.amount.to_string())("l",credit_pool));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -674,7 +689,7 @@ void credit_pool_withdraw_evaluator::do_apply( const credit_pool_withdraw_operat
    _db.credit_withdraw( o.amount, account, credit_pool );
 
    ilog( "Account: ${a} withdrew amount: ${am} from credit pool: \n ${l} \n",
-      ("a",o.account)("am",o.amount)("l",credit_pool));
+      ("a",o.account)("am",o.amount.to_string())("l",credit_pool));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
@@ -700,8 +715,8 @@ void option_pool_create_evaluator::do_apply( const option_pool_create_operation&
    time_point now = _db.head_block_time();
    date_type today = date_type( now );
 
-   FC_ASSERT( first_asset.is_credit_enabled() &&
-      second_asset.is_credit_enabled(),
+   FC_ASSERT( first_asset.is_option_enabled() &&
+      second_asset.is_option_enabled(),
       "Cannot make an option pool using this asset pair." );
 
    asset_symbol_type base_symbol;
@@ -748,7 +763,6 @@ void option_pool_create_evaluator::do_apply( const option_pool_create_operation&
    
    const asset_option_pool_object& pool = _db.create< asset_option_pool_object >( [&]( asset_option_pool_object& aopo )
    {   
-      aopo.issuer = o.account;
       aopo.base_symbol = base_symbol;
       aopo.quote_symbol = quote_symbol;
       new_strikes = aopo.add_strike_prices( current_price, new_dates );
@@ -788,7 +802,6 @@ void option_pool_create_evaluator::do_apply( const option_pool_create_operation&
 
       _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
       {
-         a.issuer = NULL_ACCOUNT;
          a.symbol = s;
       });
    }
@@ -818,11 +831,13 @@ void prediction_pool_create_evaluator::do_apply( const prediction_pool_create_op
    time_point now = _db.head_block_time();
    
    FC_ASSERT( collateral_asset.is_credit_enabled(), 
-      "Cannot make a prediction pool using the collateral asset: ${s}.",("s",o.collateral_symbol) );
+      "Cannot make a prediction pool using the collateral asset: ${s}.",
+      ("s",o.collateral_symbol) );
 
    const asset_object* asset_ptr = _db.find_asset( o.prediction_symbol );
    FC_ASSERT( asset_ptr == nullptr, 
-      "Asset already exists with the specified prediction symbol: ${s}.",("s",o.prediction_symbol) );
+      "Asset already exists with the specified prediction symbol: ${s}.",
+      ("s",o.prediction_symbol) );
 
    asset liquid = _db.get_liquid_balance( o.account, o.prediction_bond.symbol );
 
@@ -872,7 +887,6 @@ void prediction_pool_create_evaluator::do_apply( const prediction_pool_create_op
 
    _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
    {
-      a.issuer = o.account;
       a.symbol = o.prediction_symbol;
    });
 
@@ -882,7 +896,6 @@ void prediction_pool_create_evaluator::do_apply( const prediction_pool_create_op
 
    _db.create< asset_prediction_pool_object >( [&]( asset_prediction_pool_object& appo )
    {   
-      appo.issuer = o.account;
       appo.prediction_symbol = o.prediction_symbol;
       appo.collateral_symbol = o.collateral_symbol;
       appo.collateral_pool = asset( 0, o.collateral_symbol );
@@ -927,7 +940,6 @@ void prediction_pool_create_evaluator::do_apply( const prediction_pool_create_op
 
       _db.create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
       {
-         a.issuer = o.account;
          a.symbol = s;
       });
 
@@ -973,7 +985,7 @@ void prediction_pool_exchange_evaluator::do_apply( const prediction_pool_exchang
       {
          FC_ASSERT( liquid_base >= base_amount, 
             "Account: ${a} does not have enough liquid balance to exchange requested amount: ${i}.",
-            ("a", account.name)("i", base_amount) );
+            ("a", account.name)("i", base_amount.to_string()) );
 
          _db.adjust_liquid_balance( o.account, o.amount );
          _db.adjust_liquid_balance( o.account, -base_amount );
@@ -988,7 +1000,7 @@ void prediction_pool_exchange_evaluator::do_apply( const prediction_pool_exchang
       {
          FC_ASSERT( liquid_collateral >= o.amount, 
             "Account: ${a} does not have enough liquid balance to exchange requested amount: ${i}.",
-            ("a", account.name)("i", o.amount) );
+            ("a", account.name)("i", o.amount.to_string()) );
 
          _db.adjust_liquid_balance( o.account, -o.amount );
          _db.adjust_liquid_balance( o.account, base_amount );
@@ -1014,7 +1026,7 @@ void prediction_pool_exchange_evaluator::do_apply( const prediction_pool_exchang
             liquid_outcome = _db.get_liquid_balance( o.account, outcome );
             FC_ASSERT( liquid_outcome.amount >= o.amount.amount,
                "Account: ${a} does not have enough liquid balance to exchange requested amount: ${i}.",
-               ("a", account.name)("i", o.amount) );
+               ("a", account.name)("i", o.amount.to_string()) );
          }
 
          for( asset_symbol_type outcome : prediction_pool.outcome_assets )
@@ -1035,7 +1047,7 @@ void prediction_pool_exchange_evaluator::do_apply( const prediction_pool_exchang
       {
          FC_ASSERT( liquid_collateral >= o.amount,
             "Account: ${a} does not have enough liquid balance to exchange requested amount: ${i}.",
-            ("a", account.name)("i", o.amount) );
+            ("a", account.name)("i", o.amount.to_string()) );
          
          _db.adjust_liquid_balance( o.account, -o.amount );
          _db.adjust_pending_supply( o.amount );
@@ -1092,7 +1104,7 @@ void prediction_pool_resolve_evaluator::do_apply( const prediction_pool_resolve_
    {
       FC_ASSERT( liquid >= o.amount,
       "Account: ${a} does not have enough liquid balance to exchange requested amount: ${i}.",
-      ("a", account.name)("i", o.amount) );
+      ("a", account.name)("i", o.amount.to_string()) );
 
       _db.adjust_liquid_balance( o.account, -o.amount );
       _db.adjust_pending_supply( o.amount );
@@ -1120,7 +1132,7 @@ void prediction_pool_resolve_evaluator::do_apply( const prediction_pool_resolve_
          "Cannot change outcome selection resolving prediction outcome." );
       FC_ASSERT( liquid >= delta_amount,
          "Account: ${a} does not have enough liquid balance to exchange requested amount: ${i}.",
-         ("a", account.name)("i", delta_amount ) );
+         ("a", account.name)("i", delta_amount.to_string() ) );
 
       _db.adjust_liquid_balance( o.account, -delta_amount );
       _db.adjust_pending_supply( delta_amount );

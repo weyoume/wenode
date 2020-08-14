@@ -24,7 +24,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
 
 
 
-   BOOST_AUTO_TEST_CASE( ad_operation_sequence_test )
+BOOST_AUTO_TEST_CASE( ad_operation_sequence_test )
 { 
    try 
    {
@@ -64,7 +64,7 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
       comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
       comment.url = "https://www.url.com";
       comment.community = INIT_COMMUNITY;
-      comment.tags.push_back( "test" );
+      comment.tags.push_back( tag_name_type( "test" ) );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
       comment.parent_author = ROOT_POST_PARENT;
@@ -382,16 +382,18 @@ BOOST_FIXTURE_TEST_SUITE( ad_operation_tests, clean_database_fixture );
 
          generate_block();
       }
+
+      const ad_bid_object& new_alice_bid = db.get_ad_bid( bid.bidder, bid.bid_id );
       
-      BOOST_REQUIRE( alice_bid.bid_price == bid.bid_price );
-      BOOST_REQUIRE( to_string( alice_bid.campaign_id ) == bid.campaign_id );
-      BOOST_REQUIRE( to_string( alice_bid.creative_id ) == bid.creative_id );
-      BOOST_REQUIRE( to_string( alice_bid.inventory_id ) == bid.inventory_id );
-      BOOST_REQUIRE( to_string( alice_bid.audience_id ) == bid.audience_id );
-      BOOST_REQUIRE( alice_bid.account == bid.account );
-      BOOST_REQUIRE( alice_bid.requested == bid.requested );
-      BOOST_REQUIRE( alice_bid.remaining == 50 );
-      BOOST_REQUIRE( alice_bid.expiration == bid.expiration );
+      BOOST_REQUIRE( new_alice_bid.bid_price == bid.bid_price );
+      BOOST_REQUIRE( to_string( new_alice_bid.campaign_id ) == bid.campaign_id );
+      BOOST_REQUIRE( to_string( new_alice_bid.creative_id ) == bid.creative_id );
+      BOOST_REQUIRE( to_string( new_alice_bid.inventory_id ) == bid.inventory_id );
+      BOOST_REQUIRE( to_string( new_alice_bid.audience_id ) == bid.audience_id );
+      BOOST_REQUIRE( new_alice_bid.account == bid.account );
+      BOOST_REQUIRE( new_alice_bid.requested == bid.requested );
+      BOOST_REQUIRE( new_alice_bid.remaining == 50 );
+      BOOST_REQUIRE( new_alice_bid.expiration == bid.expiration );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: sucessful partial ad delivery" );
 

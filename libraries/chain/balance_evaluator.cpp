@@ -141,7 +141,7 @@ void stake_asset_evaluator::do_apply( const stake_asset_operation& o )
 
    FC_ASSERT( liquid >= o.amount,
       "Account: ${a} does not have sufficient liquid balance: ${l} for stake amount: ${s}.",
-      ("a",o.from)("l",liquid)("s",o.amount) );
+      ("a",o.from)("l",liquid.to_string())("s",o.amount.to_string()) );
 
    if( o.amount.amount == 0 )
    {
@@ -242,7 +242,7 @@ void unstake_asset_evaluator::do_apply( const unstake_asset_operation& o )
 
    FC_ASSERT( stake >= o.amount, 
       "Account: ${a} has Insufficient Staked balance: ${s} for unstake of amount: ${w}.",
-      ("a",o.from)("s",stake)("w",o.amount) );
+      ("a",o.from)("s",stake.to_string())("w",o.amount.to_string()) );
 
    if( !from_account.mined && 
       o.amount.symbol == SYMBOL_COIN )
@@ -250,7 +250,7 @@ void unstake_asset_evaluator::do_apply( const unstake_asset_operation& o )
       asset min_stake = median_props.account_creation_fee * 10;
       FC_ASSERT( stake >= min_stake,
          "Account ${a} requires 10x account creation fee: ${m} before it can be unstaked. Staked balance: ${s} Unstake amount: ${w}.", 
-         ("a",o.from)("s",stake)("w",o.amount)("m",min_stake));
+         ("a",o.from)("s",stake.to_string())("w",o.amount.to_string())("m",min_stake.to_string()));
    }
 
    if( o.amount.amount == 0 )
@@ -398,7 +398,7 @@ void transfer_to_savings_evaluator::do_apply( const transfer_to_savings_operatio
 
    FC_ASSERT( liquid >= o.amount,
       "Account: ${a} has Insufficient Liquid balance: ${s} for savings transfer of amount: ${w}.",
-      ("a",o.from)("s",liquid)("w",o.amount) );
+      ("a",o.from)("s",liquid.to_string())("w",o.amount.to_string()) );
 
    _db.adjust_liquid_balance( from, -o.amount );
    _db.adjust_savings_balance( to, o.amount );
@@ -463,7 +463,8 @@ void transfer_from_savings_evaluator::do_apply( const transfer_from_savings_oper
          a.savings_withdraw_requests++;
       });
 
-      ilog( "New Savings Withdrawal: ${s}",("s",withdraw));
+      ilog( "New Savings Withdrawal: ${s}",
+         ("s",withdraw));
    }
    else      // Savings request exists
    {
@@ -477,18 +478,19 @@ void transfer_from_savings_evaluator::do_apply( const transfer_from_savings_oper
             s.amount = o.amount;
             from_string( s.memo, o.memo );
          });
-         ilog( "Edit Savings Withdrawal: ${s}",("s",withdraw));
+         ilog( "Edit Savings Withdrawal: ${s}",
+            ("s",withdraw));
       }
       else     // Cancelling request
       {
          _db.adjust_savings_balance( withdraw.from, withdraw.amount );
          ilog( "Removed: ${v}",("v",withdraw));
-         _db.remove( withdraw );
-         
          _db.modify( from_account, [&]( account_object& a )
          {
             a.savings_withdraw_requests--;
          });
+
+         _db.remove( withdraw );
       }
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -565,7 +567,7 @@ void delegate_asset_evaluator::do_apply( const delegate_asset_operation& o )
          obj.delegator = o.delegator;
          obj.delegatee = o.delegatee;
          obj.amount = delta;
-         obj.expiration = now + CONTENT_REWARD_INTERVAL;
+         obj.expiration = now + fc::days(1);
       });
 
       _db.modify( delegation, [&]( asset_delegation_object& ado )

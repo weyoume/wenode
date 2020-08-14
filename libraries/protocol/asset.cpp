@@ -7,20 +7,30 @@ namespace node { namespace protocol {
    
 
    /**
-    * prec is a power of ten, so for example when working with
-    * 7.005 we have fract = 5, prec = 1000.  So prec+fract=1005
-    * has the correct number of zeros and we can simply trim the
-    * leading 1.
+    * prec is a power of ten, so for example when working with 7.005 we have fract = 5, prec = 1000. 
+    * 
+    * So prec+fract=1005 has the correct number of zeros and we can simply trim the leading 1.
     */
    string asset::to_string()const
    {
       int64_t decimal = precision_value();
-      string result = fc::to_string(amount.value / decimal);
+      string result = fc::to_string( amount.value / decimal );
+
+      if( result.size() > 3 )
+      {
+         size_t i = result.size();
+         while( i > 3 )
+         {
+            i -= 3;
+            result.insert( i, ",");
+         }
+      }
+
       if( decimal > 1 )
       {
          auto fract = amount.value % decimal;
          
-         result += "." + fc::to_string(decimal + fract).erase(0,1);
+         result += "." + fc::to_string( decimal + fract ).erase(0,1);
       }
       return result + " " + symbol;
    }
@@ -50,7 +60,7 @@ namespace node { namespace protocol {
          FC_ASSERT( symbol_size <= MAX_ASSET_SYMBOL_LENGTH );
          result.symbol = symbol;
 
-         return result.amount_from_string( s.substr( 0, space_pos - 1 ) );
+         return result.amount_from_string( s.substr( 0, space_pos ) );
       }
       FC_CAPTURE_AND_RETHROW( (from) )
    }
@@ -58,22 +68,27 @@ namespace node { namespace protocol {
    asset asset::multiply_and_round_up( const price& b )const
    {
       const asset& a = *this;
-      ilog( "Multiply and round up: Asset: ${a} Price: ${p}",("a",a)("p",b));
       if( a.symbol == b.base.symbol )
       {
          FC_ASSERT( b.base.amount.value > 0 );
-         share_type result = (a.amount.value * b.quote.amount.value + b.base.amount.value - 1)/b.base.amount.value;
-         FC_ASSERT( result <= share_type::max());
+         uint128_t result = ( uint128_t( a.amount.value ) * uint128_t( b.quote.amount.value ) + uint128_t( b.base.amount.value ) - 1 ) / uint128_t( b.base.amount.value );
+         FC_ASSERT( result <= share_type::max().value );
+         asset r = asset( share_type( result.to_uint64() ), b.quote.symbol );
          FC_ASSERT( is_valid_symbol( b.quote.symbol ) );
-         return asset( result, b.quote.symbol );
+         ilog( "Multiply and Round up: Asset: ${a} Price: ${p} Result: ${r}",
+            ("a",a.to_string())("p",b.to_string())("r",r.to_string()) );
+         return r;
       }
       else if( a.symbol == b.quote.symbol )
       {
          FC_ASSERT( b.quote.amount.value > 0 );
-         share_type result = (a.amount.value * b.base.amount.value + b.quote.amount.value - 1)/b.quote.amount.value;
-         FC_ASSERT( result <= share_type::max());
+         uint128_t result = ( uint128_t( a.amount.value ) * uint128_t( b.base.amount.value ) + uint128_t( b.quote.amount.value ) - 1 ) / uint128_t( b.quote.amount.value );
+         FC_ASSERT( result <= share_type::max().value );
+         asset r = asset( share_type( result.to_uint64() ), b.base.symbol );
          FC_ASSERT( is_valid_symbol( b.base.symbol ) );
-         return asset( result, b.base.symbol );
+         ilog( "Multiply and Round up: Asset: ${a} Price: ${p} Result: ${r}",
+            ("a",a.to_string())("p",b.to_string())("r",r.to_string()) );
+         return r;
       }
       FC_THROW_EXCEPTION( fc::assert_exception, "invalid asset::multiply_and_round_up(price)", ("asset",a)("price",b) );
    }
@@ -106,33 +121,46 @@ namespace node { namespace protocol {
 
       share_type satoshis = 0;
       share_type scaled_precision = asset::precision_value();
-
       const auto decimal_pos = amount_string.find( '.' );
       const string lhs = amount_string.substr( negative_found, decimal_pos );
-
+      ilog( "LHS: ${l}",
+         ("l",lhs) );
       if( !lhs.empty() )
       {
-         satoshis += fc::safe<int64_t>(std::stoll(lhs)) *= scaled_precision;
+         satoshis += fc::safe<int64_t>(std::stoll(lhs));
+         satoshis *= scaled_precision;
       }
 
       if( decimal_found )
       {
-         const size_t max_rhs_size = std::to_string( scaled_precision.value ).substr( 1 ).size();
+         const size_t max_rhs_size = size_t( precision );
          string rhs = amount_string.substr( decimal_pos + 1 );
+         ilog( "RHS: ${r}",
+            ("r",rhs) );
          FC_ASSERT( rhs.size() <= max_rhs_size );
-         while( rhs.size() < max_rhs_size )
-            rhs += '0';
 
+         while( rhs.size() < max_rhs_size )
+         {
+            rhs += '0';
+         }
+         
          if( !rhs.empty() )
+         {
             satoshis += std::stoll( rhs );
+         }
       }
 
       FC_ASSERT( satoshis <= share_type::max() );
 
       if( negative_found )
+      {
          satoshis *= -1;
+      }
 
       FC_ASSERT( is_valid_symbol( symbol ) );
+
+      ilog( "Amount from string: ${s} -> ${a}",
+         ("s",amount_string)("a",asset(satoshis, symbol)));
 
       return asset(satoshis, symbol);
    } FC_CAPTURE_AND_RETHROW( (amount_string) ) }
