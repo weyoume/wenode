@@ -23,7 +23,7 @@ BOOST_FIXTURE_TEST_SUITE( network_operation_tests, clean_database_fixture );
    //=======================//
 
 
-BOOST_AUTO_TEST_CASE( update_network_officer_operation_test )
+BOOST_AUTO_TEST_CASE( network_officer_update_operation_test )
 {
    try
    {
@@ -185,11 +185,12 @@ BOOST_AUTO_TEST_CASE( update_network_officer_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      update_network_officer_operation officer;
+      network_officer_update_operation officer;
 
       officer.signatory = "alice";
       officer.account = "alice";
       officer.officer_type = "development";
+      officer.reward_currency = SYMBOL_COIN;
       officer.details = "details";
       officer.url = "https://www.url.com";
       officer.json = "{ \"valid\": true }";
@@ -481,7 +482,7 @@ BOOST_AUTO_TEST_CASE( update_network_officer_operation_test )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
+BOOST_AUTO_TEST_CASE( executive_board_update_operation_test )
 {
    try
    {
@@ -762,7 +763,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
 
       BOOST_REQUIRE( exeq_equity.business_account == asset_create.issuer );
 
-      update_network_officer_operation officer;
+      network_officer_update_operation officer;
 
       officer.signatory = "bob";
       officer.account = "bob";
@@ -770,6 +771,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       officer.details = "details";
       officer.url = "https://www.url.com";
       officer.json = "{ \"valid\": true }";
+      officer.reward_currency = SYMBOL_COIN;
       officer.active = true;
       officer.validate();
 
@@ -955,7 +957,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      update_supernode_operation supernode;
+      supernode_update_operation supernode;
 
       supernode.signatory = "alice";
       supernode.account = "execboard";
@@ -971,7 +973,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      update_interface_operation interface;
+      interface_update_operation interface;
       
       interface.signatory = "alice";
       interface.account = "execboard";
@@ -987,7 +989,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      update_governance_operation gov;
+      governance_update_operation gov;
       
       gov.signatory = "alice";
       gov.account = "execboard";
@@ -1039,12 +1041,12 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
 
       generate_blocks( now() + fc::minutes(1) );
 
-      subscribe_governance_operation subscribe;
+      governance_subscribe_operation subscribe;
 
       subscribe.signatory = "newuser";
       subscribe.account = "newuser";
       subscribe.governance_account = "execboard";
-      subscribe.subscribe = true;
+      subscribe.approved = true;
       subscribe.validate();
 
       for( auto i = 0; i < 150; i++ )
@@ -1064,7 +1066,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
          generate_block();
       }
 
-      view_operation view;
+      comment_view_operation view;
 
       view.signatory = "newuser";
       view.viewer = "newuser";
@@ -1091,7 +1093,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
          generate_block();
       }
 
-      update_executive_board_operation exec;
+      executive_board_update_operation exec;
 
       exec.signatory = "alice";
       exec.account = "alice";
@@ -1469,7 +1471,7 @@ BOOST_AUTO_TEST_CASE( update_executive_board_operation_test )
 }
 
 
-BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
+BOOST_AUTO_TEST_CASE( governance_update_account_operation_test )
 {
    try
    {
@@ -1664,7 +1666,7 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      update_governance_operation gov;
+      governance_update_operation gov;
       
       gov.signatory = "govaccount";
       gov.account = "govaccount";
@@ -1690,12 +1692,12 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: governance account approval process" );
 
-      subscribe_governance_operation sub;
+      governance_subscribe_operation sub;
 
       sub.signatory = "alice";
       sub.account = "alice";
       sub.governance_account = "govaccount";
-      sub.subscribe = true;
+      sub.approved = true;
       sub.validate();
 
       tx.operations.push_back( sub );
@@ -1966,7 +1968,7 @@ BOOST_AUTO_TEST_CASE( update_governance_account_operation_test )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( update_supernode_operation_test )
+BOOST_AUTO_TEST_CASE( supernode_update_operation_test )
 {
    try
    {
@@ -1978,7 +1980,7 @@ BOOST_AUTO_TEST_CASE( update_supernode_operation_test )
 
       generate_blocks( TOTAL_PRODUCERS );
 
-      update_supernode_operation supernode;
+      supernode_update_operation supernode;
       
       supernode.signatory = "alice";
       supernode.account = "alice";
@@ -2015,7 +2017,7 @@ BOOST_AUTO_TEST_CASE( update_supernode_operation_test )
 
       comment_create( "alice", alice_private_posting_key, "alicetestpost" );
 
-      view_operation view;
+      comment_view_operation view;
 
       view.signatory = "bob";
       view.viewer = "bob";
@@ -2045,7 +2047,7 @@ BOOST_AUTO_TEST_CASE( update_supernode_operation_test )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( update_interface_operation_test )
+BOOST_AUTO_TEST_CASE( interface_update_operation_test )
 {
    try
    {
@@ -2078,7 +2080,7 @@ BOOST_AUTO_TEST_CASE( update_interface_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      update_interface_operation interface;
+      interface_update_operation interface;
       
       interface.signatory = "alice";
       interface.account = "alice";
@@ -2121,7 +2123,7 @@ BOOST_AUTO_TEST_CASE( update_interface_operation_test )
 
       comment_create( "alice", alice_private_posting_key, "alicetestpost" );
 
-      view_operation view;
+      comment_view_operation view;
 
       view.signatory = "bob";
       view.viewer = "bob";
@@ -2155,7 +2157,7 @@ BOOST_AUTO_TEST_CASE( update_interface_operation_test )
 }
 
 
-BOOST_AUTO_TEST_CASE( update_mediator_operation_test )
+BOOST_AUTO_TEST_CASE( mediator_update_operation_test )
 {
    try
    {
@@ -2186,7 +2188,7 @@ BOOST_AUTO_TEST_CASE( update_mediator_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      update_mediator_operation mediator;
+      mediator_update_operation mediator;
       
       mediator.signatory = "alice";
       mediator.account = "alice";
@@ -2230,7 +2232,7 @@ BOOST_AUTO_TEST_CASE( update_mediator_operation_test )
 }
 
 
-BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
+BOOST_AUTO_TEST_CASE( enterprise_sequence_test )
 {
    try
    {
@@ -2373,20 +2375,15 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_blocks( TOTAL_PRODUCERS );
 
-      create_community_enterprise_operation create;
+      enterprise_update_operation create;
 
       create.signatory = "alice";
-      create.creator = "alice";
+      create.account = "alice";
       create.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
-      create.beneficiaries[ account_name_type( "alice" ) ] = PERCENT_100;
-      create.milestone_shares = { 50*PERCENT_1, 50*PERCENT_1 };
+      create.budget = asset( 1000* BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       create.details = "details";
       create.url = "https://www.url.com";
       create.json = "{ \"valid\": true }";
-      create.begin = now() + fc::days(8);
-      create.duration = 4;
-      create.daily_budget = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      create.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       create.validate();
 
       signed_transaction tx;
@@ -2399,29 +2396,31 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const community_enterprise_object& enterprise = db.get_community_enterprise( create.creator, create.enterprise_id );
-      
-      BOOST_REQUIRE( enterprise.approved_milestones == -1 );
-      BOOST_REQUIRE( enterprise.claimed_milestones == 0 );
-      BOOST_REQUIRE( enterprise.days_paid == 0 );
+      const enterprise_object& enterprise = db.get_enterprise( create.account, create.enterprise_id );
+
       BOOST_REQUIRE( enterprise.active );
+      BOOST_REQUIRE( enterprise.account == create.account );
+      BOOST_REQUIRE( to_string( enterprise.enterprise_id ) == create.enterprise_id );
+      BOOST_REQUIRE( enterprise.budget == create.budget );
+      BOOST_REQUIRE( to_string( enterprise.details ) == create.details );
+      BOOST_REQUIRE( to_string( enterprise.url ) == create.url );
+      BOOST_REQUIRE( to_string( enterprise.json ) == create.json );
       
       BOOST_TEST_MESSAGE( "│   ├── Passed: community enterprise proposal creation" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: community enterprise proposal milestone approval" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: community enterprise proposal voting and funding approval" );
 
-      approve_enterprise_milestone_operation approve;
+      enterprise_vote_operation vote;
 
-      approve.signatory = "alice";
-      approve.account = "alice";
-      approve.creator = "alice";
-      approve.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
-      approve.milestone = 0;
-      approve.vote_rank = 1;
-      approve.approved = true;
-      approve.validate();
+      vote.signatory = "alice";
+      vote.voter = "alice";
+      vote.account = "alice";
+      vote.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
+      vote.vote_rank = 1;
+      vote.approved = true;
+      vote.validate();
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2430,10 +2429,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "bob";
-      approve.account = "bob";
+      vote.signatory = "bob";
+      vote.voter = "bob";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( bob_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2442,10 +2441,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "candice";
-      approve.account = "candice";
+      vote.signatory = "candice";
+      vote.voter = "candice";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( candice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2454,10 +2453,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "dan";
-      approve.account = "dan";
+      vote.signatory = "dan";
+      vote.voter = "dan";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( dan_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2466,10 +2465,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "elon";
-      approve.account = "elon";
+      vote.signatory = "elon";
+      vote.voter = "elon";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( elon_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2478,10 +2477,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "fred";
-      approve.account = "fred";
+      vote.signatory = "fred";
+      vote.voter = "fred";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( fred_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2490,10 +2489,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "george";
-      approve.account = "george";
+      vote.signatory = "george";
+      vote.voter = "george";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( george_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2502,10 +2501,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "haz";
-      approve.account = "haz";
+      vote.signatory = "haz";
+      vote.voter = "haz";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( haz_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2514,10 +2513,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "isabelle";
-      approve.account = "isabelle";
+      vote.signatory = "isabelle";
+      vote.voter = "isabelle";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( isabelle_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2526,10 +2525,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "jayme";
-      approve.account = "jayme";
+      vote.signatory = "jayme";
+      vote.voter = "jayme";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( jayme_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2538,10 +2537,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "kathryn";
-      approve.account = "kathryn";
+      vote.signatory = "kathryn";
+      vote.voter = "kathryn";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( kathryn_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2550,10 +2549,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "leonie";
-      approve.account = "leonie";
+      vote.signatory = "leonie";
+      vote.voter = "leonie";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( leonie_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2562,10 +2561,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "margot";
-      approve.account = "margot";
+      vote.signatory = "margot";
+      vote.voter = "margot";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( margot_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2574,10 +2573,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "natalie";
-      approve.account = "natalie";
+      vote.signatory = "natalie";
+      vote.voter = "natalie";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( natalie_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2586,10 +2585,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "olivia";
-      approve.account = "olivia";
+      vote.signatory = "olivia";
+      vote.voter = "olivia";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( olivia_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2598,10 +2597,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "peter";
-      approve.account = "peter";
+      vote.signatory = "peter";
+      vote.voter = "peter";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( peter_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2610,10 +2609,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "quentin";
-      approve.account = "quentin";
+      vote.signatory = "quentin";
+      vote.voter = "quentin";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( quentin_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2622,10 +2621,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "rachel";
-      approve.account = "rachel";
+      vote.signatory = "rachel";
+      vote.voter = "rachel";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( rachel_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2634,10 +2633,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "sam";
-      approve.account = "sam";
+      vote.signatory = "sam";
+      vote.voter = "sam";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( sam_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2646,10 +2645,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "tim";
-      approve.account = "tim";
+      vote.signatory = "tim";
+      vote.voter = "tim";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( tim_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2658,10 +2657,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "usain";
-      approve.account = "usain";
+      vote.signatory = "usain";
+      vote.voter = "usain";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( usain_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2670,22 +2669,22 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "veronica";
-      approve.account = "veronica";
+      vote.signatory = "veronica";
+      vote.voter = "veronica";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( veronica_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      approve.signatory = "will";
-      approve.account = "will";
+      vote.signatory = "will";
+      vote.voter = "will";
 
       generate_block();
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( will_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2694,10 +2693,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "xerxes";
-      approve.account = "xerxes";
+      vote.signatory = "xerxes";
+      vote.voter = "xerxes";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( xerxes_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2706,10 +2705,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "yan";
-      approve.account = "yan";
+      vote.signatory = "yan";
+      vote.voter = "yan";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.sign( yan_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2718,10 +2717,10 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      approve.signatory = "zach";
-      approve.account = "zach";
+      vote.signatory = "zach";
+      vote.voter = "zach";
 
-      tx.operations.push_back( approve );
+      tx.operations.push_back( vote );
       tx.set_reference_block( db.head_block_id() );
       tx.sign( zach_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -2731,27 +2730,59 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_block();
 
-      BOOST_REQUIRE( db.get_community_enterprise( create.creator, create.enterprise_id ).approved_milestones == 0 );
-      BOOST_REQUIRE( db.get_community_enterprise( create.creator, create.enterprise_id ).claimed_milestones == 0 );
-      BOOST_REQUIRE( db.get_community_enterprise( create.creator, create.enterprise_id ).days_paid == 0 );
-      BOOST_REQUIRE( db.get_community_enterprise( create.creator, create.enterprise_id ).active );
+      enterprise_fund_operation fund;
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: community enterprise proposal milestone approval" );
+      fund.signatory = "bob";
+      fund.funder = "bob";
+      fund.account = "alice";
+      fund.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
+      fund.amount = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      fund.validate();
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: community enterprise claim milestone" );
-
-      claim_enterprise_milestone_operation claim;
-
-      claim.signatory = "alice";
-      claim.creator = "alice";
-      claim.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
-      claim.milestone = 1;
-      claim.validate();
-
-      tx.operations.push_back( claim );
+      tx.operations.push_back( fund );
       tx.set_reference_block( db.head_block_id() );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      fund.signatory = "candice";
+      fund.funder = "candice";
+      
+      tx.operations.push_back( fund );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      fund.signatory = "dan";
+      fund.funder = "dan";
+      
+      tx.operations.push_back( fund );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      fund.signatory = "elon";
+      fund.funder = "elon";
+      
+      tx.operations.push_back( fund );
+      tx.sign( elon_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      fund.signatory = "fred";
+      fund.funder = "fred";
+      
+      tx.operations.push_back( fund );
+      tx.sign( fred_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -2759,351 +2790,17 @@ BOOST_AUTO_TEST_CASE( community_enterprise_sequence_test )
 
       generate_blocks( TOTAL_PRODUCERS );
 
-      generate_blocks( ENTERPRISE_BLOCK_INTERVAL );
-
-      BOOST_REQUIRE( db.get_community_enterprise( create.creator, create.enterprise_id ).days_paid == 1 );
-
-      generate_blocks( ENTERPRISE_BLOCK_INTERVAL );
-
-      BOOST_REQUIRE( db.get_community_enterprise( create.creator, create.enterprise_id ).days_paid == 2 );
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: community enterprise claim milestone" );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: community enterprise proposal next milestone approval" );
-
-      approve.signatory = "alice";
-      approve.account = "alice";
-      approve.creator = "alice";
-      approve.enterprise_id = "b54f0fa9-8ef3-4f0f-800c-0026c88fe9b7";
-      approve.milestone = 1;
-      approve.vote_rank = 1;
-      approve.approved = true;
-      approve.validate();
-
-      tx.operations.push_back( approve );
-      tx.set_reference_block( db.head_block_id() );
-      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "bob";
-      approve.account = "bob";
-
-      tx.operations.push_back( approve );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-   
-      approve.signatory = "candice";
-      approve.account = "candice";
-
-      tx.operations.push_back( approve );
-      tx.sign( candice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "dan";
-      approve.account = "dan";
-
-      tx.operations.push_back( approve );
-      tx.sign( dan_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "elon";
-      approve.account = "elon";
-
-      tx.operations.push_back( approve );
-      tx.sign( elon_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "fred";
-      approve.account = "fred";
-
-      tx.operations.push_back( approve );
-      tx.sign( fred_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "george";
-      approve.account = "george";
-
-      tx.operations.push_back( approve );
-      tx.sign( george_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "haz";
-      approve.account = "haz";
-
-      tx.operations.push_back( approve );
-      tx.sign( haz_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "isabelle";
-      approve.account = "isabelle";
-
-      tx.operations.push_back( approve );
-      tx.sign( isabelle_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "jayme";
-      approve.account = "jayme";
-
-      tx.operations.push_back( approve );
-      tx.sign( jayme_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "kathryn";
-      approve.account = "kathryn";
-
-      tx.operations.push_back( approve );
-      tx.sign( kathryn_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "leonie";
-      approve.account = "leonie";
-
-      tx.operations.push_back( approve );
-      tx.sign( leonie_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "margot";
-      approve.account = "margot";
-
-      tx.operations.push_back( approve );
-      tx.sign( margot_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "natalie";
-      approve.account = "natalie";
-
-      tx.operations.push_back( approve );
-      tx.sign( natalie_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "olivia";
-      approve.account = "olivia";
-
-      tx.operations.push_back( approve );
-      tx.sign( olivia_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "peter";
-      approve.account = "peter";
-
-      tx.operations.push_back( approve );
-      tx.sign( peter_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "quentin";
-      approve.account = "quentin";
-
-      tx.operations.push_back( approve );
-      tx.sign( quentin_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "rachel";
-      approve.account = "rachel";
-
-      tx.operations.push_back( approve );
-      tx.sign( rachel_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "sam";
-      approve.account = "sam";
-
-      tx.operations.push_back( approve );
-      tx.sign( sam_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "tim";
-      approve.account = "tim";
-
-      tx.operations.push_back( approve );
-      tx.sign( tim_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "usain";
-      approve.account = "usain";
-
-      tx.operations.push_back( approve );
-      tx.sign( usain_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "veronica";
-      approve.account = "veronica";
-
-      tx.operations.push_back( approve );
-      tx.sign( veronica_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "will";
-      approve.account = "will";
-
-      tx.operations.push_back( approve );
-      tx.sign( will_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "xerxes";
-      approve.account = "xerxes";
-
-      tx.operations.push_back( approve );
-      tx.sign( xerxes_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "yan";
-      approve.account = "yan";
-
-      tx.operations.push_back( approve );
-      tx.sign( yan_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      approve.signatory = "zach";
-      approve.account = "zach";
-
-      tx.operations.push_back( approve );
-      tx.sign( zach_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-      
-      generate_block();
-
-      BOOST_REQUIRE( db.get_community_enterprise( create.creator, create.enterprise_id ).approved_milestones == 1 );    // next milestone now approved
-      BOOST_REQUIRE( db.get_community_enterprise( create.creator, create.enterprise_id ).claimed_milestones == 1 );
-      BOOST_REQUIRE( db.get_community_enterprise( create.creator, create.enterprise_id ).active );
+      const enterprise_object& new_enterprise = db.get_enterprise( create.account, create.enterprise_id );
+
+      BOOST_REQUIRE( new_enterprise.active );
+      BOOST_REQUIRE( new_enterprise.total_funding == fund.amount * 5 );
+      BOOST_REQUIRE( new_enterprise.approved );
 
       generate_blocks( ENTERPRISE_BLOCK_INTERVAL );
 
-      BOOST_REQUIRE( db.get_community_enterprise( create.creator, create.enterprise_id ).days_paid == 3 );
+      BOOST_REQUIRE( db.get_enterprise( create.account, create.enterprise_id ).distributed.amount > 0 );
 
-      generate_blocks( ENTERPRISE_BLOCK_INTERVAL );
-
-      BOOST_REQUIRE( db.get_community_enterprise( create.creator, create.enterprise_id ).days_paid == 4 );
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: community enterprise proposal next milestone approval" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: community enterprise proposal approval" );
 
       BOOST_TEST_MESSAGE( "├── Passed: COMMUNITY ENTERPRISE SEQUENCE" );
    }

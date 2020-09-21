@@ -83,12 +83,25 @@ void community_create_evaluator::do_apply( const community_create_operation& o )
    {
       co.name = o.name;
       co.founder = o.founder;
-      co.community_privacy = privacy_type;
-      co.community_public_key = public_key_type( o.community_public_key );
-      from_string( co.json, o.json );
-      from_string( co.json_private, o.json_private );
+      
+      from_string( co.display_name, o.display_name );
       from_string( co.details, o.details );
       from_string( co.url, o.url );
+      from_string( co.profile_image, o.profile_image );
+      from_string( co.cover_image, o.cover_image );
+      from_string( co.json, o.json );
+      from_string( co.json_private, o.json_private );
+
+      for( auto t : o.tags )
+      {
+         co.tags.insert( t );
+      }
+
+      co.community_privacy = privacy_type;
+      co.community_member_key = public_key_type( o.community_member_key );
+      co.community_moderator_key = public_key_type( o.community_moderator_key );
+      co.community_admin_key = public_key_type( o.community_admin_key );
+
       co.max_rating = o.max_rating;
       co.flags = o.flags;
       co.permissions = o.permissions;
@@ -118,6 +131,8 @@ void community_create_evaluator::do_apply( const community_create_operation& o )
       v.account = o.founder;
       v.community = o.name;
       v.vote_rank = 1;
+      v.last_updated = now;
+      v.created = now;
    });
 
    _db.modify( founder, [&]( account_object& a )
@@ -168,7 +183,7 @@ void community_update_evaluator::do_apply( const community_update_operation& o )
 
    const community_member_object& community_member = _db.get_community_member( o.community );
 
-   FC_ASSERT( community_member.is_administrator( o.account ),
+   FC_ASSERT( _db.is_federated_administrator( community_member, o.account ),
       "Only administrators of the community can update it.");
 
    if( o.pinned_author.size() > 0 || o.pinned_permlink.size() > 0 )
@@ -183,17 +198,9 @@ void community_update_evaluator::do_apply( const community_update_operation& o )
 
    _db.modify( community, [&]( community_object& co )
    {
-      if( o.community_public_key.size() > 0 )
+      if( o.display_name.size() > 0 )
       {
-         co.community_public_key = public_key_type( o.community_public_key );
-      }
-      if( o.json.size() > 0 )
-      {
-         from_string( co.json, o.json );
-      }
-      if( o.json_private.size() > 0 )
-      {
-         from_string( co.json_private, o.json_private );
+         from_string( co.display_name, o.display_name );
       }
       if( o.details.size() > 0 )
       {
@@ -203,6 +210,49 @@ void community_update_evaluator::do_apply( const community_update_operation& o )
       {
          from_string( co.url, o.url );
       }
+      if( o.profile_image.size() > 0 )
+      {
+         from_string( co.profile_image, o.profile_image );
+      }
+      if( o.cover_image.size() > 0 )
+      {
+         from_string( co.cover_image, o.cover_image );
+      }
+      if( o.json.size() > 0 )
+      {
+         from_string( co.json, o.json );
+      }
+      if( o.json_private.size() > 0 )
+      {
+         from_string( co.json_private, o.json_private );
+      }
+      if( o.pinned_author.size() > 0 )
+      {
+         co.pinned_author = o.pinned_author;
+      }
+      if( o.pinned_permlink.size() > 0 )
+      {
+         from_string( co.pinned_permlink, o.pinned_permlink );
+      }
+
+      for( auto t : o.tags )
+      {
+         co.tags.insert( t );
+      }
+
+      if( o.community_member_key.size() > 0 )
+      {
+         co.community_member_key = public_key_type( o.community_member_key );
+      }
+      if( o.community_moderator_key.size() > 0 )
+      {
+         co.community_moderator_key = public_key_type( o.community_moderator_key );
+      }
+      if( o.community_admin_key.size() > 0 )
+      {
+         co.community_admin_key = public_key_type( o.community_admin_key );
+      }
+      
       if( co.max_rating != o.max_rating && o.max_rating != 0 )
       {
          co.max_rating = o.max_rating;
@@ -219,15 +269,7 @@ void community_update_evaluator::do_apply( const community_update_operation& o )
       {
          co.reward_currency = o.reward_currency;
       }
-      if( o.pinned_permlink.size() > 0 )
-      {
-         from_string( co.pinned_permlink, o.pinned_permlink );
-      }
-      if( o.pinned_author.size() > 0 )
-      {
-         co.pinned_author = o.pinned_author;
-      }
-
+      
       co.last_updated = now;
       co.active = o.active;
    });
@@ -256,6 +298,7 @@ void community_vote_mod_evaluator::do_apply( const community_vote_mod_operation&
 
    const account_object& voter = _db.get_account( o.account );
    const account_object& moderator_account = _db.get_account( o.moderator );
+   time_point now = _db.head_block_time();
    FC_ASSERT( moderator_account.active, 
       "Account: ${s} must be active to be voted as moderator.",("s", o.moderator) );
    const community_object& community = _db.get_community( o.community );
@@ -268,9 +311,11 @@ void community_vote_mod_evaluator::do_apply( const community_vote_mod_operation&
       FC_ASSERT( voter.can_vote, 
          "Account has declined its voting rights." );
       FC_ASSERT( community_member.is_member( o.account ),
-         "Account: ${a} must be a member before voting for a moderator of Community: ${b}.", ("a", o.account)("b", o.community));
+         "Account: ${a} must be a member before voting for a Moderator of Community: ${b}.",
+         ("a", o.account)("b", o.community));
       FC_ASSERT( community_member.is_moderator( o.moderator ),
-         "Account: ${a} must be a moderator of Community: ${b}.", ("a", o.moderator)("b", o.community));
+         "Account: ${a} must be a Moderator of Community: ${b}.",
+         ("a", o.moderator)("b", o.community));
    }
    
    const auto& account_community_rank_idx = _db.get_index< community_moderator_vote_index >().indices().get< by_account_community_rank >();
@@ -289,6 +334,8 @@ void community_vote_mod_evaluator::do_apply( const community_vote_mod_operation&
             v.account = o.account;
             v.community = o.community;
             v.vote_rank = o.vote_rank;
+            v.last_updated = now;
+            v.created = now;
          });
          
          _db.update_community_moderator_votes( voter, o.community );
@@ -349,36 +396,45 @@ void community_add_mod_evaluator::do_apply( const community_add_mod_operation& o
    const account_object& moderator = _db.get_account( o.moderator );
    const community_object& community = _db.get_community( o.community );
    FC_ASSERT( community.active, 
-      "Community: ${s} must be active for moderator voting.",("s", o.community) );
+      "Community: ${s} must be active for moderator voting.",
+      ("s", o.community) );
    const community_member_object& community_member = _db.get_community_member( o.community );
    time_point now = _db.head_block_time();
 
    FC_ASSERT( community_member.is_member( moderator.name ), 
-      "Account: ${a} must be a member before promotion to moderator of Community: ${b}.", ("a", o.moderator)("b", o.community));
+      "Account: ${a} must be a member before promotion to moderator of Community: ${b}.",
+      ("a", o.moderator)("b", o.community));
    
    if( o.added || o.account != o.moderator )     // Account can remove itself from community administrators.
    {
       FC_ASSERT( community_member.is_administrator( o.account ), 
-         "Account: ${a} is not an administrator of the Community: ${b} and cannot add or remove moderators.", ("a", o.account)("b", o.community));
+         "Account: ${a} is not an administrator of the Community: ${b} and cannot add or remove moderators.",
+         ("a", o.account)("b", o.community));
    }
 
    if( o.added )
    {
       FC_ASSERT( !community_member.is_moderator( moderator.name ), 
-         "Account: ${a} is already a moderator of Community: ${b}.", ("a", o.moderator)("b", o.community));
+         "Account: ${a} is already a moderator of Community: ${b}.",
+         ("a", o.moderator)("b", o.community));
       FC_ASSERT( !community_member.is_administrator( moderator.name ), 
-         "Account: ${a} is already a administrator of Community: ${b}.", ("a", o.moderator)("b", o.community));
+         "Account: ${a} is already a administrator of Community: ${b}.",
+         ("a", o.moderator)("b", o.community));
       FC_ASSERT( community_member.founder != moderator.name, 
-         "Account: ${a} is already the Founder of Community: ${b}.", ("a", o.moderator)("b", o.community));
+         "Account: ${a} is already the Founder of Community: ${b}.",
+         ("a", o.moderator)("b", o.community));
    }
    else
    {
       FC_ASSERT( community_member.is_moderator( moderator.name ),
-         "Account: ${a} is not a moderator of Community: ${b}.", ("a", o.moderator)("b", o.community));
+         "Account: ${a} is not a moderator of Community: ${b}.",
+         ("a", o.moderator)("b", o.community));
       FC_ASSERT( !community_member.is_administrator( moderator.name ),
-         "Account: ${a} cannot be removed from moderators while an administrator of Community: ${b}.", ("a", o.moderator)("b", o.community));
+         "Account: ${a} cannot be removed from moderators while an administrator of Community: ${b}.",
+         ("a", o.moderator)("b", o.community));
       FC_ASSERT( community_member.founder != moderator.name,
-         "Account: ${a} cannot be removed while the founder of Community: ${b}.", ("a", o.moderator)("b", o.community));
+         "Account: ${a} cannot be removed while the founder of Community: ${b}.",
+         ("a", o.moderator)("b", o.community));
    }
 
    _db.modify( community_member, [&]( community_member_object& cmo )
@@ -424,28 +480,34 @@ void community_add_admin_evaluator::do_apply( const community_add_admin_operatio
    time_point now = _db.head_block_time();
 
    FC_ASSERT( community_member.is_member( administrator.name ), 
-      "Account: ${a} must be a member before promotion to administrator of Community: ${b}.", ("a", o.admin)("b", o.community));
+      "Account: ${a} must be a member before promotion to administrator of Community: ${b}.",
+      ("a", o.admin)("b", o.community));
    FC_ASSERT( community_member.is_moderator( administrator.name ), 
-      "Account: ${a} must be a moderator before promotion to administrator of Community: ${b}.", ("a", o.admin)("b", o.community));
+      "Account: ${a} must be a moderator before promotion to administrator of Community: ${b}.",
+      ("a", o.admin)("b", o.community));
 
    if( o.added || o.account != administrator.name )     // Account can remove itself from community administrators.  
    {
       FC_ASSERT( community_member.founder == o.account, 
          "Only the Founder: ${f} of the community can add or remove administrators.", ("f", community_member.founder));
    }
-   if(o.added)
+   if( o.added )
    {
       FC_ASSERT( !community_member.is_administrator( administrator.name ), 
-         "Account: ${a} is already an administrator of Community: ${b}.", ("a", o.admin)("b", o.community));
+         "Account: ${a} is already an administrator of Community: ${b}.",
+         ("a", o.admin)("b", o.community));
       FC_ASSERT( community_member.founder != administrator.name, 
-         "Account: ${a} is already the Founder of Community: ${b}.", ("a", o.admin)("b", o.community));
+         "Account: ${a} is already the Founder of Community: ${b}.",
+         ("a", o.admin)("b", o.community));
    }
    else
    {
       FC_ASSERT( community_member.is_administrator( administrator.name ), 
-         "Account: ${a} is not an administrator of Community: ${b}.", ("a", o.admin)("b", o.community));
+         "Account: ${a} is not an administrator of Community: ${b}.",
+         ("a", o.admin)("b", o.community));
       FC_ASSERT( community_member.founder != administrator.name, 
-         "Account: ${a} cannot be removed as administrator while the Founder of Community: ${b}.", ("a", o.admin)("b", o.community));
+         "Account: ${a} cannot be removed as administrator while the Founder of Community: ${b}.",
+         ("a", o.admin)("b", o.community));
    }
    
    _db.modify( community_member, [&]( community_member_object& cmo )
@@ -483,15 +545,18 @@ void community_transfer_ownership_evaluator::do_apply( const community_transfer_
    }
    const community_object& community = _db.get_community( o.community );
    FC_ASSERT( community.active, 
-      "Community: ${s} must be active for ownership transfer.",("s", o.community) );
+      "Community: ${s} must be active for ownership transfer.",
+      ("s", o.community) );
    const account_object& new_founder = _db.get_account( o.new_founder );
    FC_ASSERT( new_founder.active, 
-      "Account: ${s} must be active to become the new community founder.",("s", o.new_founder) );
+      "Account: ${s} must be active to become the new community founder.",
+      ("s", o.new_founder) );
    time_point now = _db.head_block_time();
    const community_member_object& community_member = _db.get_community_member( o.community );
 
    FC_ASSERT( community.founder == o.account && community_member.founder == o.account,
-      "Only the founder of the community can transfer ownership." );
+      "Only the founder: ${f} of the community can transfer ownership.",
+      ("f",community.founder) );
    FC_ASSERT( now > community.last_updated + MIN_COMMUNITY_UPDATE_INTERVAL, 
       "Communities can only be updated once per 10 minutes." );
 
@@ -534,12 +599,16 @@ void community_join_request_evaluator::do_apply( const community_join_request_op
    }
    const community_object& community = _db.get_community( o.community );
    FC_ASSERT( community.active,
-      "Community: ${s} must be active for join requests.",("s", o.community) );
+      "Community: ${s} must be active for join requests.",
+      ("s", o.community) );
    const community_member_object& community_member = _db.get_community_member( o.community );
    FC_ASSERT( !community_member.is_member( o.account ),
-      "Account: ${a} is already a member of the community: ${b}.", ("a", o.account)("b", o.community));
-   FC_ASSERT( community_member.is_authorized_request( o.account ),
-      "Account: ${a} is not authorised to request to join the community: ${b}.", ("a", o.account)("b", o.community));
+      "Account: ${a} is already a member of the community: ${b}.",
+      ("a", o.account)("b", o.community));
+   FC_ASSERT( _db.is_federated_authorized_request( community_member, o.account ),
+      "Account: ${a} is not authorised to request to join the community: ${b}.",
+      ("a", o.account)("b", o.community));
+
    time_point now = _db.head_block_time();
    const auto& req_idx = _db.get_index< community_join_request_index >().indices().get< by_account_community >();
    auto itr = req_idx.find( std::make_tuple( o.account, o.community ) );
@@ -589,7 +658,7 @@ void community_join_invite_evaluator::do_apply( const community_join_invite_oper
    const community_member_object& community_member = _db.get_community_member( o.community );
    FC_ASSERT( !community_member.is_member( member.name ), 
       "Account: ${a} is already a member of the community: ${b}.", ("a", o.member)("b", o.community));
-   FC_ASSERT( community_member.is_authorized_invite( o.account ),
+   FC_ASSERT( _db.is_federated_authorized_invite( community_member, o.account ),
       "Account: ${a} is not authorised to send community: ${b} join invitations.", ("a", o.account)("b", o.community));
 
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.member );
@@ -609,21 +678,21 @@ void community_join_invite_evaluator::do_apply( const community_join_invite_oper
       FC_ASSERT( from_account_permissions.is_authorized_transfer( o.member ),
          "Invite is not authorized, due to sender account's permisssions" );
 
-      _db.create< community_join_invite_object >( [&]( community_join_invite_object& bjio )
+      _db.create< community_join_invite_object >( [&]( community_join_invite_object& cjio )
       {
-         bjio.account = o.account;
-         bjio.member = member.name;
-         bjio.community = community.name;
-         from_string( bjio.message, o.message );
-         bjio.expiration = now + CONNECTION_REQUEST_DURATION;
+         cjio.account = o.account;
+         cjio.member = member.name;
+         cjio.community = community.name;
+         from_string( cjio.message, o.message );
+         cjio.expiration = now + CONNECTION_REQUEST_DURATION;
       });
 
-      _db.create< community_member_key_object >( [&]( community_member_key_object& bmko )
+      _db.create< community_member_key_object >( [&]( community_member_key_object& cmko )
       {
-         bmko.account = o.account;
-         bmko.member = member.name;
-         bmko.community = o.community;
-         bmko.encrypted_community_key = encrypted_keypair_type( member.secure_public_key, community.community_public_key, o.encrypted_community_key );
+         cmko.account = o.account;
+         cmko.member = member.name;
+         cmko.community = o.community;
+         cmko.encrypted_community_key = encrypted_keypair_type( member.secure_public_key, community.community_member_key, o.encrypted_community_key );
       });
    }
    else     // Invite exists and is being deleted.
@@ -664,9 +733,11 @@ void community_join_accept_evaluator::do_apply( const community_join_accept_oper
    time_point now = _db.head_block_time();
 
    FC_ASSERT( !community_member.is_member( member.name ),
-      "Account: ${a} is already a member of the community: ${b}.", ("a", o.member)("b", o.community));
-   FC_ASSERT( community_member.is_authorized_invite( o.account ), 
-      "Account: ${a} is not authorized to accept join requests to the community: ${b}.", ("a", o.account)("b", o.community));    // Ensure Account is a moderator.
+      "Account: ${a} is already a member of the community: ${b}.",
+      ("a",o.member)("b",o.community));
+   FC_ASSERT( _db.is_federated_authorized_invite( community_member, o.account ), 
+      "Account: ${a} is not authorized to accept join requests to the community: ${b}.",
+      ("a",o.account)("b",o.community));
 
    const auto& req_idx = _db.get_index< community_join_request_index >().indices().get< by_account_community >();
    auto req_itr = req_idx.find( std::make_tuple( o.member, o.community ) );
@@ -682,12 +753,12 @@ void community_join_accept_evaluator::do_apply( const community_join_accept_oper
          cmo.last_updated = now;
       });
 
-      _db.create< community_member_key_object >( [&]( community_member_key_object& bmko )
+      _db.create< community_member_key_object >( [&]( community_member_key_object& cmko )
       {
-         bmko.account = o.account;
-         bmko.member = member.name;
-         bmko.community = o.community;
-         bmko.encrypted_community_key = encrypted_keypair_type( member.secure_public_key, community.community_public_key, o.encrypted_community_key );
+         cmko.account = o.account;
+         cmko.member = member.name;
+         cmko.community = o.community;
+         cmko.encrypted_community_key = encrypted_keypair_type( member.secure_public_key, community.community_member_key, o.encrypted_community_key );
       });
    }
 
@@ -718,7 +789,9 @@ void community_invite_accept_evaluator::do_apply( const community_invite_accept_
    time_point now = _db.head_block_time();
 
    FC_ASSERT( !community_member.is_member( o.account ), 
-      "Account: ${a} is already a member of the community: ${b}.", ("a", o.account)("b", o.community));
+      "Account: ${a} is already a member of the community: ${b}.",
+      ("a", o.account)("b", o.community));
+      
    const auto& inv_idx = _db.get_index< community_join_invite_index >().indices().get< by_member_community >();
    auto itr = inv_idx.find( std::make_tuple( o.account, o.community ) );
    FC_ASSERT( itr != inv_idx.end(),
@@ -728,8 +801,9 @@ void community_invite_accept_evaluator::do_apply( const community_invite_accept_
    const auto& key_idx = _db.get_index< community_member_key_index >().indices().get< by_member_community >();
    auto key_itr = key_idx.find( std::make_tuple( o.account, o.community ) );
 
-   FC_ASSERT( community_member.is_authorized_invite( invite.account ), 
-      "Account: ${a} is no longer authorised to send community: ${b} join invitations.", ("a", invite.account)("b", o.community));  // Ensure inviting account is still authorised to send invitations
+   FC_ASSERT( _db.is_federated_authorized_invite( community_member, invite.account ), 
+      "Account: ${a} is not authorised to send community: ${b} join invitations.",
+      ("a", invite.account)("b", o.community));  // Ensure inviting account is still authorised to send invitations
    
    if( o.accepted )   // Accepting the request, skipped if rejecting
    {
@@ -789,9 +863,9 @@ void community_remove_member_evaluator::do_apply( const community_remove_member_
 
    if( o.account != member.name )     // Account can remove itself from community membership.  
    {
-      FC_ASSERT( community_member.is_authorized_blacklist( o.account ), 
+      FC_ASSERT( _db.is_federated_authorized_blacklist( community_member, o.account ), 
          "Account: ${a} is not authorised to remove accounts from community: ${b}.",
-         ("a",o.account)("b",o.community)); 
+         ("a",o.account)("b",o.community));
    }
    
    _db.modify( community_member, [&]( community_member_object& cmo )
@@ -833,14 +907,18 @@ void community_blacklist_evaluator::do_apply( const community_blacklist_operatio
    const community_member_object& community_member = _db.get_community_member( o.community );
    time_point now = _db.head_block_time();
    
-   FC_ASSERT( community_member.is_authorized_blacklist( o.account ), 
-      "Account: ${a} is not authorised to add or remove accounts from the blacklist of community: ${b}.", ("a", o.account)("b", o.community)); 
-   FC_ASSERT( !community_member.is_member( member.name ),
-      "Account: ${a} cannot be blacklisted while a member of community: ${b}. Remove them first.", ("a", o.member)("b", o.community));
-   FC_ASSERT( !community_member.is_moderator( member.name ),
-      "Account: ${a} cannot be blacklisted while a moderator of community: ${b}. Remove them first.", ("a", o.member)("b", o.community));
-   FC_ASSERT( !community_member.is_administrator( member.name ),
-      "Account: ${a} cannot be blacklisted while an administrator of community: ${b}. Remove them first.", ("a", o.member)("b", o.community));
+   FC_ASSERT( _db.is_federated_authorized_blacklist( community_member, o.account ), 
+      "Account: ${a} is not authorised to add or remove accounts from the blacklist of community: ${b}.",
+      ("a", o.account)("b", o.community)); 
+   FC_ASSERT( !_db.is_federated_member( community_member, member.name ),
+      "Account: ${a} cannot be blacklisted while a member of a federated community: ${b}. Remove them first.",
+      ("a", o.member)("b", o.community));
+   FC_ASSERT( !_db.is_federated_moderator( community_member, member.name ),
+      "Account: ${a} cannot be blacklisted while a moderator of a federated community: ${b}. Remove them first.",
+      ("a", o.member)("b", o.community));
+   FC_ASSERT( !_db.is_federated_administrator( community_member, member.name ),
+      "Account: ${a} cannot be blacklisted while an administrator of a federated community: ${b}. Remove them first.",
+      ("a", o.member)("b", o.community));
    FC_ASSERT( community_member.founder != member.name,
       "Account: ${a} cannot be blacklisted while the founder of community: ${b}.", ("a", o.member)("b", o.community));
 
@@ -884,15 +962,18 @@ void community_subscribe_evaluator::do_apply( const community_subscribe_operatio
 
    if( o.subscribed )   // Adding subscription 
    {
-      FC_ASSERT( community_member.is_authorized_interact( o.account ), 
-         "Account: ${a} is not authorized to subscribe to the community ${b}.",("a", o.account)("b", o.community));
+      FC_ASSERT( _db.is_federated_authorized_interact( community_member, o.account ), 
+         "Account: ${a} is not authorized to subscribe to the community ${b}.",
+         ("a", o.account)("b", o.community));
       FC_ASSERT( !community_member.is_subscriber( o.account ), 
-         "Account: ${a} is already subscribed to the community ${b}.",("a", o.account)("b", o.community));
+         "Account: ${a} is already subscribed to the community ${b}.",
+         ("a", o.account)("b", o.community));
    }
    else     // Removing subscription
    {
       FC_ASSERT( community_member.is_subscriber( o.account ), 
-         "Account: ${a} is not subscribed to the community ${b}.",("a", o.account)("b", o.community));
+         "Account: ${a} is not subscribed to the community ${b}.",
+         ("a", o.account)("b", o.community));
    }
 
    if( o.added )
@@ -951,6 +1032,395 @@ void community_subscribe_evaluator::do_apply( const community_subscribe_operatio
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
+void community_federation_request_evaluator::do_apply( const community_federation_request_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   const community_object& requesting_community = _db.get_community( o.requesting_community );
+   FC_ASSERT( requesting_community.active,
+      "Community: ${s} must be active for federation requests.",
+      ("s", o.requesting_community));
+   const community_member_object& requesting_community_member = _db.get_community_member( o.requesting_community );
+   FC_ASSERT( !_db.is_federated_administrator( requesting_community_member, o.account ),
+      "Account: ${a} must be an Admin of the community: ${b}.",
+      ("a", o.account)("b",o.requesting_community));
+
+   const community_object& requested_community = _db.get_community( o.requested_community );
+   FC_ASSERT( requested_community.active,
+      "Community: ${s} must be active for federation requests.",
+      ("s", o.requested_community));
+   
+
+   time_point now = _db.head_block_time();
+   
+   const auto& req_idx = _db.get_index< community_federation_request_index >().indices().get< by_requesting_requested >();
+   const auto& acc_idx = _db.get_index< community_federation_request_index >().indices().get< by_requested_requesting >();
+
+   auto req_itr = req_idx.find( boost::make_tuple( o.requesting_community, o.requested_community ) );
+   auto acc_itr = acc_idx.find( boost::make_tuple( o.requesting_community, o.requested_community ) );
+
+   community_federation_type community_federation = community_federation_type::PUBLIC_FEDERATION;
+
+   for( size_t i = 0; i < community_federation_values.size(); i++ )
+   {
+      if( o.federation_type == community_federation_values[ i ] )
+      {
+         community_federation = community_federation_type( i );
+         break;
+      }
+   }
+
+   community_name_type community_a_name;
+   community_name_type community_b_name;
+
+   if( requesting_community.id < requested_community.id )      // Community objects are sorted with lowest ID is community A.
+   {
+      community_a_name = requesting_community.name;
+      community_b_name = requested_community.name;
+   }
+   else
+   {
+      community_b_name = requesting_community.name;
+      community_a_name = requested_community.name;
+   }
+
+   const auto& federation_idx = _db.get_index< community_federation_index >().indices().get< by_communities >();
+   auto federation_itr = federation_idx.find( std::make_tuple( community_a_name, community_b_name, community_federation ) );
+
+   if( req_itr == req_idx.end() && acc_itr == acc_idx.end() )      // New connection request
+   {
+      FC_ASSERT( o.requested,
+         "Request doesn't exist, user must select to request connection with the account." );
+
+      if( federation_itr == federation_idx.end() )    // No existing federation object.
+      { 
+         FC_ASSERT( community_federation == community_federation_type::PUBLIC_FEDERATION,
+            "First Federation request must be of Direct Federation type before elevation to higher levels." );
+      }
+      else        // Federation object found, requesting level increase.
+      {
+         const community_federation_object& federation_obj = *federation_itr;
+
+         auto member_itr = federation_idx.find( boost::make_tuple( community_a_name, community_b_name, community_federation_type::MEMBER_FEDERATION ) );
+         auto moderator_itr = federation_idx.find( boost::make_tuple( community_a_name, community_b_name, community_federation_type::MODERATOR_FEDERATION ) );
+         auto admin_itr = federation_idx.find( boost::make_tuple( community_a_name, community_b_name, community_federation_type::ADMIN_FEDERATION ) );
+
+         FC_ASSERT( community_federation != community_federation_type::PUBLIC_FEDERATION,
+            "Community Direct Federation already exists, should request a type increase." );
+
+         if( community_federation == community_federation_type::MEMBER_FEDERATION )
+         {
+            FC_ASSERT( member_itr == federation_idx.end(),
+               "Member Federation already exists." );
+            FC_ASSERT( now >= ( federation_obj.created + CONNECTION_REQUEST_DURATION ),
+               "Member Federation must wait one week from first Public Federation." );
+         }
+         else if( community_federation == community_federation_type::MODERATOR_FEDERATION )
+         {
+            FC_ASSERT( member_itr != federation_idx.end(),
+               "Moderator Federation must follow Member Federation." );
+            FC_ASSERT( moderator_itr == federation_idx.end(),
+               "Moderator Federation already exists." );
+            FC_ASSERT( now >= ( member_itr->created + CONNECTION_REQUEST_DURATION ),
+               "Moderator Federation must wait one week from first Member Federation." );
+         }
+         else if( community_federation == community_federation_type::ADMIN_FEDERATION )
+         {
+            FC_ASSERT( moderator_itr != federation_idx.end(),
+               "Admin Federation must follow Moderator Federation." );
+            FC_ASSERT( admin_itr == federation_idx.end(),
+               "Admmin Federation already exists." );
+            FC_ASSERT( now >= ( moderator_itr->created + CONNECTION_REQUEST_DURATION ),
+               "Admin Federation must wait one week from first Moderator Federation." );
+         }
+      }
+
+      _db.create< community_federation_request_object >( [&]( community_federation_request_object& cfro )
+      {
+         cfro.requesting_community = requesting_community.name;
+         cfro.requested_community = requested_community.name;
+         cfro.federation_type = community_federation;
+         from_string( cfro.message, o.message );
+         cfro.expiration = now + CONNECTION_REQUEST_DURATION;
+      });
+   } 
+   else   // Request exists and is being cancelled.
+   { 
+      FC_ASSERT( !o.requested,
+         "Connection currently exists, set request to false to cancel." );
+
+      if( req_itr == req_idx.end() )
+      {
+         ilog( "Removed: ${v}",("v",*req_itr));
+         _db.remove( *req_itr );
+      }
+      if( acc_itr == acc_idx.end() )
+      {
+         ilog( "Removed: ${v}",("v",*acc_itr));
+         _db.remove( *acc_itr );
+      }
+   }
+
+   ilog( "Account: ${a} requested to federate community: ${b} and ${c}", 
+      ("a", o.account)("b",o.requesting_community)("c",o.requested_community));
+
+} FC_CAPTURE_AND_RETHROW( ( o )) }
+
+
+void community_federation_accept_evaluator::do_apply( const community_federation_accept_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   const community_object& community = _db.get_community( o.community );
+   FC_ASSERT( community.active,
+      "Community: ${s} must be active for federation requests.",
+      ("s", o.community) );
+   const community_member_object& community_member = _db.get_community_member( o.community );
+
+   FC_ASSERT( _db.is_federated_administrator( community_member, o.account ),
+      "Account: ${a} must be an Admin of the community: ${b}.",
+      ("a", o.account)("b",o.community));
+
+   const community_object& requested_community = _db.get_community( o.requested_community );
+   FC_ASSERT( requested_community.active,
+      "Community: ${s} must be active for federation requests.",
+      ("s", o.requested_community));
+
+   time_point now = _db.head_block_time();
+   public_key_type public_key;
+   community_federation_type community_federation = community_federation_type::PUBLIC_FEDERATION;
+
+   for( size_t i = 0; i < community_federation_values.size(); i++ )
+   {
+      if( o.federation_type == community_federation_values[ i ] )
+      {
+         community_federation = community_federation_type( i );
+         break;
+      }
+   }
+
+   switch( community_federation )
+   {
+      case community_federation_type::PUBLIC_FEDERATION:
+      case community_federation_type::MEMBER_FEDERATION:
+      {
+         public_key = community.community_member_key;
+      }
+      break;
+      case community_federation_type::MODERATOR_FEDERATION:
+      {
+         public_key = community.community_moderator_key;
+      }
+      break;
+      case community_federation_type::ADMIN_FEDERATION:
+      {
+         public_key = community.community_admin_key;
+      }
+      break;
+      default:
+      {
+         FC_ASSERT( false, 
+            "Invalid Federation type." );
+      }
+   }
+
+   community_name_type community_a_name;
+   community_name_type community_b_name;
+
+   if( community.id < requested_community.id )      // Community objects are sorted with lowest ID is community A.
+   {
+      community_a_name = community.name;
+      community_b_name = requested_community.name;
+   }
+   else
+   {
+      community_b_name = community.name;
+      community_a_name = requested_community.name;
+   }
+
+   const auto& federation_idx = _db.get_index< community_federation_index >().indices().get< by_communities >();
+   auto federation_itr = federation_idx.find( std::make_tuple( community_a_name, community_b_name, community_federation ) );
+
+   const auto& req_idx = _db.get_index< community_federation_request_index >().indices().get< by_requesting_requested >();
+   auto req_itr = req_idx.find( boost::make_tuple( o.requested_community, o.community ) );
+
+   const community_member_object& community_member_a = _db.get_community_member( community_a_name );
+   const community_member_object& community_member_b = _db.get_community_member( community_b_name );
+
+   if( federation_itr == federation_idx.end() )       // No existing federation object of that type, creating new federation.
+   {
+      FC_ASSERT( o.accepted,
+         "Federation doesn't exist, must select to connect with account" );
+      FC_ASSERT( req_itr != req_idx.end(),
+         "Federation Request doesn't exist to accept." );
+      const community_federation_request_object& request = *req_itr;
+      FC_ASSERT( community_federation == request.federation_type,
+         "Federation request must be of the same level as acceptance" );
+
+      const community_federation_object& new_federation = _db.create< community_federation_object >( [&]( community_federation_object& cfo )
+      {
+         cfo.community_a = community_a_name;
+         cfo.community_b = community_b_name;
+
+         if( community_a_name == community.name )      // We're community A
+         {
+            cfo.encrypted_key_a = encrypted_keypair_type( requested_community.community_member_key, public_key, o.encrypted_community_key );
+         } 
+         else        // We're community B
+         {
+            cfo.encrypted_key_b = encrypted_keypair_type( requested_community.community_member_key, public_key, o.encrypted_community_key );
+         }
+
+         cfo.federation_type = community_federation;
+         from_string( cfo.federation_id, o.federation_id );
+         cfo.last_updated = now;
+         cfo.created = now;
+      });
+
+      _db.modify( community_member_a, [&]( community_member_object& cmo )
+      {
+         if( community_federation == community_federation_type::PUBLIC_FEDERATION )
+         {
+            cmo.public_federations.insert( community_b_name );
+         }
+         else if( community_federation == community_federation_type::MEMBER_FEDERATION )
+         {
+            cmo.member_federations.insert( community_b_name );
+         }
+         else if( community_federation == community_federation_type::MODERATOR_FEDERATION )
+         {
+            cmo.moderator_federations.insert( community_b_name );
+         }
+         else if( community_federation == community_federation_type::ADMIN_FEDERATION )
+         {
+            cmo.admin_federations.insert( community_b_name );
+         }
+         cmo.last_updated = now;
+      });
+
+      _db.modify( community_member_b, [&]( community_member_object& cmo )
+      {
+         if( community_federation == community_federation_type::PUBLIC_FEDERATION )
+         {
+            cmo.public_federations.insert( community_a_name );
+         }
+         else if( community_federation == community_federation_type::MEMBER_FEDERATION )
+         {
+            cmo.member_federations.insert( community_a_name );
+         }
+         else if( community_federation == community_federation_type::MODERATOR_FEDERATION )
+         {
+            cmo.moderator_federations.insert( community_a_name );
+         }
+         else if( community_federation == community_federation_type::ADMIN_FEDERATION )
+         {
+            cmo.admin_federations.insert( community_a_name );
+         }
+         cmo.last_updated = now;
+      });
+
+      ilog( "Removed: ${v}",("v",request));
+      _db.remove( request );  // Remove initial request object
+
+      ilog( "Account: ${a} accepted new federation between community ${b} and ${c} - \n ${f} \n",
+      ("a",o.account)("b",o.community)("c",o.requested_community)("f",new_federation));
+   }
+   else 
+   {
+      const community_federation_object& federation_obj = *federation_itr;
+
+      if( o.accepted ) // Federation object found, adding returning acceptance or editing keys.
+      {
+         _db.modify( federation_obj, [&]( community_federation_object& cfo )
+         {
+            if( community_a_name == community.name )    // We're Community A
+            {
+               cfo.encrypted_key_a = encrypted_keypair_type( requested_community.community_member_key, public_key, o.encrypted_community_key );
+            } 
+            else     // We're Community B
+            {
+               cfo.encrypted_key_b = encrypted_keypair_type( requested_community.community_member_key, public_key, o.encrypted_community_key );
+            }
+         }); 
+      }
+      else  // Federation object is found, and is being removed.
+      {
+         _db.modify( community_member_a, [&]( community_member_object& cmo )
+         {
+            if( community_federation == community_federation_type::PUBLIC_FEDERATION )
+            {
+               cmo.public_federations.erase( community_b_name );
+            }
+            else if( community_federation == community_federation_type::MEMBER_FEDERATION )
+            {
+               cmo.member_federations.erase( community_b_name );
+            }
+            else if( community_federation == community_federation_type::MODERATOR_FEDERATION )
+            {
+               cmo.moderator_federations.erase( community_b_name );
+            }
+            else if( community_federation == community_federation_type::ADMIN_FEDERATION )
+            {
+               cmo.admin_federations.erase( community_b_name );
+            }
+            cmo.last_updated = now;
+         });
+
+         _db.modify( community_member_b, [&]( community_member_object& cmo )
+         {
+            if( community_federation == community_federation_type::PUBLIC_FEDERATION )
+            {
+               cmo.public_federations.erase( community_a_name );
+            }
+            else if( community_federation == community_federation_type::MEMBER_FEDERATION )
+            {
+               cmo.member_federations.erase( community_a_name );
+            }
+            else if( community_federation == community_federation_type::MODERATOR_FEDERATION )
+            {
+               cmo.moderator_federations.erase( community_a_name );
+            }
+            else if( community_federation == community_federation_type::ADMIN_FEDERATION )
+            {
+               cmo.admin_federations.erase( community_a_name );
+            }
+            cmo.last_updated = now;
+         });
+
+         ilog( "Removed: ${v}",("v",federation_obj));
+         _db.remove( federation_obj );
+      }
+
+      ilog( "Account: ${a} updated federation between community: ${b} and ${c} - \n ${f} \n",
+      ("a", o.account)("b",o.community )("c",o.requested_community)("f",federation_obj));
+   }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
+
+
 void community_event_evaluator::do_apply( const community_event_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
@@ -974,13 +1444,13 @@ void community_event_evaluator::do_apply( const community_event_operation& o )
 
    const community_member_object& community_member = _db.get_community_member( o.community );
 
-   FC_ASSERT( community_member.is_administrator( o.account ),
+   FC_ASSERT( _db.is_federated_administrator( community_member, o.account ),
       "Only administrators of the community can create and update the event within it." );
    
    time_point now = _db.head_block_time();
 
-   const auto& event_idx = _db.get_index< community_event_index >().indices().get< by_community >();
-   auto event_itr = event_idx.find( o.community );
+   const auto& event_idx = _db.get_index< community_event_index >().indices().get< by_event_id >();
+   auto event_itr = event_idx.find( boost::make_tuple( o.community, o.event_id ) );
 
    if( event_itr == event_idx.end() )
    {
@@ -989,6 +1459,7 @@ void community_event_evaluator::do_apply( const community_event_operation& o )
          ceo.account = o.account;
          ceo.community = o.community;
          from_string( ceo.event_name, o.event_name );
+         from_string( ceo.event_id, o.event_id );
          from_string( ceo.location, o.location );
          ceo.latitude = o.latitude;
          ceo.longitude = o.longitude;
@@ -999,6 +1470,7 @@ void community_event_evaluator::do_apply( const community_event_operation& o )
          ceo.event_end_time = o.event_end_time;
          ceo.last_updated = now;
          ceo.created = now;
+         ceo.active = true;
       });
    }
    else
@@ -1017,6 +1489,7 @@ void community_event_evaluator::do_apply( const community_event_operation& o )
          ceo.event_start_time = o.event_start_time;
          ceo.event_end_time = o.event_end_time;
          ceo.last_updated = now;
+         ceo.active = o.active;
       });
    }
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
@@ -1038,7 +1511,7 @@ void community_event_attend_evaluator::do_apply( const community_event_attend_op
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   const community_event_object& event = _db.get_community_event( o.community );
+   const community_event_object& event = _db.get_community_event( o.community, o.event_id );
    const community_object& community = _db.get_community( o.community );
 
    FC_ASSERT( community.active, 
@@ -1046,8 +1519,9 @@ void community_event_attend_evaluator::do_apply( const community_event_attend_op
 
    const community_member_object& community_member = _db.get_community_member( o.community );
    
-   FC_ASSERT( community_member.is_authorized_interact( o.account ),
-      "Account: ${a} cannot interact with events within the community ${c}.",("a", o.account)("c", o.community) );
+   FC_ASSERT( _db.is_federated_authorized_interact( community_member, o.account ),
+      "Account: ${a} cannot interact with events within the community ${c}.",
+      ("a", o.account)("c", o.community));
    
    time_point now = _db.head_block_time();
 

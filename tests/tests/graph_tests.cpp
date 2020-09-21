@@ -254,7 +254,7 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Successful edge creation after connection" );
 
-      connection_request_operation request;
+      account_connection_request_operation request;
 
       request.signatory = "alice";
       request.account = "alice";
@@ -270,7 +270,7 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      connection_accept_operation accept;
+      account_connection_accept_operation accept;
 
       accept.signatory = "bob";
       accept.account = "bob";

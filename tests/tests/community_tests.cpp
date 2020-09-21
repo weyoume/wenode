@@ -51,21 +51,27 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       fund_stake( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "elon", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
+      generate_blocks( now() + fc::days(2), true );
+
       signed_transaction tx;
 
       community_create_operation create;
-
-      generate_blocks( now() + fc::days(2), true );
 
       create.signatory = "alice";
       create.founder = "alice";
       create.name = "aliceopencommunity";
       create.community_privacy = "open_public";
-      create.community_public_key = string( alice_public_posting_key );
-      create.json = "{ \"valid\": true }";
-      create.json_private = "{ \"valid\": true }";
+      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.display_name = "Alice Open Community";
       create.details = "details";
       create.url = "https://www.url.com";
+      create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.json = "{ \"valid\": true }";
+      create.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.tags.insert( "test" );
       create.validate();
 
       tx.operations.push_back( create );
@@ -87,8 +93,17 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.founder = "bob";
       create.name = "bobpubliccommunity";
       create.community_privacy = "exclusive_public";
-      create.community_public_key = string( bob_public_posting_key );
-      
+      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.display_name = "Bob Public Community";
+      create.details = "details";
+      create.url = "https://www.url.com";
+      create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.json = "{ \"valid\": true }";
+      create.json_private = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.tags.insert( "test" );
       create.validate();
 
       tx.operations.push_back( create );
@@ -109,8 +124,17 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.founder = "candice";
       create.name = "candiceprivatecommunity";
       create.community_privacy = "open_private";
-      create.community_public_key = string( candice_public_posting_key );
-      
+      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.display_name = "Candice Private Community";
+      create.details = "details";
+      create.url = "https://www.url.com";
+      create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.json = "{ \"valid\": true }";
+      create.json_private = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.tags.insert( "test" );
       create.validate();
 
       tx.operations.push_back( create );
@@ -131,7 +155,17 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.founder = "dan";
       create.name = "danexclusivecommunity";
       create.community_privacy = "exclusive_private";
-      create.community_public_key = string( dan_public_posting_key );
+      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.display_name = "Dan Exclusive Community";
+      create.details = "details";
+      create.url = "https://www.url.com";
+      create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.json = "{ \"valid\": true }";
+      create.json_private = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.tags.insert( "test" );
       
       create.validate();
 
@@ -158,7 +192,17 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.signatory = "alice";
       create.founder = "alice";
       create.name = "mysecondcommunity";
-      create.community_public_key = string( alice_public_posting_key );
+      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.display_name = "My Second Community";
+      create.details = "details";
+      create.url = "https://www.url.com";
+      create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.json = "{ \"valid\": true }";
+      create.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.tags.insert( "test" );
       create.validate();
 
       tx.operations.push_back( create );
@@ -189,7 +233,17 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.signatory = "elon";
       create.founder = "elon";
       create.name = "aliceopencommunity";
-      create.community_public_key = string( elon_public_posting_key );
+      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.display_name = "My Second Community";
+      create.details = "details";
+      create.url = "https://www.url.com";
+      create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.json = "{ \"valid\": true }";
+      create.json_private = get_encrypted_message( elon_private_secure_key, elon_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.tags.insert( "test" );
       create.validate();
 
       tx.operations.push_back( create );
@@ -239,11 +293,17 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       create.founder = "alice";
       create.name = "aliceopencommunity";
       create.community_privacy = "open_public";
-      create.community_public_key = string( alice_public_posting_key );
-      create.json = "{ \"valid\": true }";
-      create.json_private = "{ \"valid\": true }";
+      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.display_name = "Alice Open Community";
       create.details = "details";
       create.url = "https://www.url.com";
+      create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.json = "{ \"valid\": true }";
+      create.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.tags.insert( "test" );
       create.validate();
 
       tx.operations.push_back( create );
@@ -258,7 +318,17 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       create.founder = "bob";
       create.name = "bobpubliccommunity";
       create.community_privacy = "exclusive_public";
-      create.community_public_key = string( bob_public_posting_key );
+      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.display_name = "Bob Public Community";
+      create.details = "details";
+      create.url = "https://www.url.com";
+      create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.json = "{ \"valid\": true }";
+      create.json_private = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.tags.insert( "test" );
       create.validate();
 
       tx.operations.push_back( create );
@@ -272,7 +342,17 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       create.founder = "candice";
       create.name = "candiceprivatecommunity";
       create.community_privacy = "open_private";
-      create.community_public_key = string( candice_public_posting_key );
+      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.display_name = "Candice Private Community";
+      create.details = "details";
+      create.url = "https://www.url.com";
+      create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.json = "{ \"valid\": true }";
+      create.json_private = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.tags.insert( "test" );
       create.validate();
 
       tx.operations.push_back( create );
@@ -286,7 +366,17 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       create.founder = "dan";
       create.name = "danexclusivecommunity";
       create.community_privacy = "exclusive_private";
-      create.community_public_key = string( dan_public_posting_key );
+      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.display_name = "Dan Exclusive Community";
+      create.details = "details";
+      create.url = "https://www.url.com";
+      create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.json = "{ \"valid\": true }";
+      create.json_private = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.tags.insert( "test" );
       create.validate();
 
       tx.operations.push_back( create );
@@ -307,7 +397,7 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
       comment.url = "https://www.url.com";
       comment.community = "aliceopencommunity";
-      comment.public_key = "";
+      comment.public_key = string();
       comment.tags.push_back( tag_name_type( "test" ) );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
@@ -317,7 +407,6 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       comment.latitude = 37.8136;
       comment.longitude = 144.9631;
       comment.comment_price = asset( 0, SYMBOL_COIN );
-      comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;
@@ -337,7 +426,7 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
 
       comment.signatory = "bob";
       comment.author = "bob";
-      comment.public_key = "";
+      comment.public_key = string();
       comment.community = "bobpubliccommunity";
 
       tx.operations.push_back( comment );
@@ -349,9 +438,9 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
 
       comment.signatory = "candice";
       comment.author = "candice";
-      comment.public_key = string( candice_public_posting_key );
       comment.community = "candiceprivatecommunity";
-
+      comment.public_key = string( get_public_key( comment.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      
       options.reach = "community";
       comment.options = options;
 
@@ -364,9 +453,9 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
 
       comment.signatory = "dan";
       comment.author = "dan";
-      comment.public_key = string( dan_public_posting_key );
       comment.community = "danexclusivecommunity";
-
+      comment.public_key = string( get_public_key( comment.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      
       tx.operations.push_back( comment );
       tx.sign( dan_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -381,15 +470,19 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       update.signatory = "alice";
       update.account = "alice";
       update.community = "aliceopencommunity";
-      update.community_public_key = string( alice_public_posting_key );
-      update.json = "{ \"valid\": true }";
-      update.json_private = "{ \"valid\": true }";
+      update.community_member_key = string( get_public_key( update.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      update.community_moderator_key = string( get_public_key( update.community, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      update.community_admin_key = string( get_public_key( update.community, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      update.display_name = "Bob Public Community";
       update.details = "updated details";
       update.url = "https://www.newurl.com";
+      update.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      update.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      update.json = "{ \"valid\": true }";
+      update.json_private = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, public_key_type( update.community_member_key ), "#{ \"valid\": true }" );
+      update.tags.insert( "test" );
       update.pinned_author = "alice";
       update.pinned_permlink = "lorem";
-      update.reward_currency = SYMBOL_COIN;
-      update.active = true;
       update.validate();
 
       tx.operations.push_back( update );
@@ -568,11 +661,17 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       create.founder = "alice";
       create.name = "aliceopencommunity";
       create.community_privacy = "open_public";
-      create.community_public_key = string( alice_public_connection_key );
-      create.json = "{ \"valid\": true }";
-      create.json_private = "{ \"valid\": true }";
+      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.display_name = "Alice Open Community";
       create.details = "details";
       create.url = "https://www.url.com";
+      create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.json = "{ \"valid\": true }";
+      create.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.tags.insert( "test" );
       create.validate();
 
       tx.operations.push_back( create );
@@ -585,7 +684,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       BOOST_REQUIRE( alice_community.founder == create.founder );
       BOOST_REQUIRE( alice_community.community_privacy == community_privacy_type::OPEN_PUBLIC_COMMUNITY );
-      BOOST_REQUIRE( alice_community.community_public_key == public_key_type( create.community_public_key ) );
+      BOOST_REQUIRE( alice_community.community_member_key == public_key_type( create.community_member_key ) );
+      BOOST_REQUIRE( alice_community.community_moderator_key == public_key_type( create.community_moderator_key ) );
+      BOOST_REQUIRE( alice_community.community_admin_key == public_key_type( create.community_admin_key ) );
 
       BOOST_REQUIRE( alice_community_member.founder == create.founder );
       BOOST_REQUIRE( alice_community_member.is_administrator( create.founder ) );
@@ -600,7 +701,17 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       create.founder = "bob";
       create.name = "bobpubliccommunity";
       create.community_privacy = "exclusive_public";
-      create.community_public_key = string( bob_public_connection_key );
+      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.display_name = "Bob Public Community";
+      create.details = "details";
+      create.url = "https://www.url.com";
+      create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.json = "{ \"valid\": true }";
+      create.json_private = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.tags.insert( "test" );
       create.validate();
 
       tx.operations.push_back( create );
@@ -612,7 +723,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       BOOST_REQUIRE( bob_community.founder == create.founder );
       BOOST_REQUIRE( bob_community.community_privacy == community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY );
-      BOOST_REQUIRE( bob_community.community_public_key == public_key_type( create.community_public_key ) );
+      BOOST_REQUIRE( bob_community.community_member_key == public_key_type( create.community_member_key ) );
+      BOOST_REQUIRE( bob_community.community_moderator_key == public_key_type( create.community_moderator_key ) );
+      BOOST_REQUIRE( bob_community.community_admin_key == public_key_type( create.community_admin_key ) );
 
       BOOST_REQUIRE( bob_community_member.founder == create.founder );
       BOOST_REQUIRE( bob_community_member.is_administrator( create.founder ) );
@@ -627,7 +740,17 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       create.founder = "candice";
       create.name = "candiceprivatecommunity";
       create.community_privacy = "open_private";
-      create.community_public_key = string( candice_public_connection_key );
+      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.display_name = "Candice Private Community";
+      create.details = "details";
+      create.url = "https://www.url.com";
+      create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.json = "{ \"valid\": true }";
+      create.json_private = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.tags.insert( "test" );
       create.validate();
 
       tx.operations.push_back( create );
@@ -639,7 +762,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       BOOST_REQUIRE( candice_community.founder == create.founder );
       BOOST_REQUIRE( candice_community.community_privacy == community_privacy_type::OPEN_PRIVATE_COMMUNITY );
-      BOOST_REQUIRE( candice_community.community_public_key == public_key_type( create.community_public_key ) );
+      BOOST_REQUIRE( candice_community.community_member_key == public_key_type( create.community_member_key ) );
+      BOOST_REQUIRE( candice_community.community_moderator_key == public_key_type( create.community_moderator_key ) );
+      BOOST_REQUIRE( candice_community.community_admin_key == public_key_type( create.community_admin_key ) );
 
       BOOST_REQUIRE( candice_community_member.founder == create.founder );
       BOOST_REQUIRE( candice_community_member.is_administrator( create.founder ) );
@@ -654,7 +779,17 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       create.founder = "dan";
       create.name = "danexclusivecommunity";
       create.community_privacy = "exclusive_private";
-      create.community_public_key = string( dan_public_connection_key );
+      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.display_name = "Dan Exclusive Community";
+      create.details = "details";
+      create.url = "https://www.url.com";
+      create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      create.json = "{ \"valid\": true }";
+      create.json_private = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.tags.insert( "test" );
       create.validate();
 
       tx.operations.push_back( create );
@@ -669,7 +804,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       BOOST_REQUIRE( dan_community.founder == create.founder );
       BOOST_REQUIRE( dan_community.community_privacy == community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY );
-      BOOST_REQUIRE( dan_community.community_public_key == public_key_type( create.community_public_key ) );
+      BOOST_REQUIRE( dan_community.community_member_key == public_key_type( create.community_member_key ) );
+      BOOST_REQUIRE( dan_community.community_moderator_key == public_key_type( create.community_moderator_key ) );
+      BOOST_REQUIRE( dan_community.community_admin_key == public_key_type( create.community_admin_key ) );
 
       BOOST_REQUIRE( dan_community_member.founder == create.founder );
       BOOST_REQUIRE( dan_community_member.is_administrator( create.founder ) );
@@ -1436,7 +1573,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.latitude = 37.8136;
       comment.longitude = 144.9631;
       comment.comment_price = asset( 0, SYMBOL_COIN );
-      comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;
@@ -1474,7 +1610,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.signatory = "isabelle";
       comment.author = "isabelle";
       comment.community = "candiceprivatecommunity";
-      comment.public_key = string( candice_public_connection_key );
+      comment.public_key = string( get_public_key( comment.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
       options.reach = "community";
       comment.options = options;
 
@@ -1488,7 +1624,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.signatory = "jayme";
       comment.author = "jayme";
       comment.community = "danexclusivecommunity";
-      comment.public_key = string( dan_public_connection_key );
+      comment.public_key = string( get_public_key( comment.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
       options.reach = "community";
       comment.options = options;
 
@@ -1538,7 +1674,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.signatory = "candice";
       comment.author = "candice";
       comment.community = "candiceprivatecommunity";
-      comment.public_key = string( candice_public_connection_key );
+      comment.public_key = string( get_public_key( comment.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
       options.reach = "community";
       comment.options = options;
 
@@ -1557,7 +1693,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.signatory = "dan";
       comment.author = "dan";
       comment.community = "danexclusivecommunity";
-      comment.public_key = string( dan_public_connection_key );
+      comment.public_key = string( get_public_key( comment.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
       options.reach = "community";
       comment.options = options;
 
@@ -1577,7 +1713,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: comment vote handling before becoming members" );
 
-      vote_operation vote;
+      comment_vote_operation vote;
 
       vote.signatory = "george";
       vote.voter = "george";
@@ -1641,7 +1777,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: comment view handling before becoming members" );
 
-      view_operation view;
+      comment_view_operation view;
 
       view.signatory = "george";
       view.viewer = "george";
@@ -1712,7 +1848,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: comment share handling before becoming members" );
 
-      share_operation share;
+      comment_share_operation share;
 
       share.signatory = "george";
       share.sharer = "george";
@@ -1873,7 +2009,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.signatory = "isabelle";
       comment.author = "isabelle";
       comment.community = "candiceprivatecommunity";
-      comment.public_key = string( candice_public_connection_key );
+      comment.public_key = string( get_public_key( comment.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
       options.reach = "community";
       comment.options = options;
 
@@ -1892,7 +2028,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.signatory = "jayme";
       comment.author = "jayme";
       comment.community = "danexclusivecommunity";
-      comment.public_key = string( dan_public_connection_key );
+      comment.public_key = string( get_public_key( comment.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
       options.reach = "community";
       comment.options = options;
 
@@ -2139,7 +2275,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: moderator tag by community moderator" );
 
-      moderation_tag_operation tag;
+      comment_moderation_operation tag;
 
       tag.signatory = "elon";
       tag.moderator = "elon";
@@ -2157,7 +2293,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const auto& tag_idx = db.get_index< moderation_tag_index >().indices().get< by_comment_moderator >();
+      const auto& tag_idx = db.get_index< comment_moderation_index >().indices().get< by_comment_moderator >();
       auto tag_itr = tag_idx.find( std::make_tuple( george_comment2.id, tag.moderator ) );
 
       BOOST_REQUIRE( tag_itr != tag_idx.end() );
@@ -2278,11 +2414,17 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       update.signatory = "elon";
       update.account = "elon";
       update.community = "aliceopencommunity";
-      update.community_public_key = string( alice_public_posting_key );
-      update.json = "{ \"valid\": true }";
-      update.json_private = "{ \"valid\": true }";
+      update.community_member_key = string( get_public_key( update.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      update.community_moderator_key = string( get_public_key( update.community, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      update.community_admin_key = string( get_public_key( update.community, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      update.display_name = "Alice Public Community";
       update.details = "updated details";
       update.url = "https://www.newurl.com";
+      update.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      update.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      update.json = "{ \"valid\": true }";
+      update.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, public_key_type( update.community_member_key ), "#{ \"valid\": true }" );
+      update.tags.insert( "test" );
       update.pinned_author = "alice";
       update.pinned_permlink = "lorem";
       update.validate();
@@ -2303,7 +2445,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       update.pinned_author = "bob";
       update.community = "bobpubliccommunity";
-      update.community_public_key = string( bob_public_posting_key );
+      update.community_member_key = string( get_public_key( update.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      update.community_moderator_key = string( get_public_key( update.community, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      update.community_admin_key = string( get_public_key( update.community, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
       update.validate();
 
       tx.operations.push_back( update );
@@ -2322,7 +2466,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       update.pinned_author = "candice";
       update.community = "candiceprivatecommunity";
-      update.community_public_key = string( candice_public_posting_key );
+      update.community_member_key = string( get_public_key( update.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      update.community_moderator_key = string( get_public_key( update.community, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      update.community_admin_key = string( get_public_key( update.community, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
       update.validate();
 
       tx.operations.push_back( update );
@@ -2341,7 +2487,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       update.pinned_author = "dan";
       update.community = "danexclusivecommunity";
-      update.community_public_key = string( dan_public_posting_key );
+      update.community_member_key = string( get_public_key( update.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      update.community_moderator_key = string( get_public_key( update.community, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      update.community_admin_key = string( get_public_key( update.community, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
       update.validate();
 
       tx.operations.push_back( update );
@@ -2669,6 +2817,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       event.signatory = "alice";
       event.account = "alice";
       event.community = "aliceopencommunity";
+      event.event_id = "a14e898a-9d92-4461-8011-64a43521c051";
       event.event_name = "Alice's Party";
       event.location = "Alice's House";
       event.latitude = 37.8136;
@@ -2678,6 +2827,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       event.json = "{ \"valid\": true }";
       event.event_start_time = now() + fc::days(1);
       event.event_end_time = now() + fc::days(1) + fc::hours(8);
+      event.active = true;
       event.validate();
 
       tx.operations.push_back( event );
@@ -2687,10 +2837,11 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const community_event_object& alice_event = db.get_community_event( event.community );
+      const community_event_object& alice_event = db.get_community_event( event.community, event.event_id );
 
       BOOST_REQUIRE( event.account == alice_event.account );
       BOOST_REQUIRE( event.community == alice_event.community );
+      BOOST_REQUIRE( event.event_id == to_string( alice_event.event_id ) );
       BOOST_REQUIRE( event.event_name == to_string( alice_event.event_name ) );
       BOOST_REQUIRE( event.location == to_string( alice_event.location ) );
       BOOST_REQUIRE( event.latitude == alice_event.latitude );
@@ -2700,6 +2851,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       BOOST_REQUIRE( event.json == to_string( alice_event.json ) );
       BOOST_REQUIRE( event.event_start_time == alice_event.event_start_time );
       BOOST_REQUIRE( event.event_end_time == alice_event.event_end_time );
+      BOOST_REQUIRE( alice_event.active );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Create community event" );
 
@@ -2710,6 +2862,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       attend.signatory = "george";
       attend.account = "george";
       attend.community = "aliceopencommunity";
+      attend.event_id = "a14e898a-9d92-4461-8011-64a43521c051";
       attend.interested = true;
       attend.attending = true;
       attend.not_attending = false;
@@ -2722,9 +2875,11 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_REQUIRE( alice_event.is_interested( attend.account ) );
-      BOOST_REQUIRE( alice_event.is_attending( attend.account ) );
-      BOOST_REQUIRE( !alice_event.is_not_attending( attend.account ) );
+      const community_event_object& new_alice_event = db.get_community_event( attend.community, attend.event_id );
+
+      BOOST_REQUIRE( new_alice_event.is_interested( attend.account ) );
+      BOOST_REQUIRE( new_alice_event.is_attending( attend.account ) );
+      BOOST_REQUIRE( !new_alice_event.is_not_attending( attend.account ) );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Attend community event" );
 

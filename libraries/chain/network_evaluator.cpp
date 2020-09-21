@@ -37,7 +37,7 @@ namespace node { namespace chain {
  * network stakeholders. The top 50 members of each pool earn a proportional share of
  * the reward available each day.
  */
-void update_network_officer_evaluator::do_apply( const update_network_officer_operation& o )
+void network_officer_update_evaluator::do_apply( const network_officer_update_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -59,8 +59,8 @@ void update_network_officer_evaluator::do_apply( const update_network_officer_op
    FC_ASSERT( account.membership != membership_tier_type::NONE,
       "Account must be a member to create a network officer." );
 
+   const asset_currency_data_object& currency = _db.get_currency_data( o.reward_currency );
    const network_officer_object* net_off_ptr = _db.find_network_officer( o.account );
-
    network_officer_role_type role_type = network_officer_role_type::DEVELOPMENT;
 
    for( size_t i = 0; i < network_officer_role_values.size(); i++ )
@@ -89,6 +89,7 @@ void update_network_officer_evaluator::do_apply( const update_network_officer_op
          {
             from_string( noo.json, o.json );
          }
+         noo.reward_currency = currency.symbol;
          noo.active = o.active;
       });
    }
@@ -111,6 +112,7 @@ void update_network_officer_evaluator::do_apply( const update_network_officer_op
             from_string( noo.json, o.json );
          }
          noo.officer_approved = false;
+         noo.reward_currency = currency.symbol;
          noo.created = now;
          noo.active = true;
       });
@@ -143,6 +145,7 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
       "Account: ${s} must be active to vote as officer.",("s", o.network_officer) );
    const producer_schedule_object& pso = _db.get_producer_schedule();
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
+   time_point now = _db.head_block_time();
 
    if( o.approved )
    {
@@ -170,9 +173,11 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
             v.officer_type = officer.officer_type;
             v.account = voter.name;
             v.vote_rank = o.vote_rank;
+            v.last_updated = now;
+            v.created = now;
          });
          
-         _db.update_network_officer_votes( voter );
+         _db.network_officer_update_votes( voter );
       }
       else
       {
@@ -182,7 +187,7 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
             _db.remove( *account_officer_itr );
          }
 
-         _db.update_network_officer_votes( voter, o.network_officer, officer.officer_type, o.vote_rank );   // Remove existing officer vote, and add at new rank. 
+         _db.network_officer_update_votes( voter, o.network_officer, officer.officer_type, o.vote_rank );   // Remove existing officer vote, and add at new rank. 
       }
    }
    else  // Removing existing vote
@@ -197,10 +202,10 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
          ilog( "Removed: ${v}",("v",*account_type_rank_itr));
          _db.remove( *account_type_rank_itr );
       }
-      _db.update_network_officer_votes( voter );
+      _db.network_officer_update_votes( voter );
    }
 
-   _db.update_network_officer( officer, pso, props );
+   _db.network_officer_update( officer, pso, props );
 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
@@ -222,7 +227,7 @@ void network_officer_vote_evaluator::do_apply( const network_officer_vote_operat
  * 2 - They are approved by at least 20 producers, with at least 10% of total producer voting power.
  * 3 - The Current price of the credit asset is greater than $0.90 USD.
  */
-void update_executive_board_evaluator::do_apply( const update_executive_board_operation& o )
+void executive_board_update_evaluator::do_apply( const executive_board_update_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -485,6 +490,7 @@ void executive_board_vote_evaluator::do_apply( const executive_board_vote_operat
       "Account: ${s} must be active to receive executive board vote.",("s", o.executive_board ) );
    const producer_schedule_object& pso = _db.get_producer_schedule();
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
+   time_point now = _db.head_block_time();
 
    if( o.approved )
    {
@@ -513,6 +519,8 @@ void executive_board_vote_evaluator::do_apply( const executive_board_vote_operat
             v.executive_board = o.executive_board;
             v.account = voter.name;
             v.vote_rank = o.vote_rank;
+            v.last_updated = now;
+            v.created = now;
          });
 
          ilog( "Account: ${a} created new Executive Board Vote: ${e} Rank: ${r}",
@@ -554,7 +562,7 @@ void executive_board_vote_evaluator::do_apply( const executive_board_vote_operat
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void update_governance_evaluator::do_apply( const update_governance_operation& o )
+void governance_update_evaluator::do_apply( const governance_update_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -620,7 +628,7 @@ void update_governance_evaluator::do_apply( const update_governance_operation& o
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void subscribe_governance_evaluator::do_apply( const subscribe_governance_operation& o )
+void governance_subscribe_evaluator::do_apply( const governance_subscribe_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -644,7 +652,7 @@ void subscribe_governance_evaluator::do_apply( const subscribe_governance_operat
 
    if( itr == gov_idx.end() )    // Account is new subscriber
    { 
-      FC_ASSERT( o.subscribe, 
+      FC_ASSERT( o.approved, 
          "subscription doesn't exist, user must select to subscribe to the account." );
       FC_ASSERT( account.governance_subscriptions < MAX_GOV_ACCOUNTS, 
          "Account has too many governance subscriptions." );
@@ -663,7 +671,7 @@ void subscribe_governance_evaluator::do_apply( const subscribe_governance_operat
    } 
    else  // Account is already subscribed and is unsubscribing
    { 
-      FC_ASSERT( !o.subscribe,
+      FC_ASSERT( !o.approved,
          "Subscription currently exists, user must select to unsubscribe." );
        
       _db.modify( account, [&]( account_object& a ) 
@@ -675,12 +683,12 @@ void subscribe_governance_evaluator::do_apply( const subscribe_governance_operat
       _db.remove( *itr );
    }
 
-   _db.update_governance_account( gov_account, pso, props );
+   _db.governance_update_account( gov_account, pso, props );
 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void update_supernode_evaluator::do_apply( const update_supernode_operation& o )
+void supernode_update_evaluator::do_apply( const supernode_update_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -789,7 +797,7 @@ void update_supernode_evaluator::do_apply( const update_supernode_operation& o )
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void update_interface_evaluator::do_apply( const update_interface_operation& o )
+void interface_update_evaluator::do_apply( const interface_update_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -858,7 +866,7 @@ void update_interface_evaluator::do_apply( const update_interface_operation& o )
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void update_mediator_evaluator::do_apply( const update_mediator_operation& o )
+void mediator_update_evaluator::do_apply( const mediator_update_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -883,7 +891,7 @@ void update_mediator_evaluator::do_apply( const update_mediator_operation& o )
    
    const mediator_object* med_ptr = _db.find_mediator( o.account );
 
-   if( med_ptr != nullptr ) // updating existing mediator
+   if( med_ptr != nullptr )      // updating existing mediator
    {
       const mediator_object& mediator = *med_ptr;
       asset delta = o.mediator_bond - mediator.mediator_bond;
@@ -913,7 +921,7 @@ void update_mediator_evaluator::do_apply( const update_mediator_operation& o )
          m.active = o.active;
       });
    }
-   else  // create new mediator
+   else       // create new mediator
    {
       _db.adjust_liquid_balance( o.account, -o.mediator_bond );
       _db.adjust_pending_supply( o.mediator_bond );
@@ -942,203 +950,7 @@ void update_mediator_evaluator::do_apply( const update_mediator_operation& o )
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void create_community_enterprise_evaluator::do_apply( const create_community_enterprise_operation& o )
-{ try {
-   const account_name_type& signed_for = o.creator;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
-   time_point now = _db.head_block_time();
-   const reward_fund_object& reward_fund = _db.get_reward_fund( o.daily_budget.symbol );
-   const asset_currency_data_object& currency = _db.get_currency_data( o.daily_budget.symbol );
-
-   FC_ASSERT( currency.community_fund_reward_percent > 0,
-      "Daily Budget reward currency does not issue to Enterprise proposals." );
-
-   share_type daily_budget_total = ( currency.block_reward.amount * BLOCKS_PER_DAY * currency.community_fund_reward_percent) / PERCENT_100 ;
-   FC_ASSERT( o.daily_budget.amount < daily_budget_total,
-      "Daily Budget must specify a budget less than the total amount of funds available per day." );
-   
-   uint16_t milestone_sum = 0;
-   for( auto milestone : o.milestone_shares )
-   {
-      milestone_sum += milestone;
-   }
-
-   FC_ASSERT( milestone_sum == PERCENT_100, 
-      "Milestone Sum must equal 100 percent." );
-   
-   uint16_t beneficiary_sum = 0;
-   for( auto beneficiary : o.beneficiaries )
-   {
-      beneficiary_sum += beneficiary.second;
-   }
-
-   FC_ASSERT( beneficiary_sum == PERCENT_100, 
-      "Beneficiary Sum must equal 100 percent." );
-   FC_ASSERT( o.beneficiaries.size() >= 1 && o.beneficiaries.size() <= 100, 
-      "Funding Proposal must have between 1 and 100 beneficiaries." );
-   
-   const community_enterprise_object* ent_ptr = _db.find_community_enterprise( o.creator, o.enterprise_id );
-
-   if( ent_ptr != nullptr ) // Updating or removing existing proposal 
-   {
-      const community_enterprise_object& enterprise = *ent_ptr;
-      if( enterprise.approved_milestones == -1 )
-      {
-         FC_ASSERT( o.begin  > ( enterprise.created + fc::days(7) ), 
-            "Begin time must be at least 7 days after creation." );
-         
-         uint16_t milestone_sum = 0;
-         for( auto milestone : o.milestone_shares )
-         {
-            milestone_sum += milestone;
-         }
-         FC_ASSERT( milestone_sum == PERCENT_100, 
-            "Milestone Sum must equal 100 percent." );
-      }
-      
-      _db.modify( *ent_ptr, [&]( community_enterprise_object& ceo )
-      { 
-         if( o.url.size() )
-         {
-            from_string( ceo.url, o.url );
-         }
-         if( o.details.size() )
-         {
-            from_string( ceo.details, o.details );
-         }
-         if( o.json.size() )
-         {
-            from_string( ceo.json, o.json );
-         }
-         ceo.active = o.active;
-         if( ceo.approved_milestones == -1 )     // Proposal not yet accepted, able to modify. 
-         {
-            ceo.beneficiaries = o.beneficiaries;
-            ceo.begin = o.begin;
-            ceo.duration = o.duration;
-            ceo.end = o.begin + fc::days( o.duration );
-            ceo.milestone_shares.reserve( o.milestone_shares.size() );
-
-            for( auto& mile : o.milestone_shares )
-            {
-               ceo.milestone_shares.push_back( mile );
-            }
-         }
-      });
-
-      ilog( "Account: ${a} edited community enterprise id: ${id}",
-         ("a",o.creator)("id",o.enterprise_id));
-   }
-   else        // Create new community enterprise proposal
-   {
-      FC_ASSERT( o.begin  > ( now + fc::days(7) ), 
-         "Begin time must be at least 7 days in the future." );
-      FC_ASSERT( o.fee.amount >= 10 * BLOCKCHAIN_PRECISION, 
-         "Proposal Requires a fee of 10 currency assets." );
-      asset liquid = _db.get_liquid_balance( o.creator, o.daily_budget.symbol );
-      FC_ASSERT( liquid >= o.fee,
-         "Creator has insufficient balance to pay community enterprise proposal fee." );
-
-      _db.adjust_liquid_balance( o.creator, -o.fee );
-      _db.modify( reward_fund, [&]( reward_fund_object& rfo )
-      { 
-         rfo.adjust_community_fund_balance( o.fee );
-      });
-      _db.adjust_pending_supply( o.fee );
-
-      _db.create< community_enterprise_object >( [&]( community_enterprise_object& ceo )
-      {
-         ceo.creator = o.creator;
-         from_string( ceo.enterprise_id, o.enterprise_id );
-         ceo.beneficiaries = o.beneficiaries;
-         ceo.begin = o.begin;
-         ceo.end = o.begin + fc::days( o.duration );
-         ceo.expiration = ceo.end + fc::days(365);
-         ceo.duration = o.duration;
-         ceo.approved_milestones = -1;
-         ceo.claimed_milestones = 0;
-         ceo.daily_budget = o.daily_budget;
-         ceo.pending_budget = asset( 0, o.daily_budget.symbol );
-         ceo.total_distributed = asset( 0, o.daily_budget.symbol );
-
-         ceo.milestone_shares.reserve( o.milestone_shares.size() );
-         for( auto m : o.milestone_shares )
-         {
-            ceo.milestone_shares.push_back( m );
-         }
-         if( o.url.size() )
-         {
-            from_string( ceo.url, o.url );
-         }
-         if( o.details.size() )
-         {
-            from_string( ceo.details, o.details );
-         }
-         if( o.json.size() )
-         {
-            from_string( ceo.json, o.json );
-         }
-         ceo.active = true;
-         ceo.created = now;
-      });
-
-      ilog( "Account: ${a} created community enterprise id: ${id}",
-         ("a",o.creator)("id",o.enterprise_id));
-   }
-} FC_CAPTURE_AND_RETHROW( ( o ) ) }
-
-
-void claim_enterprise_milestone_evaluator::do_apply( const claim_enterprise_milestone_operation& o )
-{ try {
-   const account_name_type& signed_for = o.creator;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   
-   const community_enterprise_object& enterprise = _db.get_community_enterprise( o.creator, o.enterprise_id );
-   FC_ASSERT( o.milestone > enterprise.approved_milestones,
-      "Claimed milestone has already been approved." );
-   FC_ASSERT( o.milestone != enterprise.claimed_milestones,
-      "This operaiton would not change the claimed milestone." );
-
-   const dynamic_global_property_object props = _db.get_dynamic_global_properties();
-   const producer_schedule_object& producer_schedule = _db.get_producer_schedule();
-
-   _db.modify( enterprise, [&]( community_enterprise_object& ceo )
-   { 
-      ceo.claimed_milestones = o.milestone;
-   });
-
-   _db.update_enterprise( enterprise, producer_schedule, props );
-
-   ilog("Account: ${a} Claimed milestone: ${m} on enterprise id: ${id}",
-      ("a",o.creator)("m",enterprise.claimed_milestones)("id",enterprise.enterprise_id));
-   
-} FC_CAPTURE_AND_RETHROW( ( o ) ) }
-
-
-void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_milestone_operation& o )
+void enterprise_update_evaluator::do_apply( const enterprise_update_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -1154,48 +966,133 @@ void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
 
-   const account_object& account = _db.get_account( o.account );
-   const community_enterprise_object& enterprise = _db.get_community_enterprise( o.creator, o.enterprise_id );
+   time_point now = _db.head_block_time();
+   const asset_currency_data_object& currency = _db.get_currency_data( o.budget.symbol );
 
-   FC_ASSERT( o.milestone <= enterprise.claimed_milestones,
-      "Cannot approve milestone that has not yet been claimed by the enterprise creator." );
+   FC_ASSERT( currency.enterprise_fund_reward_percent > 0,
+      "Daily Budget reward currency does not issue to Enterprise proposals." );
+   const auto& enterprise_idx = _db.get_index< enterprise_index >().indices().get< by_enterprise_id >();
+   auto enterprise_itr = enterprise_idx.find( boost::make_tuple( o.account, o.enterprise_id ) );
+
+   if( enterprise_itr != enterprise_idx.end() )               // Updating or removing existing proposal 
+   {
+      const enterprise_object& enterprise = *enterprise_itr;
+      
+      _db.modify( enterprise, [&]( enterprise_object& eo )
+      {
+         if( o.details.size() )
+         {
+            from_string( eo.details, o.details );
+         }
+         if( o.url.size() )
+         {
+            from_string( eo.url, o.url );
+         }
+         if( o.json.size() )
+         {
+            from_string( eo.json, o.json );
+         }
+         eo.active = o.active;
+         eo.last_updated = now;
+      });
+
+      ilog( "Account: ${a} edited community enterprise id: ${id}",
+         ("a",o.account)("id",o.enterprise_id));
+   }
+   else        // Create new community enterprise proposal
+   {
+      _db.create< enterprise_object >( [&]( enterprise_object& eo )
+      {
+         eo.account = o.account;
+         from_string( eo.enterprise_id, o.enterprise_id );
+
+         if( o.details.size() )
+         {
+            from_string( eo.details, o.details );
+         }
+         if( o.url.size() )
+         {
+            from_string( eo.url, o.url );
+         }
+         if( o.json.size() )
+         {
+            from_string( eo.json, o.json );
+         }
+
+         eo.budget = o.budget;
+         eo.distributed = asset( 0, o.budget.symbol );
+         eo.total_funding = asset( 0, o.budget.symbol );
+         eo.active = true;
+         eo.approved = false;
+         eo.last_updated = now;
+         eo.created = now;
+      });
+
+      ilog( "Account: ${a} created community enterprise id: ${id}",
+         ("a",o.account)("id",o.enterprise_id));
+   }
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
+void enterprise_vote_evaluator::do_apply( const enterprise_vote_operation& o )
+{ try {
+   const account_name_type& signed_for = o.voter;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+
+   const account_object& voter = _db.get_account( o.voter );
+   const account_object& account = _db.get_account( o.account );
+   const enterprise_object& enterprise = _db.get_enterprise( o.account, o.enterprise_id );
+   time_point now = _db.head_block_time();
 
    if( o.approved )
    {
-      FC_ASSERT( account.can_vote, 
-         "Account has declined its voting rights." );
-      FC_ASSERT( enterprise.active, 
-         "Executive board is inactive, and not accepting approval votes at this time." );
+      FC_ASSERT( account.active, 
+         "Account: ${a} must be active to broadcast transaction.",
+         ("a", o.account));
+      FC_ASSERT( voter.can_vote,
+         "Account: ${a} has declined its voting rights.",
+         ("a",o.voter));
+      FC_ASSERT( enterprise.active,
+         "Enterprise Proposal is inactive, and not accepting approval votes at this time." );
    }
       
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    const producer_schedule_object& producer_schedule = _db.get_producer_schedule();
-   const auto& account_rank_idx = _db.get_index< enterprise_approval_index >().indices().get< by_account_rank >();
-   const auto& account_enterprise_idx = _db.get_index< enterprise_approval_index >().indices().get< by_account_enterprise >();
-   auto account_rank_itr = account_rank_idx.find( boost::make_tuple( o.account, o.vote_rank ) );
-   auto account_enterprise_itr = account_enterprise_idx.find( boost::make_tuple( o.account, enterprise.creator, o.enterprise_id ) );
+   const auto& account_rank_idx = _db.get_index< enterprise_vote_index >().indices().get< by_account_rank >();
+   const auto& account_enterprise_idx = _db.get_index< enterprise_vote_index >().indices().get< by_account_enterprise >();
+   auto account_rank_itr = account_rank_idx.find( boost::make_tuple( o.voter, o.vote_rank ) );
+   auto account_enterprise_itr = account_enterprise_idx.find( boost::make_tuple( o.voter, enterprise.account, o.enterprise_id ) );
 
    if( o.approved )      // Adding or modifying vote
    {
       if( account_enterprise_itr == account_enterprise_idx.end() && 
          account_rank_itr == account_rank_idx.end() )
       {
-         FC_ASSERT( account.enterprise_approval_count < MAX_ACCOUNT_VOTES,
-            "Account has voted for too many Enterprise proposals." );
-
-         const enterprise_approval_object& app = _db.create< enterprise_approval_object >( [&]( enterprise_approval_object& v )
+         const enterprise_vote_object& vote = _db.create< enterprise_vote_object >( [&]( enterprise_vote_object& v )
          {
+            v.voter = o.voter;
             v.account = o.account;
-            v.creator = o.creator;
             from_string( v.enterprise_id, o.enterprise_id );
             v.vote_rank = o.vote_rank;
-            v.milestone = o.milestone;
+            v.last_updated = now;
+            v.created = now;
          });
          
-         _db.update_enterprise_approvals( account );
+         _db.update_enterprise_votes( voter );
 
-         ilog( "Account: ${a} created new Enterprise Approval: ${i}",
-            ("a",o.account)("i",app.enterprise_id));
+         ilog( "Account: ${v} created new Enterprise Vote: \n ${ev} \n",
+            ("v",o.voter)("ev",vote));
       }
       else
       {
@@ -1205,10 +1102,10 @@ void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_
             _db.remove( *account_enterprise_itr );
          }
 
-         _db.update_enterprise_approvals( account, o.creator, o.enterprise_id, o.vote_rank, o.milestone );
+         _db.update_enterprise_votes( voter, o.account, o.enterprise_id, o.vote_rank );
 
-         ilog( "Account: ${a} edited enterprise proposal: creator: ${c} id: ${id} vote rank: ${r} milestone: ${m}",
-            ("a",o.account)("c",o.creator)("id",o.enterprise_id)("r",o.vote_rank)("m",o.milestone));
+         ilog( "Account: ${v} edited enterprise proposal: Account: ${a} ID: ${id} Vote rank: ${r}",
+            ("v",o.voter)("a",o.account)("id",o.enterprise_id)("r",o.vote_rank));
       }
    }
    else       // Removing existing vote
@@ -1223,10 +1120,86 @@ void approve_enterprise_milestone_evaluator::do_apply( const approve_enterprise_
          ilog( "Removed: ${v}",("v",*account_rank_itr));
          _db.remove( *account_rank_itr );
       }
-      _db.update_enterprise_approvals( account );
-      ilog( "Account: ${a} removed enterprise proposal - creator: ${c} id: ${id} vote rank: ${r} milestone: ${m}",
-            ("a",o.account)("c",o.creator)("id",o.enterprise_id)("r",o.vote_rank)("m",o.milestone));
+      _db.update_enterprise_votes( voter );
+      ilog( "Account: ${v} removed enterprise proposal: Account: ${a} ID: ${id} Vote rank: ${r}",
+         ("v",o.voter)("a",o.account)("id",o.enterprise_id)("r",o.vote_rank));
    }
+
+   _db.update_enterprise( enterprise, producer_schedule, props );
+
+} FC_CAPTURE_AND_RETHROW( ( o ) ) }
+
+
+void enterprise_fund_evaluator::do_apply( const enterprise_fund_operation& o )
+{ try {
+   const account_name_type& signed_for = o.funder;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+   
+   const enterprise_object& enterprise = _db.get_enterprise( o.account, o.enterprise_id );
+   const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
+   const producer_schedule_object& producer_schedule = _db.get_producer_schedule();
+   asset liquid = _db.get_liquid_balance( o.funder, o.amount.symbol );
+   time_point now = _db.head_block_time();
+
+   FC_ASSERT( enterprise.budget.symbol == o.amount.symbol,
+      "Funding asset: ${a} must be the same as the budget asset of the Enterprise it is contributing to: ${b}.",
+      ("a",o.amount.symbol)("b",enterprise.budget.symbol) );
+
+   const auto& enterprise_fund_idx = _db.get_index< enterprise_fund_index >().indices().get< by_account_enterprise >();
+   auto enterprise_fund_itr = enterprise_fund_idx.find( boost::make_tuple( o.funder, o.account, o.enterprise_id ) );
+
+   FC_ASSERT( liquid >= o.amount,
+      "Funder Account: ${f} has insufficient liquid balance to contribute amount: ${a}.",
+      ("f",o.funder)("a",o.amount));
+   
+   _db.adjust_liquid_balance( o.funder, -o.amount );
+   _db.adjust_liquid_balance( enterprise.account, o.amount );
+
+   if( enterprise_fund_itr == enterprise_fund_idx.end() )
+   {
+      const enterprise_fund_object& fund = _db.create< enterprise_fund_object >( [&]( enterprise_fund_object& efo )
+      {
+         efo.funder = o.funder;
+         efo.account = o.account;
+         from_string( efo.enterprise_id, o.enterprise_id );
+         efo.amount = o.amount;
+         efo.last_updated = now;
+         efo.created = now;
+      });
+      
+      ilog( "Account: ${a} created new Enterprise Fund for Proposal: ${f}",
+         ("a",o.funder)("f",fund));
+   }
+   else
+   {
+      const enterprise_fund_object& fund = *enterprise_fund_itr;
+
+      _db.modify( fund, [&]( enterprise_fund_object& efo )
+      {
+         efo.amount += o.amount;
+         efo.last_updated = now;
+      });
+      
+      ilog( "Account: ${f} edited Enterprise Fund: Account: ${a} ID: ${id} Amount: ${am}",
+         ("f",o.funder)("a",o.account)("id",o.enterprise_id)("am",o.amount));
+   }
+
+   _db.modify( enterprise, [&]( enterprise_object& e )
+      {
+         e.distributed += o.amount;
+         e.last_updated = now;
+      });
 
    _db.update_enterprise( enterprise, producer_schedule, props );
 

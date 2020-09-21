@@ -231,11 +231,11 @@ namespace node { namespace app {
 
    struct connection_state
    {
-      map< account_name_type, connection_api_obj >                         connections;
-      map< account_name_type, connection_api_obj >                         friends;
-      map< account_name_type, connection_api_obj >                         companions;
-      map< account_name_type, connection_request_api_obj >                 incoming_requests;
-      map< account_name_type, connection_request_api_obj >                 outgoing_requests;
+      map< account_name_type, account_connection_api_obj >                         connections;
+      map< account_name_type, account_connection_api_obj >                         friends;
+      map< account_name_type, account_connection_api_obj >                         companions;
+      map< account_name_type, account_connection_request_api_obj >                 incoming_requests;
+      map< account_name_type, account_connection_request_api_obj >                 outgoing_requests;
       map< account_name_type, account_verification_api_obj >               incoming_verifications;
       map< account_name_type, account_verification_api_obj >               outgoing_verifications;
    };
@@ -265,21 +265,21 @@ namespace node { namespace app {
       interface_api_obj                                                    interface;
       supernode_api_obj                                                    supernode;
       governance_account_api_obj                                           governance_account;
-      vector< community_enterprise_api_obj >                               enterprise_proposals;
+      vector< enterprise_api_obj >                               enterprise_proposals;
       vector< block_validation_api_obj >                                   block_validations;
 
       map< account_name_type, producer_vote_api_obj >                      incoming_producer_votes;
       map< account_name_type, network_officer_vote_api_obj >               incoming_network_officer_votes;
       map< account_name_type, executive_board_vote_api_obj >               incoming_executive_board_votes;
       map< account_name_type, governance_subscription_api_obj >            incoming_governance_subscriptions;
-      map< account_name_type, map< string, enterprise_approval_api_obj > > incoming_enterprise_approvals;
+      map< account_name_type, map< string, enterprise_vote_api_obj > > incoming_enterprise_votes;
       map< account_name_type, commit_violation_api_obj >                   incoming_commit_violations;
 
       map< account_name_type, producer_vote_api_obj >                      outgoing_producer_votes;
       map< account_name_type, network_officer_vote_api_obj >               outgoing_network_officer_votes;
       map< account_name_type, executive_board_vote_api_obj >               outgoing_executive_board_votes;
       map< account_name_type, governance_subscription_api_obj >            outgoing_governance_subscriptions;
-      map< account_name_type, map< string, enterprise_approval_api_obj > > outgoing_enterprise_approvals;
+      map< account_name_type, map< string, enterprise_vote_api_obj > > outgoing_enterprise_votes;
       map< account_name_type, commit_violation_api_obj >                   outgoing_commit_violations;
    };
 
@@ -422,12 +422,16 @@ namespace node { namespace app {
       extended_community( const community_object& b ):community_api_obj( b ){}
       extended_community(){}
 
-      community_event_api_obj                                 event;                       // Event Details for the community.
       vector< account_name_type >                             subscribers;                 // List of accounts that subscribe to the posts made in the community.
       vector< account_name_type >                             members;                     // List of accounts that are permitted to post in the community. Can invite and accept on public communities
       vector< account_name_type >                             moderators;                  // Accounts able to filter posts. Can invite and accept on private communities.
       vector< account_name_type >                             administrators;              // Accounts able to add and remove moderators and update community details. Can invite and accept on Exclusive communities. 
       vector< account_name_type >                             blacklist;                   // Accounts that are not able to post in this community, or request to join.
+      vector< community_name_type >                           public_federations;          ///< Communities that have a Public Federation with this community.
+      vector< community_name_type >                           member_federations;          ///< Communities that have a Member Federation with this community.
+      vector< community_name_type >                           moderator_federations;       ///< Communities that have a Moderator Federation with this community.
+      vector< community_name_type >                           admin_federations;           ///< Communities that have a Admin Federation with this community.
+      vector< community_event_api_obj >                       events;                      // Events for the community.
       map< account_name_type, int64_t >                       mod_weight;                  // Map of all moderator voting weights for distributing rewards. 
       int64_t                                                 total_mod_weight;            // Total of all moderator weights.
       map< account_name_type, community_request_api_obj >     requests;                    // Requests to join the community.
@@ -521,7 +525,7 @@ namespace node { namespace app {
    {
       vector< account_api_obj >               accounts;
       vector< community_api_obj >             communities;
-      vector< tag_following_api_obj >         tags;
+      vector< account_tag_following_api_obj >         tags;
       vector< asset_api_obj >                 assets;
       vector< discussion >                    posts;
    };
@@ -533,7 +537,7 @@ namespace node { namespace app {
       app::tag_index                          tag_idx;
       map< string, extended_account >         accounts;
       map< string, extended_community >       communities;
-      map< string, tag_following_api_obj >    tags;
+      map< string, account_tag_following_api_obj >    tags;
       map< string, discussion_index >         discussion_idx;
       map< string, tag_api_obj >              tag_stats;
       map< string, discussion >               content;
@@ -772,13 +776,13 @@ FC_REFLECT( node::app::account_network_state,
          (incoming_network_officer_votes)
          (incoming_executive_board_votes)
          (incoming_governance_subscriptions)
-         (incoming_enterprise_approvals)
+         (incoming_enterprise_votes)
          (incoming_commit_violations)
          (outgoing_producer_votes)
          (outgoing_network_officer_votes)
          (outgoing_executive_board_votes)
          (outgoing_governance_subscriptions)
-         (outgoing_enterprise_approvals)
+         (outgoing_enterprise_votes)
          (outgoing_commit_violations)
          );
 
@@ -818,12 +822,16 @@ FC_REFLECT_DERIVED( node::app::extended_account, ( node::app::account_api_obj ),
          );
 
 FC_REFLECT_DERIVED( node::app::extended_community, ( node::app::community_api_obj ),
-         (event)
          (subscribers)
          (members)
          (moderators)
          (administrators)
          (blacklist)
+         (public_federations)
+         (member_federations)
+         (moderator_federations)
+         (admin_federations)
+         (events)
          (mod_weight)
          (total_mod_weight)
          (requests)

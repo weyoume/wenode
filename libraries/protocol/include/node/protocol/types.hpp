@@ -121,13 +121,32 @@ namespace node {
       };
 
       /**
+       * Privacy levels of community, determines the connectivity of the communities membership, and whether the connection permissions are transitive.
+       */
+      enum class community_federation_type : int
+      {
+         PUBLIC_FEDERATION,          ///< Posts decryption keys shared. No permissions are shared.
+         MEMBER_FEDERATION,          ///< Posts decryption keys shared. All Member permissions are shared.
+         MODERATOR_FEDERATION,       ///< Posts decryption keys shared. All Member and Moderator permissions are shared.
+         ADMIN_FEDERATION            ///< Posts decryption keys shared. All Member, Moderator, and Admin permissions are shared.
+      };
+
+      const static vector< string > community_federation_values = 
+      {
+         "public",
+         "member",
+         "moderator",
+         "admin"
+      };
+
+      /**
        * Business account types, used for determining access controls for signatories of business account transactions and equity assets.
        */
       enum class business_structure_type : int
       {
-         OPEN_BUSINESS,     ///< All equity holders can become members and vote for officers and executives, all officers can sign transactions.
-         PUBLIC_BUSINESS,   ///< Executives select officers, officers can invite and accept members. All Equity holders can request membership. Members vote for executives.
-         PRIVATE_BUSINESS   ///< CEO selects Executives, Executives can sign transactions, and invite members. Only members may hold equity assets.
+         OPEN_BUSINESS,        ///< All equity holders can become members and vote for officers and executives, all officers can sign transactions.
+         PUBLIC_BUSINESS,      ///< Executives select officers, officers can invite and accept members. All Equity holders can request membership. Members vote for executives.
+         PRIVATE_BUSINESS      ///< CEO selects Executives, Executives can sign transactions, and invite members. Only members may hold equity assets.
       };
 
       const static vector< string > business_structure_values = 
@@ -545,23 +564,21 @@ namespace node {
       enum class community_permission_flags : int
       {
          member_whitelist            = 1,        ///< Accounts must be whitelisted by the founder to request membership or be invited.
-         require_profile             = 2,        ///< Accounts must have a valid profile data to request membership or be invited. 
-         require_verified            = 4,        ///< Accounts must have a valid verification from an existing member to request membership or be invited.
-         disable_messages            = 8,        ///< Accounts cannot send community messages.
-         disable_text_posts          = 16,       ///< Community does not allow text type posts.
-         disable_image_posts         = 32,       ///< Community does not allow image type posts.
-         disable_gif_posts           = 64,       ///< Community does not allow image type posts.
-         disable_video_posts         = 128,      ///< Community does not allow video type posts.
-         disable_link_posts          = 256,      ///< Community does not allow link type posts.
-         disable_article_posts       = 512,      ///< Community does not allow article type posts.
-         disable_audio_posts         = 1024,     ///< Community does not allow audio type posts.
-         disable_file_posts          = 2048,     ///< Community does not allow file type posts.
-         disable_livestream_posts    = 4096      ///< Community does not allow livestream type posts.
+         require_verified            = 2,        ///< Accounts must have a valid verification from an existing member to request membership or be invited.
+         disable_messages            = 4,        ///< Accounts cannot send community messages.
+         disable_text_posts          = 8,        ///< Community does not allow text type posts.  
+         disable_image_posts         = 16,       ///< Community does not allow image type posts.
+         disable_gif_posts           = 32,       ///< Community does not allow gif type posts.
+         disable_video_posts         = 64,       ///< Community does not allow video type posts.
+         disable_link_posts          = 128,      ///< Community does not allow link type posts.
+         disable_article_posts       = 256,      ///< Community does not allow article type posts.
+         disable_audio_posts         = 512,      ///< Community does not allow audio type posts.
+         disable_file_posts          = 1024,     ///< Community does not allow file type posts.
+         disable_livestream_posts    = 2048      ///< Community does not allow livestream type posts.
       };
 
       const static uint32_t COMMUNITY_PERMISSION_MASK =
          int( community_permission_flags::member_whitelist )
-         | int( community_permission_flags::require_profile )
          | int( community_permission_flags::require_verified )
          | int( community_permission_flags::disable_messages )
          | int( community_permission_flags::disable_text_posts )
@@ -742,6 +759,13 @@ FC_REFLECT_ENUM( node::protocol::community_privacy_type,
          (CLOSED_PRIVATE_COMMUNITY)
          );
 
+FC_REFLECT_ENUM( node::protocol::community_federation_type,
+         (PUBLIC_FEDERATION)
+         (MEMBER_FEDERATION)
+         (MODERATOR_FEDERATION)
+         (ADMIN_FEDERATION)
+         );
+
 FC_REFLECT_ENUM( node::protocol::business_structure_type,
          (OPEN_BUSINESS)
          (PUBLIC_BUSINESS)
@@ -915,7 +939,6 @@ FC_REFLECT_ENUM( node::protocol::asset_issuer_permission_flags,
 
 FC_REFLECT_ENUM( node::protocol::community_permission_flags,
          (member_whitelist)
-         (require_profile)
          (require_verified)
          (disable_messages)
          (disable_text_posts)

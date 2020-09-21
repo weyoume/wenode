@@ -69,7 +69,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       comment.latitude = 37.8136;
       comment.longitude = 144.9631;
       comment.comment_price = asset( 0, SYMBOL_COIN );
-      comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;
@@ -134,7 +133,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( to_string( alice_comment.parent_permlink ) == comment.parent_permlink );
       BOOST_REQUIRE( to_string( alice_comment.json ) == comment.json );
       BOOST_REQUIRE( alice_comment.comment_price == comment.comment_price );
-      BOOST_REQUIRE( alice_comment.reply_price == comment.reply_price );
       BOOST_REQUIRE( alice_comment.premium_price == comment.premium_price );
 
       BOOST_REQUIRE( alice_comment.depth == 0 );
@@ -225,7 +223,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( to_string( bob_comment.parent_permlink ) == comment.parent_permlink );
       BOOST_REQUIRE( to_string( bob_comment.json ) == comment.json );
       BOOST_REQUIRE( bob_comment.comment_price == comment.comment_price );
-      BOOST_REQUIRE( bob_comment.reply_price == comment.reply_price );
       BOOST_REQUIRE( bob_comment.premium_price == comment.premium_price );
 
       BOOST_REQUIRE( bob_comment.depth == 1 );
@@ -296,7 +293,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( to_string( candice_comment.parent_permlink ) == comment.parent_permlink );
       BOOST_REQUIRE( to_string( candice_comment.json ) == comment.json );
       BOOST_REQUIRE( candice_comment.comment_price == comment.comment_price );
-      BOOST_REQUIRE( candice_comment.reply_price == comment.reply_price );
       BOOST_REQUIRE( candice_comment.premium_price == comment.premium_price );
 
       BOOST_REQUIRE( candice_comment.depth == 2 );
@@ -449,7 +445,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: setting when comment has been voted on" );
 
-      vote_operation vote;
+      comment_vote_operation vote;
 
       vote.signatory = "alice";
       vote.voter = "alice";
@@ -841,128 +837,8 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 }
 
 
-BOOST_AUTO_TEST_CASE( message_operation_test )
-{ 
-   try 
-   {
-      BOOST_TEST_MESSAGE( "├── Passed: MESSAGE OPERATION" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when no connection" );
-
-      ACTORS( (alice)(bob)(candice)(dan) );
-
-      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
-      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
-      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
-      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-
-      generate_blocks( TOTAL_PRODUCERS );
-
-      string alice_private_connection_wif = graphene::utilities::key_to_wif( alice_private_connection_key );
-      string bob_private_connection_wif = graphene::utilities::key_to_wif( bob_private_connection_key );
-
-      signed_transaction tx;
-
-      message_operation message;
-
-      message.signatory = "alice";
-      message.sender = "alice";
-      message.recipient = "bob";
-      message.message = "Hello";
-      message.uuid = "6a91e502-1e53-4531-a97a-379ac8a495ff";
-      message.validate();
-
-      tx.operations.push_back( message );
-      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_posting_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when no connection" );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: message success with connection" );
-
-      connection_request_operation request;
-
-      request.signatory = "alice";
-      request.account = "alice";
-      request.requested_account = "bob";
-      request.connection_type = "connection";
-      request.message = "Hello";
-      request.requested = true;
-      request.validate();
-
-      tx.operations.push_back( request );
-      tx.sign( alice_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      connection_accept_operation accept;
-
-      accept.signatory = "bob";
-      accept.account = "bob";
-      accept.requesting_account = "alice";
-      accept.connection_type = "connection";
-      accept.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
-      accept.encrypted_key = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, alice_public_secure_key, bob_private_connection_wif );
-      accept.connected = true;
-      accept.validate();
-
-      tx.operations.push_back( accept );
-      tx.sign( bob_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      accept.signatory = "alice";
-      accept.account = "alice";
-      accept.requesting_account = "bob";
-      accept.connection_type = "connection";
-      accept.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
-      accept.encrypted_key = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, bob_public_secure_key, alice_private_connection_wif );
-      accept.connected = true;
-      accept.validate();
-
-      tx.operations.push_back( accept );
-      tx.sign( alice_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      tx.operations.push_back( message );
-      tx.sign( alice_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 ); 
-
-      const auto& message_idx = db.get_index< message_index >().indices().get< by_sender_uuid >();
-      auto message_itr = message_idx.find( std::make_tuple( account_name_type( "alice" ), string( "6a91e502-1e53-4531-a97a-379ac8a495ff" ) ) );
-
-      BOOST_REQUIRE( message_itr != message_idx.end() );
-      BOOST_REQUIRE( to_string( message_itr->message ) == message.message );
-
-      validate_database();
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: message success with connection" );
-
-      BOOST_TEST_MESSAGE( "├── Passed: MESSAGE OPERATION" );
-   }
-   FC_LOG_AND_RETHROW()
-}
-
-
-BOOST_AUTO_TEST_CASE( vote_operation_test )
+BOOST_AUTO_TEST_CASE( comment_vote_operation_test )
 { 
    try 
    {
@@ -1012,7 +888,6 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
       comment.latitude = 37.8136;
       comment.longitude = 144.9631;
       comment.comment_price = asset( 0, SYMBOL_COIN );
-      comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;
@@ -1031,7 +906,7 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      vote_operation vote;
+      comment_vote_operation vote;
 
       vote.signatory = "bob";
       vote.voter = "bob";
@@ -1170,7 +1045,7 @@ BOOST_AUTO_TEST_CASE( vote_operation_test )
 }
 
 
-BOOST_AUTO_TEST_CASE( view_operation_test )
+BOOST_AUTO_TEST_CASE( comment_view_operation_test )
 { 
    try 
    {
@@ -1220,7 +1095,6 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
       comment.latitude = 37.8136;
       comment.longitude = 144.9631;
       comment.comment_price = asset( 0, SYMBOL_COIN );
-      comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;
@@ -1241,7 +1115,7 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
 
       uint16_t old_viewing_power = bob.viewing_power;
 
-      view_operation view;
+      comment_view_operation view;
 
       view.signatory = "bob";
       view.viewer = "bob";
@@ -1309,7 +1183,7 @@ BOOST_AUTO_TEST_CASE( view_operation_test )
 }
 
 
-BOOST_AUTO_TEST_CASE( share_operation_test )
+BOOST_AUTO_TEST_CASE( comment_share_operation_test )
 { 
    try 
    {
@@ -1359,7 +1233,6 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
       comment.latitude = 37.8136;
       comment.longitude = 144.9631;
       comment.comment_price = asset( 0, SYMBOL_COIN );
-      comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;
@@ -1378,7 +1251,7 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      share_operation share;
+      comment_share_operation share;
 
       share.signatory = "bob";
       share.sharer = "bob";
@@ -1446,7 +1319,7 @@ BOOST_AUTO_TEST_CASE( share_operation_test )
 }
 
 
-BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
+BOOST_AUTO_TEST_CASE( comment_moderation_operation_test )
 { 
    try 
    {
@@ -1492,7 +1365,6 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       comment.latitude = 37.8136;
       comment.longitude = 144.9631;
       comment.comment_price = asset( 0, SYMBOL_COIN );
-      comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;
@@ -1511,7 +1383,7 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      moderation_tag_operation tag;
+      comment_moderation_operation tag;
 
       tag.signatory = "bob";
       tag.moderator = "bob";
@@ -1569,7 +1441,7 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      update_governance_operation gov;
+      governance_update_operation gov;
       
       gov.signatory = "bob";
       gov.account = "bob";
@@ -1601,7 +1473,7 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
 
       const comment_object& alice_comment = db.get_comment( account_name_type( "alice" ), string( "lorem" ) );
 
-      const auto& tag_idx = db.get_index< moderation_tag_index >().indices().get< by_comment_moderator >();
+      const auto& tag_idx = db.get_index< comment_moderation_index >().indices().get< by_comment_moderator >();
       auto tag_itr = tag_idx.find( std::make_tuple( alice_comment.id, account_name_type( "bob" ) ) );
 
       BOOST_REQUIRE( tag_itr != tag_idx.end() );
@@ -1629,6 +1501,128 @@ BOOST_AUTO_TEST_CASE( moderation_tag_operation_test )
       BOOST_TEST_MESSAGE( "│   ├── Passed: removing moderation tag" );
 
       BOOST_TEST_MESSAGE( "├── Passed: MODERATION TAG OPERATION" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
+
+
+BOOST_AUTO_TEST_CASE( message_operation_test )
+{ 
+   try 
+   {
+      BOOST_TEST_MESSAGE( "├── Passed: MESSAGE OPERATION" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when no connection" );
+
+      ACTORS( (alice)(bob)(candice)(dan) );
+
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      generate_blocks( TOTAL_PRODUCERS );
+
+      string alice_private_connection_wif = graphene::utilities::key_to_wif( alice_private_connection_key );
+      string bob_private_connection_wif = graphene::utilities::key_to_wif( bob_private_connection_key );
+
+      signed_transaction tx;
+
+      message_operation message;
+
+      message.signatory = "alice";
+      message.sender = "alice";
+      message.recipient = "bob";
+      message.message = "Hello";
+      message.uuid = "6a91e502-1e53-4531-a97a-379ac8a495ff";
+      message.validate();
+
+      tx.operations.push_back( message );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when no connection" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: message success with connection" );
+
+      account_connection_request_operation request;
+
+      request.signatory = "alice";
+      request.account = "alice";
+      request.requested_account = "bob";
+      request.connection_type = "connection";
+      request.message = "Hello";
+      request.requested = true;
+      request.validate();
+
+      tx.operations.push_back( request );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      account_connection_accept_operation accept;
+
+      accept.signatory = "bob";
+      accept.account = "bob";
+      accept.requesting_account = "alice";
+      accept.connection_type = "connection";
+      accept.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
+      accept.encrypted_key = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, alice_public_secure_key, bob_private_connection_wif );
+      accept.connected = true;
+      accept.validate();
+
+      tx.operations.push_back( accept );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      accept.signatory = "alice";
+      accept.account = "alice";
+      accept.requesting_account = "bob";
+      accept.connection_type = "connection";
+      accept.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
+      accept.encrypted_key = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, bob_public_secure_key, alice_private_connection_wif );
+      accept.connected = true;
+      accept.validate();
+
+      tx.operations.push_back( accept );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      tx.operations.push_back( message );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 ); 
+
+      const auto& message_idx = db.get_index< message_index >().indices().get< by_sender_uuid >();
+      auto message_itr = message_idx.find( std::make_tuple( account_name_type( "alice" ), string( "6a91e502-1e53-4531-a97a-379ac8a495ff" ) ) );
+
+      BOOST_REQUIRE( message_itr != message_idx.end() );
+      BOOST_REQUIRE( to_string( message_itr->message ) == message.message );
+
+      validate_database();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: message success with connection" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: MESSAGE OPERATION" );
    }
    FC_LOG_AND_RETHROW()
 }
@@ -1674,7 +1668,6 @@ BOOST_AUTO_TEST_CASE( list_operation_test )
       comment.latitude = 37.8136;
       comment.longitude = 144.9631;
       comment.comment_price = asset( 0, SYMBOL_COIN );
-      comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;

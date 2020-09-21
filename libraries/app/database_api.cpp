@@ -138,11 +138,11 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       vector< producer_api_obj >                      get_producers_by_mining_power( string from, uint32_t limit )const;
 
-      vector< network_officer_api_obj >               get_development_officers_by_voting_power( string from, uint32_t limit )const;
+      vector< network_officer_api_obj >               get_development_officers_by_voting_power( string currency, string from, uint32_t limit )const;
 
-      vector< network_officer_api_obj >               get_marketing_officers_by_voting_power( string from, uint32_t limit )const;
+      vector< network_officer_api_obj >               get_marketing_officers_by_voting_power( string currency, string from, uint32_t limit )const;
 
-      vector< network_officer_api_obj >               get_advocacy_officers_by_voting_power( string from, uint32_t limit )const;
+      vector< network_officer_api_obj >               get_advocacy_officers_by_voting_power( string currency, string from, uint32_t limit )const;
 
       vector< executive_board_api_obj >               get_executive_boards_by_voting_power( string from, uint32_t limit )const;
 
@@ -152,7 +152,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       vector< governance_account_api_obj >            get_governance_accounts_by_subscriber_power( string from, uint32_t limit )const;
 
-      vector< community_enterprise_api_obj >          get_enterprise_by_voting_power( string from, string from_id, uint32_t limit )const;
+      vector< enterprise_api_obj >                    get_enterprise_by_voting_power( string from, string from_id, uint32_t limit )const;
 
 
       //================//
@@ -263,7 +263,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       vector< account_moderation >                    get_account_moderation( string account, string from_author, string from_permlink, uint32_t limit )const;
 
-      vector< tag_following_api_obj >                 get_tag_followings( vector< string > tags )const;
+      vector< account_tag_following_api_obj >         get_account_tag_followings( vector< string > tags )const;
 
       vector< tag_api_obj >                           get_top_tags( string after_tag, uint32_t limit )const;
 
@@ -626,8 +626,8 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
    const auto& bus_key_idx = _db.get_index< account_member_key_index >().indices().get< by_member_business >();
    const auto& community_key_idx = _db.get_index< community_member_key_index >().indices().get< by_member_community >();
    const auto& following_idx = _db.get_index< account_following_index >().indices().get< by_account >();
-   const auto& connection_a_idx = _db.get_index< connection_index >().indices().get< by_account_a >();
-   const auto& connection_b_idx = _db.get_index< connection_index >().indices().get< by_account_b >();
+   const auto& connection_a_idx = _db.get_index< account_connection_index >().indices().get< by_account_a >();
+   const auto& connection_b_idx = _db.get_index< account_connection_index >().indices().get< by_account_b >();
    const auto& inbox_idx = _db.get_index< message_index >().indices().get< by_account_inbox >();
    const auto& outbox_idx = _db.get_index< message_index >().indices().get< by_account_outbox >();
 
@@ -638,8 +638,8 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
    const auto& collateral_idx = _db.get_index< credit_collateral_index >().indices().get< by_owner >();
    const auto& moderator_idx = _db.get_index< community_moderator_vote_index >().indices().get< by_account_community_rank >();
 
-   const auto& connection_req_idx = _db.get_index< connection_request_index >().indices().get< by_req_account >();
-   const auto& connection_acc_idx = _db.get_index< connection_request_index >().indices().get< by_account_req >();
+   const auto& connection_req_idx = _db.get_index< account_connection_request_index >().indices().get< by_req_account >();
+   const auto& connection_acc_idx = _db.get_index< account_connection_request_index >().indices().get< by_account_req >();
 
    const auto& account_req_idx = _db.get_index< account_member_request_index >().indices().get< by_account_business >();
    const auto& bus_req_idx = _db.get_index< account_member_request_index >().indices().get< by_business_account >();
@@ -669,7 +669,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
    const auto& producer_idx = _db.get_index< producer_index >().indices().get< by_name >();
    const auto& executive_idx = _db.get_index< executive_board_index >().indices().get< by_account >();
    const auto& officer_idx = _db.get_index< network_officer_index >().indices().get< by_account >();
-   const auto& enterprise_idx = _db.get_index< community_enterprise_index >().indices().get< by_creator >();
+   const auto& enterprise_idx = _db.get_index< enterprise_index >().indices().get< by_account >();
    const auto& interface_idx = _db.get_index< interface_index >().indices().get< by_account >();
    const auto& supernode_idx = _db.get_index< supernode_index >().indices().get< by_account >();
    const auto& governance_idx = _db.get_index< governance_account_index >().indices().get< by_account >();
@@ -679,17 +679,17 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
    const auto& incoming_executive_vote_idx = _db.get_index< executive_board_vote_index >().indices().get< by_executive_account >();
    const auto& incoming_officer_vote_idx = _db.get_index< network_officer_vote_index >().indices().get< by_officer_account >();
    const auto& incoming_subscription_idx = _db.get_index< governance_subscription_index >().indices().get< by_governance_account >();
-   const auto& incoming_enterprise_vote_idx = _db.get_index< enterprise_approval_index >().indices().get< by_creator >();
+   const auto& incoming_enterprise_vote_idx = _db.get_index< enterprise_vote_index >().indices().get< by_enterprise_id >();
    const auto& incoming_commit_violation_idx = _db.get_index< commit_violation_index >().indices().get< by_producer_height >();
 
    const auto& outgoing_producer_vote_idx = _db.get_index< producer_vote_index >().indices().get< by_account_rank >();
    const auto& outgoing_executive_vote_idx = _db.get_index< executive_board_vote_index >().indices().get< by_account_rank >();
    const auto& outgoing_officer_vote_idx = _db.get_index< network_officer_vote_index >().indices().get< by_account_type_rank >();
    const auto& outgoing_subscription_idx = _db.get_index< governance_subscription_index >().indices().get< by_account_rank >();
-   const auto& outgoing_enterprise_vote_idx = _db.get_index< enterprise_approval_index >().indices().get< by_account_rank >();
+   const auto& outgoing_enterprise_vote_idx = _db.get_index< enterprise_vote_index >().indices().get< by_account_rank >();
    const auto& outgoing_commit_violation_idx = _db.get_index< commit_violation_index >().indices().get< by_reporter_height >();
 
-   const auto& owner_history_idx = _db.get_index< owner_authority_history_index >().indices().get< by_account >();
+   const auto& owner_history_idx = _db.get_index< account_authority_history_index >().indices().get< by_account >();
    const auto& recovery_idx = _db.get_index< account_recovery_request_index >().indices().get< by_account >();
 
    const auto& history_idx = _db.get_index< account_history_index >().indices().get< by_account >();
@@ -788,9 +788,9 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
          }
 
          auto enterprise_itr = enterprise_idx.lower_bound( name );
-         while( enterprise_itr != enterprise_idx.end() && enterprise_itr->creator == name )
+         while( enterprise_itr != enterprise_idx.end() && enterprise_itr->account == name )
          {
-            results.back().network.enterprise_proposals.push_back( community_enterprise_api_obj( *enterprise_itr ) );
+            results.back().network.enterprise_proposals.push_back( enterprise_api_obj( *enterprise_itr ) );
             ++enterprise_itr;
          }
 
@@ -837,9 +837,9 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
 
          auto incoming_enterprise_vote_itr = incoming_enterprise_vote_idx.lower_bound( name );
          while( incoming_enterprise_vote_itr != incoming_enterprise_vote_idx.end() && 
-            incoming_enterprise_vote_itr->creator == name )
+            incoming_enterprise_vote_itr->account == name )
          {
-            results.back().network.incoming_enterprise_approvals[ incoming_enterprise_vote_itr->account ][ to_string( incoming_enterprise_vote_itr->enterprise_id ) ] = enterprise_approval_api_obj( *incoming_enterprise_vote_itr );
+            results.back().network.incoming_enterprise_votes[ incoming_enterprise_vote_itr->account ][ to_string( incoming_enterprise_vote_itr->enterprise_id ) ] = enterprise_vote_api_obj( *incoming_enterprise_vote_itr );
             ++incoming_enterprise_vote_itr;
          }
 
@@ -888,7 +888,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
          while( outgoing_enterprise_vote_itr != outgoing_enterprise_vote_idx.end() && 
             outgoing_enterprise_vote_itr->account == name )
          {
-            results.back().network.outgoing_enterprise_approvals[ outgoing_enterprise_vote_itr->creator ][ to_string( outgoing_enterprise_vote_itr->enterprise_id ) ] = enterprise_approval_api_obj( *outgoing_enterprise_vote_itr );
+            results.back().network.outgoing_enterprise_votes[ outgoing_enterprise_vote_itr->account ][ to_string( outgoing_enterprise_vote_itr->enterprise_id ) ] = enterprise_vote_api_obj( *outgoing_enterprise_vote_itr );
             ++outgoing_enterprise_vote_itr;
          }
 
@@ -1003,7 +1003,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             connection_a_itr->account_a == name &&
             connection_a_itr->connection_type == connection_tier_type::CONNECTION )
          {
-            results.back().connections.connections[ connection_a_itr->account_b ] = connection_api_obj( *connection_a_itr );
+            results.back().connections.connections[ connection_a_itr->account_b ] = account_connection_api_obj( *connection_a_itr );
             results.back().keychain.connection_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
             ++connection_a_itr;
          }
@@ -1011,7 +1011,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             connection_b_itr->account_b == name &&
             connection_b_itr->connection_type == connection_tier_type::CONNECTION )
          {
-            results.back().connections.connections[ connection_b_itr->account_a ] = connection_api_obj( *connection_b_itr );
+            results.back().connections.connections[ connection_b_itr->account_a ] = account_connection_api_obj( *connection_b_itr );
             results.back().keychain.connection_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
             ++connection_b_itr;
          }
@@ -1022,7 +1022,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             connection_a_itr->account_a == name &&
             connection_a_itr->connection_type == connection_tier_type::FRIEND )
          {
-            results.back().connections.friends[ connection_a_itr->account_b ] = connection_api_obj( *connection_a_itr );
+            results.back().connections.friends[ connection_a_itr->account_b ] = account_connection_api_obj( *connection_a_itr );
             results.back().keychain.friend_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
             ++connection_a_itr;
          }
@@ -1030,7 +1030,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             connection_b_itr->account_b == name &&
             connection_b_itr->connection_type == connection_tier_type::FRIEND )
          {
-            results.back().connections.friends[ connection_b_itr->account_a ] = connection_api_obj( *connection_b_itr );
+            results.back().connections.friends[ connection_b_itr->account_a ] = account_connection_api_obj( *connection_b_itr );
             results.back().keychain.friend_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
             ++connection_b_itr;
          }
@@ -1041,7 +1041,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             connection_a_itr->account_a == name &&
             connection_a_itr->connection_type == connection_tier_type::COMPANION )
          {
-            results.back().connections.companions[ connection_a_itr->account_b ] = connection_api_obj( *connection_a_itr );
+            results.back().connections.companions[ connection_a_itr->account_b ] = account_connection_api_obj( *connection_a_itr );
             results.back().keychain.companion_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
             ++connection_a_itr;
          }
@@ -1049,7 +1049,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             connection_b_itr->account_b == name &&
             connection_b_itr->connection_type == connection_tier_type::COMPANION )
          {
-            results.back().connections.companions[ connection_b_itr->account_a ] = connection_api_obj( *connection_b_itr );
+            results.back().connections.companions[ connection_b_itr->account_a ] = account_connection_api_obj( *connection_b_itr );
             results.back().keychain.companion_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
             ++connection_b_itr;
          }
@@ -1060,14 +1060,14 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
          while( connection_req_itr != connection_req_idx.end() && 
             connection_req_itr->requested_account == name )
          {
-            results.back().connections.incoming_requests[ connection_req_itr->account ] = connection_request_api_obj( *connection_req_itr );
+            results.back().connections.incoming_requests[ connection_req_itr->account ] = account_connection_request_api_obj( *connection_req_itr );
             ++connection_req_itr;
          }
 
          while( connection_acc_itr != connection_acc_idx.end() && 
             connection_acc_itr->account == name )
          {
-            results.back().connections.outgoing_requests[ connection_acc_itr->requested_account ] = connection_request_api_obj( *connection_acc_itr );
+            results.back().connections.outgoing_requests[ connection_acc_itr->requested_account ] = account_connection_request_api_obj( *connection_acc_itr );
             ++connection_acc_itr;
          }
 
@@ -1291,29 +1291,29 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                case operation::tag<account_accept_invite_operation>::value:
                case operation::tag<account_remove_member_operation>::value:
                case operation::tag<account_update_list_operation>::value:
-               case operation::tag<request_account_recovery_operation>::value:
-               case operation::tag<recover_account_operation>::value:
-               case operation::tag<reset_account_operation>::value:
-               case operation::tag<set_reset_account_operation>::value:
-               case operation::tag<change_recovery_account_operation>::value:
-               case operation::tag<decline_voting_rights_operation>::value:
+               case operation::tag<account_request_recovery_operation>::value:
+               case operation::tag<account_recover_operation>::value:
+               case operation::tag<account_reset_operation>::value:
+               case operation::tag<account_reset_update_operation>::value:
+               case operation::tag<account_recovery_update_operation>::value:
+               case operation::tag<account_decline_voting_operation>::value:
                {
                   results.back().operations.account_history[ item.first ] = item.second;
                }
                break;
-               case operation::tag<connection_request_operation>::value:
-               case operation::tag<connection_accept_operation>::value:
+               case operation::tag<account_connection_request_operation>::value:
+               case operation::tag<account_connection_accept_operation>::value:
                {
                   results.back().operations.connection_history[ item.first ] = item.second;
                }
                break;
                case operation::tag<account_follow_operation>::value:
-               case operation::tag<tag_follow_operation>::value:
+               case operation::tag<account_follow_tag_operation>::value:
                {
                   results.back().operations.follow_history[ item.first ] = item.second;
                }
                break;
-               case operation::tag<activity_reward_operation>::value:
+               case operation::tag<account_activity_operation>::value:
                {
                   results.back().operations.activity_history[ item.first ] = item.second;
                }
@@ -1326,37 +1326,39 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                case operation::tag<list_operation>::value:
                case operation::tag<poll_operation>::value:
                case operation::tag<poll_vote_operation>::value:
+               case operation::tag<premium_purchase_operation>::value:
+               case operation::tag<premium_release_operation>::value:
                {
                   results.back().operations.post_history[ item.first ] = item.second;
                }
                break;
-               case operation::tag<message_operation>::value:
-               {
-                  results.back().operations.message_history[ item.first ] = item.second;
-               }
-               break;
-               case operation::tag<vote_operation>::value:
+               case operation::tag<comment_vote_operation>::value:
                case operation::tag<vote_reward_operation>::value:
                {
                   results.back().operations.vote_history[ item.first ] = item.second;
                }
                break;
-               case operation::tag<view_operation>::value:
+               case operation::tag<comment_view_operation>::value:
                case operation::tag<view_reward_operation>::value:
                {
                   results.back().operations.view_history[ item.first ] = item.second;
                }
                break;
-               case operation::tag<share_operation>::value:
+               case operation::tag<comment_share_operation>::value:
                case operation::tag<share_reward_operation>::value:
                {
                   results.back().operations.share_history[ item.first ] = item.second;
                }
                break;
-               case operation::tag<moderation_tag_operation>::value:
+               case operation::tag<comment_moderation_operation>::value:
                case operation::tag<moderation_reward_operation>::value:
                {
                   results.back().operations.moderation_history[ item.first ] = item.second;
+               }
+               break;
+               case operation::tag<message_operation>::value:
+               {
+                  results.back().operations.message_history[ item.first ] = item.second;
                }
                break;
                case operation::tag<community_create_operation>::value:
@@ -1492,19 +1494,19 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                break;
                case operation::tag<account_producer_vote_operation>::value:
                case operation::tag<account_update_proxy_operation>::value:
-               case operation::tag<update_network_officer_operation>::value:
+               case operation::tag<network_officer_update_operation>::value:
                case operation::tag<network_officer_vote_operation>::value:
-               case operation::tag<update_executive_board_operation>::value:
+               case operation::tag<executive_board_update_operation>::value:
                case operation::tag<executive_board_vote_operation>::value:
-               case operation::tag<update_governance_operation>::value:
-               case operation::tag<subscribe_governance_operation>::value:
-               case operation::tag<update_supernode_operation>::value:
+               case operation::tag<governance_update_operation>::value:
+               case operation::tag<governance_subscribe_operation>::value:
+               case operation::tag<supernode_update_operation>::value:
                case operation::tag<supernode_reward_operation>::value:
-               case operation::tag<update_interface_operation>::value:
-               case operation::tag<update_mediator_operation>::value:
-               case operation::tag<create_community_enterprise_operation>::value:
-               case operation::tag<claim_enterprise_milestone_operation>::value:
-               case operation::tag<approve_enterprise_milestone_operation>::value:
+               case operation::tag<interface_update_operation>::value:
+               case operation::tag<mediator_update_operation>::value:
+               case operation::tag<enterprise_update_operation>::value:
+               case operation::tag<enterprise_vote_operation>::value:
+               case operation::tag<enterprise_fund_operation>::value:
                case operation::tag<producer_update_operation>::value:
                case operation::tag<proof_of_work_operation>::value:
                case operation::tag<producer_reward_operation>::value:
@@ -1540,22 +1542,28 @@ map< uint32_t, applied_operation > database_api_impl::get_account_history( strin
    FC_ASSERT( from >= limit,
       "From must be greater than limit." );
 
-   const auto& idx = _db.get_index< account_history_index >().indices().get< by_account >();
-   auto itr = idx.lower_bound( boost::make_tuple( account, from ) );
+   const auto& history_idx = _db.get_index< account_history_index >().indices().get< by_account >();
+   auto history_itr = history_idx.lower_bound( boost::make_tuple( account, from ) );
 
    uint32_t n = 0;
-   map<uint32_t, applied_operation> results;
+   map< uint32_t, applied_operation > results;
    
    while( true )
    {
-      if( itr == idx.end() )
+      if( history_itr == history_idx.end() )
+      {
          break;
-      if( itr->account != account )
+      }
+      if( history_itr->account != account )
+      {
          break;
+      }
       if( n >= limit )
+      {
          break;
-      results[ itr->sequence ] = _db.get( itr->op );
-      ++itr;
+      }
+      results[ history_itr->sequence ] = _db.get( history_itr->op );
+      ++history_itr;
       ++n;
    }
    return results;
@@ -2051,8 +2059,8 @@ vector< key_state > database_api::get_keychains( vector< string > names )const
 
 vector< key_state > database_api_impl::get_keychains( vector< string > names )const
 {
-   const auto& connection_a_idx = _db.get_index< connection_index >().indices().get< by_account_a >();
-   const auto& connection_b_idx = _db.get_index< connection_index >().indices().get< by_account_b >();
+   const auto& connection_a_idx = _db.get_index< account_connection_index >().indices().get< by_account_a >();
+   const auto& connection_b_idx = _db.get_index< account_connection_index >().indices().get< by_account_b >();
    const auto& community_idx = _db.get_index< community_member_key_index >().indices().get< by_member_community >();
    const auto& business_idx = _db.get_index< account_member_key_index >().indices().get< by_member_business >();
 
@@ -2327,7 +2335,7 @@ vector< extended_asset > database_api_impl::get_assets( vector< string > assets 
          results.back().distribution_balances[ balance_itr->sender ] = distribution_balance_api_obj( *balance_itr );
       }
 
-      const auto& fund_idx = _db.get_index< reward_fund_index >().indices().get< by_symbol >();
+      const auto& fund_idx = _db.get_index< asset_reward_fund_index >().indices().get< by_symbol >();
       auto fund_itr = fund_idx.find( asset );
       if( fund_itr != fund_idx.end() )
       {
@@ -2381,7 +2389,7 @@ vector< extended_community > database_api_impl::get_communities( vector< string 
    const auto& community_mem_idx = _db.get_index< community_member_index >().indices().get< by_name >();
    const auto& community_inv_idx = _db.get_index< community_join_invite_index >().indices().get< by_community >();
    const auto& community_req_idx = _db.get_index< community_join_request_index >().indices().get< by_community_account >();
-   const auto& community_event_idx = _db.get_index< community_event_index >().indices().get< by_community >();
+   const auto& community_event_idx = _db.get_index< community_event_index >().indices().get< by_community_time >();
 
    for( string community : communities )
    {
@@ -2418,11 +2426,12 @@ vector< extended_community > database_api_impl::get_communities( vector< string 
          results.back().total_mod_weight = community_mem_itr->total_mod_weight.value;
       }
       
-      auto community_event_itr = community_event_idx.find( community );
-      if( community_event_itr != community_event_idx.end() && 
+      auto community_event_itr = community_event_idx.lower_bound( community );
+      while( community_event_itr != community_event_idx.end() && 
          community_event_itr->community == community )
       {
-         results.back().event = community_event_api_obj( *community_event_itr );
+         results.back().events.push_back( community_event_api_obj( *community_event_itr ) );
+         ++community_event_itr;
       }
 
       auto community_inv_itr = community_inv_idx.lower_bound( community );
@@ -2462,7 +2471,7 @@ vector< extended_community > database_api_impl::get_communities_by_subscribers( 
    const auto& community_mem_idx = _db.get_index< community_member_index >().indices().get< by_name >();
    const auto& community_inv_idx = _db.get_index< community_join_invite_index >().indices().get< by_community >();
    const auto& community_req_idx = _db.get_index< community_join_request_index >().indices().get< by_community_account >();
-   const auto& community_event_idx = _db.get_index< community_event_index >().indices().get< by_community >();
+   const auto& community_event_idx = _db.get_index< community_event_index >().indices().get< by_community_time >();
 
    auto community_itr = community_idx.begin();
   
@@ -2508,11 +2517,12 @@ vector< extended_community > database_api_impl::get_communities_by_subscribers( 
          results.back().total_mod_weight = community_mem_itr->total_mod_weight.value;
       }
 
-      auto community_event_itr = community_event_idx.find( community );
-      if( community_event_itr != community_event_idx.end() && 
+      auto community_event_itr = community_event_idx.lower_bound( community );
+      while( community_event_itr != community_event_idx.end() && 
          community_event_itr->community == community )
       {
-         results.back().event = community_event_api_obj( *community_event_itr );
+         results.back().events.push_back( community_event_api_obj( *community_event_itr ) );
+         ++community_event_itr;
       }
 
       auto community_inv_itr = community_inv_idx.lower_bound( community );
@@ -2557,7 +2567,7 @@ vector< account_network_state > database_api_impl::get_account_network_state( ve
    const auto& producer_idx = _db.get_index< producer_index >().indices().get< by_name >();
    const auto& executive_idx = _db.get_index< executive_board_index >().indices().get< by_account >();
    const auto& officer_idx = _db.get_index< network_officer_index >().indices().get< by_account >();
-   const auto& enterprise_idx = _db.get_index< community_enterprise_index >().indices().get< by_creator >();
+   const auto& enterprise_idx = _db.get_index< enterprise_index >().indices().get< by_enterprise_id >();
    const auto& interface_idx = _db.get_index< interface_index >().indices().get< by_account >();
    const auto& supernode_idx = _db.get_index< supernode_index >().indices().get< by_account >();
    const auto& governance_idx = _db.get_index< governance_account_index >().indices().get< by_account >();
@@ -2567,14 +2577,14 @@ vector< account_network_state > database_api_impl::get_account_network_state( ve
    const auto& incoming_executive_vote_idx = _db.get_index< executive_board_vote_index >().indices().get< by_executive_account >();
    const auto& incoming_officer_vote_idx = _db.get_index< network_officer_vote_index >().indices().get< by_officer_account >();
    const auto& incoming_subscription_idx = _db.get_index< governance_subscription_index >().indices().get< by_governance_account >();
-   const auto& incoming_enterprise_vote_idx = _db.get_index< enterprise_approval_index >().indices().get< by_creator >();
+   const auto& incoming_enterprise_vote_idx = _db.get_index< enterprise_vote_index >().indices().get< by_enterprise_id >();
    const auto& incoming_commit_violation_idx = _db.get_index< commit_violation_index >().indices().get< by_producer_height >();
 
    const auto& outgoing_producer_vote_idx = _db.get_index< producer_vote_index >().indices().get< by_account_rank >();
    const auto& outgoing_executive_vote_idx = _db.get_index< executive_board_vote_index >().indices().get< by_account_rank >();
    const auto& outgoing_officer_vote_idx = _db.get_index< network_officer_vote_index >().indices().get< by_account_type_rank >();
    const auto& outgoing_subscription_idx = _db.get_index< governance_subscription_index >().indices().get< by_account_rank >();
-   const auto& outgoing_enterprise_vote_idx = _db.get_index< enterprise_approval_index >().indices().get< by_account_rank >();
+   const auto& outgoing_enterprise_vote_idx = _db.get_index< enterprise_vote_index >().indices().get< by_account_rank >();
    const auto& outgoing_commit_violation_idx = _db.get_index< commit_violation_index >().indices().get< by_reporter_height >();
 
    for( auto name : names )
@@ -2618,9 +2628,9 @@ vector< account_network_state > database_api_impl::get_account_network_state( ve
       }
 
       auto enterprise_itr = enterprise_idx.lower_bound( name );
-      while( enterprise_itr != enterprise_idx.end() && enterprise_itr->creator == name )
+      while( enterprise_itr != enterprise_idx.end() && enterprise_itr->account == name )
       {
-         nstate.enterprise_proposals.push_back( community_enterprise_api_obj( *enterprise_itr ) );
+         nstate.enterprise_proposals.push_back( enterprise_api_obj( *enterprise_itr ) );
          ++enterprise_itr;
       }
 
@@ -2667,9 +2677,9 @@ vector< account_network_state > database_api_impl::get_account_network_state( ve
 
       auto incoming_enterprise_vote_itr = incoming_enterprise_vote_idx.lower_bound( name );
       while( incoming_enterprise_vote_itr != incoming_enterprise_vote_idx.end() && 
-         incoming_enterprise_vote_itr->creator == name )
+         incoming_enterprise_vote_itr->account == name )
       {
-         nstate.incoming_enterprise_approvals[ incoming_enterprise_vote_itr->account ][ to_string( incoming_enterprise_vote_itr->enterprise_id ) ] = enterprise_approval_api_obj( *incoming_enterprise_vote_itr );
+         nstate.incoming_enterprise_votes[ incoming_enterprise_vote_itr->account ][ to_string( incoming_enterprise_vote_itr->enterprise_id ) ] = enterprise_vote_api_obj( *incoming_enterprise_vote_itr );
          ++incoming_enterprise_vote_itr;
       }
 
@@ -2718,7 +2728,7 @@ vector< account_network_state > database_api_impl::get_account_network_state( ve
       while( outgoing_enterprise_vote_itr != outgoing_enterprise_vote_idx.end() && 
          outgoing_enterprise_vote_itr->account == name )
       {
-         nstate.outgoing_enterprise_approvals[ outgoing_enterprise_vote_itr->creator ][ to_string( outgoing_enterprise_vote_itr->enterprise_id ) ] = enterprise_approval_api_obj( *outgoing_enterprise_vote_itr );
+         nstate.outgoing_enterprise_votes[ outgoing_enterprise_vote_itr->account ][ to_string( outgoing_enterprise_vote_itr->enterprise_id ) ] = enterprise_vote_api_obj( *outgoing_enterprise_vote_itr );
          ++outgoing_enterprise_vote_itr;
       }
 
@@ -2777,19 +2787,19 @@ vector< producer_api_obj > database_api_impl::get_producers_by_voting_power( str
    const auto& name_idx = _db.get_index< producer_index >().indices().get< by_name >();
    const auto& vote_idx = _db.get_index< producer_index >().indices().get< by_voting_power >();
 
-   auto itr = vote_idx.begin();
+   auto vote_itr = vote_idx.begin();
    if( from.size() ) 
    {
       auto name_itr = name_idx.find( from );
       FC_ASSERT( name_itr != name_idx.end(),
          "Invalid producer name ${n}", ("n",from) );
-      itr = vote_idx.iterator_to( *name_itr );
+      vote_itr = vote_idx.iterator_to( *name_itr );
    }
 
-   while( itr != vote_idx.end() && results.size() < limit && itr->vote_count > 0 )
+   while( vote_itr != vote_idx.end() && results.size() < limit && vote_itr->vote_count > 0 )
    {
-      results.push_back( producer_api_obj( *itr ) );
-      ++itr;
+      results.push_back( producer_api_obj( *vote_itr ) );
+      ++vote_itr;
    }
    return results;
 }
@@ -2811,125 +2821,131 @@ vector< producer_api_obj > database_api_impl::get_producers_by_mining_power( str
    const auto& name_idx = _db.get_index< producer_index >().indices().get< by_name >();
    const auto& mining_idx = _db.get_index< producer_index >().indices().get< by_mining_power >();
 
-   auto itr = mining_idx.begin();
+   auto mining_itr = mining_idx.begin();
    if( from.size() ) 
    {
       auto name_itr = name_idx.find( from );
       FC_ASSERT( name_itr != name_idx.end(),
          "Invalid producer name ${n}", ("n",from) );
-      itr = mining_idx.iterator_to( *name_itr );
+      mining_itr = mining_idx.iterator_to( *name_itr );
    }
 
-   while( itr != mining_idx.end() &&
-      results.size() < limit && itr->mining_count > 0 )
+   while( mining_itr != mining_idx.end() &&
+      results.size() < limit && mining_itr->mining_count > 0 )
    {
-      results.push_back( producer_api_obj( *itr ) );
-      ++itr;
+      results.push_back( producer_api_obj( *mining_itr ) );
+      ++mining_itr;
    }
    return results;
 }
 
 
-vector< network_officer_api_obj > database_api::get_development_officers_by_voting_power( string from, uint32_t limit )const
+vector< network_officer_api_obj > database_api::get_development_officers_by_voting_power( string currency, string from, uint32_t limit )const
 {
    return my->_db.with_read_lock( [&]()
    {
-      return my->get_development_officers_by_voting_power( from, limit );
+      return my->get_development_officers_by_voting_power( currency, from, limit );
    });
 }
 
-vector< network_officer_api_obj > database_api_impl::get_development_officers_by_voting_power( string from, uint32_t limit )const
+vector< network_officer_api_obj > database_api_impl::get_development_officers_by_voting_power( string currency, string from, uint32_t limit )const
 {
    limit = std::min( limit, uint32_t( 1000 ) );
    vector< network_officer_api_obj > results;
    results.reserve( limit );
 
    const auto& name_idx = _db.get_index< network_officer_index >().indices().get< by_account >();
-   const auto& vote_idx = _db.get_index< network_officer_index >().indices().get< by_type_voting_power >();
+   const auto& vote_idx = _db.get_index< network_officer_index >().indices().get< by_symbol_type_voting_power >();
 
-   auto itr = vote_idx.lower_bound( network_officer_role_type::DEVELOPMENT );
+   auto vote_itr = vote_idx.lower_bound( boost::make_tuple( currency, network_officer_role_type::DEVELOPMENT ) );
 
    if( from.size() ) 
    {
       auto name_itr = name_idx.find( from );
       FC_ASSERT( name_itr != name_idx.end(),
          "Invalid network officer name ${n}", ("n",from) );
-      itr = vote_idx.iterator_to( *name_itr );
+      vote_itr = vote_idx.iterator_to( *name_itr );
    }
 
-   while( itr != vote_idx.end() && results.size() < limit && itr->vote_count > 0 && itr->officer_type == network_officer_role_type::DEVELOPMENT )
+   while( vote_itr != vote_idx.end() && 
+      results.size() < limit && 
+      vote_itr->vote_count > 0 && 
+      vote_itr->officer_type == network_officer_role_type::DEVELOPMENT )
    {
-      results.push_back( network_officer_api_obj( *itr ) );
-      ++itr;
+      results.push_back( network_officer_api_obj( *vote_itr ) );
+      ++vote_itr;
    }
    return results;
 }
 
-vector< network_officer_api_obj > database_api::get_marketing_officers_by_voting_power( string from, uint32_t limit )const
+vector< network_officer_api_obj > database_api::get_marketing_officers_by_voting_power( string currency, string from, uint32_t limit )const
 {
    return my->_db.with_read_lock( [&]()
    {
-      return my->get_marketing_officers_by_voting_power( from, limit );
+      return my->get_marketing_officers_by_voting_power( currency, from, limit );
    });
 }
 
-vector< network_officer_api_obj > database_api_impl::get_marketing_officers_by_voting_power( string from, uint32_t limit )const
+vector< network_officer_api_obj > database_api_impl::get_marketing_officers_by_voting_power( string currency, string from, uint32_t limit )const
 {
    limit = std::min( limit, uint32_t( 1000 ) );
    vector< network_officer_api_obj > results;
    results.reserve( limit );
 
    const auto& name_idx = _db.get_index< network_officer_index >().indices().get< by_account >();
-   const auto& vote_idx = _db.get_index< network_officer_index >().indices().get< by_type_voting_power >();
+   const auto& vote_idx = _db.get_index< network_officer_index >().indices().get< by_symbol_type_voting_power >();
 
-   auto itr = vote_idx.lower_bound( network_officer_role_type::MARKETING );
+   auto vote_itr = vote_idx.lower_bound( boost::make_tuple( currency, network_officer_role_type::MARKETING ) );
 
    if( from.size() ) 
    {
       auto name_itr = name_idx.find( from );
       FC_ASSERT( name_itr != name_idx.end(), "Invalid network officer name ${n}", ("n",from) );
-      itr = vote_idx.iterator_to( *name_itr );
+      vote_itr = vote_idx.iterator_to( *name_itr );
    }
 
-   while( itr != vote_idx.end() && results.size() < limit && itr->vote_count > 0 && itr->officer_type == network_officer_role_type::MARKETING )
+   while( vote_itr != vote_idx.end() && results.size() < limit && vote_itr->vote_count > 0 && vote_itr->officer_type == network_officer_role_type::MARKETING )
    {
-      results.push_back( network_officer_api_obj( *itr ) );
-      ++itr;
+      results.push_back( network_officer_api_obj( *vote_itr ) );
+      ++vote_itr;
    }
    return results;
 }
 
-vector< network_officer_api_obj > database_api::get_advocacy_officers_by_voting_power( string from, uint32_t limit )const
+vector< network_officer_api_obj > database_api::get_advocacy_officers_by_voting_power( string currency, string from, uint32_t limit )const
 {
    return my->_db.with_read_lock( [&]()
    {
-      return my->get_advocacy_officers_by_voting_power( from, limit );
+      return my->get_advocacy_officers_by_voting_power( currency, from, limit );
    });
 }
 
-vector< network_officer_api_obj > database_api_impl::get_advocacy_officers_by_voting_power( string from, uint32_t limit )const
+vector< network_officer_api_obj > database_api_impl::get_advocacy_officers_by_voting_power( string currency, string from, uint32_t limit )const
 {
    limit = std::min( limit, uint32_t( 1000 ) );
    vector< network_officer_api_obj > results;
    results.reserve( limit );
 
    const auto& name_idx = _db.get_index< network_officer_index >().indices().get< by_account >();
-   const auto& vote_idx = _db.get_index< network_officer_index >().indices().get< by_type_voting_power >();
+   const auto& vote_idx = _db.get_index< network_officer_index >().indices().get< by_symbol_type_voting_power >();
 
-   auto itr = vote_idx.lower_bound( network_officer_role_type::ADVOCACY );
+   auto vote_itr = vote_idx.lower_bound( boost::make_tuple( currency, network_officer_role_type::ADVOCACY ) );
 
    if( from.size() ) 
    {
       auto name_itr = name_idx.find( from );
       FC_ASSERT( name_itr != name_idx.end(),
          "Invalid network officer name ${n}", ("n",from) );
-      itr = vote_idx.iterator_to( *name_itr );
+      vote_itr = vote_idx.iterator_to( *name_itr );
    }
 
-   while( itr != vote_idx.end() && results.size() < limit && itr->vote_count > 0 && itr->officer_type == network_officer_role_type::ADVOCACY )
+   while( vote_itr != vote_idx.end() && 
+      results.size() < limit && 
+      vote_itr->vote_count > 0 && 
+      vote_itr->officer_type == network_officer_role_type::ADVOCACY )
    {
-      results.push_back( network_officer_api_obj( *itr ) );
-      ++itr;
+      results.push_back( network_officer_api_obj( *vote_itr ) );
+      ++vote_itr;
    }
    return results;
 }
@@ -2951,19 +2967,21 @@ vector< executive_board_api_obj > database_api_impl::get_executive_boards_by_vot
    const auto& name_idx = _db.get_index< executive_board_index >().indices().get< by_account >();
    const auto& vote_idx = _db.get_index< executive_board_index >().indices().get< by_voting_power >();
 
-   auto itr = vote_idx.begin();
+   auto vote_itr = vote_idx.begin();
    if( from.size() ) 
    {
       auto name_itr = name_idx.find( from );
       FC_ASSERT( name_itr != name_idx.end(),
          "Invalid executive board name ${n}", ("n",from) );
-      itr = vote_idx.iterator_to( *name_itr );
+      vote_itr = vote_idx.iterator_to( *name_itr );
    }
 
-   while( itr != vote_idx.end() && results.size() < limit && itr->vote_count > 0 )
+   while( vote_itr != vote_idx.end() && 
+      results.size() < limit && 
+      vote_itr->vote_count > 0 )
    {
-      results.push_back( executive_board_api_obj( *itr ) );
-      ++itr;
+      results.push_back( executive_board_api_obj( *vote_itr ) );
+      ++vote_itr;
    }
    return results;
 }
@@ -2985,19 +3003,21 @@ vector< supernode_api_obj > database_api_impl::get_supernodes_by_view_weight( st
    const auto& name_idx = _db.get_index< supernode_index >().indices().get< by_account >();
    const auto& view_idx = _db.get_index< supernode_index >().indices().get< by_view_weight >();
 
-   auto itr = view_idx.begin();
+   auto view_itr = view_idx.begin();
    if( from.size() ) 
    {
       auto name_itr = name_idx.find( from );
       FC_ASSERT( name_itr != name_idx.end(),
          "Invalid supernode name ${n}", ("n",from) );
-      itr = view_idx.iterator_to( *name_itr );
+      view_itr = view_idx.iterator_to( *name_itr );
    }
 
-   while( itr != view_idx.end() && results.size() < limit && itr->monthly_active_users > 0 )
+   while( view_itr != view_idx.end() && 
+      results.size() < limit && 
+      view_itr->monthly_active_users > 0 )
    {
-      results.push_back( supernode_api_obj( *itr ) );
-      ++itr;
+      results.push_back( supernode_api_obj( *view_itr ) );
+      ++view_itr;
    }
    return results;
 }
@@ -3020,19 +3040,21 @@ vector< interface_api_obj > database_api_impl::get_interfaces_by_users( string f
    const auto& name_idx = _db.get_index< interface_index >().indices().get< by_account >();
    const auto& user_idx = _db.get_index< interface_index >().indices().get< by_monthly_active_users >();
 
-   auto itr = user_idx.begin();
+   auto user_itr = user_idx.begin();
    if( from.size() ) 
    {
       auto name_itr = name_idx.find( from );
       FC_ASSERT( name_itr != name_idx.end(),
          "Invalid interface name ${n}", ("n",from) );
-      itr = user_idx.iterator_to( *name_itr );
+      user_itr = user_idx.iterator_to( *name_itr );
    }
 
-   while( itr != user_idx.end() && results.size() < limit && itr->monthly_active_users > 0 )
+   while( user_itr != user_idx.end() && 
+      results.size() < limit && 
+      user_itr->monthly_active_users > 0 )
    {
-      results.push_back( interface_api_obj( *itr ) );
-      ++itr;
+      results.push_back( interface_api_obj( *user_itr ) );
+      ++user_itr;
    }
    return results;
 }
@@ -3055,24 +3077,26 @@ vector< governance_account_api_obj > database_api_impl::get_governance_accounts_
    const auto& name_idx = _db.get_index< governance_account_index >().indices().get< by_account >();
    const auto& sub_idx = _db.get_index< governance_account_index >().indices().get< by_subscriber_power >();
 
-   auto itr = sub_idx.begin();
+   auto sub_itr = sub_idx.begin();
    if( from.size() ) 
    {
       auto name_itr = name_idx.find( from );
       FC_ASSERT( name_itr != name_idx.end(),
          "Invalid governance account name ${n}", ("n",from) );
-      itr = sub_idx.iterator_to( *name_itr );
+      sub_itr = sub_idx.iterator_to( *name_itr );
    }
 
-   while( itr != sub_idx.end() && results.size() < limit && itr->subscriber_count > 0 )
+   while( sub_itr != sub_idx.end() && 
+      results.size() < limit && 
+      sub_itr->subscriber_count > 0 )
    {
-      results.push_back( governance_account_api_obj( *itr ) );
-      ++itr;
+      results.push_back( governance_account_api_obj( *sub_itr ) );
+      ++sub_itr;
    }
    return results;
 }
 
-vector< community_enterprise_api_obj > database_api::get_enterprise_by_voting_power( string from, string from_id, uint32_t limit )const
+vector< enterprise_api_obj > database_api::get_enterprise_by_voting_power( string from, string from_id, uint32_t limit )const
 {
    return my->_db.with_read_lock( [&]()
    {
@@ -3080,29 +3104,31 @@ vector< community_enterprise_api_obj > database_api::get_enterprise_by_voting_po
    });
 }
 
-vector< community_enterprise_api_obj > database_api_impl::get_enterprise_by_voting_power( string from, string from_id, uint32_t limit )const
+vector< enterprise_api_obj > database_api_impl::get_enterprise_by_voting_power( string from, string from_id, uint32_t limit )const
 {
    limit = std::min( limit, uint32_t( 1000 ) );
 
-   vector< community_enterprise_api_obj > results;
+   vector< enterprise_api_obj > results;
    results.reserve( limit );
 
-   const auto& name_idx = _db.get_index< community_enterprise_index >().indices().get< by_enterprise_id >();
-   const auto& vote_idx = _db.get_index< community_enterprise_index >().indices().get< by_total_voting_power >();
+   const auto& name_idx = _db.get_index< enterprise_index >().indices().get< by_enterprise_id >();
+   const auto& vote_idx = _db.get_index< enterprise_index >().indices().get< by_total_voting_power >();
 
-   auto itr = vote_idx.begin();
+   auto vote_itr = vote_idx.begin();
    if( from.size() ) 
    {
       auto name_itr = name_idx.find( boost::make_tuple( from, from_id ) );
       FC_ASSERT( name_itr != name_idx.end(),
          "Invalid enterprise Creator: ${c} with enterprise_id: ${i}", ("c",from)("i",from_id) );
-      itr = vote_idx.iterator_to( *name_itr );
+      vote_itr = vote_idx.iterator_to( *name_itr );
    }
 
-   while( itr != vote_idx.end() && results.size() < limit && itr->total_approvals > 0 )
+   while( vote_itr != vote_idx.end() && 
+      results.size() < limit && 
+      vote_itr->vote_count > 0 )
    {
-      results.push_back( community_enterprise_api_obj( *itr ) );
-      ++itr;
+      results.push_back( enterprise_api_obj( *vote_itr ) );
+      ++vote_itr;
    }
    return results;
 }
@@ -4563,7 +4589,7 @@ search_result_state database_api_impl::get_search_query( const search_query& que
 
    const auto& account_idx = _db.get_index< account_index >().indices().get< by_name >();
    const auto& community_idx = _db.get_index< community_index >().indices().get< by_name >();
-   const auto& tag_idx = _db.get_index< tag_following_index >().indices().get< by_tag >();
+   const auto& tag_idx = _db.get_index< account_tag_following_index >().indices().get< by_tag >();
    const auto& asset_idx = _db.get_index< asset_index >().indices().get< by_symbol >();
    const auto& post_idx = _db.get_index< comment_index >().indices().get< by_title >();
 
@@ -4678,7 +4704,7 @@ search_result_state database_api_impl::get_search_query( const search_query& que
          if( results.tags.size() < query.limit )
          {
             tag_itr = tag_idx.find( item.first );
-            results.tags.push_back( tag_following_api_obj( *tag_itr ) );
+            results.tags.push_back( account_tag_following_api_obj( *tag_itr ) );
          }
          else
          {
@@ -4812,16 +4838,19 @@ vector< applied_operation > database_api::get_ops_in_block( uint64_t block_num, 
 
 vector< applied_operation > database_api_impl::get_ops_in_block(uint64_t block_num, bool only_virtual)const
 {
-   const auto& idx = _db.get_index< operation_index >().indices().get< by_location >();
-   auto itr = idx.lower_bound( block_num );
+   const auto& operation_idx = _db.get_index< operation_index >().indices().get< by_location >();
+   auto operation_itr = operation_idx.lower_bound( block_num );
    vector< applied_operation> results;
    applied_operation temp;
-   while( itr != idx.end() && itr->block == block_num )
+
+   while( operation_itr != operation_idx.end() && operation_itr->block == block_num )
    {
-      temp = *itr;
+      temp = *operation_itr;
       if( !only_virtual || is_virtual_operation(temp.op) )
+      {
          results.push_back(temp);
-      ++itr;
+      } 
+      ++operation_itr;
    }
    return results;
 }
@@ -4851,19 +4880,19 @@ annotated_signed_transaction database_api::get_transaction( transaction_id_type 
 annotated_signed_transaction database_api_impl::get_transaction( transaction_id_type id )const
 {
    #ifndef SKIP_BY_TX_ID
-   const auto& idx = _db.get_index< operation_index >().indices().get< by_transaction_id >();
-   auto itr = idx.lower_bound( id );
+   const auto& operation_idx = _db.get_index< operation_index >().indices().get< by_transaction_id >();
+   auto operation_itr = operation_idx.lower_bound( id );
 
    annotated_signed_transaction results;
 
-   if( itr != idx.end() && itr->trx_id == id )
+   if( operation_itr != operation_idx.end() && operation_itr->trx_id == id )
    {
-      auto blk = _db.fetch_block_by_number( itr->block );
+      auto blk = _db.fetch_block_by_number( operation_itr->block );
       FC_ASSERT( blk.valid() );
-      FC_ASSERT( blk->transactions.size() > itr->trx_in_block );
-      results = blk->transactions[ itr->trx_in_block ];
-      results.block_num = itr->block;
-      results.transaction_num = itr->trx_in_block;
+      FC_ASSERT( blk->transactions.size() > operation_itr->trx_in_block );
+      results = blk->transactions[ operation_itr->trx_in_block ];
+      results.block_num = operation_itr->block;
+      results.transaction_num = operation_itr->trx_in_block;
       return results;
    }
 
@@ -5000,7 +5029,7 @@ comment_interaction_state database_api_impl::get_comment_interactions( string au
    const auto& vote_idx = _db.get_index< comment_vote_index >().indices().get< by_comment_voter >();
    const auto& view_idx = _db.get_index< comment_view_index >().indices().get< by_comment_viewer >();
    const auto& share_idx = _db.get_index< comment_share_index >().indices().get< by_comment_sharer >();
-   const auto& moderation_idx = _db.get_index< moderation_tag_index >().indices().get< by_comment_moderator >();
+   const auto& moderation_idx = _db.get_index< comment_moderation_index >().indices().get< by_comment_moderator >();
 
    comment_id_type cid(comment.id);
 
@@ -5090,8 +5119,8 @@ vector< account_vote > database_api_impl::get_account_votes( string account, str
 
    const auto& com_vote_idx = _db.get_index< comment_vote_index >().indices().get< by_voter_comment >();
 
-   auto itr = com_vote_idx.lower_bound( account );
-   auto end = com_vote_idx.upper_bound( account );
+   auto com_vote_itr = com_vote_idx.lower_bound( account );
+   auto com_vote_end = com_vote_idx.upper_bound( account );
 
    if( from_author.length() && from_permlink.length() )
    {
@@ -5099,22 +5128,22 @@ vector< account_vote > database_api_impl::get_account_votes( string account, str
       auto from_itr = com_vote_idx.find( boost::make_tuple( account, com.id ) );
       if( from_itr != com_vote_idx.end() )
       {
-         itr = com_vote_idx.iterator_to( *from_itr );
+         com_vote_itr = com_vote_idx.iterator_to( *from_itr );
       }
    }
 
-   while( itr != end && results.size() < limit )
+   while( com_vote_itr != com_vote_end && results.size() < limit )
    {
-      const comment_object& comment = _db.get( itr->comment );
+      const comment_object& comment = _db.get( com_vote_itr->comment );
       account_vote avote;
       avote.author = comment.author;
       avote.permlink = to_string( comment.permlink );
-      avote.weight = itr->weight;
-      avote.reward = itr->reward.value;
-      avote.percent = itr->vote_percent;
-      avote.time = itr->last_updated;
+      avote.weight = com_vote_itr->weight;
+      avote.reward = com_vote_itr->reward.value;
+      avote.percent = com_vote_itr->vote_percent;
+      avote.time = com_vote_itr->last_updated;
       results.push_back( avote );
-      ++itr;
+      ++com_vote_itr;
    }
    return results;
 }
@@ -5134,8 +5163,8 @@ vector< account_view > database_api_impl::get_account_views( string account, str
    results.reserve( limit );
 
    const auto& com_view_idx = _db.get_index< comment_view_index >().indices().get< by_viewer_comment >();
-   auto itr = com_view_idx.lower_bound( account );
-   auto end = com_view_idx.upper_bound( account );
+   auto com_view_itr = com_view_idx.lower_bound( account );
+   auto com_view_end = com_view_idx.upper_bound( account );
 
    if( from_author.length() && from_permlink.length() )
    {
@@ -5143,21 +5172,21 @@ vector< account_view > database_api_impl::get_account_views( string account, str
       auto from_itr = com_view_idx.find( boost::make_tuple( account, com.id ) );
       if( from_itr != com_view_idx.end() )
       {
-         itr = com_view_idx.iterator_to( *from_itr );
+         com_view_itr = com_view_idx.iterator_to( *from_itr );
       }
    }
 
-   while( itr != end && results.size() < limit )
+   while( com_view_itr != com_view_end && results.size() < limit )
    {
-      const comment_object& comment = _db.get( itr->comment );
+      const comment_object& comment = _db.get( com_view_itr->comment );
       account_view aview;
       aview.author = comment.author;
       aview.permlink = to_string( comment.permlink );
-      aview.weight = itr->weight;
-      aview.reward = itr->reward.value;
-      aview.time = itr->created;
+      aview.weight = com_view_itr->weight;
+      aview.reward = com_view_itr->reward.value;
+      aview.time = com_view_itr->created;
       results.push_back( aview );
-      ++itr;
+      ++com_view_itr;
    }
    return results;
 }
@@ -5177,8 +5206,8 @@ vector< account_share > database_api_impl::get_account_shares( string account, s
    results.reserve( limit );
 
    const auto& com_share_idx = _db.get_index< comment_share_index >().indices().get< by_sharer_comment >();
-   auto itr = com_share_idx.lower_bound( account );
-   auto end = com_share_idx.upper_bound( account );
+   auto com_share_itr = com_share_idx.lower_bound( account );
+   auto com_share_end = com_share_idx.upper_bound( account );
 
    if( from_author.length() && from_permlink.length() )
    {
@@ -5186,21 +5215,21 @@ vector< account_share > database_api_impl::get_account_shares( string account, s
       auto from_itr = com_share_idx.find( boost::make_tuple( account, com.id ) );
       if( from_itr != com_share_idx.end() )
       {
-         itr = com_share_idx.iterator_to( *from_itr );
+         com_share_itr = com_share_idx.iterator_to( *from_itr );
       }
    }
 
-   while( itr != end && results.size() < limit )
+   while( com_share_itr != com_share_end && results.size() < limit )
    {
-      const comment_object& comment = _db.get( itr->comment );
+      const comment_object& comment = _db.get( com_share_itr->comment );
       account_share ashare;
       ashare.author = comment.author;
       ashare.permlink = to_string( comment.permlink );
-      ashare.weight = itr->weight;
-      ashare.reward = itr->reward.value;
-      ashare.time = itr->created;
+      ashare.weight = com_share_itr->weight;
+      ashare.reward = com_share_itr->reward.value;
+      ashare.time = com_share_itr->created;
       results.push_back( ashare );
-      ++itr;
+      ++com_share_itr;
    }
    return results;
 }
@@ -5219,9 +5248,9 @@ vector< account_moderation > database_api_impl::get_account_moderation( string a
    limit = std::min( limit, uint32_t( 1000 ) );
    results.reserve( limit );
 
-   const auto& com_mod_idx = _db.get_index< moderation_tag_index >().indices().get< by_moderator_comment >();
-   auto itr = com_mod_idx.lower_bound( account );
-   auto end = com_mod_idx.upper_bound( account );
+   const auto& com_mod_idx = _db.get_index< comment_moderation_index >().indices().get< by_moderator_comment >();
+   auto com_mod_itr = com_mod_idx.lower_bound( account );
+   auto com_mod_end = com_mod_idx.upper_bound( account );
 
    if( from_author.length() && from_permlink.length() )
    {
@@ -5229,43 +5258,43 @@ vector< account_moderation > database_api_impl::get_account_moderation( string a
       auto from_itr = com_mod_idx.find( boost::make_tuple( account, com.id ) );
       if( from_itr != com_mod_idx.end() )
       {
-         itr = com_mod_idx.iterator_to( *from_itr );
+         com_mod_itr = com_mod_idx.iterator_to( *from_itr );
       }
    }
 
-   while( itr != end && results.size() < limit )
+   while( com_mod_itr != com_mod_end && results.size() < limit )
    {
-      const comment_object& comment = _db.get( itr->comment );
+      const comment_object& comment = _db.get( com_mod_itr->comment );
       account_moderation amod;
       amod.author = comment.author;
       amod.permlink = to_string( comment.permlink );
-      amod.tags.reserve( itr->tags.size() );
-      for( auto t : itr->tags )
+      amod.tags.reserve( com_mod_itr->tags.size() );
+      for( auto t : com_mod_itr->tags )
       {
          amod.tags.push_back( t );
       }
-      amod.rating = itr->rating;
-      amod.details = to_string( itr->details );
-      amod.filter = itr->filter;
-      amod.time = itr->last_updated;
+      amod.rating = com_mod_itr->rating;
+      amod.details = to_string( com_mod_itr->details );
+      amod.filter = com_mod_itr->filter;
+      amod.time = com_mod_itr->last_updated;
       results.push_back( amod );
-      ++itr;
+      ++com_mod_itr;
    }
    return results;
 }
 
-vector< tag_following_api_obj > database_api::get_tag_followings( vector< string > tags )const
+vector< account_tag_following_api_obj > database_api::get_account_tag_followings( vector< string > tags )const
 {
    return my->_db.with_read_lock( [&]()
    {
-      return my->get_tag_followings( tags );
+      return my->get_account_tag_followings( tags );
    });
 }
 
-vector< tag_following_api_obj > database_api_impl::get_tag_followings( vector< string > tags )const
+vector< account_tag_following_api_obj > database_api_impl::get_account_tag_followings( vector< string > tags )const
 {
-   vector< tag_following_api_obj > results;
-   const auto& tag_idx = _db.get_index< tag_following_index >().indices().get< by_tag >();
+   vector< account_tag_following_api_obj > results;
+   const auto& tag_idx = _db.get_index< account_tag_following_index >().indices().get< by_tag >();
    
    for( auto tag : tags )
    {
@@ -5273,7 +5302,7 @@ vector< tag_following_api_obj > database_api_impl::get_tag_followings( vector< s
 
       if( tag_itr != tag_idx.end() )
       {
-         results.push_back( tag_following_api_obj( *tag_itr ) );
+         results.push_back( account_tag_following_api_obj( *tag_itr ) );
       }
    }
    return results;
@@ -5294,18 +5323,20 @@ vector< pair< tag_name_type, uint32_t > > database_api_impl::get_tags_used_by_au
       return vector< pair< tag_name_type, uint32_t > >();
    }
 
-   const account_object* acnt = _db.find_account( author );
-   FC_ASSERT( acnt != nullptr,
+   const account_object* account_ptr = _db.find_account( author );
+   FC_ASSERT( account_ptr != nullptr,
       "Account not found." );
 
-   const auto& tidx = _db.get_index< tags::author_tag_stats_index >().indices().get< tags::by_author_posts_tag >();
-   auto itr = tidx.lower_bound( author );
+   const auto& author_tag_idx = _db.get_index< tags::author_tag_stats_index >().indices().get< tags::by_author_posts_tag >();
+   auto author_tag_itr = author_tag_idx.lower_bound( author );
    vector< pair< tag_name_type, uint32_t > > results;
 
-   while( itr != tidx.end() && itr->author == acnt->name && results.size() < 1000 )
+   while( author_tag_itr != author_tag_idx.end() && 
+      author_tag_itr->author == account_ptr->name && 
+      results.size() < 1000 )
    {
-      results.push_back( std::make_pair( itr->tag, itr->total_posts ) );
-      ++itr;
+      results.push_back( std::make_pair( author_tag_itr->tag, author_tag_itr->total_posts ) );
+      ++author_tag_itr;
    }
    return results;
 }
@@ -5402,14 +5433,15 @@ vector< discussion > database_api_impl::get_content_replies( string author, stri
 {
    account_name_type acc_name = account_name_type( author );
    const auto& comment_idx = _db.get_index< comment_index >().indices().get< by_parent >();
-   auto itr = comment_idx.find( boost::make_tuple( acc_name, permlink ) );
+   auto comment_itr = comment_idx.find( boost::make_tuple( acc_name, permlink ) );
    vector< discussion > results;
-   while( itr != comment_idx.end() && 
-      itr->parent_author == author && 
-      to_string( itr->parent_permlink ) == permlink )
+
+   while( comment_itr != comment_idx.end() && 
+      comment_itr->parent_author == author && 
+      to_string( comment_itr->parent_permlink ) == permlink )
    {
-      results.push_back( discussion( *itr ) );
-      ++itr;
+      results.push_back( discussion( *comment_itr ) );
+      ++comment_itr;
    }
    return results;
 }
@@ -6501,8 +6533,8 @@ vector< discussion > database_api_impl::get_discussions_by_feed( const discussio
    }
 
    const auto& tag_idx = _db.get_index< tags::tag_index >().indices().get<tags::by_comment>();
-   const auto& f_idx = _db.get_index< feed_index >().indices().get< by_new_account_type >();
-   auto feed_itr = f_idx.lower_bound( account );
+   const auto& f_idx = _db.get_index< comment_feed_index >().indices().get< by_new_account_type >();
+   auto comment_feed_itr = f_idx.lower_bound( account );
    feed_reach_type reach = feed_reach_type::FOLLOW_FEED;
 
    if( query.feed_type.size() )
@@ -6516,32 +6548,32 @@ vector< discussion > database_api_impl::get_discussions_by_feed( const discussio
          }
       }
 
-      feed_itr = f_idx.lower_bound( boost::make_tuple( account, reach ) );
+      comment_feed_itr = f_idx.lower_bound( boost::make_tuple( account, reach ) );
    }
 
-   const auto& feed_idx = _db.get_index< feed_index >().indices().get< by_comment >();
+   const auto& comment_feed_idx = _db.get_index< comment_feed_index >().indices().get< by_comment >();
    if( start_author.size() || start_permlink.size() )
    {
       const comment_object& com = _db.get_comment( start_author, start_permlink );
-      auto start_c = feed_idx.find( com.id );
-      FC_ASSERT( start_c != feed_idx.end(),
+      auto start_c = comment_feed_idx.find( com.id );
+      FC_ASSERT( start_c != comment_feed_idx.end(),
          "Comment is not in account's feed" );
-      feed_itr = f_idx.iterator_to( *start_c );
+      comment_feed_itr = f_idx.iterator_to( *start_c );
    }
 
    vector< discussion > results;
    results.reserve( query.limit );
 
-   while( results.size() < query.limit && feed_itr != f_idx.end() )
+   while( results.size() < query.limit && comment_feed_itr != f_idx.end() )
    {
-      if( feed_itr->account != account )
+      if( comment_feed_itr->account != account )
       {
          break;
       }
 
       if( query.post_include_time.size() )
       {
-         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+         auto tag_itr = tag_idx.lower_bound( comment_feed_itr->comment );
 
          time_point now = _db.head_block_time();
          time_point created = tag_itr->created;
@@ -6589,49 +6621,49 @@ vector< discussion > database_api_impl::get_discussions_by_feed( const discussio
 
          if( old_post )
          {
-            ++feed_itr;
+            ++comment_feed_itr;
             continue;
          }
       }
 
       if( !query.include_private )
       {
-         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+         auto tag_itr = tag_idx.lower_bound( comment_feed_itr->comment );
          if( tag_itr->encrypted )
          {
-            ++feed_itr;
+            ++comment_feed_itr;
             continue;
          }
       }
 
       if( query.max_rating <= 9 )
       {
-         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+         auto tag_itr = tag_idx.lower_bound( comment_feed_itr->comment );
 
          if( tag_itr->rating > query.max_rating )
          {
-            ++feed_itr;
+            ++comment_feed_itr;
             continue;
          }
       }
 
       if( query.select_authors.size() )
       {
-         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+         auto tag_itr = tag_idx.lower_bound( comment_feed_itr->comment );
 
          if( query.select_authors.find( tag_itr->author ) == query.select_authors.end() )
          {
-            ++feed_itr;
+            ++comment_feed_itr;
             continue;
          }
       }
 
       if( query.select_languages.size() ) 
       {
-         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+         auto tag_itr = tag_idx.lower_bound( comment_feed_itr->comment );
 
          bool found = false;
-         while( tag_itr != tag_idx.end() && tag_itr->comment == feed_itr->comment )
+         while( tag_itr != tag_idx.end() && tag_itr->comment == comment_feed_itr->comment )
          {
             if( query.select_languages.find( tag_itr->language ) != query.select_languages.end() )
             {
@@ -6642,17 +6674,17 @@ vector< discussion > database_api_impl::get_discussions_by_feed( const discussio
          }
          if( !found ) 
          {
-            ++feed_itr;
+            ++comment_feed_itr;
             continue;
          }
       }
 
       if( query.select_communities.size() ) 
       {
-         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+         auto tag_itr = tag_idx.lower_bound( comment_feed_itr->comment );
 
          bool found = false;
-         while( tag_itr != tag_idx.end() && tag_itr->comment == feed_itr->comment )
+         while( tag_itr != tag_idx.end() && tag_itr->comment == comment_feed_itr->comment )
          {
             if( query.select_communities.find( tag_itr->community ) != query.select_communities.end() )
             {
@@ -6663,17 +6695,17 @@ vector< discussion > database_api_impl::get_discussions_by_feed( const discussio
          }
          if( !found ) 
          {
-            ++feed_itr;
+            ++comment_feed_itr;
             continue;
          }
       }
 
       if( query.select_tags.size() ) 
       {
-         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+         auto tag_itr = tag_idx.lower_bound( comment_feed_itr->comment );
 
          bool found = false;
-         while( tag_itr != tag_idx.end() && tag_itr->comment == feed_itr->comment )
+         while( tag_itr != tag_idx.end() && tag_itr->comment == comment_feed_itr->comment )
          {
             if( query.select_tags.find( tag_itr->tag ) != query.select_tags.end() )
             {
@@ -6684,26 +6716,26 @@ vector< discussion > database_api_impl::get_discussions_by_feed( const discussio
          }
          if( !found ) 
          {
-            ++feed_itr;
+            ++comment_feed_itr;
             continue;
          }
       }
 
       if( query.filter_authors.size()  )
       {
-         if( query.filter_authors.find( feed_itr->account ) != query.filter_authors.end() )
+         if( query.filter_authors.find( comment_feed_itr->account ) != query.filter_authors.end() )
          {
-            ++feed_itr;
+            ++comment_feed_itr;
             continue;
          }
       }
 
       if( query.filter_languages.size() )
       {
-         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+         auto tag_itr = tag_idx.lower_bound( comment_feed_itr->comment );
 
          bool found = false;
-         while( tag_itr != tag_idx.end() && tag_itr->comment == feed_itr->comment )
+         while( tag_itr != tag_idx.end() && tag_itr->comment == comment_feed_itr->comment )
          {
             if( query.filter_languages.find( tag_itr->language ) != query.filter_languages.end() )
             {
@@ -6714,17 +6746,17 @@ vector< discussion > database_api_impl::get_discussions_by_feed( const discussio
          }
          if( found ) 
          {
-            ++feed_itr;
+            ++comment_feed_itr;
             continue;
          }
       }
 
       if( query.filter_communities.size() ) 
       {
-         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+         auto tag_itr = tag_idx.lower_bound( comment_feed_itr->comment );
 
          bool found = false;
-         while( tag_itr != tag_idx.end() && tag_itr->comment == feed_itr->comment )
+         while( tag_itr != tag_idx.end() && tag_itr->comment == comment_feed_itr->comment )
          {
             if( query.filter_communities.find( tag_itr->community ) != query.filter_communities.end() )
             {
@@ -6735,17 +6767,17 @@ vector< discussion > database_api_impl::get_discussions_by_feed( const discussio
          }
          if( found ) 
          {
-            ++feed_itr;
+            ++comment_feed_itr;
             continue;
          }
       }
 
       if( query.filter_tags.size() ) 
       {
-         auto tag_itr = tag_idx.lower_bound( feed_itr->comment );
+         auto tag_itr = tag_idx.lower_bound( comment_feed_itr->comment );
 
          bool found = false;
-         while( tag_itr != tag_idx.end() && tag_itr->comment == feed_itr->comment )
+         while( tag_itr != tag_idx.end() && tag_itr->comment == comment_feed_itr->comment )
          {
             if( query.filter_tags.find( tag_itr->tag ) != query.filter_tags.end() )
             {
@@ -6756,22 +6788,22 @@ vector< discussion > database_api_impl::get_discussions_by_feed( const discussio
          }
          if( found ) 
          {
-            ++feed_itr;
+            ++comment_feed_itr;
             continue;
          }
       }
 
       try
       {
-         results.push_back( get_discussion( feed_itr->comment, query.truncate_body ) );
-         results.back().feed = feed_api_obj( *feed_itr );
+         results.push_back( get_discussion( comment_feed_itr->comment, query.truncate_body ) );
+         results.back().feed = feed_api_obj( *comment_feed_itr );
       }
       catch ( const fc::exception& e )
       {
          edump((e.to_detail_string()));
       }
 
-      ++feed_itr;
+      ++comment_feed_itr;
    }
 
    return results;
@@ -6838,50 +6870,50 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
    }
 
    const auto& tag_idx = _db.get_index< tags::tag_index >().indices().get<tags::by_comment>();
-   const auto& blog_idx = _db.get_index< blog_index >().indices().get< by_comment >();
-   auto blog_itr = blog_idx.begin();
+   const auto& comment_blog_idx = _db.get_index< comment_blog_index >().indices().get< by_comment >();
+   auto comment_blog_itr = comment_blog_idx.begin();
 
    switch( reach_type )
    {
       case blog_reach_type::ACCOUNT_BLOG:
       {
-         const auto& account_blog_idx = _db.get_index< blog_index >().indices().get< by_new_account_blog >();
-         auto blog_itr = account_blog_idx.lower_bound( account );
+         const auto& account_comment_blog_idx = _db.get_index< comment_blog_index >().indices().get< by_new_account_blog >();
+         auto comment_blog_itr = account_comment_blog_idx.lower_bound( account );
          if( start_author.size() || start_permlink.size() )
          {
             const comment_object& com = _db.get_comment( start_author, start_permlink );
-            auto start_c = blog_idx.find( com.id );
-            FC_ASSERT( start_c != blog_idx.end(),
+            auto start_c = comment_blog_idx.find( com.id );
+            FC_ASSERT( start_c != comment_blog_idx.end(),
                "Comment is not in account's blog" );
-            blog_itr = account_blog_idx.iterator_to( *start_c );
+            comment_blog_itr = account_comment_blog_idx.iterator_to( *start_c );
          }
       }
       break;
       case blog_reach_type::COMMUNITY_BLOG:
       {
-         const auto& community_blog_idx = _db.get_index< blog_index >().indices().get< by_new_community_blog >();
-         auto blog_itr = community_blog_idx.lower_bound( community );
+         const auto& community_comment_blog_idx = _db.get_index< comment_blog_index >().indices().get< by_new_community_blog >();
+         auto comment_blog_itr = community_comment_blog_idx.lower_bound( community );
          if( start_author.size() || start_permlink.size() )
          {
             const comment_object& com = _db.get_comment( start_author, start_permlink );
-            auto start_c = blog_idx.find( com.id );
-            FC_ASSERT( start_c != blog_idx.end(),
+            auto start_c = comment_blog_idx.find( com.id );
+            FC_ASSERT( start_c != comment_blog_idx.end(),
                "Comment is not in community's blog" );
-            blog_itr = community_blog_idx.iterator_to( *start_c );
+            comment_blog_itr = community_comment_blog_idx.iterator_to( *start_c );
          }
       }
       break;
       case blog_reach_type::TAG_BLOG:
       {
-         const auto& tag_blog_idx = _db.get_index< blog_index >().indices().get< by_new_tag_blog >();
-         auto blog_itr = tag_blog_idx.lower_bound( tag );
+         const auto& tag_comment_blog_idx = _db.get_index< comment_blog_index >().indices().get< by_new_tag_blog >();
+         auto comment_blog_itr = tag_comment_blog_idx.lower_bound( tag );
          if( start_author.size() || start_permlink.size() )
          {
             const comment_object& com = _db.get_comment( start_author, start_permlink );
-            auto start_c = blog_idx.find( com.id );
-            FC_ASSERT( start_c != blog_idx.end(),
+            auto start_c = comment_blog_idx.find( com.id );
+            FC_ASSERT( start_c != comment_blog_idx.end(),
                "Comment is not in tag's blog" );
-            blog_itr = tag_blog_idx.iterator_to( *start_c );
+            comment_blog_itr = tag_comment_blog_idx.iterator_to( *start_c );
          }
       }
       break;
@@ -6894,24 +6926,24 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
    vector< discussion > results;
    results.reserve( query.limit );
 
-   while( results.size() < query.limit && blog_itr != blog_idx.end() )
+   while( results.size() < query.limit && comment_blog_itr != comment_blog_idx.end() )
    { 
-      if( account.size() && blog_itr->account != account && query.blog_type == blog_reach_values[ int( blog_reach_type::ACCOUNT_BLOG ) ] )
+      if( account.size() && comment_blog_itr->account != account && query.blog_type == blog_reach_values[ int( blog_reach_type::ACCOUNT_BLOG ) ] )
       {
          break;
       }
-      if( community.size() && blog_itr->community != community && query.blog_type == blog_reach_values[ int( blog_reach_type::COMMUNITY_BLOG ) ] )
+      if( community.size() && comment_blog_itr->community != community && query.blog_type == blog_reach_values[ int( blog_reach_type::COMMUNITY_BLOG ) ] )
       {
          break;
       }
-      if( tag.size() && blog_itr->tag != tag && query.blog_type == blog_reach_values[ int( blog_reach_type::TAG_BLOG ) ] )
+      if( tag.size() && comment_blog_itr->tag != tag && query.blog_type == blog_reach_values[ int( blog_reach_type::TAG_BLOG ) ] )
       {
          break;
       }
 
       if( query.post_include_time.size() )
       {
-         auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
+         auto tag_itr = tag_idx.lower_bound( comment_blog_itr->comment );
 
          time_point now = _db.head_block_time();
          time_point created = tag_itr->created;
@@ -6959,44 +6991,44 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
 
          if( old_post )
          {
-            ++blog_itr;
+            ++comment_blog_itr;
             continue;
          }
       }
 
       if( !query.include_private )
       {
-         auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
+         auto tag_itr = tag_idx.lower_bound( comment_blog_itr->comment );
          if( tag_itr->encrypted )
          {
-            ++blog_itr;
+            ++comment_blog_itr;
             continue;
          }
       }
 
       if( query.max_rating <= 9 )
       {
-         auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
+         auto tag_itr = tag_idx.lower_bound( comment_blog_itr->comment );
 
          if( tag_itr->rating > query.max_rating )
          {
-            ++blog_itr;
+            ++comment_blog_itr;
             continue;
          }
       }
 
-      if( query.select_authors.size() && query.select_authors.find( blog_itr->account ) == query.select_authors.end() )
+      if( query.select_authors.size() && query.select_authors.find( comment_blog_itr->account ) == query.select_authors.end() )
       {
-         ++blog_itr;
+         ++comment_blog_itr;
          continue;
       }
 
       if( query.select_languages.size() ) 
       {
-         auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
+         auto tag_itr = tag_idx.lower_bound( comment_blog_itr->comment );
 
          bool found = false;
-         while( tag_itr != tag_idx.end() && tag_itr->comment == blog_itr->comment )
+         while( tag_itr != tag_idx.end() && tag_itr->comment == comment_blog_itr->comment )
          {
             if( query.select_languages.find( tag_itr->language ) != query.select_languages.end() )
             {
@@ -7007,17 +7039,17 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
          }
          if( !found ) 
          {
-            ++blog_itr;
+            ++comment_blog_itr;
             continue;
          }
       }
 
       if( query.select_communities.size() ) 
       {
-         auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
+         auto tag_itr = tag_idx.lower_bound( comment_blog_itr->comment );
 
          bool found = false;
-         while( tag_itr != tag_idx.end() && tag_itr->comment == blog_itr->comment )
+         while( tag_itr != tag_idx.end() && tag_itr->comment == comment_blog_itr->comment )
          {
             if( query.select_communities.find( tag_itr->community ) != query.select_communities.end() )
             {
@@ -7028,17 +7060,17 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
          }
          if( !found ) 
          {
-            ++blog_itr;
+            ++comment_blog_itr;
             continue;
          }
       }
 
       if( query.select_tags.size() ) 
       {
-         auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
+         auto tag_itr = tag_idx.lower_bound( comment_blog_itr->comment );
 
          bool found = false;
-         while( tag_itr != tag_idx.end() && tag_itr->comment == blog_itr->comment )
+         while( tag_itr != tag_idx.end() && tag_itr->comment == comment_blog_itr->comment )
          {
             if( query.select_tags.find( tag_itr->tag ) != query.select_tags.end() )
             {
@@ -7049,23 +7081,23 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
          }
          if( !found ) 
          {
-            ++blog_itr;
+            ++comment_blog_itr;
             continue;
          }
       }
 
-      if( query.filter_authors.size() && query.filter_authors.find( blog_itr->account ) != query.filter_authors.end() )
+      if( query.filter_authors.size() && query.filter_authors.find( comment_blog_itr->account ) != query.filter_authors.end() )
       {
-         ++blog_itr;
+         ++comment_blog_itr;
          continue;
       }
 
       if( query.filter_languages.size() )
       {
-         auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
+         auto tag_itr = tag_idx.lower_bound( comment_blog_itr->comment );
 
          bool found = false;
-         while( tag_itr != tag_idx.end() && tag_itr->comment == blog_itr->comment )
+         while( tag_itr != tag_idx.end() && tag_itr->comment == comment_blog_itr->comment )
          {
             if( query.filter_languages.find( tag_itr->language ) != query.filter_languages.end() )
             {
@@ -7076,17 +7108,17 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
          }
          if( found ) 
          {
-            ++blog_itr;
+            ++comment_blog_itr;
             continue;
          }
       }
 
       if( query.filter_communities.size() ) 
       {
-         auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
+         auto tag_itr = tag_idx.lower_bound( comment_blog_itr->comment );
 
          bool found = false;
-         while( tag_itr != tag_idx.end() && tag_itr->comment == blog_itr->comment )
+         while( tag_itr != tag_idx.end() && tag_itr->comment == comment_blog_itr->comment )
          {
             if( query.filter_communities.find( tag_itr->community ) != query.filter_communities.end() )
             {
@@ -7097,17 +7129,17 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
          }
          if( found ) 
          {
-            ++blog_itr;
+            ++comment_blog_itr;
             continue;
          }
       }
 
       if( query.filter_tags.size() ) 
       {
-         auto tag_itr = tag_idx.lower_bound( blog_itr->comment );
+         auto tag_itr = tag_idx.lower_bound( comment_blog_itr->comment );
 
          bool found = false;
-         while( tag_itr != tag_idx.end() && tag_itr->comment == blog_itr->comment )
+         while( tag_itr != tag_idx.end() && tag_itr->comment == comment_blog_itr->comment )
          {
             if( query.filter_tags.find( tag_itr->tag ) != query.filter_tags.end() )
             {
@@ -7118,22 +7150,22 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
          }
          if( found ) 
          {
-            ++blog_itr;
+            ++comment_blog_itr;
             continue;
          }
       }
 
       try
       {
-         results.push_back( get_discussion( blog_itr->comment, query.truncate_body ) );
-         results.back().blog = blog_api_obj( *blog_itr );
+         results.push_back( get_discussion( comment_blog_itr->comment, query.truncate_body ) );
+         results.back().blog = blog_api_obj( *comment_blog_itr );
       }
       catch ( const fc::exception& e )
       {
          edump((e.to_detail_string()));
       }
 
-      ++blog_itr;
+      ++comment_blog_itr;
    }
 
    return results;
@@ -7733,7 +7765,7 @@ state database_api_impl::get_state( string path )const
       part.reserve(4);
       boost::split( part, path, boost::is_any_of("/") );
       part.resize( std::max( part.size(), size_t(4) ) );
-      string acnt;
+      string account;
       string community;
       string tag;
       string section;
@@ -7742,10 +7774,10 @@ state database_api_impl::get_state( string path )const
       {
          if( item[0] == '@' )
          {
-            string acnt = fc::to_lower( item.substr(1) );
+            string account = fc::to_lower( item.substr(1) );
             vector< string > accvec;
-            accvec.push_back( acnt );
-            _state.accounts[ acnt ] = get_full_accounts( accvec )[0];
+            accvec.push_back( account );
+            _state.accounts[ account ] = get_full_accounts( accvec )[0];
          }
          else if( item[0] == '&' )
          {
@@ -7759,7 +7791,7 @@ state database_api_impl::get_state( string path )const
             string tag = fc::to_lower( item.substr(1) );
             vector< string > tagvec;
             tagvec.push_back( tag );
-            _state.tags[ tag ] = get_tag_followings( tagvec )[0];
+            _state.tags[ tag ] = get_account_tag_followings( tagvec )[0];
          }
          else
          {
@@ -7769,62 +7801,63 @@ state database_api_impl::get_state( string path )const
 
       if( section == "recent-replies" )
       {
-         vector< discussion > replies = get_replies_by_last_update( acnt, "", 50 );
-         _state.recent_replies[ acnt ] = vector< string >();
+         vector< discussion > replies = get_replies_by_last_update( account, "", 50 );
+         _state.recent_replies[ account ] = vector< string >();
 
          for( const auto& reply : replies )
          {
             string reply_ref = reply.author + "/" + reply.permlink;
             _state.content[ reply_ref ] = reply;
-            _state.recent_replies[ acnt ].push_back( reply_ref );
+            _state.recent_replies[ account ].push_back( reply_ref );
          }
       }
       else if( section == "posts" || section == "comments" )
       {
          int count = 0;
-         const auto& pidx = _db.get_index< comment_index >().indices().get< by_author_last_update >();
-         auto itr = pidx.lower_bound( acnt );
-         _state.comments[ acnt ] = vector< string >();
+         const auto& comment_idx = _db.get_index< comment_index >().indices().get< by_author_last_update >();
+         auto comment_itr = comment_idx.lower_bound( account );
+         _state.comments[ account ] = vector< string >();
 
-         while( itr != pidx.end() && itr->author == acnt && count < 20 )
+         while( comment_itr != comment_idx.end() && 
+            comment_itr->author == account && count < 20 )
          {
-            if( itr->parent_author.size() )
+            if( comment_itr->parent_author.size() )
             {
-               string link = acnt + "/" + to_string( itr->permlink );
-               _state.recent_replies[ acnt ].push_back( link );
-               _state.content[ link ] = *itr;
+               string link = account + "/" + to_string( comment_itr->permlink );
+               _state.recent_replies[ account ].push_back( link );
+               _state.content[ link ] = *comment_itr;
                ++count;
             }
-            ++itr;
+            ++comment_itr;
          }
       }
       else if( section == "blog" )
       {
          discussion_query q;
-         q.account = acnt;
+         q.account = account;
          q.blog_type = blog_reach_values[ int( blog_reach_type::ACCOUNT_BLOG ) ];
          vector< discussion > blog_posts = get_discussions_by_blog( q );
-         _state.blogs[ acnt ] = vector< string >();
+         _state.blogs[ account ] = vector< string >();
 
          for( auto b : blog_posts )
          {
             string link = b.author + "/" + b.permlink;
-            _state.blogs[ acnt ].push_back( link );
+            _state.blogs[ account ].push_back( link );
             _state.content[ link ] = b;
          }
       }
       else if( section == "feed" )
       {
          discussion_query q;
-         q.account = acnt;
+         q.account = account;
          q.feed_type = feed_reach_values[ int( feed_reach_type::FOLLOW_FEED ) ];
          vector< discussion > feed_posts = get_discussions_by_feed( q );
-         _state.blogs[ acnt ] = vector< string >();
+         _state.blogs[ account ] = vector< string >();
 
          for( auto f: feed_posts )
          {
             string link = f.author + "/" + f.permlink;
-            _state.feeds[ acnt ].push_back( link );
+            _state.feeds[ account ].push_back( link );
             _state.content[ link ] = f;
          }
       }
@@ -8133,14 +8166,14 @@ state database_api_impl::get_state( string path )const
          {
             string name = t.tag;
             _state.tag_idx.trending.push_back( name );
-            _state.tags[ name ] = tag_following_api_obj( _db.get_tag_following( name ) );
+            _state.tags[ name ] = account_tag_following_api_obj( _db.get_account_tag_following( name ) );
          }
       }
-      else if( acnt.size() && section.size() )
+      else if( account.size() && section.size() )
       {
          string permlink = section;
-         string key = acnt + "/" + permlink;
-         discussion dis = get_content( acnt, permlink );
+         string key = account + "/" + permlink;
+         discussion dis = get_content( account, permlink );
          recursively_fetch_content( _state, dis, accounts );
          _state.content[ key ] = std::move( dis );
       }

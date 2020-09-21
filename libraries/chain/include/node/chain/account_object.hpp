@@ -12,6 +12,15 @@
 
 namespace node { namespace chain {
 
+   /**
+    * Accounts hold the state information of every user of the Protocol.
+    * 
+    * Every account is comprised of a set of signing authorities, and profile information for 
+    * managing interaction and transaction signing.
+    * 
+    * Many Elements in the Account object should be encrypted with the Connection Key of the Account
+    * so that they can be selectively decrypted by other accounts that the user connects with.
+    */
    class account_object : public object< account_object_type, account_object >
    {
       account_object() = delete;
@@ -101,7 +110,7 @@ namespace node { namespace chain {
 
          account_name_type                membership_interface = NULL_ACCOUNT;   ///< Account of the last interface to sell a membership to the account.
 
-         uint16_t                         reset_account_delay_days = 7;          ///< Days of inactivity required to enable a reset account operation
+         uint16_t                         reset_delay_days = 7;                  ///< Days of inactivity required to enable a reset account operation
          
          uint16_t                         referrer_rewards_percentage = 50 * PERCENT_1; ///< The percentage of registrar rewards that are directed to the referrer.
          
@@ -149,7 +158,7 @@ namespace node { namespace chain {
 
          uint16_t                         governance_subscriptions = 0;          ///< Number of governance accounts that the account subscribes to.
 
-         uint16_t                         enterprise_approval_count = 0;         ///< Number of Enterprise proposals that the account has voted for. 
+         uint16_t                         enterprise_vote_count = 0;             ///< Number of Enterprise proposals that the account has voted for. 
 
          uint16_t                         recurring_membership = 0;              ///< Amount of months membership should be automatically renewed for on expiration
 
@@ -190,43 +199,39 @@ namespace node { namespace chain {
 
 
    /**
-    * Describes the process and details of the verification of an account by another account.
-    * 
-    * Accounts must have a profile object before they can begin the verification process.
-    * 
-    * The verifier account proves that they have 
-    * access to the profile data of the verified account
-    * by signing an image of both people in the same picture, 
-    * holding a hand writen note containing both account names
-    * and a recent head_block_id of the blockchain using the private key
-    * corresponding to the verified account's profile public key.
+    * Contains the Transaction signing Authorities of an account.
     */
-   class account_verification_object : public object< account_verification_object_type, account_verification_object >
+   class account_authority_object : public object< account_authority_object_type, account_authority_object >
    {
-      account_verification_object() = delete;
+      account_authority_object() = delete;
 
       public:
-         template<typename Constructor, typename Allocator>
-         account_verification_object( Constructor&& c, allocator< Allocator > a ) :
-         shared_image(a)
-         {
-            c(*this);
-         };
+         template< typename Constructor, typename Allocator >
+         account_authority_object( Constructor&& c, allocator< Allocator > a ) :
+            owner_auth( a ), 
+            active_auth( a ), 
+            posting_auth( a )
+            {
+               c( *this );
+            }
 
-         id_type                   id;
+         id_type                  id;
 
-         account_name_type         verifier_account;              ///< Name of the Account with the profile.
+         account_name_type        account;            ///< Name of the account
 
-         account_name_type         verified_account;              ///< Name of the account being verifed.
+         shared_authority         owner_auth;         ///< used for backup control, can set all other keys
 
-         shared_string             shared_image;                  ///< IPFS reference to an image containing both people and the current.
+         shared_authority         active_auth;        ///< used for all monetary operations, can set active or posting
 
-         time_point                created;                       ///< Time of verification.
+         shared_authority         posting_auth;       ///< used for voting and posting
 
-         time_point                last_updated;                  ///< Time that the verifcation was last updated. 
+         time_point               last_owner_update;  ///< Time that the owner key was last updated.
    };
 
 
+   /**
+    * Permissions contain a set of whitelisted and blacklisted Accounts and Assets.
+    */
    class account_permission_object : public object< account_permission_object_type, account_permission_object >
    {
       account_permission_object() = delete;
@@ -242,13 +247,17 @@ namespace node { namespace chain {
 
          account_name_type                        account;                       ///< Name of the account with permissions set.
    
-         flat_set< account_name_type >            whitelisted_accounts;          ///< List of accounts that are able to send transfers to this account.
+         flat_set< account_name_type >            whitelisted_accounts;          ///< List of accounts that are able to interact with this account.
 
-         flat_set< account_name_type >            blacklisted_accounts;          ///< List of accounts that are not able to receive transfers from this account.
+         flat_set< account_name_type >            blacklisted_accounts;          ///< List of accounts that are not able to interact with this account.
 
-         flat_set< asset_symbol_type >            whitelisted_assets;            ///< List of assets that the account has whitelisted to receieve transfers of. 
+         flat_set< asset_symbol_type >            whitelisted_assets;            ///< List of assets that the account has whitelisted to transact with. 
 
-         flat_set< asset_symbol_type >            blacklisted_assets;            ///< List of assets that the account has blacklisted against incoming transfers.
+         flat_set< asset_symbol_type >            blacklisted_assets;            ///< List of assets that the account has blacklisted against transactions.
+
+         flat_set< community_name_type >          whitelisted_communities;       ///< List of communities that the account has whitelisted to interact with. 
+
+         flat_set< community_name_type >          blacklisted_communities;       ///< List of communities that the account has blacklisted against interactions.
  
          bool is_authorized_transfer( const account_name_type& name, const asset_object& asset_obj )const          ///< Determines if an asset is authorized for transfer with an accounts permissions object. 
          {
@@ -340,6 +349,44 @@ namespace node { namespace chain {
 
             return true;
          };
+   };
+
+
+   /**
+    * Describes the process and details of the verification of an account by another account.
+    * 
+    * Accounts must have a profile object before they can begin the verification process.
+    * 
+    * The verifier account proves that they have 
+    * access to the profile data of the verified account
+    * by signing an image of both people in the same picture, 
+    * holding a hand writen note containing both account names
+    * and a recent head_block_id of the blockchain using the private key
+    * corresponding to the verified account's profile public key.
+    */
+   class account_verification_object : public object< account_verification_object_type, account_verification_object >
+   {
+      account_verification_object() = delete;
+
+      public:
+         template<typename Constructor, typename Allocator>
+         account_verification_object( Constructor&& c, allocator< Allocator > a ) :
+         shared_image(a)
+         {
+            c(*this);
+         };
+
+         id_type                   id;
+
+         account_name_type         verifier_account;              ///< Name of the Account with the profile.
+
+         account_name_type         verified_account;              ///< Name of the account being verifed.
+
+         shared_string             shared_image;                  ///< IPFS reference to an image containing both people and the current.
+
+         time_point                created;                       ///< Time of verification.
+
+         time_point                last_updated;                  ///< Time that the verifcation was last updated. 
    };
 
 
@@ -773,6 +820,14 @@ namespace node { namespace chain {
          };
    };
 
+
+   /**
+    * Vote for an account as an Executive within a Business Account.
+    * 
+    * Vote ranks determine the ordering of the vote, 
+    * and apply higher voting power to
+    * higher ranked votes.
+    */
    class account_executive_vote_object : public object< account_executive_vote_object_type, account_executive_vote_object >
    {
       account_executive_vote_object() = delete;
@@ -795,8 +850,20 @@ namespace node { namespace chain {
          executive_role_type       role;                  ///< Role voted in favor of.
 
          uint16_t                  vote_rank = 1;         ///< The rank of the executive vote.
+
+         time_point                last_updated;         ///< Time that the vote was last updated.
+
+         time_point                created;              ///< The time the vote was created.
    };
 
+
+   /**
+    * Vote for an account as an Officer within a Business Account.
+    * 
+    * Vote ranks determine the ordering of the vote, 
+    * and apply higher voting power to
+    * higher ranked votes.
+    */
    class account_officer_vote_object : public object< account_officer_vote_object_type, account_officer_vote_object >
    {
       account_officer_vote_object() = delete;
@@ -808,17 +875,27 @@ namespace node { namespace chain {
             c(*this);
          };
 
-         id_type                                 id;
+         id_type                    id;
 
-         account_name_type                       account;             ///< Username of the account, voting for the officer.
+         account_name_type          account;             ///< Username of the account, voting for the officer.
          
-         account_name_type                       business_account;    ///< Name of the referred business account.
+         account_name_type          business_account;    ///< Name of the referred business account.
 
-         account_name_type                       officer_account;     ///< Name of the officer account.
+         account_name_type          officer_account;     ///< Name of the officer account.
 
-         uint16_t                                vote_rank = 1;       ///< The rank of the officer vote.
+         uint16_t                   vote_rank = 1;       ///< The rank of the officer vote.
+
+         time_point                 last_updated;        ///< Time that the vote was last updated.
+
+         time_point                 created;             ///< The time the vote was created.
    };
 
+
+   /**
+    * Requests that an account join as a member within a Business Account.
+    * 
+    * Contains a message encrypted with the business account public key.
+    */
    class account_member_request_object : public object< account_member_request_object_type, account_member_request_object >
    {
       account_member_request_object() = delete;
@@ -842,6 +919,12 @@ namespace node { namespace chain {
          time_point                              expiration;            ///< time that the request expires.
    };
 
+
+   /**
+    * Invites that an account join as a member within a Business Account.
+    * 
+    * Contains a message encrypted with the invited account's public secure key.
+    */
    class account_member_invite_object : public object< account_member_invite_object_type, account_member_invite_object >
    {
       account_member_invite_object() = delete;
@@ -867,6 +950,12 @@ namespace node { namespace chain {
          time_point                              expiration;            ///< time that the invitation expires.
    };
 
+
+   /**
+    * Holds the Encrypted business private key of a Business member.
+    * 
+    * Enables the Decryption of business account private messages and posts.
+    */
    class account_member_key_object : public object< account_member_key_object_type, account_member_key_object >
    {
       account_member_key_object() = delete;
@@ -890,212 +979,14 @@ namespace node { namespace chain {
    };
 
 
-   class account_balance_object : public object< account_balance_object_type, account_balance_object >
-   {
-      account_balance_object() = delete;
-
-      public:
-         template< typename Constructor, typename Allocator >
-         account_balance_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c( *this );
-         }
-
-         id_type                     id;
-
-         account_name_type           owner;                      ///< Account that owns the Balance.
-
-         asset_symbol_type           symbol;                     ///< Symbol of the asset that the balance corresponds to.
-
-         share_type                  liquid_balance;             ///< Balance that can be freely transferred.
-
-         share_type                  staked_balance;             ///< Balance that cannot be transferred, and is vested in the account for a period of time.
-
-         share_type                  reward_balance;             ///< Balance that is newly issued from the network.
-
-         share_type                  savings_balance;            ///< Balance that cannot be transferred, and must be withdrawn after a delay period.
-
-         share_type                  delegated_balance;          ///< Balance that is delegated to other accounts for voting power.
-
-         share_type                  receiving_balance;          ///< Balance that has been delegated to the account by other delegators.
-
-         share_type                  stake_rate;                 ///< Amount of liquid balance that is being staked from the liquid balance to the staked balance. 
-
-         time_point                  next_stake_time;            ///< time at which the stake rate will be transferred from liquid to staked.
-
-         share_type                  to_stake;                   ///< total amount to stake over the staking period.
-
-         share_type                  total_staked;               ///< total amount that has been staked so far.
-
-         share_type                  unstake_rate;               ///< Amount of staked balance that is being unstaked from the staked balance to the liquid balance.
-
-         time_point                  next_unstake_time;          ///< time at which the unstake rate will be transferred from staked to liquid.
-
-         share_type                  to_unstake;                 ///< total amount to unstake over the withdrawal period.
-
-         share_type                  total_unstaked;             ///< total amount that has been unstaked so far.
-
-         time_point                  last_interest_time;         ///< Last time that interest was compounded.
-
-         asset                       get_liquid_balance()const
-         { 
-            return asset( liquid_balance, symbol );
-         }
-
-         asset                       get_reward_balance()const
-         { 
-            return asset( reward_balance, symbol );
-         }
-
-         asset                       get_staked_balance()const
-         { 
-            return asset( staked_balance, symbol );
-         }
-
-         asset                       get_savings_balance()const
-         {
-            return asset( savings_balance, symbol );
-         }
-
-         asset                       get_delegated_balance()const
-         { 
-            return asset( delegated_balance, symbol );
-         }
-
-         asset                       get_receiving_balance()const
-         { 
-            return asset( receiving_balance, symbol );
-         }
-
-         asset                       get_total_balance()const
-         { 
-            return asset( ( liquid_balance + reward_balance + staked_balance + savings_balance ), symbol );
-         }
-
-         asset                       get_voting_power()const
-         { 
-            return asset( ( staked_balance - delegated_balance + receiving_balance ), symbol );
-         }
-
-         void                        adjust_liquid_balance( const asset& delta )
-         { try {
-            FC_ASSERT( delta.symbol == symbol, 
-               "Delta asset: ${s} is not the correct asset for account balance ${b}",("s",delta.symbol)("b",symbol) );
-            liquid_balance += delta.amount;
-            FC_ASSERT( liquid_balance >= 0,
-               "Liquid balance cannot go below 0, balance: ${b}",("b",liquid_balance) );
-         } FC_CAPTURE_AND_RETHROW( (delta) ) }
-
-         void                        adjust_staked_balance( const asset& delta )
-         { try {
-            FC_ASSERT( delta.symbol == symbol );
-            staked_balance += delta.amount;
-            FC_ASSERT( staked_balance >= 0 );
-         } FC_CAPTURE_AND_RETHROW( (delta) ) }
-
-         void                        adjust_reward_balance( const asset& delta )
-         { try {
-            FC_ASSERT( delta.symbol == symbol );
-            reward_balance += delta.amount;
-            FC_ASSERT( reward_balance >= 0 );
-         } FC_CAPTURE_AND_RETHROW( (delta) ) }
-
-         void                        adjust_savings_balance( const asset& delta )
-         { try {
-            FC_ASSERT( delta.symbol == symbol );
-            savings_balance += delta.amount;
-            FC_ASSERT( savings_balance >= 0 );
-         } FC_CAPTURE_AND_RETHROW( (delta) ) }
-
-         void                        adjust_delegated_balance( const asset& delta )
-         { try {
-            FC_ASSERT( delta.symbol == symbol );
-            delegated_balance += delta.amount;
-            FC_ASSERT( delegated_balance >= 0 );
-         } FC_CAPTURE_AND_RETHROW( (delta) ) }
-
-         void                        adjust_receiving_balance( const asset& delta )
-         { try {
-            FC_ASSERT( delta.symbol == symbol );
-            receiving_balance += delta.amount;
-            FC_ASSERT( receiving_balance >= 0 );
-         } FC_CAPTURE_AND_RETHROW( (delta) ) }
-   };
-
-
-   class account_vesting_balance_object : public object< account_vesting_balance_object_type, account_vesting_balance_object >
-   {
-      account_vesting_balance_object() = delete;
-
-      public:
-         template< typename Constructor, typename Allocator >
-         account_vesting_balance_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c( *this );
-         }
-
-         id_type                     id;
-
-         account_name_type           owner;
-
-         asset_symbol_type           symbol;                     ///< Symbol of the asset that the balance corresponds to.
-
-         share_type                  vesting_balance;            ///< Balance that is locked until the vesting time. Cannot be used for voting.
-
-         time_point                  vesting_time;               ///< Time at which the vesting balance will become liquid.
-
-         asset                       get_vesting_balance()const
-         { 
-            return asset( vesting_balance, symbol );
-         }
-
-         void                        adjust_vesting_balance( const asset& delta, const fc::microseconds& delta_time )
-         { try {
-            FC_ASSERT( delta.symbol == symbol );
-            vesting_balance += delta.amount;
-            vesting_time += delta_time;
-            FC_ASSERT( vesting_balance >= 0 );
-         } FC_CAPTURE_AND_RETHROW( ( delta )( delta_time ) ) }
-
-         void                        create_vesting_balance( const asset& delta, const time_point& time )
-         { try {
-            FC_ASSERT( delta.symbol == symbol );
-            FC_ASSERT( time >= GENESIS_TIME );
-            vesting_balance = delta.amount;
-            vesting_time = time;
-            FC_ASSERT( vesting_balance >= 0 );
-         } FC_CAPTURE_AND_RETHROW( ( delta )( time ) ) }
-   };
-
-
-   class account_authority_object : public object< account_authority_object_type, account_authority_object >
-   {
-      account_authority_object() = delete;
-
-      public:
-         template< typename Constructor, typename Allocator >
-         account_authority_object( Constructor&& c, allocator< Allocator > a ) :
-            owner_auth( a ), 
-            active_auth( a ), 
-            posting_auth( a )
-            {
-               c( *this );
-            }
-
-         id_type                  id;
-
-         account_name_type        account;            ///< Name of the account
-
-         shared_authority         owner_auth;         ///< used for backup control, can set all other keys
-
-         shared_authority         active_auth;        ///< used for all monetary operations, can set active or posting
-
-         shared_authority         posting_auth;       ///< used for voting and posting
-
-         time_point               last_owner_update;  ///< Time that the owner key was last updated.
-   };
-
-
+   /**
+    * Manages the Connections between accounts in the Social Graph.
+    * 
+    * Determines the accounts that are followed and connected with the account, and 
+    * the communities that the account subscribes to. 
+    * Includes the Tags that are followed, and all fo the account, communities and tags
+    * that are filtered from display by the account.
+    */
    class account_following_object : public object< account_following_object_type, account_following_object >
    {
       account_following_object() = delete;
@@ -1109,31 +1000,31 @@ namespace node { namespace chain {
 
          id_type                           id;
 
-         account_name_type                 account;              ///< Name of the account.
+         account_name_type                 account;                 ///< Name of the account.
 
-         flat_set< account_name_type >     followers;            ///< Accounts that follow this account.
+         flat_set< account_name_type >     followers;               ///< Accounts that follow this account.
 
-         flat_set< account_name_type >     following;            ///< Accounts that this account follows.
+         flat_set< account_name_type >     following;               ///< Accounts that this account follows.
 
-         flat_set< account_name_type >     mutual_followers;     ///< Accounts that are both following and followers of this account.
+         flat_set< account_name_type >     mutual_followers;        ///< Accounts that are both following and followers of this account.
 
-         flat_set< account_name_type >     connections;          ///< Accounts that are connections of this account.
+         flat_set< account_name_type >     connections;             ///< Accounts that are connections of this account.
 
-         flat_set< account_name_type >     friends;              ///< Accounts that are friends of this account.
+         flat_set< account_name_type >     friends;                 ///< Accounts that are friends of this account.
 
-         flat_set< account_name_type >     companions;           ///< Accounts that are companions of this account. 
+         flat_set< account_name_type >     companions;              ///< Accounts that are companions of this account. 
 
-         flat_set< community_name_type >   followed_communities; ///< Communities that the account subscribes to. 
+         flat_set< community_name_type >   followed_communities;    ///< Communities that the account subscribes to. 
 
-         flat_set< tag_name_type >         followed_tags;        ///< Tags that the account follows. 
+         flat_set< tag_name_type >         followed_tags;           ///< Tags that the account follows. 
 
-         flat_set< account_name_type >     filtered;             ///< Accounts that this account has filtered. Interfaces should not show posts by these users.
+         flat_set< account_name_type >     filtered;                ///< Accounts that this account has filtered. Interfaces should not show posts by these users.
 
-         flat_set< community_name_type >   filtered_communities; ///< Communities that this account has filtered. Posts will not display if they are in these communities.
+         flat_set< community_name_type >   filtered_communities;    ///< Communities that this account has filtered. Posts will not display if they are in these communities.
 
-         flat_set< tag_name_type >         filtered_tags;        ///< Tags that this account has filtered. Posts will not display if they have any of these tags. 
+         flat_set< tag_name_type >         filtered_tags;           ///< Tags that this account has filtered. Posts will not display if they have any of these tags. 
 
-         time_point                        last_updated;          ///< Last time that the account changed its following sets.
+         time_point                        last_updated;            ///< Last time that the account changed its following sets.
 
          /**
           * Adjacency value determines how similar two accounts are by comparing the 
@@ -1365,13 +1256,19 @@ namespace node { namespace chain {
    };
 
 
-   class tag_following_object : public object< tag_following_object_type, tag_following_object >
+   /**
+    * Contains the Set of all accounts that follow a Tag.
+    * 
+    * Additonally used to calculate the adjacency value of the tag to another tag
+    * by finding the amount of common followers of one tag and another tag.
+    */
+   class account_tag_following_object : public object< account_tag_following_object_type, account_tag_following_object >
    {
-      tag_following_object() = delete;
+      account_tag_following_object() = delete;
 
       public:
          template< typename Constructor, typename Allocator >
-         tag_following_object( Constructor&& c, allocator< Allocator > a )
+         account_tag_following_object( Constructor&& c, allocator< Allocator > a )
          {
             c( *this );
          }
@@ -1384,7 +1281,7 @@ namespace node { namespace chain {
 
          time_point                        last_updated;     ///< Last time that the tag changed its following sets.
 
-         share_type                        adjacency_value( const tag_following_object& t )const
+         share_type                        adjacency_value( const account_tag_following_object& t )const
          {
             vector<account_name_type> common_followers;
             common_followers.reserve( followers.size() );
@@ -1416,39 +1313,20 @@ namespace node { namespace chain {
    };
 
 
-   class connection_request_object : public object< connection_request_object_type, connection_request_object >
+   /**
+    * Connects two accounts together at a specified connection level.
+    * 
+    * Contains the encrypted private connection, friend, or companion keys 
+    * of two accounts to enable the selective decryption of provate content and 
+    * profile information.
+    */
+   class account_connection_object : public object< account_connection_object_type, account_connection_object >
    {
-      connection_request_object() = delete;
+      account_connection_object() = delete;
 
       public:
          template< typename Constructor, typename Allocator >
-         connection_request_object( Constructor&& c, allocator< Allocator > a ) :
-         message(a)
-         {
-            c( *this );
-         }
-
-         id_type                id;                 
-
-         account_name_type      account;               ///< Account that created the request.
-
-         account_name_type      requested_account;     ///< Account that the request is being made to.
-
-         connection_tier_type   connection_type;       ///< Connection level of the request.
-
-         shared_string          message;               ///< Connection request accompanying message for reference. 
-
-         time_point             expiration;            ///< Time that the request expires at. 
-   };
-
-
-   class connection_object : public object< connection_object_type, connection_object >
-   {
-      connection_object() = delete;
-
-      public:
-         template< typename Constructor, typename Allocator >
-         connection_object( Constructor&& c, allocator< Allocator > a ) :
+         account_connection_object( Constructor&& c, allocator< Allocator > a ) :
          connection_id(a)
          {
             c( *this );
@@ -1487,67 +1365,51 @@ namespace node { namespace chain {
    };
 
 
-   class asset_delegation_object : public object< asset_delegation_object_type, asset_delegation_object >
+   /**
+    * Represents a request from one account to follow another account.
+    * 
+    * Request can be accepted to generate a connection object
+    * and exchange connection keys for decrypting private posts.
+    */
+   class account_connection_request_object : public object< account_connection_request_object_type, account_connection_request_object >
    {
+      account_connection_request_object() = delete;
+
       public:
          template< typename Constructor, typename Allocator >
-         asset_delegation_object( Constructor&& c, allocator< Allocator > a )
+         account_connection_request_object( Constructor&& c, allocator< Allocator > a ) :
+         message(a)
          {
             c( *this );
          }
 
-         asset_delegation_object() {}
+         id_type                id;                 
 
-         id_type                id;
+         account_name_type      account;               ///< Account that created the request.
 
-         account_name_type      delegator;
+         account_name_type      requested_account;     ///< Account that the request is being made to.
 
-         account_name_type      delegatee;
+         connection_tier_type   connection_type;       ///< Connection level of the request.
 
-         asset                  amount;
+         shared_string          message;               ///< Connection request accompanying message for reference. 
 
-         asset_symbol_type      symbol()const
-         {
-            return amount.symbol;
-         }
+         time_point             expiration;            ///< Time that the request expires at. 
    };
 
 
-   class asset_delegation_expiration_object : public object< asset_delegation_expiration_object_type, asset_delegation_expiration_object >
+   /**
+    * Records the previous instances of an account's owner key when updated.
+    * 
+    * Used to check the validity of an account recovery operation, 
+    * which requires the inclusion of a recent previous owner authority.
+    */
+   class account_authority_history_object : public object< account_authority_history_object_type, account_authority_history_object >
    {
-      public:
-         template< typename Constructor, typename Allocator >
-         asset_delegation_expiration_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c( *this );
-         }
-
-         asset_delegation_expiration_object() {}
-
-         id_type                id;
-
-         account_name_type      delegator;
-
-         account_name_type      delegatee;
-
-         asset                  amount;
-
-         time_point             expiration;
-
-         asset_symbol_type      symbol()const
-         {
-            return amount.symbol;
-         }
-   };
-
-
-   class owner_authority_history_object : public object< owner_authority_history_object_type, owner_authority_history_object >
-   {
-      owner_authority_history_object() = delete;
+      account_authority_history_object() = delete;
 
       public:
          template< typename Constructor, typename Allocator >
-         owner_authority_history_object( Constructor&& c, allocator< Allocator > a ) : 
+         account_authority_history_object( Constructor&& c, allocator< Allocator > a ) : 
             previous_owner_authority( shared_authority::allocator_type( a.get_segment_manager() ) )
          {
             c( *this );
@@ -1563,6 +1425,13 @@ namespace node { namespace chain {
    };
 
 
+   /**
+    * Creates a request for an account to be recovered in the event that an owner authority is
+    * compromised by an attacker. 
+    * 
+    * The request must be accepted by the owner of the account, and is created by the listed recovery account.
+    * Lasts for 24 hours before expiring
+    */
    class account_recovery_request_object : public object< account_recovery_request_object_type, account_recovery_request_object >
    {
       account_recovery_request_object() = delete;
@@ -1585,11 +1454,17 @@ namespace node { namespace chain {
    };
 
 
-   class change_recovery_account_request_object : public object< change_recovery_account_request_object_type, change_recovery_account_request_object >
+   /**
+    * Creates a request for a change to the listed recovery account of an account. 
+    * 
+    * The request has a 30 day delay to ensure that an attacker may not change the
+    * recovery account to another malicious account.
+    */
+   class account_recovery_update_request_object : public object< account_recovery_update_request_object_type, account_recovery_update_request_object >
    {
       public:
          template< typename Constructor, typename Allocator >
-         change_recovery_account_request_object( Constructor&& c, allocator< Allocator > a )
+         account_recovery_update_request_object( Constructor&& c, allocator< Allocator > a )
          {
             c( *this );
          }
@@ -1604,11 +1479,34 @@ namespace node { namespace chain {
    };
 
 
+   /**
+    * Creates a request for an account to permanently revoke voting rights.
+    * 
+    * Activates after a delay period of 3 days.
+    */
+   class account_decline_voting_request_object : public object< account_decline_voting_request_object_type, account_decline_voting_request_object >
+   {
+      account_decline_voting_request_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         account_decline_voting_request_object( Constructor&& c, allocator< Allocator > a )
+         {
+            c( *this );
+         }
+
+         id_type                id;
+
+         account_name_type      account;
+         
+         time_point             effective_date;
+   };
+
+
    struct by_name;
    struct by_proxy;
    struct by_last_post;
-   struct by_next_stake_time;
-   struct by_next_unstake_time;
+   
    struct by_post_count;
    struct by_vote_count;
    struct by_follower_count;
@@ -1697,31 +1595,57 @@ namespace node { namespace chain {
       allocator< account_object >
    > account_index;
 
-   struct by_account;
-   struct by_last_valid;
+
+   struct by_last_owner_update;
+
 
    typedef multi_index_container <
-      owner_authority_history_object,
+      account_authority_object,
       indexed_by <
          ordered_unique< tag< by_id >,
-            member< owner_authority_history_object, owner_authority_history_id_type, &owner_authority_history_object::id > >,
+            member< account_authority_object, account_authority_id_type, &account_authority_object::id > >,
          ordered_unique< tag< by_account >,
-            composite_key< owner_authority_history_object,
-               member< owner_authority_history_object, account_name_type, &owner_authority_history_object::account >,
-               member< owner_authority_history_object, time_point, &owner_authority_history_object::last_valid_time >,
-               member< owner_authority_history_object, owner_authority_history_id_type, &owner_authority_history_object::id >
+            composite_key< account_authority_object,
+               member< account_authority_object, account_name_type, &account_authority_object::account >,
+               member< account_authority_object, account_authority_id_type, &account_authority_object::id >
+            >,
+            composite_key_compare< std::less< account_name_type >, std::less< account_authority_id_type > >
+         >,
+         ordered_unique< tag< by_last_owner_update >,
+            composite_key< account_authority_object,
+               member< account_authority_object, time_point, &account_authority_object::last_owner_update >,
+               member< account_authority_object, account_authority_id_type, &account_authority_object::id >
             >,
             composite_key_compare< 
-               std::less< account_name_type >, 
-               std::less< time_point >, 
-               std::less< owner_authority_history_id_type > 
+               std::greater< time_point >, 
+               std::less< account_authority_id_type > 
             >
          >
       >,
-      allocator< owner_authority_history_object >
-   > owner_authority_history_index;
+      allocator< account_authority_object >
+   > account_authority_index;
 
 
+   typedef multi_index_container <
+      account_permission_object,
+      indexed_by <
+         ordered_unique< tag< by_id >,
+            member< account_permission_object, account_permission_id_type, &account_permission_object::id > >,
+         ordered_unique< tag< by_account >,
+            composite_key< account_permission_object,
+               member< account_permission_object, account_name_type, &account_permission_object::account >,
+               member< account_permission_object, account_permission_id_type, &account_permission_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< account_permission_id_type > 
+            >
+         >
+      >,
+      allocator< account_permission_object >
+   > account_permission_index;
+
+  
    struct by_verifier_verified;
    struct by_verified_verifier;
 
@@ -1771,6 +1695,7 @@ namespace node { namespace chain {
    struct by_account_business_role_executive;
    struct by_business_account_role_rank;
    struct by_executive;
+
 
    typedef multi_index_container <
       account_executive_vote_object,
@@ -1834,11 +1759,13 @@ namespace node { namespace chain {
       allocator< account_executive_vote_object >
    > account_executive_vote_index;
 
+
    struct by_account_business_officer;
    struct by_account_business_rank;
    struct by_business_officer;
    struct by_business_account_rank;
    struct by_officer;
+
    
    typedef multi_index_container <
       account_officer_vote_object,
@@ -1890,10 +1817,12 @@ namespace node { namespace chain {
       allocator< account_officer_vote_object >
    > account_officer_vote_index;
 
+
    struct by_account_business;
    struct by_business_account;
    struct by_member_business;
    struct by_expiration;
+
 
    typedef multi_index_container <
       account_member_request_object,
@@ -1919,6 +1848,7 @@ namespace node { namespace chain {
       >,
       allocator< account_member_request_object >
    > account_member_request_index;
+
 
    struct by_member;
    struct by_business;
@@ -1969,8 +1899,10 @@ namespace node { namespace chain {
       allocator< account_member_invite_object >
    > account_member_invite_index;
 
+
    struct by_business_member;
    struct by_member_business;
+
 
    typedef multi_index_container <
       account_member_key_object,
@@ -1995,198 +1927,10 @@ namespace node { namespace chain {
       >,
       allocator< account_member_key_object >
    > account_member_key_index;
-
-
-   struct by_last_owner_update;
-   struct by_owner_symbol;
-   struct by_owner;
-   struct by_symbol_stake;
-   struct by_symbol_liquid;
-   struct by_symbol;
    
-   typedef multi_index_container <
-      account_balance_object,
-      indexed_by<
-         ordered_unique< tag<by_id>, 
-            member< account_balance_object, account_balance_id_type, &account_balance_object::id > 
-         >,
-         ordered_unique< tag<by_owner_symbol>,
-            composite_key< account_balance_object,
-               member<account_balance_object, account_name_type, &account_balance_object::owner>,
-               member<account_balance_object, asset_symbol_type, &account_balance_object::symbol>
-            >,
-            composite_key_compare<
-               std::less< account_name_type >,
-               std::less< asset_symbol_type >
-            >
-         >,
-         ordered_unique< tag<by_owner>,
-            composite_key< account_balance_object,
-               member<account_balance_object, account_name_type, &account_balance_object::owner>,
-               member< account_balance_object, account_balance_id_type, &account_balance_object::id >
-            >,
-            composite_key_compare<
-               std::less< account_name_type >,
-               std::less< account_balance_id_type >
-            >
-         >,
-         ordered_unique< tag<by_symbol>,
-            composite_key< account_balance_object,
-               member< account_balance_object, asset_symbol_type, &account_balance_object::symbol>,
-               member< account_balance_object, account_balance_id_type, &account_balance_object::id >
-            >,
-            composite_key_compare<
-               std::less< asset_symbol_type >,
-               std::less< account_balance_id_type >
-            >
-         >,
-         ordered_unique< tag<by_symbol_stake>,
-            composite_key< account_balance_object,
-               member< account_balance_object, asset_symbol_type, &account_balance_object::symbol>,
-               member< account_balance_object, share_type, &account_balance_object::staked_balance >,
-               member< account_balance_object, account_balance_id_type, &account_balance_object::id >
-            >,
-            composite_key_compare<
-               std::less< asset_symbol_type >,
-               std::greater< share_type >,
-               std::less< account_balance_id_type >
-            >
-         >,
-         ordered_unique< tag<by_symbol_liquid>,
-            composite_key< account_balance_object,
-               member< account_balance_object, asset_symbol_type, &account_balance_object::symbol>,
-               member< account_balance_object, share_type, &account_balance_object::liquid_balance >,
-               member< account_balance_object, account_balance_id_type, &account_balance_object::id >
-            >,
-            composite_key_compare<
-               std::less< asset_symbol_type >,
-               std::greater< share_type >,
-               std::less< account_balance_id_type >
-            >
-         >,
-         ordered_unique< tag< by_next_stake_time >,
-            composite_key< account_balance_object,
-               member< account_balance_object, time_point, &account_balance_object::next_stake_time >,
-               member< account_balance_object, account_balance_id_type, &account_balance_object::id >
-            >,
-            composite_key_compare<
-               std::less< time_point >,
-               std::less< account_balance_id_type >
-            >
-         >,
-         ordered_unique< tag< by_next_unstake_time >,
-            composite_key< account_balance_object,
-               member< account_balance_object, time_point, &account_balance_object::next_unstake_time >,
-               member< account_balance_object, account_balance_id_type, &account_balance_object::id >
-            >,
-            composite_key_compare<
-               std::less< time_point >,
-               std::less< account_balance_id_type >
-            >
-         >
-      >,
-      allocator< account_balance_object >
-   > account_balance_index;
-
-
-   struct by_vesting_time;
-   struct by_owner_symbol_time;
-
-   typedef multi_index_container <
-      account_vesting_balance_object,
-      indexed_by<
-         ordered_unique< tag<by_id>, 
-            member< account_vesting_balance_object, account_vesting_balance_id_type, &account_vesting_balance_object::id > 
-         >,
-         ordered_unique< tag< by_owner_symbol_time >,
-            composite_key< account_vesting_balance_object,
-               member< account_vesting_balance_object, account_name_type, &account_vesting_balance_object::owner >,
-               member< account_vesting_balance_object, asset_symbol_type, &account_vesting_balance_object::symbol >,
-               member< account_vesting_balance_object, time_point, &account_vesting_balance_object::vesting_time >,
-               member< account_vesting_balance_object, account_vesting_balance_id_type, &account_vesting_balance_object::id >
-            >,
-            composite_key_compare<
-               std::less< account_name_type >,
-               std::less< asset_symbol_type >,
-               std::less< time_point >,
-               std::less< account_vesting_balance_id_type >
-            >
-         >,
-         ordered_unique< tag< by_owner >,
-            composite_key< account_vesting_balance_object,
-               member< account_vesting_balance_object, account_name_type, &account_vesting_balance_object::owner >,
-               member< account_vesting_balance_object, account_vesting_balance_id_type, &account_vesting_balance_object::id >
-            >,
-            composite_key_compare<
-               std::less< account_name_type >,
-               std::less< account_vesting_balance_id_type >
-            >
-         >,
-         ordered_unique< tag< by_symbol >,
-            composite_key< account_vesting_balance_object,
-               member< account_vesting_balance_object, asset_symbol_type, &account_vesting_balance_object::symbol >,
-               member< account_vesting_balance_object, account_vesting_balance_id_type, &account_vesting_balance_object::id >
-            >,
-            composite_key_compare<
-               std::less< asset_symbol_type >,
-               std::less< account_vesting_balance_id_type >
-            >
-         >,
-        
-         ordered_unique< tag< by_vesting_time >,
-            composite_key< account_vesting_balance_object,
-               member< account_vesting_balance_object, time_point, &account_vesting_balance_object::vesting_time >,
-               member< account_vesting_balance_object, account_vesting_balance_id_type, &account_vesting_balance_object::id >
-            >,
-            composite_key_compare<
-               std::less< time_point >,
-               std::less< account_vesting_balance_id_type >
-            >
-         >
-      >,
-      allocator< account_vesting_balance_object >
-   > account_vesting_balance_index;
 
    struct by_name;
 
-   typedef multi_index_container <
-      account_authority_object,
-      indexed_by <
-         ordered_unique< tag< by_id >,
-            member< account_authority_object, account_authority_id_type, &account_authority_object::id > >,
-         ordered_unique< tag< by_account >,
-            composite_key< account_authority_object,
-               member< account_authority_object, account_name_type, &account_authority_object::account >,
-               member< account_authority_object, account_authority_id_type, &account_authority_object::id >
-            >,
-            composite_key_compare< std::less< account_name_type >, std::less< account_authority_id_type > >
-         >,
-         ordered_unique< tag< by_last_owner_update >,
-            composite_key< account_authority_object,
-               member< account_authority_object, time_point, &account_authority_object::last_owner_update >,
-               member< account_authority_object, account_authority_id_type, &account_authority_object::id >
-            >,
-            composite_key_compare< std::greater< time_point >, std::less< account_authority_id_type > >
-         >
-      >,
-      allocator< account_authority_object >
-   > account_authority_index;
-
-   typedef multi_index_container <
-      account_permission_object,
-      indexed_by <
-         ordered_unique< tag< by_id >,
-            member< account_permission_object, account_permission_id_type, &account_permission_object::id > >,
-         ordered_unique< tag< by_account >,
-            composite_key< account_permission_object,
-               member< account_permission_object, account_name_type, &account_permission_object::account >,
-               member< account_permission_object, account_permission_id_type, &account_permission_object::id >
-            >,
-            composite_key_compare< std::less< account_name_type >, std::less< account_permission_id_type > >
-         >
-      >,
-      allocator< account_permission_object >
-   > account_permission_index;
 
    typedef multi_index_container <
       account_following_object,
@@ -2198,109 +1942,153 @@ namespace node { namespace chain {
                member< account_following_object, account_name_type, &account_following_object::account >,
                member< account_following_object, account_following_id_type, &account_following_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< account_following_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< account_following_id_type > 
+            >
          >
       >,
       allocator< account_following_object >
    > account_following_index;
 
+
    struct by_tag;
 
+
    typedef multi_index_container <
-      tag_following_object,
+      account_tag_following_object,
       indexed_by <
          ordered_unique< tag< by_id >,
-            member< tag_following_object, tag_following_id_type, &tag_following_object::id > >,
+            member< account_tag_following_object, account_tag_following_id_type, &account_tag_following_object::id > >,
          ordered_unique< tag< by_tag >,
-            member< tag_following_object, tag_name_type, &tag_following_object::tag > >
+            member< account_tag_following_object, tag_name_type, &account_tag_following_object::tag > >
       >,
-      allocator< tag_following_object >
-   > tag_following_index;
+      allocator< account_tag_following_object >
+   > account_tag_following_index;
 
-   struct by_delegator;
-   struct by_delegatee;
+   
+   struct by_expiration;
+   struct by_accounts;
+   struct by_account_a;
+   struct by_account_b;
+   struct by_last_message_time;
 
-   typedef multi_index_container <
-      asset_delegation_object,
-      indexed_by <
-         ordered_unique< tag< by_id >,
-            member< asset_delegation_object, asset_delegation_id_type, &asset_delegation_object::id > >,
-         ordered_unique< tag< by_delegator >,
-            composite_key< asset_delegation_object,
-               member< asset_delegation_object, account_name_type, &asset_delegation_object::delegator >,
-               member< asset_delegation_object, account_name_type, &asset_delegation_object::delegatee >,
-               const_mem_fun< asset_delegation_object, asset_symbol_type, &asset_delegation_object::symbol >
+
+   typedef multi_index_container<
+      account_connection_object,
+      indexed_by<
+         ordered_unique< tag< by_id >, member< account_connection_object, account_connection_id_type, &account_connection_object::id > >,
+         ordered_unique< tag< by_accounts >,
+            composite_key< account_connection_object,
+               member< account_connection_object, account_name_type, &account_connection_object::account_a >,
+               member< account_connection_object, account_name_type, &account_connection_object::account_b >,
+               member< account_connection_object, connection_tier_type, &account_connection_object::connection_type >
             >,
             composite_key_compare< 
                std::less< account_name_type >, 
                std::less< account_name_type >, 
-               std::less< asset_symbol_type > 
+               std::greater< connection_tier_type > 
             >
          >,
-         ordered_unique< tag< by_delegatee >,
-            composite_key< asset_delegation_object,
-               member< asset_delegation_object, account_name_type, &asset_delegation_object::delegatee >,
-               member< asset_delegation_object, account_name_type, &asset_delegation_object::delegator >,
-               const_mem_fun< asset_delegation_object, asset_symbol_type, &asset_delegation_object::symbol >
+         ordered_unique< tag< by_account_a >,
+            composite_key< account_connection_object,
+               member< account_connection_object, account_name_type, &account_connection_object::account_a >,
+               member< account_connection_object, connection_tier_type, &account_connection_object::connection_type >,
+               member< account_connection_object, account_connection_id_type, &account_connection_object::id > 
             >,
             composite_key_compare< 
                std::less< account_name_type >, 
+               std::greater< connection_tier_type >, 
+               std::less<account_connection_id_type > 
+            >
+         >,
+         ordered_unique< tag< by_account_b >,
+            composite_key< account_connection_object,
+               member< account_connection_object, account_name_type, &account_connection_object::account_b >,
+               member< account_connection_object, connection_tier_type, &account_connection_object::connection_type >,
+               member< account_connection_object, account_connection_id_type, &account_connection_object::id > 
+            >,
+            composite_key_compare< 
                std::less< account_name_type >, 
-               std::less< asset_symbol_type > 
+               std::greater< connection_tier_type >, 
+               std::less< account_connection_id_type > 
+            >
+         >,
+         ordered_unique< tag< by_last_message_time >,
+            composite_key< account_connection_object,
+               const_mem_fun< account_connection_object, time_point, &account_connection_object::last_message_time >,
+               member< account_connection_object, account_connection_id_type, &account_connection_object::id > 
+            >,
+            composite_key_compare< 
+               std::greater< time_point >, 
+               std::less< account_connection_id_type > 
             >
          >
       >,
-      allocator< asset_delegation_object >
-   > asset_delegation_index;
+      allocator< account_connection_object >
+   > account_connection_index;
 
-   struct by_expiration;
-   struct by_delegator;
-   struct by_delegatee;
 
-   typedef multi_index_container <
-      asset_delegation_expiration_object,
-      indexed_by <
-         ordered_unique< tag< by_id >,
-            member< asset_delegation_expiration_object, asset_delegation_expiration_id_type, &asset_delegation_expiration_object::id > >,
+   struct by_account_req;
+   struct by_req_account;
+
+
+   typedef multi_index_container<
+      account_connection_request_object,
+      indexed_by<
+         ordered_unique< tag<by_id>, member< account_connection_request_object, account_connection_request_id_type, &account_connection_request_object::id > >,
+         ordered_unique< tag< by_account_req >,
+            composite_key< account_connection_request_object,
+               member<account_connection_request_object, account_name_type, &account_connection_request_object::account >,
+               member<account_connection_request_object, account_name_type, &account_connection_request_object::requested_account >
+            >
+         >,
+         ordered_unique< tag< by_req_account >,
+            composite_key< account_connection_request_object,
+               member<account_connection_request_object, account_name_type, &account_connection_request_object::requested_account >,
+               member<account_connection_request_object, account_name_type, &account_connection_request_object::account >
+            >
+         >,
          ordered_unique< tag< by_expiration >,
-            composite_key< asset_delegation_expiration_object,
-               member< asset_delegation_expiration_object, time_point, &asset_delegation_expiration_object::expiration >,
-               member< asset_delegation_expiration_object, asset_delegation_expiration_id_type, &asset_delegation_expiration_object::id >
+            composite_key< account_connection_request_object,
+               member< account_connection_request_object, time_point, &account_connection_request_object::expiration >,
+               member< account_connection_request_object, account_connection_request_id_type, &account_connection_request_object::id >
             >,
             composite_key_compare< 
-               std::less< time_point >,
-               std::less< asset_delegation_expiration_id_type >
-            >
-         >,
-         ordered_unique< tag< by_delegator >,
-            composite_key< asset_delegation_expiration_object,
-               member< asset_delegation_expiration_object, account_name_type, &asset_delegation_expiration_object::delegator >,
-               member< asset_delegation_expiration_object, time_point, &asset_delegation_expiration_object::expiration >,
-               member< asset_delegation_expiration_object, asset_delegation_expiration_id_type, &asset_delegation_expiration_object::id >
-            >,
-            composite_key_compare< 
-               std::less< account_name_type >, 
                std::less< time_point >, 
-               std::less< asset_delegation_expiration_id_type > 
-            >
-         >,
-         ordered_unique< tag< by_delegatee >,
-            composite_key< asset_delegation_expiration_object,
-               member< asset_delegation_expiration_object, account_name_type, &asset_delegation_expiration_object::delegatee >,
-               member< asset_delegation_expiration_object, time_point, &asset_delegation_expiration_object::expiration >,
-               member< asset_delegation_expiration_object, asset_delegation_expiration_id_type, &asset_delegation_expiration_object::id >
-            >,
-            composite_key_compare< 
-               std::less< account_name_type >, 
-               std::less< time_point >, 
-               std::less< asset_delegation_expiration_id_type > 
+               std::less< account_connection_request_id_type > 
             >
          >
       >,
-      allocator< asset_delegation_expiration_object >
-   > asset_delegation_expiration_index;
+      allocator< account_connection_request_object >
+   > account_connection_request_index;
 
-   struct by_expiration;
+
+   struct by_account;
+   struct by_last_valid;
+
+
+   typedef multi_index_container <
+      account_authority_history_object,
+      indexed_by <
+         ordered_unique< tag< by_id >,
+            member< account_authority_history_object, account_authority_history_id_type, &account_authority_history_object::id > >,
+         ordered_unique< tag< by_account >,
+            composite_key< account_authority_history_object,
+               member< account_authority_history_object, account_name_type, &account_authority_history_object::account >,
+               member< account_authority_history_object, time_point, &account_authority_history_object::last_valid_time >,
+               member< account_authority_history_object, account_authority_history_id_type, &account_authority_history_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< time_point >, 
+               std::less< account_authority_history_id_type > 
+            >
+         >
+      >,
+      allocator< account_authority_history_object >
+   > account_authority_history_index;
+
 
    typedef multi_index_container <
       account_recovery_request_object,
@@ -2331,119 +2119,61 @@ namespace node { namespace chain {
       allocator< account_recovery_request_object >
    > account_recovery_request_index;
 
+
    struct by_effective_date;
 
+
    typedef multi_index_container <
-      change_recovery_account_request_object,
+      account_recovery_update_request_object,
       indexed_by <
          ordered_unique< tag< by_id >,
-            member< change_recovery_account_request_object, change_recovery_account_request_id_type, &change_recovery_account_request_object::id > >,
+            member< account_recovery_update_request_object, account_recovery_update_request_id_type, &account_recovery_update_request_object::id > >,
          ordered_unique< tag< by_account >,
-            composite_key< change_recovery_account_request_object,
-               member< change_recovery_account_request_object, account_name_type, &change_recovery_account_request_object::account_to_recover >,
-               member< change_recovery_account_request_object, change_recovery_account_request_id_type, &change_recovery_account_request_object::id >
+            composite_key< account_recovery_update_request_object,
+               member< account_recovery_update_request_object, account_name_type, &account_recovery_update_request_object::account_to_recover >,
+               member< account_recovery_update_request_object, account_recovery_update_request_id_type, &account_recovery_update_request_object::id >
             >,
-            composite_key_compare< std::less< account_name_type >, std::less< change_recovery_account_request_id_type > >
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< account_recovery_update_request_id_type > 
+            >
          >,
          ordered_unique< tag< by_effective_date >,
-            composite_key< change_recovery_account_request_object,
-               member< change_recovery_account_request_object, time_point, &change_recovery_account_request_object::effective_on >,
-               member< change_recovery_account_request_object, change_recovery_account_request_id_type, &change_recovery_account_request_object::id >
+            composite_key< account_recovery_update_request_object,
+               member< account_recovery_update_request_object, time_point, &account_recovery_update_request_object::effective_on >,
+               member< account_recovery_update_request_object, account_recovery_update_request_id_type, &account_recovery_update_request_object::id >
             >,
-            composite_key_compare< std::less< time_point >, std::less< change_recovery_account_request_id_type > >
+            composite_key_compare< 
+               std::less< time_point >, 
+               std::less< account_recovery_update_request_id_type > 
+            >
          >
       >,
-      allocator< change_recovery_account_request_object >
-   > change_recovery_account_request_index;
+      allocator< account_recovery_update_request_object >
+   > account_recovery_update_request_index;
 
-   struct by_account_req;
-   struct by_req_account;
 
    typedef multi_index_container<
-      connection_request_object,
+      account_decline_voting_request_object,
       indexed_by<
-         ordered_unique< tag<by_id>, member< connection_request_object, connection_request_id_type, &connection_request_object::id > >,
-         ordered_unique< tag<by_account_req>,
-            composite_key< connection_request_object,
-               member<connection_request_object, account_name_type, &connection_request_object::account >,
-               member<connection_request_object, account_name_type, &connection_request_object::requested_account >
-            >
+         ordered_unique< tag< by_id >, member< account_decline_voting_request_object, account_decline_voting_request_id_type, &account_decline_voting_request_object::id > >,
+         ordered_unique< tag< by_account >,
+            member< account_decline_voting_request_object, account_name_type, &account_decline_voting_request_object::account >
          >,
-         ordered_unique< tag<by_req_account>,
-            composite_key< connection_request_object,
-               member<connection_request_object, account_name_type, &connection_request_object::requested_account >,
-               member<connection_request_object, account_name_type, &connection_request_object::account >
-            >
-         >,
-         ordered_unique< tag< by_expiration >,
-            composite_key< connection_request_object,
-               member< connection_request_object, time_point, &connection_request_object::expiration >,
-               member< connection_request_object, connection_request_id_type, &connection_request_object::id >
-            >,
-            composite_key_compare< std::less< time_point >, std::less< connection_request_id_type > >
-         >
-      >,
-      allocator< connection_request_object >
-   > connection_request_index;
-
-   struct by_accounts;
-   struct by_account_a;
-   struct by_account_b;
-   struct by_last_message_time;
-
-   typedef multi_index_container<
-      connection_object,
-      indexed_by<
-         ordered_unique< tag< by_id >, member< connection_object, connection_id_type, &connection_object::id > >,
-         ordered_unique< tag< by_accounts >,
-            composite_key< connection_object,
-               member< connection_object, account_name_type, &connection_object::account_a >,
-               member< connection_object, account_name_type, &connection_object::account_b >,
-               member< connection_object, connection_tier_type, &connection_object::connection_type >
+         ordered_unique< tag< by_effective_date >,
+            composite_key< account_decline_voting_request_object,
+               member< account_decline_voting_request_object, time_point, &account_decline_voting_request_object::effective_date >,
+               member< account_decline_voting_request_object, account_name_type, &account_decline_voting_request_object::account >
             >,
             composite_key_compare< 
-               std::less< account_name_type >, 
-               std::less< account_name_type >, 
-               std::greater< connection_tier_type > 
-            >
-         >,
-         ordered_unique< tag< by_account_a >,
-            composite_key< connection_object,
-               member< connection_object, account_name_type, &connection_object::account_a >,
-               member< connection_object, connection_tier_type, &connection_object::connection_type >,
-               member< connection_object, connection_id_type, &connection_object::id > 
-            >,
-            composite_key_compare< 
-               std::less< account_name_type >, 
-               std::greater< connection_tier_type >, 
-               std::less<connection_id_type > 
-            >
-         >,
-         ordered_unique< tag< by_account_b >,
-            composite_key< connection_object,
-               member< connection_object, account_name_type, &connection_object::account_b >,
-               member< connection_object, connection_tier_type, &connection_object::connection_type >,
-               member< connection_object, connection_id_type, &connection_object::id > 
-            >,
-            composite_key_compare< 
-               std::less< account_name_type >, 
-               std::greater< connection_tier_type >, 
-               std::less< connection_id_type > 
-            >
-         >,
-         ordered_unique< tag< by_last_message_time >,
-            composite_key< connection_object,
-               const_mem_fun< connection_object, time_point, &connection_object::last_message_time >,
-               member< connection_object, connection_id_type, &connection_object::id > 
-            >,
-            composite_key_compare< 
-               std::greater< time_point >, 
-               std::less< connection_id_type > 
+               std::less< time_point >, 
+               std::less< account_name_type > 
             >
          >
       >,
-      allocator< connection_object >
-   > connection_index;
+      allocator< account_decline_voting_request_object >
+   > account_decline_voting_request_index;
+
 
 } }   // node::chain
 
@@ -2479,7 +2209,7 @@ FC_REFLECT( node::chain::account_object,
          (recovery_account)
          (reset_account)
          (membership_interface)
-         (reset_account_delay_days)
+         (reset_delay_days)
          (referrer_rewards_percentage)
          (comment_count)
          (follower_count)
@@ -2503,7 +2233,7 @@ FC_REFLECT( node::chain::account_object,
          (officer_vote_count)
          (executive_board_vote_count)
          (governance_subscriptions)
-         (enterprise_approval_count)
+         (enterprise_vote_count)
          (recurring_membership)
          (created)
          (membership_expiration)
@@ -2567,6 +2297,8 @@ FC_REFLECT( node::chain::account_executive_vote_object,
          (executive_account)
          (role)
          (vote_rank)
+         (last_updated)
+         (created)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::account_executive_vote_object, node::chain::account_executive_vote_index );
@@ -2577,6 +2309,8 @@ FC_REFLECT( node::chain::account_officer_vote_object,
          (business_account)
          (officer_account)
          (vote_rank)
+         (last_updated)
+         (created)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::account_officer_vote_object, node::chain::account_officer_vote_index );
@@ -2619,42 +2353,11 @@ FC_REFLECT( node::chain::account_permission_object,
          (blacklisted_accounts)
          (whitelisted_assets)
          (blacklisted_assets)
+         (whitelisted_communities)
+         (blacklisted_communities)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::account_permission_object, node::chain::account_permission_index );
-
-FC_REFLECT( node::chain::account_balance_object,
-         (id)
-         (owner)
-         (symbol)
-         (liquid_balance)
-         (staked_balance)
-         (reward_balance)
-         (savings_balance)
-         (delegated_balance)
-         (receiving_balance)
-         (stake_rate)
-         (next_stake_time)
-         (to_stake)
-         (total_staked)
-         (unstake_rate)
-         (next_unstake_time)
-         (to_unstake)
-         (total_unstaked)
-         (last_interest_time)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::account_balance_object, node::chain::account_balance_index );
-
-FC_REFLECT( node::chain::account_vesting_balance_object,
-         (id)
-         (owner)
-         (symbol)
-         (vesting_balance)
-         (vesting_time)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::account_vesting_balance_object, node::chain::account_vesting_balance_index );
 
 FC_REFLECT( node::chain::account_authority_object,
          (id)
@@ -2686,16 +2389,16 @@ FC_REFLECT( node::chain::account_following_object,
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::account_following_object, node::chain::account_following_index );
 
-FC_REFLECT( node::chain::tag_following_object,
+FC_REFLECT( node::chain::account_tag_following_object,
          (id)
          (tag)
          (followers)
          (last_updated)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::chain::tag_following_object, node::chain::tag_following_index );
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_tag_following_object, node::chain::account_tag_following_index );
 
-FC_REFLECT( node::chain::connection_request_object,
+FC_REFLECT( node::chain::account_connection_request_object,
          (id)
          (account)
          (requested_account)
@@ -2704,9 +2407,9 @@ FC_REFLECT( node::chain::connection_request_object,
          (expiration)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::chain::connection_request_object, node::chain::connection_request_index );
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_connection_request_object, node::chain::account_connection_request_index );
 
-FC_REFLECT( node::chain::connection_object,
+FC_REFLECT( node::chain::account_connection_object,
          (id)
          (account_a)
          (encrypted_key_a)
@@ -2722,35 +2425,16 @@ FC_REFLECT( node::chain::connection_object,
          (created)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::chain::connection_object, node::chain::connection_index );
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_connection_object, node::chain::account_connection_index );
 
-FC_REFLECT( node::chain::asset_delegation_object,
-         (id)
-         (delegator)
-         (delegatee)
-         (amount)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::asset_delegation_object, node::chain::asset_delegation_index );
-
-FC_REFLECT( node::chain::asset_delegation_expiration_object,
-         (id)
-         (delegator)
-         (delegatee)
-         (amount)
-         (expiration)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::asset_delegation_expiration_object, node::chain::asset_delegation_expiration_index );
-
-FC_REFLECT( node::chain::owner_authority_history_object,
+FC_REFLECT( node::chain::account_authority_history_object,
          (id)
          (account)
          (previous_owner_authority)
          (last_valid_time)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::chain::owner_authority_history_object, node::chain::owner_authority_history_index )
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_authority_history_object, node::chain::account_authority_history_index );
 
 FC_REFLECT( node::chain::account_recovery_request_object,
          (id)
@@ -2759,13 +2443,21 @@ FC_REFLECT( node::chain::account_recovery_request_object,
          (expiration)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::chain::account_recovery_request_object, node::chain::account_recovery_request_index )
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_recovery_request_object, node::chain::account_recovery_request_index );
 
-FC_REFLECT( node::chain::change_recovery_account_request_object,
+FC_REFLECT( node::chain::account_recovery_update_request_object,
          (id)
          (account_to_recover)
          (recovery_account)
          (effective_on)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::chain::change_recovery_account_request_object, node::chain::change_recovery_account_request_index );
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_recovery_update_request_object, node::chain::account_recovery_update_request_index );
+
+FC_REFLECT( node::chain::account_decline_voting_request_object,
+         (id)
+         (account)
+         (effective_date) 
+         );
+            
+CHAINBASE_SET_INDEX_TYPE( node::chain::account_decline_voting_request_object, node::chain::account_decline_voting_request_index );

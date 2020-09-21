@@ -260,6 +260,8 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
          wvo.producer = o.registrar;
          wvo.account = o.new_account_name;
          wvo.vote_rank = 1;
+         wvo.last_updated = now;
+         wvo.created = now;
       });
 
       _db.modify( new_account, [&]( account_object& a )
@@ -275,6 +277,8 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
          novo.network_officer = o.registrar;
          novo.account = o.new_account_name;
          novo.vote_rank = 1;
+         novo.last_updated = now;
+         novo.created = now;
       });
 
       _db.modify( new_account, [&]( account_object& a )
@@ -290,6 +294,8 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
          ebvo.executive_board = o.registrar;
          ebvo.account = o.new_account_name;
          ebvo.vote_rank = 1;
+         ebvo.last_updated = now;
+         ebvo.created = now;
       });
 
       _db.modify( new_account, [&]( account_object& a )
@@ -512,7 +518,7 @@ void account_verification_evaluator::do_apply( const account_verification_operat
       account_a_name = verifier_account.name;
    }
 
-   const auto& con_idx = _db.get_index< connection_index >().indices().get< by_accounts >();
+   const auto& con_idx = _db.get_index< account_connection_index >().indices().get< by_accounts >();
    auto con_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::CONNECTION ) );
 
    FC_ASSERT( con_itr != con_idx.end(),
@@ -612,6 +618,8 @@ void account_business_evaluator::do_apply( const account_business_operation& o )
          aovo.business_account = o.account;
          aovo.officer_account = o.init_ceo_account;
          aovo.vote_rank = 1;
+         aovo.last_updated = now;
+         aovo.created = now;
       });
 
       _db.create< account_executive_vote_object >( [&]( account_executive_vote_object& aevo )
@@ -621,6 +629,8 @@ void account_business_evaluator::do_apply( const account_business_operation& o )
          aevo.executive_account = o.init_ceo_account;
          aevo.role = executive_role_type::CHIEF_EXECUTIVE_OFFICER;
          aevo.vote_rank = 1;
+         aevo.last_updated = now;
+         aevo.created = now;
       });
 
       _db.update_business_account( business );
@@ -820,6 +830,7 @@ void account_vote_executive_evaluator::do_apply( const account_vote_executive_op
       ("s",o.business_account));
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
    share_type voting_power = _db.get_equity_voting_power( o.account, bus_acc );
+   time_point now = _db.head_block_time();
 
    FC_ASSERT( voting_power > 0,
       "Account: ${a} must hold a balance of voting power in the equity assets of the business account: ${b} in order to vote for executives.",
@@ -864,6 +875,8 @@ void account_vote_executive_evaluator::do_apply( const account_vote_executive_op
             v.executive_account = o.executive_account;
             v.business_account = o.business_account;
             v.role = exec_role;
+            v.last_updated = now;
+            v.created = now;
          });
          
          _db.update_account_executive_votes( voter, o.business_account );
@@ -931,6 +944,7 @@ void account_vote_officer_evaluator::do_apply( const account_vote_officer_operat
       ("s", o.business_account));
    const account_business_object& bus_acc = _db.get_account_business( o.business_account );
    share_type voting_power = _db.get_equity_voting_power( o.account, bus_acc );
+   time_point now = _db.head_block_time();
 
    FC_ASSERT( voting_power > 0,
       "Account must hold a balance of voting power in the equity assets of the business account in order to vote for officers." );
@@ -962,6 +976,8 @@ void account_vote_officer_evaluator::do_apply( const account_vote_officer_operat
             v.officer_account = o.officer_account;
             v.business_account = o.business_account;
             v.vote_rank = o.vote_rank;
+            v.last_updated = now;
+            v.created = now;
          });
          
          _db.update_account_officer_votes( voter, o.business_account );
@@ -1418,6 +1434,7 @@ void account_producer_vote_evaluator::do_apply( const account_producer_vote_oper
    }
    const account_object& voter = _db.get_account( o.account );
    const producer_object& producer = _db.get_producer( o.producer );
+   time_point now = _db.head_block_time();
 
    FC_ASSERT( voter.proxy.size() == 0,
       "A proxy is currently set, please clear the proxy before voting for a producer." );
@@ -1439,14 +1456,13 @@ void account_producer_vote_evaluator::do_apply( const account_producer_vote_oper
    {
       if( producer_itr == account_producer_idx.end() && rank_itr == account_rank_idx.end() )    // No vote for producer or rank
       {
-         FC_ASSERT( voter.producer_vote_count < MAX_ACCOUNT_VOTES,
-            "Account has voted for too many producers." );
-
          _db.create< producer_vote_object >( [&]( producer_vote_object& v )
          {
             v.producer = producer.owner;
             v.account = voter.name;
             v.vote_rank = o.vote_rank;
+            v.last_updated = now;
+            v.created = now;
          });
          
          _db.update_producer_votes( voter );
@@ -1539,7 +1555,7 @@ void account_update_proxy_evaluator::do_apply( const account_update_proxy_operat
             "Proxy chain is too long." );
       }
 
-      _db.clear_network_votes( account.name );    // clear all individual vote records
+      _db.clear_account_votes( account.name );    // clear all individual vote records
 
       _db.modify( account, [&]( account_object& a )
       {
@@ -1566,7 +1582,7 @@ void account_update_proxy_evaluator::do_apply( const account_update_proxy_operat
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void request_account_recovery_evaluator::do_apply( const request_account_recovery_operation& o )
+void account_request_recovery_evaluator::do_apply( const account_request_recovery_operation& o )
 { try {
    const account_name_type& signed_for = o.recovery_account;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -1643,7 +1659,7 @@ void request_account_recovery_evaluator::do_apply( const request_account_recover
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void recover_account_evaluator::do_apply( const recover_account_operation& o )
+void account_recover_evaluator::do_apply( const account_recover_operation& o )
 { try {
    const account_name_type& signed_for = o.account_to_recover;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -1673,7 +1689,7 @@ void recover_account_evaluator::do_apply( const recover_account_operation& o )
    FC_ASSERT( request->new_owner_authority == o.new_owner_authority,
       "New owner authority does not match recovery request." );
 
-   const auto& recent_auth_idx = _db.get_index< owner_authority_history_index >().indices().get< by_account >();
+   const auto& recent_auth_idx = _db.get_index< account_authority_history_index >().indices().get< by_account >();
    auto recent_auth_itr = recent_auth_idx.lower_bound( o.account_to_recover );
    bool found = false;
 
@@ -1696,7 +1712,7 @@ void recover_account_evaluator::do_apply( const recover_account_operation& o )
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void reset_account_evaluator::do_apply( const reset_account_operation& o )
+void account_reset_evaluator::do_apply( const account_reset_operation& o )
 { try {
    const account_name_type& signed_for = o.reset_account;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -1717,7 +1733,7 @@ void reset_account_evaluator::do_apply( const reset_account_operation& o )
    FC_ASSERT( account.reset_account == o.reset_account,
       "Reset account does not match reset account on account." );
    
-   fc::microseconds delay = fc::days( account.reset_account_delay_days );
+   fc::microseconds delay = fc::days( account.reset_delay_days );
    time_point now = _db.head_block_time();
 
    FC_ASSERT( now > ( account.last_updated + delay ),
@@ -1753,7 +1769,7 @@ void reset_account_evaluator::do_apply( const reset_account_operation& o )
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void set_reset_account_evaluator::do_apply( const set_reset_account_operation& o )
+void account_reset_update_evaluator::do_apply( const account_reset_update_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -1782,7 +1798,7 @@ void set_reset_account_evaluator::do_apply( const set_reset_account_operation& o
    _db.modify( account, [&]( account_object& a )
    {
       a.reset_account = o.new_reset_account;
-      a.reset_account_delay_days = o.days;
+      a.reset_delay_days = o.days;
       a.last_updated = now;
    });
 
@@ -1791,7 +1807,7 @@ void set_reset_account_evaluator::do_apply( const set_reset_account_operation& o
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void change_recovery_account_evaluator::do_apply( const change_recovery_account_operation& o )
+void account_recovery_update_evaluator::do_apply( const account_recovery_update_operation& o )
 { try {
    const account_name_type& signed_for = o.account_to_recover;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -1813,12 +1829,12 @@ void change_recovery_account_evaluator::do_apply( const change_recovery_account_
    const account_object& account_to_recover = _db.get_account( o.account_to_recover );
    time_point now = _db.head_block_time();
 
-   const auto& change_recovery_idx = _db.get_index< change_recovery_account_request_index >().indices().get< by_account >();
+   const auto& change_recovery_idx = _db.get_index< account_recovery_update_request_index >().indices().get< by_account >();
    auto request = change_recovery_idx.find( o.account_to_recover );
 
    if( request == change_recovery_idx.end() ) // New request
    {
-      _db.create< change_recovery_account_request_object >( [&]( change_recovery_account_request_object& req )
+      _db.create< account_recovery_update_request_object >( [&]( account_recovery_update_request_object& req )
       {
          req.account_to_recover = o.account_to_recover;
          req.recovery_account = o.new_recovery_account;
@@ -1830,7 +1846,7 @@ void change_recovery_account_evaluator::do_apply( const change_recovery_account_
    }
    else if( account_to_recover.recovery_account != o.new_recovery_account ) // Change existing request
    {
-      _db.modify( *request, [&]( change_recovery_account_request_object& req )
+      _db.modify( *request, [&]( account_recovery_update_request_object& req )
       {
          req.recovery_account = o.new_recovery_account;
          req.effective_on = now + OWNER_AUTH_RECOVERY_PERIOD;
@@ -1843,7 +1859,7 @@ void change_recovery_account_evaluator::do_apply( const change_recovery_account_
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void decline_voting_rights_evaluator::do_apply( const decline_voting_rights_operation& o )
+void account_decline_voting_evaluator::do_apply( const account_decline_voting_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -1862,7 +1878,7 @@ void decline_voting_rights_evaluator::do_apply( const decline_voting_rights_oper
    const account_object& account = _db.get_account( o.account );
    time_point now = _db.head_block_time();
 
-   const auto& req_idx = _db.get_index< decline_voting_rights_request_index >().indices().get< by_account >();
+   const auto& req_idx = _db.get_index< account_decline_voting_request_index >().indices().get< by_account >();
    auto req_itr = req_idx.find( o.account );
 
    if( o.declined )
@@ -1872,7 +1888,7 @@ void decline_voting_rights_evaluator::do_apply( const decline_voting_rights_oper
       FC_ASSERT( req_itr == req_idx.end(),
          "Decline voting rights request already exists for this account." );
       
-      _db.create< decline_voting_rights_request_object >( [&]( decline_voting_rights_request_object& dvrro )
+      _db.create< account_decline_voting_request_object >( [&]( account_decline_voting_request_object& dvrro )
       {
          dvrro.account = o.account;
          dvrro.effective_date = now + DECLINE_VOTING_RIGHTS_DURATION;
@@ -1889,7 +1905,7 @@ void decline_voting_rights_evaluator::do_apply( const decline_voting_rights_oper
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void connection_request_evaluator::do_apply( const connection_request_operation& o )
+void account_connection_request_evaluator::do_apply( const account_connection_request_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -1909,8 +1925,8 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
    const account_object& req_account = _db.get_account( o.requested_account );
    time_point now = _db.head_block_time();
 
-   const auto& req_idx = _db.get_index< connection_request_index >().indices().get< by_account_req >();
-   const auto& acc_idx = _db.get_index< connection_request_index >().indices().get< by_req_account >();
+   const auto& req_idx = _db.get_index< account_connection_request_index >().indices().get< by_account_req >();
+   const auto& acc_idx = _db.get_index< account_connection_request_index >().indices().get< by_req_account >();
    auto req_itr = req_idx.find( boost::make_tuple( account.name, req_account.name ) );
    auto acc_itr = acc_idx.find( boost::make_tuple( account.name, req_account.name ) );
 
@@ -1939,7 +1955,7 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
       }
    }
 
-   const auto& con_idx = _db.get_index< connection_index >().indices().get< by_accounts >();
+   const auto& con_idx = _db.get_index< account_connection_index >().indices().get< by_accounts >();
    auto con_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::CONNECTION ) );
 
    if( req_itr == req_idx.end() && acc_itr == acc_idx.end() )      // New connection request 
@@ -1950,20 +1966,10 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
       { 
          FC_ASSERT( connection_tier == connection_tier_type::CONNECTION,
             "First connection request must be of standard Connection type before elevation to higher levels." );
-
-         _db.create< connection_request_object >( [&]( connection_request_object& cro )
-         {
-            cro.account = account.name;
-            cro.requested_account = req_account.name;
-            cro.connection_type = connection_tier;
-            from_string( cro.message, o.message );
-            cro.expiration = now + CONNECTION_REQUEST_DURATION;
-         });
       }
       else        // Connection object found, requesting level increase.
       {
-         const connection_object& connection_obj = *con_itr;
-
+         const account_connection_object& connection_obj = *con_itr;
          auto friend_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::FRIEND ) );
          auto comp_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::COMPANION ) );
 
@@ -1985,17 +1991,17 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
                "companion level connection already exists." );
             FC_ASSERT( now >= ( friend_itr->created + CONNECTION_REQUEST_DURATION ),
                "Companion Connection must wait one week from Friend connection." );
-         }
-
-         _db.create< connection_request_object >( [&]( connection_request_object& cro ) 
-         {
-            cro.requested_account = req_account.name;
-            cro.account = account.name;
-            cro.connection_type = connection_tier;
-            from_string( cro.message, o.message );
-            cro.expiration = now + CONNECTION_REQUEST_DURATION;
-         });
+         } 
       }
+
+      _db.create< account_connection_request_object >( [&]( account_connection_request_object& cro ) 
+      {
+         cro.account = account.name;
+         cro.requested_account = req_account.name;
+         cro.connection_type = connection_tier;
+         from_string( cro.message, o.message );
+         cro.expiration = now + CONNECTION_REQUEST_DURATION;
+      });
    } 
    else // Request exists and is being cancelled.
    { 
@@ -2011,7 +2017,7 @@ void connection_request_evaluator::do_apply( const connection_request_operation&
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void connection_accept_evaluator::do_apply( const connection_accept_operation& o )
+void account_connection_accept_evaluator::do_apply( const account_connection_accept_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -2081,10 +2087,10 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
       account_a_name = req_account.name;
    }
 
-   const auto& con_idx = _db.get_index< connection_index >().indices().get< by_accounts >();
+   const auto& con_idx = _db.get_index< account_connection_index >().indices().get< by_accounts >();
    auto con_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier ) );
 
-   const auto& req_idx = _db.get_index< connection_request_index >().indices().get< by_account_req >();
+   const auto& req_idx = _db.get_index< account_connection_request_index >().indices().get< by_account_req >();
    auto req_itr = req_idx.find( boost::make_tuple( o.requesting_account, o.account ) );
 
    const account_following_object& a_following_set = _db.get_account_following( account_a_name );
@@ -2096,11 +2102,11 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
          "Connection doesn't exist, must select to connect with account" );
       FC_ASSERT( req_itr != req_idx.end(),
          "Connection Request doesn't exist to accept." );
-      const connection_request_object& request = *req_itr;
+      const account_connection_request_object& request = *req_itr;
       FC_ASSERT( connection_tier == request.connection_type,
          "Connection request must be of the same level as acceptance" );
 
-      const connection_object& new_connection = _db.create< connection_object >( [&]( connection_object& co )
+      const account_connection_object& new_connection = _db.create< account_connection_object >( [&]( account_connection_object& co )
       {
          co.account_a = account_a_name;
          co.account_b = account_b_name;
@@ -2166,11 +2172,11 @@ void connection_accept_evaluator::do_apply( const connection_accept_operation& o
    }
    else 
    {
-      const connection_object& connection_obj = *con_itr;
+      const account_connection_object& connection_obj = *con_itr;
 
       if( o.connected ) // Connection object found, adding returning acceptance or editing keys.
       {
-         _db.modify( connection_obj, [&]( connection_object& co )
+         _db.modify( connection_obj, [&]( account_connection_object& co )
          {
             if( account_a_name == account.name )    // We're account A
             {
@@ -2363,7 +2369,7 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void tag_follow_evaluator::do_apply( const tag_follow_operation& o )
+void account_follow_tag_evaluator::do_apply( const account_follow_tag_operation& o )
 { try {
    const account_name_type& signed_for = o.follower;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -2380,7 +2386,7 @@ void tag_follow_evaluator::do_apply( const tag_follow_operation& o )
    }
    const account_object& follower = _db.get_account( o.follower );
    const account_following_object& follower_set = _db.get_account_following( o.follower );
-   const tag_following_object* tag_ptr = _db.find_tag_following( o.tag );
+   const account_tag_following_object* tag_ptr = _db.find_account_tag_following( o.tag );
    time_point now = _db.head_block_time();
 
    if( tag_ptr != nullptr )      // Tag follow already exists
@@ -2398,7 +2404,7 @@ void tag_follow_evaluator::do_apply( const tag_follow_operation& o )
                afo.last_updated = now;
             });
             
-            _db.modify( *tag_ptr, [&]( tag_following_object& tfo )
+            _db.modify( *tag_ptr, [&]( account_tag_following_object& tfo )
             {
                tfo.add_follower( follower.name );
                tfo.last_updated = now;
@@ -2430,7 +2436,7 @@ void tag_follow_evaluator::do_apply( const tag_follow_operation& o )
                afo.last_updated = now;
             });
             
-            _db.modify( *tag_ptr, [&]( tag_following_object& tfo )
+            _db.modify( *tag_ptr, [&]( account_tag_following_object& tfo )
             {
                tfo.remove_follower( follower.name );
                tfo.last_updated = now;
@@ -2462,7 +2468,7 @@ void tag_follow_evaluator::do_apply( const tag_follow_operation& o )
             afo.last_updated = now;
          });
 
-         _db.create< tag_following_object >( [&]( tag_following_object& tfo )
+         _db.create< account_tag_following_object >( [&]( account_tag_following_object& tfo )
          {
             tfo.tag = o.tag;
             tfo.add_follower( follower.name );
@@ -2480,7 +2486,7 @@ void tag_follow_evaluator::do_apply( const tag_follow_operation& o )
             afo.last_updated = now;
          });
 
-         _db.create< tag_following_object >( [&]( tag_following_object& tfo )
+         _db.create< account_tag_following_object >( [&]( account_tag_following_object& tfo )
          {
             tfo.tag = o.tag;
             tfo.last_updated = now;
@@ -2493,7 +2499,7 @@ void tag_follow_evaluator::do_apply( const tag_follow_operation& o )
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void activity_reward_evaluator::do_apply( const activity_reward_operation& o )
+void account_activity_evaluator::do_apply( const account_activity_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -2537,14 +2543,14 @@ void activity_reward_evaluator::do_apply( const activity_reward_operation& o )
    ilog("Claiming Activity reward for Comment: ${c} ${p} Vote: ${v} View: ${vi}",
       ("c",comment.author)("p",comment.permlink)("v",vote)("vi",view));
    
-   FC_ASSERT( uint32_t( comment.net_votes ) >= ( comment_metrics.median_vote_count / 5 ),
-      "Referred recent Post should have at least 20% of median number of votes." );
-   FC_ASSERT( comment.view_count >= ( comment_metrics.median_view_count / 5 ),
-      "Referred recent Post should have at least 20% of median number of views." );
-   FC_ASSERT( comment.vote_power >= ( comment_metrics.median_vote_power / 5 ),
-      "Referred recent Post should have at least 20% of median vote power." );
-   FC_ASSERT( comment.view_power >= ( comment_metrics.median_view_power / 5 ),
-      "Referred recent Post should have at least 20% of median view power." );
+   FC_ASSERT( uint128_t( comment.net_votes ) >= ( comment_metrics.median_vote_count / 10 ),
+      "Referred recent Post should have at least 10% of median number of votes." );
+   FC_ASSERT( uint128_t( comment.view_count ) >= ( comment_metrics.median_view_count / 10 ),
+      "Referred recent Post should have at least 10% of median number of views." );
+   FC_ASSERT( uint128_t( comment.vote_power.value ) >= ( comment_metrics.median_vote_power / 10 ),
+      "Referred recent Post should have at least 10% of median vote power." );
+   FC_ASSERT( uint128_t( comment.view_power.value ) >= ( comment_metrics.median_view_power / 10 ),
+      "Referred recent Post should have at least 10% of median view power." );
    FC_ASSERT( now <= ( comment.created + fc::days(1) ),
       "Recent Post should have been made in the last 24 hours." );
    FC_ASSERT( now <= ( view.created + fc::days(1) ),

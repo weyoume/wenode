@@ -35,7 +35,7 @@ struct get_impacted_account_visitor
          _impacted.insert( op.parent_author );
    }
 
-   void operator()( const vote_operation& op )
+   void operator()( const comment_vote_operation& op )
    {
       _impacted.insert( op.voter );
       _impacted.insert( op.author );
@@ -119,18 +119,18 @@ struct get_impacted_account_visitor
       _impacted.insert( op.work.visit( proof_of_work_impacted_visitor() ) );
    }
 
-   void operator()( const request_account_recovery_operation& op )
+   void operator()( const account_request_recovery_operation& op )
    {
       _impacted.insert( op.account_to_recover );
       _impacted.insert( op.recovery_account );
    }
 
-   void operator()( const recover_account_operation& op )
+   void operator()( const account_recover_operation& op )
    {
       _impacted.insert( op.account_to_recover );
    }
 
-   void operator()( const change_recovery_account_operation& op )
+   void operator()( const account_recovery_update_operation& op )
    {
       _impacted.insert( op.account_to_recover );
    }

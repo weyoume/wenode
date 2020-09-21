@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE( claim_reward_balance_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful reward claim" );
 
-      private_key_type producer_private_active_key = get_private_key( GENESIS_ACCOUNT_BASE_NAME, "active", INIT_ACCOUNT_PASSWORD );
+      private_key_type producer_private_active_key = get_private_key( GENESIS_ACCOUNT_BASE_NAME, ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       generate_blocks( TOTAL_PRODUCERS );
 
@@ -690,12 +690,12 @@ BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
       asset alice_init_liquid_balance = get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
       asset alice_init_delegated_balance = db.get_delegated_balance( account_name_type( "alice" ), SYMBOL_COIN );
       asset alice_init_receiving_balance = db.get_receiving_balance( account_name_type( "alice" ), SYMBOL_COIN );
-      share_type alice_init_voting_power = db.get_voting_power( account_name_type( "alice" ) );
+      share_type alice_init_voting_power = db.get_voting_power( account_name_type( "alice" ), SYMBOL_COIN  );
 
       asset bob_init_liquid_balance = get_liquid_balance( account_name_type( "bob" ), SYMBOL_COIN );
       asset bob_init_delegated_balance = db.get_delegated_balance( account_name_type( "bob" ), SYMBOL_COIN );
       asset bob_init_receiving_balance = db.get_receiving_balance( account_name_type( "bob" ), SYMBOL_COIN );
-      share_type bob_init_voting_power = db.get_voting_power( account_name_type( "bob" ) );
+      share_type bob_init_voting_power = db.get_voting_power( account_name_type( "bob" ), SYMBOL_COIN  );
       
       signed_transaction tx;
 
@@ -720,12 +720,12 @@ BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
       asset alice_liquid_balance = get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
       asset alice_delegated_balance = db.get_delegated_balance( account_name_type( "alice" ), SYMBOL_COIN );
       asset alice_receiving_balance = db.get_receiving_balance( account_name_type( "alice" ), SYMBOL_COIN );
-      share_type alice_voting_power = db.get_voting_power( account_name_type( "alice" ) );
+      share_type alice_voting_power = db.get_voting_power( account_name_type( "alice" ), SYMBOL_COIN  );
 
       asset bob_liquid_balance = get_liquid_balance( account_name_type( "bob" ), SYMBOL_COIN );
       asset bob_delegated_balance = db.get_delegated_balance( account_name_type( "bob" ), SYMBOL_COIN );
       asset bob_receiving_balance = db.get_receiving_balance( account_name_type( "bob" ), SYMBOL_COIN );
-      share_type bob_voting_power = db.get_voting_power( account_name_type( "bob" ) );
+      share_type bob_voting_power = db.get_voting_power( account_name_type( "bob" ), SYMBOL_COIN  );
 
       BOOST_REQUIRE( delegation.delegator == delegate.delegator );
       BOOST_REQUIRE( delegation.delegatee == delegate.delegatee );
@@ -756,7 +756,7 @@ BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
       alice_init_liquid_balance = get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
       alice_init_delegated_balance = db.get_delegated_balance( account_name_type( "alice" ), SYMBOL_COIN );
       alice_init_receiving_balance = db.get_receiving_balance( account_name_type( "alice" ), SYMBOL_COIN );
-      alice_init_voting_power = db.get_voting_power( account_name_type( "alice" ) );
+      alice_init_voting_power = db.get_voting_power( account_name_type( "alice" ), SYMBOL_COIN  );
 
       unstake_asset_operation withdraw;
 
@@ -819,12 +819,12 @@ BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
       alice_init_liquid_balance = get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
       alice_init_delegated_balance = db.get_delegated_balance( account_name_type( "alice" ), SYMBOL_COIN );
       alice_init_receiving_balance = db.get_receiving_balance( account_name_type( "alice" ), SYMBOL_COIN );
-      alice_init_voting_power = db.get_voting_power( account_name_type( "alice" ) );
+      alice_init_voting_power = db.get_voting_power( account_name_type( "alice" ), SYMBOL_COIN  );
 
       bob_init_liquid_balance = get_liquid_balance( account_name_type( "bob" ), SYMBOL_COIN );
       bob_init_delegated_balance = db.get_delegated_balance( account_name_type( "bob" ), SYMBOL_COIN );
       bob_init_receiving_balance = db.get_receiving_balance( account_name_type( "bob" ), SYMBOL_COIN );
-      bob_init_voting_power = db.get_voting_power( account_name_type( "bob" ) );
+      bob_init_voting_power = db.get_voting_power( account_name_type( "bob" ), SYMBOL_COIN  );
 
       delegate.amount = asset( 0, SYMBOL_COIN );
 
@@ -841,12 +841,12 @@ BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
       alice_liquid_balance = get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
       alice_delegated_balance = db.get_delegated_balance( account_name_type( "alice" ), SYMBOL_COIN );
       alice_receiving_balance = db.get_receiving_balance( account_name_type( "alice" ), SYMBOL_COIN );
-      alice_voting_power = db.get_voting_power( account_name_type( "alice" ) );
+      alice_voting_power = db.get_voting_power( account_name_type( "alice" ), SYMBOL_COIN  );
 
       bob_liquid_balance = get_liquid_balance( account_name_type( "bob" ), SYMBOL_COIN );
       bob_delegated_balance = db.get_delegated_balance( account_name_type( "bob" ), SYMBOL_COIN );
       bob_receiving_balance = db.get_receiving_balance( account_name_type( "bob" ), SYMBOL_COIN );
-      bob_voting_power = db.get_voting_power( account_name_type( "bob" ) );
+      bob_voting_power = db.get_voting_power( account_name_type( "bob" ), SYMBOL_COIN  );
 
       const auto& delegation_idx = db.get_index< asset_delegation_index >().indices().get< by_delegator >();
       auto delegation_itr = delegation_idx.find( boost::make_tuple( account_name_type( "alice" ), account_name_type( "bob" ), SYMBOL_COIN ) );
@@ -869,12 +869,12 @@ BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
       alice_liquid_balance = get_liquid_balance( account_name_type( "alice" ), SYMBOL_COIN );
       alice_delegated_balance = db.get_delegated_balance( account_name_type( "alice" ), SYMBOL_COIN );
       alice_receiving_balance = db.get_receiving_balance( account_name_type( "alice" ), SYMBOL_COIN );
-      alice_voting_power = db.get_voting_power( account_name_type( "alice" ) );
+      alice_voting_power = db.get_voting_power( account_name_type( "alice" ), SYMBOL_COIN  );
 
       bob_liquid_balance = get_liquid_balance( account_name_type( "bob" ), SYMBOL_COIN );
       bob_delegated_balance = db.get_delegated_balance( account_name_type( "bob" ), SYMBOL_COIN );
       bob_receiving_balance = db.get_receiving_balance( account_name_type( "bob" ), SYMBOL_COIN );
-      bob_voting_power = db.get_voting_power( account_name_type( "bob" ) );
+      bob_voting_power = db.get_voting_power( account_name_type( "bob" ), SYMBOL_COIN  );
 
       BOOST_REQUIRE( exp_obj == end );
       BOOST_REQUIRE( alice_delegated_balance.amount == 0 );

@@ -103,7 +103,7 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      update_mediator_operation mediator;
+      mediator_update_operation mediator;
       
       mediator.signatory = "candice";
       mediator.account = "candice";
@@ -1074,7 +1074,7 @@ BOOST_AUTO_TEST_CASE( product_sale_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      update_mediator_operation mediator;
+      mediator_update_operation mediator;
       
       mediator.signatory = "candice";
       mediator.account = "candice";
@@ -1377,7 +1377,7 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      update_mediator_operation mediator;
+      mediator_update_operation mediator;
       
       mediator.signatory = "candice";
       mediator.account = "candice";

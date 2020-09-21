@@ -132,62 +132,6 @@ namespace node { namespace chain {
    };
 
 
-   /**
-    * Holds an asset balance that can be spent by a public key.
-    * 
-    * Acts as a UTXO payment mechanism that splits balances
-    * into equal chunks that can be shuffled to provide privacy.
-    */
-   class confidential_balance_object : public object< confidential_balance_object_type, confidential_balance_object >
-   {
-      confidential_balance_object() = delete;
-
-      public:
-         template< typename Constructor, typename Allocator >
-         confidential_balance_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c( *this );
-         }
-
-         id_type                       id;
-
-         authority                     owner;               ///< Owner Authoirty of the confidential balance.
-
-         transaction_id_type           prev;                ///< Transaction ID of the transaction that created the balance.
-
-         uint16_t                      op_in_trx;           ///< Number of the operation in the creating transaction.
-
-         uint16_t                      index;               ///< Number of the balance created from the origin transaction.
-
-         commitment_type               commitment;          ///< Commitment of the Balance.
-
-         asset_symbol_type             symbol;              ///< Asset symbol of the balance.
-
-         time_point                    created;             ///< Time that the balance was created.
-
-         digest_type                   hash()const          ///< Hash of the balance.
-         {
-            digest_type::encoder enc;
-            fc::raw::pack( enc, owner );
-            fc::raw::pack( enc, prev );
-            fc::raw::pack( enc, op_in_trx );
-            fc::raw::pack( enc, index );
-            fc::raw::pack( enc, commitment );
-            fc::raw::pack( enc, symbol );
-            fc::raw::pack( enc, created );
-            return enc.result();
-         }
-
-         account_name_type             account_auth()const
-         {
-            return (*owner.account_auths.begin() ).first;
-         }
-
-         public_key_type               key_auth()const
-         {
-            return (*owner.key_auths.begin() ).first;
-         }
-   };
 
 
    struct by_expiration;
@@ -291,43 +235,7 @@ namespace node { namespace chain {
       allocator< transfer_recurring_request_object >
    > transfer_recurring_request_index;
 
-   struct by_key;
-   struct by_hash;
-   struct by_created;
-   struct by_commitment;
-   struct by_key_auth;
-   struct by_account_auth;
-
-   typedef multi_index_container<
-      confidential_balance_object,
-      indexed_by<
-         ordered_unique< tag< by_id >, member< confidential_balance_object, confidential_balance_id_type, &confidential_balance_object::id > >,
-         ordered_unique< tag< by_hash >, const_mem_fun< confidential_balance_object, digest_type, &confidential_balance_object::hash > >,
-         ordered_non_unique< tag< by_created >, member< confidential_balance_object, time_point, &confidential_balance_object::created > >,
-         ordered_unique< tag< by_commitment >, member< confidential_balance_object, commitment_type, &confidential_balance_object::commitment > >,
-         ordered_unique< tag< by_key_auth >,
-            composite_key< confidential_balance_object,
-               const_mem_fun< confidential_balance_object, public_key_type, &confidential_balance_object::key_auth >,
-               member< confidential_balance_object, confidential_balance_id_type, &confidential_balance_object::id >
-            >,
-            composite_key_compare< 
-               std::less< public_key_type >,
-               std::less< confidential_balance_id_type >
-            >
-         >,
-         ordered_unique< tag< by_account_auth >, 
-            composite_key< confidential_balance_object,
-               const_mem_fun< confidential_balance_object, account_name_type, &confidential_balance_object::account_auth >,
-               member< confidential_balance_object, confidential_balance_id_type, &confidential_balance_object::id >
-            >,
-            composite_key_compare< 
-               std::less< account_name_type >,
-               std::less< confidential_balance_id_type >
-            >
-         >
-      >,
-      allocator< confidential_balance_object >
-   > confidential_balance_index;
+   
 
 
 } } // node::chain
@@ -382,16 +290,3 @@ FC_REFLECT( node::chain::transfer_recurring_request_object,
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::transfer_recurring_request_object, node::chain::transfer_recurring_request_index );
-
-FC_REFLECT( node::chain::confidential_balance_object,
-         (id)
-         (owner)
-         (prev)
-         (op_in_trx)
-         (index)
-         (commitment)
-         (symbol)
-         (created)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::confidential_balance_object, node::chain::confidential_balance_index );

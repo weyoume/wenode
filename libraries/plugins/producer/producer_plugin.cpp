@@ -156,15 +156,15 @@ namespace detail
       catch( fc::assert_exception& ) {}
 
       // Get possible keys if memo was an account password
-      string owner_seed = account.name + "owner" + memo;
+      string owner_seed = account.name + OWNER_KEY_STR + memo;
       auto owner_secret = fc::sha256::hash( owner_seed.c_str(), owner_seed.size() );
       keys.push_back( fc::ecc::private_key::regenerate( owner_secret ).get_public_key() );
 
-      string active_seed = account.name + "active" + memo;
+      string active_seed = account.name + ACTIVE_KEY_STR + memo;
       auto active_secret = fc::sha256::hash( active_seed.c_str(), active_seed.size() );
       keys.push_back( fc::ecc::private_key::regenerate( active_secret ).get_public_key() );
 
-      string posting_seed = account.name + "posting" + memo;
+      string posting_seed = account.name + POSTING_KEY_STR + memo;
       auto posting_secret = fc::sha256::hash( posting_seed.c_str(), posting_seed.size() );
       keys.push_back( fc::ecc::private_key::regenerate( posting_secret ).get_public_key() );
 
@@ -433,7 +433,7 @@ namespace detail
             b.last_bandwidth_update = _db.head_block_time();
          });
 
-         fc::uint128 account_voting_power( _db.get_voting_power(a).value );
+         fc::uint128 account_voting_power( _db.get_voting_power( a, SYMBOL_COIN ).value );
          fc::uint128 total_voting_power( props.total_voting_power );
          fc::uint128 account_average_bandwidth( band->average_bandwidth.value );
          share_type account_lifetime_bandwidth( band->lifetime_bandwidth );

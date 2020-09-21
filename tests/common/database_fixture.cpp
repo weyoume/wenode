@@ -320,12 +320,11 @@ const account_object& database_fixture::account_create(
 const community_object& database_fixture::community_create(
    const string& name,
    const string& founder,
-   const private_key_type& founder_key,
-   const public_key_type& community_key,
    const string& community_privacy,
-   const string& details,
-   const string& url,
-   const string& json )
+   const private_key_type& founder_key,
+   const public_key_type& community_member_key,
+   const public_key_type& community_moderator_key,
+   const public_key_type& community_admin_key )
 {
    try
    {
@@ -334,12 +333,19 @@ const community_object& database_fixture::community_create(
       op.signatory = founder;
       op.founder = founder;
       op.name = name;
-      op.community_privacy = "open_public";
-      op.community_public_key = string( community_key );
-      op.json = json;
-      op.json_private = json;
-      op.details = details;
-      op.url = url;
+      op.display_name = name;
+      op.details = "Community Details";
+      op.url = "https://www.url.com";
+      op.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      op.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      op.json = "{ \"valid\": true }";
+      op.json_private = "{ \"valid\": true }";
+      op.tags.insert( "test" );
+      op.community_privacy = community_privacy;
+      op.community_member_key = string( community_member_key );
+      op.community_moderator_key = string( community_moderator_key );
+      op.community_admin_key = string( community_admin_key );
+      
       op.validate();
       
       trx.operations.push_back( op );
@@ -416,7 +422,7 @@ const producer_object& database_fixture::producer_create(
       op.details = "details";
       op.url = "https://www.url.com";
       op.json = "{ \"valid\": true }";
-      op.block_signing_key = string( node::protocol::get_public_key( owner, "producer", INIT_ACCOUNT_PASSWORD ) );
+      op.block_signing_key = string( node::protocol::get_public_key( owner, PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
       op.latitude = 37.8136;
       op.longitude = 144.9631;
       op.active = true;
@@ -497,7 +503,6 @@ const comment_object& database_fixture::comment_create(
       op.latitude = 37.8136;
       op.longitude = 144.9631;
       op.comment_price = asset( 0, SYMBOL_COIN );
-      op.reply_price = asset( 0, SYMBOL_COIN );
       op.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;

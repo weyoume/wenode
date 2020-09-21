@@ -174,7 +174,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          FC_ASSERT( liquid_usd >= o.usd_liquidity, 
             "Issuer has insufficient USD balance to provide specified initial liquidity." );
 
-         const reward_fund_object& reward_fund = _db.create< reward_fund_object >( [&]( reward_fund_object& rfo )
+         const asset_reward_fund_object& reward_fund = _db.create< asset_reward_fund_object >( [&]( asset_reward_fund_object& rfo )
          {
             rfo.symbol = o.symbol;
             rfo.content_reward_balance = asset( 0, o.symbol );
@@ -184,7 +184,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             rfo.producer_activity_reward_balance = asset( 0, o.symbol );
             rfo.supernode_reward_balance = asset( 0, o.symbol );
             rfo.power_reward_balance = asset( 0, o.symbol );
-            rfo.community_fund_balance = asset( 0, o.symbol );
+            rfo.enterprise_fund_balance = asset( 0, o.symbol );
             rfo.development_reward_balance = asset( 0, o.symbol );
             rfo.marketing_reward_balance = asset( 0, o.symbol );
             rfo.advocacy_reward_balance = asset( 0, o.symbol );
@@ -208,7 +208,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             a.producer_reward_percent = o.options.producer_reward_percent;
             a.supernode_reward_percent = o.options.supernode_reward_percent;
             a.power_reward_percent = o.options.power_reward_percent;
-            a.community_fund_reward_percent = o.options.community_fund_reward_percent;
+            a.enterprise_fund_reward_percent = o.options.enterprise_fund_reward_percent;
             a.development_reward_percent = o.options.development_reward_percent;
             a.marketing_reward_percent = o.options.marketing_reward_percent;
             a.advocacy_reward_percent = o.options.advocacy_reward_percent;
@@ -333,12 +333,6 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             a.business_account = o.issuer;
             a.last_dividend = time_point::min();
             a.dividend_share_percent = o.options.dividend_share_percent;
-            a.liquid_dividend_percent = o.options.liquid_dividend_percent;
-            a.staked_dividend_percent = o.options.staked_dividend_percent;
-            a.savings_dividend_percent = o.options.savings_dividend_percent;
-            a.liquid_voting_rights = o.options.liquid_voting_rights;
-            a.staked_voting_rights = o.options.staked_voting_rights;
-            a.savings_voting_rights = o.options.savings_voting_rights;
             a.min_active_time = o.options.min_active_time;
             a.min_balance = o.options.min_balance;
             a.min_producers = o.options.min_producers;
@@ -1104,12 +1098,6 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
          _db.modify( equity_obj, [&]( asset_equity_data_object& a )
          {
             a.dividend_share_percent = o.new_options.dividend_share_percent;
-            a.liquid_dividend_percent = o.new_options.liquid_dividend_percent;
-            a.staked_dividend_percent = o.new_options.staked_dividend_percent;
-            a.savings_dividend_percent = o.new_options.savings_dividend_percent;
-            a.liquid_voting_rights = o.new_options.liquid_voting_rights;
-            a.staked_voting_rights = o.new_options.staked_voting_rights;
-            a.savings_voting_rights = o.new_options.savings_voting_rights;
             a.min_active_time = o.new_options.min_active_time;
             a.min_balance = o.new_options.min_balance;
             a.min_producers = o.new_options.min_producers;
@@ -1980,15 +1968,15 @@ void asset_update_feed_producers_evaluator::do_apply( const asset_update_feed_pr
    
    _db.modify( stablecoin_to_update, [&]( asset_stablecoin_data_object& abdo )
    {
-      for( auto feed_itr = abdo.feeds.begin(); feed_itr != abdo.feeds.end(); )    // Remove any old publishers who are no longer publishers.
+      for( auto comment_feed_itr = abdo.feeds.begin(); comment_feed_itr != abdo.feeds.end(); )    // Remove any old publishers who are no longer publishers.
       {
-         if( !o.new_feed_producers.count( feed_itr->first ) )
+         if( !o.new_feed_producers.count( comment_feed_itr->first ) )
          {
-            feed_itr = abdo.feeds.erase( feed_itr );     // Resets iterator to the new feeds feed_itr with the name's key removed.
+            comment_feed_itr = abdo.feeds.erase( comment_feed_itr );     // Resets iterator to the new feeds comment_feed_itr with the name's key removed.
          }
          else
          {
-            ++feed_itr;
+            ++comment_feed_itr;
          }
       }
       for( const account_name_type name : o.new_feed_producers )    // Now, add map keys for any new publishers.

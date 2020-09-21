@@ -172,7 +172,7 @@ struct operation_visitor
             obj.rating            = comment.rating;
             obj.encrypted         = comment.is_encrypted();
             obj.author_reputation = comment.author_reputation;
-            obj.cashout           = _db.calculate_discussion_payout_time( comment );
+            obj.cashout           = comment.cashout_time;
             obj.cashouts_received = comment.cashouts_received;
 
             obj.net_reward        = comment.net_reward;
@@ -278,10 +278,10 @@ struct operation_visitor
    template< int16_t LF, int16_t EF, int16_t REPF, int16_t AF, int16_t VR, int16_t VIR, int16_t SR, int16_t CR >
    double calculate_total_post_score( const comment_object& c, const comment_metrics_object& m )const 
    {
-      double weighted_vote_power = double(c.vote_power.value) * ( 1 - ( double(EF) / 100 ) ) + double(c.net_votes) * double(m.average_vote_power.value) * ( double(EF) / 100 );
-      double weighted_view_power = double(c.view_power.value) * ( 1 - ( double(EF) / 100 ) ) + double(c.view_count) * double(m.average_view_power.value) * ( double(EF) / 100 );
-      double weighted_share_power = double(c.share_power.value) * ( 1 - ( double(EF) / 100 ) ) + double(c.share_count) * double(m.average_share_power.value) * ( double(EF) / 100 );
-      double weighted_comment_power = double(c.comment_power.value) * ( 1 - ( double(EF) / 100 ) ) + double(c.children) * double(m.average_comment_power.value) * ( double(EF) / 100 );
+      double weighted_vote_power = double(c.vote_power.value) * ( 1 - ( double(EF) / 100 ) ) + double(c.net_votes) * double(m.average_vote_power.to_uint64()) * ( double(EF) / 100 );
+      double weighted_view_power = double(c.view_power.value) * ( 1 - ( double(EF) / 100 ) ) + double(c.view_count) * double(m.average_view_power.to_uint64()) * ( double(EF) / 100 );
+      double weighted_share_power = double(c.share_power.value) * ( 1 - ( double(EF) / 100 ) ) + double(c.share_count) * double(m.average_share_power.to_uint64()) * ( double(EF) / 100 );
+      double weighted_comment_power = double(c.comment_power.value) * ( 1 - ( double(EF) / 100 ) ) + double(c.children) * double(m.average_comment_power.to_uint64()) * ( double(EF) / 100 );
 
       int vote_sign = 0;
       if( weighted_vote_power > 0 )
@@ -1216,7 +1216,7 @@ struct operation_visitor
    }
 
 
-   void update_account_votes( const comment_object& c, const vote_operation& op )const
+   void update_account_votes( const comment_object& c, const comment_vote_operation& op )const
    {
       const auto& metrics_idx = _db.get_index< account_curation_metrics_index >().indices().get< by_account >();
       comment_metadata meta = filter_tags( c );
@@ -1274,7 +1274,7 @@ struct operation_visitor
    }
 
 
-   void update_account_views( const comment_object& c, const view_operation& op )const
+   void update_account_views( const comment_object& c, const comment_view_operation& op )const
    {
       const auto& metrics_idx = _db.get_index< account_curation_metrics_index >().indices().get< by_account >();
       comment_metadata meta = filter_tags( c );
@@ -1331,7 +1331,7 @@ struct operation_visitor
    }
 
 
-   void update_account_shares( const comment_object& c, const share_operation& op )const
+   void update_account_shares( const comment_object& c, const comment_share_operation& op )const
    {
       const auto& metrics_idx = _db.get_index< account_curation_metrics_index >().indices().get< by_account >();
       comment_metadata meta = filter_tags( c );
@@ -1541,11 +1541,11 @@ struct operation_visitor
       } 
    }
 
-   void update_tag_adjacency( const tag_following_object& t )const
+   void update_tag_adjacency( const account_tag_following_object& t )const
    {
       time_point now = _db.head_block_time();
       const auto& following_idx = _db.get_index< chain::account_following_index >().indices().get< chain::by_account >();
-      const auto& tag_idx = _db.get_index< chain::tag_following_index >().indices().get< chain::by_tag >();
+      const auto& tag_idx = _db.get_index< chain::account_tag_following_index >().indices().get< chain::by_tag >();
       const auto& adjacency_idx = _db.get_index< tag_adjacency_index >().indices().get< by_tag_pair >();
 
       for( auto name : t.followers )
@@ -1559,7 +1559,7 @@ struct operation_visitor
             tag_name_type tag_b;
             auto tag_itr = tag_idx.find( tag );
 
-            const tag_following_object& tag_following = *tag_itr;
+            const account_tag_following_object& tag_following = *tag_itr;
 
             if( tag_following.id < t.id )
             {
@@ -1767,7 +1767,7 @@ struct operation_visitor
          // Retrieves all hybrid tag indexes for getting posts from each tag and community.
 
          const auto& view_idx = _db.get_index< comment_view_index >().indices().get< by_viewer_comment >();
-         const auto& blog_idx = _db.get_index< blog_index >().indices().get< by_new_account_blog >();
+         const auto& comment_blog_idx = _db.get_index< comment_blog_index >().indices().get< by_new_account_blog >();
          const auto& author_vote_idx = _db.get_index< tag_index >().indices().get< by_author_net_votes >();
          const auto& author_view_idx = _db.get_index< tag_index >().indices().get< by_author_view_count >();
          const auto& author_share_idx = _db.get_index< tag_index >().indices().get< by_author_share_count >();
@@ -2006,16 +2006,16 @@ struct operation_visitor
 
          for( auto author : total_authors )   // Get the top 6 unviewed most recent, most voted, most viewed, most shared and most commented posts per author
          {
-            auto blog_itr = blog_idx.lower_bound( author );
+            auto comment_blog_itr = comment_blog_idx.lower_bound( author );
             uint32_t count = 0;
-            while( blog_itr != blog_idx.end() && blog_itr->account == author && count < 4 )
+            while( comment_blog_itr != comment_blog_idx.end() && comment_blog_itr->account == author && count < 4 )
             {
-               if( view_idx.find( boost::make_tuple( account, blog_itr->comment ) ) == view_idx.end() )
+               if( view_idx.find( boost::make_tuple( account, comment_blog_itr->comment ) ) == view_idx.end() )
                {
-                  selected.insert( blog_itr->comment );
+                  selected.insert( comment_blog_itr->comment );
                   count++;
                }
-               blog_itr++;
+               comment_blog_itr++;
             }
 
             auto author_vote_itr = author_vote_idx.lower_bound( boost::make_tuple( community_name_type(), tag_name_type(), author ) );
@@ -2442,21 +2442,21 @@ struct operation_visitor
    }
    */
 
-   void operator()( const vote_operation& op )const
+   void operator()( const comment_vote_operation& op )const
    {
       update_tags( _db.get_comment( op.author, op.permlink ), _db.get_comment_metrics(), false );
       update_account_votes( _db.get_comment( op.author, op.permlink ), op );
       update_recommendations( _db.get_comment( op.author, op.permlink ), op.voter, false );
    }
 
-   void operator()( const view_operation& op )const
+   void operator()( const comment_view_operation& op )const
    {
       update_tags( _db.get_comment( op.author, op.permlink ), _db.get_comment_metrics(), false );
       update_account_views( _db.get_comment( op.author, op.permlink ), op );
       update_recommendations( _db.get_comment( op.author, op.permlink ), op.viewer, true );
    }
 
-   void operator()( const share_operation& op )const
+   void operator()( const comment_share_operation& op )const
    {
       update_tags( _db.get_comment( op.author, op.permlink ), _db.get_comment_metrics(), false );
       update_account_shares( _db.get_comment( op.author, op.permlink ), op );
@@ -2473,9 +2473,9 @@ struct operation_visitor
       update_community_adjacency( _db.get_community_member( op.community ) );
    }
 
-   void operator()( const tag_follow_operation& op )const
+   void operator()( const account_follow_tag_operation& op )const
    {
-      update_tag_adjacency( _db.get_tag_following( op.tag ) );
+      update_tag_adjacency( _db.get_account_tag_following( op.tag ) );
    }
 
    void operator()( const content_reward_operation& op )const

@@ -35,7 +35,116 @@
 
 namespace node { namespace chain {
 
-using boost::container::flat_set;
+
+const limit_order_object& database::get_limit_order( const account_name_type& name, const shared_string& order_id )const
+{ try {
+   return get< limit_order_object, by_account >( boost::make_tuple( name, order_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(order_id) ) }
+
+const limit_order_object* database::find_limit_order( const account_name_type& name, const shared_string& order_id )const
+{
+   return find< limit_order_object, by_account >( boost::make_tuple( name, order_id ) );
+}
+
+const limit_order_object& database::get_limit_order( const account_name_type& name, const string& order_id )const
+{ try {
+   return get< limit_order_object, by_account >( boost::make_tuple( name, order_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(order_id) ) }
+
+const limit_order_object* database::find_limit_order( const account_name_type& name, const string& order_id )const
+{
+   return find< limit_order_object, by_account >( boost::make_tuple( name, order_id ) );
+}
+
+const margin_order_object& database::get_margin_order( const account_name_type& name, const shared_string& margin_id )const
+{ try {
+   return get< margin_order_object, by_account >( boost::make_tuple( name, margin_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(margin_id) ) }
+
+const margin_order_object* database::find_margin_order( const account_name_type& name, const shared_string& margin_id )const
+{
+   return find< margin_order_object, by_account >( boost::make_tuple( name, margin_id ) );
+}
+
+const margin_order_object& database::get_margin_order( const account_name_type& name, const string& margin_id )const
+{ try {
+   return get< margin_order_object, by_account >( boost::make_tuple( name, margin_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(margin_id) ) }
+
+const margin_order_object* database::find_margin_order( const account_name_type& name, const string& margin_id )const
+{
+   return find< margin_order_object, by_account >( boost::make_tuple( name, margin_id ) );
+}
+
+const option_order_object& database::get_option_order( const account_name_type& name, const shared_string& option_id )const
+{ try {
+   return get< option_order_object, by_account >( boost::make_tuple( name, option_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(option_id) ) }
+
+const option_order_object* database::find_option_order( const account_name_type& name, const shared_string& option_id )const
+{
+   return find< option_order_object, by_account >( boost::make_tuple( name, option_id ) );
+}
+
+const option_order_object& database::get_option_order( const account_name_type& name, const string& option_id )const
+{ try {
+   return get< option_order_object, by_account >( boost::make_tuple( name, option_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(option_id) ) }
+
+const option_order_object* database::find_option_order( const account_name_type& name, const string& option_id )const
+{
+   return find< option_order_object, by_account >( boost::make_tuple( name, option_id ) );
+}
+
+const auction_order_object& database::get_auction_order( const account_name_type& name, const shared_string& auction_id )const
+{ try {
+   return get< auction_order_object, by_account >( boost::make_tuple( name, auction_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(auction_id) ) }
+
+const auction_order_object* database::find_auction_order( const account_name_type& name, const shared_string& auction_id )const
+{
+   return find< auction_order_object, by_account >( boost::make_tuple( name, auction_id ) );
+}
+
+const auction_order_object& database::get_auction_order( const account_name_type& name, const string& auction_id )const
+{ try {
+   return get< auction_order_object, by_account >( boost::make_tuple( name, auction_id ) );
+} FC_CAPTURE_AND_RETHROW( (name)(auction_id) ) }
+
+const auction_order_object* database::find_auction_order( const account_name_type& name, const string& auction_id )const
+{
+   return find< auction_order_object, by_account >( boost::make_tuple( name, auction_id ) );
+}
+
+const call_order_object& database::get_call_order( const account_name_type& name, const asset_symbol_type& symbol )const
+{ try {
+   return get< call_order_object, by_account >( boost::make_tuple( name, symbol ) );
+} FC_CAPTURE_AND_RETHROW( (name)(symbol) ) }
+
+const call_order_object* database::find_call_order( const account_name_type& name, const asset_symbol_type& symbol )const
+{
+   return find< call_order_object, by_account >( boost::make_tuple( name, symbol ) );
+}
+
+const asset_collateral_bid_object& database::get_asset_collateral_bid( const account_name_type& name, const asset_symbol_type& symbol )const
+{ try {
+   return get< asset_collateral_bid_object, by_account >( boost::make_tuple( name, symbol ) );
+} FC_CAPTURE_AND_RETHROW( (name)(symbol) ) }
+
+const asset_collateral_bid_object* database::find_asset_collateral_bid( const account_name_type& name, const asset_symbol_type& symbol )const
+{
+   return find< asset_collateral_bid_object, by_account >( boost::make_tuple( name, symbol ) );
+}
+
+const asset_settlement_object& database::get_asset_settlement( const account_name_type& name, const asset_symbol_type& symbol )const
+{ try {
+   return get< asset_settlement_object, by_account_asset >( boost::make_tuple( name, symbol ) );
+} FC_CAPTURE_AND_RETHROW( (name)(symbol) ) }
+
+const asset_settlement_object* database::find_asset_settlement( const account_name_type& name, const asset_symbol_type& symbol )const
+{
+   return find< asset_settlement_object, by_account_asset >( boost::make_tuple( name, symbol ) );
+}
 
 bool database::apply_order( const limit_order_object& order )
 {
@@ -1514,1357 +1623,6 @@ bool database::fill_settle_order( const asset_settlement_object& settle, const a
 } FC_CAPTURE_AND_RETHROW( (settle)(pays)(receives)(fill_price)(is_maker) ) }
 
 
-/**
- * Adds an asset into a liquidity pool
- * and receives the pool's liquidity pool asset,
- * which earns a portion of fees from trading through the pool.
- */
-void database::liquid_fund( const asset& input, const account_object& account, const asset_liquidity_pool_object& pool )
-{ try {
-   asset liquid = get_liquid_balance( account.name, input.symbol );
-   FC_ASSERT( input.amount > 0 );
-   FC_ASSERT( liquid >= input, 
-      "Account: ${a} does not have enough liquid balance to fund requested amount: ${i}.",
-      ("a", account.name)("i", input.to_string()) );
-   FC_ASSERT( liquid.symbol == pool.symbol_a || liquid.symbol == pool.symbol_b, 
-      "Invalid symbol input to liquidity pool: ${s}.",("s", input.symbol) );
-   
-
-   uint128_t pr = BLOCKCHAIN_PRECISION.value;
-   uint128_t pr_sq = pr * pr;
-   uint128_t sup = pool.balance_liquid.amount.value;
-   uint128_t ib = pool.asset_balance( input.symbol ).amount.value;
-   uint128_t in = input.amount.value;
-
-   uint128_t return_amount = ( sup * ( uint128_t( approx_sqrt( pr_sq + ( ( pr_sq * in ) / ib ) ) ) - pr  ) ) / pr;
-   share_type ra = int64_t( return_amount.to_uint64() );
-   asset return_asset = asset( ra, pool.symbol_liquid );
-   
-   adjust_liquid_balance( account.name, -input );
-
-   modify( pool, [&]( asset_liquidity_pool_object& p )
-   {
-      if( input.symbol == p.symbol_a )
-      {
-         p.balance_a += input;
-      }
-      else if( input.symbol == p.symbol_b )
-      {
-         p.balance_b += input;
-      }
-      p.balance_liquid += return_asset;
-   });
-
-   adjust_liquid_balance( account.name, return_asset );
-
-   ilog( "Funded liquidity Pool: \n Input: ${i} \n Output: ${o} \n Pool: ${p} \n",
-      ("i",input.to_string())("o",return_asset.to_string())("p",pool.to_string()));
-
-} FC_CAPTURE_AND_RETHROW( (input)(account)(pool) ) }
-
-
-/**
- * Withdraws a pool's liquidity asset for some of its underlying assets,
- * lowering the total supply of the pool's liquidity asset
- */
-void database::liquid_withdraw( const asset& input, const asset_symbol_type& receive, 
-   const account_object& account, const asset_liquidity_pool_object& pool )
-{ try {
-   asset liquid = get_liquid_balance( account.name, input.symbol );
-   FC_ASSERT( input.amount > 0 );
-   FC_ASSERT( liquid >= input, 
-      "Account: ${a} does not have enough liquid balance to withdraw requested amount: ${i}.",
-      ("a",account.name)("i",input.to_string()) );
-
-   uint128_t pr = BLOCKCHAIN_PRECISION.value;
-   uint128_t pr_sq = pr * pr;
-   uint128_t sup = pool.balance_liquid.amount.value;
-   uint128_t rb = pool.asset_balance( receive ).amount.value;
-   uint128_t in = input.amount.value;
-
-   uint128_t var = pr - ( ( in * pr ) / sup );
-   uint128_t return_amount = ( rb * ( pr_sq - ( var * var ) ) ) / pr_sq;
-
-   share_type ra = int64_t( return_amount.to_uint64() );
-   asset return_asset = asset( ra, receive );
-   
-   adjust_liquid_balance( account.name, -input );
-
-   modify( pool, [&]( asset_liquidity_pool_object& p )
-   {
-      p.balance_liquid -= input;
-      if( receive == p.symbol_a )
-      {
-         p.balance_a -= return_asset;
-      }
-      else if( receive == p.symbol_b )
-      {
-         p.balance_b -= return_asset ;
-      }
-   });
-
-   adjust_liquid_balance( account.name, return_asset );
-
-   ilog( "Withdraw liquidity Pool: \n Input: ${i} \n Output: ${o} \n Pool: ${p} \n",
-      ("i",input.to_string())("o",return_asset.to_string())("p",pool.to_string()));
-
-} FC_CAPTURE_AND_RETHROW( (input)(account)(pool) ) }
-
-/**
- * Exchanges an asset for any other asset in the network
- * by using the core asset as a liquidity pathway.
- */
-asset database::liquid_exchange( const asset& input, const asset_symbol_type& receive, 
-   bool execute = true, bool apply_fees = true )
-{ try {
-   FC_ASSERT( input.symbol != receive,
-      "Assets must have different symbols to exchange.");
-   FC_ASSERT( input.amount > 0 );
-
-   asset coin_input;
-
-   if( input.symbol != SYMBOL_COIN )
-   {
-      const asset_liquidity_pool_object& input_pool = get_liquidity_pool( SYMBOL_COIN, input.symbol );
-
-      uint128_t pr = BLOCKCHAIN_PRECISION.value;
-      uint128_t ib = input_pool.asset_balance( input.symbol ).amount.value;
-      uint128_t rb = input_pool.asset_balance( SYMBOL_COIN ).amount.value;
-      uint128_t in = input.amount.value;
-
-      uint128_t return_amount = ( rb * ( pr - ( ( pr * ib ) / ( in + ib ) ) ) ) / pr;
-
-      share_type ra = int64_t( return_amount.to_uint64() );
-      asset total_fees = asset( ( ra * TRADING_FEE_PERCENT ) / PERCENT_100,  SYMBOL_COIN );
-      asset network_fees = asset( ( total_fees.amount * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100, SYMBOL_COIN );
-      asset pool_fees = total_fees - network_fees;
-   
-      asset return_asset = asset( int64_t( return_amount.to_uint64() ), SYMBOL_COIN );
-
-      if( apply_fees )
-      {
-         return_asset -= total_fees;
-      }
-      
-      if( execute )
-      {
-         if( apply_fees )
-         {
-            pay_network_fees( network_fees );
-         }
-         modify( input_pool, [&]( asset_liquidity_pool_object& p )
-         {
-            if( apply_fees )
-            {
-               p.balance_a += pool_fees; 
-            }
-            p.balance_a -= return_asset;
-            p.balance_b += input ; 
-         });
-
-         ilog( "Exchanged liquidity Pool: \n Input: ${i} \n Output: ${o} \n Pool: ${p} \n",
-            ("i",input.to_string())("o",return_asset.to_string())("p",input_pool.to_string()));
-      }
-
-      coin_input = return_asset;
-   }
-   else
-   {
-      coin_input = input;
-   }
-
-   if( receive != SYMBOL_COIN )
-   {
-      const asset_liquidity_pool_object& receive_pool = get_liquidity_pool( SYMBOL_COIN, receive );
-
-      asset total_fees = asset( ( coin_input.amount.value * TRADING_FEE_PERCENT ) / PERCENT_100, SYMBOL_COIN );
-      asset network_fees = asset( ( total_fees.amount * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100, SYMBOL_COIN );
-      asset pool_fees = total_fees - network_fees;
-
-      if( apply_fees )
-      {
-         coin_input -= total_fees;
-      }
-
-      uint128_t in = coin_input.amount.value;
-      uint128_t pr = BLOCKCHAIN_PRECISION.value;
-      uint128_t ib = receive_pool.asset_balance( SYMBOL_COIN ).amount.value;
-      uint128_t rb = receive_pool.asset_balance( receive ).amount.value;
-
-      uint128_t return_amount = ( rb * ( pr - ( ( pr * ib ) / ( in + ib ) ) ) ) / pr;
-
-      share_type ra = int64_t( return_amount.to_uint64() );
-      asset return_asset = asset( ra, receive );
-      
-      if( execute )
-      {
-         if( apply_fees )
-         {
-            pay_network_fees( network_fees );
-         }
-         modify( receive_pool, [&]( asset_liquidity_pool_object& p )
-         {
-            if( apply_fees )
-            {
-               p.balance_a += pool_fees; 
-            }
-            p.balance_a += coin_input;
-            p.balance_b -= return_asset ; 
-         });
-
-         ilog( "Exchanged liquidity Pool: \n Input: ${i} \n Output: ${o} \n Pool: ${p} \n",
-            ("i",coin_input.to_string())("o",return_asset.to_string())("p",receive_pool.to_string()));
-      }
-      return return_asset;
-   }
-   else
-   {
-      return coin_input;
-   }
-
-   
-} FC_CAPTURE_AND_RETHROW( (input)(receive) ) }
-
-
-void database::liquid_exchange( const asset& input, const account_object& account, 
-   const asset_liquidity_pool_object& pool, const account_object& int_account )
-{ try {
-   asset liquid = get_liquid_balance( account.name, input.symbol );
-   FC_ASSERT( input.amount > 0 );
-   FC_ASSERT( liquid >= input, 
-      "Account: ${a} does not have enough liquid balance to fund requested amount: ${i}.",
-      ("a", account.name)("i", input.to_string()) );
-
-   asset total_fees;
-   asset_symbol_type rec = pool.base_price( input.symbol ).quote.symbol;
-   uint128_t pr = BLOCKCHAIN_PRECISION.value;
-   uint128_t ib = pool.asset_balance( input.symbol ).amount.value;
-   uint128_t rb = pool.asset_balance( rec ).amount.value;
-   uint128_t in = input.amount.value;
-
-   if( input.symbol == SYMBOL_COIN )
-   {
-      total_fees = asset( ( input.amount.value * TRADING_FEE_PERCENT ) / PERCENT_100,  SYMBOL_COIN );
-      in -= total_fees.amount.value;
-   }
-
-   uint128_t return_amount = ( rb * ( pr - ( ( pr * ib ) / ( in + ib ) ) ) ) / pr;
-
-   share_type ra = int64_t( return_amount.to_uint64() );
-
-   if( input.symbol != SYMBOL_COIN )
-   {
-      total_fees = asset( ( ra * TRADING_FEE_PERCENT ) / PERCENT_100, rec );
-      ra -= total_fees.amount;
-   }
-   
-   asset network_fees = ( total_fees * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
-   asset interface_fees = ( total_fees * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
-   asset pool_fees = total_fees - network_fees - interface_fees;
-   
-   asset return_asset = asset( ra, rec );
-   
-   adjust_liquid_balance( account.name, -input );
-   pay_network_fees( account, network_fees );
-   pay_fee_share( int_account, interface_fees, true );
-
-   modify( pool, [&]( asset_liquidity_pool_object& p )
-   {
-      if( input.symbol == p.symbol_a )
-      {
-         p.balance_a += input; 
-         p.balance_b -= return_asset;
-      }
-      else if( input.symbol == p.symbol_b )
-      {
-         p.balance_b += input; 
-         p.balance_a -= return_asset;
-      }
-      if( pool_fees.symbol == p.symbol_a )
-      {
-         p.balance_a += pool_fees;
-      }
-      else if( pool_fees.symbol == p.symbol_b )
-      {
-         p.balance_b += pool_fees;
-      }
-   });
-
-   adjust_liquid_balance( account.name, return_asset );
-
-   ilog( "Exchanged liquidity Pool: \n Input: ${i} \n Output: ${o} \n Pool: ${p} \n",
-      ("i",input.to_string())("o",return_asset.to_string())("p",pool.to_string()));
-
-} FC_CAPTURE_AND_RETHROW( (input)(account)(pool)(int_account) ) }
-
-
-void database::liquid_exchange( const asset& input, const account_object& account, 
-   const asset_liquidity_pool_object& pool )
-{ try {
-   asset liquid = get_liquid_balance( account.name, input.symbol );
-   FC_ASSERT( input.amount > 0 );
-   FC_ASSERT( liquid >= input, 
-      "Account: ${a} does not have enough liquid balance to fund requested amount: ${i}.",
-      ("a", account.name)("i", input.to_string()) );
-
-   asset total_fees;
-   asset_symbol_type rec = pool.base_price( input.symbol ).quote.symbol;
-   uint128_t pr = BLOCKCHAIN_PRECISION.value;
-   uint128_t ib = pool.asset_balance( input.symbol ).amount.value;
-   uint128_t rb = pool.asset_balance( rec ).amount.value;
-   uint128_t in = input.amount.value;
-
-   if( input.symbol == SYMBOL_COIN )
-   {
-      total_fees = asset( ( input.amount.value * TRADING_FEE_PERCENT ) / PERCENT_100,  SYMBOL_COIN );
-      in -= total_fees.amount.value;
-   }
-
-   uint128_t return_amount = ( rb * ( pr - ( ( pr * ib ) / ( in + ib ) ) ) ) / pr;
-
-   share_type ra = int64_t( return_amount.to_uint64() );
-
-   if( input.symbol != SYMBOL_COIN )
-   {
-      total_fees = asset( ( ra * TRADING_FEE_PERCENT ) / PERCENT_100,  rec );
-      ra -= total_fees.amount;
-   }
-   
-   asset network_fees = ( total_fees * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
-   asset interface_fees = ( total_fees * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
-   asset pool_fees = total_fees - network_fees - interface_fees;
-   
-   asset return_asset = asset( ra, rec );
-   
-   adjust_liquid_balance( account.name, -input );
-   pay_network_fees( account, network_fees + interface_fees );
-
-   modify( pool, [&]( asset_liquidity_pool_object& p )
-   {
-      if( input.symbol == p.symbol_a )
-      {
-         p.balance_a += input; 
-         p.balance_b -= return_asset;
-      }
-      else if( input.symbol == p.symbol_b )
-      {
-         p.balance_b += input; 
-         p.balance_a -= return_asset;
-      }
-      if( pool_fees.symbol == p.symbol_a )
-      {
-         p.balance_a += pool_fees;
-      }
-      else if( pool_fees.symbol == p.symbol_b )
-      {
-         p.balance_b += pool_fees;
-      }
-   });
-
-   adjust_liquid_balance( account.name, return_asset );
-
-   ilog( "Exchanged liquidity Pool: \n Input: ${i} \n Output: ${o} \n Pool: ${p} \n",
-      ("i",input.to_string())("o",return_asset.to_string())("p",pool.to_string()));
-
-} FC_CAPTURE_AND_RETHROW( (input)(account)(pool) ) }
-
-
-asset database::liquid_acquire( const asset& receive, const asset_symbol_type& input, 
-   bool execute = true, bool apply_fees = true )
-{ try {
-   FC_ASSERT( receive.amount > 0 );
-   FC_ASSERT( receive.symbol != input,
-      "Assets must have different symbols to acquire." );
-
-   asset coin_asset = asset( 0, SYMBOL_COIN );
-
-   if( receive.symbol != SYMBOL_COIN )
-   {
-      const asset_liquidity_pool_object& acquire_pool = get_liquidity_pool( SYMBOL_COIN, receive.symbol );
-
-      uint128_t pr = BLOCKCHAIN_PRECISION.value;
-      uint128_t pr_sq = pr * pr;
-      uint128_t ib = acquire_pool.asset_balance( SYMBOL_COIN ).amount.value;
-      uint128_t rb = acquire_pool.asset_balance( receive.symbol ).amount.value;
-      uint128_t re = receive.amount.value;
-
-      uint128_t input_coin = ( ( ( pr_sq * ib ) / ( pr - ( ( pr * re ) / rb ) ) ) - ( pr * ib ) ) / pr;
-
-      share_type ic = int64_t( input_coin.to_uint64() );
-
-      asset total_fees = asset( ( ic * TRADING_FEE_PERCENT ) / PERCENT_100,  SYMBOL_COIN );
-      asset network_fees = asset( ( total_fees.amount * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100, SYMBOL_COIN );
-      asset pool_fees = total_fees - network_fees;
-      
-      coin_asset = asset( ic, SYMBOL_COIN );
-      
-      if( execute )
-      {
-         modify( acquire_pool, [&]( asset_liquidity_pool_object& p )
-         {
-            if( apply_fees )
-            {
-               p.balance_a += pool_fees; 
-            }
-            p.balance_a += coin_asset;
-            p.balance_b -= receive; 
-         });
-         if( apply_fees )
-         {
-            pay_network_fees( network_fees );
-         }
-      }
-
-      if( apply_fees )
-      {
-         coin_asset += total_fees;
-      }
-      if( execute )
-      {
-         ilog( "Acquired liquidity Pool: \n Input: ${i} \n Output: ${o} \n Pool: ${p} \n",
-            ("i",coin_asset.to_string())("o",receive.to_string())("p",acquire_pool.to_string()));
-      }
-   }
-   else
-   {
-      coin_asset = receive;
-   }
-
-   if( input != SYMBOL_COIN )
-   {
-      const asset_liquidity_pool_object& receive_pool = get_liquidity_pool( SYMBOL_COIN, input );
-
-      asset total_fees = asset( ( coin_asset.amount.value * TRADING_FEE_PERCENT ) / PERCENT_100, SYMBOL_COIN );
-      asset network_fees = asset( ( total_fees.amount * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100, SYMBOL_COIN );
-      asset pool_fees = total_fees - network_fees;
-
-      if( apply_fees )
-      {
-         coin_asset += total_fees;
-      }
-
-      uint128_t in = coin_asset.amount.value;
-      uint128_t pr = BLOCKCHAIN_PRECISION.value;
-      uint128_t ib = receive_pool.asset_balance( input ).amount.value;
-      uint128_t rb = receive_pool.asset_balance( SYMBOL_COIN ).amount.value;
-
-      uint128_t input_amount = ( rb * ( pr - ( ( pr * ib ) / ( in + ib ) ) ) ) / pr;
-
-      share_type ia = int64_t( input_amount.to_uint64() );
-      
-      asset input_asset = asset( ia, input );
-      
-      if( execute )
-      {
-         if( apply_fees )
-         {
-            pay_network_fees( network_fees );
-         }
-         modify( receive_pool, [&]( asset_liquidity_pool_object& p )
-         {
-            if( apply_fees )
-            {
-               p.balance_a += pool_fees; 
-            }
-            p.balance_a -= coin_asset;
-            p.balance_b += input_asset; 
-         });
-         ilog( "Acquired liquidity Pool: \n Input: ${i} \n Output: ${o} \n Pool: ${p} \n",
-            ("i",input_asset.to_string())("o",coin_asset.to_string())("p",receive_pool.to_string()));
-      }
-      return input_asset;
-   }
-   else
-   {
-      return coin_asset;
-   }
-
-} FC_CAPTURE_AND_RETHROW( (receive)(input) ) }
-
-
-void database::liquid_acquire( const asset& receive, const account_object& account, 
-   const asset_liquidity_pool_object& pool, const account_object& int_account )
-{ try {
-   FC_ASSERT( receive.amount > 0 );
-   FC_ASSERT( receive.symbol == pool.symbol_a || receive.symbol == pool.symbol_b,
-      "Invalid pool requested for acquisition.");
-   asset total_fees;
-   asset_symbol_type in = pool.base_price( receive.symbol ).quote.symbol;
-   uint128_t pr = BLOCKCHAIN_PRECISION.value;
-   uint128_t pr_sq = pr * pr;
-   uint128_t ib = pool.asset_balance( in ).amount.value;
-   uint128_t rb = pool.asset_balance( receive.symbol ).amount.value;
-   uint128_t re = receive.amount.value;
-
-   if( receive.symbol == SYMBOL_COIN )
-   {
-      total_fees = ( receive * TRADING_FEE_PERCENT ) / PERCENT_100;
-      re += total_fees.amount.value;
-   }
-
-   uint128_t input_amount = ( ( ( pr_sq * ib ) / ( pr - ( ( pr * re ) / rb ) ) ) - ( pr * ib ) ) / pr;
-   share_type ia = int64_t( input_amount.to_uint64() );
-   asset input_asset = asset( ia, in );
-   
-   if( receive.symbol != SYMBOL_COIN )
-   {
-      total_fees = ( input_asset * TRADING_FEE_PERCENT ) / PERCENT_100;
-      input_asset += total_fees;
-   }
-
-   asset network_fees = ( total_fees * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
-   asset interface_fees = ( total_fees * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
-   asset pool_fees = total_fees - network_fees - interface_fees;
-
-   asset liquid = get_liquid_balance( account.name, input_asset.symbol );
-
-   FC_ASSERT( liquid >= input_asset,
-      "Account: ${a} has Insufficient liquid Balance to acquire requested amount: ${am}.",
-      ("a",account.name)("am",receive.to_string()));
-
-   adjust_liquid_balance( account.name, -input_asset );
-
-   pay_network_fees( account, network_fees );
-   pay_fee_share( int_account, interface_fees, true );
-   
-   modify( pool, [&]( asset_liquidity_pool_object& p )
-   {
-      if( receive.symbol == p.symbol_a )
-      {
-         p.balance_a -= receive;
-         p.balance_b += input_asset;
-      }
-      else if( receive.symbol == p.symbol_a )
-      {
-         p.balance_b -= receive;
-         p.balance_a += input_asset;
-      }
-      if( pool_fees.symbol == p.symbol_a )
-      {
-         p.balance_a += pool_fees;
-      }
-      else if( pool_fees.symbol == p.symbol_b )
-      {
-         p.balance_b += pool_fees;
-      }
-   });
-
-   adjust_liquid_balance( account.name, receive );
-
-   ilog( "Acquired liquidity Pool: \n Input: ${i} \n Output: ${o} \n Pool: ${p} \n",
-      ("i",input_asset.to_string())("o",receive.to_string())("p",pool.to_string()));
-
-} FC_CAPTURE_AND_RETHROW( (receive)(account)(pool) ) }
-
-
-void database::liquid_acquire( const asset& receive, const account_object& account, 
-   const asset_liquidity_pool_object& pool )
-{ try {
-   FC_ASSERT( receive.amount > 0 );
-   FC_ASSERT( receive.symbol == pool.symbol_a || receive.symbol == pool.symbol_b,
-      "Invalid pool requested for acquisition.");
-   asset total_fees;
-   asset_symbol_type in = pool.base_price( receive.symbol ).quote.symbol;
-   uint128_t pr = BLOCKCHAIN_PRECISION.value;
-   uint128_t pr_sq = pr * pr;
-   uint128_t ib = pool.asset_balance( in ).amount.value;
-   uint128_t rb = pool.asset_balance( receive.symbol ).amount.value;
-   uint128_t re = receive.amount.value;
-
-   if( receive.symbol == SYMBOL_COIN )
-   {
-      total_fees = ( receive * TRADING_FEE_PERCENT ) / PERCENT_100;
-      re += total_fees.amount.value;
-   }
-
-   uint128_t input_amount = ( ( ( pr_sq * ib ) / ( pr - ( ( pr * re ) / rb ) ) ) - ( pr * ib ) ) / pr;
-   share_type ia = int64_t( input_amount.to_uint64() );
-   asset input_asset = asset( ia, in );
-   
-   if( receive.symbol != SYMBOL_COIN )
-   {
-      total_fees = ( input_asset * TRADING_FEE_PERCENT ) / PERCENT_100;
-      input_asset += total_fees;
-   }
-
-   asset network_fees = ( total_fees * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
-   asset interface_fees = ( total_fees * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
-   asset pool_fees = total_fees - network_fees - interface_fees;
-
-   asset liquid = get_liquid_balance( account.name, input_asset.symbol );
-
-   FC_ASSERT( liquid >= input_asset,
-      "Account: ${a} has Insufficient liquid Balance to acquire requested amount: ${am}.",
-      ("a",account.name)("am",receive.to_string()));
-
-   adjust_liquid_balance( account.name , -input_asset );
-
-   pay_network_fees( account, network_fees + interface_fees );
-   
-   modify( pool, [&]( asset_liquidity_pool_object& p )
-   {
-      if( receive.symbol == p.symbol_a )
-      {
-         p.balance_a -= receive;
-         p.balance_b += input_asset;
-      }
-      else if( receive.symbol == p.symbol_a )
-      {
-         p.balance_b -= receive;
-         p.balance_a += input_asset;
-      }
-      if( pool_fees.symbol == p.symbol_a )
-      {
-         p.balance_a += pool_fees;
-      }
-      else if( pool_fees.symbol == p.symbol_b )
-      {
-         p.balance_b += pool_fees;
-      }
-   });
-
-   adjust_liquid_balance( account.name, receive );
-
-   ilog( "Acquired liquidity Pool: \n Input: ${i} \n Output: ${o} \n Pool: ${p} \n",
-      ("i",input_asset.to_string())("o",receive.to_string())("p",pool.to_string()));
-
-} FC_CAPTURE_AND_RETHROW( (receive)(account)(pool) ) }
-
-
-/**
- * Sells an input asset into an asset liquidity pool, up to the lower of a specified amount, or
- * an amount that would cause the sale price to fall below a specified limit price.
- */
-pair< asset, asset > database::liquid_limit_exchange( const asset& input, const price& limit_price, 
-   const asset_liquidity_pool_object& pool, bool execute, bool apply_fees )
-{ try {
-   FC_ASSERT( input.amount > 0 );
-   FC_ASSERT( input.symbol == pool.symbol_a || input.symbol == pool.symbol_b,
-      "Invalid pool requested for acquisition.");
-   asset total_fees;
-   asset_symbol_type rec = pool.base_price( input.symbol ).quote.symbol;
-   price current = pool.base_price( limit_price.base.symbol );
-   price lim;
-   if( limit_price.base.symbol == input.symbol )
-   {
-      lim = limit_price;
-   }
-   else if( limit_price.quote.symbol == input.symbol)
-   {
-      lim = ~limit_price;
-   }
-
-   if( current > limit_price )
-   {
-      uint128_t pr = BLOCKCHAIN_PRECISION.value;
-      uint128_t ib = pool.asset_balance( input.symbol ).amount.value;
-      uint128_t rb = pool.asset_balance( rec ).amount.value;
-      uint128_t in = input.amount.value;
-
-      uint128_t product = ( ib * rb * lim.base.amount.value ) / lim.quote.amount.value;
-      uint128_t limit_amount = approx_sqrt( product ) - in;
-
-      FC_ASSERT( limit_amount >= 0, 
-         "Negative limit amount, limit price above current price.");
-      
-      uint128_t lim_in = std::min( in, limit_amount );
-      share_type lim_in_share = int64_t( lim_in.to_uint64() );
-      asset input_asset = asset( lim_in_share, input.symbol );
-
-      uint128_t return_amount = ( rb * ( pr - ( ( pr * ib ) / ( lim_in + ib ) ) ) ) / pr;
-      share_type ra = int64_t( return_amount.to_uint64() );
-      
-      if( apply_fees )
-      {
-         total_fees = asset( ( ra * TRADING_FEE_PERCENT ) / PERCENT_100,  rec );
-         ra -= total_fees.amount;
-      }
-
-      asset return_asset = asset( ra, rec );
-      asset network_fees = ( total_fees * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
-      asset pool_fees = total_fees - network_fees;
-      
-      if( execute )
-      {
-         modify( pool, [&]( asset_liquidity_pool_object& p )
-         {
-            if( input.symbol == p.symbol_a )
-            {
-               p.balance_a += input_asset; 
-               p.balance_b -= return_asset;
-            }
-            else if( input.symbol == p.symbol_b )
-            {
-               p.balance_b += input_asset; 
-               p.balance_a -= return_asset;
-            }
-            if( apply_fees )
-            {
-               if( pool_fees.symbol == p.symbol_a )
-               {
-                  p.balance_a += pool_fees;
-               }
-               else if( pool_fees.symbol == p.symbol_b )
-               {
-                  p.balance_b += pool_fees;
-               }
-            }
-         });
-
-         if( apply_fees )
-         {
-            pay_network_fees( network_fees );
-         }
-
-         ilog( "Liquid Limit Exchange: \n Input: ${i} \n Output: ${o} \n Pool: ${p} \n",
-            ("i",input_asset.to_string())("o",return_asset.to_string())("p",pool.to_string()));
-      }
-
-      return std::make_pair( input_asset, return_asset );
-   }
-   else
-   {
-     return std::make_pair( asset(0, input.symbol), asset(0, rec) );
-   }
-} FC_CAPTURE_AND_RETHROW( (input)(limit_price)(pool) ) }
-
-/**
- * Sells an input asset into an asset liquidity pool, up to the lower of a specified amount, or
- * an amount that would cause the sale price to fall below a specified limit price.
- */
-void database::liquid_limit_exchange( const asset& input, const price& limit_price, const account_object& account, 
-   const asset_liquidity_pool_object& pool, const account_object& int_account )
-{ try {
-   FC_ASSERT( input.amount > 0 );
-   FC_ASSERT( input.symbol == pool.symbol_a || input.symbol == pool.symbol_b,
-      "Invalid pool requested for acquisition.");
-   asset_symbol_type rec = pool.base_price( input.symbol ).quote.symbol;
-   price current = pool.base_price( limit_price.base.symbol );
-   price lim;
-   if( limit_price.base.symbol == input.symbol )
-   {
-      lim = limit_price;
-   }
-   else if( limit_price.quote.symbol == input.symbol )
-   {
-      lim = ~limit_price;
-   }
-
-   if( current > limit_price )
-   {
-      uint128_t pr = BLOCKCHAIN_PRECISION.value;
-      uint128_t ib = pool.asset_balance( input.symbol ).amount.value;
-      uint128_t rb = pool.asset_balance( rec ).amount.value;
-      uint128_t in = input.amount.value;
-
-      uint128_t product = ( ib * rb * lim.base.amount.value ) / lim.quote.amount.value;
-      uint128_t limit_amount = approx_sqrt( product ) - in;
-
-      FC_ASSERT( limit_amount >= 0, 
-         "Negative limit amount, limit price above current price.");
-      
-      uint128_t lim_in = std::min( in, limit_amount );
-      share_type lim_in_share = int64_t( lim_in.to_uint64() );
-      asset input_asset = asset( lim_in_share, input.symbol );
-
-      uint128_t return_amount = ( rb * ( pr - ( ( pr * ib ) / ( lim_in + ib ) ) ) ) / pr;
-      share_type ra = int64_t( return_amount.to_uint64() );
-      
-      asset total_fees = asset( ( ra * TRADING_FEE_PERCENT ) / PERCENT_100,  rec );
-      ra -= total_fees.amount;
-      
-      asset return_asset = asset( ra, rec );
-      asset network_fees = ( total_fees * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
-      asset interface_fees = ( total_fees * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
-      asset pool_fees = total_fees - network_fees - interface_fees;
-
-      asset liquid = get_liquid_balance( account.name, input_asset.symbol );
-
-      FC_ASSERT( liquid >= input_asset,
-      "Account: ${a} has Insufficient liquid Balance to acquire requested amount: ${am}.",
-      ("a",account.name)("am",return_asset.to_string()));
-
-      adjust_liquid_balance( account.name , -input_asset );
-      
-      modify( pool, [&]( asset_liquidity_pool_object& p )
-      {
-         if( input.symbol == p.symbol_a )
-         {
-            p.balance_a += input_asset; 
-            p.balance_b -= return_asset;
-         }
-         else if( input.symbol == p.symbol_b )
-         {
-            p.balance_b += input_asset; 
-            p.balance_a -= return_asset;
-         }
-         
-         if( pool_fees.symbol == p.symbol_a )
-         {
-            p.balance_a += pool_fees;
-         }
-         else if( pool_fees.symbol == p.symbol_b )
-         {
-            p.balance_b += pool_fees;
-         }
-      });
-
-      pay_network_fees( account, network_fees );
-      pay_fee_share( int_account, interface_fees, true );
-
-      adjust_liquid_balance( account.name, return_asset );    
-
-      ilog( "Liquid Limit Exchange: \n Input: ${i} \n Output: ${o} \n Pool: ${p} \n",
-         ("i",input_asset.to_string())("o",return_asset.to_string())("p",pool.to_string()));
-   }
-} FC_CAPTURE_AND_RETHROW( (input)(limit_price)(account)(pool) ) }
-
-
-void database::liquid_limit_exchange( const asset& input, const price& limit_price, const account_object& account, 
-   const asset_liquidity_pool_object& pool )
-{ try {
-   FC_ASSERT( input.amount > 0 );
-   FC_ASSERT( input.symbol == pool.symbol_a || input.symbol == pool.symbol_b,
-      "Invalid pool requested for acquisition.");
-   asset_symbol_type rec = pool.base_price( input.symbol ).quote.symbol;
-   price current = pool.base_price( limit_price.base.symbol );
-   price lim;
-   if( limit_price.base.symbol == input.symbol )
-   {
-      lim = limit_price;
-   }
-   else if( limit_price.quote.symbol == input.symbol )
-   {
-      lim = ~limit_price;
-   }
-
-   if( current > limit_price )
-   {
-      uint128_t pr = BLOCKCHAIN_PRECISION.value;
-      uint128_t ib = pool.asset_balance( input.symbol ).amount.value;
-      uint128_t rb = pool.asset_balance( rec ).amount.value;
-      uint128_t in = input.amount.value;
-
-      uint128_t product = ( ib * rb * lim.base.amount.value ) / lim.quote.amount.value;
-      uint128_t limit_amount = approx_sqrt( product ) - in;
-
-      FC_ASSERT( limit_amount >= 0, 
-         "Negative limit amount, limit price above current price.");
-      
-      uint128_t lim_in = std::min( in, limit_amount );
-      share_type lim_in_share = int64_t( lim_in.to_uint64() );
-      asset input_asset = asset( lim_in_share, input.symbol );
-
-      uint128_t return_amount = ( rb * ( pr - ( ( pr * ib ) / ( lim_in + ib ) ) ) ) / pr;
-      share_type ra = int64_t( return_amount.to_uint64() );
-      
-      asset total_fees = asset( ( ra * TRADING_FEE_PERCENT ) / PERCENT_100,  rec );
-      ra -= total_fees.amount;
-      
-      asset return_asset = asset( ra, rec );
-      asset network_fees = ( total_fees * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
-      asset interface_fees = ( total_fees * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
-      asset pool_fees = total_fees - network_fees - interface_fees;
-
-      asset liquid = get_liquid_balance( account.name, input_asset.symbol );
-
-      FC_ASSERT( liquid >= input_asset,
-      "Account: ${a} has Insufficient liquid Balance to acquire requested amount: ${am}.",
-      ("a",account.name)("am",return_asset.to_string()));
-
-      adjust_liquid_balance( account.name , -input_asset );
-      
-      modify( pool, [&]( asset_liquidity_pool_object& p )
-      {
-         if( input.symbol == p.symbol_a )
-         {
-            p.balance_a += input_asset; 
-            p.balance_b -= return_asset;
-         }
-         else if( input.symbol == p.symbol_b )
-         {
-            p.balance_b += input_asset; 
-            p.balance_a -= return_asset;
-         }
-         
-         if( pool_fees.symbol == p.symbol_a )
-         {
-            p.balance_a += pool_fees;
-         }
-         else if( pool_fees.symbol == p.symbol_b )
-         {
-            p.balance_b += pool_fees;
-         }
-      });
-
-      pay_network_fees( account, network_fees + interface_fees );
-
-      adjust_liquid_balance( account.name, return_asset );
-
-      ilog( "Liquid Limit Exchange: \n Input: ${i} \n Output: ${o} \n Pool: ${p} \n",
-         ("i",input_asset.to_string())("o",return_asset.to_string())("p",pool.to_string()));
-   }
-} FC_CAPTURE_AND_RETHROW( (input)(limit_price)(account)(pool) ) }
-
-
-/**
- * Adds new capital reserves to an asset's credit liquidity pool.
- * 
- * Returns depositors the credit pool asset which earns a share of
- * incoming interest when withdrawn.
- */
-void database::credit_lend( const asset& input, const account_object& account, const asset_credit_pool_object& pool )
-{ try {
-   FC_ASSERT( input.amount > 0 );
-   FC_ASSERT( input.symbol == pool.base_symbol,
-      "Incorrect pool for input asset" );
-
-   price credit_price = pool.current_price();
-   asset borrowed = input * credit_price;
-   asset liquid = get_liquid_balance( account.name, input.symbol );
-
-   FC_ASSERT( liquid >= input,
-      "Account: ${a} has Insufficient liquid Balance to lend amount to credit pool: ${am}.",
-      ("a",account.name)("am",input));
-   
-   adjust_liquid_balance( account.name, -input );
-   adjust_pending_supply( input );
-
-   modify( pool, [&]( asset_credit_pool_object& acpo )
-   {
-      acpo.base_balance += input;
-      acpo.credit_balance += borrowed;
-      acpo.last_price = credit_price;
-   });
-
-   adjust_liquid_balance( account.name, borrowed );
-
-   ilog( "Credit Lend: \n Input: ${i} \n Output: ${o} \n Pool: ${p} \n",
-      ("i",input.to_string())("o",borrowed.to_string())("p",pool.to_string()));
-
-} FC_CAPTURE_AND_RETHROW( (input)(account)(pool) ) }
-
-
-/**
- * Withdraws capital reserves from an asset's credit liquidity pool.
- * 
- * Exchanges a credit pool asset for its underlying reserve asset 
- * at the current exchange rate.
- */
-void database::credit_withdraw( const asset& input, const account_object& account, const asset_credit_pool_object& pool )
-{ try {
-   FC_ASSERT( input.amount > 0 );
-   FC_ASSERT( input.symbol == pool.credit_symbol,
-      "Incorrect pool for input asset" );
-   asset liquid = get_liquid_balance( account.name, input.symbol );
-   price credit_price = pool.current_price();
-   asset withdrawn = input * credit_price;
-
-   FC_ASSERT( liquid >= input,
-      "Account: ${a} has Insufficient liquid Balance to withdraw amount to credit pool: ${am}.",
-      ("a",account.name)("am",input));
-   FC_ASSERT( pool.base_balance >= withdrawn,
-      "Credit pool: ${p} does not have sufficient available base balance, please wait for outstanding loans to be repaid.",
-      ("p",pool));
-
-   adjust_liquid_balance( account.name, -input );
-   adjust_pending_supply( input );
-
-   modify( pool, [&]( asset_credit_pool_object& acpo )
-   {
-      acpo.base_balance -= withdrawn;
-      acpo.credit_balance -= input;
-      acpo.last_price = credit_price;
-   });
-
-   adjust_liquid_balance( account.name, withdrawn );
-
-   ilog( "Credit Withdraw: \n Input: ${i} \n Output: ${o} \n Pool: ${p} \n",
-      ("i",input.to_string())("o",withdrawn.to_string())("p",pool.to_string()));
-
-} FC_CAPTURE_AND_RETHROW( (input)(account)(pool) ) }
-
-
-/**
- * Checks whether a proposed credit loan has sufficient liquidity.
- * 
- * Confirms that the credit asset has sufficient liquidity to the core asset,
- * and that the debt asset has greater outstanding debt
- * than market_max_credit_ratio (50%) of the amount that the liquidity pool 
- * has available in exchange for the core asset.
- * 
- * Credit Check Objective:
- * 
- * Ensure that the credit loan system is fully solvent and can be liquidated with only liquidity pool reserves.
- * 
- * 1 - Prevent Debt asset from becoming too depressed in the event of a liquidation.
- * 2 - Prevent Collateral asset from becoming too depressed in the event of a liquidation.
- * 3 - Ensure sufficient pool balances to support a full liquidation of an order 10 times the requested size.
- * 4 - Ensure that no assets accumulate margin debt in excess of the total available Coin liquidity for the debt.
- * 5 - Ensure sufficient liquidity for Coin in the credit asset liquidity pool.
- */
-bool database::credit_check( const asset& debt, const asset& collateral, const asset_credit_pool_object& credit_pool )
-{ try {
-   const median_chain_property_object& median_props = get_median_chain_properties();
-   const asset_liquidity_pool_object& credit_asset_pool = get_liquidity_pool( SYMBOL_COIN, SYMBOL_CREDIT );  //  Credit : Coin Liquidity pool
-   asset collateral_coin = collateral;
-   asset debt_coin = debt;
-   asset debt_outstanding = credit_pool.borrowed_balance;
-
-   FC_ASSERT( debt.amount > 0 );
-   FC_ASSERT( collateral.amount > 0 );
-   FC_ASSERT( debt.symbol == credit_pool.base_symbol,
-      "Incorrect credit pool for requested debt asset." );
-
-   if( collateral.symbol != SYMBOL_COIN )
-   {
-      collateral_coin = liquid_exchange( 10 * collateral, SYMBOL_COIN, false, false);
-   }
-   else
-   {
-      collateral_coin = 10 * collateral;
-   }
-
-   if( debt.symbol != SYMBOL_COIN )     // Coin cost of acquiring 10 times debt amount
-   {
-      const asset_liquidity_pool_object& debt_pool = get_liquidity_pool( SYMBOL_COIN, debt.symbol );   // Debt : Coin Liquidity pool
-      asset debt_balance = debt_pool.asset_balance( debt.symbol );
-
-      if( debt_balance >= 10 * debt )   
-      {
-         debt_coin = liquid_acquire( 10 * debt, SYMBOL_COIN, false, false );
-      }
-      else       // Pool does not have enough debt asset 
-      {
-         ilog( "Credit Check failed: Pool does not have enough debt asset: Required: ${r} Actual: ${a}",
-            ("r",(10*debt).to_string())("a",debt_balance.to_string()));
-         return false;
-      }
-
-      asset debt_limit = ( debt_pool.asset_balance( debt.symbol ) * median_props.market_max_credit_ratio ) / PERCENT_100;
-      
-      if( debt_outstanding > debt_limit )
-      {
-         // If too much debt is outstanding on the specified debt asset, compared with available liquidity to Coin
-         // Prevent margin liquidations from running out of available debt asset liquidity
-         ilog( "Credit Check failed: Insufficient debt asset liquidity: Max Debt limit: ${l} Actual: ${a}",
-            ("l",debt_limit.to_string())("a",debt_outstanding.to_string()) );
-         return false;
-      }
-   }
-   else
-   {
-      debt_coin = 10 * debt;
-   }
-
-   if( credit_asset_pool.asset_balance( SYMBOL_COIN ) >= debt_coin )  // Not enough coin to cover cost of debt with credit 
-   {
-      if( collateral_coin >= debt_coin )    // Order 10 times requested would be insolvent due to illiquidity
-      {
-         return true;     // Requested margin order passes all credit checks 
-      }
-      else        
-      {
-         ilog( "Credit Check failed: Insufficient collateral asset liquidity: Required: ${r} Actual: ${a}",
-            ("r",debt_coin.to_string())("a",collateral_coin.to_string()));
-         return false;
-      }
-   }
-   else
-   {
-      ilog( "Credit Check failed: Insufficient credit asset liquidity: Coin balance required: ${r} Actual: ${a}",
-         ("r",debt_coin.to_string())("a",credit_asset_pool.asset_balance( SYMBOL_COIN ).to_string() ) );
-      return false;
-   }
-
-} FC_CAPTURE_AND_RETHROW( (debt)(collateral)(credit_pool) ) }
-
-
-/**
- * Checks whether a proposed margin position has sufficient liquidity.
- * 
- * Confirms that the credit asset has sufficient liquidity to the core asset,
- * and that the debt asset has greater outstanding debt
- * than market_max_credit_ratio (50%) of the amount that the liquidity pool 
- * has available in exchange for the core asset.
- * 
- * Margin Check Objective:
- * 
- * Ensure that the margin order system is fully solvent and can be liquidated with only liquidity pool reserves.
- * 
- * 1 - Prevent Position asset from becoming too squeezed in the event of a liquidation.
- * 2 - Prevent Debt asset from becoming too depressed in the event of a liquidation.
- * 3 - Prevent Collateral asset from becoming too depressed in the event of a liquidation.
- * 4 - Ensure sufficient pool balances to support a full liquidation of an order 10 times the requested size.
- * 5 - Ensure that no assets accumulate margin debt in excess of the total available Coin liquidity for the debt.
- * 6 - Ensure sufficient liquidity for Coin in the credit asset liquidity pool.
- * 
- * @todo Enable margin positions in liquidity and credit pool assets by checking 
- * liquidity of underlying assets after redemptions.
- * 
- * @todo Enhance checks to prevent an arbitrary asset from being issued,
- * lent to its pool, then borrowed and deliberately defaulted on by manipulating the
- * price of the debt or collateral asset, which purchases the issued asset with credit
- * and captures the network credit default acquisition privately.
- * 
- * @todo Dual credit pool system with a high risk pool, and a low risk pool.
- * Losses from loan and margin defaults are covered by the high risk pool.
- * Low risk pool is fully backed by credit asset issuance to cover defaults.
- * The majority of incoming interest revenue is added to the high risk pool.
- */
-bool database::margin_check( const asset& debt, const asset& position, const asset& collateral, const asset_credit_pool_object& credit_pool )
-{ try {
-   const median_chain_property_object& median_props = get_median_chain_properties();
-   const asset_liquidity_pool_object& credit_asset_pool = get_liquidity_pool( SYMBOL_COIN, SYMBOL_CREDIT );    //  Credit : Coin Liquidity pool
-   asset collateral_coin = collateral;
-   asset position_coin = position;
-   asset debt_coin = debt;
-   asset debt_outstanding = credit_pool.borrowed_balance;
-
-   FC_ASSERT( debt.amount > 0 );
-   FC_ASSERT( position.amount > 0 );
-   FC_ASSERT( collateral.amount > 0 );
-   FC_ASSERT( debt.symbol == credit_pool.base_symbol,
-      "Incorrect credit pool for requested debt asset." );
-
-   if( collateral.symbol != SYMBOL_COIN )    // Coin derived from sale of 10 times collateral amount
-   {
-      collateral_coin = liquid_exchange( 10 * collateral, SYMBOL_COIN, false, false );
-   }
-   else
-   {
-      collateral_coin = 10 * collateral;
-   }
-
-   if( position.symbol != SYMBOL_COIN )      // Coin derived from sale of 10 times position amount
-   {
-      position_coin = liquid_exchange( 10 * position, SYMBOL_COIN, false, false );
-   }
-   else
-   {
-      position_coin = 10 * position;
-   }
-   
-   if( debt.symbol != SYMBOL_COIN )     // Coin cost of acquiring 10 times debt amount
-   {
-      const asset_liquidity_pool_object& debt_pool = get_liquidity_pool( SYMBOL_COIN, debt.symbol );   // Debt : Coin Liquidity pool
-      asset debt_balance = debt_pool.asset_balance( debt.symbol );
-
-      if( debt_balance >= 10 * debt )
-      {
-         debt_coin = liquid_acquire( 10 * debt, SYMBOL_COIN, false, false );
-      }
-      else       // Pool does not have enough debt asset 
-      {
-         ilog( "Margin Check failed: Pool does not have enough debt asset: Required: ${r} Actual: ${a}",
-            ("r",(10*debt).to_string())("a",debt_balance.to_string()));
-         return false;
-      }
-
-      asset debt_limit = ( debt_balance * median_props.market_max_credit_ratio ) / PERCENT_100;
-      
-      if( debt_outstanding > debt_limit )
-      {
-         // If too much debt is outstanding on the specified debt asset, compared with available liquidity to Coin
-         // Prevent margin liquidations from running out of available debt asset liquidity
-         ilog( "Margin Check failed: Insufficient debt asset liquidity: Max Debt limit: ${l} Actual: ${a}",
-            ("l",debt_limit.to_string())("a",debt_outstanding.to_string()));
-         return false;
-      }
-   }
-   else
-   {
-      debt_coin = 10 * debt;
-   }
-
-   if( credit_asset_pool.asset_balance( SYMBOL_COIN ) >= debt_coin )  // Not enough coin to cover cost of debt with credit 
-   {
-      if( ( collateral_coin + position_coin ) >= debt_coin )    // Order 10 times requested would be insolvent due to illiquidity
-      {
-         ilog( "Margin Check successful." );
-         return true;     // Requested margin order passes all credit checks 
-      }
-      else        
-      {
-         ilog( "Margin Check failed: Insufficient collateral and position asset liquidity: Required: ${r} Actual: ${a}",
-            ("r",debt_coin.to_string())("a",(collateral_coin + position_coin).to_string() ));
-         return false;
-      }
-   }
-   else
-   {
-      ilog( "Margin Check failed: Insufficient credit asset liquidity: Coin balance required: ${r} Actual: ${a}",
-         ("r",debt_coin.to_string())("a",credit_asset_pool.asset_balance( SYMBOL_COIN ).to_string()) );
-      return false;
-   }
-} FC_CAPTURE_AND_RETHROW( (debt)(position)(collateral)(credit_pool) ) }
-
-
-/**
- * Updates the state of all margin orders.
- * 
- * Compounds interest on all margin orders, checks collateralization
- * ratios for all orders, and liquidates them if they are under collateralized.
- * Places orders into the book into liquidation mode 
- * if they reach their specified limit stop or take profit price.
- */
-void database::process_margin_updates()
-{ try {
-   const median_chain_property_object& median_props = get_median_chain_properties();
-   time_point now = head_block_time();
-   const auto& margin_idx = get_index< margin_order_index >().indices().get< by_debt_collateral_position >();
-   auto margin_itr = margin_idx.begin();
-
-   while( margin_itr != margin_idx.end() )
-   {
-      const asset_object& debt_asset = get_asset( margin_itr->debt_asset() );
-      const asset_credit_pool_object& credit_pool = get_credit_pool( margin_itr->debt_asset(), false );
-      uint16_t fixed = median_props.credit_min_interest;
-      uint16_t variable = median_props.credit_variable_interest;
-      share_type interest_rate = credit_pool.interest_rate( fixed, variable );
-      asset total_interest = asset( 0, debt_asset.symbol );
-      price col_debt_price;
-      price pos_debt_price;
-
-      while( margin_itr != margin_idx.end() && 
-         margin_itr->debt_asset() == debt_asset.symbol )
-      {
-         const asset_object& collateral_asset = get_asset( margin_itr->collateral_asset() );
-
-         if( collateral_asset.symbol != debt_asset.symbol )
-         {
-            asset_symbol_type symbol_a;
-            asset_symbol_type symbol_b;
-            if( debt_asset.id < collateral_asset.id )
-            {
-               symbol_a = debt_asset.symbol;
-               symbol_b = collateral_asset.symbol;
-            }
-            else
-            {
-               symbol_b = debt_asset.symbol;
-               symbol_a = collateral_asset.symbol;
-            }
-
-            const asset_liquidity_pool_object& col_debt_pool = get_liquidity_pool( symbol_a, symbol_b );
-            col_debt_price = col_debt_pool.base_hour_median_price( debt_asset.symbol );
-         }
-
-         while( margin_itr != margin_idx.end() &&
-            margin_itr->debt_asset() == debt_asset.symbol &&
-            margin_itr->collateral_asset() == collateral_asset.symbol )
-         {
-            const asset_object& position_asset = get_asset( margin_itr->position_asset() );
-
-            asset_symbol_type symbol_a;
-            asset_symbol_type symbol_b;
-            if( debt_asset.id < position_asset.id )
-            {
-               symbol_a = debt_asset.symbol;
-               symbol_b = position_asset.symbol;
-            }
-            else
-            {
-               symbol_b = debt_asset.symbol;
-               symbol_a = position_asset.symbol;
-            }
-
-            const asset_liquidity_pool_object& pos_debt_pool = get_liquidity_pool( symbol_a, symbol_b );
-            pos_debt_price = pos_debt_pool.base_hour_median_price( debt_asset.symbol );
-
-            while( margin_itr != margin_idx.end() &&
-               margin_itr->debt_asset() == debt_asset.symbol &&
-               margin_itr->collateral_asset() == collateral_asset.symbol &&
-               margin_itr->position_asset() == position_asset.symbol )
-            {
-               const margin_order_object& margin = *margin_itr;
-               ++margin_itr;
-               
-               asset collateral_debt_value;
-
-               if( margin.collateral_asset() != margin.debt_asset() )
-               {
-                  collateral_debt_value = margin.collateral * col_debt_price;
-               }
-               else
-               {
-                  collateral_debt_value = margin.collateral;
-               }
-
-               asset position_debt_value = margin.position_balance * pos_debt_price;
-               asset equity = margin.debt_balance + position_debt_value + collateral_debt_value;
-               asset unrealized_value = margin.debt_balance + position_debt_value - margin.debt;
-               share_type collateralization = ( ( equity - margin.debt ).amount * share_type( PERCENT_100 ) ) / margin.debt.amount;
-               int64_t interest_seconds = ( now - margin.last_interest_time ).to_seconds();
-
-               if( interest_seconds >= INTEREST_MIN_INTERVAL.to_seconds() )    // Check once every hour
-               {
-                  uint128_t interest_amount = uint128_t( margin.debt.amount.value ) * uint128_t( interest_rate.value ) * uint128_t( interest_seconds );
-                  interest_amount /= uint128_t( fc::days(365).to_seconds() * PERCENT_100 );
-                  asset interest = asset( interest_amount.to_uint64(), debt_asset.symbol );
-
-                  if( interest.amount > INTEREST_MIN_AMOUNT )      // Ensure interest is above dust to prevent lossy rounding
-                  {
-                     total_interest += interest;
-                  }
-                  
-                  modify( margin, [&]( margin_order_object& m )
-                  {
-                     if( interest.amount > INTEREST_MIN_AMOUNT )
-                     {
-                        m.debt += interest;      // Increment interest onto margin loan
-                        m.interest += interest;
-                        m.last_interest_time = now;
-                        m.last_interest_rate = interest_rate;
-                     }
-
-                     m.collateralization = collateralization;
-                     m.unrealized_value = unrealized_value;
-                  });
-
-                  ilog( "Margin Order Interest Paid: ${i} Total Interest: ${t} Interest Rate: ${r}",
-                     ("i",interest.to_string())("t",margin.interest.to_string())("r",fc::to_string( margin.real_interest_rate() ).substr(0,5) + "%"));
-               }
-
-               if( margin.collateralization < median_props.margin_liquidation_ratio ||
-                     pos_debt_price <= margin.stop_loss_price ||
-                     pos_debt_price >= margin.take_profit_price )
-               {
-                  close_margin_order( margin );          // If margin value falls below collateralization threshold, or stop prices are reached
-               }
-               else if( pos_debt_price <= margin.limit_stop_loss_price && !margin.liquidating )
-               {
-                  modify( margin, [&]( margin_order_object& m )
-                  {
-                     m.liquidating = true;
-                     m.last_updated = now;
-                     m.sell_price = ~m.limit_stop_loss_price;       // If price falls below limit stop loss, reverse order and sell at limit price
-                  });
-                  apply_order( margin );
-               }
-               else if( pos_debt_price >= margin.limit_take_profit_price && !margin.liquidating )
-               {
-                  modify( margin, [&]( margin_order_object& m )
-                  {
-                     m.liquidating = true;
-                     m.last_updated = now;
-                     m.sell_price = ~m.limit_take_profit_price;      // If price rises above take profit, reverse order and sell at limit price
-                  });
-                  apply_order( margin );
-               }
-            }     // Same Position, Collateral, and Debt
-         }        // Same Collateral and Debt
-      }           // Same Debt
-
-      modify( credit_pool, [&]( asset_credit_pool_object& c )
-      {
-         c.last_interest_rate = interest_rate;
-         c.borrowed_balance += total_interest;
-      });
-   }
-} FC_CAPTURE_AND_RETHROW() }
-
-
 
 /**
  * Matches all auction orders each day at the same price.
@@ -3031,96 +1789,6 @@ void database::process_auction_orders()
 
 
 /**
- * Deleverages a loan that has gone under its collateralization
- * requirements, by selling the collateral to the liquidity arrays.
- */
-void database::liquidate_credit_loan( const credit_loan_object& loan )
-{ try {
-   asset debt_liquidated = liquid_exchange( loan.collateral, loan.debt_asset(), true, true );
-   const asset_credit_pool_object& credit_pool = get_credit_pool( loan.debt_asset(), false );
-   if( loan.debt.amount > debt_liquidated.amount )
-   {
-      asset deficit = loan.debt - debt_liquidated;
-      asset default_credit = network_credit_acquisition( deficit, true );
-      debt_liquidated = loan.debt;
-      const account_object& owner = get_account( loan.owner );
-
-      modify( owner, [&]( account_object& a )
-      {
-         a.loan_default_balance += default_credit;
-      });
-
-      ilog( "Account loan default balance: ${b}",
-         ("b",owner.loan_default_balance.to_string()));
-   }
-
-   modify( credit_pool, [&]( asset_credit_pool_object& c )
-   {
-      c.borrowed_balance -= loan.debt;
-      c.base_balance += debt_liquidated;
-   });
-
-   ilog( "Removed: ${v}",("v",loan));
-   remove( loan );
-
-} FC_CAPTURE_AND_RETHROW() }
-
-
-/**
- * Acquires a debt asset using network credit asset.
- * 
- * Issues new credit asset to the liquidity pool of coin
- * and purchases the debt asset using the coin proceeds
- */
-asset database::network_credit_acquisition( const asset& amount, bool execute )
-{ try {
-   asset credit_acquired = asset( 0, SYMBOL_CREDIT );
-
-   ilog( "Network Credit Debt Acquisition: ${a}",
-      ("a",amount.to_string()) );
-
-   const asset_object& asset_obj = get_asset( amount.symbol );
-   FC_ASSERT( asset_obj.is_credit_enabled(), 
-      "Cannot acquire assets that do not facilitate liquidity pools." );
-
-   if( amount.symbol == SYMBOL_CREDIT )
-   {
-      credit_acquired = amount;
-   }
-   else
-   {
-      credit_acquired = liquid_acquire( amount, SYMBOL_CREDIT, true, true );
-   }
-   
-   adjust_pending_supply( credit_acquired );
-
-   ilog( "Credit Acquisition: ${a}",
-      ("a",credit_acquired.to_string()) );
-   
-   return credit_acquired;
-} FC_CAPTURE_AND_RETHROW() }
-
-
-/**
- * Look for expired transactions in the deduplication list, and remove them.
- * Transactions must have expired by at least two forking windows in order to be removed.
- */
-void database::clear_expired_transactions()
-{
-   // ilog( "Clear Expired Transactions." );
-
-   auto& transaction_idx = get_index< transaction_index >();
-   const auto& dedupe_index = transaction_idx.indices().get< by_expiration >();
-   while( ( !dedupe_index.empty() ) && ( head_block_time() > dedupe_index.begin()->expiration ) )
-   {
-      const transaction_object& txn = *dedupe_index.begin();
-      // ilog( "Removed: ${v}",("v",txn));
-      remove( txn );
-   }
-}
-
-
-/**
  * Activates an option asset by trading the quote asset for the
  * underlying asset at the sprecifed strike price.
  */
@@ -3213,124 +1881,6 @@ bool database::exercise_option( const asset& option, const account_object& accou
    
 } FC_CAPTURE_AND_RETHROW() }
 
-
-/**
- * All margin positions are force closed at the swan price.
- * 
- * Collateral received goes into a force-settlement fund
- * No new margin positions can be created for this asset
- * Force settlement happens without delay at the swan price, 
- * deducting from force-settlement fund.
- * No more asset updates may be issued.
-*/
-void database::globally_settle_asset( const asset_object& mia, const price& settlement_price )
-{ try {
-   const asset_stablecoin_data_object& stablecoin = get_stablecoin_data( mia.symbol );
-   FC_ASSERT( !stablecoin.has_settlement(),
-      "Black swan already occurred, it should not happen again" );
-
-   asset_symbol_type backing_asset = stablecoin.backing_asset;
-   asset collateral_gathered = asset( 0, backing_asset );
-   const asset_dynamic_data_object& mia_dyn = get_dynamic_data( mia.symbol );
-   auto original_mia_supply = mia_dyn.get_total_supply().amount;
-
-   const auto& call_idx = get_index< call_order_index >().indices().get< by_high_price >();
-   auto call_itr = call_idx.lower_bound( price::max( backing_asset, mia.symbol ) );
-   auto call_end = call_idx.upper_bound( price::min( backing_asset, mia.symbol ) );
-   asset pays = asset( 0, backing_asset );
-
-   while( call_itr != call_end )
-   {
-      const call_order_object& order = *call_itr;
-      ++call_itr;
-      pays = order.debt.multiply_and_round_up( settlement_price );
-      if( pays > order.collateral )
-      {
-         pays = order.collateral;
-      }
-      collateral_gathered += pays;
-      // Fill Call orders without deducting pending supply of stablecoin.
-      FC_ASSERT( fill_call_order( order, pays, order.debt, settlement_price, true, NULL_ACCOUNT, true ) );
-   }
-
-   price global_settlement_price = asset( original_mia_supply, mia.symbol ) / collateral_gathered;
-   
-   // Activate Global settlement price on asset
-
-   modify( stablecoin, [&]( asset_stablecoin_data_object& a )
-   {
-      a.settlement_price = global_settlement_price;
-      a.settlement_fund = collateral_gathered.amount;
-   });
-
-   ilog( "Globally Settled Asset: ${s} at Settlement Price: ${p} \n ${st} \n",
-      ("s",mia.symbol)("p",global_settlement_price.to_string())("st",stablecoin));
-
-} FC_CAPTURE_AND_RETHROW( (mia)(settlement_price) ) }
-
-
-void database::revive_stablecoin( const asset_object& stablecoin )
-{ try {
-   FC_ASSERT( stablecoin.is_market_issued(),
-      "Asset must be a market issued asset." );
-   const asset_stablecoin_data_object& bad = get_stablecoin_data( stablecoin.symbol );
-
-   FC_ASSERT( bad.has_settlement(),
-      "Asset must have a settlement price before it can be revived.");
-   const asset_dynamic_data_object& bdd = get_dynamic_data( stablecoin.symbol );
-
-   FC_ASSERT( !bad.current_feed.settlement_price.is_null(),
-      "Settlement price cannot be null to revive asset." );
-
-   if( bdd.get_total_supply().amount > 0 )    // Create + execute a "bid" with 0 additional collateral
-   {
-      const asset_collateral_bid_object& pseudo_bid = create< asset_collateral_bid_object >([&]( asset_collateral_bid_object& bid )
-      {
-         bid.bidder = stablecoin.issuer;
-         bid.collateral = asset( 0, bad.backing_asset );
-         bid.debt = asset( bdd.get_total_supply().amount, stablecoin.symbol );
-      });
-
-      execute_bid( pseudo_bid, bdd.get_total_supply().amount, bad.settlement_fund, bad.current_feed );
-   } 
-   else
-   {
-      FC_ASSERT( bad.settlement_fund == 0,
-         "Cannot have settlement fund with zero total asset supply." );
-   }
-      
-   cancel_bids_and_revive_mpa( stablecoin, bad );
-} FC_CAPTURE_AND_RETHROW( (stablecoin) ) }
-
-
-void database::cancel_bids_and_revive_mpa( const asset_object& stablecoin, const asset_stablecoin_data_object& bad )
-{ try {
-   FC_ASSERT( stablecoin.is_market_issued(),
-      "Asset must be a market issued asset." );
-   FC_ASSERT( bad.has_settlement(),
-      "Asset must have a settlement price before it can be revived." );
-   
-   const auto& bid_idx = get_index< asset_collateral_bid_index >().indices().get< by_price >();
-   auto bid_itr = bid_idx.lower_bound( boost::make_tuple( stablecoin.symbol, price::max( bad.backing_asset, stablecoin.symbol ) ) );
-
-   while( bid_itr != bid_idx.end() && 
-      bid_itr->inv_swan_price().quote.symbol == stablecoin.symbol )
-   {
-      const asset_collateral_bid_object& bid = *bid_itr;
-      ++bid_itr;
-      cancel_bid( bid );    // cancel remaining bids
-   }
-
-   modify( bad, [&]( asset_stablecoin_data_object& obj )
-   {
-      obj.settlement_price = price();
-      obj.settlement_fund = 0;
-   });
-
-   ilog( "Cancel Bids and Revive Stablecoin: \n ${s} \n",
-      ("s",bad));
-
-} FC_CAPTURE_AND_RETHROW( ( stablecoin ) ) }
 
 
 void database::cancel_bid( const asset_collateral_bid_object& bid )
@@ -3802,5 +2352,65 @@ bool database::check_for_blackswan( const asset_object& mia, bool enable_black_s
    } 
    return false;
 }
+
+
+/** 
+ * Pays protocol trading fees on taker orders.
+ * 
+ * taker: The account that is the taker on the trade
+ * receives: The asset object being received from the trade
+ * maker_int: The owner account of the interface of the maker of the trade
+ * taker_int: The owner account of the interface of the taker of the trade
+ */
+asset database::pay_trading_fees( const account_object& taker, const asset& receives, 
+   const account_name_type& maker_int, const account_name_type& taker_int )
+{ try {
+   asset total_fees = ( receives * TRADING_FEE_PERCENT ) / PERCENT_100;
+   asset network_fee = ( total_fees * NETWORK_TRADING_FEE_PERCENT ) / PERCENT_100;
+   asset maker_interface_share = ( total_fees * MAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
+   asset taker_interface_share = ( total_fees * TAKER_TRADING_FEE_PERCENT ) / PERCENT_100;
+   asset maker_paid = asset( 0, receives.symbol );
+   asset taker_paid = asset( 0, receives.symbol );
+
+   if( maker_int.size() )
+   {
+      const account_object& m_int_acc = get_account( maker_int );
+      const interface_object& m_interface = get_interface( maker_int );
+
+      FC_ASSERT( m_int_acc.active && m_interface.active, 
+         "Maker Interface: ${i} must be active",
+         ("i",maker_int) );
+
+      maker_paid = pay_fee_share( m_int_acc, maker_interface_share, true );
+   }
+   else
+   {
+      network_fee += maker_interface_share;
+   }
+   
+   if( taker_int.size() )
+   {
+      const account_object& t_int_acc = get_account( taker_int );
+      const interface_object& t_interface = get_interface( taker_int );
+
+      FC_ASSERT( t_int_acc.active && t_interface.active, 
+         "Taker Interface: ${i} must be active",
+         ("i",taker_int) );
+
+      taker_paid = pay_fee_share( t_int_acc, taker_interface_share, true );
+   }
+   else
+   {
+      network_fee += taker_interface_share;
+   }
+   
+   pay_network_fees( taker, network_fee );
+
+   asset total_paid = network_fee + maker_paid + taker_paid;
+
+   ilog( "Account: ${a} paid trading fees: ${p}",
+      ("a",taker.name)("p",total_paid.to_string()));
+   return total_paid;
+} FC_CAPTURE_AND_RETHROW() }
 
 } } //node::chain

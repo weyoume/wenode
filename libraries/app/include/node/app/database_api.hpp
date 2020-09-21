@@ -356,11 +356,11 @@ class database_api
 
       vector< producer_api_obj >                      get_producers_by_mining_power( string from, uint32_t limit )const;
 
-      vector< network_officer_api_obj >               get_development_officers_by_voting_power( string from, uint32_t limit )const;
+      vector< network_officer_api_obj >               get_development_officers_by_voting_power( string currency, string from, uint32_t limit )const;
 
-      vector< network_officer_api_obj >               get_marketing_officers_by_voting_power( string from, uint32_t limit )const;
+      vector< network_officer_api_obj >               get_marketing_officers_by_voting_power( string currency, string from, uint32_t limit )const;
 
-      vector< network_officer_api_obj >               get_advocacy_officers_by_voting_power( string from, uint32_t limit )const;
+      vector< network_officer_api_obj >               get_advocacy_officers_by_voting_power( string currency, string from, uint32_t limit )const;
 
       vector< executive_board_api_obj >               get_executive_boards_by_voting_power( string from, uint32_t limit )const;
 
@@ -370,7 +370,7 @@ class database_api
 
       vector< governance_account_api_obj >            get_governance_accounts_by_subscriber_power( string from, uint32_t limit )const;
 
-      vector< community_enterprise_api_obj >          get_enterprise_by_voting_power( string from, string from_id, uint32_t limit )const;
+      vector< enterprise_api_obj >                    get_enterprise_by_voting_power( string from, string from_id, uint32_t limit )const;
 
 
       //================//
@@ -482,7 +482,7 @@ class database_api
 
       vector< account_moderation >                    get_account_moderation( string account, string from_author, string from_permlink, uint32_t limit )const;
 
-      vector< tag_following_api_obj >                 get_tag_followings( vector< string > tags )const;
+      vector< account_tag_following_api_obj >         get_account_tag_followings( vector< string > tags )const;
 
       vector< tag_api_obj >                           get_top_tags( string after_tag, uint32_t limit )const;
 
@@ -793,7 +793,7 @@ FC_API( node::app::database_api,
          (get_account_views)
          (get_account_shares)
          (get_account_moderation)
-         (get_tag_followings)
+         (get_account_tag_followings)
          (get_top_tags)
          (get_tags_used_by_author)
 

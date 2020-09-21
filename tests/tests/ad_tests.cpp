@@ -73,7 +73,6 @@ BOOST_AUTO_TEST_CASE( ad_operation_sequence_test )
       comment.latitude = 37.8136;
       comment.longitude = 144.9631;
       comment.comment_price = asset( 0, SYMBOL_COIN );
-      comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;
@@ -222,7 +221,7 @@ BOOST_AUTO_TEST_CASE( ad_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      update_interface_operation interface;
+      interface_update_operation interface;
       
       interface.signatory = "bob";
       interface.account = "bob";
@@ -358,7 +357,7 @@ BOOST_AUTO_TEST_CASE( ad_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
    
-      view_operation view;
+      comment_view_operation view;
 
       view.signatory = "newuser";
       view.viewer = "newuser";

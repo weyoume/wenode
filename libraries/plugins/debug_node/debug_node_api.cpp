@@ -107,14 +107,14 @@ debug_node_api_impl::debug_node_api_impl( node::app::application& _app ) : app( 
 
    while( acct_itr != acct_idx.end() )     // Inject all Accounts to have init password keys added.
    {
-      node::protocol::private_key_type private_owner_key = node::protocol::get_private_key( acct_itr->name, "owner", INIT_ACCOUNT_PASSWORD );
-      node::protocol::private_key_type private_active_key = node::protocol::get_private_key( acct_itr->name, "active", INIT_ACCOUNT_PASSWORD );
-      node::protocol::private_key_type private_posting_key = node::protocol::get_private_key( acct_itr->name, "posting", INIT_ACCOUNT_PASSWORD );
-      node::protocol::private_key_type private_secure_key = node::protocol::get_private_key( acct_itr->name, "secure", INIT_ACCOUNT_PASSWORD );
-      node::protocol::private_key_type private_connection_key = node::protocol::get_private_key( acct_itr->name, "connection", INIT_ACCOUNT_PASSWORD );
-      node::protocol::private_key_type private_friend_key = node::protocol::get_private_key( acct_itr->name, "friend", INIT_ACCOUNT_PASSWORD );
-      node::protocol::private_key_type private_companion_key = node::protocol::get_private_key( acct_itr->name, "companion", INIT_ACCOUNT_PASSWORD );
-      node::protocol::private_key_type private_producer_key = node::protocol::get_private_key( acct_itr->name, "producer", INIT_ACCOUNT_PASSWORD );
+      node::protocol::private_key_type private_owner_key = node::protocol::get_private_key( acct_itr->name, OWNER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      node::protocol::private_key_type private_active_key = node::protocol::get_private_key( acct_itr->name, ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      node::protocol::private_key_type private_posting_key = node::protocol::get_private_key( acct_itr->name, POSTING_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      node::protocol::private_key_type private_secure_key = node::protocol::get_private_key( acct_itr->name, SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      node::protocol::private_key_type private_connection_key = node::protocol::get_private_key( acct_itr->name, CONNECTION_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      node::protocol::private_key_type private_friend_key = node::protocol::get_private_key( acct_itr->name, FRIEND_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      node::protocol::private_key_type private_companion_key = node::protocol::get_private_key( acct_itr->name, COMPANION_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      node::protocol::private_key_type private_producer_key = node::protocol::get_private_key( acct_itr->name, PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       node::protocol::public_key_type public_owner_key = private_owner_key.get_public_key();
       node::protocol::public_key_type public_active_key = private_active_key.get_public_key();

@@ -11,13 +11,13 @@ namespace node { namespace app {
 
 using namespace node::chain;
 
-typedef chain::change_recovery_account_request_object  change_recovery_account_request_api_obj;
+typedef chain::account_recovery_update_request_object  account_recovery_update_request_api_obj;
 typedef chain::block_summary_object                    block_summary_api_obj;
 typedef chain::comment_vote_object                     comment_vote_api_obj;
 typedef chain::comment_view_object                     comment_view_api_obj;
 typedef chain::comment_share_object                    comment_share_api_obj;
 typedef chain::unstake_asset_route_object              unstake_asset_route_api_obj;
-typedef chain::decline_voting_rights_request_object    decline_voting_rights_request_api_obj;
+typedef chain::account_decline_voting_request_object   account_decline_voting_request_api_obj;
 typedef chain::producer_vote_object                    producer_vote_api_obj;
 typedef chain::producer_schedule_object                producer_schedule_api_obj;
 typedef chain::asset_delegation_object                 asset_delegation_api_obj;
@@ -155,7 +155,7 @@ struct median_chain_property_api_obj
 
 struct reward_fund_api_obj
 {
-   reward_fund_api_obj( const chain::reward_fund_object& o ) :
+   reward_fund_api_obj( const chain::asset_reward_fund_object& o ) :
       id( o.id ),
       symbol( o.symbol ),
       total_pending_reward_balance( o.total_pending_reward_balance() ),
@@ -166,7 +166,7 @@ struct reward_fund_api_obj
       producer_activity_reward_balance( o.producer_activity_reward_balance ),
       supernode_reward_balance( o.supernode_reward_balance ),
       power_reward_balance( o.power_reward_balance ),
-      community_fund_balance( o.community_fund_balance ),
+      enterprise_fund_balance( o.enterprise_fund_balance ),
       development_reward_balance( o.development_reward_balance ),
       marketing_reward_balance( o.marketing_reward_balance ),
       advocacy_reward_balance( o.advocacy_reward_balance ),
@@ -178,7 +178,7 @@ struct reward_fund_api_obj
 
    reward_fund_api_obj(){}
 
-   reward_fund_id_type     id;
+   asset_reward_fund_id_type     id;
    asset_symbol_type       symbol;                                                    ///< Currency symbol of the asset that the reward fund issues.
    asset                   total_pending_reward_balance;                              ///< Total of all reward balances. 
    asset                   content_reward_balance;                                    ///< Balance awaiting distribution to content creators.
@@ -188,7 +188,7 @@ struct reward_fund_api_obj
    asset                   producer_activity_reward_balance;                          ///< Balance distributed to producers that receive activity reward votes.
    asset                   supernode_reward_balance;                                  ///< Balance distributed to supernodes, based on stake weighted comment views.
    asset                   power_reward_balance;                                      ///< Balance distributed to staked units of the currency.
-   asset                   community_fund_balance;                                    ///< Balance distributed to community proposal funds on the currency. 
+   asset                   enterprise_fund_balance;                                    ///< Balance distributed to community proposal funds on the currency. 
    asset                   development_reward_balance;                                ///< Balance distributed to elected developers. 
    asset                   marketing_reward_balance;                                  ///< Balance distributed to elected marketers. 
    asset                   advocacy_reward_balance;                                   ///< Balance distributed to elected advocates. 
@@ -239,7 +239,7 @@ struct account_api_obj
       recovery_account( a.recovery_account ),
       reset_account( a.reset_account ),
       membership_interface( a.membership_interface ),
-      reset_account_delay_days( a.reset_account_delay_days ),
+      reset_delay_days( a.reset_delay_days ),
       referrer_rewards_percentage( a.referrer_rewards_percentage ),
       comment_count( a.comment_count ),
       follower_count( a.follower_count ),
@@ -263,7 +263,7 @@ struct account_api_obj
       officer_vote_count( a.officer_vote_count ),
       executive_board_vote_count( a.executive_board_vote_count ),
       governance_subscriptions( a.governance_subscriptions ),
-      enterprise_approval_count( a.enterprise_approval_count ),
+      enterprise_vote_count( a.enterprise_vote_count ),
       recurring_membership( a.recurring_membership ),
       created( a.created ),
       membership_expiration( a.membership_expiration ),
@@ -347,7 +347,7 @@ struct account_api_obj
    account_name_type                recovery_account;                      ///< Account that can request recovery using a recent owner key if compromised.  
    account_name_type                reset_account;                         ///< Account that has the ability to reset owner authority after specified days of inactivity.
    account_name_type                membership_interface;                  ///< Account of the last interface to sell a membership to the account.
-   uint16_t                         reset_account_delay_days;
+   uint16_t                         reset_delay_days;
    uint16_t                         referrer_rewards_percentage;           ///< The percentage of registrar rewards that are directed to the referrer.
    uint32_t                         comment_count;
    uint32_t                         follower_count;
@@ -371,7 +371,7 @@ struct account_api_obj
    uint16_t                         officer_vote_count;                    ///< Number of network officers that the account has voted for.
    uint16_t                         executive_board_vote_count;            ///< Number of Executive boards that the account has voted for.
    uint16_t                         governance_subscriptions;              ///< Number of governance accounts that the account subscribes to.   
-   uint16_t                         enterprise_approval_count;             ///< Number of Enterprise proposals that the account votes for. 
+   uint16_t                         enterprise_vote_count;                 ///< Number of Enterprise proposals that the account votes for. 
    uint16_t                         recurring_membership;                  ///< Amount of months membership should be automatically renewed for on expiration
    time_point                       created;                               ///< Time that the account was created.
    time_point                       membership_expiration;                 ///< Time that the account has its current membership subscription until.
@@ -534,7 +534,9 @@ struct account_executive_vote_api_obj
       business_account( a.business_account ),
       executive_account( a.executive_account ),
       role( executive_role_values[ int( a.role ) ] ),
-      vote_rank( a.vote_rank ){}
+      vote_rank( a.vote_rank ),
+      last_updated( a.last_updated ),
+      created( a.created ){}
       
    account_executive_vote_api_obj(){}
 
@@ -544,6 +546,8 @@ struct account_executive_vote_api_obj
    account_name_type                     executive_account;     ///< Name of the executive account.
    string                                role;                  ///< Role voted in favor of.
    uint16_t                              vote_rank;             ///< The rank of the executive vote.
+   time_point                            last_updated;          ///< Time that the vote was last updated.
+   time_point                            created;               ///< Time that the vote was created.
 };
 
 
@@ -554,7 +558,9 @@ struct account_officer_vote_api_obj
       account( a.account ),
       business_account( a.business_account ),
       officer_account( a.officer_account ),
-      vote_rank( a.vote_rank ){}
+      vote_rank( a.vote_rank ),
+      last_updated( a.last_updated ),
+      created( a.created ){}
       
    account_officer_vote_api_obj(){}
 
@@ -563,6 +569,8 @@ struct account_officer_vote_api_obj
    account_name_type                     business_account;      ///< Name of the referred business account.
    account_name_type                     officer_account;       ///< Name of the officer account.
    uint16_t                              vote_rank;             ///< The rank of the officer vote.
+   time_point                            last_updated;          ///< Time that the vote was last updated.
+   time_point                            created;               ///< Time that the vote was created.
 };
 
 
@@ -787,9 +795,9 @@ struct account_following_api_obj
 
 
 
-struct tag_following_api_obj
+struct account_tag_following_api_obj
 {
-   tag_following_api_obj( const chain::tag_following_object& t ):
+   account_tag_following_api_obj( const chain::account_tag_following_object& t ):
       id( t.id ),
       tag( t.tag ),
       last_updated( t.last_updated )
@@ -801,18 +809,18 @@ struct tag_following_api_obj
          }
       }
 
-   tag_following_api_obj(){}
+   account_tag_following_api_obj(){}
 
-   tag_following_id_type             id;
+   account_tag_following_id_type             id;
    tag_name_type                     tag;                  ///< Name of the account.
    vector< account_name_type >       followers;            ///< Accounts that follow this account. 
    time_point                        last_updated;          ///< Last time that the tag changed its following sets.
 };
 
 
-struct connection_api_obj
+struct account_connection_api_obj
 {
-   connection_api_obj( const chain::connection_object& c ):
+   account_connection_api_obj( const chain::account_connection_object& c ):
       id( c.id ),
       account_a( c.account_a ),
       encrypted_key_a( c.encrypted_key_a ),
@@ -827,9 +835,9 @@ struct connection_api_obj
       last_updated( c.last_updated ),
       created( c.created ){}
 
-   connection_api_obj(){}
+   account_connection_api_obj(){}
 
-   connection_id_type           id;                 
+   account_connection_id_type   id;                 
    account_name_type            account_a;                ///< Account with the lower ID.
    encrypted_keypair_type       encrypted_key_a;          ///< A's private connection key, encrypted with the public secure key of account B.
    account_name_type            account_b;                ///< Account with the greater ID.
@@ -845,9 +853,9 @@ struct connection_api_obj
 };
 
 
-struct connection_request_api_obj
+struct account_connection_request_api_obj
 {
-   connection_request_api_obj( const chain::connection_request_object& c ):
+   account_connection_request_api_obj( const chain::account_connection_request_object& c ):
       id( c.id ),
       account( c.account ),
       requested_account( c.requested_account ),
@@ -855,9 +863,9 @@ struct connection_request_api_obj
       message( to_string( c.message ) ),
       expiration( c.expiration ){}
 
-   connection_request_api_obj(){}
+   account_connection_request_api_obj(){}
 
-   connection_request_id_type              id;                 
+   account_connection_request_id_type              id;                 
    account_name_type                       account;               ///< Account that created the request
    account_name_type                       requested_account;  
    string                                  connection_type;
@@ -868,7 +876,7 @@ struct connection_request_api_obj
 
 struct owner_authority_history_api_obj
 {
-   owner_authority_history_api_obj( const chain::owner_authority_history_object& o ) :
+   owner_authority_history_api_obj( const chain::account_authority_history_object& o ) :
       id( o.id ),
       account( o.account ),
       previous_owner_authority( authority( o.previous_owner_authority ) ),
@@ -876,7 +884,7 @@ struct owner_authority_history_api_obj
    
    owner_authority_history_api_obj(){}
 
-   owner_authority_history_id_type      id;
+   account_authority_history_id_type      id;
    account_name_type                    account;
    authority                            previous_owner_authority;
    time_point                           last_valid_time;
@@ -913,33 +921,37 @@ struct network_officer_api_obj
    network_officer_api_obj( const chain::network_officer_object& o ):
       id( o.id ),
       account( o.account ),
-      active( o.active ),
-      officer_approved( o.officer_approved ),
       officer_type( network_officer_role_values[ int( o.officer_type ) ] ),
       details( to_string( o.details ) ),
       url( to_string( o.url ) ),
       json( to_string( o.json ) ),
-      created( o.created ),
+      reward_currency( o.reward_currency ),
       vote_count( o.vote_count ),
       voting_power( o.voting_power.value ),
       producer_vote_count( o.producer_vote_count ),
-      producer_voting_power( o.producer_voting_power.value ){}
+      producer_voting_power( o.producer_voting_power.value ),
+      last_updated( o.last_updated ),
+      created( o.created ),
+      active( o.active ),
+      officer_approved( o.officer_approved ){}
       
    network_officer_api_obj(){}
 
    network_officer_id_type        id;
-   account_name_type              account;                 ///< The name of the account that owns the network officer.
-   bool                           active;                  ///< True if the officer is active, set false to deactivate.
-   bool                           officer_approved;        ///< True when the network officer has received sufficient voting approval to earn funds.
-   string                         officer_type;            ///< The type of network officer that the account serves as. 
-   string                         details;                 ///< The officer's details description. 
-   string                         url;                     ///< The officer's reference URL. 
-   string                         json;                    ///< Json metadata of the officer. 
-   time_point                     created;                 ///< The time the officer was created.
-   uint32_t                       vote_count;              ///< The number of accounts that support the officer.
-   int64_t                        voting_power;            ///< The amount of voting power that votes for the officer.
+   account_name_type              account;                  ///< The name of the account that owns the network officer.
+   string                         officer_type;             ///< The type of network officer that the account serves as.
+   string                         details;                  ///< The officer's details description.
+   string                         url;                      ///< The officer's reference URL.
+   string                         json;                     ///< JSON metadata of the officer.
+   asset_symbol_type              reward_currency;          ///< Symbol of the currency asset that the network officer requests.
+   uint32_t                       vote_count;               ///< The number of accounts that support the officer.
+   int64_t                        voting_power;             ///< The amount of voting power that votes for the officer.
    uint32_t                       producer_vote_count;      ///< The number of accounts that support the officer.
    int64_t                        producer_voting_power;    ///< The amount of voting power that votes for the officer.
+   time_point                     last_updated;             ///< The time the officer was last updated.
+   time_point                     created;                  ///< The time the officer was created.
+   bool                           active;                   ///< True if the officer is active, set false to deactivate.
+   bool                           officer_approved;         ///< True when the network officer has received sufficient voting approval to earn funds.
 };
 
 
@@ -950,7 +962,9 @@ struct network_officer_vote_api_obj
       account( o.account ),
       network_officer( o.network_officer ),
       officer_type( network_officer_role_values[ int( o.officer_type ) ] ),
-      vote_rank( o.vote_rank ){}
+      vote_rank( o.vote_rank ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
 
    network_officer_vote_api_obj(){}
 
@@ -959,6 +973,8 @@ struct network_officer_vote_api_obj
    account_name_type                   network_officer;            ///< The name of the network officer being voted for.
    string                              officer_type;               ///< the type of network officer that is being voted for.
    uint16_t                            vote_rank;                  ///< the ranking of the vote for the officer.
+   time_point                          last_updated;               ///< Time that the vote was last updated.
+   time_point                          created;                    ///< Time that the vote was created.
 };
 
 
@@ -967,33 +983,35 @@ struct executive_board_api_obj
    executive_board_api_obj( const chain::executive_board_object& o ):
       id( o.id ),
       account( o.account ),
-      active( o.active ),
-      board_approved( o.board_approved ),
-      budget( o.budget ),
       details( to_string( o.details ) ),
       url( to_string( o.url ) ),
       json( to_string( o.json ) ),
-      created( o.created ),
+      budget( o.budget ),
       vote_count( o.vote_count ),
       voting_power( o.voting_power.value ),
       producer_vote_count( o.producer_vote_count ),
-      producer_voting_power( o.producer_voting_power.value ){}
+      producer_voting_power( o.producer_voting_power.value ),
+      last_updated( o.last_updated ),
+      created( o.created ),
+      active( o.active ),
+      board_approved( o.board_approved ){}
 
    executive_board_api_obj(){}
 
    executive_board_id_type        id;
    account_name_type              account;                    ///< The name of the governance account that created the executive team.
-   bool                           active;                     ///< True if the executive team is active, set false to deactivate.
-   bool                           board_approved;             ///< True when the board has reach sufficient voting support to receive budget.
+   string                         details;                    ///< The executive team's details description.
+   string                         url;                        ///< The executive team's reference URL.
+   string                         json;                       ///< JSON metadata of the executive team.
    asset                          budget;                     ///< Total amount of Credit asset requested for team compensation and funding.
-   string                         details;                    ///< The executive team's details description. 
-   string                         url;                        ///< The executive team's reference URL. 
-   string                         json;                       ///< Json metadata of the executive team. 
-   time_point                     created;                    ///< The time the executive team was created.
    uint32_t                       vote_count;                 ///< The number of accounts that support the executive team.
-   int64_t                        voting_power;               ///< The amount of voting power that votes for the executive team. 
+   int64_t                        voting_power;               ///< The amount of voting power that votes for the executive team.
    uint32_t                       producer_vote_count;        ///< The number of accounts that support the executive team.
    int64_t                        producer_voting_power;      ///< The amount of voting power that votes for the executive team.
+   time_point                     last_updated;               ///< Time that the vote was last updated.
+   time_point                     created;                    ///< Time that the vote was created.
+   bool                           active;                     ///< True if the executive team is active, set false to deactivate.
+   bool                           board_approved;             ///< True when the board has reach sufficient voting support to receive budget.
 };
 
 
@@ -1003,14 +1021,18 @@ struct executive_board_vote_api_obj
       id( o.id ),
       account( o.account ),
       executive_board( o.executive_board ),
-      vote_rank( o.vote_rank ){}
+      vote_rank( o.vote_rank ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
 
    executive_board_vote_api_obj(){}
 
    executive_board_vote_id_type        id;
    account_name_type                   account;               ///< The name of the account that voting for the executive board.
    account_name_type                   executive_board;       ///< The name of the executive board being voted for.
-   uint16_t                            vote_rank;             ///< The rank the rank of the vote for the executive board. 
+   uint16_t                            vote_rank;             ///< The rank the rank of the vote for the executive board.
+   time_point                          last_updated;          ///< Time that the vote was last updated.
+   time_point                          created;               ///< Time that the vote was created.
 };
 
 
@@ -1019,31 +1041,33 @@ struct governance_account_api_obj
    governance_account_api_obj( const chain::governance_account_object& o ):
       id( o.id ),
       account( o.account ),
-      active( o.active ),
-      account_approved( o.account_approved ),
       details( to_string( o.details ) ),
       url( to_string( o.url ) ),
       json( to_string( o.json ) ),
-      created( o.created ),
       subscriber_count( o.subscriber_count ),
       subscriber_power( o.subscriber_power.value ),
       producer_subscriber_count( o.producer_subscriber_count ),
-      producer_subscriber_power( o.producer_subscriber_power.value ){}
+      producer_subscriber_power( o.producer_subscriber_power.value ),
+      last_updated( o.last_updated ),
+      created( o.created ),
+      active( o.active ),
+      account_approved( o.account_approved ){}
 
    governance_account_api_obj(){}
 
    governance_account_id_type     id;
    account_name_type              account;                     ///< The name of the governance account that created the governance account.
-   bool                           active;                      ///< True if the governance account is active, set false to deactivate.
-   bool                           account_approved;            ///< True when the governance account has reach sufficient voting support to receive budget.
    string                         details;                     ///< The governance account's details description. 
    string                         url;                         ///< The governance account's reference URL. 
    string                         json;                        ///< Json metadata of the governance account. 
-   time_point                     created;                     ///< The time the governance account was created.
    uint32_t                       subscriber_count;            ///< The number of accounts that support the governance account.
    int64_t                        subscriber_power;            ///< The amount of voting power that votes for the governance account. 
    uint32_t                       producer_subscriber_count;   ///< The number of accounts that support the governance account.
    int64_t                        producer_subscriber_power;   ///< The amount of voting power that votes for the governance account.
+   time_point                     last_updated;                ///< The time the governance account was last updated.
+   time_point                     created;                     ///< The time the governance account was created.
+   bool                           active;                      ///< True if the governance account is active, set false to deactivate.
+   bool                           account_approved;            ///< True when the governance account has reach sufficient voting support to receive budget.
 };
 
 
@@ -1053,7 +1077,9 @@ struct governance_subscription_api_obj
       id( o.id ),
       account( o.account ),
       governance_account( o.governance_account ),
-      vote_rank( o.vote_rank ){}
+      vote_rank( o.vote_rank ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
 
    governance_subscription_api_obj(){}
 
@@ -1061,6 +1087,8 @@ struct governance_subscription_api_obj
    account_name_type                   account;                    ///< The name of the account that subscribes to the governance account.
    account_name_type                   governance_account;         ///< The name of the governance account being subscribed to.
    uint16_t                            vote_rank;                  ///< The preference rank of subscription for fee splitting.
+   time_point                          last_updated;               ///< Time that the subscription was last updated.
+   time_point                          created;                    ///< Time that the subscription was created.
 };
 
 
@@ -1069,7 +1097,6 @@ struct supernode_api_obj
    supernode_api_obj( const chain::supernode_object& o ):
       id( o.id ),
       account( o.account ),
-      active( o.active ),
       details( to_string( o.details ) ),
       url( to_string( o.url ) ),
       node_api_endpoint( to_string( o.node_api_endpoint ) ),
@@ -1078,19 +1105,19 @@ struct supernode_api_obj
       ipfs_endpoint( to_string( o.ipfs_endpoint ) ),
       bittorrent_endpoint( to_string( o.bittorrent_endpoint ) ),
       json( to_string( o.json ) ),
-      created( o.created ),
       storage_rewards( o.storage_rewards ),
       daily_active_users( o.daily_active_users / PERCENT_100 ),
       monthly_active_users( o.monthly_active_users / PERCENT_100 ),
       recent_view_weight( o.recent_view_weight.value ),
+      last_activation_time( o.last_activation_time ),
       last_updated( o.last_updated ),
-      last_activation_time( o.last_activation_time ){}
+      created( o.created ),
+      active( o.active ){}
    
    supernode_api_obj(){}
 
    supernode_id_type       id;
    account_name_type       account;                     ///< The name of the account that owns the supernode.
-   bool                    active;                      ///< True if the supernode is active, set false to deactivate.
    string                  details;                     ///< The supernode's details description. 
    string                  url;                         ///< The supernode's reference URL. 
    string                  node_api_endpoint;           ///< The Full Archive node public API endpoint of the supernode.
@@ -1099,13 +1126,14 @@ struct supernode_api_obj
    string                  ipfs_endpoint;               ///< The IPFS file storage API endpoint of the supernode.
    string                  bittorrent_endpoint;         ///< The Bittorrent Seed Box endpoint URL of the Supernode. 
    string                  json;                        ///< Json metadata of the supernode, including additional outside of consensus APIs and services. 
-   time_point              created;                     ///< The time the supernode was created.
    asset                   storage_rewards;             ///< Amount of core asset earned from storage.
    uint64_t                daily_active_users;          ///< The average number of accounts (X percent 100) that have used files from the node in the prior 24h.
    uint64_t                monthly_active_users;        ///< The average number of accounts (X percent 100) that have used files from the node in the prior 30 days.
    int64_t                 recent_view_weight;          ///< The rolling 7 day average of daily accumulated voting power of viewers. 
-   time_point              last_updated;                ///< The time the file weight and active users was last decayed.
    time_point              last_activation_time;        ///< The time the Supernode was last reactivated, must be at least 24h ago to claim rewards.
+   time_point              last_updated;                ///< The time the file weight and active users was last decayed.
+   time_point              created;                     ///< The time the supernode was created.
+   bool                    active;                      ///< True if the supernode is active, set false to deactivate.
 };
 
 
@@ -1114,27 +1142,27 @@ struct interface_api_obj
    interface_api_obj( const chain::interface_object& o ):
       id( o.id ),
       account( o.account ),
-      active( o.active ),
       details( to_string( o.details ) ),
       url( to_string( o.url ) ),
       json( to_string( o.json ) ),
-      created( o.created ),
       daily_active_users( o.daily_active_users / PERCENT_100 ),
       monthly_active_users( o.monthly_active_users / PERCENT_100 ),
-      last_updated( o.last_updated ){}
+      last_updated( o.last_updated ),
+      created( o.created ),
+      active( o.active ){}
    
    interface_api_obj(){}
 
    interface_id_type       id;
    account_name_type       account;                     ///< The name of the account that owns the interface.
-   bool                    active;                      ///< True if the interface is active, set false to deactivate.
    string                  details;                     ///< The interface's details description. 
    string                  url;                         ///< The interface's reference URL. 
    string                  json;                        ///< Json metadata of the interface, including additional outside of consensus APIs and services. 
-   time_point              created;                     ///< The time the interface was created.
    uint64_t                daily_active_users;          ///< The average number of accounts (X percent 100) that have used files from the node in the prior 24h.
    uint64_t                monthly_active_users;        ///< The average number of accounts (X percent 100) that have used files from the node in the prior 30 days.
    time_point              last_updated;                ///< The time the file weight and active users was last decayed.
+   time_point              created;                     ///< The time the interface was created.
+   bool                    active;                      ///< True if the interface is active, set false to deactivate.
 };
 
 
@@ -1143,145 +1171,120 @@ struct mediator_api_obj
    mediator_api_obj( const chain::mediator_object& o ):
       id( o.id ),
       account( o.account ),
-      active( o.active ),
       details( to_string( o.details ) ),
       url( to_string( o.url ) ),
       json( to_string( o.json ) ),
       mediator_bond( o.mediator_bond ),
       mediation_virtual_position( o.mediation_virtual_position ),
+      last_updated( o.last_updated ),
       created( o.created ),
-      last_updated( o.last_updated ){}
+      active( o.active ){}
    
    mediator_api_obj(){}
 
    mediator_id_type        id;
    account_name_type       account;                     ///< The name of the account that owns the mediator.
-   bool                    active;                      ///< True if the mediator is active, set false to deactivate.
-   string                  details;                     ///< The mediator's details description. 
-   string                  url;                         ///< The mediator's reference URL. 
-   string                  json;                        ///< Json metadata of the mediator, including additional outside of consensus APIs and services. 
+   string                  details;                     ///< The mediator's details description.
+   string                  url;                         ///< The mediator's reference URL.
+   string                  json;                        ///< Json metadata of the mediator, including additional outside of consensus APIs and services.
    asset                   mediator_bond;               ///< Core Asset staked in mediation bond for selection.
    uint128_t               mediation_virtual_position;  ///< Quantitative ranking of selection for mediation.
-   time_point              created;                     ///< The time the mediator was created.
    time_point              last_updated;                ///< The time the mediator was last updated.
+   time_point              created;                     ///< The time the mediator was created.
+   bool                    active;                      ///< True if the mediator is active, set false to deactivate.
 };
 
 
-struct community_enterprise_api_obj
+struct enterprise_api_obj
 {
-   community_enterprise_api_obj( const chain::community_enterprise_object& o ):
+   enterprise_api_obj( const chain::enterprise_object& o ):
       id( o.id ),
-      creator( o.creator ),
+      account( o.account ),
       enterprise_id( to_string( o.enterprise_id ) ),
-      active( o.active ),
-      approved_milestones( o.approved_milestones ),
-      claimed_milestones( o.claimed_milestones ),
       details( to_string( o.details ) ),
       url( to_string( o.url ) ),
       json( to_string( o.json ) ),
-      begin( o.begin ),
-      end( o.end ),
-      expiration( o.expiration ),
-      daily_budget( o.daily_budget ),
-      duration( o.duration ),
-      pending_budget( o.pending_budget ),
-      total_distributed( o.total_distributed ),
-      days_paid( o.days_paid ),
-      total_approvals( o.total_approvals ),
-      total_voting_power( o.total_voting_power.value ),
-      total_producer_approvals( o.total_producer_approvals ),
-      total_producer_voting_power( o.total_producer_voting_power.value ),
-      current_approvals( o.current_approvals ),
-      current_voting_power( o.current_voting_power.value ),
-      current_producer_approvals( o.current_producer_approvals ),
-      current_producer_voting_power( o.current_producer_voting_power.value ),
-      created( o.created )
-      {
-         for( auto beneficiary : o.beneficiaries )
-         {
-            beneficiaries[ beneficiary.first ] = beneficiary.second;
-         }
-         for( auto milestone : o.milestone_shares )
-         {
-            milestone_shares.push_back( milestone );
-         }
-      }
+      budget( o.budget ),
+      distributed( o.distributed ),
+      vote_count( o.vote_count ),
+      voting_power( o.voting_power.value ),
+      producer_vote_count( o.producer_vote_count ),
+      producer_voting_power( o.producer_voting_power.value ),
+      funder_count( o.funder_count ),
+      total_funding( o.total_funding ),
+      net_sqrt_voting_power( o.net_sqrt_voting_power ),
+      net_sqrt_funding( o.net_sqrt_funding ),
+      last_updated( o.last_updated ),
+      created( o.created ),
+      active( o.active ),
+      approved( o.approved ){}
 
-   community_enterprise_api_obj(){}
+   enterprise_api_obj(){}
 
-   community_enterprise_id_type       id;
-   account_name_type                  creator;                                    ///< The name of the governance account that created the community enterprise proposal.
-   string                             enterprise_id;                              ///< UUIDv4 for referring to the proposal.
-   bool                               active;                                     ///< True if the project is active, set false to deactivate.
-   map< account_name_type, uint16_t > beneficiaries;                              ///< Map of account names and percentages of budget value.
-   vector< uint16_t >                 milestone_shares;                           ///< Ordered vector of release milestone descriptions.
-   int16_t                            approved_milestones;                        ///< Number of the last approved milestone by the community.
-   int16_t                            claimed_milestones;                         ///< Number of milestones claimed for release.
-   string                             details;                                    ///< The proposals's details description. 
-   string                             url;                                        ///< The proposals's reference URL. 
-   string                             json;                                       ///< Json metadata of the proposal. 
-   time_point                         begin;                                      ///< Enterprise proposal start time. If the proposal is not approved by the start time, it is rejected. 
-   time_point                         end;                                        ///< Enterprise proposal end time. Determined by start plus remaining interval number of days.
-   time_point                         expiration;                                 ///< Time that the proposal expires, and transfers all remaining pending budget back to the community fund. 
-   asset                              daily_budget;                               ///< Daily amount of Core asset requested for project compensation and funding.
-   uint16_t                           duration;                                   ///< Number of days that the proposal lasts for. 
-   asset                              pending_budget;                             ///< Funds held in the proposal for release. 
-   asset                              total_distributed;                          ///< Total amount of funds distributed for the proposal. 
-   uint16_t                           days_paid;                                  ///< Number of days that the proposal has been paid for. 
-   uint32_t                           total_approvals;                            ///< The overall number of accounts that support the enterprise proposal.
-   int64_t                            total_voting_power;                         ///< The oveall amount of voting power that supports the enterprise proposal.
-   uint32_t                           total_producer_approvals;                   ///< The overall number of top 50 producers that support the enterprise proposal.
-   int64_t                            total_producer_voting_power;                ///< The overall amount of producer voting power that supports the enterprise proposal.
-   uint32_t                           current_approvals;                          ///< The number of accounts that support the latest claimed milestone.
-   int64_t                            current_voting_power;                       ///< The amount of voting power that supports the latest claimed milestone.
-   uint32_t                           current_producer_approvals;                 ///< The number of top 50 producers that support the latest claimed milestone.
-   int64_t                            current_producer_voting_power;              ///< The amount of producer voting power that supports the latest claimed milestone.
-   time_point                         created;                                    ///< The time the proposal was created.
+   enterprise_id_type                 id;
+   account_name_type                  account;                       ///< The name of the governance account that created the enterprise proposal.
+   string                             enterprise_id;                 ///< UUIDv4 for referring to the proposal.
+   string                             details;                       ///< The proposals's details description.
+   string                             url;                           ///< The proposals's reference URL.
+   string                             json;                          ///< JSON metadata of the proposal.
+   asset                              budget;                        ///< Amount of Currency Asset requested for project funding.
+   asset                              distributed;                   ///< Total amount of funds distributed to the proposal's creator.
+   uint32_t                           vote_count;                    ///< The number of accounts that support the Enterprise proposal.
+   int64_t                            voting_power;                  ///< The oveall amount of voting power that supports the enterprise proposal.
+   uint32_t                           producer_vote_count;           ///< The overall number of top 50 producers that support the enterprise proposal.
+   int64_t                            producer_voting_power;         ///< The overall amount of producer voting power that supports the enterprise proposal.
+   uint32_t                           funder_count;                  ///< The number of accounts that have sent direct funding to the enterprise proposal.
+   asset                              total_funding;                 ///< The overall amount of producer voting power that supports the enterprise proposal.
+   uint128_t                          net_sqrt_voting_power;         ///< Sum of all of the square roots of the voting power of each vote.
+   uint128_t                          net_sqrt_funding;              ///< Sum of all of the square roots of the total funding amount of each vote.
+   time_point                         last_updated;                  ///< Time the Enterprise was last updated.
+   time_point                         created;                       ///< Time the Enterprise was created.
+   bool                               active;                        ///< True if the Enterprise is active, set false to deactivate.
+   bool                               approved;                      ///< True when the Enterprise proposal has reached approval status.
 };
 
-class enterprise_approval_object : public object< enterprise_approval_object_type, enterprise_approval_object >
-   {
-      enterprise_approval_object() = delete;
 
-      public:
-         template< typename Constructor, typename Allocator >
-         enterprise_approval_object( Constructor&& c, allocator< Allocator > a ) :
-         enterprise_id(a)
-         {
-            c( *this );
-         }
-
-         id_type                        id;
-
-         account_name_type              account;                   ///< Account approving the enterprise Milestone.
-
-         account_name_type              creator;                   ///< The name of the account that created the community enterprise proposal.
-
-         shared_string                  enterprise_id;             ///< UUIDv4 referring to the proposal being claimed.
-
-         uint16_t                       vote_rank;                 ///< The vote rank of the approval for enterprise.
-
-         int16_t                        milestone;                 ///< Number of the milestone being approved for release.
-   };
-
-struct enterprise_approval_api_obj
+struct enterprise_vote_api_obj
 {
-   enterprise_approval_api_obj( const chain::enterprise_approval_object& o ):
+   enterprise_vote_api_obj( const chain::enterprise_vote_object& o ):
       id( o.id ),
+      voter( o.voter ),
       account( o.account ),
-      creator( o.creator ),
       enterprise_id( to_string( o.enterprise_id ) ),
       vote_rank( o.vote_rank ),
-      milestone( o.milestone ){}
+      last_updated( o.last_updated ),
+      created( o.created ){}
 
-   enterprise_approval_api_obj(){}
+   enterprise_vote_api_obj(){}
 
-   enterprise_approval_id_type       id;
-   account_name_type                  account;                   ///< Account approving the enterprise Milestone.
-   account_name_type                  creator;                   ///< The name of the account that created the community enterprise proposal.
-   string                             enterprise_id;             ///< UUIDv4 referring to the proposal being claimed.
-   uint16_t                           vote_rank;                 ///< The vote rank of the approval for enterprise.
-   int16_t                            milestone;                 ///< Number of the milestone being approved for release.
+   enterprise_vote_id_type            id;
+   account_name_type                  voter;                   ///< Account voting for the enterprise proposal.
+   account_name_type                  account;                 ///< The name of the account that created the community enterprise proposal.
+   string                             enterprise_id;           ///< UUIDv4 referring to the proposal being claimed.
+   uint16_t                           vote_rank;               ///< The vote rank of the approval for enterprise.
+   time_point                         last_updated;            ///< Time the Enterprise vote was last updated.
+   time_point                         created;                 ///< Time the Enterprise vote was created.
+};
+
+
+struct enterprise_fund_api_obj
+{
+   enterprise_fund_api_obj( const chain::enterprise_fund_object& o ):
+      id( o.id ),
+      funder( o.funder ),
+      account( o.account ),
+      enterprise_id( to_string( o.enterprise_id ) ),
+      amount( o.amount ){}
+
+   enterprise_fund_api_obj(){}
+
+   enterprise_fund_id_type            id;
+   account_name_type                  funder;                  ///< Account funding the enterprise proposal.
+   account_name_type                  account;                 ///< The name of the account that created the community enterprise proposal.
+   string                             enterprise_id;           ///< UUIDv4 referring to the proposal being claimed.
+   asset                              amount;                  ///< The vote rank of the approval for enterprise.
+   time_point                         last_updated;            ///< Time the Enterprise funding amount was last updated.
+   time_point                         created;                 ///< Time the Enterprise funding contribution was created.
 };
 
 
@@ -1298,30 +1301,33 @@ struct comment_api_obj
       id( o.id ),
       author( o.author ),
       permlink( to_string( o.permlink ) ),
-      title( to_string( o.title ) ),
-      post_type( post_format_values[ int( o.post_type ) ]),
-      public_key( o.public_key ),
-      encrypted( o.is_encrypted() ),
-      reach( feed_reach_values[ int( o.reach ) ] ),
-      reply_connection( connection_tier_values[ int( o.reply_connection ) ] ),
-      community( o.community ),
-      body( to_string( o.body ) ),
-      ipfs( to_string( o.ipfs ) ),
-      magnet( to_string( o.magnet ) ),
-      url( to_string( o.url ) ),
-      interface( o.interface ),
-      rating( o.rating ),
-      language( to_string( o.language ) ),
-      root_comment( o.root_comment ),
       parent_author( o.parent_author ),
       parent_permlink( to_string( o.parent_permlink ) ),
-      json( to_string( o.json ) ),    
-      category( to_string( o.category ) ),
+      title( to_string( o.title ) ),
+      body( to_string( o.body ) ),
+      body_private( to_string( o.body_private ) ),
+      url( to_string( o.url ) ),
+      url_private( to_string( o.url_private ) ),
+      ipfs( to_string( o.ipfs ) ),
+      ipfs_private( to_string( o.ipfs_private ) ),
+      magnet( to_string( o.magnet ) ),
+      magnet_private( to_string( o.magnet_private ) ),
+      json( to_string( o.json ) ),
+      json_private( to_string( o.json_private ) ),
+      language( to_string( o.language ) ),
+      public_key( o.public_key ),
+      community( o.community ),
+      interface( o.interface ),
       latitude( o.latitude ),
       longitude( o.longitude ),
       comment_price( o.comment_price ),
-      reply_price( o.reply_price ),
       premium_price( o.premium_price ),
+      rating( o.rating ),
+      root_comment( o.root_comment ),
+      post_type( post_format_values[ int( o.post_type ) ]),
+      reach( feed_reach_values[ int( o.reach ) ] ),
+      reply_connection( connection_tier_values[ int( o.reply_connection ) ] ),
+      category( to_string( o.category ) ),
       last_updated( o.last_updated ),
       created( o.created ),
       active( o.active ),
@@ -1360,6 +1366,7 @@ struct comment_api_obj
       allow_shares( o.allow_shares ),
       allow_curation_rewards( o.allow_curation_rewards ),
       root( o.root ),
+      encrypted( o.is_encrypted() ),
       deleted( o.deleted )
       {
          for( auto tag : o.tags )
@@ -1369,6 +1376,10 @@ struct comment_api_obj
          for( auto name : o.collaborating_authors )
          {
             collaborating_authors.push_back( name );
+         }
+         for( auto name : o.supernodes )
+         {
+            supernodes.push_back( name );
          }
          for( auto pr: o.payments_received )
          {
@@ -1385,83 +1396,88 @@ struct comment_api_obj
       
    comment_api_obj(){}
 
-   comment_id_type                id;
-   account_name_type              author;                       ///< Name of the account that created the post.
-   string                         permlink;                     ///< Unique identifing string for the post.
-   string                         title;                        ///< Name of the post for reference.
-   string                         post_type;                    ///< The type of post that is being created, image, text, article, video etc. 
-   public_key_type                public_key;                   ///< The public key used to encrypt the post, holders of the private key may decrypt.
-   bool                           encrypted;                    ///< True if the post is encrypted for a specific audience. 
-   string                         reach;                        ///< The reach of the post across followers, connections, friends and companions.
-   string                         reply_connection;             ///< Level of connection that can reply to the comment. 
-   community_name_type            community;                    ///< The name of the community to which the post is uploaded to. Null string if no community. 
-   vector< tag_name_type >        tags;                         ///< Set of tags for sorting the post by.
-   vector< account_name_type >    collaborating_authors;        ///< Set of accounts for sorting the post by.
-   string                         body;                         ///< String containing text for display when the post is opened.
-   string                         ipfs;                         ///< String containing a display image or video file as an IPFS file hash.
-   string                         magnet;                       ///< String containing a bittorrent magnet link to a file swarm.
-   string                         url;                          ///< String containing a URL for the post to link to.
-   account_name_type              interface;                    ///< Name of the interface account that was used to broadcast the transaction and view the post.
-   uint16_t                       rating;                       ///< User nominated rating as to the maturity of the content, and display sensitivity. 
-   string                         language;                     ///< String containing a two letter language code that the post is broadcast in.
-   comment_id_type                root_comment;                 ///< The root post that the comment is an ancestor of. 
-   account_name_type              parent_author;                ///< Account that created the post this post is replying to, empty if root post. 
-   string                         parent_permlink;              ///< permlink of the post this post is replying to, empty if root post. 
-   string                         json;                         ///< IPFS link to file containing - Json metadata of the Title, Link, and additional interface specific data relating to the post.
-   string                         category;
-   double                         latitude;                     ///< Latitude co-ordinates of the comment.
-   double                         longitude;                    ///< Longitude co-ordinates of the comment.
-   asset                          comment_price;                ///< The price paid to create a comment
-   asset                          reply_price;                  ///< Price paid to create a reply to the post
-   asset                          premium_price;                ///< Price paid to unlock premium post. 
-   vector< pair< account_name_type, asset > >  payments_received;    ///< Map of all transfers received that referenced this comment. 
-   vector< beneficiary_route_type > beneficiaries;
-   time_point                     last_updated;                 ///< The time the comment was last edited by the author
-   time_point                     created;                      ///< Time that the comment was created.
-   time_point                     active;                       ///< The last time this post was replied to.
-   time_point                     last_payout;                  ///< The last time that the post received a content reward payout
-   int64_t                        author_reputation;            ///< Used to measure author lifetime rewards, relative to other accounts.
-   uint16_t                       depth;                        ///< used to track max nested depth
-   uint32_t                       children;                     ///< The total number of children, grandchildren, posts with this as root comment.
-   int32_t                        net_votes;                    ///< The amount of upvotes, minus downvotes on the post.
-   uint32_t                       view_count;                   ///< The amount of views on the post.
-   uint32_t                       share_count;                  ///< The amount of shares on the post.
-   int64_t                        net_reward;                   ///< Net reward is the sum of all vote, view, share and comment power.
-   int64_t                        vote_power;                   ///< Sum of weighted voting power from votes.
-   int64_t                        view_power;                   ///< Sum of weighted voting power from viewers.
-   int64_t                        share_power;                  ///< Sum of weighted voting power from shares.
-   int64_t                        comment_power;                ///< Sum of weighted voting power from comments.
-   time_point                     cashout_time;                 ///< 24 hours from the weighted average of vote time
-   uint32_t                       cashouts_received;            ///< Number of times that the comment has received content rewards
-   uint128_t                      total_vote_weight;            ///< the total weight of votes, used to calculate pro-rata share of curation payouts
-   uint128_t                      total_view_weight;            ///< the total weight of views, used to calculate pro-rata share of curation payouts
-   uint128_t                      total_share_weight;           ///< the total weight of shares, used to calculate pro-rata share of curation payouts
-   uint128_t                      total_comment_weight;         ///< the total weight of comments, used to calculate pro-rata share of curation payouts
-   asset                          total_payout_value;           ///< The total payout this comment has received over time, measured in USD
-   asset                          curator_payout_value;         
-   asset                          beneficiary_payout_value;
-   asset                          content_rewards;
-   int64_t                        percent_liquid;
-   int64_t                        reward;                       ///< The amount of reward_curve this comment is responsible for in its root post.
-   uint128_t                      weight;                       ///< Used to define the comment curation reward this comment receives.
-   uint128_t                      max_weight;                   ///< Used to define relative contribution of this comment to rewards.
-   asset                          max_accepted_payout;          ///< USD value of the maximum payout this post will receive
-   asset_symbol_type              reward_currency;              ///< The currency asset that the post can earn content rewards in.
-   comment_reward_curve           reward_curve;                 ///< The components of the reward curve determined at the time of creating the post.
-   bool                           allow_replies;                ///< allows a post to receive replies.
-   bool                           allow_votes;                  ///< allows a post to receive votes.
-   bool                           allow_views;                  ///< allows a post to receive views.
-   bool                           allow_shares;                 ///< allows a post to receive shares.
-   bool                           allow_curation_rewards;       ///< Allows a post to distribute curation rewards.
-   bool                           root;                         ///< True if post is a root post. 
-   bool                           deleted;                      ///< True if author selects to remove from display in all interfaces, removed from API node distribution, cannot be interacted with.
+   comment_id_type                   id;
+   account_name_type                 author;                              ///< Name of the account that created the post.
+   string                            permlink;                            ///< Unique identifing string for the post.
+   account_name_type                 parent_author;                       ///< Account that created the post this post is replying to, empty if root post.
+   string                            parent_permlink;                     ///< permlink of the post this post is replying to, empty if root post.
+   string                            title;                               ///< String containing title text.
+   string                            body;                                ///< Public text for display when the post is opened.
+   string                            body_private;                        ///< Encrypted and private text for display when the post is opened and decrypted.
+   string                            url;                                 ///< Plaintext URL for the post to link to. For a livestream post, should link to the streaming server embed.
+   string                            url_private;                         ///< Encrypted and private Ciphertext URL for the post to link to. For a livestream post, should link to the streaming server embed.
+   string                            ipfs;                                ///< Public IPFS file hash: images, videos, files.
+   string                            ipfs_private;                        ///< Private and encrypted IPFS file hash: images, videos, files.
+   string                            magnet;                              ///< Bittorrent magnet links to torrent file swarms: videos, files.
+   string                            magnet_private;                      ///< Bittorrent magnet links to Private and Encrypted torrent file swarms: videos, files.
+   string                            json;                                ///< JSON string of additional interface specific data relating to the post.
+   string                            json_private;                        ///< Private and Encrypted JSON string of additional interface specific data relating to the post.
+   string                            language;                            ///< String containing a two letter language code that the post is broadcast in.
+   public_key_type                   public_key;                          ///< The public key used to encrypt the post, holders of the private key may decrypt. 
+   community_name_type               community;                           ///< The name of the community to which the post is uploaded to. Null string if no community.
+   vector< tag_name_type >           tags;                                ///< Set of string tags for sorting the post by.
+   vector< account_name_type >       collaborating_authors;               ///< Accounts that are able to edit the post as shared authors.
+   vector< account_name_type >       supernodes;                          ///< Name of the Supernodes that the IPFS file is hosted with. Each should additionally hold the private key.
+   account_name_type                 interface;                           ///< Name of the interface account that was used to broadcast the transaction and view the post.
+   double                            latitude;                            ///< Latitude co-ordinates of the comment.
+   double                            longitude;                           ///< Longitude co-ordinates of the comment.
+   asset                             comment_price;                       ///< The price paid to create a comment.
+   asset                             premium_price;                       ///< The price paid to unlock the post's premium encryption.
+   uint16_t                          rating;                              ///< User nominated rating [1-10] as to the maturity of the content, and display sensitivity.
+   comment_id_type                   root_comment;                        ///< The root post that the comment is an ancestor of.
+   string                            post_type;                           ///< The type of post that is being created, image, text, article, video etc.
+   string                            reach;                               ///< The reach of the post across followers, connections, friends and companions.
+   string                            reply_connection;                    ///< Replies to the comment must be connected to the author to at least this level.
+   string                            category;                            ///< Permlink of root post that this comment is applied to.
+   vector< pair< account_name_type, asset > >  payments_received;         ///< Map of all transfers received that referenced this comment. 
+   vector< beneficiary_route_type >  beneficiaries;                       ///< Vector of beneficiary routes that receive a content reward distribution.
+   time_point                        last_updated;                        ///< The time the comment was last edited by the author
+   time_point                        created;                             ///< Time that the comment was created.
+   time_point                        active;                              ///< The last time this post was replied to.
+   time_point                        last_payout;                         ///< The last time that the post received a content reward payout
+   int64_t                           author_reputation;                   ///< Used to measure author lifetime rewards, relative to other accounts.
+   uint32_t                          depth;                               ///< Used to track max nested depth.
+   uint32_t                          children;                            ///< The total number of children, grandchildren, posts with this as root comment.
+   int32_t                           net_votes;                           ///< The amount of upvotes, minus downvotes on the post.
+   uint32_t                          view_count;                          ///< The amount of views on the post.
+   uint32_t                          share_count;                         ///< The amount of shares on the post.
+   int64_t                           net_reward;                          ///< Net reward is the sum of all vote, view, share and comment power.
+   int64_t                           vote_power;                          ///< Sum of weighted voting power from votes.
+   int64_t                           view_power;                          ///< Sum of weighted voting power from viewers.
+   int64_t                           share_power;                         ///< Sum of weighted voting power from shares.
+   int64_t                           comment_power;                       ///< Sum of weighted voting power from comments.
+   time_point                        cashout_time;                        ///< Next scheduled time to receive a content reward cashout.
+   uint32_t                          cashouts_received;                   ///< Number of times that the comment has received content rewards.
+   uint128_t                         total_vote_weight;                   ///< The total weight of votes, used to calculate pro-rata share of curation payouts.
+   uint128_t                         total_view_weight;                   ///< The total weight of views, used to calculate pro-rata share of curation payouts.
+   uint128_t                         total_share_weight;                  ///< The total weight of shares, used to calculate pro-rata share of curation payouts.
+   uint128_t                         total_comment_weight;                ///< The total weight of comments, used to calculate pro-rata share of curation payouts.
+   asset                             total_payout_value;                  ///< The total payout this comment has received over time, measured in USD.
+   asset                             curator_payout_value;                ///< The total payout this comment paid to curators, measured in USD.
+   asset                             beneficiary_payout_value;            ///< The total payout this comment paid to beneficiaries, measured in USD.
+   asset                             content_rewards;                     ///< The Total amount of content rewards that the post has earned, measured in reward currency. 
+   uint32_t                          percent_liquid;                      ///< The percentage of content rewards that should be paid in liquid reward balance. 0 to stake all rewards.
+   int64_t                           reward;                              ///< The amount of reward_curve this comment is responsible for in its root post.
+   uint128_t                         weight;                              ///< Used to define the comment curation reward this comment receives.
+   uint128_t                         max_weight;                          ///< Used to define relative contribution of this comment to rewards.
+   asset                             max_accepted_payout;                 ///< USD value of the maximum payout this post will receive.
+   asset_symbol_type                 reward_currency;                     ///< The currency asset that the post can earn content rewards in.
+   comment_reward_curve              reward_curve;                        ///< The components of the reward curve determined at the time of creating the post.
+   bool                              allow_replies;                       ///< allows a post to receive replies.
+   bool                              allow_votes;                         ///< allows a post to receive votes.
+   bool                              allow_views;                         ///< allows a post to receive views.
+   bool                              allow_shares;                        ///< allows a post to receive shares.
+   bool                              allow_curation_rewards;              ///< Allows a post to distribute curation rewards.
+   bool                              root;                                ///< True if post is a root post.
+   bool                              encrypted;                           ///< True if the post is encrypted. False if it is plaintext.
+   bool                              deleted;                             ///< True if author selects to remove from display in all interfaces, removed from API node distribution, cannot be interacted with.
+   
 };
 
 
-
-struct moderation_tag_api_obj
+struct comment_moderation_api_obj
 {
-   moderation_tag_api_obj( const chain::moderation_tag_object& m ) :
+   comment_moderation_api_obj( const chain::comment_moderation_object& m ) :
       id( m.id ),
       moderator( m.moderator ),
       comment( m.comment ),
@@ -1479,9 +1495,9 @@ struct moderation_tag_api_obj
          }
       }
 
-   moderation_tag_api_obj(){}
+   comment_moderation_api_obj(){}
 
-   moderation_tag_id_type         id;
+   comment_moderation_id_type         id;
    account_name_type              moderator;        ///< Name of the moderator or goverance account that created the comment tag.
    comment_id_type                comment;          ///< ID of the comment.
    community_name_type            community;        ///< The name of the community to which the post is uploaded to.
@@ -1652,7 +1668,7 @@ struct poll_vote_api_obj
 
 struct blog_api_obj
 {
-   blog_api_obj( const chain::blog_object& o ):
+   blog_api_obj( const chain::comment_blog_object& o ):
       id( o.id ),
       account( o.account ),
       community( o.community ),
@@ -1671,7 +1687,7 @@ struct blog_api_obj
       
    blog_api_obj(){}
 
-   blog_id_type                            id;
+   comment_blog_id_type                            id;
    account_name_type                       account;               ///< Blog or sharing account for account type blogs, null for other types.
    community_name_type                     community;             ///< Community posted or shared to for community type blogs.
    tag_name_type                           tag;                   ///< Tag posted or shared to for tag type blogs.          
@@ -1686,7 +1702,7 @@ struct blog_api_obj
 
 struct feed_api_obj
 {
-   feed_api_obj( const chain::feed_object& o ):
+   feed_api_obj( const chain::comment_feed_object& o ):
       id( o.id ),
       account( o.account ),
       comment( o.comment ),
@@ -1717,7 +1733,7 @@ struct feed_api_obj
 
    feed_api_obj(){}
 
-   feed_id_type                                id;
+   comment_feed_id_type                                id;
    account_name_type                           account;               ///< Account that should see comment in their feed.
    comment_id_type                             comment;               ///< ID of comment being shared
    string                                      feed_type;             ///< Type of feed, follow, connection, community, tag etc. 
@@ -1743,12 +1759,22 @@ struct community_api_obj
       id( b.id ),
       name( b.name ),
       founder( b.founder ),
-      community_privacy( community_privacy_values[ int( b.community_privacy ) ] ),
-      community_public_key( b.community_public_key ),
+      display_name( to_string( b.display_name ) ),
+      details( to_string( b.details ) ),
+      url( to_string( b.url ) ),
+      profile_image( to_string( b.profile_image ) ),
+      cover_image( to_string( b.cover_image ) ),
       json( to_string( b.json ) ),
       json_private( to_string( b.json_private ) ),
       pinned_author( b.pinned_author ),
       pinned_permlink( to_string( b.pinned_permlink ) ),
+      community_privacy( community_privacy_values[ int( b.community_privacy ) ] ),
+      community_member_key( b.community_member_key ),
+      community_moderator_key( b.community_moderator_key ),
+      community_admin_key( b.community_admin_key ),
+      max_rating( b.max_rating ),
+      flags( b.flags ),
+      permissions( b.permissions ),
       subscriber_count( b.subscriber_count ),
       post_count( b.post_count ),
       comment_count( b.comment_count ),
@@ -1760,31 +1786,48 @@ struct community_api_obj
       last_updated( b.last_updated ),
       last_post( b.last_post ),
       last_root_post( b.last_root_post ),
-      active( b.active ){}
+      active( b.active )
+      {
+         for( auto t : b.tags )
+         {
+            tags.insert( t );
+         }
+      }
 
    community_api_obj(){}
 
    community_id_type                  id;
-   community_name_type                name;                       ///< Name of the community, lowercase letters, numbers and hyphens only.
-   account_name_type                  founder;                    ///< The account that created the community, able to add and remove administrators.
-   string                             community_privacy;          ///< Community privacy level, open, public, private, or exclusive
-   public_key_type                    community_public_key;       ///< Key used for encrypting and decrypting posts. Private key shared with accepted members.
-   string                             json;                       ///< Public plaintext json information about the community, its topic and rules.
-   string                             json_private;               ///< Private ciphertext json information about the community.
-   account_name_type                  pinned_author;              ///< Author of the Post pinned to the top of the community's page. 
-   string                             pinned_permlink;            ///< Permlink of the Post pinned to the top of the community's page. 
-   uint32_t                           subscriber_count;           ///< number of accounts that are subscribed to the community
-   uint32_t                           post_count;                 ///< number of posts created in the community
-   uint32_t                           comment_count;              ///< number of comments on posts in the community
-   uint32_t                           vote_count;                 ///< accumulated number of votes received by all posts in the community
-   uint32_t                           view_count;                 ///< accumulated number of views on posts in the community 
-   uint32_t                           share_count;                ///< accumulated number of shares on posts in the community 
-   asset_symbol_type                  reward_currency;            ///< The Currency asset used for content rewards in the community. 
-   time_point                         created;                    ///< Time that the community was created.
-   time_point                         last_updated;      ///< Time that the community's details were last updated.
-   time_point                         last_post;                  ///< Time that the user most recently created a comment.
-   time_point                         last_root_post;             ///< Time that the community last created a post. 
-   bool                               active;                     ///< True when community is active.
+   community_name_type                name;                               ///< Name of the community, lowercase letters, numbers and hyphens only.
+   account_name_type                  founder;                            ///< The account that created the community, able to add and remove administrators.
+   string                             display_name;                       ///< The full name of the community (non-consensus), encrypted with the member key if private community.
+   string                             details;                            ///< Describes the community and what it is about and the rules of posting, encrypted with the member key if private community.
+   string                             url;                                ///< Community URL link for more details, encrypted with the member key if private community.
+   string                             profile_image;                      ///< IPFS Reference of the Icon image of the community, encrypted with the member key if private community.
+   string                             cover_image;                        ///< IPFS Reference of the Cover image of the community, encrypted with the member key if private community.
+   string                             json;                               ///< Public plaintext JSON information about the community, its topic and rules.
+   string                             json_private;                       ///< Private ciphertext JSON information about the community, encrypted with the member key if private community.
+   account_name_type                  pinned_author;                      ///< Author of Post pinned to the top of the community's page.
+   string                             pinned_permlink;                    ///< Permlink of Post pinned to the top of the community's page, encrypted with the member key if private community.
+   set< tag_name_type >               tags;                               ///< Set of tags of the topics within the community to enable discovery.
+   string                             community_privacy;                  ///< Community privacy level: Open_Public, General_Public, Exclusive_Public, Closed_Public, Open_Private, General_Private, Exclusive_Private, Closed_Private.
+   public_key_type                    community_member_key;               ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted members.
+   public_key_type                    community_moderator_key;            ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted moderators.
+   public_key_type                    community_admin_key;                ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted admins.
+   uint16_t                           max_rating;                         ///< Highest severity rating that posts in the community can have.
+   uint32_t                           flags;                              ///< The currently active flags on the community for content settings.
+   uint32_t                           permissions;                        ///< The flag permissions that can be activated on the community for content settings.
+   uint32_t                           subscriber_count;                   ///< Number of accounts that are subscribed to the community.
+   uint32_t                           post_count;                         ///< Number of posts created in the community.
+   uint32_t                           comment_count;                      ///< Number of comments on posts in the community.
+   uint32_t                           vote_count;                         ///< Accumulated number of votes received by all posts in the community.
+   uint32_t                           view_count;                         ///< Accumulated number of views on posts in the community.
+   uint32_t                           share_count;                        ///< Accumulated number of shares on posts in the community.
+   asset_symbol_type                  reward_currency;                    ///< The Currency asset used for content rewards in the community. 
+   time_point                         created;                            ///< Time that the community was created.
+   time_point                         last_updated;                       ///< Time that the community's details were last updated.
+   time_point                         last_post;                          ///< Time that the user most recently created a comment.
+   time_point                         last_root_post;                     ///< Time that the community last created a post.
+   bool                               active;                             ///< True if the community is active, false to suspend all interaction.
 };
 
 
@@ -1833,7 +1876,8 @@ struct community_event_api_obj
    community_event_api_obj( const chain::community_event_object& o ):
       id( o.id ),
       account( o.account ),
-      community( o.community),
+      community( o.community ),
+      event_id( to_string( o.event_id ) ),
       event_name( to_string( o.event_name ) ),
       location( to_string( o.location ) ),
       latitude( o.latitude ),
@@ -1844,7 +1888,8 @@ struct community_event_api_obj
       event_start_time( o.event_start_time ),
       event_end_time( o.event_end_time ),
       last_updated( o.last_updated ),
-      created( o.created )
+      created( o.created ),
+      active( o.active )
       {
          for( auto name : o.interested )
          {
@@ -1865,6 +1910,7 @@ struct community_event_api_obj
    community_event_id_type               id;                 
    account_name_type                     account;                ///< Account that created the event.
    community_name_type                   community;              ///< Community being invited to join.
+   string                                event_id;               ///< UUIDv4 referring to the event within the Community. Unique on community/event_id.
    string                                event_name;             ///< The Name of the event.
    string                                location;               ///< Address location of the event.
    double                                latitude;               ///< Latitude co-ordinates of the event.
@@ -1880,6 +1926,7 @@ struct community_event_api_obj
    time_point                            event_end_time;         ///< Time that the event will end.
    time_point                            last_updated;           ///< Time that the event was last updated.
    time_point                            created;                ///< Time that the event was created.
+   bool                                  active;                 ///< True if the community is active, false to suspend all interaction to cancel or end the event.
 };
 
 
@@ -2617,7 +2664,7 @@ struct product_auction_bid_api_obj
       bid_asset( o.bid_asset ),
       bid_price_commitment( o.bid_price_commitment ),
       blinding_factor( o.blinding_factor ),
-      public_bid_amount( o.public_bid_amount ),
+      public_bid_amount( o.public_bid_amount.value ),
       memo( to_string( o.memo ) ),
       json( to_string( o.json ) ),
       bid_public_key( o.bid_public_key ),
@@ -2640,7 +2687,7 @@ struct product_auction_bid_api_obj
    asset_symbol_type                 bid_asset;              ///< The Symbol of the asset being bidded.
    commitment_type                   bid_price_commitment;   ///< Concealed value of the bid price amount.
    blind_factor_type                 blinding_factor;        ///< Factor to blind the bid price.
-   share_type                        public_bid_amount;      ///< Set to 0 initially for concealed bid, revealed to match commitment. Revealed in initial bid if open.
+   int64_t                           public_bid_amount;      ///< Set to 0 initially for concealed bid, revealed to match commitment. Revealed in initial bid if open.
    string                            memo;                   ///< The memo for the transaction, encryption on the memo is advised.
    string                            json;                   ///< Additional JSON object attribute details.
    public_key_type                   bid_public_key;         ///< the Public key used to encrypt the memo and shipping address. 
@@ -3015,7 +3062,7 @@ struct currency_data_api_obj
       producer_reward_percent( a.producer_reward_percent ),
       supernode_reward_percent( a.supernode_reward_percent ),
       power_reward_percent( a.power_reward_percent ),
-      community_fund_reward_percent( a.community_fund_reward_percent ),
+      enterprise_fund_reward_percent( a.enterprise_fund_reward_percent ),
       development_reward_percent( a.development_reward_percent ),
       marketing_reward_percent( a.marketing_reward_percent ),
       advocacy_reward_percent( a.advocacy_reward_percent ),
@@ -3039,7 +3086,7 @@ struct currency_data_api_obj
    uint16_t                        producer_reward_percent;            ///< Percentage of reward paid to block producers.
    uint16_t                        supernode_reward_percent;           ///< Percentage of reward paid to supernode operators.
    uint16_t                        power_reward_percent;               ///< Percentage of reward paid to staked currency asset holders.
-   uint16_t                        community_fund_reward_percent;      ///< Percentage of reward paid to community fund proposals.
+   uint16_t                        enterprise_fund_reward_percent;      ///< Percentage of reward paid to community fund proposals.
    uint16_t                        development_reward_percent;         ///< Percentage of reward paid to elected developers.
    uint16_t                        marketing_reward_percent;           ///< Percentage of reward paid to elected marketers.
    uint16_t                        advocacy_reward_percent;            ///< Percentage of reward paid to elected advocates.
@@ -3147,12 +3194,6 @@ struct equity_data_api_obj
       symbol( e.symbol ),
       last_dividend( e.last_dividend ),
       dividend_share_percent( e.dividend_share_percent ),
-      liquid_dividend_percent( e.liquid_dividend_percent ),
-      staked_dividend_percent( e.staked_dividend_percent ),
-      savings_dividend_percent( e.savings_dividend_percent ),
-      liquid_voting_rights( e.liquid_voting_rights ),
-      staked_voting_rights( e.staked_voting_rights ),
-      savings_voting_rights( e.savings_voting_rights ),
       min_active_time( e.min_active_time ),
       min_balance( e.min_balance.value ),
       min_producers( e.min_producers ),
@@ -3175,12 +3216,6 @@ struct equity_data_api_obj
    map< asset_symbol_type, asset >      dividend_pool;               ///< Assets pooled for distribution at the next interval.
    time_point                           last_dividend;               ///< Time that the asset last distributed a dividend.
    uint16_t                             dividend_share_percent;      ///< Percentage of incoming assets added to the dividends pool.
-   uint16_t                             liquid_dividend_percent;     ///< Percentage of equity dividends distributed to liquid balances.
-   uint16_t                             staked_dividend_percent;     ///< Percentage of equity dividends distributed to staked balances.
-   uint16_t                             savings_dividend_percent;    ///< Percentage of equity dividends distributed to savings balances.
-   uint16_t                             liquid_voting_rights;        ///< Amount of votes per asset conveyed to liquid holders of the asset.
-   uint16_t                             staked_voting_rights;        ///< Amount of votes per asset conveyed to staked holders of the asset.
-   uint16_t                             savings_voting_rights;       ///< Amount of votes per asset conveyed to savings holders of the asset
    fc::microseconds                     min_active_time;             ///< Time that account must have a recent activity reward within to earn dividend.
    int64_t                              min_balance;                 ///< Minimum amount of equity required to earn dividends.
    uint16_t                             min_producers;               ///< Minimum amount of producer votes required to earn dividends.
@@ -3914,7 +3949,7 @@ FC_REFLECT( node::app::reward_fund_api_obj,
          (producer_activity_reward_balance) 
          (supernode_reward_balance)
          (power_reward_balance)
-         (community_fund_balance)
+         (enterprise_fund_balance)
          (development_reward_balance)
          (marketing_reward_balance)
          (advocacy_reward_balance)
@@ -3967,7 +4002,7 @@ FC_REFLECT( node::app::account_api_obj,
          (recovery_account)
          (reset_account)
          (membership_interface)
-         (reset_account_delay_days)
+         (reset_delay_days)
          (referrer_rewards_percentage)
          (comment_count)
          (follower_count)
@@ -3991,7 +4026,7 @@ FC_REFLECT( node::app::account_api_obj,
          (officer_vote_count)
          (executive_board_vote_count)
          (governance_subscriptions)
-         (enterprise_approval_count)
+         (enterprise_vote_count)
          (recurring_membership)
          (created)
          (membership_expiration)
@@ -4068,6 +4103,8 @@ FC_REFLECT( node::app::account_executive_vote_api_obj,
          (executive_account)
          (role)
          (vote_rank)
+         (last_updated)
+         (created)
          );
 
 FC_REFLECT( node::app::account_officer_vote_api_obj,
@@ -4076,6 +4113,8 @@ FC_REFLECT( node::app::account_officer_vote_api_obj,
          (business_account)
          (officer_account)
          (vote_rank)
+         (last_updated)
+         (created)
          );
 
 FC_REFLECT( node::app::account_permission_api_obj,
@@ -4151,14 +4190,14 @@ FC_REFLECT( node::app::account_following_api_obj,
          (last_updated)
          );
 
-FC_REFLECT( node::app::tag_following_api_obj,
+FC_REFLECT( node::app::account_tag_following_api_obj,
          (id)
          (tag)
          (followers)
          (last_updated)
          );
 
-FC_REFLECT( node::app::connection_api_obj,
+FC_REFLECT( node::app::account_connection_api_obj,
          (id)
          (account_a)
          (encrypted_key_a)
@@ -4174,7 +4213,7 @@ FC_REFLECT( node::app::connection_api_obj,
          (created)
          );
 
-FC_REFLECT( node::app::connection_request_api_obj,
+FC_REFLECT( node::app::account_connection_request_api_obj,
          (id)
          (account)
          (requested_account)
@@ -4206,17 +4245,19 @@ FC_REFLECT( node::app::account_recovery_request_api_obj,
 FC_REFLECT( node::app::network_officer_api_obj,
          (id)
          (account)
-         (active)
-         (officer_approved)
          (officer_type)
          (details)
          (url)
          (json)
-         (created)
+         (reward_currency)
          (vote_count)
          (voting_power)
          (producer_vote_count)
          (producer_voting_power)
+         (last_updated)
+         (created)
+         (active)
+         (officer_approved)
          );
 
 FC_REFLECT( node::app::network_officer_vote_api_obj,
@@ -4225,23 +4266,25 @@ FC_REFLECT( node::app::network_officer_vote_api_obj,
          (network_officer)
          (officer_type)
          (vote_rank)
+         (last_updated)
+         (created)
          );
-
 
 FC_REFLECT( node::app::executive_board_api_obj,
          (id)
          (account)
-         (active)
-         (board_approved)
-         (budget)
          (details)
          (url)
          (json)
-         (created)
+         (budget)
          (vote_count)
          (voting_power)
          (producer_vote_count)
          (producer_voting_power)
+         (last_updated)
+         (created)
+         (active)
+         (board_approved)
          );
 
 FC_REFLECT( node::app::executive_board_vote_api_obj,
@@ -4249,21 +4292,24 @@ FC_REFLECT( node::app::executive_board_vote_api_obj,
          (account)
          (executive_board)
          (vote_rank)
+         (last_updated)
+         (created)
          );
 
 FC_REFLECT( node::app::governance_account_api_obj,
          (id)
          (account)
-         (active)
-         (account_approved)
          (details)
          (url)
          (json)
-         (created)
          (subscriber_count)
          (subscriber_power)
          (producer_subscriber_count)
          (producer_subscriber_power)
+         (last_updated)
+         (created)
+         (active)
+         (account_approved)
          );
 
 FC_REFLECT( node::app::governance_subscription_api_obj,
@@ -4271,12 +4317,13 @@ FC_REFLECT( node::app::governance_subscription_api_obj,
          (account)
          (governance_account)
          (vote_rank)
+         (last_updated)
+         (created)
          );
 
 FC_REFLECT( node::app::supernode_api_obj,
          (id)
          (account)
-         (active)
          (details)
          (url)
          (node_api_endpoint)
@@ -4285,79 +4332,83 @@ FC_REFLECT( node::app::supernode_api_obj,
          (ipfs_endpoint)
          (bittorrent_endpoint)
          (json)
-         (created)
          (storage_rewards)
          (daily_active_users)
          (monthly_active_users)
          (recent_view_weight)
-         (last_updated)
          (last_activation_time)
+         (last_updated)
+         (created)
+         (active)
          );
 
 FC_REFLECT( node::app::interface_api_obj,
          (id)
          (account)
-         (active)
          (details)
          (url)
          (json)
-         (created)
          (daily_active_users)
          (monthly_active_users)
          (last_updated)
+         (created)
+         (active)
          );
 
 FC_REFLECT( node::app::mediator_api_obj,
          (id)
          (account)
-         (active)
          (details)
          (url)
          (json)
          (mediator_bond)
          (mediation_virtual_position)
-         (created)
          (last_updated)
+         (created)
+         (active)
          );
 
-FC_REFLECT( node::app::community_enterprise_api_obj,
+FC_REFLECT( node::app::enterprise_api_obj,
          (id)
-         (creator)
+         (account)
          (enterprise_id)
-         (active)
-         (beneficiaries)
-         (milestone_shares)
-         (approved_milestones)
-         (claimed_milestones)
          (details)
          (url)
          (json)
-         (begin)
-         (end)
-         (expiration)
-         (daily_budget)
-         (duration)
-         (pending_budget)
-         (total_distributed)
-         (days_paid)
-         (total_approvals)
-         (total_voting_power)
-         (total_producer_approvals)
-         (total_producer_voting_power)
-         (current_approvals)
-         (current_voting_power)
-         (current_producer_approvals)
-         (current_producer_voting_power)
+         (budget)
+         (distributed)
+         (vote_count)
+         (voting_power)
+         (producer_vote_count)
+         (producer_voting_power)
+         (funder_count)
+         (total_funding)
+         (net_sqrt_voting_power)
+         (net_sqrt_funding)
+         (last_updated)
+         (created)
+         (active)
+         (approved)
+         );
+
+FC_REFLECT( node::app::enterprise_vote_api_obj,
+         (id)
+         (voter)
+         (account)
+         (enterprise_id)
+         (vote_rank)
+         (last_updated)
          (created)
          );
 
-FC_REFLECT( node::app::enterprise_approval_api_obj,
+FC_REFLECT( node::app::enterprise_fund_api_obj,
          (id)
+         (funder)
          (account)
-         (creator)
          (enterprise_id)
-         (vote_rank)
-         (milestone)
+         (amount)
+         (last_updated)
+         (created)
          );
 
 
@@ -4370,32 +4421,36 @@ FC_REFLECT( node::app::comment_api_obj,
          (id)
          (author)
          (permlink)
+         (parent_author)
+         (parent_permlink)
          (title)
-         (post_type)
+         (body)
+         (body_private)
+         (url)
+         (url_private)
+         (ipfs)
+         (ipfs_private)
+         (magnet)
+         (magnet_private)
+         (json)
+         (json_private)
+         (language)
          (public_key)
-         (encrypted)
-         (reach)
-         (reply_connection)
          (community)
          (tags)
          (collaborating_authors)
-         (body)
-         (ipfs)
-         (magnet)
-         (url)
+         (supernodes)
          (interface)
-         (rating)
-         (language)
-         (root_comment)
-         (parent_author)
-         (parent_permlink)
-         (json)
-         (category)
          (latitude)
          (longitude)
          (comment_price)
-         (reply_price)
          (premium_price)
+         (rating)
+         (root_comment)
+         (post_type)
+         (reach)
+         (reply_connection)
+         (category)
          (payments_received)
          (beneficiaries)
          (last_updated)
@@ -4436,10 +4491,11 @@ FC_REFLECT( node::app::comment_api_obj,
          (allow_shares)
          (allow_curation_rewards)
          (root)
+         (encrypted)
          (deleted)
          );
 
-FC_REFLECT( node::app::moderation_tag_api_obj,
+FC_REFLECT( node::app::comment_moderation_api_obj,
          (id)
          (moderator)
          (comment)
@@ -4542,12 +4598,23 @@ FC_REFLECT( node::app::community_api_obj,
          (id)
          (name)
          (founder)
-         (community_privacy)
-         (community_public_key)
+         (display_name)
+         (details)
+         (url)
+         (profile_image)
+         (cover_image)
          (json)
          (json_private)
          (pinned_author)
          (pinned_permlink)
+         (tags)
+         (community_privacy)
+         (community_member_key)
+         (community_moderator_key)
+         (community_admin_key)
+         (max_rating)
+         (flags)
+         (permissions)
          (subscriber_count)
          (post_count)
          (comment_count)
@@ -4583,6 +4650,7 @@ FC_REFLECT( node::app::community_event_api_obj,
          (id)
          (account)
          (community)
+         (event_id)
          (event_name)
          (location)
          (latitude)
@@ -4598,6 +4666,7 @@ FC_REFLECT( node::app::community_event_api_obj,
          (event_end_time)
          (last_updated)
          (created)
+         (active)
          );
 
 //=====================================//
@@ -5072,7 +5141,7 @@ FC_REFLECT( node::app::currency_data_api_obj,
          (producer_reward_percent)
          (supernode_reward_percent)
          (power_reward_percent)
-         (community_fund_reward_percent)
+         (enterprise_fund_reward_percent)
          (development_reward_percent)
          (marketing_reward_percent)
          (advocacy_reward_percent)
@@ -5128,12 +5197,6 @@ FC_REFLECT( node::app::equity_data_api_obj,
          (dividend_pool)
          (last_dividend)
          (dividend_share_percent)
-         (liquid_dividend_percent)
-         (staked_dividend_percent)
-         (savings_dividend_percent)
-         (liquid_voting_rights)
-         (staked_voting_rights)
-         (savings_voting_rights)
          (min_active_time)
          (min_balance)
          (min_producers)

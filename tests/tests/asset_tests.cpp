@@ -803,9 +803,6 @@ BOOST_AUTO_TEST_CASE( equity_asset_operation_sequence_test )
       new_options.json = "{\"json\":\"supervalid\"}";
       new_options.url = "https://www.newurl.com";
       new_options.dividend_share_percent = 10 * PERCENT_1;
-      new_options.liquid_dividend_percent = 20 * PERCENT_1;
-      new_options.savings_dividend_percent = 20 * PERCENT_1;
-      new_options.staked_dividend_percent = 60 * PERCENT_1;
 
       new_options.validate();
       asset_update.new_options = new_options;
@@ -834,9 +831,6 @@ BOOST_AUTO_TEST_CASE( equity_asset_operation_sequence_test )
       const asset_equity_data_object& new_candice_equity = db.get_equity_data( asset_symbol_type( "TROPICO" ) );
 
       BOOST_REQUIRE( new_candice_equity.dividend_share_percent == asset_update.new_options.dividend_share_percent );
-      BOOST_REQUIRE( new_candice_equity.liquid_dividend_percent == asset_update.new_options.liquid_dividend_percent );
-      BOOST_REQUIRE( new_candice_equity.savings_dividend_percent == asset_update.new_options.savings_dividend_percent );
-      BOOST_REQUIRE( new_candice_equity.staked_dividend_percent == asset_update.new_options.staked_dividend_percent );
 
       generate_block();
 
@@ -2429,17 +2423,17 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       vector< private_key_type > keys;
 
-      keys.push_back( get_private_key( "alice", "active", INIT_ACCOUNT_PASSWORD ) );
-      keys.push_back( get_private_key( "bob", "active", INIT_ACCOUNT_PASSWORD ) );
-      keys.push_back( get_private_key( "candice", "active", INIT_ACCOUNT_PASSWORD ) );
-      keys.push_back( get_private_key( "dan", "active", INIT_ACCOUNT_PASSWORD ) );
-      keys.push_back( get_private_key( "elon", "active", INIT_ACCOUNT_PASSWORD ) );
-      keys.push_back( get_private_key( "fred", "active", INIT_ACCOUNT_PASSWORD ) );
-      keys.push_back( get_private_key( "george", "active", INIT_ACCOUNT_PASSWORD ) );
-      keys.push_back( get_private_key( "haz", "active", INIT_ACCOUNT_PASSWORD ) );
-      keys.push_back( get_private_key( "isabelle", "active", INIT_ACCOUNT_PASSWORD ) );
-      keys.push_back( get_private_key( "jayme", "active", INIT_ACCOUNT_PASSWORD ) );
-      keys.push_back( get_private_key( "kathryn", "active", INIT_ACCOUNT_PASSWORD ) );
+      keys.push_back( get_private_key( "alice", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      keys.push_back( get_private_key( "bob", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      keys.push_back( get_private_key( "candice", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      keys.push_back( get_private_key( "dan", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      keys.push_back( get_private_key( "elon", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      keys.push_back( get_private_key( "fred", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      keys.push_back( get_private_key( "george", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      keys.push_back( get_private_key( "haz", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      keys.push_back( get_private_key( "isabelle", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      keys.push_back( get_private_key( "jayme", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      keys.push_back( get_private_key( "kathryn", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
 
       vector< asset_publish_feed_operation > publish_feeds;
       publish_feeds.reserve( 11 );

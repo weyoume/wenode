@@ -79,7 +79,7 @@ struct operation_process
       });
    }
 
-   void operator()( const activity_reward_operation& op )const
+   void operator()( const account_activity_operation& op )const
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
@@ -136,7 +136,7 @@ struct operation_process
       });
    }
 
-   void operator()( const vote_operation& op )const
+   void operator()( const comment_vote_operation& op )const
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
@@ -152,7 +152,7 @@ struct operation_process
       });
    }
 
-   void operator()( const view_operation& op )const
+   void operator()( const comment_view_operation& op )const
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {
@@ -168,7 +168,7 @@ struct operation_process
       });
    }
 
-   void operator()( const share_operation& op )const
+   void operator()( const comment_share_operation& op )const
    {
       _db.modify( _bucket, [&]( bucket_object& b )
       {

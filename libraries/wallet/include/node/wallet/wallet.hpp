@@ -671,7 +671,7 @@ class wallet_api
        * @param limit Amount of officers to retrieve.
        * @returns List of network officer objects pertaining to the top officers.
        */
-      vector< network_officer_api_obj >               get_development_officers_by_voting_power( string from, uint32_t limit )const;
+      vector< network_officer_api_obj >               get_development_officers_by_voting_power( string currency, string from, uint32_t limit )const;
 
 
       /** 
@@ -681,7 +681,7 @@ class wallet_api
        * @param limit Amount of officers to retrieve.
        * @returns List of network officer objects pertaining to the top officers.
        */
-      vector< network_officer_api_obj >               get_marketing_officers_by_voting_power( string from, uint32_t limit )const;
+      vector< network_officer_api_obj >               get_marketing_officers_by_voting_power( string currency, string from, uint32_t limit )const;
 
 
       /** 
@@ -691,7 +691,7 @@ class wallet_api
        * @param limit Amount of officers to retrieve.
        * @returns List of network officer objects pertaining to the top officers.
        */
-      vector< network_officer_api_obj >               get_advocacy_officers_by_voting_power( string from, uint32_t limit )const;
+      vector< network_officer_api_obj >               get_advocacy_officers_by_voting_power( string currency, string from, uint32_t limit )const;
 
 
       /** 
@@ -742,7 +742,7 @@ class wallet_api
        * @param limit The amount of enterprise proposals to return.
        * @returns List of enterprise proposals with the highest voting power from total approvals.
        */
-      vector< community_enterprise_api_obj >          get_enterprise_by_voting_power( string from, string from_id, uint32_t limit )const;
+      vector< enterprise_api_obj >          get_enterprise_by_voting_power( string from, string from_id, uint32_t limit )const;
 
 
 
@@ -1134,7 +1134,7 @@ class wallet_api
        * @param tags List of tags to return. 
        * @returns Accounts that follow each tag.
        */
-      vector< tag_following_api_obj >      get_tag_followings( vector< string > tags )const;
+      vector< account_tag_following_api_obj >      get_account_tag_followings( vector< string > tags )const;
 
 
       /**
@@ -1808,7 +1808,7 @@ class wallet_api
        * @param new_owner_authority The new owner authority the account to recover wishes to have.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           request_account_recovery(
+      annotated_signed_transaction           account_request_recovery(
          string signatory,
          string recovery_account,
          string account_to_recover,
@@ -1828,7 +1828,7 @@ class wallet_api
        * @param recent_owner_authority A recent owner authority on your account.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           recover_account(
+      annotated_signed_transaction           account_recover(
          string signatory,
          string account_to_recover,
          authority new_owner_authority,
@@ -1862,7 +1862,7 @@ class wallet_api
        * @param days Days of inactivity required to reset the account. 
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           set_reset_account(
+      annotated_signed_transaction           account_reset_update(
          string signatory,
          string account,
          string new_reset_account,
@@ -1878,7 +1878,7 @@ class wallet_api
        * @param new_recovery_account The account that is authorized to create recovery requests.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           change_recovery_account(
+      annotated_signed_transaction           account_recovery_update(
          string signatory,
          string account_to_recover, 
          string new_recovery_account, 
@@ -1893,7 +1893,7 @@ class wallet_api
        * @param declined True to decine voting rights, false to cancel pending request.
        * @param broadcast Set True to broadcast transaction.
        */ 
-      annotated_signed_transaction           decline_voting_rights(
+      annotated_signed_transaction           account_decline_voting(
          string signatory,
          string account, 
          bool declined, 
@@ -1911,7 +1911,7 @@ class wallet_api
        * @param requested Set true to request, false to cancel request.
        * @param broadcast Set True to broadcast transaction.
        */ 
-      annotated_signed_transaction           connection_request(
+      annotated_signed_transaction           account_connection_request(
          string signatory,
          string account,
          string requested_account,
@@ -1933,7 +1933,7 @@ class wallet_api
        * @param connected Set true to connect, false to delete connection.
        * @param broadcast Set True to broadcast transaction.
        */ 
-      annotated_signed_transaction           connection_accept(
+      annotated_signed_transaction           account_connection_accept(
          string signatory,
          string account,
          string requesting_account,
@@ -2017,16 +2017,18 @@ class wallet_api
        * @param details Information about the network officer and their work
        * @param url The officers's description URL explaining their details. 
        * @param json Additional information about the officer.
+       * @param reward_currency Currency Asset for the Network Officer to earn.
        * @param active Set true to activate the officer, false to deactivate. 
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           update_network_officer(
+      annotated_signed_transaction           network_officer_update(
          string signatory,
          string account,
          string officer_type,
          string details,
          string url,
          string json,
+         string reward_currency,
          bool active,
          bool broadcast );
 
@@ -2105,7 +2107,7 @@ class wallet_api
        * @param active Set true to activate governance account, false to deactivate. 
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           update_governance(
+      annotated_signed_transaction           governance_update(
          string signatory,
          string account,
          string details,
@@ -2124,7 +2126,7 @@ class wallet_api
        * @param subscribe True if subscribing, false if unsubscribing.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           subscribe_governance(
+      annotated_signed_transaction           governance_subscribe(
          string signatory,
          string account,
          string governance_account,
@@ -2148,7 +2150,7 @@ class wallet_api
        * @param active Set true to activate the supernode, false to deactivate. 
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           update_supernode(
+      annotated_signed_transaction           supernode_update(
          string signatory,
          string account,
          string details,
@@ -2174,7 +2176,7 @@ class wallet_api
        * @param active Set true to activate the interface, false to deactivate. 
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           update_interface(
+      annotated_signed_transaction           interface_update(
          string signatory,
          string account,
          string details,
@@ -2196,7 +2198,7 @@ class wallet_api
        * @param active Set true to activate the interface, false to deactivate. 
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           update_mediator(
+      annotated_signed_transaction           mediator_update(
          string signatory,
          string account,
          string details,
@@ -2225,7 +2227,7 @@ class wallet_api
        * @param active True to set the proposal to activate, false to deactivate an existing proposal and delay funding. 
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           create_community_enterprise(
+      annotated_signed_transaction           enterprise_update(
          string signatory,
          string creator,
          string enterprise_id,
@@ -2252,7 +2254,7 @@ class wallet_api
        * @param details Description of completion of milestone, with supporting evidence.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           claim_enterprise_milestone(
+      annotated_signed_transaction           enterprise_fund(
          string signatory,
          string creator,
          string enterprise_id,
@@ -2273,7 +2275,7 @@ class wallet_api
        * @param approved True to approve the milestone claim, false to remove approval. 
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           approve_enterprise_milestone(
+      annotated_signed_transaction           enterprise_vote(
          string signatory,
          string account,
          string creator,
@@ -2310,24 +2312,30 @@ class wallet_api
        * @param signatory The name of the account signing the transaction.
        * @param author Name of the account that created the post.
        * @param permlink Unique identifing string for the post.
+       * @param parent_author Account that created the post this post is replying to, empty if root post.
+       * @param parent_permlink Permlink of the post this post is replying to, empty if root post.
        * @param title Content related name of the post, used to find post with search API.
        * @param body String containing text for display when the post is opened.
-       * @param ipfs Vector of Strings containing IPFS file hashes: images, videos, files.
-       * @param magnet Vector of Strings containing bittorrent magnet links to torrent file swarms: videos, files.
-       * @param url String URL HTTPS link for the post to direct to.
+       * @param body_private String containing text for display when the post is opened.
+       * @param url Plaintext URL for the post to link to. For a livestream post, should link to the streaming server embed.
+       * @param url_private Private Encrypted ciphertext URL for the post to link to. For a livestream post, should link to the streaming server embed.
+       * @param ipfs Public IPFS file hash: images, videos, files.
+       * @param ipfs_private Private and encrypted IPFS file hash: images, videos, files.
+       * @param magnet Bittorrent magnet links to torrent file swarms: videos, files.
+       * @param magnet_private Bittorrent magnet links to Private and Encrypted torrent file swarms: videos, files.
+       * @param json JSON string of additional interface specific data relating to the post.
+       * @param json Private and Encrypted JSON string of additional interface specific data relating to the post.
        * @param language String containing the two letter ISO language code of the native language of the author.
-       * @param community The name of the community to which the post is uploaded to.
        * @param public_key The public key used to encrypt the post, holders of the private key may decrypt.
+       * @param community The name of the community to which the post is uploaded to.
+       * @param tags Set of string tags for sorting the post by.
+       * @param collaborating_authors Set of Authors that are able to create edits for the post.
+       * @param supernodes Set of the Supernodes that the IPFS file is hosted with. Each should additionally hold the private key.
        * @param interface Name of the interface application that broadcasted the transaction.
        * @param latitude Latitude co-ordinates of the comment.
        * @param longitude Longitude co-ordinates of the comment.
        * @param comment_price Price that is required to comment on the post.
-       * @param reply_price Price that is paid to the root comment author when the root author replies.
        * @param premium_price Price that is required to unlock premium content.
-       * @param parent_author Account that created the post this post is replying to, empty if root post.
-       * @param parent_permlink Permlink of the post this post is replying to, empty if root post.
-       * @param tags Set of string tags for sorting the post by.
-       * @param json json string of additional interface specific data relating to the post.
        * @param options Settings for the post, that effect how the network applies and displays it.
        * @param deleted True to delete post, false to create post.
        * @param broadcast Set True to broadcast transaction.
@@ -2336,24 +2344,30 @@ class wallet_api
          string signatory,
          string author,
          string permlink,
+         string parent_author, 
+         string parent_permlink, 
          string title,
          string body,
-         vector< string > ipfs,
-         vector< string > magnet,
+         string body_private,
          string url,
+         string url_private,
+         string ipfs,
+         string ipfs_private,
+         string magnet,
+         string magnet_private,
+         string json,
+         string json_private,
          string language,
-         string community,
          string public_key,
+         string community,
+         vector< string > tags,
+         vector< string > collaborating_authors,
+         vector< string > supernodes,
          string interface,
          double latitude,
          double longitude,
          asset comment_price,
-         asset reply_price,
          asset premium_price,
-         string parent_author, 
-         string parent_permlink, 
-         vector< string > tags,
-         string json,
          comment_options options,
          bool deleted,
          bool broadcast );
@@ -2389,7 +2403,7 @@ class wallet_api
        * @param interface Name of the interface account that was used to broadcast the transaction. 
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           vote(
+      annotated_signed_transaction           comment_vote(
          string signatory,
          string voter, 
          string author, 
@@ -2411,7 +2425,7 @@ class wallet_api
        * @param viewed True if viewing the post, false if removing view object.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           view(
+      annotated_signed_transaction           comment_view(
          string signatory,
          string viewer,
          string author,
@@ -2436,7 +2450,7 @@ class wallet_api
        * @param shared True if sharing the post, false if removing share.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           share(
+      annotated_signed_transaction           comment_share(
          string signatory,
          string sharer,
          string author,
@@ -2464,7 +2478,7 @@ class wallet_api
        * @param applied True if applying the tag, false if removing the tag.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           moderation_tag(
+      annotated_signed_transaction           comment_moderation(
          string signatory,
          string moderator,
          string author,
@@ -2568,12 +2582,18 @@ class wallet_api
        * @param signatory The name of the account signing the transaction.
        * @param founder The account that created the community, able to add and remove administrators.
        * @param name Name of the community.
-       * @param community_privacy Type of community Privacy to us, determines access permissions and encryption.
-       * @param community_public_key Key used for encrypting and decrypting posts. Private key shared with accepted members.
-       * @param json Public plaintext json information about the community, its topic and rules.
-       * @param json_private Private ciphertext json information about the community.
+       * @param display_name The full name of the community (non-consensus), encrypted with the member key if private community.
        * @param details Details of the community, describing what it is for.
        * @param url External reference URL.
+       * @param profile_image IPFS Reference of the Icon image of the community, encrypted with the member key if private community.
+       * @param cover_image IPFS Reference of the Cover image of the community, encrypted with the member key if private community.
+       * @param json Public plaintext json information about the community, its topic and rules.
+       * @param json_private Private ciphertext json information about the community.
+       * @param tags Set of tags of the topics within the community to enable discovery.
+       * @param community_privacy Community privacy level: Open_Public, General_Public, Exclusive_Public, Closed_Public, Open_Private, General_Private, Exclusive_Private, Closed_Private.
+       * @param community_member_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted members.
+       * @param community_moderator_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted moderators.
+       * @param community_admin_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted admins.
        * @param reward_currency The Currency asset used for content rewards in the community.
        * @param max_rating Highest severity rating that posts in the community can have.
        * @param flags The currently active flags on the community for content settings.
@@ -2584,12 +2604,18 @@ class wallet_api
          string signatory,
          string founder,
          string name,
-         string community_privacy,
-         string community_public_key,
-         string json,
-         string json_private,
+         string display_name,
          string details,
          string url,
+         string profile_image,
+         string cover_image,
+         string json,
+         string json_private,
+         vector< string > tags,
+         string community_privacy,
+         string community_member_key,
+         string community_moderator_key,
+         string community_admin_key,
          string reward_currency,
          uint16_t max_rating,
          uint32_t flags,
@@ -2601,15 +2627,22 @@ class wallet_api
        * Updates the details of an existing community.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param account Account updating the community.
-       * @param community Name of the community.
-       * @param community_public_key Key used for encrypting and decrypting posts. Private key shared with accepted members.
-       * @param json Public plaintext json information about the community, its topic and rules.
-       * @param json_private Private ciphertext json information about the community.
+       * @param founder The account that created the community, able to add and remove administrators.
+       * @param name Name of the community.
+       * @param display_name The full name of the community (non-consensus), encrypted with the member key if private community.
        * @param details Details of the community, describing what it is for.
        * @param url External reference URL.
-       * @param pinned_author Author of the pinned post.
-       * @param pinned_permlink Permlink of the pinned post.
+       * @param profile_image IPFS Reference of the Icon image of the community, encrypted with the member key if private community.
+       * @param cover_image IPFS Reference of the Cover image of the community, encrypted with the member key if private community.
+       * @param json Public plaintext json information about the community, its topic and rules.
+       * @param json_private Private ciphertext json information about the community.
+       * @param pinned_author Author of Post pinned to the top of the community's page.
+       * @param pinned_permlink Permlink of Post pinned to the top of the community's page, encrypted with the member key if private community.
+       * @param tags Set of tags of the topics within the community to enable discovery.
+       * @param community_privacy Community privacy level: Open_Public, General_Public, Exclusive_Public, Closed_Public, Open_Private, General_Private, Exclusive_Private, Closed_Private.
+       * @param community_member_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted members.
+       * @param community_moderator_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted moderators.
+       * @param community_admin_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted admins.
        * @param reward_currency The Currency asset used for content rewards in the community.
        * @param max_rating Highest severity rating that posts in the community can have.
        * @param flags The currently active flags on the community for content settings.
@@ -2619,15 +2652,22 @@ class wallet_api
        */
       annotated_signed_transaction           community_update(
          string signatory,
-         string account,
-         string community,
-         string community_public_key,
-         string json,
-         string json_private,
+         string founder,
+         string name,
+         string display_name,
          string details,
          string url,
+         string profile_image,
+         string cover_image,
+         string json,
+         string json_private,
          string pinned_author,
          string pinned_permlink,
+         vector< string > tags,
+         string community_privacy,
+         string community_member_key,
+         string community_moderator_key,
+         string community_admin_key,
          string reward_currency,
          uint16_t max_rating,
          uint32_t flags,
@@ -2855,6 +2895,7 @@ class wallet_api
        * @param signatory The name of the account signing the transaction.
        * @param account Account that created the event.
        * @param community Community being invited to join.
+       * @param event_id UUIDv4 referring to the event within the Community. Unique on community/event_id.
        * @param event_name The Name of the event. Unique within each community.
        * @param location Address of the location of the event.
        * @param latitude Latitude co-ordinates of the event.
@@ -2864,12 +2905,14 @@ class wallet_api
        * @param json Additional Event JSON data.
        * @param event_start_time Time that the Event will begin.
        * @param event_end_time Time that the event will end.
+       * @param active True if the community is active, false to suspend all interaction to cancel or end the event.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           community_event(
          string signatory,
          string account,
          string community,
+         string event_id,
          string event_name,
          string location,
          double latitude,
@@ -2879,6 +2922,7 @@ class wallet_api
          string json,
          time_point event_start_time,
          time_point event_end_time,
+         bool active,
          bool broadcast );
 
 
@@ -2888,6 +2932,7 @@ class wallet_api
        * @param signatory The name of the account signing the transaction.
        * @param account Account that is attending the event.
        * @param community Community that the event is within.
+       * @param event_id UUIDv4 referring to the event within the Community. Unique on community/event_id.
        * @param interested True to set interested in the event, and receive notifications about it, false to remove interedt status.
        * @param attending True to attend the event, false to remove attending status.
        * @param not_attending True to state not attending the event, false to remove not attending status.
@@ -2897,6 +2942,7 @@ class wallet_api
          string signatory,
          string account,
          string community,
+         string event_id,
          bool interested,
          bool attending,
          bool not_attending,
@@ -4717,7 +4763,7 @@ FC_API( node::wallet::wallet_api,
          (get_account_views)
          (get_account_shares)
          (get_account_moderation)
-         (get_tag_followings)
+         (get_account_tag_followings)
          (get_top_tags)
          (get_tags_used_by_author)
          (get_content)
@@ -4757,35 +4803,35 @@ FC_API( node::wallet::wallet_api,
          (account_update_list)
          (account_producer_vote)
          (account_update_proxy)
-         (request_account_recovery)
-         (recover_account)
+         (account_request_recovery)
+         (account_recover)
          (reset_account)
-         (set_reset_account)
-         (change_recovery_account)
-         (decline_voting_rights)
-         (connection_request)
-         (connection_accept)
+         (account_reset_update)
+         (account_recovery_update)
+         (account_decline_voting)
+         (account_connection_request)
+         (account_connection_accept)
          (account_follow)
          (tag_follow)
          (activity_reward)
-         (update_network_officer)
+         (network_officer_update)
          (network_officer_vote)
          (update_executive_board)
          (executive_board_vote)
-         (update_governance)
-         (subscribe_governance)
-         (update_supernode)
-         (update_interface)
-         (update_mediator)
-         (create_community_enterprise)
-         (claim_enterprise_milestone)
-         (approve_enterprise_milestone)
+         (governance_update)
+         (governance_subscribe)
+         (supernode_update)
+         (interface_update)
+         (mediator_update)
+         (enterprise_update)
+         (enterprise_fund)
+         (enterprise_vote)
          (comment)
          (message)
          (vote)
          (view)
          (share)
-         (moderation_tag)
+         (comment_moderation)
          (list)
          (poll)
          (poll_vote)

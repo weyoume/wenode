@@ -15,50 +15,59 @@ endif( MSVC )
 set_source_files_properties( "${CMAKE_CURRENT_BINARY_DIR}/include/node/chain/hardfork.hpp" PROPERTIES GENERATED TRUE )
 
 ## SORT .cpp by most likely to change / break compile
+
 add_library( node_chain
+   node_database.cpp
+   account_database.cpp
+   network_database.cpp
+   comment_database.cpp
+   community_database.cpp
+   ad_database.cpp
+   graph_database.cpp
+   transfer_database.cpp
+   balance_database.cpp
+   marketplace_database.cpp
+   trading_database.cpp
+   pool_database.cpp
+   asset_database.cpp
+   producer_database.cpp
+   
+   fork_database.cpp
+   producer_schedule.cpp
 
-             node_database.cpp
-             account_database.cpp
-             asset_database.cpp
-             trading_database.cpp
-             comment_database.cpp
+   account_evaluator.cpp
+   network_evaluator.cpp
+   comment_evaluator.cpp
+   community_evaluator.cpp
+   ad_evaluator.cpp
+   graph_evaluator.cpp
+   transfer_evaluator.cpp
+   balance_evaluator.cpp
+   marketplace_evaluator.cpp
+   trading_evaluator.cpp
+   pool_evaluator.cpp
+   asset_evaluator.cpp
+   producer_evaluator.cpp
+   custom_evaluator.cpp
 
-             fork_database.cpp
-             producer_schedule.cpp
+   node_objects.cpp
+   shared_authority.cpp
+   block_log.cpp
 
-             account_evaluator.cpp
-             network_evaluator.cpp
-             comment_evaluator.cpp
-             community_evaluator.cpp
-             ad_evaluator.cpp
-             graph_evaluator.cpp
-             transfer_evaluator.cpp
-             balance_evaluator.cpp
-             marketplace_evaluator.cpp
-             trading_evaluator.cpp
-             pool_evaluator.cpp
-             asset_evaluator.cpp
-             producer_evaluator.cpp
-             custom_evaluator.cpp
+   util/reward.cpp
 
-             node_objects.cpp
-             shared_authority.cpp
-             block_log.cpp
-
-             util/reward.cpp
-
-             ${HEADERS}
-             ${hardfork_hpp_file}
-             "${CMAKE_CURRENT_BINARY_DIR}/include/node/chain/hardfork.hpp"
-           )
+   ${HEADERS}
+   ${hardfork_hpp_file}
+   "${CMAKE_CURRENT_BINARY_DIR}/include/node/chain/hardfork.hpp"
+)
 
 add_dependencies( node_chain node_protocol build_hardfork_hpp )
 target_link_libraries( node_chain node_protocol fc chainbase graphene_schema ${PATCH_MERGE_LIB} )
 target_include_directories( node_chain
-                            PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include" )
+   PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include" )
 
 if(MSVC)
-  set_source_files_properties( node_database.cpp PROPERTIES COMPILE_FLAGS "/bigobj" )
+  set_source_files_properties( network_database.cpp PROPERTIES COMPILE_FLAGS "/bigobj" )
 endif(MSVC)
 
 INSTALL( TARGETS

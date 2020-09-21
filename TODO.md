@@ -1,5 +1,20 @@
 # WeYouMe Protocol Development TODO list
 
+## To Do
+-----
+- Premium content purchasing
+- Community Federations and Connections
+- Community Messages
+- Quadratic fund matching for Enterprise Proposals
+- Asset Supply Audit API method
+- The MegaTest
+- Genesis WYM Asset Distribution object
+- Genesis WYM Asset balances
+- Full Documentation for all Objects, Evaluators, Operations, API methods and Database Method
+
+## Done
+-----
+
 - Community Object Type System
 - Graph Node Object
 - Graph Edge Object
@@ -7,19 +22,16 @@
 - Create Edge Type
 - Option Asset Object
 - Prediction Assets
-- Property Asset
+- Unique Assets
 - Asset Distribution Object
-- Asset Generation Object
-- Profile Account Object
+- Asset Generation Object 
 - Auction Orders
 - Product Object
-- Marketplace
+- Marketplace 
 - Event Object
 - Account and Asset Creation Fee scaling
 - Comment Reply Permissioning based on connection level
 - Message Streaks
 - X11 Mining Algorithm
-- Credit Pool Dual Risk system
-- Anonymous Accounts
-- Verified Accounts
-- 
+- Anonymous Account
+- Account Verifications

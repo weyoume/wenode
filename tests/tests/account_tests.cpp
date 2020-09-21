@@ -67,9 +67,9 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
 
       signed_transaction tx;
 
-      fc::ecc::private_key alice_private_owner_key = get_private_key( "alice", "owner", INIT_ACCOUNT_PASSWORD );
-      fc::ecc::private_key alice_private_active_key = get_private_key( "alice", "active", INIT_ACCOUNT_PASSWORD );
-      fc::ecc::private_key alice_private_posting_key = get_private_key( "alice", "posting", INIT_ACCOUNT_PASSWORD );
+      fc::ecc::private_key alice_private_owner_key = get_private_key( "alice", OWNER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      fc::ecc::private_key alice_private_active_key = get_private_key( "alice", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      fc::ecc::private_key alice_private_posting_key = get_private_key( "alice", POSTING_KEY_STR, INIT_ACCOUNT_PASSWORD );
       fc::ecc::private_key alice_private_secure_key = get_private_key( "alice", "secure", INIT_ACCOUNT_PASSWORD );
       fc::ecc::private_key alice_private_connection_key = get_private_key( "alice", "connection", INIT_ACCOUNT_PASSWORD );
       fc::ecc::private_key alice_private_friend_key = get_private_key( "alice", "friend", INIT_ACCOUNT_PASSWORD );
@@ -156,9 +156,9 @@ BOOST_AUTO_TEST_CASE( account_create_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Business Account creation" );
 
-      fc::ecc::private_key ionstudios_private_owner_key = get_private_key( "ionstudios", "owner", INIT_ACCOUNT_PASSWORD );
-      fc::ecc::private_key ionstudios_private_active_key = get_private_key( "ionstudios", "active", INIT_ACCOUNT_PASSWORD );
-      fc::ecc::private_key ionstudios_private_posting_key = get_private_key( "ionstudios", "posting", INIT_ACCOUNT_PASSWORD );
+      fc::ecc::private_key ionstudios_private_owner_key = get_private_key( "ionstudios", OWNER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      fc::ecc::private_key ionstudios_private_active_key = get_private_key( "ionstudios", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      fc::ecc::private_key ionstudios_private_posting_key = get_private_key( "ionstudios", POSTING_KEY_STR, INIT_ACCOUNT_PASSWORD );
       fc::ecc::private_key ionstudios_private_secure_key = get_private_key( "ionstudios", "secure", INIT_ACCOUNT_PASSWORD );
       fc::ecc::private_key ionstudios_private_connection_key = get_private_key( "ionstudios", "connection", INIT_ACCOUNT_PASSWORD );
       fc::ecc::private_key ionstudios_private_friend_key = get_private_key( "ionstudios", "friend", INIT_ACCOUNT_PASSWORD );
@@ -326,7 +326,7 @@ BOOST_AUTO_TEST_CASE( account_update_operation_test )
 
       ACTORS( (alice)(bob) );
 
-      private_key_type new_private_key = get_private_key( "alice", "owner", "aliceownerhunter2" );
+      private_key_type new_private_key = get_private_key( "alice", OWNER_KEY_STR, "aliceownerhunter2" );
 
       account_update_operation update;
 
@@ -576,7 +576,7 @@ BOOST_AUTO_TEST_CASE( account_member_invite_operation_test )
       fund_stake( "bob", asset( BLOCKCHAIN_PRECISION * 10000, SYMBOL_COIN ) );
 
       private_key_type init_ceo_private_secure_key = get_private_key( INIT_CEO, "secure", INIT_ACCOUNT_PASSWORD );
-      private_key_type init_ceo_private_active_key = get_private_key( INIT_CEO, "active", INIT_ACCOUNT_PASSWORD );
+      private_key_type init_ceo_private_active_key = get_private_key( INIT_CEO, ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type init_ceo_public_secure_key = get_public_key( INIT_CEO, "secure", INIT_ACCOUNT_PASSWORD );
       string init_account_private_business_wif = graphene::utilities::key_to_wif( get_private_key( INIT_ACCOUNT, "business", INIT_ACCOUNT_PASSWORD ) );
 
@@ -666,7 +666,7 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
       const account_business_object& bus_acc = db.get_account_business( INIT_ACCOUNT );
 
       private_key_type init_ceo_private_secure_key = get_private_key( INIT_CEO, "secure", INIT_ACCOUNT_PASSWORD );
-      private_key_type init_ceo_private_active_key = get_private_key( INIT_CEO, "active", INIT_ACCOUNT_PASSWORD );
+      private_key_type init_ceo_private_active_key = get_private_key( INIT_CEO, ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type init_ceo_public_secure_key = get_public_key( INIT_CEO, "secure", INIT_ACCOUNT_PASSWORD );
       string init_account_private_business_wif = graphene::utilities::key_to_wif( get_private_key( INIT_ACCOUNT, "business", INIT_ACCOUNT_PASSWORD ) );
 
@@ -1429,7 +1429,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      request_account_recovery_operation request;
+      account_request_recovery_operation request;
 
       request.signatory = "alice";
       request.recovery_account = "alice";
@@ -1448,7 +1448,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      recover_account_operation recover;
+      account_recover_operation recover;
       
       recover.signatory = "bob";
       recover.account_to_recover = "bob";
@@ -1638,9 +1638,9 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: change recovery account" );
 
-      auto change_recovery_account = [&]( const std::string& account_to_recover, const std::string& new_recovery_account )
+      auto account_recovery_update = [&]( const std::string& account_to_recover, const std::string& new_recovery_account )
       {
-         change_recovery_account_operation recovery;
+         account_recovery_update_operation recovery;
 
          recovery.signatory = account_to_recover;
          recovery.account_to_recover = account_to_recover;
@@ -1654,9 +1654,9 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
          db.push_transaction( tx, 0 );
       };
 
-      auto recover_account = [&]( const std::string& account_to_recover, const fc::ecc::private_key& new_owner_key, const fc::ecc::private_key& recent_owner_key )
+      auto account_recover = [&]( const std::string& account_to_recover, const fc::ecc::private_key& new_owner_key, const fc::ecc::private_key& recent_owner_key )
       {
-         recover_account_operation recovery;
+         account_recover_operation recovery;
 
          recovery.signatory = account_to_recover;
          recovery.account_to_recover = account_to_recover;
@@ -1683,7 +1683,7 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
 
       auto request_recovery = [&]( const std::string& recovery_account, const fc::ecc::private_key& recovery_account_key, const std::string& account_to_recover, const public_key_type& new_owner_key )
       {
-         request_account_recovery_operation recovery;
+         account_request_recovery_operation recovery;
 
          recovery.signatory = recovery_account;
          recovery.recovery_account = recovery_account;
@@ -1715,10 +1715,10 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       };
 
       // if either/both users do not exist, we shouldn't allow it
-      REQUIRE_THROW( change_recovery_account( "alice", "nobody" ), fc::exception );
-      REQUIRE_THROW( change_recovery_account( "haxer", "sam" ), fc::exception );
-      REQUIRE_THROW( change_recovery_account( "haxer", "nobody" ), fc::exception );
-      change_recovery_account( "alice", "sam" );
+      REQUIRE_THROW( account_recovery_update( "alice", "nobody" ), fc::exception );
+      REQUIRE_THROW( account_recovery_update( "haxer", "sam" ), fc::exception );
+      REQUIRE_THROW( account_recovery_update( "haxer", "nobody" ), fc::exception );
+      account_recovery_update( "alice", "sam" );
 
       fc::ecc::private_key alice_priv1 = fc::ecc::private_key::regenerate( fc::sha256::hash( "alice_k1" ) );
       fc::ecc::private_key alice_priv2 = fc::ecc::private_key::regenerate( fc::sha256::hash( "alice_k2" ) );
@@ -1732,19 +1732,19 @@ BOOST_AUTO_TEST_CASE( account_recovery_sequence_test )
       generate_block();
 
       // cannot finish account recovery until requested
-      REQUIRE_THROW( recover_account( "alice", alice_priv1, alice_private_owner_key ), fc::exception );
+      REQUIRE_THROW( account_recover( "alice", alice_priv1, alice_private_owner_key ), fc::exception );
 
       // do the request
       request_recovery( "sam", sam_private_active_key, "alice", alice_pub1 );
 
       // can't recover with the current owner key
-      REQUIRE_THROW( recover_account( "alice", alice_priv1, alice_private_owner_key ), fc::exception );
+      REQUIRE_THROW( account_recover( "alice", alice_priv1, alice_private_owner_key ), fc::exception );
       
       // unless we change it!
       change_owner( "alice", alice_private_owner_key, public_key_type( alice_priv2.get_public_key() ) );
-      recover_account( "alice", alice_priv1, alice_private_owner_key );
+      account_recover( "alice", alice_priv1, alice_private_owner_key );
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: change_recovery_account_operation" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: account_recovery_update_operation" );
 
       BOOST_TEST_MESSAGE( "├── Passed: ACCOUNT RECOVERY SEQUENCE" );
    }
@@ -1802,7 +1802,7 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
 
       const account_object& bob_acc = db.get_account( account_name_type( "bob" ) );
 
-      reset_account_operation reset;
+      account_reset_operation reset;
 
       reset.signatory = "alice";
       reset.reset_account = "alice";
@@ -1815,7 +1815,7 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );   // reset not valid yet
 
-      generate_blocks( now() + fc::days( bob_acc.reset_account_delay_days ), true );
+      generate_blocks( now() + fc::days( bob_acc.reset_delay_days ), true );
       generate_block();
 
       tx.operations.clear();
@@ -1838,7 +1838,7 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: set new reset account" );
 
-      set_reset_account_operation set;
+      account_reset_update_operation set;
 
       set.signatory = "bob";
       set.account = "bob";
@@ -1875,7 +1875,7 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      generate_blocks( now() + fc::days( bob_new_acc.reset_account_delay_days ), true );
+      generate_blocks( now() + fc::days( bob_new_acc.reset_delay_days ), true );
       generate_blocks( 10 );
 
       tx.operations.push_back( reset );
@@ -1919,7 +1919,7 @@ BOOST_AUTO_TEST_CASE( account_reset_sequence_test )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
+BOOST_AUTO_TEST_CASE( account_decline_voting_operation_test )
 {
    try
    {
@@ -1937,7 +1937,7 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
 
       generate_blocks( now() + fc::days(2), true );
 
-      decline_voting_rights_operation decline;
+      account_decline_voting_operation decline;
 
       decline.signatory = "alice";
       decline.account = "alice";
@@ -1954,7 +1954,7 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const auto& req_idx = db.get_index< decline_voting_rights_request_index >().indices().get< by_account >();
+      const auto& req_idx = db.get_index< account_decline_voting_request_index >().indices().get< by_account >();
       auto req_itr = req_idx.find( account_name_type( "alice" ) );
 
       BOOST_REQUIRE( req_itr != req_idx.end() );
@@ -2046,7 +2046,6 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       comment.latitude = 37.8136;
       comment.longitude = 144.9631;
       comment.comment_price = asset( 0, SYMBOL_COIN );
-      comment.reply_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
 
       comment_options options;
@@ -2058,7 +2057,7 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_operation_test )
       comment.options = options;
       comment.validate();
 
-      vote_operation vote;
+      comment_vote_operation vote;
 
       vote.signatory = "alice";
       vote.voter = "alice";
@@ -2161,7 +2160,7 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       string alice_private_companion_wif = graphene::utilities::key_to_wif( alice_private_companion_key );
       string bob_private_companion_wif = graphene::utilities::key_to_wif( bob_private_companion_key );
 
-      connection_request_operation request;
+      account_connection_request_operation request;
 
       request.signatory = "alice";
       request.account = "alice";
@@ -2178,9 +2177,9 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const auto& req_idx = db.get_index< connection_request_index >().indices().get< by_account_req >();
+      const auto& req_idx = db.get_index< account_connection_request_index >().indices().get< by_account_req >();
       auto req_itr = req_idx.find( boost::make_tuple( account_name_type( "alice" ), account_name_type( "bob" ) ) );
-      const auto& con_idx = db.get_index< connection_index >().indices().get< by_accounts >();
+      const auto& con_idx = db.get_index< account_connection_index >().indices().get< by_accounts >();
       auto con_itr = con_idx.find( boost::make_tuple( account_name_type( "alice" ), account_name_type( "bob" ), connection_tier_type::CONNECTION ) );
 
       BOOST_REQUIRE( req_itr != req_idx.end() );
@@ -2197,7 +2196,7 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      connection_accept_operation accept;
+      account_connection_accept_operation accept;
 
       accept.signatory = "bob";
       accept.account = "bob";
@@ -2525,7 +2524,7 @@ BOOST_AUTO_TEST_CASE( account_follow_operation_test )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( tag_follow_operation_test )
+BOOST_AUTO_TEST_CASE( account_follow_tag_operation_test )
 {
    try
    {
@@ -2535,7 +2534,7 @@ BOOST_AUTO_TEST_CASE( tag_follow_operation_test )
 
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
-      tag_follow_operation follow;
+      account_follow_tag_operation follow;
 
       follow.signatory = "alice";
       follow.follower = "alice";
@@ -2553,7 +2552,7 @@ BOOST_AUTO_TEST_CASE( tag_follow_operation_test )
       db.push_transaction( tx, 0 );
 
       const account_following_object& following_a = db.get_account_following( account_name_type( "alice" ) );
-      const tag_following_object& following_t = db.get_tag_following( tag_name_type( "test" ) );
+      const account_tag_following_object& following_t = db.get_account_tag_following( tag_name_type( "test" ) );
       
       BOOST_REQUIRE( following_a.is_followed_tag( tag_name_type( "test" ) ) );
       BOOST_REQUIRE( following_t.is_follower( account_name_type( "alice" ) ) );
@@ -2592,7 +2591,7 @@ BOOST_AUTO_TEST_CASE( tag_follow_operation_test )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
+BOOST_AUTO_TEST_CASE( account_activity_operation_test )
 {
    try
    {
@@ -2685,7 +2684,7 @@ BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
 
       generate_block();
 
-      vote_operation vote;
+      comment_vote_operation vote;
 
       vote.signatory = "bob";
       vote.voter = "bob";
@@ -2747,7 +2746,7 @@ BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      view_operation view;
+      comment_view_operation view;
 
       view.signatory = "bob";
       view.viewer = "bob";
@@ -2916,7 +2915,7 @@ BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      activity_reward_operation activity;
+      account_activity_operation activity;
 
       activity.signatory = "alice";
       activity.account = "alice";
@@ -2931,7 +2930,7 @@ BOOST_AUTO_TEST_CASE( activity_reward_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const reward_fund_object& rfo = db.get_reward_fund( SYMBOL_COIN );
+      const asset_reward_fund_object& rfo = db.get_reward_fund( SYMBOL_COIN );
       
       BOOST_REQUIRE( rfo.recent_activity_claims == uint128_t( BLOCKCHAIN_PRECISION.value * 2 ) );
       

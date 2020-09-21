@@ -108,16 +108,17 @@
 #define GOVERNANCE_VOTE_THRESHOLD_PERCENT             (PERCENT_1)         // Governance Accounts require 1% of network voting power to be approved for profile account creation.
 #define GOVERNANCE_VOTE_THRESHOLD_AMOUNT              (25)                // Governance Accounts proposals require 25 individual votes to be approved for profile account creation.
 #define GOVERNANCE_VOTE_THRESHOLD_PRODUCERS           (5)                 // Governance Accounts require 5 top voted producer votes to be approved for profile account creation.
-#define ENTERPRISE_VOTE_THRESHOLD_PERCENT             (PERCENT_1)         // Enterprise proposals require 1% of network voting power to approve milestones.
-#define ENTERPRISE_VOTE_THRESHOLD_AMOUNT              (25)                // Enterprise proposals require 25 individual votes to approve milestones.
-#define ENTERPRISE_VOTE_THRESHOLD_PRODUCERS           (5)                 // Enterprise proposals require 5 top voted producer votes to approve milestones.
+#define ENTERPRISE_VOTE_THRESHOLD_PERCENT             (PERCENT_1)         // Enterprise proposals require 1% of network voting power to approve.
+#define ENTERPRISE_VOTE_THRESHOLD_AMOUNT              (25)                // Enterprise proposals require 25 individual votes to approve.
+#define ENTERPRISE_VOTE_THRESHOLD_PRODUCERS           (5)                 // Enterprise proposals require 5 top voted producer votes to approve.
+#define ENTERPRISE_FUND_THRESHOLD_AMOUNT              (5)                 // Enterprise proposals require 5 individual funder to approve.
+#define ENTERPRISE_FUND_THRESHOLD_PERCENT             (PERCENT_1)         // Enterprise proposals require 1% of the budget amount in direct funding to approve.
 #define OFFICER_VOTE_THRESHOLD_PERCENT                (PERCENT_1)         // Network Officers require 1% of network voting power to be approved for rewards.
 #define OFFICER_VOTE_THRESHOLD_AMOUNT                 (25)                // Network Officers proposals require 25 individual votes to be approved for rewards.
 #define OFFICER_VOTE_THRESHOLD_PRODUCERS              (5)                 // Network Officers require 5 top voted producer votes to be approved for rewards.
 #define EXECUTIVE_VOTE_THRESHOLD_PERCENT              (10 * PERCENT_1)    // Executive boards require 10% of network voting power to be approved for rewards.
 #define EXECUTIVE_VOTE_THRESHOLD_AMOUNT               (100)               // Executive boards proposals require 100 individual votes to be approved for rewards.
 #define EXECUTIVE_VOTE_THRESHOLD_PRODUCERS            (20)                // Executive boards require 20 top voted producer votes to be approved for rewards.
-#define MAX_ACCOUNT_VOTES                             (1000)  
 
 #define SET_UPDATE_BLOCK_INTERVAL       (BLOCKS_PER_DAY)      // Updates business account executive sets once every day.
 #define ENTERPRISE_BLOCK_INTERVAL       (BLOCKS_PER_DAY)      // Distributes community enterprise funding once every day.
@@ -315,9 +316,6 @@
 #define EQUITY_INTERVAL                        fc::days(7)                   // Time period of distributing dividends to equity assests.
 #define EQUITY_INTERVAL_BLOCKS                 uint64_t( EQUITY_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Pays Equity rewards once per week.
 #define DIVIDEND_SHARE_PERCENT                 (5 * PERCENT_1)               // Percentage of incoming assets added to the dividends pool.
-#define LIQUID_DIVIDEND_PERCENT                (10 * PERCENT_1)              // percentage of equity dividends distributed to liquid balances.
-#define STAKED_DIVIDEND_PERCENT                (80 * PERCENT_1)              // percentage of equity dividends distributed to staked balances.
-#define SAVINGS_DIVIDEND_PERCENT               (10 * PERCENT_1)              // percentage of equity dividends distirbuted to savings balances.
 #define BOND_COLLATERALIZATION_PERCENT         (20 * PERCENT_1)              // Percentage of bond face value required for collateral.
 #define BOND_COUPON_RATE_PERCENT               (5 * PERCENT_1)               // Interest rate paid on bond assets.
 #define BOND_COUPON_INTERVAL                   fc::days(7)                   // Processes Bond Asset coupon interest rate each week.
@@ -376,7 +374,7 @@
 #define METRIC_CALC_TIME                       (fc::days(30))                // Metrics include posts up to 30 days old.
 #define MESSAGE_COUNT_INTERVAL                 fc::days(1)                   // Updates consecutive days
 #define MESSAGE_COUNT_INTERVAL_BLOCKS          uint64_t( MESSAGE_COUNT_INTERVAL.count() / BLOCK_INTERVAL.count() )
-#define FEED_INTERVAL_BLOCKS                   (BLOCKS_PER_HOUR)             // Updates feeds once per hour
+#define COMMENT_FEED_INTERVAL_BLOCKS           (BLOCKS_PER_HOUR)             // Updates feeds once per hour
 #define FEED_HISTORY_WINDOW                    fc::hours(84)                 // 3.5 days
 #define MAX_FEED_AGE                           fc::days(30)                  // 30 days
 #define MIN_FEEDS                              (TOTAL_PRODUCERS / 4)         // protects the network from conversions before price has been established
@@ -418,3 +416,15 @@
 #define INIT_IMAGE                      "QmfMeLP6uhjEsSitFENcvJwRx6SpNr41ir4XMYGi3hiW1S"
 #define INIT_CEO                         account_name_type("harrison.mclean")               // firstname.lastname of launching Chief Executive Officer
 #define INIT_COMMUNITY                   community_name_type("general")
+
+#define SECURE_KEY_STR                  "secure"                                      // String included in the key generation formula
+#define POSTING_KEY_STR                 "posting"                                     // String included in the key generation formula
+#define ACTIVE_KEY_STR                  "active"                                      // String included in the key generation formula
+#define OWNER_KEY_STR                   "owner"                                       // String included in the key generation formula
+#define PRODUCER_KEY_STR                "producer"                                    // String included in the key generation formula
+#define CONNECTION_KEY_STR              "connection"                                  // String included in the key generation formula
+#define FRIEND_KEY_STR                  "friend"                                      // String included in the key generation formula
+#define COMPANION_KEY_STR               "companion"                                   // String included in the key generation formula
+#define MEMBER_KEY_STR                  "member"                                      // String included in the key generation formula
+#define MODERATOR_KEY_STR               "moderator"                                   // String included in the key generation formula
+#define ADMIN_KEY_STR                   "admin"                                       // String included in the key generation formula

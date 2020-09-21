@@ -9,6 +9,13 @@
 
 namespace node { namespace chain {
 
+
+   /**
+    * Operates a Network officer for a currency asset.
+    * 
+    * Recieves ongoing funding and is placed in an ongoing role as a
+    * Developer, Marketer, or Advocate.
+    */
    class network_officer_object : public object< network_officer_object_type, network_officer_object >
    {
       network_officer_object() = delete;
@@ -16,41 +23,50 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          network_officer_object( Constructor&& c, allocator< Allocator > a ) :
-         details(a), 
-         url(a), 
-         json(a)
-         {
-            c( *this );
-         }
+            details(a), 
+            url(a), 
+            json(a)
+            {
+               c( *this );
+            }
 
          id_type                        id;
 
          account_name_type              account;                          ///< The name of the account that owns the network officer.
 
-         bool                           active = true;                    ///< True if the officer is active, set false to deactivate.
+         network_officer_role_type      officer_type;                     ///< The type of network officer that the account serves as.
 
-         bool                           officer_approved = false;         ///< True when the network officer has received sufficient voting approval to earn funds.
+         shared_string                  details;                          ///< The officer's details description.
 
-         network_officer_role_type      officer_type;                     ///< The type of network officer that the account serves as. 
+         shared_string                  url;                              ///< The officer's reference URL.
 
-         shared_string                  details;                          ///< The officer's details description. 
+         shared_string                  json;                             ///< Json metadata of the officer.
 
-         shared_string                  url;                              ///< The officer's reference URL. 
-
-         shared_string                  json;                             ///< Json metadata of the officer. 
-         
-         time_point                     created;                          ///< The time the officer was created.
+         asset_symbol_type              reward_currency;                  ///< Symbol of the currency asset that the network officer requests.
 
          uint32_t                       vote_count = 0;                   ///< The number of accounts that support the officer.
 
          share_type                     voting_power = 0;                 ///< The amount of voting power that votes for the officer.
 
-         uint32_t                       producer_vote_count = 0;          ///< The number of accounts that support the officer.
+         uint32_t                       producer_vote_count = 0;          ///< The number of producer accounts that support the officer.
 
-         share_type                     producer_voting_power = 0;        ///< The amount of voting power that votes for the officer.
+         share_type                     producer_voting_power = 0;        ///< The amount of producer voting power that votes for the officer.
+
+         time_point                     last_updated;                     ///< Time the vote was last updated.
+
+         time_point                     created;                          ///< The time the officer was created.
+
+         bool                           active = true;                    ///< True if the officer is active, set false to deactivate.
+
+         bool                           officer_approved = false;         ///< True when the network officer has received sufficient voting approval to earn funds.
    };
 
 
+   /**
+    * Creates a vote for a network officer.
+    * 
+    * Weighted by stake in the currency that the Network Officer is operating for.
+    */
    class network_officer_vote_object : public object< network_officer_vote_object_type, network_officer_vote_object >
    {
       network_officer_vote_object() = delete;
@@ -71,16 +87,32 @@ namespace node { namespace chain {
          network_officer_role_type      officer_type;               ///< the type of network officer that is being voted for.
 
          uint16_t                       vote_rank = 1;              ///< the ranking of the vote for the officer.
+
+         time_point                     last_updated;               ///< Time the vote was last updated.
+
+         time_point                     created;                    ///< Time the vote was created.
    };
 
 
+   /**
+    * Creates an Executive Board.
+    * 
+    * Executive Boards represent an ongoing dedicated effort
+    * to maintain a fully operational development, marketing and advocacy team.
+    * 
+    * Executive Boards are voted on by holders of Coin and Equity assets.
+    * The recieve an ongoing budget paid in network credit asset, 
+    * whcih derives value from the revenue of the network.
+    * 
+    * The maximum budget amount is a network variable parameter.
+    */
    class executive_board_object : public object< executive_board_object_type, executive_board_object >
    {
       executive_board_object() = delete;
 
       public:
          template< typename Constructor, typename Allocator >
-            executive_board_object( Constructor&& c, allocator< Allocator > a ) :
+         executive_board_object( Constructor&& c, allocator< Allocator > a ) :
             details(a), 
             url(a), 
             json(a)
@@ -91,31 +123,39 @@ namespace node { namespace chain {
          id_type                        id;
 
          account_name_type              account;                                   ///< The name of the governance account that created the executive team.
+         
+         shared_string                  details;                                   ///< The executive team's details description.
+
+         shared_string                  url;                                       ///< The executive team's reference URL.
+
+         shared_string                  json;                                      ///< Json metadata of the executive team.
+
+         asset                          budget;                                    ///< Total amount of Credit asset requested for team compensation and funding.
+
+         uint32_t                       vote_count = 0;                            ///< The number of accounts that support the executive team.
+
+         share_type                     voting_power = 0;                          ///< The amount of voting power that votes for the executive team.
+
+         uint32_t                       producer_vote_count = 0;                   ///< The number of producer accounts that support the executive team.
+
+         share_type                     producer_voting_power = 0;                 ///< The amount of producer voting power that votes for the executive team.
+
+         time_point                     last_updated;                              ///< Time the vote was last updated.
+
+         time_point                     created;                                   ///< Time the vote was created.
 
          bool                           active = true;                             ///< True if the executive team is active, set false to deactivate.
 
          bool                           board_approved = false;                    ///< True when the community has reach sufficient voting support to receive budget.
-
-         asset                          budget;                                    ///< Total amount of Credit asset requested for team compensation and funding.
-         
-         shared_string                  details;                                   ///< The executive team's details description. 
-
-         shared_string                  url;                                       ///< The executive team's reference URL. 
-
-         shared_string                  json;                                      ///< Json metadata of the executive team. 
-         
-         time_point                     created;                                   ///< The time the executive team was created.
-
-         uint32_t                       vote_count = 0;                            ///< The number of accounts that support the executive team.
-
-         share_type                     voting_power = 0;                          ///< The amount of voting power that votes for the executive team. 
-
-         uint32_t                       producer_vote_count = 0;                   ///< The number of accounts that support the executive team.
-
-         share_type                     producer_voting_power = 0;                 ///< The amount of voting power that votes for the executive team.
    };
 
 
+   /**
+    * Creates a vote for an Executive Board.
+    * 
+    * Provides voting power proportional to the stake weight of the account in Coin and Equity.
+    * The top Executive boards recieve their budgets paid each day.
+    */
    class executive_board_vote_object : public object< executive_board_vote_object_type, executive_board_vote_object >
    {
       executive_board_vote_object() = delete;
@@ -129,21 +169,33 @@ namespace node { namespace chain {
 
          id_type                        id;
 
-         account_name_type              account;                    ///< The name of the account that voting for the executive board.
+         account_name_type              account;              ///< The name of the account that voting for the executive board.
 
-         account_name_type              executive_board;            ///< The name of the executive board being voted for.
+         account_name_type              executive_board;      ///< The name of the executive board being voted for.
 
-         uint16_t                       vote_rank = 1;              ///< The rank the rank of the vote for the executive board. 
+         uint16_t                       vote_rank = 1;        ///< The rank the rank of the vote for the executive board.
+
+         time_point                     last_updated;         ///< Time the vote was last updated.
+
+         time_point                     created;              ///< Time the vote was created.
    };
 
 
+   /**
+    * Enables an account to create moderation tags on posts.
+    * 
+    * Governance Accounts act as protocol wide moderators, and earn a share
+    * of the revenue paid to the network from their subscribers.
+    * They form a decentralized team that creates community driven moderation
+    * that enables a variable level of individual moderation for each user.
+    */
    class governance_account_object : public object< governance_account_object_type, governance_account_object >
    {
       governance_account_object() = delete;
 
       public:
          template< typename Constructor, typename Allocator >
-            governance_account_object( Constructor&& c, allocator< Allocator > a ) :
+         governance_account_object( Constructor&& c, allocator< Allocator > a ) :
             details(a), 
             url(a), 
             json(a)
@@ -155,28 +207,37 @@ namespace node { namespace chain {
 
          account_name_type              account;                             ///< The name of the account that owns the governance account.
 
-         bool                           active = true;                       ///< True if the governance account is active, set false to deactivate.
+         shared_string                  details;                             ///< The governance account's details description.
 
-         bool                           account_approved = false;            ///< True if the governance account is approved by the network.
+         shared_string                  url;                                 ///< The governance account's reference URL.
 
-         shared_string                  details;                             ///< The governance account's details description. 
-
-         shared_string                  url;                                 ///< The governance account's reference URL. 
-
-         shared_string                  json;                                ///< Json metadata of the governance account. 
-         
-         time_point                     created;                             ///< The time the governance account was created.
+         shared_string                  json;                                ///< Json metadata of the governance account.
 
          uint32_t                       subscriber_count = 0;                ///< The number of accounts that subscribe to the governance account.
 
          share_type                     subscriber_power = 0;                ///< The amount of voting power the subscribes to the governance account.
 
-         uint32_t                       producer_subscriber_count = 0;       ///< The number of accounts that subscribe to the governance account.
+         uint32_t                       producer_subscriber_count = 0;       ///< The number of producer accounts that subscribe to the governance account.
 
-         share_type                     producer_subscriber_power = 0;       ///< The amount of voting power the subscribes to the governance account.
+         share_type                     producer_subscriber_power = 0;       ///< The amount of producer voting power the subscribes to the governance account.
+
+         time_point                     last_updated;                        ///< The time the governance account was last updated.
+
+         time_point                     created;                             ///< The time the governance account was created.
+
+         bool                           active = true;                       ///< True if the governance account is active, set false to deactivate.
+
+         bool                           account_approved = false;            ///< True if the governance account is approved by the network.
    };
 
 
+   /**
+    * Creates a subscription between an account and a Governance account.
+    * 
+    * Adds the moderation tags from the governance account to the posts and objects 
+    * browsed by the user. Provides a share of the network fees to the Governance account
+    * as they are paid by the Account.
+    */
    class governance_subscription_object : public object< governance_subscription_object_type, governance_subscription_object >
    {
       governance_subscription_object() = delete;
@@ -195,9 +256,23 @@ namespace node { namespace chain {
          account_name_type              governance_account;         ///< The name of the governance account being subscribed to.
 
          uint16_t                       vote_rank = 1;              ///< The preference rank of subscription for fee splitting. 
+
+         time_point                     last_updated;               ///< Time the subscription was last updated.
+
+         time_point                     created;                    ///< Time the subscription was created.
    };
 
 
+   /**
+    * Supernodes combine a Full node, and IPFS node, an Auth API node, a Notification Server, and a Bittorrent Endpoint.
+    * 
+    * Supernodes are a Second layer architecture node, 
+    * and combine into a cohesive Blockchain object for infrastructural baseload.
+    * Supernodes earn a share of all content rewards for views 
+    * that reference them as the viewing supernode.
+    * They earn a share of premium content fees when 
+    * they serve decryption keys to purchasers.
+    */
    class supernode_object : public object< supernode_object_type, supernode_object >
    {
       supernode_object() = delete;
@@ -205,16 +280,21 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          supernode_object( Constructor&& c, allocator< Allocator > a ) :
-         details(a), url(a), node_api_endpoint(a), notification_api_endpoint(a), auth_api_endpoint(a), ipfs_endpoint(a), bittorrent_endpoint(a), json(a)
-         {
-            c( *this );
-         }
+            details(a), 
+            url(a), 
+            node_api_endpoint(a), 
+            notification_api_endpoint(a), 
+            auth_api_endpoint(a), 
+            ipfs_endpoint(a), 
+            bittorrent_endpoint(a), 
+            json(a)
+            {
+               c( *this );
+            }
 
          id_type                        id;
 
          account_name_type              account;                          ///< The name of the account that owns the supernode.
-
-         bool                           active = true;                    ///< True if the supernode is active, set false to deactivate.
 
          shared_string                  details;                          ///< The supernode's details description. 
 
@@ -230,9 +310,7 @@ namespace node { namespace chain {
 
          shared_string                  bittorrent_endpoint;              ///< The Bittorrent Seed Box endpoint URL of the Supernode. 
 
-         shared_string                  json;                             ///< Json metadata of the supernode, including additional outside of consensus APIs and services. 
-         
-         time_point                     created;                          ///< The time the supernode was created.
+         shared_string                  json;                             ///< JSON metadata of the supernode, including additional outside of consensus APIs and services. 
          
          asset                          storage_rewards;                  ///< Amount of core asset earned from storage.
 
@@ -240,11 +318,15 @@ namespace node { namespace chain {
 
          uint64_t                       monthly_active_users = 0;         ///< The average number of accounts (X percent 100) that have used files from the node in the prior 30 days.
 
-         share_type                     recent_view_weight = 0;           ///< The rolling 7 day average of daily accumulated voting power of viewers. 
+         share_type                     recent_view_weight = 0;           ///< The rolling 7 day average of daily accumulated voting power of viewers.
+
+         time_point                     last_activation_time;             ///< The time the Supernode was last reactivated, must be at least 24h ago to claim rewards.
 
          time_point                     last_updated;                     ///< The time the file weight and active users was last decayed.
 
-         time_point                     last_activation_time;             ///< The time the Supernode was last reactivated, must be at least 24h ago to claim rewards.
+         time_point                     created;                          ///< The time the supernode was created.
+
+         bool                           active = true;                    ///< True if the supernode is active, set false to deactivate.
 
          void                           decay_weights( const median_chain_property_object& props, time_point now )
          {
@@ -256,6 +338,17 @@ namespace node { namespace chain {
    };
 
 
+   /**
+    * Interfaces enable a developer to create advertising inventory and be nominated for views.
+    * 
+    * Interfaces tract the details of off-chain domain properties and 
+    * determine the source application of transactions that reference the interface.
+    * 
+    * Note that Interface assignment may not be completely accurate, 
+    * as transaction may specify false interfaces
+    * and no transaction assignment of an interface should be
+    * used to determine content responsbility. 
+    */
    class interface_object : public object< interface_object_type, interface_object >
    {
       interface_object() = delete;
@@ -263,30 +356,32 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          interface_object( Constructor&& c, allocator< Allocator > a ) :
-         details(a), url(a), json(a)
-         {
-            c( *this );
-         }
+            details(a), 
+            url(a), 
+            json(a)
+            {
+               c( *this );
+            }
 
          id_type                        id;
 
          account_name_type              account;                           ///< The name of the account that owns the interface.
 
-         bool                           active = true;                     ///< True if the interface is active, set false to deactivate.
-
          shared_string                  details;                           ///< The interface's details description. 
 
          shared_string                  url;                               ///< The interface's reference URL. 
 
-         shared_string                  json;                              ///< Json metadata of the interface. 
-         
-         time_point                     created;                           ///< The time the interface was created.
+         shared_string                  json;                              ///< JSON metadata of the interface. 
 
          uint64_t                       daily_active_users = 0;            ///< The average number of accounts (X percent 100) that have signed a transaction from the interface in the prior 24h.
 
          uint64_t                       monthly_active_users = 0;          ///< The average number of accounts (X percent 100) that have signed a transaction from the interface in the prior 30 days.
 
          time_point                     last_updated;                      ///< The time the user counts were last updated.
+
+         time_point                     created;                           ///< The time the interface was created.
+
+         bool                           active = true;                     ///< True if the interface is active, set false to deactivate.
 
          void                           decay_weights( time_point now )
          {
@@ -296,6 +391,22 @@ namespace node { namespace chain {
          }
    };
 
+
+   /**
+    * Mediators are assigned to Marketplace tranactions to act as dispute resolving agents.
+    * 
+    * Each Marketplace transaction is assigned 2 mediators, one from each party.
+    * In a dispute, 5 random mediators are added from a pool, and vote on the 
+    * allocation of disputed funds.
+    * 
+    * Mediators earn a share of the marketplace fees for 
+    * escrow transfers that they are assigned to. In a dispute, the fee is increased.
+    * All mediators place a mediation bond to secure the trustworthyness of thier account,
+    * and include a bond in every transfer that they are a party to.
+    * 
+    * If the vote that they determine deviates from the median vote, 
+    * they may lose deposit funds to the other mediators in the dispute.
+    */
    class mediator_object : public object< mediator_object_type, mediator_object >
    {
       mediator_object() = delete;
@@ -303,18 +414,16 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          mediator_object( Constructor&& c, allocator< Allocator > a ) :
-         details(a), 
-         url(a), 
-         json(a)
-         {
-            c( *this );
-         }
+            details(a), 
+            url(a), 
+            json(a)
+            {
+               c( *this );
+            }
 
          id_type                        id;
 
          account_name_type              account;                              ///< The name of the account that owns the mediator.
-
-         bool                           active = true;                        ///< True if the mediator is active, set false to deactivate.
 
          shared_string                  details;                              ///< The mediator's details description.
 
@@ -326,21 +435,31 @@ namespace node { namespace chain {
 
          uint128_t                      mediation_virtual_position = 0;       ///< Quantitative ranking of selection for mediation.
 
+         time_point                     last_updated;                         ///< The time the mediator was last updated.
+
          time_point                     created;                              ///< The time the mediator was created.
 
-         time_point                     last_updated;                         ///< The time the mediator was last updated.
+         bool                           active = true;                        ///< True if the mediator is active, set false to deactivate.
    };
 
 
-   class community_enterprise_object : public object< community_enterprise_object_type, community_enterprise_object >
+   /**
+    * Contains an Enterprise Proposal that earns funding from the network.
+    * 
+    * Enterprise Proposals can recieve funding from contributors, and votes from
+    * stakeholders of the currency it earns for it's budget.
+    * 
+    * 50% of the Funding is divided by voting power, 
+    * and the other 50% is divided by funding contributons under quadratic funding.
+    */
+   class enterprise_object : public object< enterprise_object_type, enterprise_object >
    {
-      community_enterprise_object() = delete;
+      enterprise_object() = delete;
 
       public:
          template< typename Constructor, typename Allocator >
-         community_enterprise_object( Constructor&& c, allocator< Allocator > a ) :
+         enterprise_object( Constructor&& c, allocator< Allocator > a ) :
             enterprise_id(a),
-            milestone_shares( a.get_segment_manager() ),
             details(a),
             url(a), 
             json(a)
@@ -348,102 +467,65 @@ namespace node { namespace chain {
                c( *this );
             }
 
-         id_type                                     id;
+         id_type                         id;
 
-         account_name_type                           creator;                                         ///< The name of the governance account that created the community enterprise proposal.
+         account_name_type               account;                           ///< The name of the account that created the enterprise proposal.
 
-         shared_string                               enterprise_id;                                   ///< UUIDv4 for referring to the proposal.
+         shared_string                   enterprise_id;                     ///< UUIDv4 referring to the proposal.
 
-         bool                                        active = true;                                   ///< True if the project is active, set false to deactivate.
+         shared_string                   details;                           ///< The proposals's details and planning for funding deployment and deliverables.
 
-         flat_map< account_name_type, uint16_t >     beneficiaries;                                   ///< Map of account names and percentages of budget value.
+         shared_string                   url;                               ///< The proposals's reference URL.
 
-         shared_vector< uint16_t >                   milestone_shares;                                ///< Ordered vector of release milestone descriptions.
+         shared_string                   json;                              ///< JSON metadata of the proposal.
 
-         int16_t                                     approved_milestones;                             ///< Number of the last approved milestone by the community.
+         asset                           budget;                            ///< Amount of Currency Asset requested for project funding.
 
-         int16_t                                     claimed_milestones;                              ///< Number of milestones claimed for release.
+         asset                           distributed;                       ///< Total amount of funds distributed to the proposal.
 
-         shared_string                               details;                                         ///< The proposals's details and release milestone percentages of budget value.
+         uint32_t                        vote_count = 0;                    ///< The number of accounts that support the enterprise proposal.
 
-         shared_string                               url;                                             ///< The proposals's reference URL.
+         share_type                      voting_power = 0;                  ///< The amount of voting power that supports the enterprise proposal.
 
-         shared_string                               json;                                            ///< Json metadata of the proposal.
+         uint32_t                        producer_vote_count = 0;           ///< The overall number of top 50 producers that support the enterprise proposal.
 
-         time_point                                  begin;                                           ///< Enterprise proposal start time. Budget payments begin past this time.
+         share_type                      producer_voting_power = 0;         ///< The overall amount of producer voting power that supports the enterprise proposal.
 
-         time_point                                  end;                                             ///< Enterprise proposal end time. Determined by start plus remaining interval number of days.
+         uint32_t                        funder_count = 0;                  ///< The number of accounts that have sent direct funding to the enterprise proposal.
 
-         time_point                                  expiration;                                      ///< Time that the proposal expires, and transfers all remaining pending budget back to the community fund. 
+         asset                           total_funding;                     ///< The overall amount of producer voting power that supports the enterprise proposal.
 
-         asset                                       daily_budget;                                    ///< Daily amount of Core asset requested for project compensation and funding.
+         uint128_t                       net_sqrt_voting_power = 0;         ///< Sum of all of the square roots of the voting power of each vote.
 
-         uint16_t                                    duration;                                        ///< Number of days that the proposal lasts for. 
+         uint128_t                       net_sqrt_funding = 0;              ///< Sum of all of the square roots of the total funding amount of each vote.
+         
+         time_point                      last_updated;                      ///< Time that the Enterprise was last updated.
 
-         asset                                       pending_budget;                                  ///< Funds held in the proposal for release. 
+         time_point                      created;                           ///< Time the Enterprise was created.
 
-         asset                                       total_distributed;                               ///< Total amount of funds distributed for the proposal. 
+         bool                            active = true;                     ///< True if the Enterprise is active, set false to deactivate.
 
-         uint16_t                                    days_paid = 0;                                   ///< Number of days that the proposal has been paid for. 
+         bool                            approved = false;                  ///< True when the Enterprise proposal has reached approval status.
 
-         uint32_t                                    total_approvals = 0;                             ///< The overall number of accounts that support the enterprise proposal.
+         asset_symbol_type               budget_symbol()const { return budget.symbol; }      ///< The Asset symbol of the enterprise budget.
 
-         share_type                                  total_voting_power = 0;                          ///< The oveall amount of voting power that supports the enterprise proposal.
-
-         uint32_t                                    total_producer_approvals = 0;                    ///< The overall number of top 50 producers that support the enterprise proposal.
-
-         share_type                                  total_producer_voting_power = 0;                 ///< The overall amount of producer voting power that supports the enterprise proposal.
-
-         uint32_t                                    current_approvals = 0;                           ///< The number of accounts that support the latest claimed milestone.
-
-         share_type                                  current_voting_power = 0;                        ///< The amount of voting power that supports the latest claimed milestone.
-
-         uint32_t                                    current_producer_approvals = 0;                  ///< The number of top 50 producers that support the latest claimed milestone.
-
-         share_type                                  current_producer_voting_power = 0;               ///< The amount of producer voting power that supports the latest claimed milestone.
-
-         time_point                                  last_updated;                                    ///< Time that the proposal was last updated. 
-
-         time_point                                  created;                                         ///< The time the proposal was created.
-
-         asset                                       total_budget()const                              ///< Returns the total amount of funding requested by the proposal.
-         {
-            asset result = asset( daily_budget.amount * share_type( duration ), daily_budget.symbol );
-            return result;
-         }
-
-         asset                                       remaining_budget()const                          ///< Returns the total amount of funding remaining for payment.
-         {
-            asset result = asset( daily_budget.amount * share_type( duration - days_paid ), daily_budget.symbol );
-            return result;
-         }
-
-         bool                                        is_beneficiary( const account_name_type& beneficiary )         ///< Finds if a given account name is in the beneficiarys set.
-         {
-            if( beneficiaries[ beneficiary ] > 0 )
-            {
-               return true;
-            }
-            else
-            {
-               return false;
-            }
-         }
-
-         void                                        adjust_pending_budget( const asset& delta )
-         {
-            assert(delta.symbol == SYMBOL_COIN);
-            pending_budget += delta;
-         }
+         bool                            enterprise_active()const { return active && approved && ( budget.amount > distributed.amount ); }    ///< True when the Enterprise should be receiving budget.
    };
+   
 
-   class enterprise_approval_object : public object< enterprise_approval_object_type, enterprise_approval_object >
+   /**
+    * Creates a vote for an Enterprise Proposal.
+    * 
+    * The voting power in the budget currency is used to
+    * determine the voting stake of the vote.
+    */
+   class enterprise_vote_object : public object< enterprise_vote_object_type, enterprise_vote_object >
    {
-      enterprise_approval_object() = delete;
+      enterprise_vote_object() = delete;
 
       public:
          template< typename Constructor, typename Allocator >
-         enterprise_approval_object( Constructor&& c, allocator< Allocator > a ) :
+         enterprise_vote_object( Constructor&& c, allocator< Allocator > a ) :
             enterprise_id(a)
             {
                c( *this );
@@ -451,19 +533,64 @@ namespace node { namespace chain {
 
          id_type                        id;
 
-         account_name_type              account;                   ///< Account approving the enterprise Milestone.
+         account_name_type              voter;                ///< Account voting for the enterprise.
 
-         account_name_type              creator;                   ///< The name of the account that created the community enterprise proposal.
+         account_name_type              account;              ///< The name of the account that created the community enterprise proposal.
 
-         shared_string                  enterprise_id;             ///< UUIDv4 referring to the proposal being claimed.
+         shared_string                  enterprise_id;        ///< UUIDv4 referring to the proposal being claimed.
 
-         uint16_t                       vote_rank = 1;             ///< The vote rank of the approval for enterprise.
+         uint16_t                       vote_rank = 1;        ///< The vote rank of the approval for enterprise.
 
-         int16_t                        milestone = 0;             ///< Number of the milestone being approved for release.
+         time_point                     last_updated;         ///< Time that the vote was last updated.
+
+         time_point                     created;              ///< The time the vote was created.
    };
 
-   struct by_type_voting_power;
-   struct by_type_vote_count;
+
+   /**
+    * Creates a funding contribution to an Enterprise Proposal.
+    * 
+    * The funds are sent to the project owner, and the
+    * square root of the funding amount is added to the total funding share.
+    */
+   class enterprise_fund_object : public object< enterprise_fund_object_type, enterprise_fund_object >
+   {
+      enterprise_fund_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         enterprise_fund_object( Constructor&& c, allocator< Allocator > a ) :
+            enterprise_id(a)
+            {
+               c( *this );
+            }
+
+         id_type                        id;
+
+         account_name_type              funder;               ///< Account voting for the enterprise.
+
+         account_name_type              account;              ///< The name of the account that created the community enterprise proposal.
+
+         shared_string                  enterprise_id;        ///< UUIDv4 referring to the proposal being claimed.
+
+         asset                          amount;               ///< The total amount of funding sent to the enterprise proposal.
+
+         time_point                     last_updated;         ///< Time that the funding was last updated.
+
+         time_point                     created;              ///< The time the funding was created.
+   };
+
+
+
+   struct by_name;
+   struct by_account;
+   struct by_subscribers;
+   struct by_subscriber_power;
+   struct by_voting_power;
+   struct by_vote_count;
+   struct by_symbol_type_voting_power;
+   struct by_symbol_type_vote_count;
+
 
    typedef multi_index_container <
       network_officer_object,
@@ -472,37 +599,43 @@ namespace node { namespace chain {
             member< network_officer_object, network_officer_id_type, &network_officer_object::id > >,
          ordered_unique< tag< by_account >,
             member< network_officer_object, account_name_type, &network_officer_object::account > >,
-         ordered_unique< tag< by_type_vote_count >,
+         ordered_unique< tag< by_symbol_type_vote_count >,
             composite_key< network_officer_object,
+               member< network_officer_object, asset_symbol_type, &network_officer_object::reward_currency >,
                member< network_officer_object, network_officer_role_type, &network_officer_object::officer_type >,
                member< network_officer_object, uint32_t, &network_officer_object::vote_count >,
                member< network_officer_object, network_officer_id_type, &network_officer_object::id >
             >,
-            composite_key_compare< 
-               std::less< network_officer_role_type >, 
-               std::greater< uint32_t >, 
-               std::less< network_officer_id_type > 
+            composite_key_compare<
+               std::less< asset_symbol_type >,
+               std::less< network_officer_role_type >,
+               std::greater< uint32_t >,
+               std::less< network_officer_id_type >
             >
          >,
-         ordered_unique< tag< by_type_voting_power >,
+         ordered_unique< tag< by_symbol_type_voting_power >,
             composite_key< network_officer_object,
+               member< network_officer_object, asset_symbol_type, &network_officer_object::reward_currency >,
                member< network_officer_object, network_officer_role_type, &network_officer_object::officer_type >,
                member< network_officer_object, share_type, &network_officer_object::voting_power >,
                member< network_officer_object, network_officer_id_type, &network_officer_object::id >
             >,
-            composite_key_compare< 
-               std::less< network_officer_role_type >, 
-               std::greater< share_type >, 
-               std::less< network_officer_id_type > 
+            composite_key_compare<
+               std::less< asset_symbol_type >,
+               std::less< network_officer_role_type >,
+               std::greater< share_type >,
+               std::less< network_officer_id_type >
             >
          >
       >,
       allocator< network_officer_object >
    > network_officer_index;
 
+
    struct by_account_officer;
    struct by_officer_account;
    struct by_account_type_rank;
+
 
    typedef multi_index_container<
       network_officer_vote_object,
@@ -533,13 +666,7 @@ namespace node { namespace chain {
       allocator< network_officer_vote_object >
    > network_officer_vote_index;
 
-   struct by_name;
-   struct by_account;
-   struct by_subscribers;
-   struct by_subscriber_power;
-   struct by_voting_power;
-   struct by_vote_count;
-   struct by_budget;
+   
 
    typedef multi_index_container <
       executive_board_object,
@@ -548,16 +675,6 @@ namespace node { namespace chain {
             member< executive_board_object, executive_board_id_type, &executive_board_object::id > >,
          ordered_unique< tag< by_account >,
             member< executive_board_object, account_name_type, &executive_board_object::account > >,
-         ordered_unique< tag< by_budget >,
-            composite_key< executive_board_object,
-               member< executive_board_object, asset, &executive_board_object::budget >,
-               member< executive_board_object, executive_board_id_type, &executive_board_object::id >
-            >,
-            composite_key_compare< 
-               std::greater< asset >, 
-               std::less< executive_board_id_type > 
-            >
-         >,
          ordered_unique< tag< by_vote_count >,
             composite_key< executive_board_object,
                member< executive_board_object, uint32_t, &executive_board_object::vote_count >,
@@ -645,8 +762,10 @@ namespace node { namespace chain {
       allocator< governance_account_object >
    > governance_account_index;
 
+
    struct by_account_governance;
    struct by_governance_account;
+
 
    typedef multi_index_container<
       governance_subscription_object,
@@ -674,9 +793,11 @@ namespace node { namespace chain {
       allocator< governance_subscription_object >
    > governance_subscription_index;
 
+
    struct by_view_weight;
    struct by_daily_active_users;
    struct by_monthly_active_users;
+
 
    typedef multi_index_container <
       supernode_object,
@@ -751,7 +872,9 @@ namespace node { namespace chain {
       allocator< interface_object >
    > interface_index;
 
+
    struct by_virtual_position;
+
 
    typedef multi_index_container <
       mediator_object,
@@ -774,129 +897,82 @@ namespace node { namespace chain {
       allocator< mediator_object >
    > mediator_index;
 
-   struct by_creator;
+
    struct by_enterprise_id;
-   struct by_daily_budget;
-   struct by_pending_budget;
    struct by_total_budget;
    struct by_begin_time;
    struct by_end_time;
    struct by_expiration;
    struct by_next_payment;
    struct by_total_voting_power;
-   struct by_total_approvals;
-   struct by_total_producer_voting_power;
    struct by_total_producer_approvals;
+   struct by_symbol;
+
 
    typedef multi_index_container <
-      community_enterprise_object,
+      enterprise_object,
       indexed_by <
          ordered_unique< tag< by_id >,
-            member< community_enterprise_object, community_enterprise_id_type, &community_enterprise_object::id > >,
-         ordered_non_unique< tag< by_begin_time >,
-            member< community_enterprise_object, time_point, &community_enterprise_object::begin > >,
-         ordered_non_unique< tag< by_end_time >,
-            member< community_enterprise_object, time_point, &community_enterprise_object::end > >,
-         ordered_non_unique< tag< by_expiration>,
-            member< community_enterprise_object, time_point, &community_enterprise_object::expiration > >,
-         ordered_unique< tag< by_creator >,
-            composite_key< community_enterprise_object,
-               member< community_enterprise_object, account_name_type, &community_enterprise_object::creator >,
-               member< community_enterprise_object, community_enterprise_id_type, &community_enterprise_object::id >
-            >,
-            composite_key_compare< 
-               std::less< account_name_type >, 
-               std::less< community_enterprise_id_type > 
-            >
-         >,
+            member< enterprise_object, enterprise_id_type, &enterprise_object::id > >,
          ordered_unique< tag< by_enterprise_id >,
-            composite_key< community_enterprise_object,
-               member< community_enterprise_object, account_name_type, &community_enterprise_object::creator >,
-               member< community_enterprise_object, shared_string, &community_enterprise_object::enterprise_id >
+            composite_key< enterprise_object,
+               member< enterprise_object, account_name_type, &enterprise_object::account >,
+               member< enterprise_object, shared_string, &enterprise_object::enterprise_id >
             >,
-            composite_key_compare< 
-               std::less< account_name_type >, 
-               strcmp_less 
+            composite_key_compare<
+               std::less< account_name_type >,
+               strcmp_less
             >
          >,
-         ordered_unique< tag< by_daily_budget >,
-            composite_key< community_enterprise_object,
-               member< community_enterprise_object, asset, &community_enterprise_object::daily_budget >,
-               member< community_enterprise_object, community_enterprise_id_type, &community_enterprise_object::id >
+         ordered_unique< tag< by_account >,
+            composite_key< enterprise_object,
+               member< enterprise_object, account_name_type, &enterprise_object::account >,
+               member< enterprise_object, enterprise_id_type, &enterprise_object::id >
             >,
-            composite_key_compare< 
-               std::greater< asset >, 
-               std::less< community_enterprise_id_type > 
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::less< enterprise_id_type >
             >
          >,
-         ordered_unique< tag< by_pending_budget >,
-            composite_key< community_enterprise_object,
-               member< community_enterprise_object, asset, &community_enterprise_object::pending_budget >,
-               member< community_enterprise_object, community_enterprise_id_type, &community_enterprise_object::id >
+         ordered_unique< tag< by_symbol >,
+            composite_key< enterprise_object,
+               const_mem_fun< enterprise_object, asset_symbol_type, &enterprise_object::budget_symbol >,
+               member< enterprise_object, enterprise_id_type, &enterprise_object::id >
             >,
-            composite_key_compare< 
-               std::greater< asset >, 
-               std::less< community_enterprise_id_type > 
+            composite_key_compare<
+               std::less< asset_symbol_type >,
+               std::less< enterprise_id_type >
             >
          >,
          ordered_unique< tag< by_total_voting_power >,
-            composite_key< community_enterprise_object,
-               member< community_enterprise_object, share_type, &community_enterprise_object::total_voting_power >,
-               member< community_enterprise_object, community_enterprise_id_type, &community_enterprise_object::id >
+            composite_key< enterprise_object,
+               member< enterprise_object, share_type, &enterprise_object::voting_power >,
+               member< enterprise_object, enterprise_id_type, &enterprise_object::id >
             >,
-            composite_key_compare< 
-               std::greater< share_type >, 
-               std::less< community_enterprise_id_type > 
-            >
-         >,
-         ordered_unique< tag< by_total_producer_voting_power >,
-            composite_key< community_enterprise_object,
-               member< community_enterprise_object, share_type, &community_enterprise_object::total_producer_voting_power >,
-               member< community_enterprise_object, community_enterprise_id_type, &community_enterprise_object::id >
-            >,
-            composite_key_compare< 
-               std::greater< share_type >, 
-               std::less< community_enterprise_id_type > 
-            >
-         >,
-         ordered_unique< tag< by_total_budget >,
-            composite_key< community_enterprise_object,
-               const_mem_fun< community_enterprise_object, asset, &community_enterprise_object::total_budget >,
-               member< community_enterprise_object, community_enterprise_id_type, &community_enterprise_object::id >
-            >,
-            composite_key_compare< 
-               std::greater< asset >, 
-               std::less< community_enterprise_id_type > 
+            composite_key_compare<
+               std::greater< share_type >,
+               std::less< enterprise_id_type >
             >
          >
       >,
-      allocator< community_enterprise_object >
-   > community_enterprise_index;
+      allocator< enterprise_object >
+   > enterprise_index;
+
 
    struct by_account_rank;
    struct by_account_enterprise;
 
 
    typedef multi_index_container <
-      enterprise_approval_object,
+      enterprise_vote_object,
       indexed_by <
          ordered_unique< tag< by_id >,
-            member< enterprise_approval_object, enterprise_approval_id_type, &enterprise_approval_object::id > >,
-         ordered_unique< tag< by_creator >,
-            composite_key< enterprise_approval_object,
-               member< enterprise_approval_object, account_name_type, &enterprise_approval_object::creator >,
-               member< enterprise_approval_object, enterprise_approval_id_type, &enterprise_approval_object::id >
-            >,
-            composite_key_compare< 
-               std::less< account_name_type >, 
-               std::less< enterprise_approval_id_type > 
-            >
-         >,
+            member< enterprise_vote_object, enterprise_vote_id_type, &enterprise_vote_object::id > >,
          ordered_unique< tag< by_enterprise_id >,
-            composite_key< enterprise_approval_object,
-               member< enterprise_approval_object, account_name_type, &enterprise_approval_object::creator >,
-               member< enterprise_approval_object, shared_string, &enterprise_approval_object::enterprise_id >,
-               member< enterprise_approval_object, account_name_type, &enterprise_approval_object::account >
+            composite_key< enterprise_vote_object,
+               member< enterprise_vote_object, account_name_type, &enterprise_vote_object::account >,
+               member< enterprise_vote_object, shared_string, &enterprise_vote_object::enterprise_id >,
+               member< enterprise_vote_object, account_name_type, &enterprise_vote_object::voter >
             >,
             composite_key_compare< 
                std::less< account_name_type >, 
@@ -904,11 +980,21 @@ namespace node { namespace chain {
                std::less< account_name_type >
             >
          >,
+         ordered_unique< tag< by_account >,
+            composite_key< enterprise_vote_object,
+               member< enterprise_vote_object, account_name_type, &enterprise_vote_object::voter >,
+               member< enterprise_vote_object, enterprise_vote_id_type, &enterprise_vote_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< enterprise_vote_id_type > 
+            >
+         >,
          ordered_unique< tag< by_account_enterprise >,
-            composite_key< enterprise_approval_object,
-               member< enterprise_approval_object, account_name_type, &enterprise_approval_object::account >,
-               member< enterprise_approval_object, account_name_type, &enterprise_approval_object::creator >,
-               member< enterprise_approval_object, shared_string, &enterprise_approval_object::enterprise_id >
+            composite_key< enterprise_vote_object,
+               member< enterprise_vote_object, account_name_type, &enterprise_vote_object::voter >,
+               member< enterprise_vote_object, account_name_type, &enterprise_vote_object::account >,
+               member< enterprise_vote_object, shared_string, &enterprise_vote_object::enterprise_id >
             >,
             composite_key_compare< 
                std::less< account_name_type >, 
@@ -917,9 +1003,9 @@ namespace node { namespace chain {
             >
          >,
          ordered_unique< tag< by_account_rank >,
-            composite_key< enterprise_approval_object, 
-               member< enterprise_approval_object, account_name_type, &enterprise_approval_object::account >,
-               member< enterprise_approval_object, uint16_t, &enterprise_approval_object::vote_rank >
+            composite_key< enterprise_vote_object, 
+               member< enterprise_vote_object, account_name_type, &enterprise_vote_object::voter >,
+               member< enterprise_vote_object, uint16_t, &enterprise_vote_object::vote_rank >
             >,
             composite_key_compare< 
                std::less< account_name_type >, 
@@ -927,25 +1013,73 @@ namespace node { namespace chain {
             >
          >
       >,
-      allocator< enterprise_approval_object >
-   > enterprise_approval_index;
+      allocator< enterprise_vote_object >
+   > enterprise_vote_index;
+
+
+   typedef multi_index_container <
+      enterprise_fund_object,
+      indexed_by <
+         ordered_unique< tag< by_id >,
+            member< enterprise_fund_object, enterprise_fund_id_type, &enterprise_fund_object::id > >,
+         ordered_unique< tag< by_enterprise_id >,
+            composite_key< enterprise_fund_object,
+               member< enterprise_fund_object, account_name_type, &enterprise_fund_object::account >,
+               member< enterprise_fund_object, shared_string, &enterprise_fund_object::enterprise_id >,
+               member< enterprise_fund_object, account_name_type, &enterprise_fund_object::funder >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >,
+               strcmp_less,
+               std::less< account_name_type >
+            >
+         >,
+         ordered_unique< tag< by_account >,
+            composite_key< enterprise_fund_object,
+               member< enterprise_fund_object, account_name_type, &enterprise_fund_object::funder >,
+               member< enterprise_fund_object, enterprise_fund_id_type, &enterprise_fund_object::id >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::less< enterprise_fund_id_type >
+            >
+         >,
+         ordered_unique< tag< by_account_enterprise >,
+            composite_key< enterprise_fund_object,
+               member< enterprise_fund_object, account_name_type, &enterprise_fund_object::funder >,
+               member< enterprise_fund_object, account_name_type, &enterprise_fund_object::account >,
+               member< enterprise_fund_object, shared_string, &enterprise_fund_object::enterprise_id >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::less< account_name_type >,
+               strcmp_less
+            >
+         >
+      >,
+      allocator< enterprise_fund_object >
+   > enterprise_fund_index;
+
+
 
 } }         ///< node::chain
 
 FC_REFLECT( node::chain::network_officer_object,
          (id)
          (account)
-         (active)
-         (officer_approved)
          (officer_type)
          (details)
          (url)
          (json)
-         (created)
+         (reward_currency)
          (vote_count)
          (voting_power)
          (producer_vote_count)
          (producer_voting_power)
+         (last_updated)
+         (created)
+         (active)
+         (officer_approved)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::network_officer_object, node::chain::network_officer_index );
@@ -956,6 +1090,8 @@ FC_REFLECT( node::chain::network_officer_vote_object,
          (network_officer)
          (officer_type)
          (vote_rank)
+         (last_updated)
+         (created)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::network_officer_vote_object, node::chain::network_officer_vote_index );
@@ -963,17 +1099,18 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::network_officer_vote_object, node::chain:
 FC_REFLECT( node::chain::executive_board_object,
          (id)
          (account)
-         (active)
-         (board_approved)
-         (budget)
          (details)
          (url)
          (json)
-         (created)
+         (budget)
          (vote_count)
          (voting_power)
          (producer_vote_count)
          (producer_voting_power)
+         (last_updated)
+         (created)
+         (active)
+         (board_approved)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::executive_board_object, node::chain::executive_board_index );
@@ -983,6 +1120,8 @@ FC_REFLECT( node::chain::executive_board_vote_object,
          (account)
          (executive_board)
          (vote_rank)
+         (last_updated)
+         (created)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::executive_board_vote_object, node::chain::executive_board_vote_index );
@@ -990,16 +1129,17 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::executive_board_vote_object, node::chain:
 FC_REFLECT( node::chain::governance_account_object,
          (id)
          (account)
-         (active)
-         (account_approved)
          (details)
          (url)
          (json)
-         (created)
          (subscriber_count)
          (subscriber_power)
          (producer_subscriber_count)
          (producer_subscriber_power)
+         (last_updated)
+         (created)
+         (active)
+         (account_approved)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::governance_account_object, node::chain::governance_account_index );
@@ -1009,6 +1149,8 @@ FC_REFLECT( node::chain::governance_subscription_object,
          (account)
          (governance_account)
          (vote_rank)
+         (last_updated)
+         (created)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::governance_subscription_object, node::chain::governance_subscription_index );
@@ -1016,7 +1158,6 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::governance_subscription_object, node::cha
 FC_REFLECT( node::chain::supernode_object,
          (id)
          (account)
-         (active)
          (details)
          (url)
          (node_api_endpoint)
@@ -1025,13 +1166,14 @@ FC_REFLECT( node::chain::supernode_object,
          (ipfs_endpoint)
          (bittorrent_endpoint)
          (json)
-         (created)
          (storage_rewards)
          (daily_active_users)
          (monthly_active_users)
          (recent_view_weight)
-         (last_updated)
          (last_activation_time)
+         (last_updated)
+         (created)
+         (active)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::supernode_object, node::chain::supernode_index );
@@ -1043,10 +1185,10 @@ FC_REFLECT( node::chain::interface_object,
          (details)
          (url)
          (json)
-         (created)
          (daily_active_users)
          (monthly_active_users)
          (last_updated)
+         (created)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::interface_object, node::chain::interface_index );
@@ -1054,59 +1196,63 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::interface_object, node::chain::interface_
 FC_REFLECT( node::chain::mediator_object,
          (id)
          (account)
-         (active)
          (details)
          (url)
          (json)
          (mediator_bond)
          (mediation_virtual_position)
-         (created)
          (last_updated)
+         (created)
+         (active)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::mediator_object, node::chain::mediator_index );
 
-FC_REFLECT( node::chain::community_enterprise_object,
+FC_REFLECT( node::chain::enterprise_object,
          (id)
-         (creator)
+         (account)
          (enterprise_id)
-         (active)
-         (beneficiaries)
-         (milestone_shares)
-         (approved_milestones)
-         (claimed_milestones)
          (details)
          (url)
          (json)
-         (begin)
-         (end)
-         (expiration)
-         (daily_budget)
-         (duration)
-         (pending_budget)
-         (total_distributed)
-         (days_paid)
-         (total_approvals)
-         (total_voting_power)
-         (total_producer_approvals)
-         (total_producer_voting_power)
-         (current_approvals)
-         (current_voting_power)
-         (current_producer_approvals)
-         (current_producer_voting_power)
+         (budget)
+         (distributed)
+         (vote_count)
+         (voting_power)
+         (producer_vote_count)
+         (producer_voting_power)
+         (funder_count)
+         (total_funding)
+         (net_sqrt_voting_power)
+         (net_sqrt_funding)
+         (last_updated)
+         (created)
+         (active)
+         (approved)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::enterprise_object, node::chain::enterprise_index );
+
+FC_REFLECT( node::chain::enterprise_vote_object,
+         (id)
+         (voter)
+         (account)
+         (enterprise_id)
+         (vote_rank)
          (last_updated)
          (created)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::chain::community_enterprise_object, node::chain::community_enterprise_index );
+CHAINBASE_SET_INDEX_TYPE( node::chain::enterprise_vote_object, node::chain::enterprise_vote_index );
 
-FC_REFLECT( node::chain::enterprise_approval_object,
+FC_REFLECT( node::chain::enterprise_fund_object,
          (id)
+         (funder)
          (account)
-         (creator)
          (enterprise_id)
-         (vote_rank)
-         (milestone)
+         (amount)
+         (last_updated)
+         (created)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::chain::enterprise_approval_object, node::chain::enterprise_approval_index );
+CHAINBASE_SET_INDEX_TYPE( node::chain::enterprise_fund_object, node::chain::enterprise_fund_index );

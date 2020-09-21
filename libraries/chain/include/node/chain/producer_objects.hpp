@@ -166,6 +166,10 @@ namespace node { namespace chain {
          account_name_type      account;              ///< The account creating the producer vote.
 
          uint16_t               vote_rank = 1;        ///< Ordered rank to which the producer is supported.
+
+         time_point             last_updated;         ///< Time the vote was last updated.
+
+         time_point             created;              ///< Time the vote was created.
    };
 
 
@@ -237,6 +241,7 @@ namespace node { namespace chain {
             last_pow_update = now;
          }
    };
+
 
    /**
     * Block Validation Objects are used by block producers
@@ -400,9 +405,11 @@ namespace node { namespace chain {
       allocator< producer_object >
    > producer_index;
 
+
    struct by_account_producer;
    struct by_account_rank;
    struct by_producer_account;
+
 
    typedef multi_index_container<
       producer_vote_object,
@@ -458,6 +465,7 @@ namespace node { namespace chain {
    struct by_producer_block_id;
    struct by_block_id;
    
+
    typedef multi_index_container<
       block_validation_object,
       indexed_by<
@@ -524,7 +532,9 @@ namespace node { namespace chain {
       allocator< block_validation_object >
    > block_validation_index;
 
+
    struct by_reporter_height;
+
 
    typedef multi_index_container<
       commit_violation_object,
@@ -621,6 +631,8 @@ FC_REFLECT( node::chain::producer_vote_object,
          (producer)
          (account)
          (vote_rank)
+         (last_updated)
+         (created)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::producer_vote_object, node::chain::producer_vote_index );

@@ -38,14 +38,333 @@ namespace node { namespace chain {
 
 using boost::container::flat_set;
 
+
+const account_object& database::get_account( const account_name_type& name )const
+{ try {
+	return get< account_object, by_name >( name );
+} FC_CAPTURE_AND_RETHROW( (name) ) }
+
+const account_object* database::find_account( const account_name_type& name )const
+{
+   return find< account_object, by_name >( name );
+}
+
+const account_authority_object& database::get_account_authority( const account_name_type& account )const
+{ try {
+	return get< account_authority_object, by_account >( account );
+} FC_CAPTURE_AND_RETHROW( (account) ) }
+
+const account_authority_object* database::find_account_authority( const account_name_type& account )const
+{
+   return find< account_authority_object, by_account >( account );
+}
+
+const account_permission_object& database::get_account_permissions( const account_name_type& account )const
+{ try {
+	return get< account_permission_object, by_account >( account );
+} FC_CAPTURE_AND_RETHROW( (account) ) }
+
+const account_permission_object* database::find_account_permissions( const account_name_type& account )const
+{
+   return find< account_permission_object, by_account >( account );
+}
+
+const account_verification_object& database::get_account_verification( const account_name_type& verifier_account, const account_name_type& verified_account )const
+{ try {
+	return get< account_verification_object, by_verifier_verified >( boost::make_tuple( verifier_account, verified_account ) );
+} FC_CAPTURE_AND_RETHROW( (verifier_account)(verified_account) ) }
+
+const account_verification_object* database::find_account_verification( const account_name_type& verifier_account, const account_name_type& verified_account )const
+{
+   return find< account_verification_object, by_verifier_verified >( boost::make_tuple( verifier_account, verified_account ) );
+}
+
+const account_business_object& database::get_account_business( const account_name_type& account )const
+{ try {
+	return get< account_business_object, by_account >( account );
+} FC_CAPTURE_AND_RETHROW( (account) ) }
+
+const account_business_object* database::find_account_business( const account_name_type& account )const
+{
+   return find< account_business_object, by_account >( account );
+}
+
+const account_executive_vote_object& database::get_account_executive_vote( const account_name_type& account, const account_name_type& business, const account_name_type& executive )const
+{ try {
+	return get< account_executive_vote_object, by_account_business_executive >( boost::make_tuple( account, business, executive ) );
+} FC_CAPTURE_AND_RETHROW( (account)(business)(executive) ) }
+
+const account_executive_vote_object* database::find_account_executive_vote( const account_name_type& account, const account_name_type& business, const account_name_type& executive )const
+{
+   return find< account_executive_vote_object, by_account_business_executive >( boost::make_tuple( account, business, executive ) );
+}
+
+const account_officer_vote_object& database::get_account_officer_vote( const account_name_type& account, const account_name_type& business, const account_name_type& officer )const
+{ try {
+	return get< account_officer_vote_object, by_account_business_officer >( boost::make_tuple( account, business, officer ) );
+} FC_CAPTURE_AND_RETHROW( (account)(business)(officer) ) }
+
+const account_officer_vote_object* database::find_account_officer_vote( const account_name_type& account, const account_name_type& business, const account_name_type& officer )const
+{
+   return find< account_officer_vote_object, by_account_business_officer >( boost::make_tuple( account, business, officer ) );
+}
+
+const account_member_request_object& database::get_account_member_request( const account_name_type& account, const account_name_type& business )const
+{ try {
+	return get< account_member_request_object, by_account_business >( boost::make_tuple( account, business) );
+} FC_CAPTURE_AND_RETHROW( (account)(business) ) }
+
+const account_member_request_object* database::find_account_member_request( const account_name_type& account, const account_name_type& business )const
+{
+   return find< account_member_request_object, by_account_business >( boost::make_tuple( account, business) );
+}
+
+const account_member_invite_object& database::get_account_member_invite( const account_name_type& member, const account_name_type& business )const
+{ try {
+	return get< account_member_invite_object, by_member_business >( boost::make_tuple( member, business) );
+} FC_CAPTURE_AND_RETHROW( (member)(business) ) }
+
+const account_member_invite_object* database::find_account_member_invite( const account_name_type& member, const account_name_type& business )const
+{
+   return find< account_member_invite_object, by_member_business >( boost::make_tuple( member, business) );
+}
+
+const account_member_key_object& database::get_account_member_key( const account_name_type& member, const account_name_type& business )const
+{ try {
+	return get< account_member_key_object, by_member_business >( boost::make_tuple( member, business) );
+} FC_CAPTURE_AND_RETHROW( (member)(business) ) }
+
+const account_member_key_object* database::find_account_member_key( const account_name_type& member, const account_name_type& business )const
+{
+   return find< account_member_key_object, by_member_business >( boost::make_tuple( member, business) );
+}
+
+const account_following_object& database::get_account_following( const account_name_type& account )const
+{ try {
+	return get< account_following_object, by_account >( account );
+} FC_CAPTURE_AND_RETHROW( (account) ) }
+
+const account_following_object* database::find_account_following( const account_name_type& account )const
+{
+   return find< account_following_object, by_account >( account );
+}
+
+const account_tag_following_object& database::get_account_tag_following( const tag_name_type& tag )const
+{ try {
+	return get< account_tag_following_object, by_tag >( tag );
+} FC_CAPTURE_AND_RETHROW( (tag) ) }
+
+const account_tag_following_object* database::find_account_tag_following( const tag_name_type& tag )const
+{
+   return find< account_tag_following_object, by_tag >( tag );
+}
+
+
+/**
+ * Updates the voting statistics, executive board, and officer set of a Business account.
+ */
+void database::update_business_account( const account_business_object& business )
+{ try {
+   const auto& bus_officer_vote_idx = get_index< account_officer_vote_index >().indices().get< by_business_account_rank >();
+   const auto& bus_executive_vote_idx = get_index< account_executive_vote_index >().indices().get< by_business_role_executive >();
+
+   flat_map< account_name_type, share_type > officers;
+   flat_map< account_name_type, flat_map< executive_role_type, share_type > > exec_map;
+   vector< pair< account_name_type, pair< executive_role_type, share_type > > > role_rank;
+   
+   role_rank.reserve( executive_role_values.size() * officers.size() );
+   flat_map< account_name_type, pair< executive_role_type, share_type > > executives;
+   executive_officer_set exec_set;
+
+   auto bus_officer_vote_itr = bus_officer_vote_idx.lower_bound( business.account );
+
+   flat_set< account_name_type > executive_account_list;
+   flat_set< account_name_type > officer_account_list;
+
+   while( bus_officer_vote_itr != bus_officer_vote_idx.end() &&
+      bus_officer_vote_itr->business_account == business.account )
+   {
+      const account_object& voter = get_account( bus_officer_vote_itr->account );
+      share_type weight = get_equity_voting_power( bus_officer_vote_itr->account, business );
+
+      while( bus_officer_vote_itr != bus_officer_vote_idx.end() && 
+         bus_officer_vote_itr->business_account == business.account &&
+         bus_officer_vote_itr->account == voter.name )
+      {
+         const account_officer_vote_object& vote = *bus_officer_vote_itr;
+         officers[ vote.officer_account ] += share_type( weight.value >> vote.vote_rank );
+         // divides voting weight by 2^vote_rank, limiting total voting weight -> total voting power as votes increase.
+         ++bus_officer_vote_itr;
+      }
+   }
+
+   // Remove officers from map that do not meet voting requirement
+   for( auto itr = officers.begin(); itr != officers.end(); )
+   {
+      if( itr->second < business.officer_vote_threshold )
+      {
+         itr = officers.erase( itr );   
+      }
+      else
+      {
+         officer_account_list.insert( itr->first );
+         ++itr;
+      }
+   }
+
+   flat_map< executive_role_type, share_type > role_map;
+   auto bus_executive_vote_itr = bus_executive_vote_idx.lower_bound( business.account );
+
+   while( bus_executive_vote_itr != bus_executive_vote_idx.end() && 
+      bus_executive_vote_itr->business_account == business.account )
+   {
+      const account_object& voter = get_account( bus_executive_vote_itr->account );
+      share_type weight = get_equity_voting_power( bus_executive_vote_itr->account, business );
+
+      while( bus_executive_vote_itr != bus_executive_vote_idx.end() && 
+         bus_executive_vote_itr->business_account == business.account &&
+         bus_executive_vote_itr->account == voter.name )
+      {
+         const account_executive_vote_object& vote = *bus_executive_vote_itr;
+
+         exec_map[ vote.executive_account ][ vote.role ] += share_type( weight.value >> vote.vote_rank );
+         // divides voting weight by 2^vote_rank, limiting total voting weight -> total voting power as votes increase.
+         ++bus_executive_vote_itr;
+      }
+   }
+      
+   for( auto exec_votes : exec_map )
+   {
+      for( auto role_votes : exec_votes.second )   // Copy all exec role votes into sorting vector
+      {
+         role_rank.push_back( std::make_pair( exec_votes.first, std::make_pair( role_votes.first, role_votes.second ) ) );
+      }
+   }
+   
+   std::sort( role_rank.begin(), role_rank.end(), [&]( pair< account_name_type, pair< executive_role_type, share_type > > a, pair< account_name_type, pair< executive_role_type, share_type > > b )
+   {
+      return a.second.second < b.second.second;   // Ordered vector of all executives, for each role. 
+   });
+
+   auto role_rank_itr = role_rank.begin();
+
+   while( !exec_set.allocated() && 
+      role_rank_itr != role_rank.end() )
+   {
+      pair< account_name_type, pair< executive_role_type, share_type > > rank = *role_rank_itr;
+      
+      account_name_type executive = rank.first;
+      executive_role_type role = rank.second.first;
+      share_type votes = rank.second.second;
+
+      switch( role )
+      {
+         case executive_role_type::CHIEF_EXECUTIVE_OFFICER:
+         {
+            executives[executive] = std::make_pair( role, votes );
+            exec_set.CHIEF_EXECUTIVE_OFFICER = executive;
+         }
+         break;
+         case executive_role_type::CHIEF_OPERATING_OFFICER:
+         {
+            executives[executive] = std::make_pair( role, votes );
+            exec_set.CHIEF_OPERATING_OFFICER = executive;
+         }
+         break;
+         case executive_role_type::CHIEF_FINANCIAL_OFFICER:
+         {
+            executives[executive] = std::make_pair( role, votes );
+            exec_set.CHIEF_FINANCIAL_OFFICER = executive;
+         }
+         break;
+         case executive_role_type::CHIEF_TECHNOLOGY_OFFICER:
+         {
+            executives[executive] = std::make_pair( role, votes );
+            exec_set.CHIEF_TECHNOLOGY_OFFICER = executive;
+         }
+         break;
+         case executive_role_type::CHIEF_DEVELOPMENT_OFFICER:
+         {
+            executives[executive] = std::make_pair( role, votes );
+            exec_set.CHIEF_DEVELOPMENT_OFFICER = executive;
+         }
+         break;
+         case executive_role_type::CHIEF_SECURITY_OFFICER:
+         {
+            executives[executive] = std::make_pair( role, votes );
+            exec_set.CHIEF_SECURITY_OFFICER = executive;
+         }
+         break;
+         case executive_role_type::CHIEF_ADVOCACY_OFFICER:
+         {
+            executives[executive] = std::make_pair( role, votes );
+            exec_set.CHIEF_ADVOCACY_OFFICER = executive;
+         }
+         break;
+         case executive_role_type::CHIEF_GOVERNANCE_OFFICER:
+         {
+            executives[executive] = std::make_pair( role, votes );
+            exec_set.CHIEF_GOVERNANCE_OFFICER = executive;
+         }
+         break;
+         case executive_role_type::CHIEF_MARKETING_OFFICER:
+         {
+            executives[executive] = std::make_pair( role, votes );
+            exec_set.CHIEF_MARKETING_OFFICER = executive;
+         }
+         break;
+         case executive_role_type::CHIEF_DESIGN_OFFICER:
+         {
+            executives[executive] = std::make_pair( role, votes );
+            exec_set.CHIEF_DESIGN_OFFICER = executive;
+         }
+         break;
+      }
+
+      executive_account_list.insert( executive );
+      ++role_rank_itr;
+   }
+
+   modify( business, [&]( account_business_object& b )
+   {
+      b.officers = officer_account_list;
+      b.executives = executive_account_list;
+      b.officer_votes = officers;
+      b.executive_votes = executives;
+      b.executive_board = exec_set;
+   });
+
+   ilog( "Updated Business Account: ${b}",("b",business ) );
+
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
+ * Updates the executive board votes and positions of officers
+ * in a business account.
+ */
+void database::update_business_account_set()
+{ try {
+   if( (head_block_num() % SET_UPDATE_BLOCK_INTERVAL) != 0 )    // Runs once per day
+      return;
+
+   const auto& business_idx = get_index< account_business_index >().indices().get< by_account >();
+   auto business_itr = business_idx.begin();
+
+   while( business_itr != business_idx.end() )
+   {
+      update_business_account( *business_itr );
+      ++business_itr;
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+
 /**
  * Expires memberships, and renews recurring memberships when the 
  * membership expiration time is reached.
  */
 void database::process_membership_updates()
 { try {
-   // ilog( "Process Membership Updates");
-
    const median_chain_property_object& median_props = get_median_chain_properties();
    time_point now = head_block_time();
    const auto& account_idx = get_index< account_index >().indices().get< by_membership_expiration >();
@@ -153,7 +472,7 @@ asset database::pay_membership_fees( const account_object& member, const asset& 
    FC_ASSERT( mem_payment > asset( 0, SYMBOL_USD ), 
       "Payment must be denominated in USD asset and greater than 0." );
 
-   const reward_fund_object& reward_fund = get_reward_fund( SYMBOL_COIN );
+   const asset_reward_fund_object& reward_fund = get_reward_fund( SYMBOL_COIN );
    price usd_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).hour_median_price;
    asset membership_fee = mem_payment * usd_price;       // Membership fee denominated in Core asset
    asset network_fees = ( membership_fee * NETWORK_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
@@ -164,7 +483,7 @@ asset database::pay_membership_fees( const account_object& member, const asset& 
    asset total_fees = network_paid + interface_paid + partners_fees;
    adjust_liquid_balance( member.name, -total_fees );
    
-   modify( reward_fund, [&]( reward_fund_object& rfo )
+   modify( reward_fund, [&]( asset_reward_fund_object& rfo )
    {
       rfo.adjust_premium_partners_fund_balance( partners_fees );    // Adds funds to premium partners fund for distribution to premium creators
    });
@@ -184,7 +503,7 @@ asset database::pay_membership_fees( const account_object& member, const asset& 
    FC_ASSERT( mem_payment > asset( 0, SYMBOL_USD ), 
       "Payment must be denominated in USD asset and greater than 0." );
 
-   const reward_fund_object& reward_fund = get_reward_fund( SYMBOL_COIN );
+   const asset_reward_fund_object& reward_fund = get_reward_fund( SYMBOL_COIN );
    price usd_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_USD ).hour_median_price;
    asset membership_fee = mem_payment * usd_price;       // Membership fee denominated in Core asset
    asset network_fees = ( membership_fee * NETWORK_MEMBERSHIP_FEE_PERCENT ) / PERCENT_100;
@@ -194,7 +513,7 @@ asset database::pay_membership_fees( const account_object& member, const asset& 
    asset total_fees = network_paid + partners_fees;
    adjust_liquid_balance( member.name, -total_fees );
    
-   modify( reward_fund, [&]( reward_fund_object& rfo )
+   modify( reward_fund, [&]( asset_reward_fund_object& rfo )
    {
       rfo.adjust_premium_partners_fund_balance( partners_fees );    // Adds funds to premium partners fund for distribution to premium creators
    });
@@ -266,13 +585,13 @@ asset database::claim_activity_reward( const account_object& account,
    const producer_object& producer, asset_symbol_type currency_symbol )
 { try {
    const asset_currency_data_object& currency = get_currency_data( currency_symbol );
-   const reward_fund_object& reward_fund = get_reward_fund( currency_symbol );
+   const asset_reward_fund_object& reward_fund = get_reward_fund( currency_symbol );
    const account_balance_object& abo = get_account_balance( account.name, currency.equity_asset );
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    const median_chain_property_object& median_props = get_median_chain_properties();
    time_point now = props.time;
    auto decay_rate = RECENT_REWARD_DECAY_RATE;
-   price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
+   price equity_price = get_liquidity_pool( currency_symbol, currency.equity_asset ).hour_median_price;
    uint128_t activity_shares = BLOCKCHAIN_PRECISION.value;
 
    FC_ASSERT( abo.staked_balance >= BLOCKCHAIN_PRECISION,
@@ -297,7 +616,8 @@ asset database::claim_activity_reward( const account_object& account,
    }
 
    // Decay recent claims of activity reward fund and add new shares of this claim.
-   modify( reward_fund, [&]( reward_fund_object& rfo )   
+
+   modify( reward_fund, [&]( asset_reward_fund_object& rfo )   
    {
       rfo.recent_activity_claims -= ( rfo.recent_activity_claims * ( now - rfo.last_updated ).count() ) / decay_rate.count();
       rfo.last_updated = now;
@@ -308,7 +628,7 @@ asset database::claim_activity_reward( const account_object& account,
 
    asset activity_reward = asset( share_type( reward_shares_amount.to_uint64() ), currency_symbol );
 
-   modify( reward_fund, [&]( reward_fund_object& rfo )
+   modify( reward_fund, [&]( asset_reward_fund_object& rfo )
    {
       rfo.adjust_activity_reward_balance( -activity_reward );    // Deduct activity reward from reward fund.
    });
@@ -316,6 +636,7 @@ asset database::claim_activity_reward( const account_object& account,
    adjust_pending_supply( -activity_reward );                    // Deduct activity reward from pending supply.
    
    // Update recent activity claims on account
+
    modify( account, [&]( account_object& a )
    {
       a.recent_activity_claims -= ( a.recent_activity_claims * ( now - a.last_activity_reward ).to_seconds() ) / decay_rate.to_seconds();
@@ -343,7 +664,7 @@ void database::update_owner_authority( const account_object& account, const auth
    time_point now = head_block_time();
    const account_authority_object& auth = get< account_authority_object, by_account >( account.name );
 
-   create< owner_authority_history_object >( [&]( owner_authority_history_object& h )
+   create< account_authority_history_object >( [&]( account_authority_history_object& h )
    {
       h.account = account.name;
       h.previous_owner_authority = auth.owner_auth;
@@ -360,378 +681,6 @@ void database::update_owner_authority( const account_object& account, const auth
       ("a", account.name)("o",auth));
 }
 
-/**
- * Aligns producer votes in order of highest to lowest,
- * with continual ordering.
- */
-void database::update_producer_votes( const account_object& account )
-{
-   const auto& vote_idx = get_index< producer_vote_index >().indices().get< by_account_rank >();
-   auto vote_itr = vote_idx.lower_bound( account.name );
-
-   uint16_t new_vote_rank = 1;
-
-   while( vote_itr != vote_idx.end() && 
-      vote_itr->account == account.name )
-   {
-      const producer_vote_object& vote = *vote_itr;
-      if( vote.vote_rank != new_vote_rank )
-      {
-         modify( vote, [&]( producer_vote_object& v )
-         {
-            v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
-         });
-      }
-      ++vote_itr;
-      new_vote_rank++;
-   }
-
-   modify( account, [&]( account_object& a )
-   {
-      a.producer_vote_count = ( new_vote_rank - 1 );
-   });
-}
-
-/**
- * Aligns producer votes in a continuous order, and inputs a new vote
- * at a specified vote number.
- */
-void database::update_producer_votes( const account_object& account, const account_name_type& producer, uint16_t input_vote_rank )
-{
-   const auto& vote_idx = get_index< producer_vote_index >().indices().get< by_account_rank >();
-   auto vote_itr = vote_idx.lower_bound( account.name );
-
-   uint16_t new_vote_rank = 1;
-
-   while( vote_itr != vote_idx.end() && 
-      vote_itr->account == account.name )
-   {
-      const producer_vote_object& vote = *vote_itr;
-      if( vote.vote_rank == input_vote_rank )
-      {
-         new_vote_rank++;
-      }
-      if( vote.vote_rank != new_vote_rank )
-      {
-         modify( vote, [&]( producer_vote_object& v )
-         {
-            v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
-         });
-      }
-      new_vote_rank++;
-      ++vote_itr;
-   }
-
-   create< producer_vote_object >([&]( producer_vote_object& v )
-   {
-      v.account = account.name;
-      v.producer = producer;
-      v.vote_rank = input_vote_rank;
-   });
-
-   modify( account, [&]( account_object& a )
-   {
-      a.producer_vote_count = ( new_vote_rank - 1 );
-   });
-}
-
-/**
- * Aligns network_officer votes in a continuous order, and inputs a new vote
- * at a specified vote number.
- */
-void database::update_network_officer_votes( const account_object& account )
-{
-   const auto& vote_idx = get_index< network_officer_vote_index >().indices().get< by_account_type_rank >();
-   auto vote_itr = vote_idx.lower_bound( account.name );
-
-   flat_map< network_officer_role_type, uint16_t > vote_rank;
-   vote_rank[ network_officer_role_type::DEVELOPMENT ] = 1;
-   vote_rank[ network_officer_role_type::MARKETING ] = 1;
-   vote_rank[ network_officer_role_type::ADVOCACY ] = 1;
-
-   while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
-   {
-      const network_officer_vote_object& vote = *vote_itr;
-      if( vote.vote_rank != vote_rank[ vote.officer_type ] )
-      {
-         modify( vote, [&]( network_officer_vote_object& v )
-         {
-            v.vote_rank = vote_rank[ vote.officer_type ];   // Updates vote rank to linear order of index retrieval.
-         });
-      }
-      vote_rank[ vote.officer_type ]++;
-      ++vote_itr;
-   }
-
-   modify( account, [&]( account_object& a )
-   {
-      a.officer_vote_count = ( vote_rank[ network_officer_role_type::DEVELOPMENT ] + vote_rank[ network_officer_role_type::MARKETING ] + vote_rank[ network_officer_role_type::ADVOCACY ] - 3 );
-   });
-}
-
-/**
- * Aligns network_officer votes in a continuous order, and inputs a new vote
- * at a specified vote number.
- */
-void database::update_network_officer_votes( const account_object& account, const account_name_type& network_officer, 
-   network_officer_role_type officer_type, uint16_t input_vote_rank )
-{
-   const auto& vote_idx = get_index< network_officer_vote_index >().indices().get< by_account_type_rank >();
-   auto vote_itr = vote_idx.lower_bound( account.name );
-
-   flat_map< network_officer_role_type, uint16_t > vote_rank;
-   vote_rank[ network_officer_role_type::DEVELOPMENT ] = 1;
-   vote_rank[ network_officer_role_type::MARKETING ] = 1;
-   vote_rank[ network_officer_role_type::ADVOCACY ] = 1;
-
-   while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
-   {
-      const network_officer_vote_object& vote = *vote_itr;
-
-      if( vote.vote_rank == input_vote_rank && vote.officer_type == officer_type )
-      {
-         vote_rank[ vote.officer_type ]++;
-      }
-      if( vote.vote_rank != vote_rank[ vote.officer_type ] )
-      {
-         modify( vote, [&]( network_officer_vote_object& v )
-         {
-            v.vote_rank = vote_rank[ vote.officer_type ];   // Updates vote rank to linear order of index retrieval.
-         });
-      }
-      vote_rank[ vote.officer_type ]++;
-      ++vote_itr;
-   }
-
-   create< network_officer_vote_object >([&]( network_officer_vote_object& v )
-   {
-      v.account = account.name;
-      v.network_officer = network_officer;
-      v.officer_type = officer_type;
-      v.vote_rank = input_vote_rank;
-   });
-
-   modify( account, [&]( account_object& a )
-   {
-      a.officer_vote_count = ( vote_rank[ network_officer_role_type::DEVELOPMENT ] + vote_rank[ network_officer_role_type::MARKETING ] + vote_rank[ network_officer_role_type::ADVOCACY ] - 3 );
-   });
-}
-
-
-/**
- * Aligns executive board votes in order of highest to lowest,
- * with continual ordering.
- */
-void database::update_executive_board_votes( const account_object& account )
-{
-   const auto& vote_idx = get_index< executive_board_vote_index >().indices().get< by_account_rank >();
-   auto vote_itr = vote_idx.lower_bound( account.name );
-
-   uint16_t new_vote_rank = 1;
-
-   while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
-   {
-      const executive_board_vote_object& vote = *vote_itr;
-      if( vote.vote_rank != new_vote_rank )
-      {
-         modify( vote, [&]( executive_board_vote_object& v )
-         {
-            v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
-         });
-      }
-      ++vote_itr;
-      new_vote_rank++;
-   }
-
-   modify( account, [&]( account_object& a )
-   {
-      a.executive_board_vote_count = ( new_vote_rank - 1 );
-   });
-}
-
-/**
- * Aligns executive board votes in a continuous order, and inputs a new vote
- * at a specified vote number.
- */
-void database::update_executive_board_votes( const account_object& account, const account_name_type& executive, uint16_t input_vote_rank )
-{
-   const auto& vote_idx = get_index< executive_board_vote_index >().indices().get< by_account_rank >();
-   auto vote_itr = vote_idx.lower_bound( account.name );
-
-   uint16_t new_vote_rank = 1;
-
-   while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
-   {
-      const executive_board_vote_object& vote = *vote_itr;
-      if( vote.vote_rank == input_vote_rank )
-      {
-         new_vote_rank++;
-      }
-      
-      if( vote.vote_rank != new_vote_rank )
-      {
-         modify( vote, [&]( executive_board_vote_object& v )
-         {
-            v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
-         });
-      }
-
-      new_vote_rank++;
-      ++vote_itr;
-   }
-
-   create< executive_board_vote_object >([&]( executive_board_vote_object& v )
-   {
-      v.account = account.name;
-      v.executive_board = executive;
-      v.vote_rank = input_vote_rank;
-   });
-
-   modify( account, [&]( account_object& a )
-   {
-      a.executive_board_vote_count = ( new_vote_rank - 1 );
-   });
-}
-
-
-/**
- * Aligns community moderator votes in order of highest to lowest,
- * with continual ordering.
- */
-void database::update_community_moderator_votes( const account_object& account, const community_name_type& community )
-{
-   const auto& vote_idx = get_index< community_moderator_vote_index >().indices().get< by_account_community_rank >();
-   auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, community ) );
-
-   uint16_t new_vote_rank = 1;
-
-   while( vote_itr != vote_idx.end() && 
-      vote_itr->account == account.name &&
-      vote_itr->community == community )
-   {
-      const community_moderator_vote_object& vote = *vote_itr;
-      if( vote.vote_rank != new_vote_rank )
-      {
-         modify( vote, [&]( community_moderator_vote_object& v )
-         {
-            v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
-         });
-      }
-      ++vote_itr;
-      new_vote_rank++;
-   }
-}
-
-/**
- * Aligns community moderator votes in a continuous order, and inputs a new vote
- * at a specified vote number.
- */
-void database::update_community_moderator_votes( const account_object& account, const community_name_type& community, 
-   const account_name_type& moderator, uint16_t input_vote_rank )
-{
-   const auto& vote_idx = get_index< community_moderator_vote_index >().indices().get< by_account_community_rank >();
-   auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, community ) );
-
-   uint16_t new_vote_rank = 1;
-
-   while( vote_itr != vote_idx.end() && 
-      vote_itr->account == account.name &&
-      vote_itr->community == community )
-   {
-      const community_moderator_vote_object& vote = *vote_itr;
-      if( vote.vote_rank == input_vote_rank )
-      {
-         new_vote_rank++;
-      }
-      if( vote.vote_rank != new_vote_rank )
-      {
-         modify( vote, [&]( community_moderator_vote_object& v )
-         {
-            v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
-         });
-      }
-      new_vote_rank++;
-      ++vote_itr;
-   }
-
-   create< community_moderator_vote_object >([&]( community_moderator_vote_object& v )
-   {
-      v.account = account.name;
-      v.moderator = moderator;
-      v.community = community;
-      v.vote_rank = input_vote_rank;
-   });
-}
-
-
-/**
- * Aligns enterprise approval votes in order of highest to lowest,
- * with continual ordering.
- */
-void database::update_enterprise_approvals( const account_object& account )
-{
-   const auto& vote_idx = get_index< enterprise_approval_index >().indices().get< by_account_rank >();
-   auto vote_itr = vote_idx.lower_bound( account.name );
-
-   uint16_t new_vote_rank = 1;
-
-   while( vote_itr != vote_idx.end() && 
-      vote_itr->account == account.name )
-   {
-      const enterprise_approval_object& vote = *vote_itr;
-      if( vote.vote_rank != new_vote_rank )
-      {
-         modify( vote, [&]( enterprise_approval_object& v )
-         {
-            v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
-         });
-      }
-      ++vote_itr;
-      new_vote_rank++;
-   }
-}
-
-/**
- * Aligns enterprise approval votes in a continuous order, and inputs a new vote
- * at a specified vote number.
- */
-void database::update_enterprise_approvals( const account_object& account, const account_name_type& creator,
-   string enterprise_id, uint16_t input_vote_rank, int16_t input_milestone )
-{
-   const auto& vote_idx = get_index< enterprise_approval_index >().indices().get< by_account_rank >();
-   auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, 1 ) );
-
-   uint16_t new_vote_rank = 1;
-
-   while( vote_itr != vote_idx.end() && 
-      vote_itr->account == account.name )
-   {
-      const enterprise_approval_object& vote = *vote_itr;
-      if( vote.vote_rank == input_vote_rank )
-      {
-         new_vote_rank++;
-      }
-      if( vote.vote_rank != new_vote_rank )
-      {
-         modify( vote, [&]( enterprise_approval_object& v )
-         {
-            v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
-         });
-      }
-      new_vote_rank++;
-      ++vote_itr;
-   }
-
-   create< enterprise_approval_object >([&]( enterprise_approval_object& v )
-   {
-      v.account = account.name;
-      from_string( v.enterprise_id, enterprise_id );
-      v.creator = creator;
-      v.vote_rank = input_vote_rank;
-      v.milestone = input_milestone;
-   });
-}
-
 
 /**
  * Aligns business account executive votes in a continuous order.
@@ -740,6 +689,7 @@ void database::update_account_executive_votes( const account_object& account, co
 {
    const auto& vote_idx = get_index< account_executive_vote_index >().indices().get< by_account_business_role_rank >();
    auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, business ) );
+   time_point now = head_block_time();
 
    flat_map< executive_role_type, uint16_t >vote_rank;
    vote_rank[ executive_role_type::CHIEF_EXECUTIVE_OFFICER ] = 1;
@@ -764,6 +714,7 @@ void database::update_account_executive_votes( const account_object& account, co
          modify( vote, [&]( account_executive_vote_object& v )
          {
             v.vote_rank = vote_rank[vote.role];
+            v.last_updated = now;
          });
       }
       vote_rank[vote.role]++;
@@ -780,6 +731,7 @@ void database::update_account_executive_votes( const account_object& account, co
 {
    const auto& vote_idx = get_index< account_executive_vote_index >().indices().get< by_account_business_role_rank >();
    auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, business ) );
+   time_point now = head_block_time();
 
    flat_map< executive_role_type, uint16_t >vote_rank;
    vote_rank[ executive_role_type::CHIEF_EXECUTIVE_OFFICER ] = 1;
@@ -808,6 +760,7 @@ void database::update_account_executive_votes( const account_object& account, co
          modify( vote, [&]( account_executive_vote_object& v )
          {
             v.vote_rank = vote_rank[vote.role];
+            v.last_updated = now;
          });
       }
       vote_rank[vote.role]++;
@@ -821,6 +774,8 @@ void database::update_account_executive_votes( const account_object& account, co
       v.executive_account = executive.name;
       v.role = role;
       v.vote_rank = input_vote_rank;
+      v.last_updated = now;
+      v.created = now;
    });
 }
 
@@ -831,6 +786,7 @@ void database::update_account_officer_votes( const account_object& account, cons
 {
    const auto& vote_idx = get_index< account_officer_vote_index >().indices().get< by_account_business_rank >();
    auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, business ) );
+   time_point now = head_block_time();
 
    uint16_t new_vote_rank = 1;
 
@@ -845,6 +801,7 @@ void database::update_account_officer_votes( const account_object& account, cons
          modify( vote, [&]( account_officer_vote_object& v )
          {
             v.vote_rank = new_vote_rank;
+            v.last_updated = now;
          });
       }
       new_vote_rank++;
@@ -860,6 +817,7 @@ void database::update_account_officer_votes( const account_object& account, cons
 {
    const auto& vote_idx = get_index< account_officer_vote_index >().indices().get< by_account_business_rank >();
    auto vote_itr = vote_idx.lower_bound( boost::make_tuple( account.name, business ) );
+   time_point now = head_block_time();
 
    uint16_t new_vote_rank = 1;
 
@@ -878,6 +836,7 @@ void database::update_account_officer_votes( const account_object& account, cons
          modify( vote, [&]( account_officer_vote_object& v )
          {
             v.vote_rank = new_vote_rank;
+            v.last_updated = now;
          });
       }
       new_vote_rank++;
@@ -890,6 +849,8 @@ void database::update_account_officer_votes( const account_object& account, cons
       v.business_account = business;
       v.officer_account = officer.name;
       v.vote_rank = input_vote_rank;
+      v.last_updated = now;
+      v.created = now;
    });
 }
 
@@ -911,7 +872,7 @@ void database::account_recovery_processing()
    }
 
    // Clear invalid historical authorities
-   const auto& hist_idx = get_index< owner_authority_history_index >().indices();
+   const auto& hist_idx = get_index< account_authority_history_index >().indices();
    auto hist = hist_idx.begin();
 
    while( hist != hist_idx.end() && 
@@ -923,7 +884,7 @@ void database::account_recovery_processing()
    }
 
    // Apply effective recovery_account changes
-   const auto& change_req_idx = get_index< change_recovery_account_request_index >().indices().get< by_effective_date >();
+   const auto& change_req_idx = get_index< account_recovery_update_request_index >().indices().get< by_effective_date >();
    auto change_req = change_req_idx.begin();
 
    while( change_req != change_req_idx.end() && 
@@ -945,7 +906,47 @@ void database::account_recovery_processing()
    }
 }
 
-void database::clear_network_votes( const account_name_type& a )
+void database::process_account_decline_voting()
+{
+   time_point now = head_block_time();
+   const auto& req_idx = get_index< account_decline_voting_request_index >().indices().get< by_effective_date >();
+   auto req_itr = req_idx.begin();
+
+   while( req_itr != req_idx.end() && 
+      req_itr->effective_date <= now )
+   {
+      const account_decline_voting_request_object& request = *req_itr;
+      const account_object& account = get_account( request.account );
+      ++req_itr;
+   
+      clear_account_votes( account.name );
+
+      for( auto proxy : account.proxied )   // Remove all accounts proxied to the account.
+      {
+         modify( get_account( proxy ), [&]( account_object& a )
+         {
+            a.proxy = PROXY_TO_SELF_ACCOUNT;
+         });
+      }
+
+      modify( account, [&]( account_object& a )
+      {
+         a.can_vote = false;
+         a.proxy = PROXY_TO_SELF_ACCOUNT;
+         a.proxied.clear();
+      });
+
+      ilog( "Account: ${a} Processed Decline Voting Rights Request: \n ${r} \n",
+         ("a",account.name)("r",request));
+
+      ilog( "Removed: ${v}",("v",request));
+      remove( request );
+   }
+}
+
+
+
+void database::clear_account_votes( const account_name_type& a )
 {
    const auto& producer_vote_idx = get_index< producer_vote_index >().indices().get< by_account_producer >();
    auto producer_vote_itr = producer_vote_idx.lower_bound( a );
@@ -980,13 +981,13 @@ void database::clear_network_votes( const account_name_type& a )
       remove(vote);
    }
 
-   const auto& enterprise_approval_idx = get_index< enterprise_approval_index >().indices().get< by_account_enterprise >();
-   auto enterprise_approval_itr = enterprise_approval_idx.lower_bound( a );
-   while( enterprise_approval_itr != enterprise_approval_idx.end() && 
-      enterprise_approval_itr->account == a )
+   const auto& enterprise_vote_idx = get_index< enterprise_vote_index >().indices().get< by_account_enterprise >();
+   auto enterprise_vote_itr = enterprise_vote_idx.lower_bound( a );
+   while( enterprise_vote_itr != enterprise_vote_idx.end() && 
+      enterprise_vote_itr->account == a )
    {
-      const enterprise_approval_object& vote = *enterprise_approval_itr;
-      ++enterprise_approval_itr;
+      const enterprise_vote_object& vote = *enterprise_vote_itr;
+      ++enterprise_vote_itr;
       ilog( "Removed: ${v}",("v",vote));
       remove(vote);
    }
@@ -1022,44 +1023,6 @@ void database::clear_network_votes( const account_name_type& a )
       ++account_executive_vote_itr;
       ilog( "Removed: ${v}",("v",vote));
       remove(vote);
-   }
-}
-
-void database::process_decline_voting_rights()
-{
-   time_point now = head_block_time();
-   const auto& req_idx = get_index< decline_voting_rights_request_index >().indices().get< by_effective_date >();
-   auto req_itr = req_idx.begin();
-
-   while( req_itr != req_idx.end() && 
-      req_itr->effective_date <= now )
-   {
-      const decline_voting_rights_request_object& request = *req_itr;
-      const account_object& account = get_account( request.account );
-      ++req_itr;
-   
-      clear_network_votes( account.name );
-
-      for( auto proxy : account.proxied )   // Remove all accounts proxied to the account.
-      {
-         modify( get_account( proxy ), [&]( account_object& a )
-         {
-            a.proxy = PROXY_TO_SELF_ACCOUNT;
-         });
-      }
-
-      modify( account, [&]( account_object& a )
-      {
-         a.can_vote = false;
-         a.proxy = PROXY_TO_SELF_ACCOUNT;
-         a.proxied.clear();
-      });
-
-      ilog( "Account: ${a} Processed Decline Voting Rights Request: \n ${r} \n",
-         ("a",account.name)("r",request));
-
-      ilog( "Removed: ${v}",("v",request));
-      remove( request );
    }
 }
 

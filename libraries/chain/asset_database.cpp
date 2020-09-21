@@ -34,7 +34,544 @@
 
 namespace node { namespace chain {
 
-using boost::container::flat_set;
+const asset_object& database::get_asset( const asset_symbol_type& symbol ) const
+{ try {
+   return get< asset_object, by_symbol >( symbol );
+} FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+const asset_object* database::find_asset( const asset_symbol_type& symbol ) const
+{
+   return find< asset_object, by_symbol >( symbol );
+}
+
+const asset_dynamic_data_object& database::get_dynamic_data( const asset_symbol_type& symbol ) const
+{ try {
+   return get< asset_dynamic_data_object, by_symbol >( (symbol) );
+} FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+const asset_dynamic_data_object* database::find_dynamic_data( const asset_symbol_type& symbol ) const
+{
+   return find< asset_dynamic_data_object, by_symbol >( (symbol) );
+}
+
+const asset_currency_data_object& database::get_currency_data( const asset_symbol_type& symbol ) const
+{ try {
+   return get< asset_currency_data_object, by_symbol >( (symbol) );
+} FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+const asset_currency_data_object* database::find_currency_data( const asset_symbol_type& symbol ) const
+{
+   return find< asset_currency_data_object, by_symbol >( (symbol) );
+}
+
+const asset_reward_fund_object& database::get_reward_fund( const asset_symbol_type& symbol ) const
+{ try {
+   return get< asset_reward_fund_object, by_symbol >( symbol );
+} FC_CAPTURE_AND_RETHROW( (symbol)) }
+
+const asset_reward_fund_object* database::find_reward_fund( const asset_symbol_type& symbol ) const
+{
+   return find< asset_reward_fund_object, by_symbol >( symbol );
+}
+
+const asset_stablecoin_data_object& database::get_stablecoin_data( const asset_symbol_type& symbol ) const
+{ try {
+   return get< asset_stablecoin_data_object, by_symbol >( (symbol) );
+} FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+const asset_stablecoin_data_object* database::find_stablecoin_data( const asset_symbol_type& symbol ) const
+{
+   return find< asset_stablecoin_data_object, by_symbol >( (symbol) );
+}
+
+const asset_equity_data_object& database::get_equity_data( const asset_symbol_type& symbol ) const
+{ try {
+   return get< asset_equity_data_object, by_symbol >( (symbol) );
+} FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+const asset_equity_data_object* database::find_equity_data( const asset_symbol_type& symbol ) const
+{
+   return find< asset_equity_data_object, by_symbol >( (symbol) );
+}
+
+const asset_bond_data_object& database::get_bond_data( const asset_symbol_type& symbol ) const
+{ try {
+   return get< asset_bond_data_object, by_symbol >( (symbol) );
+} FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+const asset_bond_data_object* database::find_bond_data( const asset_symbol_type& symbol ) const
+{
+   return find< asset_bond_data_object, by_symbol >( (symbol) );
+}
+
+const asset_credit_data_object& database::get_credit_data( const asset_symbol_type& symbol ) const
+{ try {
+   return get< asset_credit_data_object, by_symbol >( (symbol) );
+} FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+const asset_credit_data_object* database::find_credit_data( const asset_symbol_type& symbol ) const
+{
+   return find< asset_credit_data_object, by_symbol >( (symbol) );
+}
+
+const asset_stimulus_data_object& database::get_stimulus_data( const asset_symbol_type& symbol ) const
+{ try {
+   return get< asset_stimulus_data_object, by_symbol >( (symbol) );
+} FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+const asset_stimulus_data_object* database::find_stimulus_data( const asset_symbol_type& symbol ) const
+{
+   return find< asset_stimulus_data_object, by_symbol >( (symbol) );
+}
+
+const asset_unique_data_object& database::get_unique_data( const asset_symbol_type& symbol ) const
+{ try {
+   return get< asset_unique_data_object, by_symbol >( (symbol) );
+} FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+const asset_unique_data_object* database::find_unique_data( const asset_symbol_type& symbol ) const
+{
+   return find< asset_unique_data_object, by_symbol >( (symbol) );
+}
+
+const asset_distribution_object& database::get_asset_distribution( const asset_symbol_type& symbol )const
+{ try {
+   return get< asset_distribution_object, by_symbol >( symbol );
+} FC_CAPTURE_AND_RETHROW( (symbol) ) }
+
+const asset_distribution_object* database::find_asset_distribution( const asset_symbol_type& symbol )const
+{
+   return find< asset_distribution_object, by_symbol >( symbol );
+}
+
+const asset_distribution_balance_object& database::get_asset_distribution_balance( const account_name_type& name, const asset_symbol_type& symbol )const
+{ try {
+   return get< asset_distribution_balance_object, by_account_distribution >( boost::make_tuple( name, symbol ) );
+} FC_CAPTURE_AND_RETHROW( (name)(symbol) ) }
+
+const asset_distribution_balance_object* database::find_asset_distribution_balance( const account_name_type& name, const asset_symbol_type& symbol )const
+{
+   return find< asset_distribution_balance_object, by_account_distribution >( boost::make_tuple( name, symbol ) );
+}
+
+
+/**
+ * Distributes currency issuance of all currency assets.
+ * Pays out Staked and liquid Currency assets, including MEC, 
+ * every block to all network contributors.
+ * 
+ * For MeCoin, the issuance rate is one Billion per year.
+ * 
+ *  - 25% of issuance is directed to Content Creator rewards.
+ *  - 20% of issuance is directed to Equity Holder rewards.
+ *  - 20% of issuance is directed to Block producers.
+ *  - 10% of issuance is directed to Supernode Operator rewards.
+ *  - 10% of issuance is directed to Staked MeCoin Holder rewards.
+ *  -  5% of issuance is directed to The Community Enterprise fund.
+ *  - 2.5% of issuance is directed to The Development reward pool.
+ *  - 2.5% of issuance is directed to The Marketing reward pool.
+ *  - 2.5% of issuance is directed to The Advocacy reward pool.
+ *  - 2.5% of issuance is directed to The Activity reward pool.
+ */
+void database::process_funds()
+{ try {
+   const dynamic_global_property_object& props = get_dynamic_global_properties();
+   const producer_object& current_producer = get_producer( props.current_producer );
+   const account_object& producer_account = get_account( props.current_producer );
+
+   FC_ASSERT( current_producer.active && 
+      producer_account.active,
+      "Block Producer cannot process funds while account or producer object is inactive." );
+
+   if( props.head_block_number > 0 )      // First block uses init genesis for reward.
+   {
+      const auto& currency_idx = get_index< asset_currency_data_index >().indices().get< by_id >();
+      auto currency_itr = currency_idx.begin();
+
+      while( currency_itr != currency_idx.end() )
+      {
+         const asset_currency_data_object& currency = *currency_itr;
+
+         asset block_reward = currency.block_reward;
+
+         asset content_reward            = ( block_reward * currency.content_reward_percent               ) / PERCENT_100;
+         asset equity_reward             = ( block_reward * currency.equity_reward_percent                ) / PERCENT_100;
+         asset producer_reward           = ( block_reward * currency.producer_reward_percent              ) / PERCENT_100;
+         asset supernode_reward          = ( block_reward * currency.supernode_reward_percent             ) / PERCENT_100;
+         asset power_reward              = ( block_reward * currency.power_reward_percent                 ) / PERCENT_100;
+         asset enterprise_fund_reward    = ( block_reward * currency.enterprise_fund_reward_percent       ) / PERCENT_100;
+         asset development_reward        = ( block_reward * currency.development_reward_percent           ) / PERCENT_100;
+         asset marketing_reward          = ( block_reward * currency.marketing_reward_percent             ) / PERCENT_100;
+         asset advocacy_reward           = ( block_reward * currency.advocacy_reward_percent              ) / PERCENT_100;
+         asset activity_reward           = ( block_reward * currency.activity_reward_percent              ) / PERCENT_100;
+
+         asset producer_block_reward     = ( producer_reward * currency.producer_block_reward_percent     ) / PERCENT_100;
+         asset validation_reward         = ( producer_reward * currency.validation_reward_percent         ) / PERCENT_100;
+         asset txn_stake_reward          = ( producer_reward * currency.txn_stake_reward_percent          ) / PERCENT_100;
+         asset work_reward               = ( producer_reward * currency.work_reward_percent               ) / PERCENT_100;
+         asset producer_activity_reward  = ( producer_reward * currency.producer_activity_reward_percent  ) / PERCENT_100;
+
+         asset reward_checksum = content_reward + equity_reward + producer_reward + supernode_reward + power_reward + enterprise_fund_reward + development_reward + marketing_reward + advocacy_reward + activity_reward;
+         
+         FC_ASSERT( reward_checksum == block_reward,
+            "Block reward issuance checksum failed: ${r} != ${c}, for currency: ${c}",
+            ("r", reward_checksum)("b", block_reward)("c", currency));
+
+         asset producer_checksum = producer_block_reward + validation_reward + txn_stake_reward + work_reward + producer_activity_reward;
+         
+         FC_ASSERT( producer_checksum == producer_reward,
+            "Producer reward issuance checksum failed: ${r} != ${c}, for currency: ${c}",
+            ("r", producer_checksum)("b", producer_reward)("c", currency));
+         
+         const asset_reward_fund_object& reward_fund = get_reward_fund( currency.symbol );
+         const asset_equity_data_object& equity = get_equity_data( currency.equity_asset );
+
+         modify( reward_fund, [&]( asset_reward_fund_object& rfo )
+         {
+            rfo.adjust_content_reward_balance( content_reward );
+            rfo.adjust_validation_reward_balance( validation_reward );
+            rfo.adjust_txn_stake_reward_balance( txn_stake_reward );
+            rfo.adjust_work_reward_balance( work_reward );
+            rfo.adjust_producer_activity_reward_balance( producer_activity_reward );
+            rfo.adjust_supernode_reward_balance( supernode_reward );
+            rfo.adjust_power_reward_balance( power_reward );
+            rfo.adjust_enterprise_fund_balance( enterprise_fund_reward );
+            rfo.adjust_development_reward_balance( development_reward );
+            rfo.adjust_marketing_reward_balance( marketing_reward );
+            rfo.adjust_advocacy_reward_balance( advocacy_reward );
+            rfo.adjust_activity_reward_balance( activity_reward );
+         });
+
+         modify( equity, [&]( asset_equity_data_object& aedo )
+         {
+            aedo.adjust_pool( equity_reward );
+         });
+
+         adjust_reward_balance( producer_account, producer_block_reward );
+
+         asset producer_pending = validation_reward + txn_stake_reward + work_reward + producer_activity_reward;
+         asset pending_issuance = content_reward + equity_reward + supernode_reward + power_reward + enterprise_fund_reward + development_reward + marketing_reward + advocacy_reward + activity_reward;
+
+         adjust_pending_supply( pending_issuance + producer_pending );
+         
+         push_virtual_operation( producer_reward_operation( producer_account.name, producer_block_reward ) );
+
+         if( currency.block_reward_reduction_days > 0 && currency.block_reward.amount.value > 0 )     // Reduce Currency Block reward if block interval reached
+         {
+            if( props.head_block_number % ( currency.block_reward_reduction_days * BLOCKS_PER_DAY ) == 0 )
+            {
+               modify( currency, [&]( asset_currency_data_object& acdo )
+               {
+                  acdo.block_reward.amount -= ( ( acdo.block_reward.amount * currency.block_reward_reduction_percent ) / PERCENT_100 );
+               });
+            }
+         }
+
+         ++currency_itr;
+      }
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+
+const price& database::get_usd_price() const
+{
+   return get_stablecoin_data( SYMBOL_USD ).current_feed.settlement_price;
+}
+
+asset database::asset_to_USD( const price& p, const asset& a ) const
+{
+   FC_ASSERT( a.symbol != SYMBOL_USD );
+   asset_symbol_type quote_symbol = p.quote.symbol;
+   asset_symbol_type base_symbol = p.base.symbol;
+   FC_ASSERT( base_symbol == SYMBOL_USD || quote_symbol == SYMBOL_USD );
+   asset value_usd = asset( 0, SYMBOL_USD);
+
+   if( p.is_null() )
+   {
+      return value_usd;
+   }
+   else
+   {
+      value_usd = a * p;
+      return value_usd;
+   }
+}
+
+
+asset database::asset_to_USD( const asset& a ) const
+{
+   price usd_price = get_usd_price();
+   asset coin_value = a;
+   asset usd_value = asset( 0, SYMBOL_USD );
+   
+   if( a.symbol != SYMBOL_COIN )
+   {
+      price coin_price = get_liquidity_pool( SYMBOL_COIN, a.symbol ).current_price();
+      usd_value = asset_to_USD( usd_price, coin_value * coin_price );
+   }
+   else
+   {
+      usd_value = asset_to_USD( usd_price, coin_value );
+   }
+   return usd_value;
+}
+
+
+asset database::USD_to_asset( const price& p, const asset& a ) const
+{
+   FC_ASSERT( a.symbol == SYMBOL_USD );
+   asset_symbol_type quote_symbol = p.quote.symbol;
+   asset_symbol_type base_symbol = p.base.symbol;
+   FC_ASSERT( base_symbol == SYMBOL_USD || quote_symbol == SYMBOL_USD );
+
+   asset usd_value = a;
+   asset coin_value = asset( 0, SYMBOL_USD );
+   price coin_price = p;
+
+   if( p.is_null() ) 
+   {
+      if( base_symbol == SYMBOL_USD ) 
+      {
+         coin_value = asset( 0, quote_symbol );
+      } 
+      else if( quote_symbol == SYMBOL_USD ) 
+      {
+         coin_value = asset( 0, base_symbol );
+      }
+   }
+   else
+   {
+      coin_value = usd_value * coin_price;
+   }
+   
+   return coin_value;
+}
+
+
+asset database::USD_to_asset( const asset& a ) const
+{
+   price usd_price = get_usd_price();
+   return USD_to_asset( usd_price, a );
+}
+
+
+/**
+ * Process updates across all stablecoins, execute collateral bids
+ * for settled stablecoins, and update price feeds and force settlement volumes
+ */
+void database::process_stablecoins()
+{ try {
+   if( (head_block_num() % STABLECOIN_BLOCK_INTERVAL) != 0 )    // Runs once per day
+      return;
+
+   // ilog( "Process Stablecoins" );
+
+   time_point_sec now = head_block_time();
+   uint64_t head_epoch_seconds = now.sec_since_epoch();
+
+   const auto& stablecoin_idx = get_index< asset_stablecoin_data_index >().indices().get< by_symbol >();
+   auto stablecoin_itr = stablecoin_idx.begin();
+
+   while( stablecoin_itr != stablecoin_idx.end() )
+   {
+      const asset_stablecoin_data_object& stablecoin = *stablecoin_itr;
+      ++stablecoin_itr;
+
+      const asset_object& asset_obj = get_asset( stablecoin.symbol );
+      uint32_t flags = asset_obj.flags;
+      uint64_t feed_lifetime = stablecoin.feed_lifetime.to_seconds();
+
+      if( stablecoin.has_settlement() )
+      {
+         process_bids( stablecoin );
+      }
+
+      modify( stablecoin, [&]( asset_stablecoin_data_object& abdo )
+      {
+         abdo.force_settled_volume = 0;        // Reset all BitAsset force settlement volumes to zero
+
+         if ( ( flags & int( asset_issuer_permission_flags::producer_fed_asset ) ) &&
+              feed_lifetime < head_epoch_seconds )            // if smartcoin && check overflow
+         {
+            fc::time_point calculated = now - feed_lifetime;
+
+            for( auto comment_feed_itr = abdo.feeds.rbegin(); comment_feed_itr != abdo.feeds.rend(); )       // loop feeds
+            {
+               auto feed_time = comment_feed_itr->second.first;
+               std::advance( comment_feed_itr, 1 );
+
+               if( feed_time < calculated )
+               {
+                  abdo.feeds.erase( comment_feed_itr.base() ); // delete expired feed
+               }
+            }
+         }
+      });
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
+ * Allocates rewards to staked currency asset holders
+ * according to proportional balances.
+ */
+void database::process_power_rewards()
+{ try {
+   if( (head_block_num() % EQUITY_INTERVAL_BLOCKS) != 0 )    // Runs once per week
+      return;
+
+   // ilog( "Process Power Rewards" );
+
+   const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol_stake >();
+   const auto& fund_idx = get_index< asset_reward_fund_index >().indices().get< by_symbol >();
+   auto fund_itr = fund_idx.begin();
+
+   while( fund_itr != fund_idx.end() )
+   {
+      const asset_reward_fund_object& reward_fund = *fund_itr;
+
+      asset power_reward_balance = reward_fund.power_reward_balance;       // Record the opening balance of the power reward fund
+      auto balance_itr = balance_idx.lower_bound( reward_fund.symbol );
+      flat_map < account_name_type, uint128_t > power_map;
+      uint128_t total_power_shares = 0;
+      asset distributed = asset( 0, reward_fund.symbol );
+
+      while( balance_itr != balance_idx.end() && 
+         balance_itr->symbol == reward_fund.symbol && 
+         balance_itr->staked_balance >= BLOCKCHAIN_PRECISION )
+      {
+         uint128_t power_shares = balance_itr->staked_balance.value;         // Get the staked balance for each stakeholder.
+
+         if( power_shares > uint128_t( 0 ) )
+         {
+            total_power_shares += power_shares;
+            power_map[ balance_itr->owner ] = power_shares;
+         }
+         ++balance_itr;
+      }
+
+      for( auto b : power_map )
+      {
+         uint128_t reward_amount = ( uint128_t( power_reward_balance.amount.value ) * b.second ) / total_power_shares;
+         asset power_reward = asset( reward_amount.to_uint64(), reward_fund.symbol );
+         adjust_staked_balance( b.first, power_reward );       // Pay power reward to each stakeholder account proportionally.
+         distributed += power_reward;
+      }
+
+      modify( reward_fund, [&]( asset_reward_fund_object& r )
+      {
+         r.adjust_power_reward_balance( -distributed ); 
+      });
+
+      adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
+
+      ++fund_itr;
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
+ * Calculates the relative share of equity reward dividend distribution.
+ * 
+ * Each account should receive the equity reward based on its balances, and account activity.
+ */
+share_type database::get_equity_shares( const account_balance_object& balance, const asset_equity_data_object& equity )
+{
+   const account_object& account = get_account( balance.owner );
+   time_point now = head_block_time();
+
+   // Account does not receive equity reward when producer votes or last activity are insufficient.
+
+   if( ( account.producer_vote_count < equity.min_producers ) || 
+      ( now > ( account.last_activity_reward + equity.min_active_time ) ) )
+   {
+      return 0;
+   }
+
+   share_type equity_shares = 0;
+   equity_shares += balance.staked_balance;
+
+   // Doubles equity reward when above Boost balance, Boost producer votes, and Boost Activity rewards in last 30 days
+   
+   if( ( balance.staked_balance >= equity.boost_balance ) &&
+      ( account.producer_vote_count >= equity.boost_producers ) &&
+      ( account.recent_activity_claims >= equity.boost_activity ) )
+   {
+      equity_shares *= 2;
+   }
+
+   if( account.membership == membership_tier_type::TOP_MEMBERSHIP )
+   {
+      equity_shares += ( ( equity_shares * equity.boost_top ) / PERCENT_100 );
+   }
+
+   return equity_shares;
+}
+
+
+/**
+ * Allocates equity asset dividends from each dividend reward pool,
+ * according to proportional balances.
+ */
+void database::process_equity_rewards()
+{ try {
+   if( (head_block_num() % EQUITY_INTERVAL_BLOCKS) != 0 )    // Runs once per week
+      return;
+
+   time_point now = head_block_time();
+   const auto& equity_idx = get_index< asset_equity_data_index >().indices().get< by_symbol >();
+   const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol_stake >();
+   auto equity_itr = equity_idx.begin();
+
+   while( equity_itr != equity_idx.end() )
+   {
+      const asset_equity_data_object& equity = *equity_itr;
+
+      for( auto a : equity.dividend_pool )     // Distribute every asset in the dividend pool
+      {
+         if( a.second.amount > 0 )
+         {
+            asset equity_reward_balance = a.second;  // Record the opening balance of the equity reward fund
+            auto balance_itr = balance_idx.lower_bound( equity.symbol );
+            flat_map < account_name_type, uint128_t > equity_map;
+            uint128_t total_equity_shares = 0;
+            asset distributed = asset( 0, a.first );
+
+            while( balance_itr != balance_idx.end() &&
+               balance_itr->symbol == equity.symbol ) 
+            {
+               share_type equity_shares = get_equity_shares( *balance_itr, equity );  // Get the equity shares for each stakeholder
+
+               if( equity_shares > 0 )
+               {
+                  total_equity_shares += equity_shares.value;
+                  equity_map[ balance_itr->owner ] = equity_shares.value;
+               }
+               ++balance_itr;
+            }
+
+            for( auto b : equity_map )
+            {
+               uint128_t reward_amount = ( uint128_t( equity_reward_balance.amount.value ) * b.second ) / total_equity_shares;
+               asset equity_reward = asset( reward_amount.to_uint64(), equity_reward_balance.symbol ); 
+               adjust_reward_balance( b.first, equity_reward );       // Pay equity dividend to each stakeholder account proportionally.
+               distributed += equity_reward;
+            }
+
+            modify( equity, [&]( asset_equity_data_object& e )
+            {
+               e.adjust_pool( -distributed ); 
+               e.last_dividend = now;        // Remove the distributed amount from the dividend pool.
+            });
+
+            adjust_pending_supply( -distributed );   // Deduct distributed amount from pending supply.
+         }
+      }
+      
+      ++equity_itr;
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
 
 
 void database::process_asset_staking()
@@ -179,219 +716,6 @@ void database::process_asset_staking()
       remove( vesting_balance );
    }
 }
-
-void database::process_recurring_transfers()
-{
-   // ilog( "Process Recurring Transfers" );
-
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = props.time;
-   const auto& transfer_idx = get_index< transfer_recurring_index >().indices().get< by_next_transfer >();
-   auto transfer_itr = transfer_idx.begin();
-
-   while( transfer_itr != transfer_idx.end() &&
-      transfer_itr->next_transfer <= now )
-   {
-      const transfer_recurring_object& transfer = *transfer_itr;
-      ++transfer_itr;
-      asset liquid = get_liquid_balance( transfer.from, transfer.amount.symbol );
-
-      if( liquid >= transfer.amount )    // Account has sufficient funds to pay
-      {
-         adjust_liquid_balance( transfer.from, -transfer.amount );
-         adjust_liquid_balance( transfer.to, transfer.amount );
-
-         modify( transfer, [&]( transfer_recurring_object& tro )
-         {
-            tro.next_transfer += tro.interval;
-            tro.payments_remaining -= 1;
-         });
-
-         ilog( "Processed Recurring Transfer: \n ${t} \n",
-            ("t",transfer));
-
-         if( transfer.payments_remaining == 0 )
-         {
-            ilog( "Removed: ${v}",("v",transfer));
-            remove( transfer );
-         }
-      }
-      else     // Account cannot make the payment
-      {
-         if( transfer.fill_or_kill )     // Fill or kill causes transfer to be cancelled if payment cannot be made.
-         {
-            ilog( "Removed: ${v}",("v",transfer));
-            remove( transfer );
-         }
-         else if( transfer.extensible )   // Extensible recurring transfer is extended if a payment is missed.
-         {
-            modify( transfer, [&]( transfer_recurring_object& tro )
-            {
-               tro.next_transfer += tro.interval;
-               tro.end += tro.interval;
-            });
-            
-            ilog( "Processed Recurring Transfer: \n ${t} \n",
-               ("t",transfer));
-         }
-         else if( transfer.payments_remaining > 1 )    // Payments are remaining, not extensible, so payment is not extended
-         {
-            modify( transfer, [&]( transfer_recurring_object& tro )
-            {
-               tro.next_transfer += tro.interval;
-               tro.payments_remaining -= 1;
-            });
-
-            ilog( "Processed Recurring Transfer: \n ${t} \n",
-               ("t",transfer));
-         }
-         else     // No payments remaining
-         {
-            ilog( "Removed: ${v}",("v",transfer));
-            remove( transfer );
-         }
-      }
-   }
-}
-
-void database::process_savings_withdraws()
-{
-   // ilog( "Process Savings Withdraws" );
-
-   const auto& savings_idx = get_index< savings_withdraw_index >().indices().get< by_complete_from_request_id >();
-   auto savings_itr = savings_idx.begin();
-   time_point now = head_block_time();
-
-   while( savings_itr != savings_idx.end() && 
-      savings_itr->complete <= now )
-   {
-      const savings_withdraw_object& withdraw = *savings_itr;
-      ++savings_itr;
-
-      adjust_liquid_balance( withdraw.to, withdraw.amount );
-      const account_object& account = get_account( withdraw.from );
-
-      modify( account, [&]( account_object& a )
-      {
-         a.savings_withdraw_requests--;
-      });
-
-      push_virtual_operation( 
-         fill_transfer_from_savings_operation( 
-         withdraw.from, 
-         withdraw.to, 
-         withdraw.amount, 
-         to_string( withdraw.request_id ), 
-         to_string( withdraw.memo ))
-      );
-
-      ilog( "Processed Savings Withdrawal from account: ${f} to recipient: ${t} of amount: ${a}",
-         ("f",withdraw.from)("t",withdraw.to)("a",withdraw.amount.to_string()) );
-
-      remove( withdraw );
-   }
-}
-
-
-void database::process_escrow_transfers()
-{
-   // ilog( "Process Escrow Transfers" );
-
-   const auto& escrow_acc_idx = get_index< escrow_index >().indices().get< by_acceptance_time >();
-   auto escrow_acc_itr = escrow_acc_idx.lower_bound( false );
-   time_point now = head_block_time();
-
-   while( escrow_acc_itr != escrow_acc_idx.end() && 
-      !escrow_acc_itr->is_approved() && 
-      escrow_acc_itr->acceptance_time <= now )
-   {
-      const escrow_object& old_escrow = *escrow_acc_itr;
-      ++escrow_acc_itr;
-
-      release_escrow( old_escrow );
-   }
-
-   const auto& escrow_dis_idx = get_index< escrow_index >().indices().get< by_dispute_release_time >();
-   auto escrow_dis_itr = escrow_dis_idx.lower_bound( true );
-
-   while( escrow_dis_itr != escrow_dis_idx.end() && 
-      escrow_dis_itr->disputed && 
-      escrow_dis_itr->dispute_release_time <= now )
-   {
-      const escrow_object& old_escrow = *escrow_dis_itr;
-      ++escrow_dis_itr;
-
-      release_escrow( old_escrow );
-   }
-}
-
-void database::update_median_liquidity()
-{ try {
-   if( (head_block_num() % MEDIAN_LIQUIDITY_INTERVAL_BLOCKS) != 0 )
-      return;
-
-   // ilog( "Update Median Liquidity" );
-
-   const auto& liq_idx = get_index< asset_liquidity_pool_index >().indices().get< by_asset_pair>();
-   auto liq_itr = liq_idx.begin();
-
-   size_t day_history_window = 1 + fc::days(1).to_seconds() / MEDIAN_LIQUIDITY_INTERVAL.to_seconds();
-   size_t hour_history_window = 1 + fc::hours(1).to_seconds() / MEDIAN_LIQUIDITY_INTERVAL.to_seconds();
-
-   while( liq_itr != liq_idx.end() )
-   {
-      const asset_liquidity_pool_object& pool = *liq_itr;
-      ++liq_itr;
-      vector< price > day; 
-      vector< price > hour;
-      day.reserve( day_history_window );
-      hour.reserve( hour_history_window );
-
-      modify( pool, [&]( asset_liquidity_pool_object& p )
-      {
-         p.price_history.push_back( pool.current_price() );
-         
-         while( p.price_history.size() > day_history_window )
-         {
-            p.price_history.pop_front();       // Maintain one day worth of price history
-         }
-
-         for( auto i : p.price_history )
-         {
-            day.push_back( i );
-         }
-
-         size_t offset = day.size()/2;
-
-         std::nth_element( day.begin(), day.begin()+offset, day.end(),
-         []( price a, price b )
-         {
-            return a < b;
-         });
-
-         p.day_median_price = day[ offset ];    // Set day median price to the median of all prices in the last day, at 10 min intervals
-
-         auto hour_itr = p.price_history.rbegin();
-
-         while( hour_itr != p.price_history.rend() && hour.size() < hour_history_window )
-         {
-            hour.push_back( *hour_itr );
-            ++hour_itr;
-         }
-
-         offset = hour.size()/2;
-
-         std::nth_element( hour.begin(), hour.begin()+offset, hour.end(),
-         []( price a, price b )
-         {
-            return a < b;
-         });
-
-         p.hour_median_price = hour[ offset ];   // Set hour median price to the median of all prices in the last hour, at 10 min intervals
-
-      });
-   } 
-} FC_CAPTURE_AND_RETHROW() }
 
 
 /**
@@ -780,7 +1104,7 @@ void database::process_stimulus_assets()
 /**
 void database::update_median_feed() 
 { try {
-   if( (head_block_num() % FEED_INTERVAL_BLOCKS) != 0 )
+   if( (head_block_num() % COMMENT_FEED_INTERVAL_BLOCKS) != 0 )
       return;
 
    auto now = head_block_time();
@@ -825,313 +1149,6 @@ void database::update_median_feed()
    }
 } FC_CAPTURE_AND_RETHROW() }
 */
-
-
-
-
-/**
- * Expires all outstanding option orders, balances 
- * and resets option pool strike prices.
- * Adds in a new month of option assets by shifting 
- * the option strike forward by one year.
- */
-void database::process_option_assets()
-{ try {
-   if( (head_block_num() % OPTION_INTERVAL_BLOCKS ) != 0 )
-   { 
-      return; 
-   }
-
-   // ilog( "Process Option Assets" );
-
-   time_point now = head_block_time();
-   const auto& option_order_idx = get_index< option_order_index >().indices().get< by_expiration >();
-   auto option_order_itr = option_order_idx.begin();
-
-   asset_symbol_type option_symbol;
-   option_strike strike;
-   price current_price;
-
-   while( option_order_itr != option_order_idx.end() &&
-      now >= option_order_itr->expiration() )
-   {
-      const option_order_object& order = *option_order_itr;
-      ++option_order_itr;
-
-      option_symbol = order.debt_type();
-      strike = option_strike::from_string( option_symbol );
-      const asset_option_pool_object& option_pool = get_option_pool( strike.strike_price.base.symbol, strike.strike_price.quote.symbol );
-      const asset_liquidity_pool_object& liquidity_pool = get_liquidity_pool( strike.strike_price.base.symbol, strike.strike_price.quote.symbol );
-      current_price = liquidity_pool.base_day_median_price( strike.strike_price.base.symbol );
-      flat_set< asset_symbol_type > new_strikes;
-      const asset_object& base_asset = get_asset( strike.strike_price.base.symbol );
-      const asset_object& quote_asset = get_asset( strike.strike_price.quote.symbol );
-
-      modify( option_pool, [&]( asset_option_pool_object& aopo )
-      {
-         aopo.expire_strike_prices( strike.expiration_date );
-         date_type new_date = date_type( 1, strike.expiration_date.month, strike.expiration_date.year + 1 );
-         new_strikes = aopo.add_strike_prices( current_price, new_date );
-      });
-
-      for( asset_symbol_type s : new_strikes )     // Create the new asset objects for the option.
-      {
-         create< asset_object >( [&]( asset_object& a )
-         {
-            option_strike strike = option_strike::from_string(s);
-
-            a.symbol = s;
-            a.asset_type = asset_property_type::OPTION_ASSET;
-            a.issuer = NULL_ACCOUNT;
-            from_string( a.display_symbol, strike.display_symbol() );
-
-            from_string( 
-               a.details, 
-               strike.details( 
-                  to_string( quote_asset.display_symbol ), 
-                  to_string( quote_asset.details ), 
-                  to_string( base_asset.display_symbol ), 
-                  to_string( base_asset.details ) ) );
-            
-            from_string( a.json, "" );
-            from_string( a.url, "" );
-            a.max_supply = MAX_ASSET_SUPPLY;
-            a.stake_intervals = 0;
-            a.unstake_intervals = 0;
-            a.market_fee_percent = 0;
-            a.market_fee_share_percent = 0;
-            a.issuer_permissions = 0;
-            a.flags = 0;
-            a.created = now;
-            a.last_updated = now;
-         });
-
-         create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
-         {
-            a.symbol = s;
-         });
-      }
-
-      clear_asset_balances( option_symbol );      // Clear all balances and order positions of the option.
-   }
-} FC_CAPTURE_AND_RETHROW() }
-
-
-/**
- * Check for and close all prediction pools which have reached their resolution time.
- */
-void database::process_prediction_assets()
-{ try {
-
-   // ilog( "Process Prediction Assets" );
-
-   time_point now = head_block_time();
-   const auto& prediction_pool_idx = get_index< asset_prediction_pool_index >().indices().get< by_resolution_time >();
-   auto prediction_pool_itr = prediction_pool_idx.begin();
-   
-   while( prediction_pool_itr != prediction_pool_idx.end() &&
-      now >= prediction_pool_itr->resolution_time )
-   {
-      const asset_prediction_pool_object& prediction_pool = *prediction_pool_itr;
-      ++prediction_pool_itr;
-
-      close_prediction_pool( prediction_pool );
-   }
-} FC_CAPTURE_AND_RETHROW() }
-
-
-/**
- * Resolves a prediction pool.
- * 
- * - Finds the winning outcome according ot quadratic voting for resolutions.
- * - Pays the holders of the successful outcome asset.
- * - Pays the voters of the successful outcome.
- * - Wipes the blances of all holders of all outcome assets and prediciton assets.
- */
-void database::close_prediction_pool( const asset_prediction_pool_object& pool )
-{ try {
-   ilog( "Closing Prediction Pool: \n ${p} \n",
-      ("p",pool));
-
-   const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol >();
-   const auto& resolution_idx = get_index< asset_prediction_pool_resolution_index >().indices().get< by_outcome_symbol >();
-   auto balance_itr = balance_idx.begin();
-   auto resolution_itr = resolution_idx.lower_bound( pool.prediction_symbol );
-   asset_symbol_type top_outcome;
-   uint128_t top_outcome_votes = 0;
-   uint128_t top_outcome_shares = 0;
-   flat_map< asset_symbol_type, uint128_t > resolution_votes;
-   flat_map< asset_symbol_type, uint128_t > resolution_shares;
-
-   for( asset_symbol_type s : pool.outcome_assets )
-   {
-      resolution_votes[ s ] = 0;
-      resolution_shares[ s ] = 0;
-   }
-
-   // Determine the top outcome by accumulating resolution votes.
-
-   while( resolution_itr != resolution_idx.end() &&
-      resolution_itr->prediction_symbol == pool.prediction_symbol )
-   {
-      const asset_prediction_pool_resolution_object& resolution = *resolution_itr;
-      ++resolution_itr;
-
-      resolution_votes[ resolution.resolution_outcome ] += uint128_t( resolution.resolution_votes().value );
-      resolution_shares[ resolution.resolution_outcome ] += uint128_t( resolution.amount.amount.value );
-
-      if( resolution_votes[ resolution.resolution_outcome ] > top_outcome_votes )
-      {
-         top_outcome_votes = resolution_votes[ resolution.resolution_outcome ];
-         top_outcome_shares = resolution_shares[ resolution.resolution_outcome ];
-         top_outcome = resolution.resolution_outcome;
-      }
-   }
-
-   asset prediction_bond_remaining = pool.prediction_bond_pool;
-   asset collateral_remaining = pool.collateral_pool;
-   resolution_itr = resolution_idx.lower_bound( boost::make_tuple( pool.prediction_symbol, top_outcome ) );
-   asset pool_split = asset( 0, pool.collateral_symbol );
-
-   // Distribute funds from the prediction bond pool to the resolvers of the top outcome.
-
-   while( resolution_itr != resolution_idx.end() &&
-      resolution_itr->prediction_symbol == pool.prediction_symbol &&
-      resolution_itr->resolution_outcome == top_outcome &&
-      prediction_bond_remaining.amount > 0 )
-   {
-      const asset_prediction_pool_resolution_object& resolution = *resolution_itr;
-      ++resolution_itr;
-      uint128_t split_amount = ( uint128_t( resolution.amount.amount.value ) * uint128_t( pool.prediction_bond_pool.amount.value ) ) / top_outcome_shares;
-      pool_split = asset( share_type( split_amount.to_uint64() ), pool.collateral_symbol );
-      
-      if( pool_split > prediction_bond_remaining )
-      {
-         pool_split = prediction_bond_remaining;
-      }
-
-      ilog( "Account: ${a} received resolving amount: ${am}",
-         ("a",resolution.account)("am",pool_split.to_string()));
-
-      adjust_liquid_balance( resolution.account, pool_split );
-      prediction_bond_remaining -= pool_split;
-   }
-
-   balance_itr = balance_idx.lower_bound( top_outcome );
-
-   // Distribute funds from the collateral pool to the holders of the succesful outcome asset.
-
-   while( balance_itr != balance_idx.end() &&
-      balance_itr->symbol == top_outcome &&
-      collateral_remaining.amount > 0 )
-   {
-      const account_balance_object& balance = *balance_itr;
-      ++balance_itr;
-
-      pool_split = asset( balance.get_total_balance().amount, pool.collateral_symbol );
-      
-      if( pool_split > collateral_remaining )
-      {
-         pool_split = collateral_remaining;
-      }
-
-      ilog( "Account: ${a} received prediction outcome amount: ${am}",
-         ("a",balance.owner)("am",pool_split.to_string()));
-
-      adjust_liquid_balance( balance.owner, pool_split );
-      collateral_remaining -= pool_split;
-   }
-
-   // Clear all ballances and orders in the prediction pool base asset and outcome assets.
-
-   clear_asset_balances( pool.prediction_symbol );    
-
-   for( asset_symbol_type a : pool.outcome_assets )
-   {
-      clear_asset_balances( a );
-   }
-
-   ilog( "Removed: ${v}",("v",pool.prediction_symbol));
-   remove( pool );
-   
-} FC_CAPTURE_AND_RETHROW() }
-
-
-/**
- * Clear all balance and supply values, and open orders for a temporary asset.
- */
-void database::clear_asset_balances( const asset_symbol_type& symbol )
-{ try {
-   const asset_object& asset_obj = get_asset( symbol );
-
-   FC_ASSERT( asset_obj.is_temp_asset(),
-      "Cannot clear asset balances of a non-temporary Asset." );
-
-   ilog( "Clear Asset Balances: ${s}", ("s", symbol ) );
-
-   const auto& balance_idx = get_index< account_balance_index >().indices().get< by_symbol >();
-   const auto& limit_idx = get_index< limit_order_index >().indices().get< by_symbol >();
-   const auto& auction_idx = get_index< auction_order_index >().indices().get< by_symbol >();
-   const auto& option_idx = get_index< option_order_index >().indices().get< by_symbol >();
-   const auto& dyn_data_idx = get_index< asset_dynamic_data_index >().indices().get< by_symbol >();
-
-   auto balance_itr = balance_idx.lower_bound( symbol );
-   
-   while( balance_itr != balance_idx.end() &&
-   balance_itr->symbol == symbol )
-   {
-      const account_balance_object& balance = *balance_itr;
-      ++balance_itr;
-      ilog( "Removed: ${v}",("v",balance));
-      remove( balance );
-   }
-
-   auto limit_itr = limit_idx.lower_bound( symbol );
-
-   while( limit_itr != limit_idx.end() &&
-   limit_itr->sell_asset() == symbol )
-   {
-      const limit_order_object& limit = *limit_itr;
-      ++limit_itr;
-      ilog( "Removed: ${v}",("v",limit));
-      remove( limit );
-   }
-
-   auto auction_itr = auction_idx.lower_bound( symbol );
-
-   while( auction_itr != auction_idx.end() &&
-   auction_itr->sell_asset() == symbol )
-   {
-      const auction_order_object& auction = *auction_itr;
-      ++auction_itr;
-      ilog( "Removed: ${v}",("v",auction));
-      remove( auction );
-   }
-
-   auto option_itr = option_idx.lower_bound( symbol );
-
-   while( option_itr != option_idx.end() &&
-      option_itr->debt_type() == symbol )
-   {
-      const option_order_object& order = *option_itr;
-      ++option_itr;
-      close_option_order( order );
-   }
-
-   auto dyn_data_itr = dyn_data_idx.lower_bound( symbol );
-
-   while( dyn_data_itr != dyn_data_idx.end() &&
-      dyn_data_itr->symbol == symbol )
-   {
-      const asset_dynamic_data_object& dyn_data = *dyn_data_itr;
-      ++dyn_data_itr;
-
-      modify( dyn_data, [&]( asset_dynamic_data_object& addo )
-      {
-         addo.clear_supply();
-      });
-   }
-} FC_CAPTURE_AND_RETHROW() }
 
 
 /**
@@ -1480,883 +1497,6 @@ void database::process_asset_distribution()
 } FC_CAPTURE_AND_RETHROW() }
 
 
-/**
- * Decrement an active asset delegation upon the expiration of
- * a delegation expiration object.
- * 
- * Withdrawing a delegation has a 24 hour time delay to ensure stake is not 
- * used to vote multiple times in rapid succession.
- */
-void database::clear_expired_delegations()
-{
-   // ilog( "Clear Expired Delegations" );
-
-   time_point now = head_block_time();
-   const auto& exp_idx = get_index< asset_delegation_expiration_index, by_expiration >();
-   
-   auto exp_itr = exp_idx.begin();
-
-   while( exp_itr != exp_idx.end() && 
-      exp_itr->expiration <= now )
-   {
-      const asset_delegation_expiration_object& exp = *exp_itr;
-      ++exp_itr;
-      
-      adjust_delegated_balance( exp.delegator, -exp.amount );
-      adjust_receiving_balance( exp.delegatee, -exp.amount );
-      push_virtual_operation( return_asset_delegation_operation( exp_itr->delegator, exp_itr->amount ) );
-      ilog( "Removed: ${v}",("v",exp));
-      remove( exp );
-   }
-}
-
-/**
- * Adjusts an account's liquid balance of a specified asset.
- */
-void database::adjust_liquid_balance( const account_object& a, const asset& delta )
-{
-   adjust_liquid_balance( a.name, delta );
-}
-
-/**
- * Adjusts an account's liquid balance of a specified asset.
- */
-void database::adjust_liquid_balance( const account_name_type& a, const asset& delta )
-{ try {
-   if( delta.amount == 0 )
-   {
-      return;
-   }
-   else if( a == NULL_ACCOUNT )
-   {
-      FC_ASSERT( delta.amount > 0,
-         "Cannot reduce the balance of the Null Account. It has nothing." );
-      if( delta.symbol == SYMBOL_COIN )
-      {
-         const dynamic_global_property_object& props = get_dynamic_global_properties();
-         modify( props, [&]( dynamic_global_property_object& dgpo )
-         {
-            dgpo.accumulated_network_revenue += delta;
-         });
-      }
-      return;
-   }
-
-   const account_balance_object* account_balance_ptr = find_account_balance( a, delta.symbol );
-   const asset_dynamic_data_object& asset_dyn_data = get_dynamic_data( delta.symbol );
-   
-   if( account_balance_ptr == nullptr )      // New balance object
-   {
-      FC_ASSERT( delta.amount > 0, "Insufficient Balance: ${a}'s balance of ${b} is less than required ${r}", 
-         ("a", a )
-         ("b", to_pretty_string( asset( 0, delta.symbol )))
-         ("r", to_pretty_string( -delta )));
-
-      time_point now = head_block_time();
-
-      create< account_balance_object >( [&]( account_balance_object& abo ) 
-      {
-         abo.owner = a;
-         abo.symbol = delta.symbol;
-         abo.liquid_balance = delta.amount;
-         abo.last_interest_time = now;
-         abo.stake_rate = 0;
-         abo.next_stake_time = time_point::maximum();
-         abo.to_stake = 0;
-         abo.total_staked = 0;
-         abo.unstake_rate = 0;
-         abo.next_unstake_time = time_point::maximum();
-         abo.to_unstake = 0;
-         abo.total_unstaked = 0;
-      });
-      modify( asset_dyn_data, [&]( asset_dynamic_data_object& addo ) 
-      {
-         addo.adjust_liquid_supply( delta );
-      });
-   } 
-   else 
-   {
-      if( delta.amount < 0 ) 
-      {
-         FC_ASSERT( account_balance_ptr->get_liquid_balance() >= -delta, 
-            "Insufficient Balance: ${a}'s balance of ${b} is less than required ${r}",
-                  ("a", a)
-                  ("b", to_pretty_string( account_balance_ptr->get_liquid_balance() ))
-                  ("r", to_pretty_string( -delta )));
-      }
-      modify( *account_balance_ptr, [&]( account_balance_object& abo ) 
-      {
-         abo.adjust_liquid_balance( delta );
-      });
-
-      modify( asset_dyn_data, [&]( asset_dynamic_data_object& addo ) 
-      {
-         addo.adjust_liquid_supply( delta );
-      });
-   }
-   // ilog( "Account: ${a} adjust liquid balance: ${d}", ("d", delta )("a", a) );
-} FC_CAPTURE_AND_RETHROW( (a)( delta ) ) }
-
-/**
- * Adjusts an account's staked balance of a specified asset.
- */
-void database::adjust_staked_balance( const account_object& a, const asset& delta )
-{
-   adjust_staked_balance(a.name, delta);
-}
-
-/**
- * Adjusts an account's staked balance of a specified asset.
- */
-void database::adjust_staked_balance( const account_name_type& a, const asset& delta )
-{ try {
-   if( delta.amount == 0 )
-   {
-      return;
-   }
-   else if( a == NULL_ACCOUNT )
-   {
-      FC_ASSERT( delta.amount > 0,
-         "Cannot reduce the balance of the Null Account. It has nothing." );
-      if( delta.symbol == SYMBOL_COIN )
-      {
-         const dynamic_global_property_object& props = get_dynamic_global_properties();
-         modify( props, [&]( dynamic_global_property_object& dgpo) 
-         {
-            dgpo.accumulated_network_revenue += delta;
-         });
-      }
-      return;
-   }
-
-   const account_balance_object* account_balance_ptr = find_account_balance( a, delta.symbol );
-   const asset_dynamic_data_object& asset_dyn_data = get_dynamic_data( delta.symbol );
-   
-   if( account_balance_ptr == nullptr )      // New balance object
-   {
-      FC_ASSERT( delta.amount > 0, "Insufficient Balance: ${a}'s balance of ${b} is less than required ${r}", 
-         ("a", a )
-         ("b", to_pretty_string( asset( 0, delta.symbol )))
-         ("r", to_pretty_string( -delta )));
-
-      time_point now = head_block_time();
-
-      create< account_balance_object >( [&]( account_balance_object& abo ) 
-      {
-         abo.owner = a;
-         abo.symbol = delta.symbol;
-         abo.staked_balance = delta.amount;
-         abo.last_interest_time = now;
-         abo.stake_rate = 0;
-         abo.next_stake_time = time_point::maximum();
-         abo.to_stake = 0;
-         abo.total_staked = 0;
-         abo.unstake_rate = 0;
-         abo.next_unstake_time = time_point::maximum();
-         abo.to_unstake = 0;
-         abo.total_unstaked = 0;
-      });
-      modify( asset_dyn_data, [&]( asset_dynamic_data_object& addo )
-      {
-         addo.adjust_staked_supply( delta );
-      });
-   } 
-   else 
-   {
-      if( delta.amount < 0 ) 
-      {
-         FC_ASSERT( account_balance_ptr->get_staked_balance() >= -delta, 
-            "Insufficient Balance: ${a}'s balance of ${b} is less than required ${r}",
-                  ("a", a)
-                  ("b", to_pretty_string( account_balance_ptr->get_staked_balance() ))
-                  ("r", to_pretty_string( -delta )));
-      }
-      modify( *account_balance_ptr, [&]( account_balance_object& abo ) 
-      {
-         abo.adjust_staked_balance( delta );
-      });
-
-      modify( asset_dyn_data, [&]( asset_dynamic_data_object& addo ) 
-      {
-         addo.adjust_staked_supply( delta );
-      });
-   }
-   // ilog( "Account: ${a} adjust staked balance: ${d}", ("d", delta )("a", a) );
-} FC_CAPTURE_AND_RETHROW( (a)( delta ) ) }
-
-/**
- * Adjusts an account's savings balance of a specified asset.
- */
-void database::adjust_savings_balance( const account_object& a, const asset& delta )
-{
-   adjust_savings_balance(a.name, delta);
-}
-
-/**
- * Adjusts an account's savings balance of a specified asset.
- */
-void database::adjust_savings_balance( const account_name_type& a, const asset& delta )
-{ try {
-   if( delta.amount == 0 )
-   {
-      return;
-   }
-   else if( a == NULL_ACCOUNT )
-   {
-      FC_ASSERT( delta.amount > 0,
-         "Cannot reduce the balance of the Null Account. It has nothing." );
-      if( delta.symbol == SYMBOL_COIN )
-      {
-         const dynamic_global_property_object& props = get_dynamic_global_properties();
-         modify( props, [&]( dynamic_global_property_object& dgpo ) 
-         {
-            dgpo.accumulated_network_revenue += delta;
-         });
-      }
-      return;
-   }
-
-   const account_balance_object* account_balance_ptr = find_account_balance( a, delta.symbol );
-   const asset_dynamic_data_object& asset_dyn_data = get_dynamic_data( delta.symbol );
-   
-   if( account_balance_ptr == nullptr )      // New balance object
-   {
-      FC_ASSERT( delta.amount > 0, "Insufficient Balance: ${a}'s balance of ${b} is less than required ${r}", 
-         ("a", a )
-         ("b", to_pretty_string( asset(0, delta.symbol)))
-         ("r", to_pretty_string( -delta)));
-
-      time_point now = head_block_time();
-
-      create< account_balance_object >( [&]( account_balance_object& abo )
-      {
-         abo.owner = a;
-         abo.symbol = delta.symbol;
-         abo.savings_balance = delta.amount;
-         abo.last_interest_time = now;
-         abo.stake_rate = 0;
-         abo.next_stake_time = time_point::maximum();
-         abo.to_stake = 0;
-         abo.total_staked = 0;
-         abo.unstake_rate = 0;
-         abo.next_unstake_time = time_point::maximum();
-         abo.to_unstake = 0;
-         abo.total_unstaked = 0;
-      });
-      modify( asset_dyn_data, [&]( asset_dynamic_data_object& addo )
-      {
-         addo.adjust_savings_supply( delta );
-      });
-   }
-   else
-   {
-      if( delta.amount < 0 ) 
-      {
-         FC_ASSERT( account_balance_ptr->get_savings_balance() >= -delta, 
-            "Insufficient Balance: ${a}'s balance of ${b} is less than required ${r}",
-                  ("a", a)
-                  ("b", to_pretty_string( account_balance_ptr->get_savings_balance() ))
-                  ("r", to_pretty_string( -delta )));
-      }
-      modify( *account_balance_ptr, [&]( account_balance_object& abo ) 
-      {
-         abo.adjust_savings_balance( delta );
-      });
-
-      modify( asset_dyn_data, [&]( asset_dynamic_data_object& addo ) 
-      {
-         addo.adjust_savings_supply( delta );
-      });
-   }
-   // ilog( "Account: ${a} adjust savings balance: ${d}", ("d", delta )("a", a) );
-} FC_CAPTURE_AND_RETHROW( (a)( delta ) ) }
-
-/**
- * Adjusts an account's reward balance of a specified asset.
- */
-void database::adjust_reward_balance( const account_object& a, const asset& delta )
-{
-   adjust_reward_balance(a.name, delta);
-}
-
-/**
- * Adjusts an account's reward balance of a specified asset.
- */
-void database::adjust_reward_balance( const account_name_type& a, const asset& delta )
-{ try {
-   if( delta.amount == 0 )
-   {
-      return;
-   }
-   else if( a == NULL_ACCOUNT )
-   {
-      FC_ASSERT( delta.amount > 0,
-         "Cannot reduce the balance of the Null Account. It has nothing." );
-      if( delta.symbol == SYMBOL_COIN )
-      {
-         const dynamic_global_property_object& props = get_dynamic_global_properties();
-         modify( props, [&]( dynamic_global_property_object& dgpo ) 
-         {
-            dgpo.accumulated_network_revenue += delta;
-         });
-      }
-      return;
-   }
-
-   const account_balance_object* account_balance_ptr = find_account_balance( a, delta.symbol );
-   const asset_dynamic_data_object& asset_dyn_data = get_dynamic_data( delta.symbol );
-   
-   if( account_balance_ptr == nullptr )      // New balance object
-   {
-      FC_ASSERT( delta.amount > 0, "Insufficient Balance: ${a}'s balance of ${b} is less than required ${r}", 
-         ("a", a )
-         ("b", to_pretty_string( asset(0, delta.symbol)))
-         ("r", to_pretty_string( -delta)));
-
-      time_point now = head_block_time();
-
-      create< account_balance_object >( [&]( account_balance_object& abo )
-      {
-         abo.owner = a;
-         abo.symbol = delta.symbol;
-         abo.reward_balance = delta.amount;
-         abo.last_interest_time = now;
-         abo.stake_rate = 0;
-         abo.next_stake_time = time_point::maximum();
-         abo.to_stake = 0;
-         abo.total_staked = 0;
-         abo.unstake_rate = 0;
-         abo.next_unstake_time = time_point::maximum();
-         abo.to_unstake = 0;
-         abo.total_unstaked = 0;
-      });
-      modify( asset_dyn_data, [&]( asset_dynamic_data_object& addo )
-      {
-         addo.adjust_reward_supply( delta );
-      });
-   }
-   else
-   {
-      if( delta.amount < 0 )
-      {
-         FC_ASSERT( account_balance_ptr->get_reward_balance() >= -delta, 
-            "Insufficient Balance: ${a}'s balance of ${b} is less than required ${r}",
-                  ("a", a)
-                  ("b", to_pretty_string( account_balance_ptr->get_reward_balance() ))
-                  ("r", to_pretty_string( -delta )));
-      }
-      modify( *account_balance_ptr, [&]( account_balance_object& abo ) 
-      {
-         abo.adjust_reward_balance( delta );
-      });
-
-      modify( asset_dyn_data, [&]( asset_dynamic_data_object& addo ) 
-      {
-         addo.adjust_reward_supply( delta );
-      });
-   }
-   // ilog( "Account: ${a} adjust reward balance: ${d}", ("d", delta )("a", a) );
-} FC_CAPTURE_AND_RETHROW( (a)( delta ) ) }
-
-/**
- * Adjusts an account's delegated balance of a specified asset.
- */
-void database::adjust_delegated_balance( const account_object& a, const asset& delta )
-{
-   adjust_delegated_balance(a.name, delta);
-}
-
-/**
- * Adjusts an account's delegated balance of a specified asset.
- */
-void database::adjust_delegated_balance( const account_name_type& a, const asset& delta )
-{ try {
-   if( delta.amount == 0 )
-   {
-      return;
-   }
-   else if( a == NULL_ACCOUNT )
-   {
-      FC_ASSERT( delta.amount > 0,
-         "Cannot reduce the balance of the Null Account. It has nothing." );
-      if( delta.symbol == SYMBOL_COIN )
-      {
-         const dynamic_global_property_object& props = get_dynamic_global_properties();
-         modify( props, [&]( dynamic_global_property_object& dgpo )
-         {
-            dgpo.accumulated_network_revenue += delta;
-         });
-      }
-      return;
-   }
-
-   const account_balance_object* account_balance_ptr = find_account_balance( a, delta.symbol );
-   const asset_dynamic_data_object& asset_dyn_data = get_dynamic_data( delta.symbol );
-   
-   if( account_balance_ptr == nullptr )      // New balance object
-   {
-      FC_ASSERT( delta.amount > 0, "Insufficient Balance: ${a}'s balance of ${b} is less than required ${r}", 
-         ("a", a )
-         ("b", to_pretty_string( asset( 0, delta.symbol )))
-         ("r", to_pretty_string( -delta )));
-
-      time_point now = head_block_time();
-
-      create< account_balance_object >( [&]( account_balance_object& abo )
-      {
-         abo.owner = a;
-         abo.symbol = delta.symbol;
-         abo.delegated_balance = delta.amount;
-         abo.last_interest_time = now;
-         abo.stake_rate = 0;
-         abo.next_stake_time = time_point::maximum();
-         abo.to_stake = 0;
-         abo.total_staked = 0;
-         abo.unstake_rate = 0;
-         abo.next_unstake_time = time_point::maximum();
-         abo.to_unstake = 0;
-         abo.total_unstaked = 0;
-      });
-      modify( asset_dyn_data, [&]( asset_dynamic_data_object& addo ) 
-      {
-         addo.adjust_delegated_supply( delta );
-      });
-   } 
-   else 
-   {
-      if( delta.amount < 0 ) 
-      {
-         FC_ASSERT( account_balance_ptr->get_delegated_balance() >= -delta, 
-            "Insufficient Balance: ${a}'s balance of ${b} is less than required ${r}",
-                  ("a", a)
-                  ("b", to_pretty_string( account_balance_ptr->get_delegated_balance() ))
-                  ("r", to_pretty_string( -delta )));
-      }
-      modify( *account_balance_ptr, [&]( account_balance_object& abo ) 
-      {
-         abo.adjust_delegated_balance( delta );
-      });
-
-      modify( asset_dyn_data, [&]( asset_dynamic_data_object& addo ) 
-      {
-         addo.adjust_delegated_supply( delta );
-      });
-   }
-} FC_CAPTURE_AND_RETHROW( (a)( delta ) ) }
-
-/**
- * Adjusts an account's recieving balance of a specified asset.
- */
-void database::adjust_receiving_balance( const account_object& a, const asset& delta )
-{
-   adjust_receiving_balance(a.name, delta);
-}
-
-/**
- * Adjusts an account's recieving balance of a specified asset.
- */
-void database::adjust_receiving_balance( const account_name_type& a, const asset& delta )
-{ try {
-   if( delta.amount == 0 )
-   {
-      return;
-   }
-   else if( a == NULL_ACCOUNT )
-   {
-      FC_ASSERT( delta.amount > 0,
-         "Cannot reduce the balance of the Null Account. It has nothing." );
-      if( delta.symbol == SYMBOL_COIN )
-      {
-         const dynamic_global_property_object& props = get_dynamic_global_properties();
-         modify( props, [&]( dynamic_global_property_object& dgpo ) 
-         {
-            dgpo.accumulated_network_revenue += delta;
-         });
-      }
-      return;
-   }
-
-   const account_balance_object* account_balance_ptr = find_account_balance( a, delta.symbol );
-   const asset_dynamic_data_object& asset_dyn_data = get_dynamic_data( delta.symbol );
-   
-   if( account_balance_ptr == nullptr )      // New balance object
-   {
-      FC_ASSERT( delta.amount > 0, "Insufficient Balance: ${a}'s balance of ${b} is less than required ${r}", 
-         ("a", a )
-         ("b", to_pretty_string( asset(0, delta.symbol)))
-         ("r", to_pretty_string( -delta )));
-
-      time_point now = head_block_time();
-
-      create< account_balance_object >( [&]( account_balance_object& abo ) 
-      {
-         abo.owner = a;
-         abo.symbol = delta.symbol;
-         abo.receiving_balance = delta.amount;
-         abo.last_interest_time = now;
-         abo.stake_rate = 0;
-         abo.next_stake_time = time_point::maximum();
-         abo.to_stake = 0;
-         abo.total_staked = 0;
-         abo.unstake_rate = 0;
-         abo.next_unstake_time = time_point::maximum();
-         abo.to_unstake = 0;
-         abo.total_unstaked = 0;
-      });
-      modify( asset_dyn_data, [&] ( asset_dynamic_data_object& addo ) 
-      {
-         addo.adjust_receiving_supply( delta );
-      });
-   } 
-   else 
-   {
-      if( delta.amount < 0 ) 
-      {
-         FC_ASSERT( account_balance_ptr->get_receiving_balance() >= -delta, 
-            "Insufficient Balance: ${a}'s balance of ${b} is less than required ${r}",
-                  ("a", a)
-                  ("b", to_pretty_string( account_balance_ptr->get_receiving_balance() ))
-                  ("r", to_pretty_string( -delta )));
-      }
-      modify( *account_balance_ptr, [&]( account_balance_object& abo ) 
-      {
-         abo.adjust_receiving_balance( delta );
-      });
-
-      modify( asset_dyn_data, [&]( asset_dynamic_data_object& addo ) 
-      {
-         addo.adjust_receiving_supply( delta );
-      });
-   }
-} FC_CAPTURE_AND_RETHROW( (a)( delta ) ) }
-
-/**
- * Adjusts the network's pending supply of a specified asset.
- */
-void database::adjust_pending_supply( const asset& delta )
-{ try {
-   if( delta.amount == 0 )
-   {
-      return;
-   }
-
-   const asset_dynamic_data_object& asset_dyn_data = get_dynamic_data( delta.symbol );
-   if( delta.amount < 0 ) 
-   {
-      FC_ASSERT( asset_dyn_data.get_pending_supply() >= -delta, 
-         "Insufficient Pending supply: ${a}'s balance of ${b} is less than required ${r}",
-               ("a", delta.symbol)
-               ("b", to_pretty_string( asset_dyn_data.get_pending_supply() ))
-               ("r", to_pretty_string( -delta )));
-   }
-   
-   modify( asset_dyn_data, [&]( asset_dynamic_data_object& addo ) 
-   {
-      addo.adjust_pending_supply( delta );
-   });
-   
-} FC_CAPTURE_AND_RETHROW( ( delta ) ) }
-
-
-/**
- * Adjusts the network's confidential supply of a specified asset.
- */
-void database::adjust_confidential_supply( const asset& delta )
-{ try {
-   if( delta.amount == 0 )
-   {
-      return;
-   }
-
-   const asset_dynamic_data_object& asset_dyn_data = get_dynamic_data( delta.symbol );
-   if( delta.amount < 0 ) 
-   {
-      FC_ASSERT( asset_dyn_data.get_confidential_supply() >= -delta, 
-         "Insufficient Pending supply: ${a}'s balance of ${b} is less than required ${r}",
-               ("a", delta.symbol)
-               ("b", to_pretty_string( asset_dyn_data.get_confidential_supply() ))
-               ("r", to_pretty_string( -delta )));
-   }
-   
-   modify( asset_dyn_data, [&]( asset_dynamic_data_object& addo ) 
-   {
-      addo.adjust_confidential_supply( delta );
-   });
-   
-} FC_CAPTURE_AND_RETHROW( ( delta ) ) }
-
-/**
- * Retrieves an account's liquid balance of a specified asset.
- */
-asset database::get_liquid_balance( const account_object& a, const asset_symbol_type& symbol )const
-{
-   return get_liquid_balance(a.name, symbol);
-}
-
-/**
- * Retrieves an account's liquid balance of a specified asset.
- */
-asset database::get_liquid_balance( const account_name_type& a, const asset_symbol_type& symbol)const
-{ try {
-   const account_balance_object* abo_ptr = find_account_balance(a, symbol);
-   if( abo_ptr == nullptr )
-   {
-      ilog( "Liquid ${s} balance of account: ${acc} is not found",
-      ("acc",a)("s",symbol));
-      return asset(0, symbol);
-   }
-   else
-   {
-      return abo_ptr->get_liquid_balance();
-   }
-} FC_CAPTURE_AND_RETHROW( (a)(symbol) ) }
-
-/**
- * Retrieves an account's staked balance of a specified asset.
- */
-asset database::get_staked_balance( const account_object& a, const asset_symbol_type& symbol )const
-{
-   return get_staked_balance(a.name, symbol);
-}
-
-/**
- * Retrieves an account's staked balance of a specified asset.
- */
-asset database::get_staked_balance( const account_name_type& a, const asset_symbol_type& symbol)const
-{ try {
-   const account_balance_object* abo_ptr = find_account_balance(a, symbol);
-   if( abo_ptr == nullptr )
-   {
-      ilog( "Staked ${s} balance of account: ${acc} is not found",
-      ("acc",a)("s",symbol));
-      return asset(0, symbol);
-   }
-   else
-   {
-      return abo_ptr->get_staked_balance();
-   }
-} FC_CAPTURE_AND_RETHROW( (a)(symbol) ) }
-
-/**
- * Retrieves an account's reward balance of a specified asset.
- */
-asset database::get_reward_balance( const account_object& a, const asset_symbol_type& symbol )const
-{
-   return get_reward_balance(a.name, symbol);
-}
-
-/**
- * Retrieves an account's reward balance of a specified asset.
- */
-asset database::get_reward_balance( const account_name_type& a, const asset_symbol_type& symbol)const
-{ try {
-   const account_balance_object* abo_ptr = find_account_balance(a, symbol);
-   if( abo_ptr == nullptr )
-   {
-      ilog( "Reward ${s} balance of account: ${acc} is not found",
-      ("acc",a)("s",symbol));
-      return asset(0, symbol);
-   }
-   else
-   {
-      return abo_ptr->get_reward_balance();
-   }
-} FC_CAPTURE_AND_RETHROW( (a)(symbol) ) }
-
-/**
- * Retrieves an account's savings balance of a specified asset.
- */
-asset database::get_savings_balance( const account_object& a, const asset_symbol_type& symbol )const
-{
-   return get_savings_balance(a.name, symbol);
-}
-
-/**
- * Retrieves an account's savings balance of a specified asset.
- */
-asset database::get_savings_balance( const account_name_type& a, const asset_symbol_type& symbol)const
-{ try {
-   const account_balance_object* abo_ptr = find_account_balance(a, symbol);
-   if( abo_ptr == nullptr )
-   {
-      ilog( "Savings ${s} balance of account: ${acc} is not found",
-      ("acc",a)("s",symbol));
-      return asset(0, symbol);
-   }
-   else
-   {
-      return abo_ptr->get_savings_balance();
-   }
-} FC_CAPTURE_AND_RETHROW( (a)(symbol) ) }
-
-/**
- * Retrieves an account's delegated balance of a specified asset.
- */
-asset database::get_delegated_balance( const account_object& a, const asset_symbol_type& symbol )const
-{
-   return get_delegated_balance(a.name, symbol);
-}
-
-/**
- * Retrieves an account's delegated balance of a specified asset.
- */
-asset database::get_delegated_balance( const account_name_type& a, const asset_symbol_type& symbol)const
-{ try {
-   const account_balance_object* abo_ptr = find_account_balance(a, symbol);
-   if( abo_ptr == nullptr )
-   {
-      ilog( "Delegated ${s} balance of account: ${acc} is not found",
-      ("acc",a)("s",symbol));
-      return asset(0, symbol);
-   }
-   else
-   {
-      return abo_ptr->get_delegated_balance();
-   }
-} FC_CAPTURE_AND_RETHROW( (a)(symbol) ) }
-
-/**
- * Retrieves an account's recieving balance of a specified asset.
- */
-asset database::get_receiving_balance( const account_object& a, const asset_symbol_type& symbol )const
-{
-   return get_receiving_balance(a.name, symbol);
-}
-
-/**
- * Retrieves an account's recieving balance of a specified asset.
- */
-asset database::get_receiving_balance( const account_name_type& a, const asset_symbol_type& symbol)const
-{ try {
-   const account_balance_object* abo_ptr = find_account_balance(a, symbol);
-   if( abo_ptr == nullptr )
-   {
-      ilog( "Receiving ${s} balance of account: ${acc} is not found",
-      ("acc",a)("s",symbol));
-      return asset(0, symbol);
-   }
-   else
-   {
-      return abo_ptr->get_receiving_balance();
-   }
-} FC_CAPTURE_AND_RETHROW( (a)(symbol) ) }
-
-/**
- * Retrieves an account's voting power.
- * 
- * Determined by the staked and net delegated balance of SYMBOL_EQUITY and SYMBOL_COIN.
- */
-share_type database::get_voting_power( const account_object& a )const
-{
-   return get_voting_power( a.name );
-}
-
-/**
- * Retrieves an account's voting power.
- * 
- * Determined by the staked and net delegated balance of SYMBOL_EQUITY and SYMBOL_COIN.
- */
-share_type database::get_voting_power( const account_name_type& a )const
-{
-   price equity_coin_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
-   return get_voting_power( a, equity_coin_price );
-}
-
-/**
- * Retrieves an account's voting power.
- * 
- * Determined by the staked and net delegated balance of SYMBOL_EQUITY and SYMBOL_COIN.
- */
-share_type database::get_voting_power( const account_object& a, const price& equity_coin_price )const
-{
-   return get_voting_power( a.name, equity_coin_price );
-}
-
-/**
- * Retrieves an account's voting power.
- * 
- * Determined by the staked and net delegated balance of SYMBOL_EQUITY and SYMBOL_COIN.
- */
-share_type database::get_voting_power( const account_name_type& a, const price& equity_coin_price )const
-{
-   const account_balance_object* coin_ptr = find_account_balance( a, SYMBOL_COIN );
-   const account_balance_object* equity_ptr = find_account_balance( a, SYMBOL_EQUITY );
-   asset coin_vote = asset( 0, SYMBOL_COIN );
-   asset equity_vote = asset( 0, SYMBOL_EQUITY );
-   
-   if( coin_ptr != nullptr )
-   {
-      coin_vote = coin_ptr->get_voting_power();
-   }
-   if( equity_ptr != nullptr )
-   {
-      equity_vote = equity_ptr->get_voting_power();
-   }
-
-   share_type voting_power = coin_vote.amount + ( equity_vote * equity_coin_price ).amount;
-
-   /**
-   ilog( "Account: ${a} has Voting Power: ${p} [ Coin:${c} Equity:${q} at Equity Price: ${e} ]", 
-   ("a", a)("p", voting_power )("e", equity_coin_price)("c", coin_vote)("q", equity_vote) );
-   */
-
-   return voting_power;
-}
-
-share_type database::get_proxied_voting_power( const account_object& a, const price& equity_price )const
-{ try {
-   if( a.proxied.size() == 0 )
-   {
-      return 0;
-   }
-   share_type voting_power = 0;
-   for( auto name : a.proxied )
-   {
-      voting_power += get_voting_power( name, equity_price );
-      voting_power += get_proxied_voting_power( name, equity_price );    // Recursively finds voting power of proxies.
-   }
-   return voting_power;
-
-} FC_CAPTURE_AND_RETHROW() }
-
-
-share_type database::get_proxied_voting_power( const account_name_type& a, const price& equity_price )const
-{ try {
-   return get_proxied_voting_power( get_account(a), equity_price );
-} FC_CAPTURE_AND_RETHROW() }
-
-
-share_type database::get_equity_voting_power( const account_object& a, const account_business_object& b )const
-{ try {
-   return get_equity_voting_power( a.name, b );
-} FC_CAPTURE_AND_RETHROW() }
-
-
-share_type database::get_equity_voting_power( const account_name_type& a, const account_business_object& b )const
-{ try {
-   share_type voting_power = 0;
-   for( auto symbol : b.equity_assets )
-   {
-      const asset_equity_data_object& equity = get_equity_data( symbol );
-      const account_balance_object* abo_ptr = find_account_balance( a, symbol );
-
-      if( abo_ptr != nullptr )
-      {
-         voting_power += abo_ptr->liquid_balance * share_type( equity.liquid_voting_rights );
-         voting_power += abo_ptr->staked_balance * share_type( equity.staked_voting_rights );
-         voting_power += abo_ptr->savings_balance * share_type( equity.savings_voting_rights );
-      }
-   }
-   return voting_power;
-} FC_CAPTURE_AND_RETHROW() }
-
-
-string database::to_pretty_string( const asset& a )const
-{
-   return a.to_string();
-}
-
-
 void database::update_expired_feeds()
 { try {
    // ilog( "Update Expired Feeds" );
@@ -2365,7 +1505,7 @@ void database::update_expired_feeds()
 
    const auto& idx = get_index< asset_stablecoin_data_index >().indices().get< by_feed_expiration >();
    auto itr = idx.begin();
-   while( itr != idx.end() && itr->feed_is_expired( head_time ) ) // update feeds, check margin calls for each asset whose feed is expired
+   while( itr != idx.end() && itr->comment_feed_is_expired( head_time ) ) // update feeds, check margin calls for each asset whose feed is expired
    {
       const asset_stablecoin_data_object& stablecoin = *itr;
       ++itr; 
@@ -2480,169 +1620,243 @@ void database::process_bids( const asset_stablecoin_data_object& bad )
 } FC_CAPTURE_AND_RETHROW() }
 
 
-void database::dispute_escrow( const escrow_object& escrow )
+/**
+ * All margin positions are force closed at the swan price.
+ * 
+ * Collateral received goes into a force-settlement fund
+ * No new margin positions can be created for this asset
+ * Force settlement happens without delay at the swan price, 
+ * deducting from force-settlement fund.
+ * No more asset updates may be issued.
+*/
+void database::globally_settle_asset( const asset_object& mia, const price& settlement_price )
 { try {
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
-   time_point now = props.time;
+   const asset_stablecoin_data_object& stablecoin = get_stablecoin_data( mia.symbol );
+   FC_ASSERT( !stablecoin.has_settlement(),
+      "Black swan already occurred, it should not happen again" );
 
-   const auto& mediator_idx = get_index< mediator_index >().indices().get< by_virtual_position >();
-   auto mediator_itr = mediator_idx.begin();
+   asset_symbol_type backing_asset = stablecoin.backing_asset;
+   asset collateral_gathered = asset( 0, backing_asset );
+   const asset_dynamic_data_object& mia_dyn = get_dynamic_data( mia.symbol );
+   auto original_mia_supply = mia_dyn.get_total_supply().amount;
 
-   vector< account_name_type > top_mediators;
-   vector< account_name_type > shuffled_mediators;
-   flat_set< account_name_type > allocated_mediators;
+   const auto& call_idx = get_index< call_order_index >().indices().get< by_high_price >();
+   auto call_itr = call_idx.lower_bound( price::max( backing_asset, mia.symbol ) );
+   auto call_end = call_idx.upper_bound( price::min( backing_asset, mia.symbol ) );
+   asset pays = asset( 0, backing_asset );
 
-   // Increment all mediators virtual position by their mediation stake balance.
-   while( mediator_itr != mediator_idx.end() )
+   while( call_itr != call_end )
    {
-      if( mediator_itr->active )
+      const call_order_object& order = *call_itr;
+      ++call_itr;
+      pays = order.debt.multiply_and_round_up( settlement_price );
+      if( pays > order.collateral )
       {
-         modify( *mediator_itr, [&]( mediator_object& m )
-         {
-            m.mediation_virtual_position += m.mediator_bond.amount.value;
-         });
+         pays = order.collateral;
       }
-      ++mediator_itr;
+      collateral_gathered += pays;
+      // Fill Call orders without deducting pending supply of stablecoin.
+      FC_ASSERT( fill_call_order( order, pays, order.debt, settlement_price, true, NULL_ACCOUNT, true ) );
    }
 
-   mediator_itr = mediator_idx.begin();
+   price global_settlement_price = asset( original_mia_supply, mia.symbol ) / collateral_gathered;
+   
+   // Activate Global settlement price on asset
 
-   // Select top position mediators
-   while( mediator_itr != mediator_idx.end() && 
-      top_mediators.size() < ( 10 * ESCROW_DISPUTE_MEDIATOR_AMOUNT ) )
+   modify( stablecoin, [&]( asset_stablecoin_data_object& a )
    {
-      if( mediator_itr->active )
-      {
-         top_mediators.push_back( mediator_itr->account );
-      }
-      ++mediator_itr;
-   }
-
-   shuffled_mediators = shuffle_accounts( top_mediators );   // Get a random ordered vector of mediator names
-
-   for( auto i = 0; i < ESCROW_DISPUTE_MEDIATOR_AMOUNT; i++ )
-   {
-      allocated_mediators.insert( shuffled_mediators[ i ] );
-
-      const mediator_object& mediator = get_mediator( shuffled_mediators[ i ] );
-      modify( mediator, [&]( mediator_object& m )
-      {
-         m.mediation_virtual_position = 0;
-      });
-   }
-
-   modify( escrow, [&]( escrow_object& esc )
-   {
-      esc.disputed = true;
-      esc.mediators = allocated_mediators;
-      esc.last_updated = now;
-      esc.dispute_release_time = now + ESCROW_DISPUTE_DURATION;
+      a.settlement_price = global_settlement_price;
+      a.settlement_fund = collateral_gathered.amount;
    });
 
-   ilog( "Disputing Escrow: \n ${e} \n", ("e",escrow) );
+   ilog( "Globally Settled Asset: ${s} at Settlement Price: ${p} \n ${st} \n",
+      ("s",mia.symbol)("p",global_settlement_price.to_string())("st",stablecoin));
 
+} FC_CAPTURE_AND_RETHROW( (mia)(settlement_price) ) }
+
+
+void database::revive_stablecoin( const asset_object& stablecoin )
+{ try {
+   FC_ASSERT( stablecoin.is_market_issued(),
+      "Asset must be a market issued asset." );
+   const asset_stablecoin_data_object& bad = get_stablecoin_data( stablecoin.symbol );
+
+   FC_ASSERT( bad.has_settlement(),
+      "Asset must have a settlement price before it can be revived.");
+   const asset_dynamic_data_object& bdd = get_dynamic_data( stablecoin.symbol );
+
+   FC_ASSERT( !bad.current_feed.settlement_price.is_null(),
+      "Settlement price cannot be null to revive asset." );
+
+   if( bdd.get_total_supply().amount > 0 )    // Create + execute a "bid" with 0 additional collateral
+   {
+      const asset_collateral_bid_object& pseudo_bid = create< asset_collateral_bid_object >([&]( asset_collateral_bid_object& bid )
+      {
+         bid.bidder = stablecoin.issuer;
+         bid.collateral = asset( 0, bad.backing_asset );
+         bid.debt = asset( bdd.get_total_supply().amount, stablecoin.symbol );
+      });
+
+      execute_bid( pseudo_bid, bdd.get_total_supply().amount, bad.settlement_fund, bad.current_feed );
+   } 
+   else
+   {
+      FC_ASSERT( bad.settlement_fund == 0,
+         "Cannot have settlement fund with zero total asset supply." );
+   }
+      
+   cancel_bids_and_revive_mpa( stablecoin, bad );
+} FC_CAPTURE_AND_RETHROW( (stablecoin) ) }
+
+
+void database::cancel_bids_and_revive_mpa( const asset_object& stablecoin, const asset_stablecoin_data_object& bad )
+{ try {
+   FC_ASSERT( stablecoin.is_market_issued(),
+      "Asset must be a market issued asset." );
+   FC_ASSERT( bad.has_settlement(),
+      "Asset must have a settlement price before it can be revived." );
+   
+   const auto& bid_idx = get_index< asset_collateral_bid_index >().indices().get< by_price >();
+   auto bid_itr = bid_idx.lower_bound( boost::make_tuple( stablecoin.symbol, price::max( bad.backing_asset, stablecoin.symbol ) ) );
+
+   while( bid_itr != bid_idx.end() && 
+      bid_itr->inv_swan_price().quote.symbol == stablecoin.symbol )
+   {
+      const asset_collateral_bid_object& bid = *bid_itr;
+      ++bid_itr;
+      cancel_bid( bid );    // cancel remaining bids
+   }
+
+   modify( bad, [&]( asset_stablecoin_data_object& obj )
+   {
+      obj.settlement_price = price();
+      obj.settlement_fund = 0;
+   });
+
+   ilog( "Cancel Bids and Revive Stablecoin: \n ${s} \n",
+      ("s",bad));
+
+} FC_CAPTURE_AND_RETHROW( ( stablecoin ) ) }
+
+
+
+asset database::calculate_issuer_fee( const asset_object& trade_asset, const asset& trade_amount )
+{ try {
+   FC_ASSERT( trade_asset.symbol == trade_amount.symbol,
+   "Trade asset symbol must be equal to trade amount symbol." );
+      
+   if( trade_asset.market_fee_percent == 0 )
+   {
+      return asset( 0, trade_asset.symbol );
+   }
+
+   share_type value = (( trade_amount.amount * trade_asset.market_fee_percent ) / PERCENT_100  );
+   asset percent_fee = asset( value, trade_asset.symbol );
+
+   if( percent_fee.amount > trade_asset.max_market_fee )
+   {
+      percent_fee.amount = trade_asset.max_market_fee;
+   }
+      
+   return percent_fee;
+} FC_CAPTURE_AND_RETHROW() }
+
+asset database::pay_issuer_fees( const asset_object& recv_asset, const asset& receives )
+{ try {
+   asset issuer_fees = calculate_issuer_fee( recv_asset, receives );
+
+   FC_ASSERT( issuer_fees <= receives, 
+      "Market fee shouldn't be greater than receives." );
+
+   if( issuer_fees.amount > 0 )
+   {
+      adjust_reward_balance( recv_asset.issuer, issuer_fees );
+   }
+
+   return issuer_fees;
 } FC_CAPTURE_AND_RETHROW() }
 
 
-/**
- * Selects the median release percentage in the escrow and divides the payment between the TO and FROM accounts.
- * 
- * Fofeits security bonds based on the difference between median
- * and individual votes to create an incentive to reach 
- * cooperative consensus between the mediators about the
- * escrow details.
- * 
- * All voters receive a split of all forfeited bonds, distributing funds
- * as a net profit to accounts the voted closest to the median.
- */
-void database::release_escrow( const escrow_object& escrow )
+asset database::pay_issuer_fees( const account_object& seller, const asset_object& recv_asset, const asset& receives )
 { try {
-   const median_chain_property_object& median_props = get_median_chain_properties();
-   asset escrow_bond = asset( ( escrow.payment.amount * median_props.escrow_bond_percent ) / PERCENT_100, escrow.payment.symbol );
-
-   if( escrow.is_approved() )
+   const asset& issuer_fees = calculate_issuer_fee( recv_asset, receives );
+   FC_ASSERT( issuer_fees <= receives,
+      "Market fee shouldn't be greater than receives." );
+   
+   if( issuer_fees.amount > 0 )
    {
-      vector< uint16_t > release_percentages;
-      uint16_t median_release = PERCENT_100;
+      asset reward = asset( 0, recv_asset.symbol );
+      asset reward_paid = asset( 0, recv_asset.symbol );
 
-      for( auto p : escrow.release_percentages )
+      uint16_t reward_percent = recv_asset.market_fee_share_percent;       // Percentage of market fees shared with registrars
+
+      if( reward_percent > 0 )         // Calculate and pay market fee sharing rewards
       {
-         release_percentages.push_back( p.second );
-      }
+         const account_permission_object& issuer_permissions = get_account_permissions( seller.name );
+         const account_permission_object& registrar_permissions = get_account_permissions( seller.registrar );
+         const account_permission_object& referrer_permissions = get_account_permissions( seller.referrer );
 
-      size_t offset = release_percentages.size()/2;
+         share_type reward_value = ( issuer_fees.amount * reward_percent ) / PERCENT_100;
+         asset registrar_reward = asset( 0, recv_asset.symbol );
+         asset referrer_reward = asset( 0, recv_asset.symbol );
 
-      std::nth_element( release_percentages.begin(), release_percentages.begin()+offset, release_percentages.end(),
-      []( uint16_t a, uint16_t b )
-      {
-         return a < b;
-      });
-
-      median_release = release_percentages[ offset ];
-
-      asset to_share = ( escrow.payment * median_release ) / PERCENT_100;
-      asset from_share = escrow.payment - to_share;
-      asset balance = escrow.balance;
-
-      adjust_liquid_balance( escrow.to, to_share );
-      balance -= to_share;
-      adjust_liquid_balance( escrow.from, from_share );
-      balance -= from_share;
-
-      if( escrow.disputed )
-      {
-         for( auto a : escrow.release_percentages )     // Refund escrow bonds, minus loss from vote differential
+         if( reward_value > 0 )
          {
-            int16_t delta = abs( median_release - a.second );
-            asset escrow_bond_return = asset( ( escrow_bond.amount * ( PERCENT_100 - delta ) ) / PERCENT_100, escrow_bond.symbol );
-            balance -= escrow_bond_return;
-            adjust_liquid_balance( a.first, escrow_bond_return );
-         }
-         asset escrow_split = asset( balance.amount / escrow.release_percentages.size(), balance.symbol );
-         for( auto a : escrow.release_percentages )     // Distribute remaining balance evenly between voters
-         {
-            balance -= escrow_split;
-            adjust_liquid_balance( a.first, escrow_split );
-         }
-      }
-      else
-      {
-         for( auto a : escrow.approvals )     // Refund escrow bonds to all approving accounts
-         {
-            if( a.second == true )
+            reward = asset( reward_value, recv_asset.symbol );
+
+            FC_ASSERT( reward < issuer_fees,
+               "Market reward should be less than issuer fees." );
+
+            if( registrar_permissions.is_authorized_transfer( recv_asset.issuer, recv_asset ) &&
+               issuer_permissions.is_authorized_transfer( seller.registrar, recv_asset ) )
             {
-               balance -= escrow_bond;
-               adjust_liquid_balance( a.first, escrow_bond );
+               registrar_reward = reward;          // Registrar begins with all reward
+            }
+
+            if( seller.referrer != seller.registrar )
+            {
+               share_type referrer_rewards_value;
+
+               if( registrar_reward == reward )
+               {
+                  referrer_rewards_value = ( reward.amount * seller.referrer_rewards_percentage ) / PERCENT_100;
+               }
+               else
+               {
+                  referrer_rewards_value = reward.amount;         // Referrer gets all reward if registrar cannot receive.
+               }
+               
+               FC_ASSERT ( referrer_rewards_value <= reward.amount.value,
+                  "Referrer reward shouldn't be greater than total reward." );
+
+               if( referrer_rewards_value > 0 )
+               {
+                  if( referrer_permissions.is_authorized_transfer( recv_asset.issuer, recv_asset ) &&
+                     issuer_permissions.is_authorized_transfer( seller.referrer, recv_asset ) )
+                  {
+                     referrer_reward = asset( referrer_rewards_value, recv_asset.symbol );
+                     registrar_reward -= referrer_reward;    // Referrer and registrar split reward;
+                  }
+               }  
+            }
+
+            if( registrar_reward.amount > 0 )
+            {
+               adjust_reward_balance( seller.registrar, registrar_reward );
+               reward_paid += registrar_reward;
+            }
+            if( referrer_reward.amount > 0 )
+            {
+               adjust_reward_balance( seller.referrer, referrer_reward );
+               reward_paid += referrer_reward;
             }
          }
       }
 
-      adjust_liquid_balance( escrow.from, balance );   // Return remaining balance to FROM.
-
-      ilog( "Released Approved Escrow: ${e}", ("e",escrow) );
-   }
-   else      // Escrow is being released before being approved, all accounts refunded
-   {
-      for( auto a : escrow.approvals )
-      {
-         if( a.second == true )
-         {
-            if( a.first == escrow.from )
-            {
-               adjust_liquid_balance( a.first, escrow.payment + escrow_bond );
-            }
-            else
-            {
-               adjust_liquid_balance( a.first, escrow_bond );
-            }
-         }
-      }
-      ilog( "Cancelled Unapproved Escrow: ${e}", ("e",escrow) );
+      adjust_reward_balance( recv_asset.issuer, issuer_fees - reward_paid );
    }
 
-   adjust_pending_supply( -escrow.balance );
-   remove( escrow );
-
+   return issuer_fees;
 } FC_CAPTURE_AND_RETHROW() }
 
 } } //node::chain

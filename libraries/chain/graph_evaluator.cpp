@@ -323,7 +323,7 @@ void graph_edge_evaluator::do_apply( const graph_edge_operation& o )
       account_a_name = to_account.name;
    }
 
-   const auto& con_idx = _db.get_index< connection_index >().indices().get< by_accounts >();
+   const auto& con_idx = _db.get_index< account_connection_index >().indices().get< by_accounts >();
    auto con_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, edge_permission ) );
 
    FC_ASSERT( con_itr != con_idx.end(),

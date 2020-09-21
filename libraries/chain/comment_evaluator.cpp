@@ -145,13 +145,15 @@ void comment_evaluator::do_apply( const comment_operation& o )
 
       if( o.parent_author == ROOT_POST_PARENT )
       {
-         FC_ASSERT( community_member.is_authorized_author( o.author ), 
-            "User ${u} is not authorized to post in the community ${b}.",("b", o.community)("u", auth.name));
+         FC_ASSERT( _db.is_federated_authorized_author( community_member, o.author ),
+            "User ${u} is not authorized to post in the community ${b}.",
+            ("b",o.community)("u",auth.name));
       }
       else
       {
-         FC_ASSERT( community_member.is_authorized_interact( o.author ), 
-            "User ${u} is not authorized to interact with posts in the community ${b}.",("b", o.community)("u", auth.name));
+         FC_ASSERT( _db.is_federated_authorized_interact( community_member, o.author ),
+            "User ${u} is not authorized to interact with posts in the community ${b}.",
+            ("b",o.community)("u",auth.name));
       }
       
       switch( community.community_privacy )
@@ -172,8 +174,10 @@ void comment_evaluator::do_apply( const comment_operation& o )
          {
             FC_ASSERT( o.public_key.size(),
                "Posts in Private Communities should be encrypted." );
-            FC_ASSERT( public_key_type( o.public_key ) == community.community_public_key,
-               "Posts in Private Communities must be encrypted with the community public key.");
+            FC_ASSERT( public_key_type( o.public_key ) == community.community_member_key || 
+               public_key_type( o.public_key ) == community.community_moderator_key || 
+               public_key_type( o.public_key ) == community.community_admin_key,
+               "Posts in Private Communities must be encrypted with a community key.");
             FC_ASSERT( reach_type == community_feed_type, 
                "Posts in Private Communities should have reach limited to only community level subscribers.");
          }
@@ -189,7 +193,8 @@ void comment_evaluator::do_apply( const comment_operation& o )
          "Post rating exceeds maximum rating of community." );
       FC_ASSERT( o.options.reward_currency == community.reward_currency ||
          o.options.reward_currency == SYMBOL_COIN, 
-         "Community does not accept specified reward currency: ${c}.", ("c", o.options.reward_currency ));
+         "Community does not accept specified reward currency: ${c}.",
+         ("c", o.options.reward_currency ));
    }
 
    switch( reach_type )
@@ -224,8 +229,10 @@ void comment_evaluator::do_apply( const comment_operation& o )
       {
          FC_ASSERT( community_ptr != nullptr, 
             "Community level posts must be made within a valid community.");
-         FC_ASSERT( public_key_type( o.public_key ) == community_ptr->community_public_key, 
-            "Community level posts must be encrypted with the community public key.");
+         FC_ASSERT( public_key_type( o.public_key ) == community_ptr->community_member_key || 
+            public_key_type( o.public_key ) == community_ptr->community_moderator_key || 
+            public_key_type( o.public_key ) == community_ptr->community_admin_key,
+            "Community level posts must be encrypted with a community public key.");
       }
       break;
       case feed_reach_type::NO_FEED:
@@ -394,6 +401,9 @@ void comment_evaluator::do_apply( const comment_operation& o )
          FC_ASSERT( ( now - auth.last_post ) >= MIN_REPLY_INTERVAL,
             "You may only comment once every 15 seconds. Last post was: ${t}. Try again in ${s} seconds.",
             ("t",auth.last_root_post)("s",(MIN_REPLY_INTERVAL-(now-auth.last_root_post )).to_seconds() ) );
+         FC_ASSERT( o.options.reward_currency == root.reward_currency,
+            "Comment must have the same reward currency: ${c} as the root post: ${r}",
+            ("c",o.options.reward_currency)("r",root.reward_currency));
 
          // If root charges a comment price, pay the comment price to root author.
 
@@ -422,19 +432,6 @@ void comment_evaluator::do_apply( const comment_operation& o )
             });
          }
 
-         // If parent comment pays a reply price, then transfer from parent to root author.
-
-         if( parent->reply_price.amount > 0 && o.author == root.author )
-         {
-            asset liquid = _db.get_liquid_balance( parent->author, parent->reply_price.symbol );
-
-            if( liquid >= parent->reply_price )
-            {
-               _db.adjust_liquid_balance( parent->author, -parent->reply_price );
-               _db.adjust_liquid_balance( root.author, parent->reply_price );
-            }
-         }
-
          account_name_type account_a_name;
          account_name_type account_b_name;
 
@@ -449,7 +446,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
             account_a_name = root_auth.name;
          }
 
-         const auto& connection_idx = _db.get_index< connection_index >().indices().get< by_accounts >();
+         const auto& account_connection_idx = _db.get_index< account_connection_index >().indices().get< by_accounts >();
 
          switch( reply_connection )
          {
@@ -460,22 +457,22 @@ void comment_evaluator::do_apply( const comment_operation& o )
             break;
             case connection_tier_type::CONNECTION:
             {
-               auto con_itr = connection_idx.find( boost::make_tuple( account_a_name, account_b_name, reply_connection ) );
-               FC_ASSERT( con_itr != connection_idx.end(), 
+               auto con_itr = account_connection_idx.find( boost::make_tuple( account_a_name, account_b_name, reply_connection ) );
+               FC_ASSERT( con_itr != account_connection_idx.end(), 
                   "Cannot create reply: No Connection between Account: ${a} and Account: ${b}", ("a", account_a_name)("b", account_b_name) );
             }
             break;
             case connection_tier_type::FRIEND:
             {
-               auto con_itr = connection_idx.find( boost::make_tuple( account_a_name, account_b_name, reply_connection ) );
-               FC_ASSERT( con_itr != connection_idx.end(), 
+               auto con_itr = account_connection_idx.find( boost::make_tuple( account_a_name, account_b_name, reply_connection ) );
+               FC_ASSERT( con_itr != account_connection_idx.end(), 
                   "Cannot create reply: No Friend Connection between Account: ${a} and Account: ${b}", ("a", account_a_name)("b", account_b_name) );
             }
             break;
             case connection_tier_type::COMPANION:
             {
-               auto con_itr = connection_idx.find( boost::make_tuple( account_a_name, account_b_name, reply_connection ) );
-               FC_ASSERT( con_itr != connection_idx.end(), 
+               auto con_itr = account_connection_idx.find( boost::make_tuple( account_a_name, account_b_name, reply_connection ) );
+               FC_ASSERT( con_itr != account_connection_idx.end(), 
                   "Cannot create reply: No Companion Connection between Account: ${a} and Account: ${b}", ("a", account_a_name)("b", account_b_name) );
             }
             break;
@@ -492,14 +489,14 @@ void comment_evaluator::do_apply( const comment_operation& o )
             }
          }
 
-         _db.get_reward_fund( root.reward_currency );
-         
+         // Gets the user's voting power from their Equity and Staked coin balances.
+
+         share_type voting_power = _db.get_voting_power( o.author, o.options.reward_currency );
          int64_t elapsed_seconds = ( now - auth.last_post ).to_seconds();
          int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / median_props.comment_recharge_time.to_seconds();
          int16_t current_power = std::min( int64_t( auth.commenting_power + regenerated_power), int64_t(PERCENT_100) );
          FC_ASSERT( current_power > 0, 
             "Account currently does not have any commenting power." );
-         share_type voting_power = _db.get_voting_power( auth.name );
          int16_t max_comment_denom = median_props.comment_reserve_rate * ( median_props.comment_recharge_time.count() / fc::days(1).count() );  // Weights the viewing power with the network reserve ratio and recharge time
          FC_ASSERT( max_comment_denom > 0 );
          int16_t used_power = (current_power + max_comment_denom - 1) / max_comment_denom;
@@ -507,7 +504,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          FC_ASSERT( used_power <= current_power, 
             "Account does not have enough power to comment." );
          
-         reward = ( voting_power.value * used_power) / PERCENT_100;
+         reward = ( voting_power.value * used_power ) / PERCENT_100;
 
          uint128_t old_weight = util::evaluate_reward_curve( root );
 
@@ -590,35 +587,51 @@ void comment_evaluator::do_apply( const comment_operation& o )
          {
             com.public_key = public_key_type();
          }
-         if( o.interface != account_name_type() )
-         {
-            com.interface = o.interface;
-         }
+         
          if( o.title.size() )
          {
             from_string( com.title, o.title );
-         }
-         if( o.ipfs.size() )
-         {
-            from_string( com.ipfs, o.ipfs );
-         }
-         if( o.magnet.size() )
-         {
-            from_string( com.magnet, o.magnet );
          }
          if( o.body.size() )
          {
             from_string( com.body, o.body );
          }
-         if( o.json.size() )
+         if( o.body_private.size() )
          {
-            from_string( com.json, o.json );
+            from_string( com.body_private, o.body_private );
          }
          if( o.url.size() )
          {
             from_string( com.url, o.url );
          }
-
+         if( o.url_private.size() )
+         {
+            from_string( com.url, o.url_private );
+         }
+         if( o.ipfs.size() )
+         {
+            from_string( com.ipfs, o.ipfs );
+         }
+         if( o.ipfs_private.size() )
+         {
+            from_string( com.ipfs_private, o.ipfs_private );
+         }
+         if( o.magnet.size() )
+         {
+            from_string( com.magnet, o.magnet );
+         }
+         if( o.magnet_private.size() )
+         {
+            from_string( com.magnet_private, o.magnet_private );
+         }
+         if( o.json.size() )
+         {
+            from_string( com.json, o.json );
+         }
+         if( o.json_private.size() )
+         {
+            from_string( com.json_private, o.json_private );
+         }
          for( auto tag : o.tags )
          {
             com.tags.insert( tag );
@@ -627,9 +640,17 @@ void comment_evaluator::do_apply( const comment_operation& o )
          {
             com.collaborating_authors.insert( name );
          }
+         for( auto name : o.supernodes )
+         {
+            com.supernodes.insert( name );
+         }
          for( auto b : options.beneficiaries )
          {
             com.beneficiaries.insert( b );
+         }
+         if( o.interface != account_name_type() )
+         {
+            com.interface = o.interface;
          }
 
          com.last_updated = now;
@@ -791,44 +812,52 @@ void comment_evaluator::do_apply( const comment_operation& o )
                   "The parent of a comment cannot change." );
                FC_ASSERT( equal( com.parent_permlink, o.parent_permlink ), 
                   "The permlink of a comment cannot change." );
-            }       
-            if( o.json.size() )
-            {
-               from_string( com.json, o.json );  
             }
-            if( o.url.size() )
-            {
-               from_string( com.url, o.url );  
-            }
+
             if( o.title.size() )
             {
                from_string( com.title, o.title );
+            }
+            if( o.body.size() )
+            {
+               from_string( com.body, o.body );
+            }
+            if( o.body_private.size() )
+            {
+               from_string( com.body_private, o.body_private );
+            }
+            if( o.url.size() )
+            {
+               from_string( com.url, o.url );
+            }
+            if( o.url_private.size() )
+            {
+               from_string( com.url_private, o.url_private );
             }
             if( o.ipfs.size() )
             {
                from_string( com.ipfs, o.ipfs );
             }
+            if( o.ipfs_private.size() )
+            {
+               from_string( com.ipfs_private, o.ipfs_private );
+            }
             if( o.magnet.size() )
             {
                from_string( com.magnet, o.magnet );
             }
-
-            com.tags.clear();
-            for( auto tag : o.tags )
+            if( o.magnet_private.size() )
             {
-               com.tags.insert( tag );
+               from_string( com.magnet_private, o.magnet_private );
             }
-            com.collaborating_authors.clear();
-            for( auto name : o.collaborating_authors )
+            if( o.json.size() )
             {
-               com.collaborating_authors.insert( name );
+               from_string( com.json, o.json );
             }
-            com.beneficiaries.clear();
-            for( auto b : options.beneficiaries )
+            if( o.json_private.size() )
             {
-               com.beneficiaries.insert( b );
+               from_string( com.json_private, o.json_private );
             }
-
             if( o.language.size() )
             {
                from_string( com.language, o.language );
@@ -841,9 +870,26 @@ void comment_evaluator::do_apply( const comment_operation& o )
             {
                com.public_key = public_key_type();
             }
-            if( o.body.size() )
-            {  
-               from_string( com.body, o.body );
+
+            com.tags.clear();
+            for( auto tag : o.tags )
+            {
+               com.tags.insert( tag );
+            }
+            com.collaborating_authors.clear();
+            for( auto name : o.collaborating_authors )
+            {
+               com.collaborating_authors.insert( name );
+            }
+            com.supernodes.clear();
+            for( auto name : o.supernodes )
+            {
+               com.supernodes.insert( name );
+            }
+            com.beneficiaries.clear();
+            for( auto b : options.beneficiaries )
+            {
+               com.beneficiaries.insert( b );
             }
          });
 
@@ -866,14 +912,20 @@ void comment_evaluator::do_apply( const comment_operation& o )
             com.rating = 1;
             com.community = community_name_type();
             com.reach = feed_reach_type::NO_FEED;
-            from_string( com.json, "" );
-            from_string( com.url, "" );
             from_string( com.title, "" );
+            from_string( com.body, "" );
+            from_string( com.body_private, "" );
+            from_string( com.url, "" );
+            from_string( com.url_private, "" );
             from_string( com.ipfs, "" );
+            from_string( com.ipfs_private, "" );
             from_string( com.magnet, "" );
+            from_string( com.magnet_private, "" );
+            from_string( com.json, "" );
+            from_string( com.json_private, "" );
             from_string( com.language, "" );
             com.public_key = public_key_type();
-            from_string( com.body, "" );
+            
             com.cashout_time = fc::time_point::maximum();
          });
         
@@ -883,87 +935,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void message_evaluator::do_apply( const message_operation& o )
-{ try {
-   const account_name_type& signed_for = o.sender;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   const account_object& sender = _db.get_account( o.sender );
-   const account_object& recipient = _db.get_account( o.recipient );
-   time_point now = _db.head_block_time();
-   
-   account_name_type account_a_name;
-   account_name_type account_b_name;
-
-   if( sender.id < recipient.id )        // Connection objects are sorted with lowest ID is account A. 
-   {
-      account_a_name = sender.name;
-      account_b_name = recipient.name;
-   }
-   else
-   {
-      account_b_name = sender.name;
-      account_a_name = recipient.name;
-   }
-
-   const auto& connection_idx = _db.get_index< connection_index >().indices().get< by_accounts >();
-   auto connection_itr = connection_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::CONNECTION ) );
-
-   FC_ASSERT( connection_itr != connection_idx.end(), 
-      "Cannot send message: No Connection between Account: ${a} and Account: ${b}", ("a", account_a_name)("b", account_b_name) );
-
-   const auto& message_idx = _db.get_index< message_index >().indices().get< by_sender_uuid >();
-   auto message_itr = message_idx.find( boost::make_tuple( sender.name, o.uuid ) );
-
-   if( message_itr == message_idx.end() )         // Message uuid does not exist, creating new message
-   {
-      _db.create< message_object >( [&]( message_object& mo )
-      {
-         mo.sender = sender.name;
-         mo.recipient = recipient.name;
-         mo.sender_public_key = sender.secure_public_key;
-         mo.recipient_public_key = recipient.secure_public_key;
-         from_string( mo.message, o.message );
-         from_string( mo.uuid, o.uuid );
-         mo.created = now;
-         mo.last_updated = now;
-      });
-
-      _db.modify( *connection_itr, [&]( connection_object& co )
-      {
-         if( account_a_name == sender.name )
-         {
-            co.last_message_time_a = now;
-         }
-         else if( account_b_name == sender.name )
-         {
-            co.last_message_time_b = now;
-         }
-         co.message_count++;
-      });
-   }
-   else
-   {
-      _db.modify( *message_itr, [&]( message_object& mo )
-      {
-         from_string( mo.message, o.message );
-         mo.last_updated = now;
-      });
-   }
-} FC_CAPTURE_AND_RETHROW( ( o )) }
-
-
-void vote_evaluator::do_apply( const vote_operation& o )
+void comment_vote_evaluator::do_apply( const comment_vote_operation& o )
 { try {
    const account_name_type& signed_for = o.voter;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -993,8 +965,9 @@ void vote_evaluator::do_apply( const vote_operation& o )
    {
       community_ptr = _db.find_community( comment.community );     
       const community_member_object& community_member = _db.get_community_member( comment.community );
-      FC_ASSERT( community_member.is_authorized_interact( voter.name ), 
-         "User ${u} is not authorized to interact with posts in the community ${b}.",("b", comment.community)("u", voter.name));
+      FC_ASSERT( _db.is_federated_authorized_interact( community_member, o.voter ), 
+         "User ${u} is not authorized to interact with posts in the community ${b}.",
+         ("b", comment.community)("u", voter.name));
    }
 
    if( o.interface.size() )
@@ -1007,8 +980,8 @@ void vote_evaluator::do_apply( const vote_operation& o )
          "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
    }
 
-   _db.get_reward_fund( comment.reward_currency );
-
+   const asset_reward_fund_object& rfo = _db.get_reward_fund( comment.reward_currency );
+   share_type voting_power = _db.get_voting_power( o.voter, rfo.symbol );    // Gets the user's voting power from their Equity and Staked coin balances
    const auto& comment_vote_idx = _db.get_index< comment_vote_index >().indices().get< by_comment_voter >();
    auto itr = comment_vote_idx.find( std::make_tuple( comment.id, voter.name ) );
 
@@ -1029,14 +1002,13 @@ void vote_evaluator::do_apply( const vote_operation& o )
    used_power = ( used_power + max_vote_denom - 1 ) / max_vote_denom;
    FC_ASSERT( used_power <= current_power, 
       "Account does not have enough power to vote." );
-
-   share_type voting_power = _db.get_voting_power( o.voter );    // Gets the user's voting power from their Equity and Staked coin balances
+   
    share_type abs_reward = ( voting_power * used_power ) / PERCENT_100;
    FC_ASSERT( abs_reward > 0 || o.weight == 0, 
       "Voting weight is too small, please accumulate more voting power." );
-   share_type reward = o.weight < 0 ? -abs_reward : abs_reward; // Determines the sign of abs_reward for upvote and downvote
+   share_type reward = o.weight < 0 ? -abs_reward : abs_reward;    // Determines the sign of abs_reward for upvote and downvote
 
-   if( itr == comment_vote_idx.end() )   // New vote is being added to emtpy index
+   if( itr == comment_vote_idx.end() )      // New vote is being added to emtpy index
    {
       FC_ASSERT( o.weight != 0, 
          "Vote weight cannot be 0 for the first vote.");
@@ -1243,7 +1215,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
-void view_evaluator::do_apply( const view_operation& o )
+void comment_view_evaluator::do_apply( const comment_view_operation& o )
 { try {
    const account_name_type& signed_for = o.viewer;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -1260,7 +1232,8 @@ void view_evaluator::do_apply( const view_operation& o )
    }
    const comment_object& comment = _db.get_comment( o.author, o.permlink );
    const account_object& viewer = _db.get_account( o.viewer );
-   share_type vp = _db.get_voting_power( viewer );         // Gets the user's voting power from their Equity and Staked coin balances to weight the view.
+   const asset_reward_fund_object& rfo = _db.get_reward_fund( comment.reward_currency );
+   share_type voting_power = _db.get_voting_power( o.viewer, rfo.symbol );    // Gets the user's voting power from their Equity and Staked coin balances
    FC_ASSERT( comment.allow_views,
       "Views are not allowed on the comment." );
    FC_ASSERT( viewer.can_vote,
@@ -1270,24 +1243,14 @@ void view_evaluator::do_apply( const view_operation& o )
    {
       community_ptr = _db.find_community( comment.community );      
       const community_member_object& community_member = _db.get_community_member( comment.community );       
-      FC_ASSERT( community_member.is_authorized_interact( viewer.name ), 
-         "User ${u} is not authorized to interact with posts in the community ${b}.",("b", comment.community)("u", viewer.name));
+      FC_ASSERT( _db.is_federated_authorized_interact( community_member, o.viewer ), 
+         "User ${u} is not authorized to interact with posts in the community ${b}.",
+         ("b",comment.community)("u",viewer.name));
    }
 
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
-   _db.get_reward_fund( comment.reward_currency );
-
    const supernode_object* supernode_ptr = nullptr;
    const interface_object* interface_ptr = nullptr;
-
-   if( o.supernode.size() )
-   {
-      supernode_ptr = _db.find_supernode( o.supernode );
-   }
-   if( o.interface.size() )
-   {
-      interface_ptr = _db.find_interface( o.interface );
-   }
 
    time_point now = _db.head_block_time();
 
@@ -1312,9 +1275,9 @@ void view_evaluator::do_apply( const view_operation& o )
    int16_t used_power = ( current_power + max_view_denom - 1 ) / max_view_denom;
    FC_ASSERT( used_power <= current_power, 
       "Account does not have enough power to view." );
-   share_type reward = ( vp.value * used_power ) / PERCENT_100;
+   share_type reward = ( voting_power.value * used_power ) / PERCENT_100;
 
-   if( itr == comment_view_idx.end() )   // New view is being added 
+   if( itr == comment_view_idx.end() )   // New view is being added.
    {
       FC_ASSERT( reward > 0, 
          "Cannot claim view with 0 reward." );
@@ -1324,15 +1287,32 @@ void view_evaluator::do_apply( const view_operation& o )
       const auto& supernode_view_idx = _db.get_index< comment_view_index >().indices().get< by_supernode_viewer >();
       const auto& interface_view_idx = _db.get_index< comment_view_index >().indices().get< by_interface_viewer >();
 
+      if( o.supernode.size() )
+      {
+         supernode_ptr = _db.find_supernode( o.supernode );
+         FC_ASSERT( supernode_ptr->active, 
+            "Supernode: ${s} must be active in order to create view transaction.",
+            ("s",o.supernode) );
+      }
+      
       if( supernode_ptr != nullptr )
       {
          auto supernode_view_itr = supernode_view_idx.find( std::make_tuple( o.supernode, o.viewer ) );
          if( supernode_view_itr == supernode_view_idx.end() || 
             ( ( supernode_view_itr->created + fc::days(1) ) < now ) )
          {
-            _db.adjust_view_weight( *supernode_ptr, vp, true );
+            _db.adjust_view_weight( *supernode_ptr, voting_power, true );
          }
       }
+
+      if( o.interface.size() )
+      {
+         interface_ptr = _db.find_interface( o.interface );
+         FC_ASSERT( interface_ptr->active, 
+            "Interface: ${i} must be active in order to create view transaction.",
+            ("i",o.interface) );
+      }
+
       if( interface_ptr != nullptr )
       {
          auto interface_view_itr = interface_view_idx.find( std::make_tuple( o.interface, o.viewer ) );
@@ -1368,7 +1348,7 @@ void view_evaluator::do_apply( const view_operation& o )
          });
       }
 
-      _db.create< comment_view_object >( [&]( comment_view_object& cv )
+      const comment_view_object& view = _db.create< comment_view_object >( [&]( comment_view_object& cv )
       {
          cv.viewer = viewer.name;
          cv.comment = comment.id;
@@ -1419,6 +1399,9 @@ void view_evaluator::do_apply( const view_operation& o )
          }
       });
 
+      ilog( "Account: ${a} Created Comment View: \n ${v} \n",
+         ("a",o.viewer)("v",view));
+
       if( viewer.membership == membership_tier_type::NONE )     // Check for the presence of an ad bid on this view.
       {
          const auto& bid_idx = _db.get_index< ad_bid_index >().indices().get< by_provider_metric_author_objective_price >();
@@ -1440,6 +1423,25 @@ void view_evaluator::do_apply( const view_operation& o )
             }
 
             ++bid_itr;
+         }
+      }
+
+      if( comment.premium_price.amount > 0 )
+      {
+         const auto& purchase_idx = _db.get_index< premium_purchase_index >().indices().get< by_account_comment >();
+         auto purchase_itr = purchase_idx.find( std::make_tuple( o.viewer, comment.id ) );
+
+         const auto& key_idx = _db.get_index< premium_purchase_key_index >().indices().get< by_provider_account_comment >();
+         auto key_itr = key_idx.find( boost::make_tuple( o.supernode, o.viewer, comment.id ) );
+
+         if( purchase_itr != purchase_idx.end() && key_itr != key_idx.end() )
+         {
+            const premium_purchase_object& purchase = *purchase_itr;
+
+            if( purchase.released )
+            {
+               _db.deliver_premium_purchase( purchase, o.interface, o.supernode );
+            }
          }
       }
    }
@@ -1467,13 +1469,10 @@ void view_evaluator::do_apply( const view_operation& o )
       ilog( "Removed: ${v}",("v",*itr));
       _db.remove( *itr );
    }
-
-   ilog( "Account: ${v} Viewed post - Author: ${a} Permlink: ${p} Interface: ${i} Viewing power: ${vp}",
-      ("a",o.author)("p",o.permlink )("v",o.viewer)("i",o.interface)("vp",viewer.viewing_power));
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
-void share_evaluator::do_apply( const share_operation& o )
+void comment_share_evaluator::do_apply( const comment_share_operation& o )
 { try {
    const account_name_type& signed_for = o.sharer;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -1501,8 +1500,9 @@ void share_evaluator::do_apply( const share_operation& o )
    {
       community_ptr = _db.find_community( comment.community );      
       const community_member_object& community_member = _db.get_community_member( comment.community );       
-      FC_ASSERT( community_member.is_authorized_interact( sharer.name ), 
-         "User ${u} is not authorized to interact with posts in the community ${b}.",("b", comment.community)("u", sharer.name));
+      FC_ASSERT( _db.is_federated_authorized_interact( community_member, o.sharer ), 
+         "User ${u} is not authorized to interact with posts in the community ${b}.",
+         ("b", comment.community)("u", sharer.name));
    }
 
    if( o.interface.size() )
@@ -1516,8 +1516,6 @@ void share_evaluator::do_apply( const share_operation& o )
    }
 
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
-   _db.get_reward_fund( comment.reward_currency );
-
    time_point now = _db.head_block_time();
    
    const auto& comment_share_idx = _db.get_index< comment_share_index >().indices().get< by_comment_sharer >();
@@ -1538,8 +1536,9 @@ void share_evaluator::do_apply( const share_operation& o )
    int16_t used_power = ( current_power + max_share_denom - 1 ) / max_share_denom;
    FC_ASSERT( used_power <= current_power,   
       "Account does not have enough power to share." );
-   share_type vp = _db.get_voting_power( sharer );         // Gets the user's voting power from their Equity and Staked coin balances to weight the share.
-   share_type reward = ( vp.value * used_power ) / PERCENT_100;
+   const asset_reward_fund_object& rfo = _db.get_reward_fund( comment.reward_currency );
+   share_type voting_power = _db.get_voting_power( o.sharer, rfo.symbol );    // Gets the user's voting power from their Equity and Staked coin balances
+   share_type reward = ( voting_power.value * used_power ) / PERCENT_100;
 
    if( itr == comment_share_idx.end() )   // New share is being added to emtpy index
    {
@@ -1638,7 +1637,7 @@ void share_evaluator::do_apply( const share_operation& o )
       if( o.community.valid() )
       {
          const community_member_object& community_member = _db.get_community_member( *o.community );       
-         FC_ASSERT( community_member.is_authorized_interact( sharer.name ), 
+         FC_ASSERT( _db.is_federated_authorized_interact( community_member, o.sharer ), 
             "User ${u} is not authorized to interact with posts in the community ${b}.",
             ("b", *o.community)("u", sharer.name));
 
@@ -1707,7 +1706,7 @@ void share_evaluator::do_apply( const share_operation& o )
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
 
-void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
+void comment_moderation_evaluator::do_apply( const comment_moderation_operation& o )
 { try {
    const account_name_type& signed_for = o.moderator;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -1774,7 +1773,7 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
       } 
    }
    
-   const auto& mod_idx = _db.get_index< moderation_tag_index >().indices().get< by_moderator_comment >();
+   const auto& mod_idx = _db.get_index< comment_moderation_index >().indices().get< by_moderator_comment >();
    auto mod_itr = mod_idx.find( boost::make_tuple( o.moderator, comment.id ) );
    time_point now = _db.head_block_time();
 
@@ -1783,7 +1782,7 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
       FC_ASSERT( o.applied,
          "Moderation tag does not exist, Applied should be set to true to create new moderation tag." );
 
-      _db.create< moderation_tag_object >( [&]( moderation_tag_object& mto )
+      _db.create< comment_moderation_object >( [&]( comment_moderation_object& mto )
       {
          mto.moderator = moderator.name;
          mto.comment = comment.id;
@@ -1809,7 +1808,7 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
    {
       if( o.applied )  // Editing existing moderation tag
       {
-         _db.modify( *mod_itr, [&]( moderation_tag_object& mto )
+         _db.modify( *mod_itr, [&]( comment_moderation_object& mto )
          {
             mto.tags.clear();
             for( auto t : o.tags )
@@ -1832,6 +1831,87 @@ void moderation_tag_evaluator::do_apply( const moderation_tag_operation& o )
          ("m",mod_itr->moderator)("c",mod_itr->comment)("d",mod_itr->details));
          _db.remove( *mod_itr );
       }
+   }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
+
+
+
+void message_evaluator::do_apply( const message_operation& o )
+{ try {
+   const account_name_type& signed_for = o.sender;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+   const account_object& sender = _db.get_account( o.sender );
+   const account_object& recipient = _db.get_account( o.recipient );
+   time_point now = _db.head_block_time();
+   
+   account_name_type account_a_name;
+   account_name_type account_b_name;
+
+   if( sender.id < recipient.id )        // Connection objects are sorted with lowest ID is account A. 
+   {
+      account_a_name = sender.name;
+      account_b_name = recipient.name;
+   }
+   else
+   {
+      account_b_name = sender.name;
+      account_a_name = recipient.name;
+   }
+
+   const auto& account_connection_idx = _db.get_index< account_connection_index >().indices().get< by_accounts >();
+   auto connection_itr = account_connection_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::CONNECTION ) );
+
+   FC_ASSERT( connection_itr != account_connection_idx.end(), 
+      "Cannot send message: No Connection between Account: ${a} and Account: ${b}", ("a", account_a_name)("b", account_b_name) );
+
+   const auto& message_idx = _db.get_index< message_index >().indices().get< by_sender_uuid >();
+   auto message_itr = message_idx.find( boost::make_tuple( sender.name, o.uuid ) );
+
+   if( message_itr == message_idx.end() )         // Message uuid does not exist, creating new message
+   {
+      _db.create< message_object >( [&]( message_object& mo )
+      {
+         mo.sender = sender.name;
+         mo.recipient = recipient.name;
+         mo.sender_public_key = sender.secure_public_key;
+         mo.recipient_public_key = recipient.secure_public_key;
+         from_string( mo.message, o.message );
+         from_string( mo.uuid, o.uuid );
+         mo.created = now;
+         mo.last_updated = now;
+      });
+
+      _db.modify( *connection_itr, [&]( account_connection_object& co )
+      {
+         if( account_a_name == sender.name )
+         {
+            co.last_message_time_a = now;
+         }
+         else if( account_b_name == sender.name )
+         {
+            co.last_message_time_b = now;
+         }
+         co.message_count++;
+      });
+   }
+   else
+   {
+      _db.modify( *message_itr, [&]( message_object& mo )
+      {
+         from_string( mo.message, o.message );
+         mo.last_updated = now;
+      });
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
@@ -2113,6 +2193,163 @@ void poll_vote_evaluator::do_apply( const poll_vote_operation& o )
       {
          p.poll_option = poll.poll_options[ o.poll_option ];
          p.last_updated = now;
+      });
+   }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
+
+
+void premium_purchase_evaluator::do_apply( const premium_purchase_operation& o )
+{ try {
+   const account_name_type& signed_for = o.account;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+   
+   const account_object& account = _db.get_account( o.account );
+   const account_object& author = _db.get_account( o.author );
+   const comment_object& comment = _db.get_comment( o.author, o.permlink );
+   asset liquid = _db.get_liquid_balance( o.account, comment.premium_price.symbol );
+   time_point now = _db.head_block_time();
+
+   FC_ASSERT( author.active, 
+      "Account: ${s} must be active to purchase premium post.",
+      ("s",author.name) );
+   FC_ASSERT( !comment.deleted, 
+      "Comment: ${a} ${c} has been deleted and cannot be purchased.",
+      ("a",comment.author)("c",comment.permlink));
+   FC_ASSERT( comment.premium_price.amount > 0,
+      "Comment: ${a} ${p} must have a premium price in order to purchase.",
+      ("a",comment.author)("c",comment.permlink));
+   FC_ASSERT( liquid.amount >= comment.premium_price.amount,
+      "Account: ${a} has insufficient liquid balance: ${b} of premium price asset for purchase: ${p}.",
+      ("a",o.account)("b",liquid)("p",comment.premium_price));
+
+   const auto& purchase_idx = _db.get_index< premium_purchase_index >().indices().get< by_account_comment >();
+   auto purchase_itr = purchase_idx.find( boost::make_tuple( account.name, comment.id ) );
+   
+   if( purchase_itr == purchase_idx.end() )   // Creating new purchase
+   {
+      FC_ASSERT( o.purchased, 
+         "Premium purchase does not yet exist with the account: ${a} for the comment: {c}.",
+         ("a",o.account)("c",comment));
+
+      _db.create< premium_purchase_object >( [&]( premium_purchase_object& ppo )
+      {
+         ppo.account = o.account;
+         ppo.comment = comment.id;
+         ppo.premium_price = comment.premium_price;
+         ppo.interface = o.interface;
+         ppo.expiration = now + fc::days(1);
+         ppo.released = false;
+         ppo.last_updated = now;
+         ppo.created = now;
+      });
+
+      _db.adjust_liquid_balance( o.account, -comment.premium_price );
+      _db.adjust_pending_supply( comment.premium_price );
+   }
+   else     // Removing existing unreleased purchase
+   {
+      const premium_purchase_object& purchase = *purchase_itr;
+
+      FC_ASSERT( !o.purchased && !purchase.released,
+         "Cannot remove a purchase that has been released." );
+
+      // Full refund for unreleased premium post. 
+
+      _db.adjust_liquid_balance( o.account, purchase.premium_price );
+      _db.adjust_pending_supply( -purchase.premium_price );
+      _db.remove( purchase );
+   }
+} FC_CAPTURE_AND_RETHROW( ( o )) }
+
+
+
+void premium_release_evaluator::do_apply( const premium_release_operation& o )
+{ try {
+   const account_name_type& signed_for = o.provider;
+   const account_object& signatory = _db.get_account( o.signatory );
+   FC_ASSERT( signatory.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
+   if( o.signatory != signed_for )
+   {
+      const account_object& signed_acc = _db.get_account( signed_for );
+      FC_ASSERT( signed_acc.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
+      const account_business_object& b = _db.get_account_business( signed_for );
+      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
+         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
+   }
+   
+   const account_object& account = _db.get_account( o.account );
+   const account_object& author = _db.get_account( o.author );
+   const comment_object& comment = _db.get_comment( o.author, o.permlink );
+   time_point now = _db.head_block_time();
+
+   FC_ASSERT( !comment.deleted, 
+      "Comment: ${a} ${c} has been deleted and cannot be release.",
+      ("a",comment.author)("c",comment.permlink));
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s",o.account));
+   FC_ASSERT( author.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s",o.author));
+   FC_ASSERT( comment.premium_price.amount > 0, 
+      "Comment: ${a} ${c} must have a premium price in order to purchase.",
+      ("a",comment.author)("c",comment.permlink));
+
+   const auto& purchase_idx = _db.get_index< premium_purchase_index >().indices().get< by_account_comment >();
+   auto purchase_itr = purchase_idx.find( boost::make_tuple( o.account, comment.id ) );
+   
+   const auto& key_idx = _db.get_index< premium_purchase_key_index >().indices().get< by_provider_account_comment >();
+   auto key_itr = key_idx.find( boost::make_tuple( o.provider, o.account, comment.id ) );
+   
+   if( key_itr == key_idx.end() )   // Creating new purchase release key
+   {
+      if( purchase_itr == purchase_idx.end() )   // No Purchase, must be author releasing to designated supernode.
+      {
+         FC_ASSERT( o.provider == comment.author && comment.is_supernode( o.account ),
+            "Post Author can only release Premium purchase key without purchase to a designated Supernode." );
+      }
+      else
+      {
+         const premium_purchase_object& purchase = *purchase_itr;
+
+         _db.modify( purchase, [&]( premium_purchase_object& ppo )
+         {
+            ppo.released = true;
+            ppo.last_updated = now;
+         });
+      }
+      
+      _db.create< premium_purchase_key_object >( [&]( premium_purchase_key_object& ppko )
+      {
+         ppko.provider = o.provider;
+         ppko.account = o.account;
+         ppko.comment = comment.id;
+         ppko.encrypted_key = encrypted_keypair_type( account.secure_public_key, comment.public_key, o.encrypted_key );
+         ppko.last_updated = now;
+         ppko.created = now;
+      });
+   }
+   else     // Updating key
+   {
+      const premium_purchase_key_object& key = *key_itr;
+
+      _db.modify( key, [&]( premium_purchase_key_object& ppko )
+      {
+         ppko.encrypted_key = encrypted_keypair_type( account.secure_public_key, comment.public_key, o.encrypted_key );
+         ppko.last_updated = now;
       });
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
