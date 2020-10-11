@@ -84,7 +84,7 @@ class database_api_impl : public std::enable_shared_from_this<database_api_impl>
 
       map< uint32_t, applied_operation >              get_account_history( string account, uint64_t from, uint32_t limit )const;
 
-      vector< message_state >                         get_messages( vector< string > names )const;
+      vector< account_message_state >                 get_account_messages( vector< string > names )const;
 
       list_state                                      get_list( string name, string list_id )const;
 
@@ -624,22 +624,20 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
 
    const auto& business_idx = _db.get_index< account_business_index >().indices().get< by_account >();
    const auto& bus_key_idx = _db.get_index< account_member_key_index >().indices().get< by_member_business >();
-   const auto& community_key_idx = _db.get_index< community_member_key_index >().indices().get< by_member_community >();
+   const auto& community_key_idx = _db.get_index< community_member_key_index >().indices().get< by_member_community_type >();
    const auto& following_idx = _db.get_index< account_following_index >().indices().get< by_account >();
+   const auto& permission_idx = _db.get_index< account_permission_index >().indices().get< by_account >();
    const auto& connection_a_idx = _db.get_index< account_connection_index >().indices().get< by_account_a >();
    const auto& connection_b_idx = _db.get_index< account_connection_index >().indices().get< by_account_b >();
    const auto& inbox_idx = _db.get_index< message_index >().indices().get< by_account_inbox >();
    const auto& outbox_idx = _db.get_index< message_index >().indices().get< by_account_outbox >();
+   const auto& community_inbox_idx = _db.get_index< message_index >().indices().get< by_community_inbox >();
 
    const auto& limit_idx = _db.get_index< limit_order_index >().indices().get< by_account >();
    const auto& margin_idx = _db.get_index< margin_order_index >().indices().get< by_account >();
    const auto& call_idx = _db.get_index< call_order_index >().indices().get< by_account >();
    const auto& loan_idx = _db.get_index< credit_loan_index >().indices().get< by_owner >();
    const auto& collateral_idx = _db.get_index< credit_collateral_index >().indices().get< by_owner >();
-   const auto& moderator_idx = _db.get_index< community_moderator_vote_index >().indices().get< by_account_community_rank >();
-
-   const auto& connection_req_idx = _db.get_index< account_connection_request_index >().indices().get< by_req_account >();
-   const auto& connection_acc_idx = _db.get_index< account_connection_request_index >().indices().get< by_account_req >();
 
    const auto& account_req_idx = _db.get_index< account_member_request_index >().indices().get< by_account_business >();
    const auto& bus_req_idx = _db.get_index< account_member_request_index >().indices().get< by_business_account >();
@@ -657,7 +655,11 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
    const auto& community_req_idx = _db.get_index< community_join_request_index >().indices().get< by_account_community >();
    const auto& community_acc_inv_idx = _db.get_index< community_join_invite_index >().indices().get< by_account >();
    const auto& community_member_inv_idx = _db.get_index< community_join_invite_index >().indices().get< by_member >();
-   const auto& community_member_idx = _db.get_index< community_member_index >().indices().get< by_name >();
+   const auto& incoming_moderator_idx = _db.get_index< community_moderator_vote_index >().indices().get< by_moderator_community_rank >();
+   const auto& outgoing_moderator_idx = _db.get_index< community_moderator_vote_index >().indices().get< by_account_community_rank >();
+   const auto& community_event_idx = _db.get_index< community_event_index >().indices().get< by_event_id >();
+   const auto& community_event_attend_idx = _db.get_index< community_event_attend_index >().indices().get< by_attendee >();
+   const auto& community_event_attend_id_idx = _db.get_index< community_event_attend_index >().indices().get< by_event_id >();
 
    const auto& transfer_req_idx = _db.get_index< transfer_request_index >().indices().get< by_request_id >();
    const auto& transfer_from_req_idx = _db.get_index< transfer_request_index >().indices().get< by_from_account >();
@@ -680,6 +682,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
    const auto& incoming_officer_vote_idx = _db.get_index< network_officer_vote_index >().indices().get< by_officer_account >();
    const auto& incoming_subscription_idx = _db.get_index< governance_subscription_index >().indices().get< by_governance_account >();
    const auto& incoming_enterprise_vote_idx = _db.get_index< enterprise_vote_index >().indices().get< by_enterprise_id >();
+   const auto& incoming_enterprise_fund_idx = _db.get_index< enterprise_fund_index >().indices().get< by_account_enterprise_funder >();
    const auto& incoming_commit_violation_idx = _db.get_index< commit_violation_index >().indices().get< by_producer_height >();
 
    const auto& outgoing_producer_vote_idx = _db.get_index< producer_vote_index >().indices().get< by_account_rank >();
@@ -687,7 +690,38 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
    const auto& outgoing_officer_vote_idx = _db.get_index< network_officer_vote_index >().indices().get< by_account_type_rank >();
    const auto& outgoing_subscription_idx = _db.get_index< governance_subscription_index >().indices().get< by_account_rank >();
    const auto& outgoing_enterprise_vote_idx = _db.get_index< enterprise_vote_index >().indices().get< by_account_rank >();
+   const auto& outgoing_enterprise_fund_idx = _db.get_index< enterprise_fund_index >().indices().get< by_funder_account_enterprise >();
    const auto& outgoing_commit_violation_idx = _db.get_index< commit_violation_index >().indices().get< by_reporter_height >();
+
+   const auto& creative_idx = _db.get_index< ad_creative_index >().indices().get< by_latest >();
+   const auto& campaign_idx = _db.get_index< ad_campaign_index >().indices().get< by_latest >();
+   const auto& audience_idx = _db.get_index< ad_audience_index >().indices().get< by_latest >();
+   const auto& inventory_idx = _db.get_index< ad_inventory_index >().indices().get< by_latest >();
+
+   const auto& creative_id_idx = _db.get_index< ad_creative_index >().indices().get< by_creative_id >();
+   const auto& campaign_id_idx = _db.get_index< ad_campaign_index >().indices().get< by_campaign_id >();
+   const auto& audience_id_idx = _db.get_index< ad_audience_index >().indices().get< by_audience_id >();
+   const auto& inventory_id_idx = _db.get_index< ad_inventory_index >().indices().get< by_inventory_id >();
+
+   const auto& bidder_bid_idx = _db.get_index< ad_bid_index >().indices().get< by_bidder_updated >();
+   const auto& account_bid_idx = _db.get_index< ad_bid_index >().indices().get< by_account_updated >();
+   const auto& author_bid_idx = _db.get_index< ad_bid_index >().indices().get< by_author_updated >();
+   const auto& provider_bid_idx = _db.get_index< ad_bid_index >().indices().get< by_provider_updated >();
+
+   const auto& product_idx = _db.get_index< product_sale_index >().indices().get< by_product_id >();
+   const auto& seller_purchase_idx = _db.get_index< product_purchase_index >().indices().get< by_product_id >();
+   const auto& buyer_purchase_idx = _db.get_index< product_purchase_index >().indices().get< by_order_id >();
+
+   const auto& auction_idx = _db.get_index< product_auction_sale_index >().indices().get< by_auction_id >();
+   const auto& seller_bid_idx = _db.get_index< product_auction_bid_index >().indices().get< by_auction_id >();
+   const auto& buyer_bid_idx = _db.get_index< product_auction_bid_index >().indices().get< by_bid_id >();
+
+   const auto& account_premium_purchase_idx = _db.get_index< premium_purchase_index >().indices().get< by_account_comment >();
+   const auto& author_premium_purchase_idx = _db.get_index< premium_purchase_index >().indices().get< by_author_comment >();
+   const auto& account_premium_purchase_key_idx = _db.get_index< premium_purchase_key_index >().indices().get< by_account_comment >();
+   const auto& author_premium_purchase_key_idx = _db.get_index< premium_purchase_key_index >().indices().get< by_author_comment >();
+
+   const auto& comment_blog_idx = _db.get_index< comment_blog_index >().indices().get< by_new_account_blog >();
 
    const auto& owner_history_idx = _db.get_index< account_authority_history_index >().indices().get< by_account >();
    const auto& recovery_idx = _db.get_index< account_recovery_request_index >().indices().get< by_account >();
@@ -703,202 +737,89 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
       {
          results.push_back( extended_account( *account_itr, _db ) );
 
-         auto balance_itr = balance_idx.lower_bound( name );
-         while( balance_itr != balance_idx.end() && balance_itr->owner == name )
-         {
-            results.back().balances.balances[ balance_itr->symbol ] = account_balance_api_obj( *balance_itr );
-            ++balance_itr;
-         }
-   
-         auto limit_itr = limit_idx.lower_bound( name );
-         while( limit_itr != limit_idx.end() && limit_itr->seller == name ) 
-         {
-            results.back().orders.limit_orders.push_back( limit_order_api_obj( *limit_itr ) );
-            ++limit_itr;
-         }
-
-         auto margin_itr = margin_idx.lower_bound( name );
-         while( margin_itr != margin_idx.end() && margin_itr->owner == name )
-         {
-            results.back().orders.margin_orders.push_back( margin_order_api_obj( *margin_itr ) );
-            ++margin_itr;
-         }
-
-         auto call_itr = call_idx.lower_bound( name );
-         while( call_itr != call_idx.end() && call_itr->borrower == name ) 
-         {
-            results.back().orders.call_orders.push_back( call_order_api_obj( *call_itr ) );
-            ++call_itr;
-         }
-
-         auto loan_itr = loan_idx.lower_bound( name );
-         while( loan_itr != loan_idx.end() && loan_itr->owner == name ) 
-         {
-            results.back().orders.loan_orders.push_back( credit_loan_api_obj( *loan_itr ) );
-            ++loan_itr;
-         }
-
-         auto collateral_itr = collateral_idx.lower_bound( name );
-         while( collateral_itr != collateral_idx.end() && collateral_itr->owner == name ) 
-         {
-            results.back().orders.collateral.push_back( credit_collateral_api_obj( *collateral_itr ) );
-            ++collateral_itr;
-         }
-
          auto following_itr = following_idx.find( name );
          if( following_itr != following_idx.end() )
          {
             results.back().following = account_following_api_obj( *following_itr );
          }
 
-         auto producer_itr = producer_idx.find( name );
-         if( producer_itr != producer_idx.end() )
+         auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::CONNECTION ) );
+         auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::CONNECTION ) );
+         while( connection_a_itr != connection_a_idx.end() && 
+            connection_a_itr->account_a == name &&
+            connection_a_itr->connection_type == connection_tier_type::CONNECTION )
          {
-            results.back().network.producer = producer_api_obj( *producer_itr );
+            results.back().connections.connections[ connection_a_itr->account_b ] = account_connection_api_obj( *connection_a_itr );
+            results.back().keychain.connection_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
+            ++connection_a_itr;
+         }
+         while( connection_b_itr != connection_b_idx.end() && 
+            connection_b_itr->account_b == name &&
+            connection_b_itr->connection_type == connection_tier_type::CONNECTION )
+         {
+            results.back().connections.connections[ connection_b_itr->account_a ] = account_connection_api_obj( *connection_b_itr );
+            results.back().keychain.connection_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
+            ++connection_b_itr;
          }
 
-         auto officer_itr = officer_idx.find( name );
-         if( officer_itr != officer_idx.end() )
+         connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::FRIEND ) );
+         connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::FRIEND ) );
+         while( connection_a_itr != connection_a_idx.end() && 
+            connection_a_itr->account_a == name &&
+            connection_a_itr->connection_type == connection_tier_type::FRIEND )
          {
-            results.back().network.network_officer = network_officer_api_obj( *officer_itr );
+            results.back().connections.friends[ connection_a_itr->account_b ] = account_connection_api_obj( *connection_a_itr );
+            results.back().keychain.friend_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
+            ++connection_a_itr;
+         }
+         while( connection_b_itr != connection_b_idx.end() && 
+            connection_b_itr->account_b == name &&
+            connection_b_itr->connection_type == connection_tier_type::FRIEND )
+         {
+            results.back().connections.friends[ connection_b_itr->account_a ] = account_connection_api_obj( *connection_b_itr );
+            results.back().keychain.friend_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
+            ++connection_b_itr;
          }
 
-         auto executive_itr = executive_idx.find( name );
-         if( executive_itr != executive_idx.end() )
+         connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::COMPANION ) );
+         connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::COMPANION ) );
+         while( connection_a_itr != connection_a_idx.end() && 
+            connection_a_itr->account_a == name &&
+            connection_a_itr->connection_type == connection_tier_type::COMPANION )
          {
-            results.back().network.executive_board = executive_board_api_obj( *executive_itr );
-         } 
-
-         auto interface_itr = interface_idx.find( name );
-         if( interface_itr != interface_idx.end() )
+            results.back().connections.companions[ connection_a_itr->account_b ] = account_connection_api_obj( *connection_a_itr );
+            results.back().keychain.companion_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
+            ++connection_a_itr;
+         }
+         while( connection_b_itr != connection_b_idx.end() && 
+            connection_b_itr->account_b == name &&
+            connection_b_itr->connection_type == connection_tier_type::COMPANION )
          {
-            results.back().network.interface = interface_api_obj( *interface_itr );
+            results.back().connections.companions[ connection_b_itr->account_a ] = account_connection_api_obj( *connection_b_itr );
+            results.back().keychain.companion_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
+            ++connection_b_itr;
          }
 
-         auto supernode_itr = supernode_idx.find( name );
-         if( supernode_itr != supernode_idx.end() )
+         auto verifier_verified_itr = verifier_verified_idx.lower_bound( name );
+         while( verifier_verified_itr != verifier_verified_idx.end() &&
+            verifier_verified_itr->verifier_account == name )
          {
-            results.back().network.supernode = supernode_api_obj( *supernode_itr );
+            results.back().connections.outgoing_verifications[ verifier_verified_itr->verified_account ] = account_verification_api_obj( *verifier_verified_itr );
+            ++verifier_verified_itr;
          }
 
-         auto governance_itr = governance_idx.find( name );
-         if( governance_itr != governance_idx.end() )
+         auto verified_verifier_itr = verified_verifier_idx.lower_bound( name );
+         while( verified_verifier_itr != verified_verifier_idx.end() &&
+            verified_verifier_itr->verified_account == name )
          {
-            results.back().network.governance_account = governance_account_api_obj( *governance_itr );
+            results.back().connections.incoming_verifications[ verified_verifier_itr->verifier_account ] = account_verification_api_obj( *verified_verifier_itr );
+            ++verified_verifier_itr;
          }
 
-         auto enterprise_itr = enterprise_idx.lower_bound( name );
-         while( enterprise_itr != enterprise_idx.end() && enterprise_itr->account == name )
+         auto permission_itr = permission_idx.find( name );
+         if( permission_itr != permission_idx.end() )
          {
-            results.back().network.enterprise_proposals.push_back( enterprise_api_obj( *enterprise_itr ) );
-            ++enterprise_itr;
-         }
-
-         auto validation_itr = validation_idx.lower_bound( name );
-         while( validation_itr != validation_idx.end() && 
-            validation_itr->producer == name &&
-            results.back().network.block_validations.size() < 100 )
-         {
-            results.back().network.block_validations.push_back( block_validation_api_obj( *validation_itr ) );
-            ++validation_itr;
-         }
-
-         auto incoming_producer_vote_itr = incoming_producer_vote_idx.lower_bound( name );
-         while( incoming_producer_vote_itr != incoming_producer_vote_idx.end() && 
-            incoming_producer_vote_itr->producer == name )
-         {
-            results.back().network.incoming_producer_votes[ incoming_producer_vote_itr->account ] = producer_vote_api_obj( *incoming_producer_vote_itr );
-            ++incoming_producer_vote_itr;
-         }
-
-         auto incoming_officer_vote_itr = incoming_officer_vote_idx.lower_bound( name );
-         while( incoming_officer_vote_itr != incoming_officer_vote_idx.end() && 
-            incoming_officer_vote_itr->network_officer == name )
-         {
-            results.back().network.incoming_network_officer_votes[ incoming_officer_vote_itr->account ] = network_officer_vote_api_obj( *incoming_officer_vote_itr );
-            ++incoming_officer_vote_itr;
-         }
-
-         auto incoming_executive_vote_itr = incoming_executive_vote_idx.lower_bound( name );
-         while( incoming_executive_vote_itr != incoming_executive_vote_idx.end() && 
-            incoming_executive_vote_itr->executive_board == name )
-         {
-            results.back().network.incoming_executive_board_votes[ incoming_executive_vote_itr->account ] = executive_board_vote_api_obj( *incoming_executive_vote_itr );
-            ++incoming_executive_vote_itr;
-         }
-
-         auto incoming_subscription_itr = incoming_subscription_idx.lower_bound( name );
-         while( incoming_subscription_itr != incoming_subscription_idx.end() && 
-            incoming_subscription_itr->governance_account == name )
-         {
-            results.back().network.incoming_governance_subscriptions[ incoming_subscription_itr->account ] = governance_subscription_api_obj( *incoming_subscription_itr );
-            ++incoming_subscription_itr;
-         }
-
-         auto incoming_enterprise_vote_itr = incoming_enterprise_vote_idx.lower_bound( name );
-         while( incoming_enterprise_vote_itr != incoming_enterprise_vote_idx.end() && 
-            incoming_enterprise_vote_itr->account == name )
-         {
-            results.back().network.incoming_enterprise_votes[ incoming_enterprise_vote_itr->account ][ to_string( incoming_enterprise_vote_itr->enterprise_id ) ] = enterprise_vote_api_obj( *incoming_enterprise_vote_itr );
-            ++incoming_enterprise_vote_itr;
-         }
-
-         auto incoming_commit_violation_itr = incoming_commit_violation_idx.lower_bound( name );
-         while( incoming_commit_violation_itr != incoming_commit_violation_idx.end() && 
-            incoming_commit_violation_itr->producer == name &&
-            results.back().network.incoming_commit_violations.size() < 100 )
-         {
-            results.back().network.incoming_commit_violations[ incoming_commit_violation_itr->reporter ] = commit_violation_api_obj( *incoming_commit_violation_itr );
-            ++incoming_commit_violation_itr;
-         }
-
-         auto outgoing_producer_vote_itr = outgoing_producer_vote_idx.lower_bound( name );
-         while( outgoing_producer_vote_itr != outgoing_producer_vote_idx.end() && 
-            outgoing_producer_vote_itr->account == name ) 
-         {
-            results.back().network.outgoing_producer_votes[ outgoing_producer_vote_itr->producer ] = producer_vote_api_obj( *outgoing_producer_vote_itr );
-            ++outgoing_producer_vote_itr;
-         }
-
-         auto outgoing_officer_vote_itr = outgoing_officer_vote_idx.lower_bound( name );
-         while( outgoing_officer_vote_itr != outgoing_officer_vote_idx.end() && 
-            outgoing_officer_vote_itr->account == name )
-         {
-            results.back().network.outgoing_network_officer_votes[ outgoing_officer_vote_itr->network_officer ] = network_officer_vote_api_obj( *outgoing_officer_vote_itr );
-            ++outgoing_officer_vote_itr;
-         }
-
-         auto outgoing_executive_vote_itr = outgoing_executive_vote_idx.lower_bound( name );
-         while( outgoing_executive_vote_itr != outgoing_executive_vote_idx.end() && 
-            outgoing_executive_vote_itr->account == name )
-         {
-            results.back().network.outgoing_executive_board_votes[ outgoing_executive_vote_itr->executive_board ] = executive_board_vote_api_obj( *outgoing_executive_vote_itr );
-            ++outgoing_executive_vote_itr;
-         }
-
-         auto outgoing_subscription_itr = outgoing_subscription_idx.lower_bound( name );
-         while( outgoing_subscription_itr != outgoing_subscription_idx.end() && 
-            outgoing_subscription_itr->account == name )
-         {
-            results.back().network.outgoing_governance_subscriptions[ outgoing_subscription_itr->governance_account ] = governance_subscription_api_obj( *outgoing_subscription_itr );
-            ++outgoing_subscription_itr;
-         }
-
-         auto outgoing_enterprise_vote_itr = outgoing_enterprise_vote_idx.lower_bound( name );
-         while( outgoing_enterprise_vote_itr != outgoing_enterprise_vote_idx.end() && 
-            outgoing_enterprise_vote_itr->account == name )
-         {
-            results.back().network.outgoing_enterprise_votes[ outgoing_enterprise_vote_itr->account ][ to_string( outgoing_enterprise_vote_itr->enterprise_id ) ] = enterprise_vote_api_obj( *outgoing_enterprise_vote_itr );
-            ++outgoing_enterprise_vote_itr;
-         }
-
-         auto outgoing_commit_violation_itr = outgoing_commit_violation_idx.lower_bound( name );
-         while( outgoing_commit_violation_itr != outgoing_commit_violation_idx.end() && 
-            outgoing_commit_violation_itr->reporter == name &&
-            results.back().network.outgoing_commit_violations.size() < 100 )
-         {
-            results.back().network.outgoing_commit_violations[ outgoing_commit_violation_itr->producer ] = commit_violation_api_obj( *outgoing_commit_violation_itr );
-            ++outgoing_commit_violation_itr;
+            results.back().permissions = account_permission_api_obj( *permission_itr );
          }
 
          auto business_itr = business_idx.find( name );
@@ -997,151 +918,46 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             ++bus_inv_itr;
          }
 
-         auto connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::CONNECTION ) );
-         auto connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::CONNECTION ) );
-         while( connection_a_itr != connection_a_idx.end() && 
-            connection_a_itr->account_a == name &&
-            connection_a_itr->connection_type == connection_tier_type::CONNECTION )
+         auto balance_itr = balance_idx.lower_bound( name );
+         while( balance_itr != balance_idx.end() && balance_itr->owner == name )
          {
-            results.back().connections.connections[ connection_a_itr->account_b ] = account_connection_api_obj( *connection_a_itr );
-            results.back().keychain.connection_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
-            ++connection_a_itr;
+            results.back().balances.balances[ balance_itr->symbol ] = account_balance_api_obj( *balance_itr );
+            ++balance_itr;
          }
-         while( connection_b_itr != connection_b_idx.end() && 
-            connection_b_itr->account_b == name &&
-            connection_b_itr->connection_type == connection_tier_type::CONNECTION )
+   
+         auto limit_itr = limit_idx.lower_bound( name );
+         while( limit_itr != limit_idx.end() && limit_itr->seller == name ) 
          {
-            results.back().connections.connections[ connection_b_itr->account_a ] = account_connection_api_obj( *connection_b_itr );
-            results.back().keychain.connection_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
-            ++connection_b_itr;
+            results.back().orders.limit_orders.push_back( limit_order_api_obj( *limit_itr ) );
+            ++limit_itr;
          }
 
-         connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::FRIEND ) );
-         connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::FRIEND ) );
-         while( connection_a_itr != connection_a_idx.end() && 
-            connection_a_itr->account_a == name &&
-            connection_a_itr->connection_type == connection_tier_type::FRIEND )
+         auto margin_itr = margin_idx.lower_bound( name );
+         while( margin_itr != margin_idx.end() && margin_itr->owner == name )
          {
-            results.back().connections.friends[ connection_a_itr->account_b ] = account_connection_api_obj( *connection_a_itr );
-            results.back().keychain.friend_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
-            ++connection_a_itr;
-         }
-         while( connection_b_itr != connection_b_idx.end() && 
-            connection_b_itr->account_b == name &&
-            connection_b_itr->connection_type == connection_tier_type::FRIEND )
-         {
-            results.back().connections.friends[ connection_b_itr->account_a ] = account_connection_api_obj( *connection_b_itr );
-            results.back().keychain.friend_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
-            ++connection_b_itr;
+            results.back().orders.margin_orders.push_back( margin_order_api_obj( *margin_itr ) );
+            ++margin_itr;
          }
 
-         connection_a_itr = connection_a_idx.lower_bound( boost::make_tuple( name, connection_tier_type::COMPANION ) );
-         connection_b_itr = connection_b_idx.lower_bound( boost::make_tuple( name, connection_tier_type::COMPANION ) );
-         while( connection_a_itr != connection_a_idx.end() && 
-            connection_a_itr->account_a == name &&
-            connection_a_itr->connection_type == connection_tier_type::COMPANION )
+         auto call_itr = call_idx.lower_bound( name );
+         while( call_itr != call_idx.end() && call_itr->borrower == name ) 
          {
-            results.back().connections.companions[ connection_a_itr->account_b ] = account_connection_api_obj( *connection_a_itr );
-            results.back().keychain.companion_keys[ connection_a_itr->account_b ] = connection_a_itr->encrypted_key_b;
-            ++connection_a_itr;
-         }
-         while( connection_b_itr != connection_b_idx.end() && 
-            connection_b_itr->account_b == name &&
-            connection_b_itr->connection_type == connection_tier_type::COMPANION )
-         {
-            results.back().connections.companions[ connection_b_itr->account_a ] = account_connection_api_obj( *connection_b_itr );
-            results.back().keychain.companion_keys[ connection_b_itr->account_a ] = connection_b_itr->encrypted_key_a;
-            ++connection_b_itr;
+            results.back().orders.call_orders.push_back( call_order_api_obj( *call_itr ) );
+            ++call_itr;
          }
 
-         auto connection_req_itr = connection_req_idx.lower_bound( name );
-         auto connection_acc_itr = connection_acc_idx.lower_bound( name );
-
-         while( connection_req_itr != connection_req_idx.end() && 
-            connection_req_itr->requested_account == name )
+         auto loan_itr = loan_idx.lower_bound( name );
+         while( loan_itr != loan_idx.end() && loan_itr->owner == name ) 
          {
-            results.back().connections.incoming_requests[ connection_req_itr->account ] = account_connection_request_api_obj( *connection_req_itr );
-            ++connection_req_itr;
+            results.back().orders.loan_orders.push_back( credit_loan_api_obj( *loan_itr ) );
+            ++loan_itr;
          }
 
-         while( connection_acc_itr != connection_acc_idx.end() && 
-            connection_acc_itr->account == name )
+         auto collateral_itr = collateral_idx.lower_bound( name );
+         while( collateral_itr != collateral_idx.end() && collateral_itr->owner == name ) 
          {
-            results.back().connections.outgoing_requests[ connection_acc_itr->requested_account ] = account_connection_request_api_obj( *connection_acc_itr );
-            ++connection_acc_itr;
-         }
-
-         auto verifier_verified_itr = verifier_verified_idx.lower_bound( name );
-         while( verifier_verified_itr != verifier_verified_idx.end() &&
-            verifier_verified_itr->verifier_account == name )
-         {
-            results.back().connections.outgoing_verifications[ verifier_verified_itr->verified_account ] = account_verification_api_obj( *verifier_verified_itr );
-            ++verifier_verified_itr;
-         }
-
-         auto verified_verifier_itr = verified_verifier_idx.lower_bound( name );
-         while( verified_verifier_itr != verified_verifier_idx.end() &&
-            verified_verifier_itr->verified_account == name )
-         {
-            results.back().connections.incoming_verifications[ verified_verifier_itr->verifier_account ] = account_verification_api_obj( *verified_verifier_itr );
-            ++verified_verifier_itr;
-         }
-
-         auto community_itr = community_member_idx.begin();
-
-         while( community_itr != community_member_idx.end() )
-         {
-            if( community_itr->founder == name )
-            {
-               results.back().communities.founded_communities.push_back( community_itr->name );
-            }
-            else if( community_itr->is_administrator( name ) )
-            {
-               results.back().communities.admin_communities.push_back( community_itr->name );
-            }
-            else if( community_itr->is_moderator( name ) )
-            {
-               results.back().communities.moderator_communities.push_back( community_itr->name );
-            }
-            else if( community_itr->is_member( name ) )
-            {
-               results.back().communities.member_communities.push_back( community_itr->name );
-            }
-            
-            ++community_itr;
-         }
-
-         auto community_req_itr = community_req_idx.lower_bound( name );
-         auto community_acc_inv_itr = community_acc_inv_idx.lower_bound( name );
-         auto community_member_inv_itr = community_member_inv_idx.lower_bound( name );
-
-         while( community_req_itr != community_req_idx.end() && 
-            community_req_itr->account == name )
-         {
-            results.back().communities.pending_requests[ community_req_itr->account ] = community_request_api_obj( *community_req_itr );
-            ++community_req_itr;
-         }
-
-         while( community_acc_inv_itr != community_acc_inv_idx.end() && 
-            community_acc_inv_itr->account == name )
-         {
-            results.back().communities.outgoing_invites[ community_acc_inv_itr->member ] = community_invite_api_obj( *community_acc_inv_itr );
-            ++community_acc_inv_itr;
-         }
-
-         while( community_member_inv_itr != community_member_inv_idx.end() && 
-            community_member_inv_itr->member == name )
-         {
-            results.back().communities.incoming_invites[ community_member_inv_itr->community ] = community_invite_api_obj( *community_member_inv_itr );
-            ++community_member_inv_itr;
-         }
-
-         auto community_key_itr = community_key_idx.lower_bound( name );
-         while( community_key_itr != community_key_idx.end() && 
-            community_key_itr->member == name )
-         {
-            results.back().keychain.community_keys[ community_key_itr->community ] = community_key_itr->encrypted_community_key;
-            ++community_key_itr;
+            results.back().orders.collateral.push_back( credit_collateral_api_obj( *collateral_itr ) );
+            ++collateral_itr;
          }
 
          auto bus_key_itr = bus_key_idx.lower_bound( name );
@@ -1151,6 +967,78 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             results.back().keychain.business_keys[ bus_key_itr->business_account ] = bus_key_itr->encrypted_business_key;
             ++bus_key_itr;
          }
+
+         auto inbox_itr = inbox_idx.lower_bound( name );
+         auto outbox_itr = outbox_idx.lower_bound( name );
+         auto community_inbox_itr = community_inbox_idx.begin();
+
+         vector< message_api_obj > inbox;
+         vector< message_api_obj > outbox;
+
+         map< account_name_type, vector< message_api_obj > > account_conversations;
+         map< community_name_type, vector< message_api_obj > > community_conversations;
+
+         while( inbox_itr != inbox_idx.end() && inbox_itr->recipient == name )
+         {
+            inbox.push_back( message_api_obj( *inbox_itr ) );
+            ++inbox_itr;
+         }
+
+         while( outbox_itr != outbox_idx.end() && outbox_itr->sender == name )
+         {
+            outbox.push_back( message_api_obj( *outbox_itr ) );
+            ++outbox_itr;
+         }
+
+         for( auto message : inbox )
+         {
+            account_conversations[ message.sender ].push_back( message );
+         }
+
+         for( auto message : outbox )
+         {
+            account_conversations[ message.recipient ].push_back( message );
+         }
+
+         const account_following_object& account_following = *following_itr;
+
+         for( auto community : account_following.member_communities )
+         {
+            community_inbox_itr = community_inbox_idx.lower_bound( community );
+            while( community_inbox_itr != community_inbox_idx.end() && 
+               community_inbox_itr->community == community )
+            {
+               community_conversations[ community ].push_back( message_api_obj( *community_inbox_itr ) );
+               ++community_inbox_itr;
+            }
+         }
+
+         for( auto conv : account_conversations )
+         {
+            vector< message_api_obj > thread = conv.second;
+            std::sort( thread.begin(), thread.end(), [&]( message_api_obj a, message_api_obj b )
+            {
+               return a.created < b.created;
+            });
+            account_conversations[ conv.first ] = thread;
+         }
+
+         for( auto conv : community_conversations )
+         {
+            vector< message_api_obj > thread = conv.second;
+            std::sort( thread.begin(), thread.end(), [&]( message_api_obj a, message_api_obj b )
+            {
+               return a.created < b.created;
+            });
+            community_conversations[ conv.first ] = thread;
+         }
+
+         account_message_state mstate;
+
+         mstate.account_conversations = account_conversations;
+         mstate.community_conversations = community_conversations;
+
+         results.back().messages = mstate;
 
          auto transfer_req_itr = transfer_req_idx.lower_bound( name );
          auto transfer_from_req_itr = transfer_from_req_idx.lower_bound( name );
@@ -1201,53 +1089,502 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             ++recurring_from_req_itr;
          }
 
-         auto inbox_itr = inbox_idx.lower_bound( name );
-         auto outbox_itr = outbox_idx.lower_bound( name );
-         vector< message_api_obj > inbox;
-         vector< message_api_obj > outbox;
-         map< account_name_type, vector< message_api_obj > > conversations;
+         auto community_req_itr = community_req_idx.lower_bound( name );
+         auto community_acc_inv_itr = community_acc_inv_idx.lower_bound( name );
+         auto community_member_inv_itr = community_member_inv_idx.lower_bound( name );
+         auto incoming_moderator_itr = incoming_moderator_idx.lower_bound( name );
+         auto outgoing_moderator_itr = outgoing_moderator_idx.lower_bound( name );
 
-         while( inbox_itr != inbox_idx.end() && inbox_itr->recipient == name )
+         while( community_req_itr != community_req_idx.end() && 
+            community_req_itr->account == name )
          {
-            inbox.push_back( message_api_obj( *inbox_itr ) );
+            results.back().communities.pending_requests[ community_req_itr->account ] = community_request_api_obj( *community_req_itr );
+            ++community_req_itr;
          }
 
-         while( outbox_itr != outbox_idx.end() && outbox_itr->sender == name )
+         while( community_acc_inv_itr != community_acc_inv_idx.end() && 
+            community_acc_inv_itr->account == name )
          {
-            outbox.push_back( message_api_obj( *outbox_itr ) );
+            results.back().communities.outgoing_invites[ community_acc_inv_itr->member ] = community_invite_api_obj( *community_acc_inv_itr );
+            ++community_acc_inv_itr;
          }
 
-         for( auto message : inbox )
+         while( community_member_inv_itr != community_member_inv_idx.end() && 
+            community_member_inv_itr->member == name )
          {
-            conversations[ message.sender ].push_back( message );
+            results.back().communities.incoming_invites[ community_member_inv_itr->community ] = community_invite_api_obj( *community_member_inv_itr );
+            ++community_member_inv_itr;
          }
 
-         for( auto message : outbox )
+         while( incoming_moderator_itr != incoming_moderator_idx.end() && 
+            incoming_moderator_itr->moderator == name )
          {
-            conversations[ message.recipient ].push_back( message );
+            results.back().communities.incoming_moderator_votes[ incoming_moderator_itr->community ].push_back( community_moderator_api_obj( *incoming_moderator_itr ) );
+            ++incoming_moderator_itr;
          }
 
-         for( auto conv : conversations )
+         while( outgoing_moderator_itr != outgoing_moderator_idx.end() && 
+            outgoing_moderator_itr->account == name )
          {
-            vector< message_api_obj > thread = conv.second;
-            std::sort( thread.begin(), thread.end(), [&]( message_api_obj a, message_api_obj b )
+            results.back().communities.outgoing_moderator_votes[ outgoing_moderator_itr->community ].push_back( community_moderator_api_obj( *outgoing_moderator_itr ) );
+            ++outgoing_moderator_itr;
+         }
+
+         auto community_key_itr = community_key_idx.lower_bound( name );
+         while( community_key_itr != community_key_idx.end() && 
+            community_key_itr->member == name )
+         {
+            switch( community_key_itr->community_key_type )
             {
-               return a.created < b.created;
-            });
-            conversations[ conv.first ] = thread;
+               case community_federation_type::MEMBER_FEDERATION:
+               {
+                  results.back().keychain.community_member_keys[ community_key_itr->community ] = community_key_itr->encrypted_community_key;
+               }
+               break;
+               case community_federation_type::MODERATOR_FEDERATION:
+               {
+                  results.back().keychain.community_moderator_keys[ community_key_itr->community ] = community_key_itr->encrypted_community_key;
+               }
+               break;
+               case community_federation_type::ADMIN_FEDERATION:
+               {
+                  results.back().keychain.community_admin_keys[ community_key_itr->community ] = community_key_itr->encrypted_community_key;
+               }
+               break;
+               default:
+               {
+                  FC_ASSERT( false, "Invalid Federation type" );
+               }
+            }
+            
+            ++community_key_itr;
          }
 
-         message_state mstate;
-         mstate.inbox = inbox;
-         mstate.outbox = outbox;
-         mstate.conversations = conversations;
-         results.back().messages = mstate;
+         auto community_event_attend_itr = community_event_attend_idx.lower_bound( name );
 
-         auto moderator_itr = moderator_idx.lower_bound( name );
-         while( moderator_itr != moderator_idx.end() && moderator_itr->account == name )
+         while( community_event_attend_itr != community_event_attend_idx.end() && 
+            community_event_attend_itr->attendee == name )
          {
-            results.back().communities.outgoing_moderator_votes[ moderator_itr->community ][ moderator_itr->moderator ] = moderator_itr->vote_rank;
-            ++moderator_itr;
+            const community_event_attend_object& attend = *community_event_attend_itr;
+            auto community_event_itr = community_event_idx.find( boost::make_tuple( attend.community, attend.event_id ) );
+            community_event_state estate = community_event_state( *community_event_itr );
+            auto community_event_attend_id_itr = community_event_attend_id_idx.lower_bound( boost::make_tuple( attend.community, attend.event_id ) );
+
+            while( community_event_attend_id_itr != community_event_attend_id_idx.end() && 
+               community_event_attend_id_itr->community == attend.community &&
+               community_event_attend_id_itr->event_id == attend.event_id )
+            {
+               estate.attend_objs.push_back( *community_event_attend_id_itr );
+               ++community_event_attend_id_itr;
+            }
+         
+            if( attend.interested )
+            {
+               if( attend.attending )
+               {
+                  results.back().events.interested_attending.push_back( estate );
+               }
+               else
+               {
+                  results.back().events.interested_not_attending.push_back( estate );
+               }
+            }
+            else
+            {
+               if( attend.attending )
+               {
+                  results.back().events.not_interested_attending.push_back( estate );
+               }
+               else
+               {
+                  results.back().events.not_interested_not_attending.push_back( estate );
+               }
+            }
+            
+            ++community_event_attend_itr;
+         }
+         
+
+         auto producer_itr = producer_idx.find( name );
+         if( producer_itr != producer_idx.end() )
+         {
+            results.back().network.producer = producer_api_obj( *producer_itr );
+         }
+
+         auto officer_itr = officer_idx.find( name );
+         if( officer_itr != officer_idx.end() )
+         {
+            results.back().network.network_officer = network_officer_api_obj( *officer_itr );
+         }
+
+         auto executive_itr = executive_idx.find( name );
+         if( executive_itr != executive_idx.end() )
+         {
+            results.back().network.executive_board = executive_board_api_obj( *executive_itr );
+         } 
+
+         auto interface_itr = interface_idx.find( name );
+         if( interface_itr != interface_idx.end() )
+         {
+            results.back().network.interface = interface_api_obj( *interface_itr );
+         }
+
+         auto supernode_itr = supernode_idx.find( name );
+         if( supernode_itr != supernode_idx.end() )
+         {
+            results.back().network.supernode = supernode_api_obj( *supernode_itr );
+         }
+
+         auto governance_itr = governance_idx.find( name );
+         if( governance_itr != governance_idx.end() )
+         {
+            results.back().network.governance_account = governance_account_api_obj( *governance_itr );
+         }
+
+         auto enterprise_itr = enterprise_idx.lower_bound( name );
+         while( enterprise_itr != enterprise_idx.end() && enterprise_itr->account == name )
+         {
+            results.back().network.enterprise_proposals.push_back( enterprise_api_obj( *enterprise_itr ) );
+            ++enterprise_itr;
+         }
+
+         auto validation_itr = validation_idx.lower_bound( name );
+         while( validation_itr != validation_idx.end() && 
+            validation_itr->producer == name &&
+            results.back().network.block_validations.size() < 100 )
+         {
+            results.back().network.block_validations.push_back( block_validation_api_obj( *validation_itr ) );
+            ++validation_itr;
+         }
+
+         auto incoming_producer_vote_itr = incoming_producer_vote_idx.lower_bound( name );
+         while( incoming_producer_vote_itr != incoming_producer_vote_idx.end() && 
+            incoming_producer_vote_itr->producer == name )
+         {
+            results.back().network.incoming_producer_votes[ incoming_producer_vote_itr->account ] = producer_vote_api_obj( *incoming_producer_vote_itr );
+            ++incoming_producer_vote_itr;
+         }
+
+         auto incoming_officer_vote_itr = incoming_officer_vote_idx.lower_bound( name );
+         while( incoming_officer_vote_itr != incoming_officer_vote_idx.end() && 
+            incoming_officer_vote_itr->network_officer == name )
+         {
+            results.back().network.incoming_network_officer_votes[ incoming_officer_vote_itr->account ] = network_officer_vote_api_obj( *incoming_officer_vote_itr );
+            ++incoming_officer_vote_itr;
+         }
+
+         auto incoming_executive_vote_itr = incoming_executive_vote_idx.lower_bound( name );
+         while( incoming_executive_vote_itr != incoming_executive_vote_idx.end() && 
+            incoming_executive_vote_itr->executive_board == name )
+         {
+            results.back().network.incoming_executive_board_votes[ incoming_executive_vote_itr->account ] = executive_board_vote_api_obj( *incoming_executive_vote_itr );
+            ++incoming_executive_vote_itr;
+         }
+
+         auto incoming_subscription_itr = incoming_subscription_idx.lower_bound( name );
+         while( incoming_subscription_itr != incoming_subscription_idx.end() && 
+            incoming_subscription_itr->governance_account == name )
+         {
+            results.back().network.incoming_governance_subscriptions[ incoming_subscription_itr->account ] = governance_subscription_api_obj( *incoming_subscription_itr );
+            ++incoming_subscription_itr;
+         }
+
+         auto incoming_enterprise_vote_itr = incoming_enterprise_vote_idx.lower_bound( name );
+         while( incoming_enterprise_vote_itr != incoming_enterprise_vote_idx.end() && 
+            incoming_enterprise_vote_itr->account == name )
+         {
+            results.back().network.incoming_enterprise_votes[ incoming_enterprise_vote_itr->voter ][ to_string( incoming_enterprise_vote_itr->enterprise_id ) ] = enterprise_vote_api_obj( *incoming_enterprise_vote_itr );
+            ++incoming_enterprise_vote_itr;
+         }
+
+         auto incoming_enterprise_fund_itr = incoming_enterprise_fund_idx.lower_bound( name );
+         while( incoming_enterprise_fund_itr != incoming_enterprise_fund_idx.end() && 
+            incoming_enterprise_fund_itr->account == name )
+         {
+            results.back().network.incoming_enterprise_funds[ incoming_enterprise_fund_itr->funder ][ to_string( incoming_enterprise_fund_itr->enterprise_id ) ] = enterprise_fund_api_obj( *incoming_enterprise_fund_itr );
+            ++incoming_enterprise_fund_itr;
+         }
+
+         auto incoming_commit_violation_itr = incoming_commit_violation_idx.lower_bound( name );
+         while( incoming_commit_violation_itr != incoming_commit_violation_idx.end() && 
+            incoming_commit_violation_itr->producer == name &&
+            results.back().network.incoming_commit_violations.size() < 100 )
+         {
+            results.back().network.incoming_commit_violations[ incoming_commit_violation_itr->reporter ] = commit_violation_api_obj( *incoming_commit_violation_itr );
+            ++incoming_commit_violation_itr;
+         }
+
+         auto outgoing_producer_vote_itr = outgoing_producer_vote_idx.lower_bound( name );
+         while( outgoing_producer_vote_itr != outgoing_producer_vote_idx.end() && 
+            outgoing_producer_vote_itr->account == name ) 
+         {
+            results.back().network.outgoing_producer_votes[ outgoing_producer_vote_itr->producer ] = producer_vote_api_obj( *outgoing_producer_vote_itr );
+            ++outgoing_producer_vote_itr;
+         }
+
+         auto outgoing_officer_vote_itr = outgoing_officer_vote_idx.lower_bound( name );
+         while( outgoing_officer_vote_itr != outgoing_officer_vote_idx.end() && 
+            outgoing_officer_vote_itr->account == name )
+         {
+            results.back().network.outgoing_network_officer_votes[ outgoing_officer_vote_itr->network_officer ] = network_officer_vote_api_obj( *outgoing_officer_vote_itr );
+            ++outgoing_officer_vote_itr;
+         }
+
+         auto outgoing_executive_vote_itr = outgoing_executive_vote_idx.lower_bound( name );
+         while( outgoing_executive_vote_itr != outgoing_executive_vote_idx.end() && 
+            outgoing_executive_vote_itr->account == name )
+         {
+            results.back().network.outgoing_executive_board_votes[ outgoing_executive_vote_itr->executive_board ] = executive_board_vote_api_obj( *outgoing_executive_vote_itr );
+            ++outgoing_executive_vote_itr;
+         }
+
+         auto outgoing_subscription_itr = outgoing_subscription_idx.lower_bound( name );
+         while( outgoing_subscription_itr != outgoing_subscription_idx.end() && 
+            outgoing_subscription_itr->account == name )
+         {
+            results.back().network.outgoing_governance_subscriptions[ outgoing_subscription_itr->governance_account ] = governance_subscription_api_obj( *outgoing_subscription_itr );
+            ++outgoing_subscription_itr;
+         }
+
+         auto outgoing_enterprise_vote_itr = outgoing_enterprise_vote_idx.lower_bound( name );
+         while( outgoing_enterprise_vote_itr != outgoing_enterprise_vote_idx.end() && 
+            outgoing_enterprise_vote_itr->voter == name )
+         {
+            results.back().network.outgoing_enterprise_votes[ outgoing_enterprise_vote_itr->account ][ to_string( outgoing_enterprise_vote_itr->enterprise_id ) ] = enterprise_vote_api_obj( *outgoing_enterprise_vote_itr );
+            ++outgoing_enterprise_vote_itr;
+         }
+
+         auto outgoing_enterprise_fund_itr = outgoing_enterprise_fund_idx.lower_bound( name );
+         while( outgoing_enterprise_fund_itr != outgoing_enterprise_fund_idx.end() && 
+            outgoing_enterprise_fund_itr->funder == name )
+         {
+            results.back().network.outgoing_enterprise_funds[ outgoing_enterprise_fund_itr->account ][ to_string( outgoing_enterprise_fund_itr->enterprise_id ) ] = enterprise_fund_api_obj( *outgoing_enterprise_fund_itr );
+            ++outgoing_enterprise_fund_itr;
+         }
+
+         auto outgoing_commit_violation_itr = outgoing_commit_violation_idx.lower_bound( name );
+         while( outgoing_commit_violation_itr != outgoing_commit_violation_idx.end() && 
+            outgoing_commit_violation_itr->reporter == name &&
+            results.back().network.outgoing_commit_violations.size() < 100 )
+         {
+            results.back().network.outgoing_commit_violations[ outgoing_commit_violation_itr->producer ] = commit_violation_api_obj( *outgoing_commit_violation_itr );
+            ++outgoing_commit_violation_itr;
+         }
+
+         auto creative_itr = creative_idx.lower_bound( name );
+         while( creative_itr != creative_idx.end() && creative_itr->author == name )
+         {
+            results.back().ads.creatives.push_back( ad_creative_api_obj( *creative_itr ) );
+            ++creative_itr;
+         }
+
+         auto campaign_itr = campaign_idx.lower_bound( name );
+         while( campaign_itr != campaign_idx.end() && campaign_itr->account == name )
+         {
+            results.back().ads.campaigns.push_back( ad_campaign_api_obj( *campaign_itr ) );
+            ++campaign_itr;
+         }
+
+         auto audience_itr = audience_idx.lower_bound( name );
+         while( audience_itr != audience_idx.end() && audience_itr->account == name )
+         {
+            results.back().ads.audiences.push_back( ad_audience_api_obj( *audience_itr ) );
+            ++audience_itr;
+         }
+
+         auto inventory_itr = inventory_idx.lower_bound( name );
+         while( inventory_itr != inventory_idx.end() && inventory_itr->provider == name )
+         {
+            results.back().ads.inventories.push_back( ad_inventory_api_obj( *inventory_itr ) );
+            ++inventory_itr;
+         }
+
+         auto bidder_bid_itr = bidder_bid_idx.lower_bound( name );
+         while( bidder_bid_itr != bidder_bid_idx.end() && bidder_bid_itr->bidder == name )
+         {
+            results.back().ads.created_bids.push_back( ad_bid_api_obj( *bidder_bid_itr ) );
+            ++bidder_bid_itr;
+         }
+
+         auto account_bid_itr = account_bid_idx.lower_bound( name );
+         while( account_bid_itr != account_bid_idx.end() && account_bid_itr->account == name )
+         {
+            results.back().ads.account_bids.push_back( ad_bid_api_obj( *account_bid_itr ) );
+            ++account_bid_itr;
+         }
+
+         auto author_bid_itr = author_bid_idx.lower_bound( name );
+         while( author_bid_itr != author_bid_idx.end() && author_bid_itr->author == name )
+         {
+            results.back().ads.creative_bids.push_back( ad_bid_api_obj( *author_bid_itr ) );
+            ++author_bid_itr;
+         }
+
+         auto provider_bid_itr = provider_bid_idx.lower_bound( name );
+         while( provider_bid_itr != provider_bid_idx.end() && provider_bid_itr->provider == name )
+         {
+            results.back().ads.incoming_bids.push_back( ad_bid_state( *provider_bid_itr ) );
+
+            auto cr_itr = creative_id_idx.find( boost::make_tuple( provider_bid_itr->author, provider_bid_itr->creative_id ) );
+            if( cr_itr != creative_id_idx.end() )
+            {
+               results.back().ads.incoming_bids.back().creative = ad_creative_api_obj( *cr_itr );
+            }
+
+            auto c_itr = campaign_id_idx.find( boost::make_tuple( provider_bid_itr->account, provider_bid_itr->campaign_id ) );
+            if( c_itr != campaign_id_idx.end() )
+            {
+               results.back().ads.incoming_bids.back().campaign = ad_campaign_api_obj( *c_itr );
+            }
+
+            auto i_itr = inventory_id_idx.find( boost::make_tuple( provider_bid_itr->provider, provider_bid_itr->inventory_id ) );
+            if( i_itr != inventory_id_idx.end() )
+            {
+               results.back().ads.incoming_bids.back().inventory = ad_inventory_api_obj( *i_itr );
+            }
+
+            auto a_itr = audience_id_idx.find( boost::make_tuple( provider_bid_itr->bidder, provider_bid_itr->audience_id ) );
+            if( a_itr != audience_id_idx.end() )
+            {
+               results.back().ads.incoming_bids.back().audience = ad_audience_api_obj( *a_itr );
+            }
+
+            ++provider_bid_itr;
+         }
+
+         auto product_itr = product_idx.lower_bound( name );
+         while( product_itr != product_idx.end() && 
+            product_itr->account == name )
+         {
+            results.back().products.seller_products.push_back( product_sale_api_obj( *product_itr ) );
+            ++product_itr;
+         }
+
+         auto seller_purchase_itr = seller_purchase_idx.lower_bound( name );
+         while( seller_purchase_itr != seller_purchase_idx.end() && 
+            seller_purchase_itr->seller == name )
+         {
+            results.back().products.seller_orders.push_back( product_purchase_api_obj( *seller_purchase_itr ) );
+            ++seller_purchase_itr;
+         }
+
+         auto buyer_purchase_itr = buyer_purchase_idx.lower_bound( name );
+         while( buyer_purchase_itr != buyer_purchase_idx.end() && 
+            buyer_purchase_itr->buyer == name )
+         {
+            results.back().products.buyer_orders.push_back( product_purchase_api_obj( *buyer_purchase_itr ) );
+            ++buyer_purchase_itr;
+         }
+
+         flat_set< pair < account_name_type, string > > buyer_products;
+
+         for( auto product : results.back().products.buyer_orders )
+         {
+            buyer_products.insert( std::make_pair( product.seller, product.product_id ) );
+         }
+
+         for( auto product : buyer_products )
+         {
+            product_itr = product_idx.find( boost::make_tuple( product.first, product.second ) );
+            if( product_itr != product_idx.end() )
+            {
+               results.back().products.buyer_products.push_back( product_sale_api_obj( *product_itr ) );
+            }
+         }
+
+         auto auction_itr = auction_idx.lower_bound( name );
+         while( auction_itr != auction_idx.end() && 
+            auction_itr->account == name )
+         {
+            results.back().products.seller_auctions.push_back( product_auction_sale_api_obj( *auction_itr ) );
+            ++auction_itr;
+         }
+
+         auto seller_bid_itr = seller_bid_idx.lower_bound( name );
+         while( seller_bid_itr != seller_bid_idx.end() && 
+            seller_bid_itr->seller == name )
+         {
+            results.back().products.seller_bids.push_back( product_auction_bid_api_obj( *seller_bid_itr ) );
+            ++seller_bid_itr;
+         }
+
+         auto buyer_bid_itr = buyer_bid_idx.lower_bound( name );
+         while( buyer_bid_itr != buyer_bid_idx.end() && 
+            buyer_bid_itr->buyer == name )
+         {
+            results.back().products.buyer_bids.push_back( product_auction_bid_api_obj( *buyer_bid_itr ) );
+            ++buyer_bid_itr;
+         }
+
+         flat_set< pair < account_name_type, string > > buyer_auctions;
+
+         for( auto bid : results.back().products.buyer_bids )
+         {
+            buyer_auctions.insert( std::make_pair( bid.seller, bid.bid_id ) );
+         }
+
+         for( auto auction : buyer_auctions )
+         {
+            auction_itr = auction_idx.find( boost::make_tuple( auction.first, auction.second ) );
+            if( auction_itr != auction_idx.end() )
+            {
+               results.back().products.buyer_auctions.push_back( product_auction_sale_api_obj( *auction_itr ) );
+            }
+         }
+
+         auto author_premium_purchase_itr = author_premium_purchase_idx.lower_bound( name );
+         while( author_premium_purchase_itr != author_premium_purchase_idx.end() && 
+            author_premium_purchase_itr->author == name )
+         {
+            results.back().premium.incoming_premium_purchases.push_back( premium_purchase_api_obj( *author_premium_purchase_itr ) );
+            ++author_premium_purchase_itr;
+         }
+
+         auto account_premium_purchase_itr = account_premium_purchase_idx.lower_bound( name );
+         while( account_premium_purchase_itr != account_premium_purchase_idx.end() && 
+            account_premium_purchase_itr->account == name )
+         {
+            results.back().premium.outgoing_premium_purchases.push_back( premium_purchase_api_obj( *account_premium_purchase_itr ) );
+            ++account_premium_purchase_itr;
+         }
+
+         auto author_premium_purchase_key_itr = author_premium_purchase_key_idx.lower_bound( name );
+         while( author_premium_purchase_key_itr != author_premium_purchase_key_idx.end() && 
+            author_premium_purchase_key_itr->author == name )
+         {
+            results.back().premium.incoming_premium_purchase_keys.push_back( premium_purchase_key_api_obj( *author_premium_purchase_key_itr ) );
+            ++author_premium_purchase_key_itr;
+         }
+
+         auto account_premium_purchase_key_itr = account_premium_purchase_key_idx.lower_bound( name );
+         while( account_premium_purchase_key_itr != account_premium_purchase_key_idx.end() && 
+            account_premium_purchase_key_itr->account == name )
+         {
+            results.back().premium.outgoing_premium_purchase_keys.push_back( premium_purchase_key_api_obj( *account_premium_purchase_key_itr ) );
+            ++account_premium_purchase_key_itr;
+         }
+
+         if( _db.has_index< tags::account_curation_metrics_index >() )
+         {
+            const auto& account_curation_metrics_idx = _db.get_index< tags::account_curation_metrics_index >().indices().get< tags::by_account >();
+            auto account_curation_metrics_itr = account_curation_metrics_idx.find( name );
+
+            if( account_curation_metrics_itr != account_curation_metrics_idx.end() )
+            {
+               results.back().curation_metrics = account_curation_metrics_api_obj( *account_curation_metrics_itr );
+            }
+         }
+
+         if( results.back().pinned_permlink.size() )
+         {
+            results.back().pinned_post = get_content( name, results.back().pinned_permlink );
+         }
+
+         auto comment_blog_itr = comment_blog_idx.lower_bound( name );
+         if( comment_blog_itr != comment_blog_idx.end() && comment_blog_itr->account == name )
+         {
+            results.back().latest_post = get_discussion( comment_blog_itr->comment, 0 );
+            results.back().latest_post.blog = comment_blog_api_obj( *comment_blog_itr );
          }
 
          auto history_itr = history_idx.lower_bound( name );
@@ -1301,8 +1638,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                   results.back().operations.account_history[ item.first ] = item.second;
                }
                break;
-               case operation::tag<account_connection_request_operation>::value:
-               case operation::tag<account_connection_accept_operation>::value:
+               case operation::tag<account_connection_operation>::value:
                {
                   results.back().operations.connection_history[ item.first ] = item.second;
                }
@@ -1374,6 +1710,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                case operation::tag<community_remove_member_operation>::value:
                case operation::tag<community_blacklist_operation>::value:
                case operation::tag<community_subscribe_operation>::value:
+               case operation::tag<community_federation_operation>::value:
                case operation::tag<community_event_operation>::value:
                case operation::tag<community_event_attend_operation>::value:
                {
@@ -1736,20 +2073,22 @@ vector< confidential_balance_api_obj > database_api_impl::get_confidential_balan
    return results;
 }
 
-vector< message_state > database_api::get_messages( vector< string > names )const
+vector< account_message_state > database_api::get_account_messages( vector< string > names )const
 {
    return my->_db.with_read_lock( [&]()
    {
-      return my->get_messages( names );
+      return my->get_account_messages( names );
    });
 }
 
-vector< message_state > database_api_impl::get_messages( vector< string > names )const
+vector< account_message_state > database_api_impl::get_account_messages( vector< string > names )const
 {
    const auto& inbox_idx = _db.get_index< message_index >().indices().get< by_account_inbox >();
    const auto& outbox_idx = _db.get_index< message_index >().indices().get< by_account_outbox >();
+   const auto& community_inbox_idx = _db.get_index< message_index >().indices().get< by_community_inbox >();
+   const auto& following_idx = _db.get_index< account_following_index >().indices().get< by_account >();
 
-   vector< message_state > results;
+   vector< account_message_state > results;
 
    for( auto name: names )
    {
@@ -1757,7 +2096,9 @@ vector< message_state > database_api_impl::get_messages( vector< string > names 
       auto outbox_itr = outbox_idx.lower_bound( name );
       vector< message_api_obj > inbox;
       vector< message_api_obj > outbox;
-      map< account_name_type, vector< message_api_obj > > conversations;
+
+      map< account_name_type, vector< message_api_obj > > account_conversations;
+      map< community_name_type, vector< message_api_obj > > community_conversations;
 
       while( inbox_itr != inbox_idx.end() && inbox_itr->recipient == name )
       {
@@ -1771,28 +2112,53 @@ vector< message_state > database_api_impl::get_messages( vector< string > names 
 
       for( auto message : inbox )
       {
-         conversations[ message.sender ].push_back( message );
+         account_conversations[ message.sender ].push_back( message );
       }
 
       for( auto message : outbox )
       {
-         conversations[ message.recipient ].push_back( message );
+         account_conversations[ message.recipient ].push_back( message );
       }
 
-      for( auto conv : conversations )
+      auto following_itr = following_idx.find( name );
+
+      const account_following_object& account_following = *following_itr;
+
+      for( auto community : account_following.member_communities )
+      {
+         auto community_inbox_itr = community_inbox_idx.lower_bound( community );
+         while( community_inbox_itr != community_inbox_idx.end() && 
+            community_inbox_itr->community == community )
+         {
+            community_conversations[ community ].push_back( message_api_obj( *community_inbox_itr ) );
+            ++community_inbox_itr;
+         }
+      }
+
+      for( auto conv : account_conversations )
       {
          vector< message_api_obj > thread = conv.second;
          std::sort( thread.begin(), thread.end(), [&]( message_api_obj a, message_api_obj b )
          {
             return a.created < b.created;
          });
-         conversations[ conv.first ] = thread;
+         account_conversations[ conv.first ] = thread;
       }
 
-      message_state mstate;
-      mstate.inbox = inbox;
-      mstate.outbox = outbox;
-      mstate.conversations = conversations;
+      for( auto conv : community_conversations )
+      {
+         vector< message_api_obj > thread = conv.second;
+         std::sort( thread.begin(), thread.end(), [&]( message_api_obj a, message_api_obj b )
+         {
+            return a.created < b.created;
+         });
+         community_conversations[ conv.first ] = thread;
+      }
+
+      account_message_state mstate;
+
+      mstate.account_conversations = account_conversations;
+      mstate.community_conversations = community_conversations;
       results.push_back( mstate );
    }
 
@@ -1821,49 +2187,47 @@ list_state database_api_impl::get_list( string name, string list_id )const
    {
       const list_object& list = *list_itr;
 
-      lstate.creator = list.creator;
-      lstate.list_id = to_string( list.list_id );
-      lstate.name = to_string( list.name );
-
+      lstate = list_state( list );
+      
       for( account_id_type id : list.accounts )
       {
-         lstate.accounts.push_back( account_api_obj( _db.get( id ), _db ) );
+         lstate.account_objs.push_back( account_api_obj( _db.get( id ), _db ) );
       }
       for( comment_id_type id : list.comments )
       {
-         lstate.comments.push_back( comment_api_obj( _db.get( id ) ) );
+         lstate.comment_objs.push_back( comment_api_obj( _db.get( id ) ) );
       }
       for( community_id_type id : list.communities )
       {
-         lstate.communities.push_back( community_api_obj( _db.get( id ) ) );
+         lstate.community_objs.push_back( community_api_obj( _db.get( id ) ) );
       }
       for( asset_id_type id : list.assets )
       {
-         lstate.assets.push_back( asset_api_obj( _db.get( id ) ) );
+         lstate.asset_objs.push_back( asset_api_obj( _db.get( id ) ) );
       }
       for( product_sale_id_type id : list.products )
       {
-         lstate.products.push_back( product_sale_api_obj( _db.get( id ) ) );
+         lstate.product_objs.push_back( product_sale_api_obj( _db.get( id ) ) );
       }
       for( product_auction_sale_id_type id : list.auctions )
       {
-         lstate.auctions.push_back( product_auction_sale_api_obj( _db.get( id ) ) );
+         lstate.auction_objs.push_back( product_auction_sale_api_obj( _db.get( id ) ) );
       }
       for( graph_node_id_type id : list.nodes )
       {
-         lstate.nodes.push_back( graph_node_api_obj( _db.get( id ) ) );
+         lstate.node_objs.push_back( graph_node_api_obj( _db.get( id ) ) );
       }
       for( graph_edge_id_type id : list.edges )
       {
-         lstate.edges.push_back( graph_edge_api_obj( _db.get( id ) ) );
+         lstate.edge_objs.push_back( graph_edge_api_obj( _db.get( id ) ) );
       }
       for( graph_node_property_id_type id : list.node_types )
       {
-         lstate.node_types.push_back( graph_node_property_api_obj( _db.get( id ) ) );
+         lstate.node_type_objs.push_back( graph_node_property_api_obj( _db.get( id ) ) );
       }
       for( graph_edge_property_id_type id : list.edge_types )
       {
-         lstate.edge_types.push_back( graph_edge_property_api_obj( _db.get( id ) ) );
+         lstate.edge_type_objs.push_back( graph_edge_property_api_obj( _db.get( id ) ) );
       }
    }
 
@@ -1898,51 +2262,47 @@ vector< account_list_state > database_api_impl::get_account_lists( vector< strin
       {
          const list_object& list = *list_itr;
 
-         list_state lstate;
-
-         lstate.creator = list.creator;
-         lstate.list_id = to_string( list.list_id );
-         lstate.name = to_string( list.name );
+         list_state lstate = list_state( list );
 
          for( account_id_type id : list.accounts )
          {
-            lstate.accounts.push_back( account_api_obj( _db.get( id ), _db ) );
+            lstate.account_objs.push_back( account_api_obj( _db.get( id ), _db ) );
          }
          for( comment_id_type id : list.comments )
          {
-            lstate.comments.push_back( comment_api_obj( _db.get( id ) ) );
+            lstate.comment_objs.push_back( comment_api_obj( _db.get( id ) ) );
          }
          for( community_id_type id : list.communities )
          {
-            lstate.communities.push_back( community_api_obj( _db.get( id ) ) );
+            lstate.community_objs.push_back( community_api_obj( _db.get( id ) ) );
          }
          for( asset_id_type id : list.assets )
          {
-            lstate.assets.push_back( asset_api_obj( _db.get( id ) ) );
+            lstate.asset_objs.push_back( asset_api_obj( _db.get( id ) ) );
          }
          for( product_sale_id_type id : list.products )
          {
-            lstate.products.push_back( product_sale_api_obj( _db.get( id ) ) );
+            lstate.product_objs.push_back( product_sale_api_obj( _db.get( id ) ) );
          }
          for( product_auction_sale_id_type id : list.auctions )
          {
-            lstate.auctions.push_back( product_auction_sale_api_obj( _db.get( id ) ) );
+            lstate.auction_objs.push_back( product_auction_sale_api_obj( _db.get( id ) ) );
          }
          for( graph_node_id_type id : list.nodes )
          {
-            lstate.nodes.push_back( graph_node_api_obj( _db.get( id ) ) );
+            lstate.node_objs.push_back( graph_node_api_obj( _db.get( id ) ) );
          }
          for( graph_edge_id_type id : list.edges )
          {
-            lstate.edges.push_back( graph_edge_api_obj( _db.get( id ) ) );
+            lstate.edge_objs.push_back( graph_edge_api_obj( _db.get( id ) ) );
          }
          for( graph_node_property_id_type id : list.node_types )
          {
-            lstate.node_types.push_back( graph_node_property_api_obj( _db.get( id ) ) );
+            lstate.node_type_objs.push_back( graph_node_property_api_obj( _db.get( id ) ) );
          }
          for( graph_edge_property_id_type id : list.edge_types )
          {
-            lstate.edge_types.push_back( graph_edge_property_api_obj( _db.get( id ) ) );
+            lstate.edge_type_objs.push_back( graph_edge_property_api_obj( _db.get( id ) ) );
          }
 
          account_lstate.lists.push_back( lstate );
@@ -1980,6 +2340,12 @@ poll_state database_api_impl::get_poll( string name, string poll_id )const
    {
       const poll_object& poll = *poll_itr;
       pstate = poll_state( poll );
+      pstate.vote_count.reserve( 10 );
+
+      for( auto i = 0; i < 10; i++ )
+      {
+         pstate.vote_count[ i ] = 0;
+      }
 
       vote_itr = vote_idx.lower_bound( boost::make_tuple( name, poll_id ) );
 
@@ -2061,7 +2427,7 @@ vector< key_state > database_api_impl::get_keychains( vector< string > names )co
 {
    const auto& connection_a_idx = _db.get_index< account_connection_index >().indices().get< by_account_a >();
    const auto& connection_b_idx = _db.get_index< account_connection_index >().indices().get< by_account_b >();
-   const auto& community_idx = _db.get_index< community_member_key_index >().indices().get< by_member_community >();
+   const auto& community_key_idx = _db.get_index< community_member_key_index >().indices().get< by_member_community_type >();
    const auto& business_idx = _db.get_index< account_member_key_index >().indices().get< by_member_business >();
 
    vector< key_state > results;
@@ -2121,12 +2487,34 @@ vector< key_state > database_api_impl::get_keychains( vector< string > names )co
          ++connection_b_itr;
       }
 
-      auto community_itr = community_idx.lower_bound( name );
-      while( community_itr != community_idx.end() && 
-         community_itr->member == name )
+      auto community_key_itr = community_key_idx.lower_bound( name );
+      while( community_key_itr != community_key_idx.end() && 
+         community_key_itr->member == name )
       {
-         kstate.community_keys[ community_itr->community ] = community_itr->encrypted_community_key;
-         ++community_itr;
+         switch( community_key_itr->community_key_type )
+         {
+            case community_federation_type::MEMBER_FEDERATION:
+            {
+               kstate.community_member_keys[ community_key_itr->community ] = community_key_itr->encrypted_community_key;
+            }
+            break;
+            case community_federation_type::MODERATOR_FEDERATION:
+            {
+               kstate.community_moderator_keys[ community_key_itr->community ] = community_key_itr->encrypted_community_key;
+            }
+            break;
+            case community_federation_type::ADMIN_FEDERATION:
+            {
+               kstate.community_admin_keys[ community_key_itr->community ] = community_key_itr->encrypted_community_key;
+            }
+            break;
+            default:
+            {
+               FC_ASSERT( false, "Invalid Federation type" );
+            }
+         }
+         
+         ++community_key_itr;
       }
 
       auto business_itr = business_idx.lower_bound( name );
@@ -2390,7 +2778,12 @@ vector< extended_community > database_api_impl::get_communities( vector< string 
    const auto& community_inv_idx = _db.get_index< community_join_invite_index >().indices().get< by_community >();
    const auto& community_req_idx = _db.get_index< community_join_request_index >().indices().get< by_community_account >();
    const auto& community_event_idx = _db.get_index< community_event_index >().indices().get< by_community_time >();
-
+   const auto& community_event_attend_idx = _db.get_index< community_event_attend_index >().indices().get< by_event_id >();
+   const auto& community_federation_a_idx = _db.get_index< community_federation_index >().indices().get< by_community_a >();
+   const auto& community_federation_b_idx = _db.get_index< community_federation_index >().indices().get< by_community_b >();
+   const auto& community_inbox_idx = _db.get_index< message_index >().indices().get< by_community_inbox >();
+   const auto& comment_blog_idx = _db.get_index< comment_blog_index >().indices().get< by_new_community_blog >();
+   
    for( string community : communities )
    {
       auto community_itr = community_idx.find( community );
@@ -2426,11 +2819,126 @@ vector< extended_community > database_api_impl::get_communities( vector< string 
          results.back().total_mod_weight = community_mem_itr->total_mod_weight.value;
       }
       
+      auto community_inbox_itr = community_inbox_idx.lower_bound( community );
+      while( community_inbox_itr != community_inbox_idx.end() && 
+         community_inbox_itr->community == community )
+      {
+         results.back().messages.push_back( message_api_obj( *community_inbox_itr ) );
+         ++community_inbox_itr;
+      }
+      
+      auto community_federation_a_itr = community_federation_a_idx.lower_bound( boost::make_tuple( community, community_federation_type::MEMBER_FEDERATION ) );
+      auto community_federation_b_itr = community_federation_b_idx.lower_bound( boost::make_tuple( community, community_federation_type::MEMBER_FEDERATION ) );
+      while( community_federation_a_itr != community_federation_a_idx.end() && 
+         community_federation_a_itr->community_a == community &&
+         community_federation_a_itr->federation_type == community_federation_type::MEMBER_FEDERATION )
+      {
+         if( community_federation_a_itr->share_accounts_a )
+         {
+            results.back().upstream_member_federations[ community_federation_a_itr->community_b ] = community_federation_api_obj( *community_federation_a_itr );
+         }
+         if( community_federation_a_itr->share_accounts_b )
+         {
+            results.back().downstream_member_federations[ community_federation_a_itr->community_b ] = community_federation_api_obj( *community_federation_a_itr );
+         }
+         ++community_federation_a_itr;
+      }
+
+      while( community_federation_b_itr != community_federation_b_idx.end() && 
+         community_federation_b_itr->community_b == community &&
+         community_federation_b_itr->federation_type == community_federation_type::MEMBER_FEDERATION )
+      {
+         if( community_federation_b_itr->share_accounts_b )
+         {
+            results.back().upstream_member_federations[ community_federation_b_itr->community_a ] = community_federation_api_obj( *community_federation_b_itr );
+         }
+         if( community_federation_b_itr->share_accounts_a )
+         {
+            results.back().downstream_member_federations[ community_federation_b_itr->community_a ] = community_federation_api_obj( *community_federation_b_itr );
+         }
+         ++community_federation_b_itr;
+      }
+
+      community_federation_a_itr = community_federation_a_idx.lower_bound( boost::make_tuple( community, community_federation_type::MODERATOR_FEDERATION ) );
+      community_federation_b_itr = community_federation_b_idx.lower_bound( boost::make_tuple( community, community_federation_type::MODERATOR_FEDERATION ) );
+      while( community_federation_a_itr != community_federation_a_idx.end() && 
+         community_federation_a_itr->community_a == community &&
+         community_federation_a_itr->federation_type == community_federation_type::MODERATOR_FEDERATION )
+      {
+         if( community_federation_a_itr->share_accounts_a )
+         {
+            results.back().upstream_moderator_federations[ community_federation_a_itr->community_b ] = community_federation_api_obj( *community_federation_a_itr );
+         }
+         if( community_federation_a_itr->share_accounts_b )
+         {
+            results.back().downstream_moderator_federations[ community_federation_a_itr->community_b ] = community_federation_api_obj( *community_federation_a_itr );
+         }
+         ++community_federation_a_itr;
+      }
+
+      while( community_federation_b_itr != community_federation_b_idx.end() && 
+         community_federation_b_itr->community_b == community &&
+         community_federation_b_itr->federation_type == community_federation_type::MODERATOR_FEDERATION )
+      {
+         if( community_federation_b_itr->share_accounts_b )
+         {
+            results.back().upstream_moderator_federations[ community_federation_b_itr->community_a ] = community_federation_api_obj( *community_federation_b_itr );
+         }
+         if( community_federation_b_itr->share_accounts_a )
+         {
+            results.back().downstream_moderator_federations[ community_federation_b_itr->community_a ] = community_federation_api_obj( *community_federation_b_itr );
+         }
+         ++community_federation_b_itr;
+      }
+
+      community_federation_a_itr = community_federation_a_idx.lower_bound( boost::make_tuple( community, community_federation_type::ADMIN_FEDERATION ) );
+      community_federation_b_itr = community_federation_b_idx.lower_bound( boost::make_tuple( community, community_federation_type::ADMIN_FEDERATION ) );
+      while( community_federation_a_itr != community_federation_a_idx.end() && 
+         community_federation_a_itr->community_a == community &&
+         community_federation_a_itr->federation_type == community_federation_type::ADMIN_FEDERATION )
+      {
+         if( community_federation_a_itr->share_accounts_a )
+         {
+            results.back().upstream_admin_federations[ community_federation_a_itr->community_b ] = community_federation_api_obj( *community_federation_a_itr );
+         }
+         if( community_federation_a_itr->share_accounts_b )
+         {
+            results.back().downstream_admin_federations[ community_federation_a_itr->community_b ] = community_federation_api_obj( *community_federation_a_itr );
+         }
+         ++community_federation_a_itr;
+      }
+
+      while( community_federation_b_itr != community_federation_b_idx.end() && 
+         community_federation_b_itr->community_b == community &&
+         community_federation_b_itr->federation_type == community_federation_type::ADMIN_FEDERATION )
+      {
+         if( community_federation_b_itr->share_accounts_b )
+         {
+            results.back().upstream_admin_federations[ community_federation_b_itr->community_a ] = community_federation_api_obj( *community_federation_b_itr );
+         }
+         if( community_federation_b_itr->share_accounts_a )
+         {
+            results.back().downstream_admin_federations[ community_federation_b_itr->community_a ] = community_federation_api_obj( *community_federation_b_itr );
+         }
+         ++community_federation_b_itr;
+      }
+      
       auto community_event_itr = community_event_idx.lower_bound( community );
+      auto community_event_attend_itr = community_event_attend_idx.lower_bound( community );
+
       while( community_event_itr != community_event_idx.end() && 
          community_event_itr->community == community )
       {
-         results.back().events.push_back( community_event_api_obj( *community_event_itr ) );
+         results.back().events.push_back( community_event_state( *community_event_itr ) );
+
+         while( community_event_attend_itr != community_event_attend_idx.end() && 
+            community_event_attend_itr->community == community && 
+            community_event_attend_itr->event_id == community_event_itr->event_id )
+         {
+            results.back().events.back().attend_objs.push_back( *community_event_attend_itr );
+            ++community_event_attend_itr;
+         }
+         
          ++community_event_itr;
       }
 
@@ -2442,11 +2950,22 @@ vector< extended_community > database_api_impl::get_communities( vector< string 
       }
 
       auto community_req_itr = community_req_idx.lower_bound( community );
-
       while( community_req_itr != community_req_idx.end() && community_req_itr->community == community )
       {
          results.back().requests[ community_inv_itr->account ] = community_request_api_obj( *community_req_itr );
          ++community_req_itr;
+      }
+
+      if( results.back().pinned_author.size() && results.back().pinned_permlink.size() )
+      {
+         results.back().pinned_post = get_content( results.back().pinned_author, results.back().pinned_permlink );
+      }
+
+      auto comment_blog_itr = comment_blog_idx.lower_bound( community );
+      if( comment_blog_itr != comment_blog_idx.end() && comment_blog_itr->community == community )
+      {
+         results.back().latest_post = get_discussion( comment_blog_itr->comment, 0 );
+         results.back().latest_post.blog = comment_blog_api_obj( *comment_blog_itr );
       }
    }
    return results;
@@ -2468,10 +2987,16 @@ vector< extended_community > database_api_impl::get_communities_by_subscribers( 
 
    const auto& community_idx = _db.get_index< community_index >().indices().get< by_subscriber_count >();
    const auto& name_idx = _db.get_index< community_index >().indices().get< by_name >();
+
    const auto& community_mem_idx = _db.get_index< community_member_index >().indices().get< by_name >();
    const auto& community_inv_idx = _db.get_index< community_join_invite_index >().indices().get< by_community >();
    const auto& community_req_idx = _db.get_index< community_join_request_index >().indices().get< by_community_account >();
    const auto& community_event_idx = _db.get_index< community_event_index >().indices().get< by_community_time >();
+   const auto& community_event_attend_idx = _db.get_index< community_event_attend_index >().indices().get< by_event_id >();
+   const auto& community_federation_a_idx = _db.get_index< community_federation_index >().indices().get< by_community_a >();
+   const auto& community_federation_b_idx = _db.get_index< community_federation_index >().indices().get< by_community_b >();
+   const auto& community_inbox_idx = _db.get_index< message_index >().indices().get< by_community_inbox >();
+   const auto& comment_blog_idx = _db.get_index< comment_blog_index >().indices().get< by_new_community_blog >();
 
    auto community_itr = community_idx.begin();
   
@@ -2483,10 +3008,12 @@ vector< extended_community > database_api_impl::get_communities_by_subscribers( 
       community_itr = community_idx.iterator_to( *name_itr );
    }
 
-   while( community_itr != community_idx.end() && results.size() < limit )
+   while( community_itr != community_idx.end() && 
+      results.size() < limit )
    {
       results.push_back( extended_community( *community_itr ) );
       community_name_type community = community_itr->name;
+      
       auto community_mem_itr = community_mem_idx.find( community );
       if( community_mem_itr != community_mem_idx.end() )
       {
@@ -2516,29 +3043,154 @@ vector< extended_community > database_api_impl::get_communities_by_subscribers( 
          }
          results.back().total_mod_weight = community_mem_itr->total_mod_weight.value;
       }
+      
+      auto community_inbox_itr = community_inbox_idx.lower_bound( community );
+      while( community_inbox_itr != community_inbox_idx.end() && 
+         community_inbox_itr->community == community )
+      {
+         results.back().messages.push_back( message_api_obj( *community_inbox_itr ) );
+         ++community_inbox_itr;
+      }
+      
+      auto community_federation_a_itr = community_federation_a_idx.lower_bound( boost::make_tuple( community, community_federation_type::MEMBER_FEDERATION ) );
+      auto community_federation_b_itr = community_federation_b_idx.lower_bound( boost::make_tuple( community, community_federation_type::MEMBER_FEDERATION ) );
+      while( community_federation_a_itr != community_federation_a_idx.end() && 
+         community_federation_a_itr->community_a == community &&
+         community_federation_a_itr->federation_type == community_federation_type::MEMBER_FEDERATION )
+      {
+         if( community_federation_a_itr->share_accounts_a )
+         {
+            results.back().upstream_member_federations[ community_federation_a_itr->community_b ] = community_federation_api_obj( *community_federation_a_itr );
+         }
+         if( community_federation_a_itr->share_accounts_b )
+         {
+            results.back().downstream_member_federations[ community_federation_a_itr->community_b ] = community_federation_api_obj( *community_federation_a_itr );
+         }
+         ++community_federation_a_itr;
+      }
 
+      while( community_federation_b_itr != community_federation_b_idx.end() && 
+         community_federation_b_itr->community_b == community &&
+         community_federation_b_itr->federation_type == community_federation_type::MEMBER_FEDERATION )
+      {
+         if( community_federation_b_itr->share_accounts_b )
+         {
+            results.back().upstream_member_federations[ community_federation_b_itr->community_a ] = community_federation_api_obj( *community_federation_b_itr );
+         }
+         if( community_federation_b_itr->share_accounts_a )
+         {
+            results.back().downstream_member_federations[ community_federation_b_itr->community_a ] = community_federation_api_obj( *community_federation_b_itr );
+         }
+         ++community_federation_b_itr;
+      }
+
+      community_federation_a_itr = community_federation_a_idx.lower_bound( boost::make_tuple( community, community_federation_type::MODERATOR_FEDERATION ) );
+      community_federation_b_itr = community_federation_b_idx.lower_bound( boost::make_tuple( community, community_federation_type::MODERATOR_FEDERATION ) );
+      while( community_federation_a_itr != community_federation_a_idx.end() && 
+         community_federation_a_itr->community_a == community &&
+         community_federation_a_itr->federation_type == community_federation_type::MODERATOR_FEDERATION )
+      {
+         if( community_federation_a_itr->share_accounts_a )
+         {
+            results.back().upstream_moderator_federations[ community_federation_a_itr->community_b ] = community_federation_api_obj( *community_federation_a_itr );
+         }
+         if( community_federation_a_itr->share_accounts_b )
+         {
+            results.back().downstream_moderator_federations[ community_federation_a_itr->community_b ] = community_federation_api_obj( *community_federation_a_itr );
+         }
+         ++community_federation_a_itr;
+      }
+
+      while( community_federation_b_itr != community_federation_b_idx.end() && 
+         community_federation_b_itr->community_b == community &&
+         community_federation_b_itr->federation_type == community_federation_type::MODERATOR_FEDERATION )
+      {
+         if( community_federation_b_itr->share_accounts_b )
+         {
+            results.back().upstream_moderator_federations[ community_federation_b_itr->community_a ] = community_federation_api_obj( *community_federation_b_itr );
+         }
+         if( community_federation_b_itr->share_accounts_a )
+         {
+            results.back().downstream_moderator_federations[ community_federation_b_itr->community_a ] = community_federation_api_obj( *community_federation_b_itr );
+         }
+         ++community_federation_b_itr;
+      }
+
+      community_federation_a_itr = community_federation_a_idx.lower_bound( boost::make_tuple( community, community_federation_type::ADMIN_FEDERATION ) );
+      community_federation_b_itr = community_federation_b_idx.lower_bound( boost::make_tuple( community, community_federation_type::ADMIN_FEDERATION ) );
+      while( community_federation_a_itr != community_federation_a_idx.end() && 
+         community_federation_a_itr->community_a == community &&
+         community_federation_a_itr->federation_type == community_federation_type::ADMIN_FEDERATION )
+      {
+         if( community_federation_a_itr->share_accounts_a )
+         {
+            results.back().upstream_admin_federations[ community_federation_a_itr->community_b ] = community_federation_api_obj( *community_federation_a_itr );
+         }
+         if( community_federation_a_itr->share_accounts_b )
+         {
+            results.back().downstream_admin_federations[ community_federation_a_itr->community_b ] = community_federation_api_obj( *community_federation_a_itr );
+         }
+         ++community_federation_a_itr;
+      }
+
+      while( community_federation_b_itr != community_federation_b_idx.end() && 
+         community_federation_b_itr->community_b == community &&
+         community_federation_b_itr->federation_type == community_federation_type::ADMIN_FEDERATION )
+      {
+         if( community_federation_b_itr->share_accounts_b )
+         {
+            results.back().upstream_admin_federations[ community_federation_b_itr->community_a ] = community_federation_api_obj( *community_federation_b_itr );
+         }
+         if( community_federation_b_itr->share_accounts_a )
+         {
+            results.back().downstream_admin_federations[ community_federation_b_itr->community_a ] = community_federation_api_obj( *community_federation_b_itr );
+         }
+         ++community_federation_b_itr;
+      }
+      
       auto community_event_itr = community_event_idx.lower_bound( community );
+      auto community_event_attend_itr = community_event_attend_idx.lower_bound( community );
+
       while( community_event_itr != community_event_idx.end() && 
          community_event_itr->community == community )
       {
-         results.back().events.push_back( community_event_api_obj( *community_event_itr ) );
+         results.back().events.push_back( community_event_state( *community_event_itr ) );
+
+         while( community_event_attend_itr != community_event_attend_idx.end() && 
+            community_event_attend_itr->community == community && 
+            community_event_attend_itr->event_id == community_event_itr->event_id )
+         {
+            results.back().events.back().attend_objs.push_back( *community_event_attend_itr );
+            ++community_event_attend_itr;
+         }
+         
          ++community_event_itr;
       }
 
       auto community_inv_itr = community_inv_idx.lower_bound( community );
-      while( community_inv_itr != community_inv_idx.end() && 
-         community_inv_itr->community == community )
+      while( community_inv_itr != community_inv_idx.end() && community_inv_itr->community == community )
       {
          results.back().invites[ community_inv_itr->member ] = community_invite_api_obj( *community_inv_itr );
          ++community_inv_itr;
       }
 
       auto community_req_itr = community_req_idx.lower_bound( community );
-      while( community_req_itr != community_req_idx.end() && 
-         community_req_itr->community == community )
+      while( community_req_itr != community_req_idx.end() && community_req_itr->community == community )
       {
          results.back().requests[ community_inv_itr->account ] = community_request_api_obj( *community_req_itr );
          ++community_req_itr;
+      }
+
+      if( results.back().pinned_author.size() && results.back().pinned_permlink.size() )
+      {
+         results.back().pinned_post = get_content( results.back().pinned_author, results.back().pinned_permlink );
+      }
+
+      auto comment_blog_itr = comment_blog_idx.lower_bound( community );
+      if( comment_blog_itr != comment_blog_idx.end() && comment_blog_itr->community == community )
+      {
+         results.back().latest_post = get_discussion( comment_blog_itr->comment, 0 );
+         results.back().latest_post.blog = comment_blog_api_obj( *comment_blog_itr );
       }
    }
    return results;
@@ -2578,6 +3230,7 @@ vector< account_network_state > database_api_impl::get_account_network_state( ve
    const auto& incoming_officer_vote_idx = _db.get_index< network_officer_vote_index >().indices().get< by_officer_account >();
    const auto& incoming_subscription_idx = _db.get_index< governance_subscription_index >().indices().get< by_governance_account >();
    const auto& incoming_enterprise_vote_idx = _db.get_index< enterprise_vote_index >().indices().get< by_enterprise_id >();
+   const auto& incoming_enterprise_fund_idx = _db.get_index< enterprise_fund_index >().indices().get< by_account_enterprise_funder >();
    const auto& incoming_commit_violation_idx = _db.get_index< commit_violation_index >().indices().get< by_producer_height >();
 
    const auto& outgoing_producer_vote_idx = _db.get_index< producer_vote_index >().indices().get< by_account_rank >();
@@ -2585,6 +3238,7 @@ vector< account_network_state > database_api_impl::get_account_network_state( ve
    const auto& outgoing_officer_vote_idx = _db.get_index< network_officer_vote_index >().indices().get< by_account_type_rank >();
    const auto& outgoing_subscription_idx = _db.get_index< governance_subscription_index >().indices().get< by_account_rank >();
    const auto& outgoing_enterprise_vote_idx = _db.get_index< enterprise_vote_index >().indices().get< by_account_rank >();
+   const auto& outgoing_enterprise_fund_idx = _db.get_index< enterprise_fund_index >().indices().get< by_funder_account_enterprise >();
    const auto& outgoing_commit_violation_idx = _db.get_index< commit_violation_index >().indices().get< by_reporter_height >();
 
    for( auto name : names )
@@ -2679,8 +3333,16 @@ vector< account_network_state > database_api_impl::get_account_network_state( ve
       while( incoming_enterprise_vote_itr != incoming_enterprise_vote_idx.end() && 
          incoming_enterprise_vote_itr->account == name )
       {
-         nstate.incoming_enterprise_votes[ incoming_enterprise_vote_itr->account ][ to_string( incoming_enterprise_vote_itr->enterprise_id ) ] = enterprise_vote_api_obj( *incoming_enterprise_vote_itr );
+         nstate.incoming_enterprise_votes[ incoming_enterprise_vote_itr->voter ][ to_string( incoming_enterprise_vote_itr->enterprise_id ) ] = enterprise_vote_api_obj( *incoming_enterprise_vote_itr );
          ++incoming_enterprise_vote_itr;
+      }
+
+      auto incoming_enterprise_fund_itr = incoming_enterprise_fund_idx.lower_bound( name );
+      while( incoming_enterprise_fund_itr != incoming_enterprise_fund_idx.end() && 
+         incoming_enterprise_fund_itr->account == name )
+      {
+         nstate.incoming_enterprise_funds[ incoming_enterprise_fund_itr->funder ][ to_string( incoming_enterprise_fund_itr->enterprise_id ) ] = enterprise_fund_api_obj( *incoming_enterprise_fund_itr );
+         ++incoming_enterprise_fund_itr;
       }
 
       auto incoming_commit_violation_itr = incoming_commit_violation_idx.lower_bound( name );
@@ -2726,10 +3388,18 @@ vector< account_network_state > database_api_impl::get_account_network_state( ve
 
       auto outgoing_enterprise_vote_itr = outgoing_enterprise_vote_idx.lower_bound( name );
       while( outgoing_enterprise_vote_itr != outgoing_enterprise_vote_idx.end() && 
-         outgoing_enterprise_vote_itr->account == name )
+         outgoing_enterprise_vote_itr->voter == name )
       {
          nstate.outgoing_enterprise_votes[ outgoing_enterprise_vote_itr->account ][ to_string( outgoing_enterprise_vote_itr->enterprise_id ) ] = enterprise_vote_api_obj( *outgoing_enterprise_vote_itr );
          ++outgoing_enterprise_vote_itr;
+      }
+
+      auto outgoing_enterprise_fund_itr = outgoing_enterprise_fund_idx.lower_bound( name );
+      while( outgoing_enterprise_fund_itr != outgoing_enterprise_fund_idx.end() && 
+         outgoing_enterprise_fund_itr->funder == name )
+      {
+         nstate.outgoing_enterprise_funds[ outgoing_enterprise_fund_itr->account ][ to_string( outgoing_enterprise_fund_itr->enterprise_id ) ] = enterprise_fund_api_obj( *outgoing_enterprise_fund_itr );
+         ++outgoing_enterprise_fund_itr;
       }
 
       auto outgoing_commit_violation_itr = outgoing_commit_violation_idx.lower_bound( name );
@@ -3748,20 +4418,20 @@ vector< account_ad_state > database_api_impl::get_account_ads( vector< string > 
    vector< account_ad_state > results;
    results.reserve( names.size() );
 
-   const auto& creative_idx   = _db.get_index< ad_creative_index >().indices().get< by_latest >();
-   const auto& campaign_idx   = _db.get_index< ad_campaign_index >().indices().get< by_latest >();
-   const auto& audience_idx   = _db.get_index< ad_audience_index >().indices().get< by_latest >();
-   const auto& inventory_idx  = _db.get_index< ad_inventory_index >().indices().get< by_latest >();
+   const auto& creative_idx = _db.get_index< ad_creative_index >().indices().get< by_latest >();
+   const auto& campaign_idx = _db.get_index< ad_campaign_index >().indices().get< by_latest >();
+   const auto& audience_idx = _db.get_index< ad_audience_index >().indices().get< by_latest >();
+   const auto& inventory_idx = _db.get_index< ad_inventory_index >().indices().get< by_latest >();
 
-   const auto& creative_id_idx   = _db.get_index< ad_creative_index >().indices().get< by_creative_id >();
-   const auto& campaign_id_idx   = _db.get_index< ad_campaign_index >().indices().get< by_campaign_id >();
-   const auto& audience_id_idx   = _db.get_index< ad_audience_index >().indices().get< by_audience_id >();
-   const auto& inventory_id_idx  = _db.get_index< ad_inventory_index >().indices().get< by_inventory_id >();
+   const auto& creative_id_idx = _db.get_index< ad_creative_index >().indices().get< by_creative_id >();
+   const auto& campaign_id_idx = _db.get_index< ad_campaign_index >().indices().get< by_campaign_id >();
+   const auto& audience_id_idx = _db.get_index< ad_audience_index >().indices().get< by_audience_id >();
+   const auto& inventory_id_idx = _db.get_index< ad_inventory_index >().indices().get< by_inventory_id >();
 
-   const auto& bidder_idx     = _db.get_index< ad_bid_index >().indices().get< by_bidder_updated >();
-   const auto& account_idx    = _db.get_index< ad_bid_index >().indices().get< by_account_updated >();
-   const auto& author_idx     = _db.get_index< ad_bid_index >().indices().get< by_author_updated >();
-   const auto& provider_idx   = _db.get_index< ad_bid_index >().indices().get< by_provider_updated >();
+   const auto& bidder_idx = _db.get_index< ad_bid_index >().indices().get< by_bidder_updated >();
+   const auto& account_idx = _db.get_index< ad_bid_index >().indices().get< by_account_updated >();
+   const auto& author_idx = _db.get_index< ad_bid_index >().indices().get< by_author_updated >();
+   const auto& provider_idx = _db.get_index< ad_bid_index >().indices().get< by_provider_updated >();
 
    for( auto name : names )
    {
@@ -5413,6 +6083,15 @@ discussion database_api_impl::get_content( string author, string permlink )const
       results.active_views = cstate.views;
       results.active_shares = cstate.shares;
       results.active_mod_tags = cstate.moderation;
+
+      const comment_api_obj root( _db.get< comment_object, by_id >( results.root_comment ) );
+      results.url = "/" + root.community + "/@" + root.author + "/" + root.permlink;
+      results.root_title = root.title;
+      if( root.id != results.id )
+      {
+         results.url += "#@" + results.author + "/" + results.permlink;
+      }
+
       return results;
    }
    else
@@ -6796,7 +7475,7 @@ vector< discussion > database_api_impl::get_discussions_by_feed( const discussio
       try
       {
          results.push_back( get_discussion( comment_feed_itr->comment, query.truncate_body ) );
-         results.back().feed = feed_api_obj( *comment_feed_itr );
+         results.back().feed = comment_feed_api_obj( *comment_feed_itr );
       }
       catch ( const fc::exception& e )
       {
@@ -7158,7 +7837,7 @@ vector< discussion > database_api_impl::get_discussions_by_blog( const discussio
       try
       {
          results.push_back( get_discussion( comment_blog_itr->comment, query.truncate_body ) );
-         results.back().blog = blog_api_obj( *comment_blog_itr );
+         results.back().blog = comment_blog_api_obj( *comment_blog_itr );
       }
       catch ( const fc::exception& e )
       {

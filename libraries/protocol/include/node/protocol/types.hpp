@@ -98,14 +98,14 @@ namespace node {
        */
       enum class community_privacy_type : int
       {
-         OPEN_PUBLIC_COMMUNITY,         ///< All Users can read, interact, post, and request to join. Accounts cannot be blacklisted.
-         GENERAL_PUBLIC_COMMUNITY,      ///< All Users can read, interact, post, and request to join.
-         EXCLUSIVE_PUBLIC_COMMUNITY,    ///< All users can read, interact, and request to join. Members can post and invite.
-         CLOSED_PUBLIC_COMMUNITY,       ///< All users can read, and request to join. Members can interact, post, and invite.
-         OPEN_PRIVATE_COMMUNITY,        ///< Members can read and interact, and create posts. Moderators can invite and accept.
-         GENERAL_PRIVATE_COMMUNITY,     ///< Members can read and interact, and create posts. Moderators can invite and accept. Cannot share posts.
-         EXCLUSIVE_PRIVATE_COMMUNITY,   ///< Members can read and interact, and post. Cannot share posts or request to join. Admins can invite and accept.
-         CLOSED_PRIVATE_COMMUNITY       ///< Members can read and interact. Moderators can post. Cannot share posts or request to join. Admins can invite and accept.
+         OPEN_PUBLIC_COMMUNITY,         ///< All Users can read, interact, post, and request to join. Accounts cannot be blacklisted. Posts can be shared.
+         GENERAL_PUBLIC_COMMUNITY,      ///< All Users can read, interact, post, and request to join. Posts can be shared.
+         EXCLUSIVE_PUBLIC_COMMUNITY,    ///< All users can read, interact, and request to join. Members can post and invite. Posts can be shared.
+         CLOSED_PUBLIC_COMMUNITY,       ///< All users can read, and request to join. Members can interact, post, and invite. Posts can be shared.
+         OPEN_PRIVATE_COMMUNITY,        ///< Members can read and interact, and create posts. Moderators can invite and accept. Posts cannot be shared.
+         GENERAL_PRIVATE_COMMUNITY,     ///< Members can read and interact, and create posts. Admins can invite and accept. Posts cannot be shared.
+         EXCLUSIVE_PRIVATE_COMMUNITY,   ///< Members can read and interact, and post. Cannot request to join. Admins can invite and accept. Posts cannot be shared.
+         CLOSED_PRIVATE_COMMUNITY       ///< Members can read and interact. Moderators can post. Cannot request to join. Admins can invite and accept. Posts cannot be shared.
       };
 
       const static vector< string > community_privacy_values = 
@@ -121,19 +121,17 @@ namespace node {
       };
 
       /**
-       * Privacy levels of community, determines the connectivity of the communities membership, and whether the connection permissions are transitive.
+       * Role Level of a Community Federation, determines which tier of community participants are carried over to federated communities. 
        */
       enum class community_federation_type : int
       {
-         PUBLIC_FEDERATION,          ///< Posts decryption keys shared. No permissions are shared.
-         MEMBER_FEDERATION,          ///< Posts decryption keys shared. All Member permissions are shared.
-         MODERATOR_FEDERATION,       ///< Posts decryption keys shared. All Member and Moderator permissions are shared.
-         ADMIN_FEDERATION            ///< Posts decryption keys shared. All Member, Moderator, and Admin permissions are shared.
+         MEMBER_FEDERATION,          ///< Member Post decryption key shared. Members may be shared.
+         MODERATOR_FEDERATION,       ///< Moderator Post decryption key shared. Moderators may be shared.
+         ADMIN_FEDERATION            ///< Admin Post decryption keys shared. Admins may be shared.
       };
 
       const static vector< string > community_federation_values = 
       {
-         "public",
          "member",
          "moderator",
          "admin"
@@ -760,7 +758,6 @@ FC_REFLECT_ENUM( node::protocol::community_privacy_type,
          );
 
 FC_REFLECT_ENUM( node::protocol::community_federation_type,
-         (PUBLIC_FEDERATION)
          (MEMBER_FEDERATION)
          (MODERATOR_FEDERATION)
          (ADMIN_FEDERATION)

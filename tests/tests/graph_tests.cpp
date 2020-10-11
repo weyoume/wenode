@@ -40,6 +40,9 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
       fund_stake( "bob", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "bob", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
+      string alice_private_connection_wif = graphene::utilities::key_to_wif( alice_private_connection_key );
+      string bob_private_connection_wif = graphene::utilities::key_to_wif( bob_private_connection_key );
+
       signed_transaction tx;
 
       graph_node_property_operation node_property;
@@ -254,34 +257,33 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Successful edge creation after connection" );
 
-      account_connection_request_operation request;
+      account_connection_operation connection;
 
-      request.signatory = "alice";
-      request.account = "alice";
-      request.requested_account = "bob";
-      request.connection_type = "connection";
-      request.message = "Hello";
-      request.requested = true;
+      connection.signatory = "bob";
+      connection.account = "bob";
+      connection.connecting_account = "alice";
+      connection.connection_type = "connection";
+      connection.connection_id = "adad21ef-3ac5-46be-bd52-14b1c6510628";
+      connection.encrypted_key = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, alice_public_secure_key, bob_private_connection_wif );
+      connection.connected = true;
 
-      tx.operations.push_back( request );
-      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      tx.operations.push_back( connection );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      account_connection_accept_operation accept;
+      connection.signatory = "alice";
+      connection.account = "alice";
+      connection.connecting_account = "bob";
+      connection.connection_type = "connection";
+      connection.connection_id = "adad21ef-3ac5-46be-bd52-14b1c6510628";
+      connection.encrypted_key = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, bob_public_secure_key, alice_private_connection_wif );
+      connection.connected = true;
 
-      accept.signatory = "bob";
-      accept.account = "bob";
-      accept.requesting_account = "alice";
-      accept.connection_type = "connection";
-      accept.connection_id = "adad21ef-3ac5-46be-bd52-14b1c6510628";
-      accept.encrypted_key = "#supersecretencryptedkeygoeshere";
-      accept.connected = true;
-
-      tx.operations.push_back( accept );
-      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      tx.operations.push_back( connection );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();

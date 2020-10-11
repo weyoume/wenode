@@ -544,9 +544,6 @@ namespace node { namespace chain {
          const community_member_object&                 get_community_member( const community_name_type& community )const;
          const community_member_object*                 find_community_member( const community_name_type& community )const;
 
-         const community_member_key_object&             get_community_member_key( const account_name_type& member, const community_name_type& community )const;
-         const community_member_key_object*             find_community_member_key( const account_name_type& member, const community_name_type& community )const;
-
          const community_event_object&                  get_community_event( const community_name_type& community, const shared_string& event_id )const;
          const community_event_object*                  find_community_event( const community_name_type& community, const shared_string& event_id )const;
 
@@ -560,23 +557,11 @@ namespace node { namespace chain {
 
          void update_community_moderator_set();
 
-         bool is_federated_member( const community_member_object& m, const account_name_type a );
+         void process_community_membership_fees();
 
-         bool is_federated_moderator( const community_member_object& m, const account_name_type a );
+         void process_community_federation( const community_federation_object& federation );
 
-         bool is_federated_administrator( const community_member_object& m, const account_name_type a );
-
-         bool is_federated_blacklisted( const community_member_object& m, const account_name_type a );
-
-         bool is_federated_authorized_interact( const community_member_object& m, const account_name_type a );
-
-         bool is_federated_authorized_author( const community_member_object& m, const account_name_type a );
-
-         bool is_federated_authorized_request( const community_member_object& m, const account_name_type a );
-
-         bool is_federated_authorized_invite( const community_member_object& m, const account_name_type a );
-
-         bool is_federated_authorized_blacklist( const community_member_object& m, const account_name_type a );
+         void remove_community_federation( const community_federation_object& federation );
 
 
 

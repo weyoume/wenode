@@ -969,7 +969,7 @@ void database::update_enterprise( const enterprise_object& enterprise,
       }
    }
 
-   const auto& fund_idx = get_index< enterprise_fund_index >().indices().get< by_enterprise_id >();
+   const auto& fund_idx = get_index< enterprise_fund_index >().indices().get< by_account_enterprise_funder >();
    auto fund_itr = fund_idx.lower_bound( boost::make_tuple( enterprise.account, enterprise.enterprise_id ) );
 
    while( fund_itr != fund_idx.end() && 

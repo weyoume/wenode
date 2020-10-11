@@ -927,7 +927,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
    {
       case feed_reach_type::NO_FEED:
       {
-         return;                                 // Do not share to any feeds. Shows only on account blog. 
+         return;                                 // Do not share to any feeds. Shows only on account blog.
       }
       case feed_reach_type::COMMUNITY_FEED:     // Encrypted Community feed variants are only shared to community subscribers, and not account followers or connections. 
       case feed_reach_type::COMPANION_FEED:     // Encrypted posts are only shared to connected accounts of the specified level.
@@ -938,12 +938,11 @@ void database::add_comment_to_feeds( const comment_object& comment )
             "Post should be encrypted at this reach level." );
       }
       break;
-      case feed_reach_type::MUTUAL_FEED:        // Public Posts only from here down
+      case feed_reach_type::MUTUAL_FEED:        // Public Posts only from here down.
       case feed_reach_type::FOLLOW_FEED:
       case feed_reach_type::TAG_FEED:           // Tag Feed level posts are shared to tag followers, in addition to account followers. 
       {
-         FC_ASSERT( !comment.is_encrypted(), 
-            "Post should not encrypted at this reach level." );
+         // No encryption required
       }
       break;
       default:
@@ -1155,8 +1154,8 @@ void database::add_comment_to_feeds( const comment_object& comment )
 
 
 /** 
- * Adds a shared post to the feeds of each of the accounts in its
- * account following object.
+ * Adds a shared post to the feeds of each of the accounts in its account following object.
+ * Create blog and feed objects for sharer account's followers and connections. 
  */
 void database::share_comment_to_feeds( const account_name_type& sharer, 
    const feed_reach_type& reach, const comment_object& comment )
@@ -2171,7 +2170,7 @@ void database::deliver_premium_purchase( const premium_purchase_object& purchase
    asset fees_paid = supernode_paid + interface_paid + network_fee;
    asset premium_paid = purchase_amount - fees_paid;
 
-   adjust_liquid_balance( comment.author, premium_paid );
+   adjust_reward_balance( comment.author, premium_paid );
    adjust_pending_supply( -purchase_amount );
 
    ilog( "Account: ${a} paid advertising delivery: ${v}",

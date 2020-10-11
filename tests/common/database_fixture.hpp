@@ -186,6 +186,8 @@ namespace node { namespace chain {
 
       fc::ecc::public_key          init_account_public_posting_key = protocol::get_public_key( INIT_ACCOUNT, POSTING_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
+      fc::ecc::public_key          init_account_public_secure_key = protocol::get_public_key( INIT_ACCOUNT, SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
       fc::ecc::public_key          init_account_public_producer_key = protocol::get_public_key( INIT_ACCOUNT, PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
 
@@ -195,6 +197,8 @@ namespace node { namespace chain {
 
       fc::ecc::private_key         init_account_private_posting_key = protocol::get_private_key( INIT_ACCOUNT, POSTING_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
+      fc::ecc::private_key         init_account_private_secure_key = protocol::get_private_key( INIT_ACCOUNT, SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
       fc::ecc::private_key         init_account_private_producer_key = protocol::get_private_key( INIT_ACCOUNT, PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
 
@@ -203,6 +207,8 @@ namespace node { namespace chain {
       string                       init_account_private_active_wif = graphene::utilities::key_to_wif( init_account_private_active_key );
 
       string                       init_account_private_posting_wif = graphene::utilities::key_to_wif( init_account_private_posting_key );
+
+      string                       init_account_private_secure_wif = graphene::utilities::key_to_wif( init_account_private_secure_key );
 
       string                       init_account_private_producer_wif = graphene::utilities::key_to_wif( init_account_private_producer_key );
 

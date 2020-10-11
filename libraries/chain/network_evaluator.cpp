@@ -1156,7 +1156,7 @@ void enterprise_fund_evaluator::do_apply( const enterprise_fund_operation& o )
       "Funding asset: ${a} must be the same as the budget asset of the Enterprise it is contributing to: ${b}.",
       ("a",o.amount.symbol)("b",enterprise.budget.symbol) );
 
-   const auto& enterprise_fund_idx = _db.get_index< enterprise_fund_index >().indices().get< by_account_enterprise >();
+   const auto& enterprise_fund_idx = _db.get_index< enterprise_fund_index >().indices().get< by_funder_account_enterprise >();
    auto enterprise_fund_itr = enterprise_fund_idx.find( boost::make_tuple( o.funder, o.account, o.enterprise_id ) );
 
    FC_ASSERT( liquid >= o.amount,

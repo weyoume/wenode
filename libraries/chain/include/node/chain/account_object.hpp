@@ -146,7 +146,7 @@ namespace node { namespace chain {
 
          share_type                       author_reputation = 0;                 ///< 0 to BLOCKCHAIN_PRECISION rating of the account, based on relative total rewards
 
-         asset                            loan_default_balance = asset(0, SYMBOL_CREDIT);
+         asset                            loan_default_balance = asset(0, SYMBOL_CREDIT);   ///< Amount of credit asset that is owed by the account to the network.
 
          share_type                       recent_activity_claims = 0;            ///< Value of activity rewards claimed in last 30 days / BLOCKCHAIN_PRECISION
 
@@ -371,10 +371,10 @@ namespace node { namespace chain {
       public:
          template<typename Constructor, typename Allocator>
          account_verification_object( Constructor&& c, allocator< Allocator > a ) :
-         shared_image(a)
-         {
-            c(*this);
-         };
+            shared_image(a)
+            {
+               c(*this);
+            };
 
          id_type                   id;
 
@@ -980,10 +980,10 @@ namespace node { namespace chain {
 
 
    /**
-    * Manages the Connections between accounts in the Social Graph.
+    * Manages the Connections between accounts and communities in the Social Graph.
     * 
     * Determines the accounts that are followed and connected with the account, and 
-    * the communities that the account subscribes to. 
+    * the communities that the account subscribes to and is a member of. 
     * Includes the Tags that are followed, and all fo the account, communities and tags
     * that are filtered from display by the account.
     */
@@ -998,40 +998,48 @@ namespace node { namespace chain {
             c( *this );
          }
 
-         id_type                           id;
+         id_type                                id;
 
-         account_name_type                 account;                 ///< Name of the account.
+         account_name_type                      account;                 ///< Name of the account.
 
-         flat_set< account_name_type >     followers;               ///< Accounts that follow this account.
+         flat_set< account_name_type >          followers;               ///< Accounts that follow this account.
 
-         flat_set< account_name_type >     following;               ///< Accounts that this account follows.
+         flat_set< account_name_type >          following;               ///< Accounts that this account follows.
 
-         flat_set< account_name_type >     mutual_followers;        ///< Accounts that are both following and followers of this account.
+         flat_set< account_name_type >          mutual_followers;        ///< Accounts that are both following and followers of this account.
 
-         flat_set< account_name_type >     connections;             ///< Accounts that are connections of this account.
+         flat_set< account_name_type >          connections;             ///< Accounts that are connections of this account.
 
-         flat_set< account_name_type >     friends;                 ///< Accounts that are friends of this account.
+         flat_set< account_name_type >          friends;                 ///< Accounts that are friends of this account.
 
-         flat_set< account_name_type >     companions;              ///< Accounts that are companions of this account. 
+         flat_set< account_name_type >          companions;              ///< Accounts that are companions of this account.
 
-         flat_set< community_name_type >   followed_communities;    ///< Communities that the account subscribes to. 
+         flat_set< community_name_type >        followed_communities;    ///< Communities that the account subscribes to.
 
-         flat_set< tag_name_type >         followed_tags;           ///< Tags that the account follows. 
+         flat_set< community_name_type >        member_communities;      ///< Communities that the account is a member within.
 
-         flat_set< account_name_type >     filtered;                ///< Accounts that this account has filtered. Interfaces should not show posts by these users.
+         flat_set< community_name_type >        moderator_communities;   ///< Communities that the account is a moderator within.
 
-         flat_set< community_name_type >   filtered_communities;    ///< Communities that this account has filtered. Posts will not display if they are in these communities.
+         flat_set< community_name_type >        admin_communities;       ///< Communities that the account is an admin within.
 
-         flat_set< tag_name_type >         filtered_tags;           ///< Tags that this account has filtered. Posts will not display if they have any of these tags. 
+         flat_set< community_name_type >        founder_communities;     ///< Communities that the account is a founder of.
 
-         time_point                        last_updated;            ///< Last time that the account changed its following sets.
+         flat_set< tag_name_type >              followed_tags;           ///< Tags that the account follows.
+
+         flat_set< account_name_type >          filtered;                ///< Accounts that this account has filtered. Interfaces should not show posts by these users.
+
+         flat_set< community_name_type >        filtered_communities;    ///< Communities that this account has filtered. Posts will not display if they are in these communities.
+
+         flat_set< tag_name_type >              filtered_tags;           ///< Tags that this account has filtered. Posts will not display if they have any of these tags. 
+
+         time_point                             last_updated;            ///< Last time that the account changed its following sets.
 
          /**
           * Adjacency value determines how similar two accounts are by comparing the 
           * accounts, communities and tags that they have in common with eachother. 
           * this value is used for the determination of post recommendations.
           */
-         share_type                        adjacency_value( const account_following_object& f )const
+         share_type                             adjacency_value( const account_following_object& f )const
          {
             vector< account_name_type > common_followers;
             common_followers.reserve( followers.size() );
@@ -1070,62 +1078,82 @@ namespace node { namespace chain {
             return result;
          };
 
-         bool                              is_connection( const account_name_type& account )const
+         bool                                   is_connection( const account_name_type& account )const
          {
             return std::find( connections.begin(), connections.end(), account ) != connections.end();
          };
 
-         bool                              is_friend( const account_name_type& account )const
+         bool                                   is_friend( const account_name_type& account )const
          {
             return std::find( friends.begin(), friends.end(), account ) != friends.end();
          };
 
-         bool                              is_companion( const account_name_type& account )const
+         bool                                   is_companion( const account_name_type& account )const
          {
             return std::find( companions.begin(), companions.end(), account ) != companions.end();
          };
 
-         bool                              is_follower( const account_name_type& account )const
+         bool                                   is_follower( const account_name_type& account )const
          {
             return std::find( followers.begin(), followers.end(), account ) != followers.end();
          };
 
-         bool                              is_following( const account_name_type& account )const
+         bool                                   is_following( const account_name_type& account )const
          {
             return std::find( following.begin(), following.end(), account ) != following.end();
          };
 
-         bool                              is_followed_tag( const tag_name_type& tag )const
+         bool                                   is_followed_tag( const tag_name_type& tag )const
          {
             return std::find( followed_tags.begin(), followed_tags.end(), tag ) != followed_tags.end();
          };
 
-         bool                              is_followed_community( const community_name_type& community )const
+         bool                                   is_followed_community( const community_name_type& community )const
          {
             return std::find( followed_communities.begin(), followed_communities.end(), community ) != followed_communities.end();
          };
 
-         bool                              is_mutual( const account_name_type& account )const
+         bool                                   is_member_community( const community_name_type& community )const
+         {
+            return std::find( member_communities.begin(), member_communities.end(), community ) != member_communities.end();
+         };
+
+         bool                                   is_moderator_community( const community_name_type& community )const
+         {
+            return std::find( moderator_communities.begin(), moderator_communities.end(), community ) != moderator_communities.end();
+         };
+
+         bool                                   is_admin_community( const community_name_type& community )const
+         {
+            return std::find( admin_communities.begin(), admin_communities.end(), community ) != admin_communities.end();
+         };
+
+         bool                                   is_founder_community( const community_name_type& community )const
+         {
+            return std::find( founder_communities.begin(), founder_communities.end(), community ) != founder_communities.end();
+         };
+
+         bool                                   is_mutual( const account_name_type& account )const
          {
             return std::find( mutual_followers.begin(), mutual_followers.end(), account ) != mutual_followers.end();
          };
 
-         bool                              is_filtered( const account_name_type& account )const
+         bool                                   is_filtered( const account_name_type& account )const
          {
             return std::find( filtered.begin(), filtered.end(), account ) != filtered.end();
          };
 
-         bool                              is_filtered_tag( const tag_name_type& tag )const
+         bool                                   is_filtered_tag( const tag_name_type& tag )const
          {
             return std::find( filtered_tags.begin(), filtered_tags.end(), tag ) != filtered_tags.end();
          };
 
-         bool                              is_filtered_community( const community_name_type& community )const
+         bool                                   is_filtered_community( const community_name_type& community )const
          {
             return std::find( filtered_communities.begin(), filtered_communities.end(), community ) != filtered_communities.end();
          };
 
-         void                              add_follower( const account_name_type& account )
+         void                                   add_follower( const account_name_type& account )
          {
             if( !is_follower( account ) )
             {
@@ -1137,7 +1165,7 @@ namespace node { namespace chain {
             }
          }
 
-         void                              remove_follower( const account_name_type& account )
+         void                                   remove_follower( const account_name_type& account )
          {
             if( is_follower( account ) )
             {
@@ -1149,7 +1177,7 @@ namespace node { namespace chain {
             }
          }
 
-         void                              add_following( const account_name_type& account )
+         void                                   add_following( const account_name_type& account )
          {
             if( !is_following( account ) )
             {
@@ -1161,7 +1189,7 @@ namespace node { namespace chain {
             }
          }
 
-         void                              add_followed_tag( const tag_name_type& t )
+         void                                   add_followed_tag( const tag_name_type& t )
          {
             if( !is_followed_tag( t ) )
             {
@@ -1169,7 +1197,7 @@ namespace node { namespace chain {
             }
          }
 
-         void                              add_followed_community( const community_name_type& community )
+         void                                   add_followed_community( const community_name_type& community )
          {
             if( !is_followed_community( community ) )
             {
@@ -1177,23 +1205,39 @@ namespace node { namespace chain {
             }
          }
 
-         void                              remove_followed_tag( const tag_name_type& t )
+         void                                   add_member_community( const community_name_type& community )
          {
-            if( is_followed_tag( t ) )
+            if( !is_member_community( community ) )
             {
-               followed_tags.erase( t );
+               member_communities.insert( community );
             }
          }
 
-         void                              remove_followed_community( const community_name_type& community )
+         void                                   add_moderator_community( const community_name_type& community )
          {
-            if( is_followed_community( community ) )
+            if( !is_moderator_community( community ) )
             {
-               followed_communities.erase( community );
+               moderator_communities.insert( community );
             }
          }
 
-         void                              remove_following( const account_name_type& account )
+         void                                   add_admin_community( const community_name_type& community )
+         {
+            if( !is_admin_community( community ) )
+            {
+               admin_communities.insert( community );
+            }
+         }
+
+         void                                   add_founder_community( const community_name_type& community )
+         {
+            if( !is_founder_community( community ) )
+            {
+               founder_communities.insert( community );
+            }
+         }
+
+         void                                   remove_following( const account_name_type& account )
          {
             if( is_following( account ) )
             {
@@ -1205,7 +1249,55 @@ namespace node { namespace chain {
             }
          }
 
-         void                              add_filtered( const account_name_type& account )
+         void                                   remove_followed_tag( const tag_name_type& t )
+         {
+            if( is_followed_tag( t ) )
+            {
+               followed_tags.erase( t );
+            }
+         }
+
+         void                                   remove_followed_community( const community_name_type& community )
+         {
+            if( is_followed_community( community ) )
+            {
+               followed_communities.erase( community );
+            }
+         }
+
+         void                                   remove_member_community( const community_name_type& community )
+         {
+            if( is_member_community( community ) )
+            {
+               member_communities.erase( community );
+            }
+         }
+
+         void                                   remove_moderator_community( const community_name_type& community )
+         {
+            if( is_moderator_community( community ) )
+            {
+               moderator_communities.erase( community );
+            }
+         }
+
+         void                                   remove_admin_community( const community_name_type& community )
+         {
+            if( is_admin_community( community ) )
+            {
+               admin_communities.erase( community );
+            }
+         }
+
+         void                                   remove_founder_community( const community_name_type& community )
+         {
+            if( is_founder_community( community ) )
+            {
+               founder_communities.erase( community );
+            }
+         }         
+
+         void                                   add_filtered( const account_name_type& account )
          {
             if( !is_filtered( account ) )
             {
@@ -1213,7 +1305,7 @@ namespace node { namespace chain {
             }
          }
 
-         void                              remove_filtered( const account_name_type& account )
+         void                                   remove_filtered( const account_name_type& account )
          {
             if( is_filtered( account ) )
             {
@@ -1221,7 +1313,7 @@ namespace node { namespace chain {
             }
          }
 
-         void                              add_filtered_tag( const tag_name_type& t )
+         void                                   add_filtered_tag( const tag_name_type& t )
          {
             if( !is_filtered_tag( t ) )
             {
@@ -1229,7 +1321,7 @@ namespace node { namespace chain {
             }
          }
 
-         void                              remove_filtered_tag( const tag_name_type& t )
+         void                                   remove_filtered_tag( const tag_name_type& t )
          {
             if( is_filtered_tag( t ) )
             {
@@ -1237,7 +1329,7 @@ namespace node { namespace chain {
             }
          }
 
-         void                              add_filtered_community( const community_name_type& community )
+         void                                   add_filtered_community( const community_name_type& community )
          {
             if( !is_filtered_community( community ) )
             {
@@ -1245,7 +1337,7 @@ namespace node { namespace chain {
             }
          }
 
-         void                              remove_filtered_community( const community_name_type& community )
+         void                                   remove_filtered_community( const community_name_type& community )
          {
             if( is_filtered_community( community ) )
             {
@@ -1327,10 +1419,14 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          account_connection_object( Constructor&& c, allocator< Allocator > a ) :
-         connection_id(a)
-         {
-            c( *this );
-         }
+            message_a(a),
+            json_a(a),
+            message_b(a),
+            json_b(a),
+            connection_id(a)
+            {
+               c( *this );
+            }
 
          id_type                      id;                 
 
@@ -1338,21 +1434,33 @@ namespace node { namespace chain {
 
          encrypted_keypair_type       encrypted_key_a;          ///< A's private connection key, encrypted with the public secure key of account B.
 
+         shared_string                message_a;                ///< A's Connection encrypted accompanying message for reference.
+
+         shared_string                json_a;                   ///< A's Encrypted JSON metadata.
+
          account_name_type            account_b;                ///< Account with the greater ID.
 
          encrypted_keypair_type       encrypted_key_b;          ///< B's private connection key, encrypted with the public secure key of account A.
 
+         shared_string                message_b;                ///< B's Connection encrypted accompanying message for reference.
+
+         shared_string                json_b;                   ///< B's Encrypted JSON metadata.
+
          connection_tier_type         connection_type;          ///< The connection level shared in this object.
 
-         shared_string                connection_id;            ///< Unique uuidv4 for the connection, for local storage of decryption key.
+         shared_string                connection_id;            ///< Globally Unique uuidv4 for the connection, for local storage of decryption key.
 
          uint32_t                     message_count;            ///< Number of total messages sent between connections.
 
          uint32_t                     consecutive_days;         ///< Number of consecutive days that the connected accounts have both sent a message.
 
-         time_point                   last_message_time_a;      ///< Time since the account A last sent a message.
+         time_point                   last_message_time_a;      ///< Time since account A last sent a message.
 
-         time_point                   last_message_time_b;      ///< Time since the account B last sent a message.
+         time_point                   last_message_time_b;      ///< Time since account B last sent a message.
+
+         bool                         approved_a;               ///< True when account A approves the connection.
+
+         bool                         approved_b;               ///< True when account B approves the connection.
 
          time_point                   last_updated;             ///< Time the connection keys were last updated.
 
@@ -1362,38 +1470,11 @@ namespace node { namespace chain {
          {
             return std::min( last_message_time_a, last_message_time_b );
          }
-   };
 
-
-   /**
-    * Represents a request from one account to follow another account.
-    * 
-    * Request can be accepted to generate a connection object
-    * and exchange connection keys for decrypting private posts.
-    */
-   class account_connection_request_object : public object< account_connection_request_object_type, account_connection_request_object >
-   {
-      account_connection_request_object() = delete;
-
-      public:
-         template< typename Constructor, typename Allocator >
-         account_connection_request_object( Constructor&& c, allocator< Allocator > a ) :
-         message(a)
+         bool                         approved()const
          {
-            c( *this );
+            return approved_a && approved_b;
          }
-
-         id_type                id;                 
-
-         account_name_type      account;               ///< Account that created the request.
-
-         account_name_type      requested_account;     ///< Account that the request is being made to.
-
-         connection_tier_type   connection_type;       ///< Connection level of the request.
-
-         shared_string          message;               ///< Connection request accompanying message for reference. 
-
-         time_point             expiration;            ///< Time that the request expires at. 
    };
 
 
@@ -2031,39 +2112,6 @@ namespace node { namespace chain {
 
    struct by_account_req;
    struct by_req_account;
-
-
-   typedef multi_index_container<
-      account_connection_request_object,
-      indexed_by<
-         ordered_unique< tag<by_id>, member< account_connection_request_object, account_connection_request_id_type, &account_connection_request_object::id > >,
-         ordered_unique< tag< by_account_req >,
-            composite_key< account_connection_request_object,
-               member<account_connection_request_object, account_name_type, &account_connection_request_object::account >,
-               member<account_connection_request_object, account_name_type, &account_connection_request_object::requested_account >
-            >
-         >,
-         ordered_unique< tag< by_req_account >,
-            composite_key< account_connection_request_object,
-               member<account_connection_request_object, account_name_type, &account_connection_request_object::requested_account >,
-               member<account_connection_request_object, account_name_type, &account_connection_request_object::account >
-            >
-         >,
-         ordered_unique< tag< by_expiration >,
-            composite_key< account_connection_request_object,
-               member< account_connection_request_object, time_point, &account_connection_request_object::expiration >,
-               member< account_connection_request_object, account_connection_request_id_type, &account_connection_request_object::id >
-            >,
-            composite_key_compare< 
-               std::less< time_point >, 
-               std::less< account_connection_request_id_type > 
-            >
-         >
-      >,
-      allocator< account_connection_request_object >
-   > account_connection_request_index;
-
-
    struct by_account;
    struct by_last_valid;
 
@@ -2380,6 +2428,10 @@ FC_REFLECT( node::chain::account_following_object,
          (friends)
          (companions)
          (followed_communities)
+         (member_communities)
+         (moderator_communities)
+         (admin_communities)
+         (founder_communities)
          (followed_tags)
          (filtered)
          (filtered_communities)
@@ -2398,29 +2450,24 @@ FC_REFLECT( node::chain::account_tag_following_object,
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::account_tag_following_object, node::chain::account_tag_following_index );
 
-FC_REFLECT( node::chain::account_connection_request_object,
-         (id)
-         (account)
-         (requested_account)
-         (connection_type)
-         (message)
-         (expiration)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::account_connection_request_object, node::chain::account_connection_request_index );
-
 FC_REFLECT( node::chain::account_connection_object,
          (id)
          (account_a)
          (encrypted_key_a)
+         (message_a)
+         (json_a)
          (account_b)
          (encrypted_key_b)
+         (message_b)
+         (json_b)
          (connection_type)
          (connection_id)
          (message_count)
          (consecutive_days)
          (last_message_time_a)
          (last_message_time_b)
+         (approved_a)
+         (approved_b)
          (last_updated)
          (created)
          );

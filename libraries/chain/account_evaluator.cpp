@@ -521,8 +521,9 @@ void account_verification_evaluator::do_apply( const account_verification_operat
    const auto& con_idx = _db.get_index< account_connection_index >().indices().get< by_accounts >();
    auto con_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::CONNECTION ) );
 
-   FC_ASSERT( con_itr != con_idx.end(),
-      "Accounts must be connected before verification." );
+   FC_ASSERT( con_itr != con_idx.end() && 
+      con_itr->approved(),
+      "Accounts must have an approved connection before creating a verification." );
 
    if( verification_itr == verification_idx.end() )
    {
@@ -1905,7 +1906,8 @@ void account_decline_voting_evaluator::do_apply( const account_decline_voting_op
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void account_connection_request_evaluator::do_apply( const account_connection_request_operation& o )
+
+void account_connection_evaluator::do_apply( const account_connection_operation& o )
 { try {
    const account_name_type& signed_for = o.account;
    const account_object& signatory = _db.get_account( o.signatory );
@@ -1922,119 +1924,7 @@ void account_connection_request_evaluator::do_apply( const account_connection_re
    }
 
    const account_object& account = _db.get_account( o.account );
-   const account_object& req_account = _db.get_account( o.requested_account );
-   time_point now = _db.head_block_time();
-
-   const auto& req_idx = _db.get_index< account_connection_request_index >().indices().get< by_account_req >();
-   const auto& acc_idx = _db.get_index< account_connection_request_index >().indices().get< by_req_account >();
-   auto req_itr = req_idx.find( boost::make_tuple( account.name, req_account.name ) );
-   auto acc_itr = acc_idx.find( boost::make_tuple( account.name, req_account.name ) );
-
-   account_name_type account_a_name;
-   account_name_type account_b_name;
-
-   if( account.id < req_account.id )      // Connection objects are sorted with lowest ID is account A. 
-   {
-      account_a_name = account.name;
-      account_b_name = req_account.name;
-   }
-   else
-   {
-      account_b_name = account.name;
-      account_a_name = req_account.name;
-   }
-
-   connection_tier_type connection_tier = connection_tier_type::CONNECTION;
-
-   for( size_t i = 0; i < connection_tier_values.size(); i++ )
-   {
-      if( o.connection_type == connection_tier_values[ i ] )
-      {
-         connection_tier = connection_tier_type( i );
-         break;
-      }
-   }
-
-   const auto& con_idx = _db.get_index< account_connection_index >().indices().get< by_accounts >();
-   auto con_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::CONNECTION ) );
-
-   if( req_itr == req_idx.end() && acc_itr == acc_idx.end() )      // New connection request 
-   {
-      FC_ASSERT( o.requested,
-         "Request doesn't exist, user must select to request connection with the account." );
-      if( con_itr == con_idx.end() )      // No existing connection object.
-      { 
-         FC_ASSERT( connection_tier == connection_tier_type::CONNECTION,
-            "First connection request must be of standard Connection type before elevation to higher levels." );
-      }
-      else        // Connection object found, requesting level increase.
-      {
-         const account_connection_object& connection_obj = *con_itr;
-         auto friend_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::FRIEND ) );
-         auto comp_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::COMPANION ) );
-
-         FC_ASSERT( connection_tier != connection_tier_type::CONNECTION,
-            "Connection of this type already exists, should request a type increase." );
-
-         if( connection_tier == connection_tier_type::FRIEND )
-         {
-            FC_ASSERT( friend_itr == con_idx.end(),
-               "Friend level connection already exists." );
-            FC_ASSERT( now >= ( connection_obj.created + CONNECTION_REQUEST_DURATION ),
-               "Friend Connection must wait one week from first connection." );
-         }
-         else if( connection_tier == connection_tier_type::COMPANION )
-         {
-            FC_ASSERT( friend_itr != con_idx.end(),
-               "Companion connection must follow a friend connection." );
-               FC_ASSERT( comp_itr == con_idx.end(),
-               "companion level connection already exists." );
-            FC_ASSERT( now >= ( friend_itr->created + CONNECTION_REQUEST_DURATION ),
-               "Companion Connection must wait one week from Friend connection." );
-         } 
-      }
-
-      _db.create< account_connection_request_object >( [&]( account_connection_request_object& cro ) 
-      {
-         cro.account = account.name;
-         cro.requested_account = req_account.name;
-         cro.connection_type = connection_tier;
-         from_string( cro.message, o.message );
-         cro.expiration = now + CONNECTION_REQUEST_DURATION;
-      });
-   } 
-   else // Request exists and is being cancelled.
-   { 
-      FC_ASSERT( !o.requested,
-         "Connection currently exists, set request to false to cancel." );
-
-      ilog( "Removed: ${v}",("v",*req_itr));
-      _db.remove( *req_itr );
-   }
-
-   ilog( "Account: ${a} requested to connect with ${b}", 
-      ("a", o.account)("b",o.requested_account ) );
-} FC_CAPTURE_AND_RETHROW( ( o ) ) }
-
-
-void account_connection_accept_evaluator::do_apply( const account_connection_accept_operation& o )
-{ try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
-   const account_object& account = _db.get_account( o.account );
-   const account_object& req_account = _db.get_account( o.requesting_account );
+   const account_object& con_account = _db.get_account( o.connecting_account );
    time_point now = _db.head_block_time();
    public_key_type public_key;
 
@@ -2076,22 +1966,19 @@ void account_connection_accept_evaluator::do_apply( const account_connection_acc
    account_name_type account_a_name;
    account_name_type account_b_name;
 
-   if( account.id < req_account.id )         // Connection objects are sorted with lowest ID is account A.
+   if( account.id < con_account.id )         // Connection objects are sorted with lowest ID is account A.
    {
       account_a_name = account.name;
-      account_b_name = req_account.name;
+      account_b_name = con_account.name;
    }
    else
    {
       account_b_name = account.name;
-      account_a_name = req_account.name;
+      account_a_name = con_account.name;
    }
 
    const auto& con_idx = _db.get_index< account_connection_index >().indices().get< by_accounts >();
    auto con_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier ) );
-
-   const auto& req_idx = _db.get_index< account_connection_request_index >().indices().get< by_account_req >();
-   auto req_itr = req_idx.find( boost::make_tuple( o.requesting_account, o.account ) );
 
    const account_following_object& a_following_set = _db.get_account_following( account_a_name );
    const account_following_object& b_following_set = _db.get_account_following( account_b_name );
@@ -2100,11 +1987,6 @@ void account_connection_accept_evaluator::do_apply( const account_connection_acc
    {
       FC_ASSERT( o.connected,
          "Connection doesn't exist, must select to connect with account" );
-      FC_ASSERT( req_itr != req_idx.end(),
-         "Connection Request doesn't exist to accept." );
-      const account_connection_request_object& request = *req_itr;
-      FC_ASSERT( connection_tier == request.connection_type,
-         "Connection request must be of the same level as acceptance" );
 
       const account_connection_object& new_connection = _db.create< account_connection_object >( [&]( account_connection_object& co )
       {
@@ -2113,11 +1995,17 @@ void account_connection_accept_evaluator::do_apply( const account_connection_acc
 
          if( account_a_name == account.name )      // We're account A
          {
-            co.encrypted_key_a = encrypted_keypair_type( req_account.secure_public_key, public_key, o.encrypted_key );
+            co.encrypted_key_a = encrypted_keypair_type( con_account.secure_public_key, public_key, o.encrypted_key );
+            from_string( co.message_a, o.message );
+            from_string( co.json_a, o.json );
+            co.approved_a = true;
          } 
          else        // We're account B
          {
-            co.encrypted_key_b = encrypted_keypair_type( req_account.secure_public_key, public_key, o.encrypted_key );
+            co.encrypted_key_b = encrypted_keypair_type( con_account.secure_public_key, public_key, o.encrypted_key );
+            from_string( co.message_b, o.message );
+            from_string( co.json_b, o.json );
+            co.approved_b = true;
          }
 
          co.connection_type = connection_tier;
@@ -2130,45 +2018,8 @@ void account_connection_accept_evaluator::do_apply( const account_connection_acc
          co.created = now;
       });
 
-      _db.modify( a_following_set, [&]( account_following_object& afo )
-      {
-         if( connection_tier == connection_tier_type::CONNECTION )
-         {
-            afo.connections.insert( account_b_name );
-         }
-         else if( connection_tier == connection_tier_type::FRIEND )
-         {
-            afo.friends.insert( account_b_name );
-         }
-         else if( connection_tier == connection_tier_type::COMPANION )
-         {
-            afo.companions.insert( account_b_name );
-         }
-         afo.last_updated = now;
-      });
-
-      _db.modify( b_following_set, [&]( account_following_object& afo )
-      {
-         if( connection_tier == connection_tier_type::CONNECTION )
-         {
-            afo.connections.insert( account_a_name );
-         }
-         else if( connection_tier == connection_tier_type::FRIEND )
-         {
-            afo.friends.insert( account_a_name );
-         }
-         else if( connection_tier == connection_tier_type::COMPANION )
-         {
-            afo.companions.insert( account_a_name );
-         }
-         afo.last_updated = now;
-      });
-
-      ilog( "Removed: ${v}",("v",request));
-      _db.remove( request );  // Remove initial request object
-
       ilog( "Account: ${a} accepted new connection with ${b} - \n ${c} \n",
-      ("a", o.account)("b",o.requesting_account )("c", new_connection ) );
+      ("a", o.account)("b",o.connecting_account )("c", new_connection ) );
    }
    else 
    {
@@ -2180,13 +2031,53 @@ void account_connection_accept_evaluator::do_apply( const account_connection_acc
          {
             if( account_a_name == account.name )    // We're account A
             {
-               co.encrypted_key_a = encrypted_keypair_type( req_account.secure_public_key, public_key, o.encrypted_key );
+               co.encrypted_key_a = encrypted_keypair_type( con_account.secure_public_key, public_key, o.encrypted_key );
+               from_string( co.message_a, o.message );
+               from_string( co.json_a, o.json );
+               co.approved_a = true;
             } 
             else     // We're account B
             {
-               co.encrypted_key_b = encrypted_keypair_type( req_account.secure_public_key, public_key, o.encrypted_key );
+               co.encrypted_key_b = encrypted_keypair_type( con_account.secure_public_key, public_key, o.encrypted_key );
+               from_string( co.message_b, o.message );
+               from_string( co.json_b, o.json );
+               co.approved_b = true;
             }
-         }); 
+         });
+
+         _db.modify( a_following_set, [&]( account_following_object& afo )
+         {
+            if( connection_tier == connection_tier_type::CONNECTION )
+            {
+               afo.connections.insert( account_b_name );
+            }
+            else if( connection_tier == connection_tier_type::FRIEND )
+            {
+               afo.friends.insert( account_b_name );
+            }
+            else if( connection_tier == connection_tier_type::COMPANION )
+            {
+               afo.companions.insert( account_b_name );
+            }
+            afo.last_updated = now;
+         });
+
+         _db.modify( b_following_set, [&]( account_following_object& afo )
+         {
+            if( connection_tier == connection_tier_type::CONNECTION )
+            {
+               afo.connections.insert( account_a_name );
+            }
+            else if( connection_tier == connection_tier_type::FRIEND )
+            {
+               afo.friends.insert( account_a_name );
+            }
+            else if( connection_tier == connection_tier_type::COMPANION )
+            {
+               afo.companions.insert( account_a_name );
+            }
+            afo.last_updated = now;
+         });
       }
       else  // Connection object is found, and is being unconnected.
       {
@@ -2228,13 +2119,12 @@ void account_connection_accept_evaluator::do_apply( const account_connection_acc
          _db.remove( connection_obj );
       }
 
+      _db.update_account_in_feed( o.account, o.connecting_account );
+      _db.update_account_in_feed( o.connecting_account, o.account );
+
       ilog( "Account: ${a} updated connection with ${b} - \n ${c} \n",
-      ("a", o.account)("b",o.requesting_account )("c", connection_obj ) );
+      ("a", o.account)("b",o.connecting_account )("c", connection_obj ) );
    }
-
-   _db.update_account_in_feed( o.account, o.requesting_account );
-   _db.update_account_in_feed( o.requesting_account, o.account );
-
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 

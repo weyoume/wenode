@@ -326,8 +326,9 @@ void graph_edge_evaluator::do_apply( const graph_edge_operation& o )
    const auto& con_idx = _db.get_index< account_connection_index >().indices().get< by_accounts >();
    auto con_itr = con_idx.find( boost::make_tuple( account_a_name, account_b_name, edge_permission ) );
 
-   FC_ASSERT( con_itr != con_idx.end(),
-      "Edge creation requires connection between from account and to account." );
+   FC_ASSERT( con_itr != con_idx.end() && 
+      con_itr->approved(),
+      "Edge creation requires an approved connection between from account and to account." );
    FC_ASSERT( public_key == public_key_type( o.edge_public_key ),
       "Edge must use the required public key of the highest graph privacy level of all edge types." );
 

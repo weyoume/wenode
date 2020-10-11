@@ -34,8 +34,7 @@ namespace node { namespace protocol {
             account_reset_update_operation,
             account_recovery_update_operation,
             account_decline_voting_operation,
-            account_connection_request_operation,
-            account_connection_accept_operation,
+            account_connection_operation,
             account_follow_operation,
             account_follow_tag_operation,
             account_activity_operation,
@@ -58,7 +57,6 @@ namespace node { namespace protocol {
             // Post and Comment operations
 
             comment_operation,
-            
             comment_vote_operation,
             comment_view_operation,
             comment_share_operation,
@@ -85,8 +83,7 @@ namespace node { namespace protocol {
             community_remove_member_operation,
             community_blacklist_operation,
             community_subscribe_operation,
-            community_federation_request_operation,
-            community_federation_accept_operation,
+            community_federation_operation,
             community_event_operation,
             community_event_attend_operation,
 

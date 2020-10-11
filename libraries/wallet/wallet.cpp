@@ -1423,24 +1423,25 @@ map< uint32_t, applied_operation >   wallet_api::get_account_history( string acc
 }
 
 
-vector< message_state >           wallet_api::get_messages( vector< string > names ) const
+vector< account_message_state >   wallet_api::get_account_messages( vector< string > names ) const
 {
-   vector< message_state > results = my->_remote_db->get_messages( names );
+   vector< account_message_state > results = my->_remote_db->get_account_messages( names );
    for( auto& item : results )
    {
-      for( auto& m : item.inbox )
-      {
-         m.message = get_decrypted_message( m.message );
-      }
-      for( auto& m : item.outbox )
-      {
-         m.message = get_decrypted_message( m.message );
-      }
-      for( auto& n : item.conversations )
+      for( auto& n : item.account_conversations )
       {
          for( auto& m : n.second )
          {
             m.message = get_decrypted_message( m.message );
+            m.json = get_decrypted_message( m.json );
+         }
+      }
+      for( auto& n : item.community_conversations )
+      {
+         for( auto& m : n.second )
+         {
+            m.message = get_decrypted_message( m.message );
+            m.json = get_decrypted_message( m.json );
          }
       }
    }
@@ -2994,53 +2995,29 @@ annotated_signed_transaction      wallet_api::account_decline_voting(
 } FC_CAPTURE_AND_RETHROW() }
 
 
-annotated_signed_transaction      wallet_api::account_connection_request(
+annotated_signed_transaction      wallet_api::account_connection(
    string signatory,
    string account,
-   string requested_account,
-   string connection_type,
-   string message,
-   bool requested,
-   bool broadcast )
-{ try {
-   FC_ASSERT( !is_locked() );
-
-   account_connection_request_operation op;
-
-   op.signatory = signatory;
-   op.account = account;
-   op.requested_account = requested_account;
-   op.connection_type = connection_type;
-   op.message = message;
-   op.requested = requested;
-
-   signed_transaction tx;
-   tx.operations.push_back( op );
-   tx.validate();
-
-   return my->sign_transaction( tx, broadcast );
-} FC_CAPTURE_AND_RETHROW() }
-
-
-annotated_signed_transaction      wallet_api::account_connection_accept(
-   string signatory,
-   string account,
-   string requesting_account,
+   string connecting_account,
    string connection_id,
    string connection_type,
+   string message,
+   string json,
    string encrypted_key,
    bool connected,
    bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
 
-   account_connection_accept_operation op;
+   account_connection_operation op;
 
    op.signatory = signatory;
    op.account = account;
-   op.requesting_account = requesting_account;
+   op.connecting_account = connecting_account;
    op.connection_id = connection_id;
    op.connection_type = connection_type;
+   op.message = message;
+   op.json = json;
    op.encrypted_key = encrypted_key;
    op.connected = connected;
 
@@ -3625,6 +3602,8 @@ annotated_signed_transaction      wallet_api::comment_vote(
    string permlink,
    int16_t weight,
    string interface,
+   string reaction,
+   string json,
    bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
@@ -3637,6 +3616,8 @@ annotated_signed_transaction      wallet_api::comment_vote(
    op.permlink = permlink;
    op.weight = weight;
    op.interface = interface;
+   op.reaction = reaction;
+   op.json = json;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -3653,6 +3634,7 @@ annotated_signed_transaction      wallet_api::comment_view(
    string permlink,
    string interface,
    string supernode,
+   string json,
    bool viewed,
    bool broadcast )
 { try {
@@ -3666,6 +3648,7 @@ annotated_signed_transaction      wallet_api::comment_view(
    op.permlink = permlink;
    op.interface = interface;
    op.supernode = supernode;
+   op.json = json;
    op.viewed = viewed;
 
    signed_transaction tx;
@@ -3685,6 +3668,7 @@ annotated_signed_transaction      wallet_api::comment_share(
    string interface,
    string community,
    string tag,
+   string json,
    bool shared,
    bool broadcast )
 { try {
@@ -3700,6 +3684,7 @@ annotated_signed_transaction      wallet_api::comment_share(
    op.interface = interface;
    op.community = community;
    op.tag = tag;
+   op.json = json;
    op.shared = shared;
 
    signed_transaction tx;
@@ -3718,8 +3703,11 @@ annotated_signed_transaction      wallet_api::comment_moderation(
    vector< string > tags,
    uint16_t rating,
    string details,
+   string json,
    string interface,
    bool filter,
+   bool removal_requested,
+   vector< beneficiary_route_type > beneficiaries_requested,
    bool applied,
    bool broadcast )
 { try {
@@ -3750,6 +3738,8 @@ annotated_signed_transaction      wallet_api::comment_moderation(
    op.details = details;
    op.interface = interface;
    op.filter = filter;
+   op.removal_requested = removal_requested;
+   op.beneficiaries_requested = beneficiaries_requested;
    op.applied = applied;
 
    signed_transaction tx;
@@ -3764,8 +3754,18 @@ annotated_signed_transaction      wallet_api::message(
    string signatory,
    string sender,
    string recipient,
+   string community,
+   string public_key,
    string message,
+   string ipfs,
+   string json
    string uuid,
+   string interface,
+   string parent_sender,
+   string parent_uuid,
+   time_point expiration,
+   bool forward,
+   bool active,
    bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
@@ -3773,13 +3773,22 @@ annotated_signed_transaction      wallet_api::message(
    message_operation op;
 
    string from_public_key = string( get_account( sender ).secure_public_key );
-   string to_public_key = string( get_account( recipient ).secure_public_key );
+   string to_public_key = public_key;
 
    op.signatory = signatory;
    op.sender = sender;
    op.recipient = recipient;
+   op.community = community;
+   op.public_key = public_key;
    op.message = get_encrypted_message( from_public_key, to_public_key, message );
+   op.ipfs = get_encrypted_message( from_public_key, to_public_key, ipfs );
+   op.json = get_encrypted_message( from_public_key, to_public_key, json );
    op.uuid = uuid;
+   op.interface = interface;
+   op.parent_sender = parent_sender;
+   op.parent_uuid = parent_uuid;
+   op.expiration = expiration;
+   op.active = active;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -3794,16 +3803,20 @@ annotated_signed_transaction      wallet_api::list(
    string creator,
    string list_id,
    string name,
-   flat_set< int64_t > accounts,
-   flat_set< int64_t > comments,
-   flat_set< int64_t > communities,
-   flat_set< int64_t > assets,
-   flat_set< int64_t > products,
-   flat_set< int64_t > auctions,
-   flat_set< int64_t > nodes,
-   flat_set< int64_t > edges,
-   flat_set< int64_t > node_types,
-   flat_set< int64_t > edge_types,
+   string details,
+   string json,
+   string interface,
+   vector< int64_t > accounts,
+   vector< int64_t > comments,
+   vector< int64_t > communities,
+   vector< int64_t > assets,
+   vector< int64_t > products,
+   vector< int64_t > auctions,
+   vector< int64_t > nodes,
+   vector< int64_t > edges,
+   vector< int64_t > node_types,
+   vector< int64_t > edge_types,
+   bool active,
    bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
@@ -3814,6 +3827,9 @@ annotated_signed_transaction      wallet_api::list(
    op.creator = creator;
    op.list_id = list_id;
    op.name = name;
+   op.details = details;
+   op.json = json;
+   op.interface = interface;
    op.accounts = accounts;
    op.comments = comments;
    op.communities = communities;
@@ -3824,6 +3840,7 @@ annotated_signed_transaction      wallet_api::list(
    op.edges = edges;
    op.node_types = node_types;
    op.edge_types = edge_types;
+   op.active = active;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -3837,9 +3854,23 @@ annotated_signed_transaction      wallet_api::poll(
    string signatory,
    string creator,
    string poll_id,
+   string community,
+   string public_key,
+   string interface,
    string details,
-   vector< string > poll_options,
+   string json,
+   string poll_option_0,
+   string poll_option_1,
+   string poll_option_2,
+   string poll_option_3,
+   string poll_option_4,
+   string poll_option_5,
+   string poll_option_6,
+   string poll_option_7,
+   string poll_option_8,
+   string poll_option_9,
    time_point completion_time,
+   bool active,
    bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
@@ -3849,22 +3880,23 @@ annotated_signed_transaction      wallet_api::poll(
    op.signatory = signatory;
    op.creator = creator;
    op.poll_id = poll_id;
-
-   set< string > o_set;
-
-   for( string p : poll_options )
-   {
-      o_set.insert( p );
-   }
-
-   op.poll_options.reserve( o_set.size() );
-
-   for( string p : o_set )
-   {
-      op.poll_options.push_back( p );
-   }
-
+   op.community = community;
+   op.public_key = public_key;
+   op.interface = interface;
+   op.details = details;
+   op.json = json;
+   op.poll_option_0 = poll_option_0;
+   op.poll_option_1 = poll_option_1;
+   op.poll_option_2 = poll_option_2;
+   op.poll_option_3 = poll_option_3;
+   op.poll_option_4 = poll_option_4;
+   op.poll_option_5 = poll_option_5;
+   op.poll_option_6 = poll_option_6;
+   op.poll_option_7 = poll_option_7;
+   op.poll_option_8 = poll_option_8;
+   op.poll_option_9 = poll_option_9;
    op.completion_time = completion_time;
+   op.active = active;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -3879,7 +3911,9 @@ annotated_signed_transaction      wallet_api::poll_vote(
    string voter,
    string creator,
    string poll_id,
+   string interface,
    uint16_t poll_option,
+   bool active,
    bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
@@ -3890,7 +3924,67 @@ annotated_signed_transaction      wallet_api::poll_vote(
    op.voter = voter;
    op.creator = creator;
    op.poll_id = poll_id;
+   op.interface = interface;
    op.poll_option = poll_option;
+   op.active = active;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::premium_purchase(
+   string signatory,
+   string account,
+   string author,
+   string permlink,
+   string interface,
+   bool purchased,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   premium_purchase_operation op;
+
+   op.signatory = signatory;
+   op.account = account;
+   op.author = author;
+   op.permlink = permlink;
+   op.interface = interface;
+   op.purchased = purchased;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::premium_release(
+   string signatory,
+   string provider,
+   string account,
+   string author,
+   string permlink,
+   string interface,
+   string encrypted_key,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   premium_release_operation op;
+
+   op.signatory = signatory;
+   op.provider = provider;
+   op.account = account;
+   op.author = author;
+   op.permlink = permlink;
+   op.interface = interface;
+   op.encrypted_key = encrypted_key;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -3923,7 +4017,9 @@ annotated_signed_transaction      wallet_api::community_create(
    string community_member_key,
    string community_moderator_key,
    string community_admin_key,
+   sring interface,
    string reward_currency,
+   asset membership_price,
    uint16_t max_rating,
    uint32_t flags,
    uint32_t permissions,
@@ -3953,7 +4049,9 @@ annotated_signed_transaction      wallet_api::community_create(
    op.community_member_key = community_member_key;
    op.community_moderator_key = community_moderator_key;
    op.community_admin_key = community_admin_key;
+   op.interface = interface;
    op.reward_currency = reward_currency;
+   op.membership_price = membership_price;
    op.max_rating = max_rating;
    op.flags = flags;
    op.permissions = permissions;
@@ -3984,7 +4082,6 @@ annotated_signed_transaction      wallet_api::community_update(
    string community_member_key,
    string community_moderator_key,
    string community_admin_key,
-   string reward_currency,
    uint16_t max_rating,
    uint32_t flags,
    uint32_t permissions,
@@ -4017,7 +4114,6 @@ annotated_signed_transaction      wallet_api::community_update(
    op.community_member_key = community_member_key;
    op.community_moderator_key = community_moderator_key;
    op.community_admin_key = community_admin_key;
-   op.reward_currency = reward_currency;
    op.max_rating = max_rating;
    op.flags = flags;
    op.permissions = permissions;
@@ -4320,11 +4416,52 @@ annotated_signed_transaction      wallet_api::community_subscribe(
 } FC_CAPTURE_AND_RETHROW() }
 
 
+
+annotated_signed_transaction      wallet_api::community_federation(
+   string signatory,
+   string account,
+   string federation_id,
+   string community,
+   string federated_community,
+   string message,
+   string json,
+   string federation_type,
+   string encrypted_community_key,
+   bool share_accounts,
+   bool accepted,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   community_federation_operation op;
+
+   op.signatory = signatory;
+   op.account = account;
+   op.federation_id = federation_id;
+   op.community = community;
+   op.federated_community = federated_community;
+   op.message = message;
+   op.json = json;
+   op.federation_type = federation_type;
+   op.encrypted_community_key = encrypted_community_key;
+   op.share_accounts = share_accounts;
+   op.accepted = accepted;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
 annotated_signed_transaction      wallet_api::community_event(
    string signatory,
    string account,
    string community,
    string event_id,
+   string public_key, 
+   string interface,
    string event_name,
    string location,
    double latitude,
@@ -4332,6 +4469,7 @@ annotated_signed_transaction      wallet_api::community_event(
    string details,
    string url,
    string json,
+   asset event_price,
    time_point event_start_time,
    time_point event_end_time,
    bool active,
@@ -4345,6 +4483,8 @@ annotated_signed_transaction      wallet_api::community_event(
    op.account = account;
    op.community = community;
    op.event_id = event_id;
+   op.public_key = public_key;
+   op.interface = interface;
    op.event_name = event_name;
    op.location = location;
    op.latitude = latitude;
@@ -4352,6 +4492,7 @@ annotated_signed_transaction      wallet_api::community_event(
    op.details = details;
    op.url = url;
    op.json = json;
+   op.event_price = event_price;
    op.event_start_time = event_start_time;
    op.event_end_time = event_end_time;
    op.active = active;
@@ -4369,6 +4510,7 @@ annotated_signed_transaction      wallet_api::community_event_attend(
    string account,
    string community,
    string event_id,
+   string interface,
    bool interested,
    bool attending,
    bool not_attending,
@@ -4382,6 +4524,7 @@ annotated_signed_transaction      wallet_api::community_event_attend(
    op.account = account;
    op.community = community;
    op.event_id = event_id;
+   op.interface = interface;
    op.interested = interested;
    op.attending = attending;
    op.not_attending = not_attending;

@@ -587,7 +587,7 @@ BOOST_AUTO_TEST_CASE( account_member_invite_operation_test )
       invite.business_account = INIT_ACCOUNT;
       invite.member = "alice";
       invite.message = "Hello";
-      invite.encrypted_business_key = get_encrypted_message( init_ceo_private_secure_key, init_ceo_public_secure_key, alice_public_secure_key, init_account_private_business_wif );
+      invite.encrypted_business_key = get_encrypted_message( init_ceo_private_secure_key, init_ceo_public_secure_key, alice_public_secure_key, string( "#" ) + init_account_private_business_wif );
       invite.validate();
 
       signed_transaction tx;
@@ -670,6 +670,8 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
       public_key_type init_ceo_public_secure_key = get_public_key( INIT_CEO, "secure", INIT_ACCOUNT_PASSWORD );
       string init_account_private_business_wif = graphene::utilities::key_to_wif( get_private_key( INIT_ACCOUNT, "business", INIT_ACCOUNT_PASSWORD ) );
 
+      signed_transaction tx;
+
       stake_asset_operation stake;
 
       stake.signatory = INIT_CEO;
@@ -677,9 +679,7 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
       stake.to = INIT_CEO;
       stake.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY );
       stake.validate();
-
-      signed_transaction tx;
-
+      
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.operations.push_back( stake );
       tx.sign( init_ceo_private_active_key, db.get_chain_id() );
@@ -698,7 +698,7 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
       invite.member = "alice";
       invite.business_account = INIT_ACCOUNT;
       invite.message = "Hello";
-      invite.encrypted_business_key = get_encrypted_message( init_ceo_private_secure_key, init_ceo_public_secure_key, alice_public_secure_key, init_account_private_business_wif );
+      invite.encrypted_business_key = get_encrypted_message( init_ceo_private_secure_key, init_ceo_public_secure_key, alice_public_secure_key, string( "#" ) + init_account_private_business_wif );
       invite.validate();
 
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
@@ -766,7 +766,7 @@ BOOST_AUTO_TEST_CASE( business_account_management_sequence_test )
       accept_request.account = INIT_CEO;
       accept_request.member = "bob";
       accept_request.business_account = INIT_ACCOUNT;
-      accept_request.encrypted_business_key = get_encrypted_message( init_ceo_private_secure_key, init_ceo_public_secure_key, bob_public_secure_key, init_account_private_business_wif );
+      accept_request.encrypted_business_key = get_encrypted_message( init_ceo_private_secure_key, init_ceo_public_secure_key, bob_public_secure_key, string( "#" ) + init_account_private_business_wif );
       accept_request.validate();
 
       tx.operations.push_back( accept_request );
@@ -2138,13 +2138,13 @@ BOOST_AUTO_TEST_CASE( account_decline_voting_operation_test )
    FC_LOG_AND_RETHROW()
 }
 
-BOOST_AUTO_TEST_CASE( connection_sequence_test )
+BOOST_AUTO_TEST_CASE( account_connection_operation_test )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "├── Testing: CONNECTION SEQUENCE" );
+      BOOST_TEST_MESSAGE( "├── Testing: ACCOUNT CONNECTION " );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: create connection request" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: create connection" );
 
       ACTORS( (alice)(bob)(candice)(dan)(elon) );
 
@@ -2160,101 +2160,73 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
       string alice_private_companion_wif = graphene::utilities::key_to_wif( alice_private_companion_key );
       string bob_private_companion_wif = graphene::utilities::key_to_wif( bob_private_companion_key );
 
-      account_connection_request_operation request;
-
-      request.signatory = "alice";
-      request.account = "alice";
-      request.requested_account = "bob";
-      request.connection_type = "connection";
-      request.message = "Hello";
-      request.requested = true;
-      request.validate();
-
       signed_transaction tx;
 
+      account_connection_operation connection;
+
+      connection.signatory = "bob";
+      connection.account = "bob";
+      connection.connecting_account = "alice";
+      connection.connection_type = "connection";
+      connection.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
+      connection.encrypted_key = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, alice_public_secure_key, string( "#" ) + bob_private_connection_wif );
+      connection.message = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, alice_public_secure_key, string( "#Hello" ) );
+      connection.json = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, alice_public_secure_key, string( "#{ \"valid\": true }" ) );
+      connection.connected = true;
+      connection.validate();
+
+      tx.set_reference_block( db.head_block_id() );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.operations.push_back( request );
-      tx.sign( alice_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      const auto& req_idx = db.get_index< account_connection_request_index >().indices().get< by_account_req >();
-      auto req_itr = req_idx.find( boost::make_tuple( account_name_type( "alice" ), account_name_type( "bob" ) ) );
-      const auto& con_idx = db.get_index< account_connection_index >().indices().get< by_accounts >();
-      auto con_itr = con_idx.find( boost::make_tuple( account_name_type( "alice" ), account_name_type( "bob" ), connection_tier_type::CONNECTION ) );
-
-      BOOST_REQUIRE( req_itr != req_idx.end() );
-      BOOST_REQUIRE( req_itr->account == "alice" );
-      BOOST_REQUIRE( req_itr->requested_account == "bob" );
-      BOOST_REQUIRE( req_itr->connection_type == connection_tier_type::CONNECTION );
-      BOOST_REQUIRE( req_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
-      BOOST_REQUIRE( con_itr == con_idx.end() );    // Connection not created yet
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: create connection request" );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: accept connection request" );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      account_connection_accept_operation accept;
-
-      accept.signatory = "bob";
-      accept.account = "bob";
-      accept.requesting_account = "alice";
-      accept.connection_type = "connection";
-      accept.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
-      accept.encrypted_key = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, alice_public_secure_key, bob_private_connection_wif );
-      accept.connected = true;
-      accept.validate();
-
-      tx.operations.push_back( accept );
+      tx.operations.push_back( connection );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      req_itr = req_idx.find( boost::make_tuple( account_name_type( "alice" ), account_name_type( "bob" ) ) );
-      con_itr = con_idx.find( boost::make_tuple( account_name_type( "alice" ), account_name_type( "bob" ), connection_tier_type::CONNECTION ) );
-
-      BOOST_REQUIRE( req_itr == req_idx.end() );    // Request is now removed
-      BOOST_REQUIRE( con_itr->account_a == "alice" );
-      BOOST_REQUIRE( con_itr->account_b == "bob" );
-      BOOST_REQUIRE( con_itr->connection_type == connection_tier_type::CONNECTION );
-      BOOST_REQUIRE( con_itr->encrypted_key_b.encrypted_private_key == accept.encrypted_key );
-      BOOST_REQUIRE( to_string( con_itr->connection_id ) == accept.connection_id );
-      BOOST_REQUIRE( con_itr->created == now() );
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: accept connection request" );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: match connection request" );
-
       tx.operations.clear();
       tx.signatures.clear();
 
-      accept.signatory = "alice";
-      accept.account = "alice";
-      accept.requesting_account = "bob";
-      accept.encrypted_key = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, bob_public_secure_key, alice_private_connection_wif );
-      accept.connected = true;
-      accept.validate();
+      const auto& con_idx = db.get_index< account_connection_index >().indices().get< by_accounts >();
+      auto con_itr = con_idx.find( boost::make_tuple( account_name_type( "alice" ), account_name_type( "bob" ), connection_tier_type::CONNECTION ) );
 
-      tx.operations.push_back( accept );
+      BOOST_REQUIRE( con_itr->account_a == "alice" );
+      BOOST_REQUIRE( con_itr->account_b == "bob" );
+      BOOST_REQUIRE( con_itr->connection_type == connection_tier_type::CONNECTION );
+      BOOST_REQUIRE( to_string( con_itr->message_b ) == connection.message );
+      BOOST_REQUIRE( to_string( con_itr->json_b ) == connection.json );
+      BOOST_REQUIRE( con_itr->approved_b == true );
+      BOOST_REQUIRE( con_itr->encrypted_key_b.encrypted_private_key == connection.encrypted_key );
+      BOOST_REQUIRE( to_string( con_itr->connection_id ) == connection.connection_id );
+      BOOST_REQUIRE( con_itr->created == now() );
+
+      connection.signatory = "alice";
+      connection.account = "alice";
+      connection.connecting_account = "bob";
+      connection.encrypted_key = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, bob_public_secure_key, string( "#" ) + alice_private_connection_wif );
+      connection.message = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, bob_public_secure_key, string( "#Hello" ) );
+      connection.json = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, bob_public_secure_key, string( "#{ \"valid\": true }" ) );
+      connection.connected = true;
+      connection.validate();
+
+      tx.operations.push_back( connection );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      req_itr = req_idx.find( boost::make_tuple( account_name_type( "alice" ), account_name_type( "bob" ) ) );
       con_itr = con_idx.find( boost::make_tuple( account_name_type( "alice" ), account_name_type( "bob" ), connection_tier_type::CONNECTION ) );
 
-      BOOST_REQUIRE( req_itr == req_idx.end() );    // Request is now removed
       BOOST_REQUIRE( con_itr->account_a == "alice" );
       BOOST_REQUIRE( con_itr->account_b == "bob" );
       BOOST_REQUIRE( con_itr->connection_type == connection_tier_type::CONNECTION );
-      BOOST_REQUIRE( con_itr->encrypted_key_a.encrypted_private_key == accept.encrypted_key );
-      BOOST_REQUIRE( to_string( con_itr->connection_id ) == accept.connection_id );
+      BOOST_REQUIRE( to_string( con_itr->message_a ) == connection.message );
+      BOOST_REQUIRE( to_string( con_itr->json_a ) == connection.json );
+      BOOST_REQUIRE( con_itr->approved_a == true );
+      BOOST_REQUIRE( con_itr->encrypted_key_a.encrypted_private_key == connection.encrypted_key );
+      BOOST_REQUIRE( to_string( con_itr->connection_id ) == connection.connection_id );
       BOOST_REQUIRE( con_itr->created == now() );
+      BOOST_REQUIRE( con_itr->approved() == true );
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: match connection request" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Create connection" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Create account verification" );
 
@@ -2282,111 +2254,137 @@ BOOST_AUTO_TEST_CASE( connection_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Create account verification" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when requesting existing connection type" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Create friend connection" );
 
-      tx.operations.clear();
-      tx.signatures.clear();
+      generate_blocks( now() + fc::days(8) );
 
-      tx.operations.push_back( request );
+      connection.signatory = "bob";
+      connection.account = "bob";
+      connection.connecting_account = "alice";
+      connection.connection_type = "friend";
+      connection.connection_id = "ab946f00-2373-4096-ae22-1a1a2414f6df";
+      connection.encrypted_key = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, alice_public_secure_key, string( "#" ) + bob_private_friend_wif );
+      connection.message = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, alice_public_secure_key, string( "#Hello" ) );
+      connection.json = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, alice_public_secure_key, string( "#{ \"valid\": true }" ) );
+      connection.connected = true;
+      connection.validate();
+
+      tx.set_reference_block( db.head_block_id() );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_posting_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when requesting existing connection type" );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when requesting friend connection before request duration" );
-
-      generate_blocks( now() + CONNECTION_REQUEST_DURATION, true );
-
-      request.connection_type = "friend";
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      tx.operations.push_back( request );
-      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.sign( alice_private_posting_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when requesting friend connection before request duration" );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: friend connection request" );
-
-      generate_block();
-
-      db.push_transaction( tx, database::skip_transaction_dupe_check );
-
-      req_itr = req_idx.find( boost::make_tuple( account_name_type( "alice" ), account_name_type( "bob" ) ) );
-      con_itr = con_idx.find( boost::make_tuple( account_name_type( "alice" ), account_name_type( "bob" ), connection_tier_type::FRIEND ) );
-
-      BOOST_REQUIRE( req_itr != req_idx.end() );
-      BOOST_REQUIRE( req_itr->account == "alice" );
-      BOOST_REQUIRE( req_itr->requested_account == "bob" );
-      BOOST_REQUIRE( req_itr->connection_type == connection_tier_type::FRIEND );
-      BOOST_REQUIRE( req_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
-      BOOST_REQUIRE( con_itr == con_idx.end() );    // Connection not created yet
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: friend connection request" );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: accept friend connection request" );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      accept.signatory = "bob";
-      accept.account = "bob";
-      accept.requesting_account = "alice";
-      accept.connection_type = "friend";
-      accept.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
-      accept.encrypted_key = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, alice_public_secure_key, bob_private_friend_wif );
-      accept.connected = true;
-      accept.validate();
-
-      tx.operations.push_back( accept );
+      tx.operations.push_back( connection );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      req_itr = req_idx.find( boost::make_tuple( account_name_type( "alice" ), account_name_type( "bob" ) ) );
+      tx.operations.clear();
+      tx.signatures.clear();
+
       con_itr = con_idx.find( boost::make_tuple( account_name_type( "alice" ), account_name_type( "bob" ), connection_tier_type::FRIEND ) );
 
-      BOOST_REQUIRE( req_itr == req_idx.end() );
       BOOST_REQUIRE( con_itr->account_a == "alice" );
       BOOST_REQUIRE( con_itr->account_b == "bob" );
       BOOST_REQUIRE( con_itr->connection_type == connection_tier_type::FRIEND );
-      BOOST_REQUIRE( con_itr->encrypted_key_b.encrypted_private_key == accept.encrypted_key );
-      BOOST_REQUIRE( to_string( con_itr->connection_id ) == accept.connection_id );
+      BOOST_REQUIRE( to_string( con_itr->message_b ) == connection.message );
+      BOOST_REQUIRE( to_string( con_itr->json_b ) == connection.json );
+      BOOST_REQUIRE( con_itr->approved_b == true );
+      BOOST_REQUIRE( con_itr->encrypted_key_b.encrypted_private_key == connection.encrypted_key );
+      BOOST_REQUIRE( to_string( con_itr->connection_id ) == connection.connection_id );
       BOOST_REQUIRE( con_itr->created == now() );
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: accept friend connection request" );
+      connection.signatory = "alice";
+      connection.account = "alice";
+      connection.connecting_account = "bob";
+      connection.connection_type = "friend";
+      connection.encrypted_key = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, bob_public_secure_key, string( "#" ) + alice_private_friend_wif );
+      connection.message = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, bob_public_secure_key, string( "#Hello" ) );
+      connection.json = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, bob_public_secure_key, string( "#{ \"valid\": true }" ) );
+      connection.validate();
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: match friend connection request" );
+      tx.operations.push_back( connection );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      accept.signatory = "alice";
-      accept.account = "alice";
-      accept.requesting_account = "bob";
-      accept.connection_type = "friend";
-      accept.encrypted_key = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, bob_public_secure_key, alice_private_friend_wif );
-      accept.validate();
-
-      tx.operations.push_back( accept );
-      tx.sign( alice_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      req_itr = req_idx.find( boost::make_tuple( account_name_type( "alice" ), account_name_type( "bob" ) ) );
       con_itr = con_idx.find( boost::make_tuple( account_name_type( "alice" ), account_name_type( "bob" ), connection_tier_type::FRIEND ) );
 
-      BOOST_REQUIRE( req_itr == req_idx.end() );
       BOOST_REQUIRE( con_itr->account_a == "alice" );
       BOOST_REQUIRE( con_itr->account_b == "bob" );
       BOOST_REQUIRE( con_itr->connection_type == connection_tier_type::FRIEND );
-      BOOST_REQUIRE( con_itr->encrypted_key_a.encrypted_private_key == accept.encrypted_key );
-      BOOST_REQUIRE( to_string( con_itr->connection_id ) == accept.connection_id );
+      BOOST_REQUIRE( to_string( con_itr->message_a ) == connection.message );
+      BOOST_REQUIRE( to_string( con_itr->json_a ) == connection.json );
+      BOOST_REQUIRE( con_itr->approved_a == true );
+      BOOST_REQUIRE( con_itr->encrypted_key_a.encrypted_private_key == connection.encrypted_key );
+      BOOST_REQUIRE( to_string( con_itr->connection_id ) == connection.connection_id );
       BOOST_REQUIRE( con_itr->created == now() );
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: match friend request" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Create friend connection" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Create companion connection" );
+
+      generate_blocks( now() + fc::days(8) );
+
+      connection.signatory = "bob";
+      connection.account = "bob";
+      connection.connecting_account = "alice";
+      connection.connection_type = "companion";
+      connection.connection_id = "be07ef0a-4d27-45a5-a3c8-480c4fbad1ac";
+      connection.encrypted_key = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, alice_public_secure_key, string( "#" ) + bob_private_companion_wif );
+      connection.message = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, alice_public_secure_key, string( "#Hello" ) );
+      connection.json = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, alice_public_secure_key, string( "#{ \"valid\": true }" ) );
+      connection.connected = true;
+      connection.validate();
+
+      tx.set_reference_block( db.head_block_id() );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.operations.push_back( connection );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      con_itr = con_idx.find( boost::make_tuple( account_name_type( "alice" ), account_name_type( "bob" ), connection_tier_type::COMPANION ) );
+
+      BOOST_REQUIRE( con_itr->account_a == "alice" );
+      BOOST_REQUIRE( con_itr->account_b == "bob" );
+      BOOST_REQUIRE( con_itr->connection_type == connection_tier_type::COMPANION );
+      BOOST_REQUIRE( to_string( con_itr->message_b ) == connection.message );
+      BOOST_REQUIRE( to_string( con_itr->json_b ) == connection.json );
+      BOOST_REQUIRE( con_itr->approved_b == true );
+      BOOST_REQUIRE( con_itr->encrypted_key_b.encrypted_private_key == connection.encrypted_key );
+      BOOST_REQUIRE( to_string( con_itr->connection_id ) == connection.connection_id );
+      BOOST_REQUIRE( con_itr->created == now() );
+
+      connection.signatory = "alice";
+      connection.account = "alice";
+      connection.connecting_account = "bob";
+      connection.connection_type = "companion";
+      connection.encrypted_key = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, bob_public_secure_key, string( "#" ) + alice_private_companion_wif );
+      connection.message = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, bob_public_secure_key, string( "#Hello" ) );
+      connection.json = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, bob_public_secure_key, string( "#{ \"valid\": true }" ) );
+      connection.validate();
+
+      tx.operations.push_back( connection );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      con_itr = con_idx.find( boost::make_tuple( account_name_type( "alice" ), account_name_type( "bob" ), connection_tier_type::COMPANION ) );
+
+      BOOST_REQUIRE( con_itr->account_a == "alice" );
+      BOOST_REQUIRE( con_itr->account_b == "bob" );
+      BOOST_REQUIRE( con_itr->connection_type == connection_tier_type::COMPANION );
+      BOOST_REQUIRE( to_string( con_itr->message_a ) == connection.message );
+      BOOST_REQUIRE( to_string( con_itr->json_a ) == connection.json );
+      BOOST_REQUIRE( con_itr->approved_a == true );
+      BOOST_REQUIRE( con_itr->encrypted_key_a.encrypted_private_key == connection.encrypted_key );
+      BOOST_REQUIRE( to_string( con_itr->connection_id ) == connection.connection_id );
+      BOOST_REQUIRE( con_itr->created == now() );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Create companion connection" );
 
       BOOST_TEST_MESSAGE( "├── Passed: CONNECTION SEQUENCE" );
    }

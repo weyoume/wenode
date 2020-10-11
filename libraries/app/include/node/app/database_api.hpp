@@ -302,7 +302,7 @@ class database_api
 
       map< uint32_t, applied_operation >              get_account_history( string account, uint64_t from, uint32_t limit )const;
 
-      vector< message_state >                         get_messages( vector< string > names )const;
+      vector< account_message_state >                 get_account_messages( vector< string > names )const;
 
       list_state                                      get_list( string name, string list_id )const;
 
@@ -703,7 +703,7 @@ FC_API( node::app::database_api,
          (get_concise_accounts)
          (get_full_accounts)
          (get_account_history)
-         (get_messages)
+         (get_account_messages)
          (get_list)
          (get_account_lists)
          (get_poll)

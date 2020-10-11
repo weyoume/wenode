@@ -55,16 +55,6 @@ const community_member_object* database::find_community_member( const community_
    return find< community_member_object, by_name >( community );
 }
 
-const community_member_key_object& database::get_community_member_key( const account_name_type& member, const community_name_type& community )const
-{ try {
-	return get< community_member_key_object, by_member_community >( boost::make_tuple( member, community) );
-} FC_CAPTURE_AND_RETHROW( (community) ) }
-
-const community_member_key_object* database::find_community_member_key( const account_name_type& member, const community_name_type& community )const
-{
-   return find< community_member_key_object, by_member_community >( boost::make_tuple( member, community) );
-}
-
 const community_event_object& database::get_community_event( const community_name_type& community, const shared_string& event_id )const
 { try {
 	return get< community_event_object, by_event_id >( boost::make_tuple( community, event_id ) );
@@ -175,9 +165,10 @@ void database::update_community_moderators( const community_member_object& commu
    asset_symbol_type reward_currency = get_community( community.name ).reward_currency;
    const asset_currency_data_object& currency = get_currency_data( reward_currency );
    price equity_price = get_liquidity_pool( reward_currency, currency.equity_asset ).hour_median_price;
-   const auto& vote_idx = get_index< community_moderator_vote_index >().indices().get< by_community_moderator >();
    flat_map< account_name_type, share_type > mod_weight;
    share_type total = 0;
+
+   const auto& vote_idx = get_index< community_moderator_vote_index >().indices().get< by_community>();
    auto vote_itr = vote_idx.lower_bound( community.name );
 
    while( vote_itr != vote_idx.end() && 
@@ -194,6 +185,11 @@ void database::update_community_moderators( const community_member_object& commu
       share_type w = share_type( weight.value >> vote.vote_rank );
 
       // divides voting weight by 2^vote_rank, limiting total voting weight -> total voting power as votes increase.
+
+      if( mod_weight.count( vote.moderator ) == 0 )
+      {
+         mod_weight[ vote.moderator ] = 0;
+      }
 
       mod_weight[ vote.moderator ] += w;
       total += w;
@@ -230,355 +226,336 @@ void database::update_community_moderator_set()
 } FC_CAPTURE_AND_RETHROW() }
 
 
+
 /**
- * Returns True when the account is a member of the community, or one of its Federated Communities.
+ * Deducts the daily membership fee for communities that have a membership price.
+ * 
+ * Pays this price to the founder of the community.
  */
-bool database::is_federated_member( const community_member_object& m, const account_name_type a )
-{
-   const auto& community_idx = get_index< community_member_index >().indices().get< by_name >();
+void database::process_community_membership_fees()
+{ try {
+   if( (head_block_num() % COMMUNITY_FEE_INTERVAL_BLOCKS != 0 ) )   // Runs once per week
+      return;
+   
+   const auto& community_idx = get_index< community_index >().indices().get< by_membership_price >();
    auto community_itr = community_idx.begin();
 
-   flat_set< account_name_type > members = m.members;
+   while( community_itr != community_idx.end() && 
+      community_itr->membership_amount() >= share_type(0) )
+   {
+      const community_object& community = *community_itr;
+      const community_member_object& community_member = get_community_member( community.name );
+
+      for( auto name : community_member.members )
+      {
+         if( name != community_member.founder )      // All members except the founder pay membership price to the founder.
+         {
+            asset liquid = get_liquid_balance( name, community.membership_price.symbol );
+
+            if( liquid.amount >= community.membership_price.amount )      // Pay daily community membership fee
+            {
+               adjust_liquid_balance( name, -community.membership_price );
+               adjust_reward_balance( community.founder, community.membership_price );
+            }
+         }
+      }
+
+      ++community_itr;
+   }
+} FC_CAPTURE_AND_RETHROW() }
+
+
+/**
+ * Updates the state of community member objects 
+ * membership, moderator, and admin lists and federation connections,
+ * based on the federations that exist between them.
+ * 
+ * Cascades all upstream and downstream federation sets, 
+ * and adds all memberships from upstream federations into the communities.
+ */
+void database::process_community_federation( const community_federation_object& federation )
+{ try {
+   const community_member_object& community_member_a = get_community_member( federation.community_a );
+   const community_member_object& community_member_b = get_community_member( federation.community_b );
+   time_point now = head_block_time();
    
-   for( auto f : m.member_federations )
+   switch( federation.federation_type )
    {
-      community_itr = community_idx.find( f );
-      if( community_itr != community_idx.end() )
+      case community_federation_type::MEMBER_FEDERATION:
       {
-         for( auto name : community_itr->members )
+         if( federation.share_accounts_a )       // B is accepted as A's Upstream Community
          {
-            members.insert( name );
-         }
-      }
-   }
+            modify( community_member_a, [&]( community_member_object& cmo )
+            {
+               cmo.upstream_member_federations.insert( federation.community_b );
+               for( auto name : community_member_b.members )
+               {
+                  cmo.members.insert( name );
+               }
+               cmo.last_updated = now;
+            });
 
-   for( auto f : m.moderator_federations )
-   {
-      community_itr = community_idx.find( f );
-      if( community_itr != community_idx.end() )
-      {
-         for( auto name : community_itr->members )
+            for( auto name : community_member_b.members )
+            {
+               const account_following_object& account_following = get_account_following( name );
+
+               modify( account_following, [&]( account_following_object& afo )
+               {
+                  afo.add_member_community( federation.community_a );
+                  afo.last_updated = now;
+               });
+            }
+
+            modify( community_member_b, [&]( community_member_object& cmo )
+            {
+               cmo.downstream_member_federations.insert( federation.community_a );
+               cmo.last_updated = now;
+            });
+         }
+         if( federation.share_accounts_b )      // A is accepted as B's Upstream Community
          {
-            members.insert( name );
+            modify( community_member_b, [&]( community_member_object& cmo )
+            {
+               cmo.upstream_member_federations.insert( federation.community_a );
+               for( auto name : community_member_a.members )
+               {
+                  cmo.members.insert( name );
+               }
+               cmo.last_updated = now;
+            });
+
+            for( auto name : community_member_a.members )
+            {
+               const account_following_object& account_following = get_account_following( name );
+
+               modify( account_following, [&]( account_following_object& afo )
+               {
+                  afo.add_member_community( federation.community_b );
+                  afo.last_updated = now;
+               });
+            }
+
+            modify( community_member_a, [&]( community_member_object& cmo )
+            {
+               cmo.downstream_member_federations.insert( federation.community_b );
+               cmo.last_updated = now;
+            });
          }
-      }
-   }
-
-   for( auto f : m.admin_federations )
-   {
-      community_itr = community_idx.find( f );
-      if( community_itr != community_idx.end() )
-      {
-         for( auto name : community_itr->members )
-         {
-            members.insert( name );
-         }
-      }
-   }
-
-   return std::find( members.begin(), members.end(), a ) != members.end();
-}
-
-/**
- * Returns True when the account is a moderator of the community, or one of its Federated Communities.
- */
-bool database::is_federated_moderator( const community_member_object& m, const account_name_type a )
-{
-   const auto& community_idx = get_index< community_member_index >().indices().get< by_name >();
-   auto community_itr = community_idx.begin();
-
-   flat_set< account_name_type > moderators = m.moderators;
-
-   for( auto f : m.moderator_federations )
-   {
-      community_itr = community_idx.find( f );
-      if( community_itr != community_idx.end() )
-      {
-         for( auto name : community_itr->moderators )
-         {
-            moderators.insert( name );
-         }
-      }
-   }
-
-   for( auto f : m.admin_federations )
-   {
-      community_itr = community_idx.find( f );
-      if( community_itr != community_idx.end() )
-      {
-         for( auto name : community_itr->moderators )
-         {
-            moderators.insert( name );
-         }
-      }
-   }
-
-   return std::find( moderators.begin(), moderators.end(), a ) != moderators.end();
-}
-
-/**
- * Returns True when the account is an administrator of the community, or one of its Federated Communities.
- */
-bool database::is_federated_administrator( const community_member_object& m, const account_name_type a )
-{
-   const auto& community_idx = get_index< community_member_index >().indices().get< by_name >();
-   auto community_itr = community_idx.begin();
-
-   flat_set< account_name_type > administrators = m.administrators;
-   
-   for( auto f : m.admin_federations )
-   {
-      community_itr = community_idx.find( f );
-      if( community_itr != community_idx.end() )
-      {
-         for( auto name : community_itr->administrators )
-         {
-            administrators.insert( name );
-         }
-      }
-   }
-
-   return std::find( administrators.begin(), administrators.end(), a ) != administrators.end();
-}
-
-/**
- * Returns True when the account is a blacklisted account of the community, or one of its Federated Communities.
- */
-bool database::is_federated_blacklisted( const community_member_object& m, const account_name_type a )
-{
-   const auto& community_idx = get_index< community_member_index >().indices().get< by_name >();
-   auto community_itr = community_idx.begin();
-   
-   flat_set< account_name_type > blacklist = m.blacklist;
-   
-   for( auto f : m.member_federations )
-   {
-      community_itr = community_idx.find( f );
-      if( community_itr != community_idx.end() )
-      {
-         for( auto name : community_itr->blacklist )
-         {
-            blacklist.insert( name );
-         }
-      }
-   }
-
-   for( auto f : m.moderator_federations )
-   {
-      community_itr = community_idx.find( f );
-      if( community_itr != community_idx.end() )
-      {
-         for( auto name : community_itr->blacklist )
-         {
-            blacklist.insert( name );
-         }
-      }
-   }
-
-   for( auto f : m.admin_federations )
-   {
-      community_itr = community_idx.find( f );
-      if( community_itr != community_idx.end() )
-      {
-         for( auto name : community_itr->blacklist )
-         {
-            blacklist.insert( name );
-         }
-      }
-   }
-
-   return std::find( blacklist.begin(), blacklist.end(), a ) != blacklist.end();
-}
-
-/**
- * Returns True when the account is authorized to interact with the community, or one of its Federated Communities.
- */
-bool database::is_federated_authorized_interact( const community_member_object& m, const account_name_type a )
-{
-   if( is_federated_blacklisted( m, a ) )
-   {
-      return false;
-   }
-
-   switch( m.community_privacy )
-   {
-      case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
-      case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
-      case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
-      {
-         return true;
       }
       break;
-      case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
-      case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
-      case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
-      case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
-      case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
+      case community_federation_type::MODERATOR_FEDERATION:
       {
-         return is_federated_member( m, a );
+         if( federation.share_accounts_a )       // B is accepted as A's Upstream Community
+         {
+            modify( community_member_a, [&]( community_member_object& cmo )
+            {
+               cmo.upstream_moderator_federations.insert( federation.community_b );
+               for( auto name : community_member_b.moderators )
+               {
+                  cmo.moderators.insert( name );
+               }
+               cmo.last_updated = now;
+            });
+
+            for( auto name : community_member_b.moderators )
+            {
+               const account_following_object& account_following = get_account_following( name );
+
+               modify( account_following, [&]( account_following_object& afo )
+               {
+                  afo.add_moderator_community( federation.community_a );
+                  afo.last_updated = now;
+               });
+            }
+
+            modify( community_member_b, [&]( community_member_object& cmo )
+            {
+               cmo.downstream_moderator_federations.insert( federation.community_a );
+               cmo.last_updated = now;
+            });
+         }
+         if( federation.share_accounts_b )      // A is accepted as B's Upstream Community
+         {
+            modify( community_member_b, [&]( community_member_object& cmo )
+            {
+               cmo.upstream_moderator_federations.insert( federation.community_a );
+               for( auto name : community_member_a.moderators )
+               {
+                  cmo.moderators.insert( name );
+               }
+               cmo.last_updated = now;
+            });
+
+            for( auto name : community_member_a.moderators )
+            {
+               const account_following_object& account_following = get_account_following( name );
+
+               modify( account_following, [&]( account_following_object& afo )
+               {
+                  afo.add_moderator_community( federation.community_b );
+                  afo.last_updated = now;
+               });
+            }
+
+            modify( community_member_a, [&]( community_member_object& cmo )
+            {
+               cmo.downstream_moderator_federations.insert( federation.community_b );
+               cmo.last_updated = now;
+            });
+         }
+      }
+      break;
+      case community_federation_type::ADMIN_FEDERATION:
+      {
+         if( federation.share_accounts_a )      // B is accepted as A's Upstream Community
+         {
+            modify( community_member_a, [&]( community_member_object& cmo )
+            {
+               cmo.upstream_admin_federations.insert( federation.community_b );
+               for( auto name : community_member_b.administrators )
+               {
+                  cmo.administrators.insert( name );
+               }
+               cmo.last_updated = now;
+            });
+
+            for( auto name : community_member_b.administrators )
+            {
+               const account_following_object& account_following = get_account_following( name );
+
+               modify( account_following, [&]( account_following_object& afo )
+               {
+                  afo.add_admin_community( federation.community_a );
+                  afo.last_updated = now;
+               });
+            }
+
+            modify( community_member_b, [&]( community_member_object& cmo )
+            {
+               cmo.downstream_admin_federations.insert( federation.community_a );
+               cmo.last_updated = now;
+            });
+         }
+         if( federation.share_accounts_b )      // A is accepted as B's Upstream Community
+         {
+            modify( community_member_b, [&]( community_member_object& cmo )
+            {
+               cmo.upstream_admin_federations.insert( federation.community_a );
+               for( auto name : community_member_a.administrators )
+               {
+                  cmo.administrators.insert( name );
+               }
+               cmo.last_updated = now;
+            });
+
+            for( auto name : community_member_a.administrators )
+            {
+               const account_following_object& account_following = get_account_following( name );
+
+               modify( account_following, [&]( account_following_object& afo )
+               {
+                  afo.add_admin_community( federation.community_b );
+                  afo.last_updated = now;
+               });
+            }
+
+            modify( community_member_a, [&]( community_member_object& cmo )
+            {
+               cmo.downstream_admin_federations.insert( federation.community_b );
+               cmo.last_updated = now;
+            });
+         }
       }
       break;
       default:
       {
-         FC_ASSERT( false, "Invalid community privacy: ${t}.",
-            ("t",m.community_privacy) );
+         FC_ASSERT( false, 
+            "Invalid Federation type." );
       }
-   }
-}
-
-/**
- * Returns True when the account is authorized to create a root post within the community, or one of its Federated Communities.
- */
-bool database::is_federated_authorized_author( const community_member_object& m, const account_name_type a )
-{
-   if( is_federated_blacklisted( m, a ) )
-   {
-      return false;
    }
 
-   switch( m.community_privacy )
-   {
-      case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
-      case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
-      {
-         return true;
-      }
-      break;
-      case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
-      case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
-      case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
-      case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
-      case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
-      {
-         return is_federated_member( m, a );
-      }
-      break;
-      case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
-      {
-         return is_federated_moderator( m, a );
-      }
-      break;
-      default:
-      {
-         FC_ASSERT( false, "Invalid community privacy: ${t}.",
-            ("t",m.community_privacy) );
-      }
-   }
-}
-
-/**
- * Returns True when the account is authorized to request to join the community, or one of its Federated Communities.
- */
-bool database::is_federated_authorized_request( const community_member_object& m, const account_name_type a )
-{
-   if( is_federated_blacklisted( m, a ) )
-   {
-      return false;
-   }
-
-   switch( m.community_privacy )
-   {
-      case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
-      case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
-      case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
-      case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
-      case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
-      case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
-      {
-         return true;
-      }
-      break;
-      case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
-      case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
-      {
-         return false;
-      }
-      break;
-      default:
-      {
-         FC_ASSERT( false, "Invalid community privacy: ${t}.",
-            ("t",m.community_privacy) );
-      }
-   }
-}
+} FC_CAPTURE_AND_RETHROW() }
 
 
 /**
- * Returns True when the account is authorized to create an invitation to join the community, or one of its Federated Communities.
+ * Removes the community federation from all community member objects
+ * and deletes a federation object.
  */
-bool database::is_federated_authorized_invite( const community_member_object& m, const account_name_type a )
-{
-   if( is_federated_blacklisted( m, a ) )
-   {
-      return false;
-   }
+void database::remove_community_federation( const community_federation_object& federation )
+{ try {
+   const community_member_object& community_member_a = get_community_member( federation.community_a );
+   const community_member_object& community_member_b = get_community_member( federation.community_b );
+   time_point now = head_block_time();
 
-   switch( m.community_privacy )
+   modify( community_member_a, [&]( community_member_object& cmo )
    {
-      case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
-      case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
-      case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
+      switch( federation.federation_type )
       {
-         return is_federated_member( m, a );
+         case community_federation_type::MEMBER_FEDERATION:
+         {
+            cmo.upstream_member_federations.erase( federation.community_b );
+            cmo.downstream_member_federations.erase( federation.community_b );
+         }
+         break;
+         case community_federation_type::MODERATOR_FEDERATION:
+         {
+            cmo.upstream_moderator_federations.erase( federation.community_b );
+            cmo.downstream_moderator_federations.erase( federation.community_b );
+         }
+         break;
+         case community_federation_type::ADMIN_FEDERATION:
+         {
+            cmo.upstream_admin_federations.erase( federation.community_b );
+            cmo.downstream_admin_federations.erase( federation.community_b );
+         }
+         break;
+         default:
+         {
+            FC_ASSERT( false, 
+               "Invalid Federation type." );
+         }
       }
-      break;
-      case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
-      case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
-      case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
-      case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
-      {
-         return is_federated_moderator( m, a );
-      }
-      break;
-      case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
-      {
-         return is_federated_administrator( m, a );
-      }
-      break;
-      default:
-      {
-         FC_ASSERT( false, "Invalid community privacy: ${t}.",
-            ("t",m.community_privacy) );
-      }
-   }
-}
 
-bool database::is_federated_authorized_blacklist( const community_member_object& m, const account_name_type a )
-{
-   if( is_federated_blacklisted( m, a ) )
-   {
-      return false;
-   }
+      cmo.last_updated = now;
+   });
 
-   switch( m.community_privacy )
+   modify( community_member_b, [&]( community_member_object& cmo )
    {
-      case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
+      switch( federation.federation_type )
       {
-         return false;
+         case community_federation_type::MEMBER_FEDERATION:
+         {
+            cmo.upstream_member_federations.erase( federation.community_a );
+            cmo.downstream_member_federations.erase( federation.community_a );
+         }
+         break;
+         case community_federation_type::MODERATOR_FEDERATION:
+         {
+            cmo.upstream_moderator_federations.erase( federation.community_a );
+            cmo.downstream_moderator_federations.erase( federation.community_a );
+         }
+         break;
+         case community_federation_type::ADMIN_FEDERATION:
+         {
+            cmo.upstream_admin_federations.erase( federation.community_a );
+            cmo.downstream_admin_federations.erase( federation.community_a );
+         }
+         break;
+         default:
+         {
+            FC_ASSERT( false, 
+               "Invalid Federation type." );
+         }
       }
-      break;
-      case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
-      case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
-      case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
-      {
-         return is_federated_moderator( m, a );
-      }
-      break;
-      case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
-      case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
-      case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
-      case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
-      {
-         return is_federated_administrator( m, a );
-      }
-      break;
-      default:
-      {
-         FC_ASSERT( false, "Invalid community privacy: ${t}.",
-            ("t",m.community_privacy) );
-      }
-   }
-}
+
+      cmo.last_updated = now;
+   });
+
+   ilog( "Removed: ${v}",("v",federation));
+   remove( federation );
+
+} FC_CAPTURE_AND_RETHROW() }
+
 
 
 } } //node::chain

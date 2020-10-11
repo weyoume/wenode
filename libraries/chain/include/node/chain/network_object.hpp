@@ -1017,12 +1017,16 @@ namespace node { namespace chain {
    > enterprise_vote_index;
 
 
+   struct by_funder_account_enterprise;
+   struct by_account_enterprise_funder;
+
+
    typedef multi_index_container <
       enterprise_fund_object,
       indexed_by <
          ordered_unique< tag< by_id >,
             member< enterprise_fund_object, enterprise_fund_id_type, &enterprise_fund_object::id > >,
-         ordered_unique< tag< by_enterprise_id >,
+         ordered_unique< tag< by_account_enterprise_funder >,
             composite_key< enterprise_fund_object,
                member< enterprise_fund_object, account_name_type, &enterprise_fund_object::account >,
                member< enterprise_fund_object, shared_string, &enterprise_fund_object::enterprise_id >,
@@ -1034,23 +1038,13 @@ namespace node { namespace chain {
                std::less< account_name_type >
             >
          >,
-         ordered_unique< tag< by_account >,
-            composite_key< enterprise_fund_object,
-               member< enterprise_fund_object, account_name_type, &enterprise_fund_object::funder >,
-               member< enterprise_fund_object, enterprise_fund_id_type, &enterprise_fund_object::id >
-            >,
-            composite_key_compare<
-               std::less< account_name_type >,
-               std::less< enterprise_fund_id_type >
-            >
-         >,
-         ordered_unique< tag< by_account_enterprise >,
+         ordered_unique< tag< by_funder_account_enterprise >,
             composite_key< enterprise_fund_object,
                member< enterprise_fund_object, account_name_type, &enterprise_fund_object::funder >,
                member< enterprise_fund_object, account_name_type, &enterprise_fund_object::account >,
                member< enterprise_fund_object, shared_string, &enterprise_fund_object::enterprise_id >
             >,
-            composite_key_compare<
+            composite_key_compare< 
                std::less< account_name_type >,
                std::less< account_name_type >,
                strcmp_less

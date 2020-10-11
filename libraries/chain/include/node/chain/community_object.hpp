@@ -17,6 +17,10 @@ namespace node { namespace chain {
     * Moderators, and Administrators are able to be appointed to 
     * uphold content guidelines and generate a valuable posting and 
     * discussion environment.
+    * 
+    * Communities can create federation links to share and 
+    * duplicate memberships, and create heirarchial or peer
+    * structures of communities. 
     */ 
    class community_object : public object< community_object_type, community_object >
    {
@@ -69,13 +73,19 @@ namespace node { namespace chain {
 
          public_key_type                    community_moderator_key;            ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted moderators.
 
-         public_key_type                    community_admin_key;                ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted admins.
+         public_key_type                    community_admin_key;                ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted Admin .
+
+         account_name_type                  interface;                          ///< Account of the interface that broadcasted the transaction.
+         
+         asset_symbol_type                  reward_currency = SYMBOL_COIN;      ///< The Currency asset used for content rewards in the community.
+
+         asset                              membership_price = asset( 0, SYMBOL_COIN ); ///< Price paid per week by all community members to community founder.
 
          uint16_t                           max_rating = 9;                     ///< Highest severity rating that posts in the community can have.
 
          uint32_t                           flags;                              ///< The currently active flags on the community for content settings.
 
-         uint32_t                           permissions;                        ///< The flag permissions that can be activated on the community for content settings. 
+         uint32_t                           permissions;                        ///< The flag permissions that can be activated on the community for content settings.
 
          uint32_t                           subscriber_count = 0;               ///< Number of accounts that are subscribed to the community.
 
@@ -89,8 +99,6 @@ namespace node { namespace chain {
 
          uint32_t                           share_count = 0;                    ///< Accumulated number of shares on posts in the community.
 
-         asset_symbol_type                  reward_currency = SYMBOL_COIN;      ///< The Currency asset used for content rewards in the community. 
-
          time_point                         created;                            ///< Time that the community was created.
 
          time_point                         last_updated;                       ///< Time that the community's details were last updated.
@@ -100,6 +108,11 @@ namespace node { namespace chain {
          time_point                         last_root_post;                     ///< Time that the community last created a post.
 
          bool                               active;                             ///< True if the community is active, false to suspend all interaction.
+
+         share_type membership_amount()const                                    ///< Returns the amount of the membership price of the community.
+         {
+            return membership_price.amount;
+         }
 
          bool require_member_whitelist()const                                   ///< True if members must be whitelisted by founder.
          { 
@@ -170,23 +183,37 @@ namespace node { namespace chain {
     *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========|
     *   |   Permissions         ||   O_PUB   |   G_PUB   |   E_PUB   |   C_PUB   |   O_PRI   |   G_PRI   |   E_PRI   |   C_PRI   |
     *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========| 
-    *   |   Read Posts          ||   All     |   All     |   All     |   All     |   Mems    |   Mems    |   Mems    |   Mems    |
+    *   |   Read Posts          ||   All     |   All     |   All     |   All     |   Mem     |   Mem     |   Mem     |   Mem     |
+    *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========| 
+    *   |   Share Posts         ||   All     |   All     |   All     |   Mem     |   None    |   None    |   None    |   None    |
     *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========|
-    *   |   Interact Posts      ||   All     |   All     |   All     |   Mems    |   Mems    |   Mems    |   Mems    |   Mems    |
+    *   |   Interact Posts      ||   All     |   All     |   All     |   Mem     |   Mem     |   Mem     |   Mem     |   Mem     |
     *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========|
-    *   |   Create Posts        ||   All     |   All     |   Mems    |   Mems    |   Mems    |   Mems    |   Mems    |   Mods    |
+    *   |   Create Posts        ||   All     |   All     |   Mem     |   Mem     |   Mem     |   Mem     |   Mem     |   Mem     |
     *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========|
-    *   |   Invite+Accept       ||   Mems    |   Mems    |   Mems    |   Mods    |   Mods    |   Mods    |   Mods    |   Admins  |
+    *   |   Invite+Accept       ||   Mem     |   Mem     |   Mem     |   Mod     |   Mod     |   Admin   |   Admin   |   Admin   |
     *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========|
     *   |   Request Join        ||   All     |   All     |   All     |   All     |   All     |   All     |   None    |   None    |
     *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========|
-    *   |   Moderate posts      ||   Mods    |   Mods    |   Mods    |   Mods    |   Mods    |   Mods    |   Mods    |   Mods    |
+    *   |   Moderate posts      ||   Mod     |   Mod     |   Mod     |   Mod     |   Mod     |   Mod     |   Mod     |   Mod     |
     *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========|
-    *   |   Update community    ||   Admins  |   Admins  |   Admins  |   Admins  |   Admins  |   Admins  |   Admins  |   Admins  |
+    *   |   Update community    ||   Admin   |   Admin   |   Admin   |   Admin   |   Admin   |   Admin   |   Admin   |   Admin   |
     *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========|
-    *   |   Blacklist Accounts  ||   None    |   Mods    |   Mods    |   Mods    |   Admins  |   Admins  |   Admins  |   Admins  |
+    *   |   Blacklist Accounts  ||   None    |   Mod     |   Mod     |   Mod     |   Admin   |   Admin   |   Admin   |   Admin   |
     *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========|
     * 
+    * A standard Practice implemented in interfaces would involve the creation of 8 communities
+    * that act as concentric circles of trust within a group. New people would begin by joining
+    * the outer public group, and be progressively advanced up the levels, until reaching the
+    * Open Private community.
+    * 
+    * An automated mechanism for making and inviting a team of people to the desired level of community
+    * would be created for managing the concentric rings of communities
+    * and mirroring the memberships, admin and moderator roles across all lower levels for seperation
+    * of communications and posts depending on the community level.
+    * 
+    * Downstream federated communities recieve all incoming membership and role changes, 
+    * and create an automated hierarchial community structure.
     */
    class community_member_object : public object< community_member_object_type, community_member_object >
    {
@@ -201,35 +228,39 @@ namespace node { namespace chain {
 
          id_type                                        id;
 
-         community_name_type                            name;                        ///< Name of the community with permissions set.
+         community_name_type                            name;                                 ///< Name of the community with permissions set.
 
-         account_name_type                              founder;                     ///< Name of the founding account of the community. Has full permissions.
+         account_name_type                              founder;                              ///< Name of the founding account of the community. Has full permissions.
 
-         community_privacy_type                         community_privacy;           ///< Community privacy level: Open_Public, General_Public, Exclusive_Public, Closed_Public, Open_Private, General_Private, Exclusive_Private, Closed_Private.
+         community_privacy_type                         community_privacy;                    ///< Community privacy level: Open_Public, General_Public, Exclusive_Public, Closed_Public, Open_Private, General_Private, Exclusive_Private, Closed_Private.
 
-         flat_set< account_name_type >                  subscribers;                 ///< List of accounts that subscribe to the posts made in the community.
+         flat_set< account_name_type >                  subscribers;                          ///< List of accounts that subscribe to the posts made in the community.
 
-         flat_set< account_name_type >                  members;                     ///< List of accounts that are permitted to post in the community. Can invite and accept on public communities.
+         flat_set< account_name_type >                  members;                              ///< List of accounts that are permitted to post in the community. Can invite and accept on public communities.
  
-         flat_set< account_name_type >                  moderators;                  ///< Accounts able to filter posts. Can invite and accept on private communities.
+         flat_set< account_name_type >                  moderators;                           ///< Accounts able to filter posts. Can invite and accept on private communities.
 
-         flat_set< account_name_type >                  administrators;              ///< Accounts able to add and remove moderators and update community details. Can invite and accept on Exclusive communities.
+         flat_set< account_name_type >                  administrators;                       ///< Accounts able to add and remove moderators and update community details. Can invite and accept on Exclusive communities.
 
-         flat_set< account_name_type >                  blacklist;                   ///< Accounts that are not able to post in this community, or request to join.
+         flat_set< account_name_type >                  blacklist;                            ///< Accounts that are not able to post in this community, or request to join.
 
-         flat_set< community_name_type >                public_federations;          ///< Communities that have a Public Federation with this community.
+         flat_set< community_name_type >                upstream_member_federations;          ///< Communities that this community recieves incoming members from.
 
-         flat_set< community_name_type >                member_federations;          ///< Communities that have a Member Federation with this community.
+         flat_set< community_name_type >                upstream_moderator_federations;       ///< Communities that this community recieves incoming moderators from.
 
-         flat_set< community_name_type >                moderator_federations;       ///< Communities that have a Moderator Federation with this community.
+         flat_set< community_name_type >                upstream_admin_federations;           ///< Communities that this community recieves incoming admins from.
 
-         flat_set< community_name_type >                admin_federations;           ///< Communities that have a Admin Federation with this community.
+         flat_set< community_name_type >                downstream_member_federations;        ///< Communities that Receive incoming members from this community.
 
-         flat_map< account_name_type, share_type >      mod_weight;                  ///< Map of all moderator voting weights for distributing rewards.
+         flat_set< community_name_type >                downstream_moderator_federations;     ///< Communities that Receive incoming moderators from this community.
 
-         share_type                                     total_mod_weight = 0;        ///< Total of all moderator weights.
+         flat_set< community_name_type >                downstream_admin_federations;         ///< Communities that Receive incoming admins from this community.
 
-         time_point                                     last_updated;                ///< Time that the community was last updated.
+         flat_map< account_name_type, share_type >      mod_weight;                           ///< Map of all moderator voting weights for distributing rewards.
+
+         share_type                                     total_mod_weight = 0;                 ///< Total of all moderator weights.
+
+         time_point                                     last_updated;                         ///< Time that the community was last updated.
 
          /**
           * Adjacency value determines how similar two accounts are by comparing the 
@@ -391,12 +422,12 @@ namespace node { namespace chain {
                break;
                case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
                case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
-               case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
-               case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
                {
                   return is_moderator( account );
                }
                break;
+               case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
+               case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
                case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
                {
                   return is_administrator( account );
@@ -605,9 +636,12 @@ namespace node { namespace chain {
    /**
     * Community Federations enable communities to connect together.
     * 
-    * Communities share thier private decryption keys with eachother securely, 
+    * Communities share their private decryption keys with eachother securely, 
     * and every holder of the private key of one community is granted access to the other, 
     * enabling content decryption and message decryption.
+    * 
+    * Federations can be directed or mutual, which can pass memberships from
+    * one to another automatically. 
     */
    class community_federation_object : public object< community_federation_object_type, community_federation_object >
    {
@@ -616,6 +650,10 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          community_federation_object( Constructor&& c, allocator< Allocator > a ) :
+            message_a(a),
+            json_a(a),
+            message_b(a),
+            json_b(a),
             federation_id(a)
             {
                c( *this );
@@ -625,50 +663,40 @@ namespace node { namespace chain {
 
          community_name_type              community_a;                   ///< Community with the lower ID.
 
-         encrypted_keypair_type           encrypted_key_a;               ///< A's private community key, encrypted with the public community key of Community B.
+         encrypted_keypair_type           encrypted_key_a;               ///< A's private community key, encrypted with the equivalent private community key of Community B.
+
+         shared_string                    message_a;                     ///< Encrypted message from A to the community B membership, encrypted with equivalent community public key.
+
+         shared_string                    json_a;                        ///< Encrypted JSON metadata from A to community B, encrypted with equivalent community public key.
 
          community_name_type              community_b;                   ///< Community with the higher ID.
 
-         encrypted_keypair_type           encrypted_key_b;               ///< B's private community key, encrypted with the public community key of Community A.
+         encrypted_keypair_type           encrypted_key_b;               ///< B's private community key, encrypted with the equivalent private community key of Community A.
 
-         community_federation_type        federation_type;               ///< Determines the level of Federation between the Communities. 
+         shared_string                    message_b;                     ///< Encrypted message from B to the community A membership, encrypted with equivalent community public key.
+
+         shared_string                    json_b;                        ///< Encrypted JSON metadata from B to community A, encrypted with equivalent community public key.
+
+         community_federation_type        federation_type;               ///< Determines the level of Federation between the Communities.
 
          shared_string                    federation_id;                 ///< Reference uuidv4 for the federation, for local storage of decryption keys.
+
+         bool                             share_accounts_a;              ///< True when community A accepts incoming memberships from B.
+
+         bool                             share_accounts_b;              ///< True when community B accepts incoming memberships from A.
+
+         bool                             approved_a;                    ///< True when community A approves the federation.
+
+         bool                             approved_b;                    ///< True when account B approves the federation.
 
          time_point                       last_updated;                  ///< Time the connection keys were last updated.
 
          time_point                       created;                       ///< Time the connection was created.
-   };
 
-
-   /**
-    * Enables a community admin to request to connect with another community as a federation.
-    * 
-    * Federations combine members through sharing thier community private key.
-    */
-   class community_federation_request_object : public object< community_federation_request_object_type, community_federation_request_object >
-   {
-      community_federation_request_object() = delete;
-
-      public:
-         template< typename Constructor, typename Allocator >
-         community_federation_request_object( Constructor&& c, allocator< Allocator > a ) :
-            message(a)
-            {
-               c( *this );
-            }
-
-         id_type                          id;                 
-
-         community_name_type              requesting_community;          ///< Community that created the request.
-
-         community_name_type              requested_community;           ///< Community being requested to join the federation.
-
-         community_federation_type        federation_type;               ///< Determines the level of Federation between the Communities. 
-
-         shared_string                    message;                       ///< Encrypted message to the communities management team, encrypted with community public key.
-
-         time_point                       expiration;                    ///< Request expiry time.
+         bool                             approved()const
+         {
+            return approved_a && approved_b;
+         }
    };
 
 
@@ -679,6 +707,8 @@ namespace node { namespace chain {
     * Accounts indicate whether or not they are attending.
     * 
     * All members of the Community that the Event is created within are invited to attend.
+    * Admins within a community can create and update Events. 
+    * Event price amounts are paid to the community founder. 
     */
    class community_event_object : public object< community_event_object_type, community_event_object >
    {
@@ -699,56 +729,90 @@ namespace node { namespace chain {
 
          id_type                               id;                 
 
-         account_name_type                     account;                ///< Account that created the event.
+         community_name_type                   community;              ///< Community hosting the event, and all members are being invited to attend.
 
-         community_name_type                   community;              ///< Community being invited to join.
+         shared_string                         event_id;               ///< UUIDv4 referring to the event within the Community. Unique on community/event_id.
 
-         shared_string                         event_id;               ///< UUIDv4 referring to the event within the Community. Unique on community/event_id
+         public_key_type                       public_key;             ///< Public key for encrypting the event details. Null if public event.
 
-         shared_string                         event_name;             ///< The Display Name of the event.
+         shared_string                         event_name;             ///< The Display Name of the event. Encrypted for private events.
 
-         shared_string                         location;               ///< Address location of the event.
+         shared_string                         location;               ///< Address location of the event. Encrypted for private events.
 
          double                                latitude;               ///< Latitude co-ordinates of the event.
 
          double                                longitude;              ///< Longitude co-ordinates of the event.
 
-         shared_string                         details;                ///< Event details describing the purpose of the event.
+         shared_string                         details;                ///< Event details describing the purpose of the event. Encrypted for private events.
 
          shared_string                         url;                    ///< Reference URL for the event.
 
-         shared_string                         json;                   ///< Additional Event JSON data.
+         shared_string                         json;                   ///< Additional Event JSON metadata. Encrypted for private events.
 
-         flat_set< account_name_type >         interested;             ///< Members that are interested in the event.
+         account_name_type                     interface;              ///< Account of the interface that broadcasted the transaction.
 
-         flat_set< account_name_type >         attending;              ///< Members that have confirmed that they will be attending the event.
+         asset                                 event_price;            ///< Amount paid to join the attending list as a ticket holder to the event.
 
-         flat_set< account_name_type >         not_attending;          ///< Members that have confirmed that they will not be attending the event.
+         uint64_t                              interested;             ///< Number of accounts that are interested in the event.
+
+         uint64_t                              attending;              ///< Number of accounts that have confirmed that they will be attending the event and paid event price.
+
+         uint64_t                              not_attending;          ///< Number of accounts that have confirmed that they will not be attending the event.
 
          time_point                            event_start_time;       ///< Time that the Event will begin.
 
-         time_point                            event_end_time;         ///< Time that the event will end.
+         time_point                            event_end_time;         ///< Time that the Event will end.
 
          time_point                            last_updated;           ///< Time that the event was last updated.
 
          time_point                            created;                ///< Time that the event was created.
+   };
 
-         bool                                  active;                 ///< True if the community is active, false to suspend all interaction to cancel or end the event.
 
-         bool                                  is_interested( const account_name_type& account )const
-         {
-            return std::find( interested.begin(), interested.end(), account ) != interested.end();
-         };
+   /**
+    * Nominates an account as attending a community event
+    * 
+    * Accounts that nominate an event as Interested see posts relating to the event
+    * Accounts that nominate an event as Attending determine that they are going
+    * and have paid the event price.
+    */
+   class community_event_attend_object : public object< community_event_attend_object_type, community_event_attend_object >
+   {
+      community_event_attend_object() = delete;
 
-         bool                                  is_attending( const account_name_type& account )const
-         {
-            return std::find( attending.begin(), attending.end(), account ) != attending.end();
-         };
+      public:
+         template< typename Constructor, typename Allocator >
+         community_event_attend_object( Constructor&& c, allocator< Allocator > a ) :
+            event_id(a),
+            message(a), 
+            json(a)
+            {
+               c( *this );
+            }
 
-         bool                                  is_not_attending( const account_name_type& account )const
-         {
-            return std::find( not_attending.begin(), not_attending.end(), account ) != not_attending.end();
-         };
+         id_type                               id;
+
+         account_name_type                     attendee;               ///< Account that is attending the event.
+
+         community_name_type                   community;              ///< Community hosting the event, and all members are being invited to attend.
+
+         shared_string                         event_id;               ///< UUIDv4 referring to the event within the Community. Unique on community/event_id.
+
+         public_key_type                       public_key;             ///< Public key for encrypting the event details. Null if public event.
+
+         account_name_type                     interface;              ///< Account of the interface that broadcasted the transaction.
+
+         shared_string                         message;                ///< Encrypted message to the community operating the event.
+
+         shared_string                         json;                   ///< Additional Event Attendance JSON metadata.
+
+         bool                                  interested;             ///< True when the attendee is interested in the event.
+
+         bool                                  attending;              ///< True when the attendee has confirmed that they will be attending the event, and paid the event price.
+
+         time_point                            last_updated;           ///< Time that the attendance was last updated.
+
+         time_point                            created;                ///< Time that the attendance was created.
    };
 
 
@@ -759,6 +823,7 @@ namespace node { namespace chain {
    struct by_post_count;
    struct by_vote_count;
    struct by_view_count;
+   struct by_membership_price;
 
 
    typedef multi_index_container<
@@ -827,6 +892,16 @@ namespace node { namespace chain {
                std::greater< uint32_t >, 
                std::less< community_id_type > 
             >
+         >,
+         ordered_unique< tag< by_membership_price >,
+            composite_key< community_object,
+               const_mem_fun< community_object, share_type, &community_object::membership_amount >,
+               member< community_object, community_id_type, &community_object::id >
+            >,
+            composite_key_compare< 
+               std::greater< share_type >, 
+               std::less< community_id_type > 
+            >
          >
       >,
       allocator< community_object >
@@ -845,29 +920,32 @@ namespace node { namespace chain {
       allocator< community_member_object >
    > community_member_index;
 
-   struct by_member_community;
+   struct by_member_community_type;
 
    typedef multi_index_container<
       community_member_key_object,
       indexed_by<
          ordered_unique< tag< by_id >,
             member< community_member_key_object, community_member_key_id_type, &community_member_key_object::id > >,
-         ordered_unique< tag< by_member_community >,
+         ordered_unique< tag< by_member_community_type >,
             composite_key< community_member_key_object,
                member< community_member_key_object, account_name_type, &community_member_key_object::member >, 
-               member< community_member_key_object, community_name_type, &community_member_key_object::community > 
+               member< community_member_key_object, community_name_type, &community_member_key_object::community >,
+               member< community_member_key_object, community_federation_type, &community_member_key_object::community_key_type >
             >
          >
       >,
       allocator< community_member_key_object >
    > community_member_key_index;
 
+
    struct by_community;
    struct by_community_moderator;
    struct by_account;
-   struct by_moderator_community;
+   struct by_moderator_community_rank;
    struct by_account_community_moderator;
    struct by_account_community_rank;
+
 
    typedef multi_index_container<
       community_moderator_vote_object,
@@ -893,6 +971,14 @@ namespace node { namespace chain {
                member< community_moderator_vote_object, uint16_t, &community_moderator_vote_object::vote_rank >
             >
          >,
+         ordered_unique< tag< by_moderator_community_rank >,
+            composite_key< community_moderator_vote_object,
+               member< community_moderator_vote_object, account_name_type, &community_moderator_vote_object::moderator >,
+               member< community_moderator_vote_object, community_name_type, &community_moderator_vote_object::community >,
+               member< community_moderator_vote_object, uint16_t, &community_moderator_vote_object::vote_rank >,
+               member< community_moderator_vote_object, community_moderator_vote_id_type, &community_moderator_vote_object::id >
+            >
+         >,
          ordered_unique< tag< by_account_community_moderator >,
             composite_key< community_moderator_vote_object,
                member< community_moderator_vote_object, account_name_type, &community_moderator_vote_object::account >,
@@ -904,13 +990,6 @@ namespace node { namespace chain {
             composite_key< community_moderator_vote_object,
                member< community_moderator_vote_object, community_name_type, &community_moderator_vote_object::community >,
                member< community_moderator_vote_object, account_name_type, &community_moderator_vote_object::moderator >,
-               member< community_moderator_vote_object, community_moderator_vote_id_type, &community_moderator_vote_object::id >
-            >
-         >,
-         ordered_unique< tag< by_moderator_community >,
-            composite_key< community_moderator_vote_object,
-               member< community_moderator_vote_object, account_name_type, &community_moderator_vote_object::moderator >,
-               member< community_moderator_vote_object, community_name_type, &community_moderator_vote_object::community >,
                member< community_moderator_vote_object, community_moderator_vote_id_type, &community_moderator_vote_object::id >
             >
          >
@@ -1036,32 +1115,6 @@ namespace node { namespace chain {
       allocator< community_federation_object >
    > community_federation_index;
 
-   struct by_requesting_requested;
-   struct by_requested_requesting;
-
-
-   typedef multi_index_container<
-      community_federation_request_object,
-      indexed_by<
-         ordered_unique< tag< by_id >,
-            member< community_federation_request_object, community_federation_request_id_type, &community_federation_request_object::id > >,
-         ordered_non_unique< tag< by_expiration >,
-            member< community_federation_request_object, time_point, &community_federation_request_object::expiration > >,
-         ordered_unique< tag< by_requesting_requested >,
-            composite_key< community_federation_request_object,
-               member< community_federation_request_object, community_name_type, &community_federation_request_object::requesting_community >,
-               member< community_federation_request_object, community_name_type, &community_federation_request_object::requested_community >
-            >
-         >,
-         ordered_unique< tag< by_requested_requesting >,
-            composite_key< community_federation_request_object,
-               member< community_federation_request_object, community_name_type, &community_federation_request_object::requested_community >,
-               member< community_federation_request_object, community_name_type, &community_federation_request_object::requesting_community >
-            >
-         >
-      >,
-      allocator< community_federation_request_object >
-   > community_federation_request_index;
    
 
    struct by_start_time;
@@ -1112,6 +1165,56 @@ namespace node { namespace chain {
       allocator< community_event_object >
    > community_event_index;
 
+
+   struct by_attending_event_id;
+   struct by_attendee;
+
+
+   typedef multi_index_container<
+      community_event_attend_object,
+      indexed_by<
+         ordered_unique< tag< by_id >,
+            member< community_event_attend_object, community_event_attend_id_type, &community_event_attend_object::id > >,
+         ordered_unique< tag< by_event_id >,
+            composite_key< community_event_attend_object,
+               member< community_event_attend_object, community_name_type, &community_event_attend_object::community >,
+               member< community_event_attend_object, shared_string, &community_event_attend_object::event_id >,
+               member< community_event_attend_object, account_name_type, &community_event_attend_object::attendee >
+            >,
+            composite_key_compare< 
+               std::less< community_name_type >,
+               strcmp_less,
+               std::less< account_name_type >
+            >
+         >,
+         ordered_unique< tag< by_attending_event_id >,
+            composite_key< community_event_attend_object,
+               member< community_event_attend_object, bool, &community_event_attend_object::attending >,
+               member< community_event_attend_object, community_name_type, &community_event_attend_object::community >,
+               member< community_event_attend_object, shared_string, &community_event_attend_object::event_id >,
+               member< community_event_attend_object, account_name_type, &community_event_attend_object::attendee >
+            >,
+            composite_key_compare<
+               std::less< bool >,
+               std::less< community_name_type >,
+               strcmp_less,
+               std::less< account_name_type >
+            >
+         >,
+         ordered_unique< tag< by_attendee >,
+            composite_key< community_event_attend_object,
+               member< community_event_attend_object, account_name_type, &community_event_attend_object::attendee >,
+               member< community_event_attend_object, community_event_attend_id_type, &community_event_attend_object::id >
+            >,
+            composite_key_compare< 
+               std::less< community_name_type >,
+               std::less< community_event_attend_id_type >
+            >
+         >
+      >,
+      allocator< community_event_attend_object >
+   > community_event_attend_index;
+
 } } // node::chain
 
 
@@ -1133,6 +1236,9 @@ FC_REFLECT( node::chain::community_object,
          (community_member_key)
          (community_moderator_key)
          (community_admin_key)
+         (interface)
+         (reward_currency)
+         (membership_price)
          (max_rating)
          (flags)
          (permissions)
@@ -1142,7 +1248,6 @@ FC_REFLECT( node::chain::community_object,
          (vote_count)
          (view_count)
          (share_count)
-         (reward_currency)
          (created)
          (last_updated)
          (last_post)
@@ -1162,10 +1267,12 @@ FC_REFLECT( node::chain::community_member_object,
          (moderators)
          (administrators)
          (blacklist)
-         (public_federations)
-         (member_federations)
-         (moderator_federations)
-         (admin_federations)
+         (upstream_member_federations)
+         (upstream_moderator_federations)
+         (upstream_admin_federations)
+         (downstream_member_federations)
+         (downstream_moderator_federations)
+         (downstream_admin_federations)
          (mod_weight)
          (total_mod_weight)
          (last_updated)
@@ -1215,38 +1322,35 @@ FC_REFLECT( node::chain::community_member_key_object,
          (encrypted_community_key)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::chain::community_member_key_object, node::chain::community_member_key_index );   
+CHAINBASE_SET_INDEX_TYPE( node::chain::community_member_key_object, node::chain::community_member_key_index );
 
 FC_REFLECT( node::chain::community_federation_object,
          (id)
          (community_a)
          (encrypted_key_a)
+         (message_a)
+         (json_a)
          (community_b)
          (encrypted_key_b)
+         (message_b)
+         (json_b)
          (federation_type)
          (federation_id)
+         (share_accounts_a)
+         (share_accounts_b)
+         (approved_a)
+         (approved_b)
          (last_updated)
          (created)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::community_federation_object, node::chain::community_federation_index );
 
-FC_REFLECT( node::chain::community_federation_request_object,
-         (id)
-         (requesting_community)
-         (requested_community)
-         (federation_type)
-         (message)
-         (expiration)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::community_federation_request_object, node::chain::community_federation_request_index );
-
 FC_REFLECT( node::chain::community_event_object,
          (id)
-         (account)
          (community)
          (event_id)
+         (public_key)
          (event_name)
          (location)
          (latitude)
@@ -1254,6 +1358,8 @@ FC_REFLECT( node::chain::community_event_object,
          (details)
          (url)
          (json)
+         (interface)
+         (event_price)
          (interested)
          (attending)
          (not_attending)
@@ -1261,7 +1367,23 @@ FC_REFLECT( node::chain::community_event_object,
          (event_end_time)
          (last_updated)
          (created)
-         (active)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::community_event_object, node::chain::community_event_index );
+
+FC_REFLECT( node::chain::community_event_attend_object,
+         (id)
+         (attendee)
+         (community)
+         (event_id)
+         (public_key)
+         (interface)
+         (message)
+         (json)
+         (interested)
+         (attending)
+         (last_updated)
+         (created)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::community_event_attend_object, node::chain::community_event_attend_index );

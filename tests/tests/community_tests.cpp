@@ -53,6 +53,46 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
 
       generate_blocks( now() + fc::days(2), true );
 
+      public_key_type aliceopencommunity_public_member_key = get_public_key( "aliceopencommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type aliceopencommunity_public_moderator_key = get_public_key( "aliceopencommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type aliceopencommunity_public_admin_key = get_public_key( "aliceopencommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      private_key_type aliceopencommunity_private_member_key = get_private_key( "aliceopencommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type aliceopencommunity_private_moderator_key = get_private_key( "aliceopencommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type aliceopencommunity_private_admin_key = get_private_key( "aliceopencommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      public_key_type bobpubliccommunity_public_member_key = get_public_key( "bobpubliccommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type bobpubliccommunity_public_moderator_key = get_public_key( "bobpubliccommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type bobpubliccommunity_public_admin_key = get_public_key( "bobpubliccommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      private_key_type bobpubliccommunity_private_member_key = get_private_key( "bobpubliccommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type bobpubliccommunity_private_moderator_key = get_private_key( "bobpubliccommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type bobpubliccommunity_private_admin_key = get_private_key( "bobpubliccommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      public_key_type candiceprivatecommunity_public_member_key = get_public_key( "candiceprivatecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type candiceprivatecommunity_public_moderator_key = get_public_key( "candiceprivatecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type candiceprivatecommunity_public_admin_key = get_public_key( "candiceprivatecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      private_key_type candiceprivatecommunity_private_member_key = get_private_key( "candiceprivatecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type candiceprivatecommunity_private_moderator_key = get_private_key( "candiceprivatecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type candiceprivatecommunity_private_admin_key = get_private_key( "candiceprivatecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      public_key_type danexclusivecommunity_public_member_key = get_public_key( "danexclusivecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type danexclusivecommunity_public_moderator_key = get_public_key( "danexclusivecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type danexclusivecommunity_public_admin_key = get_public_key( "danexclusivecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      private_key_type danexclusivecommunity_private_member_key = get_private_key( "danexclusivecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type danexclusivecommunity_private_moderator_key = get_private_key( "danexclusivecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type danexclusivecommunity_private_admin_key = get_private_key( "danexclusivecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      public_key_type mysecondcommunity_public_member_key = get_public_key( "mysecondcommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type mysecondcommunity_public_moderator_key = get_public_key( "mysecondcommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type mysecondcommunity_public_admin_key = get_public_key( "mysecondcommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      private_key_type mysecondcommunity_private_member_key = get_private_key( "mysecondcommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type mysecondcommunity_private_moderator_key = get_private_key( "mysecondcommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type mysecondcommunity_private_admin_key = get_private_key( "mysecondcommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
       signed_transaction tx;
 
       community_create_operation create;
@@ -61,16 +101,16 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.founder = "alice";
       create.name = "aliceopencommunity";
       create.community_privacy = "open_public";
-      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_member_key = string( aliceopencommunity_public_member_key );
+      create.community_moderator_key = string( aliceopencommunity_public_moderator_key );
+      create.community_admin_key = string( aliceopencommunity_public_admin_key );
       create.display_name = "Alice Open Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, aliceopencommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
       create.validate();
 
@@ -93,16 +133,16 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.founder = "bob";
       create.name = "bobpubliccommunity";
       create.community_privacy = "exclusive_public";
-      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_member_key = string( bobpubliccommunity_public_member_key );
+      create.community_moderator_key = string( bobpubliccommunity_public_moderator_key );
+      create.community_admin_key = string( bobpubliccommunity_public_admin_key );
       create.display_name = "Bob Public Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.json_private = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, bobpubliccommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
       create.validate();
 
@@ -124,16 +164,16 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.founder = "candice";
       create.name = "candiceprivatecommunity";
       create.community_privacy = "open_private";
-      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_member_key = string( candiceprivatecommunity_public_member_key );
+      create.community_moderator_key = string( candiceprivatecommunity_public_moderator_key );
+      create.community_admin_key = string( candiceprivatecommunity_public_admin_key );
       create.display_name = "Candice Private Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.json_private = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, candiceprivatecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
       create.validate();
 
@@ -155,16 +195,16 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.founder = "dan";
       create.name = "danexclusivecommunity";
       create.community_privacy = "exclusive_private";
-      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_member_key = string( danexclusivecommunity_public_member_key );
+      create.community_moderator_key = string( danexclusivecommunity_public_moderator_key );
+      create.community_admin_key = string( danexclusivecommunity_public_admin_key );
       create.display_name = "Dan Exclusive Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.json_private = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, danexclusivecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
       
       create.validate();
@@ -192,16 +232,16 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.signatory = "alice";
       create.founder = "alice";
       create.name = "mysecondcommunity";
-      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_member_key = string( mysecondcommunity_public_member_key );
+      create.community_moderator_key = string( mysecondcommunity_public_moderator_key );
+      create.community_admin_key = string( mysecondcommunity_public_admin_key );
       create.display_name = "My Second Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, mysecondcommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
       create.validate();
 
@@ -233,16 +273,16 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.signatory = "elon";
       create.founder = "elon";
       create.name = "aliceopencommunity";
-      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_member_key = string( aliceopencommunity_public_member_key );
+      create.community_moderator_key = string( aliceopencommunity_public_moderator_key );
+      create.community_admin_key = string( aliceopencommunity_public_admin_key );
       create.display_name = "My Second Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( elon_private_secure_key, elon_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.json_private = get_encrypted_message( elon_private_secure_key, elon_public_secure_key, aliceopencommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
       create.validate();
 
@@ -285,6 +325,38 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
 
       generate_blocks( now() + fc::days(2), true );
 
+      public_key_type aliceopencommunity_public_member_key = get_public_key( "aliceopencommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type aliceopencommunity_public_moderator_key = get_public_key( "aliceopencommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type aliceopencommunity_public_admin_key = get_public_key( "aliceopencommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      private_key_type aliceopencommunity_private_member_key = get_private_key( "aliceopencommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type aliceopencommunity_private_moderator_key = get_private_key( "aliceopencommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type aliceopencommunity_private_admin_key = get_private_key( "aliceopencommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      public_key_type bobpubliccommunity_public_member_key = get_public_key( "bobpubliccommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type bobpubliccommunity_public_moderator_key = get_public_key( "bobpubliccommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type bobpubliccommunity_public_admin_key = get_public_key( "bobpubliccommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      private_key_type bobpubliccommunity_private_member_key = get_private_key( "bobpubliccommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type bobpubliccommunity_private_moderator_key = get_private_key( "bobpubliccommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type bobpubliccommunity_private_admin_key = get_private_key( "bobpubliccommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      public_key_type candiceprivatecommunity_public_member_key = get_public_key( "candiceprivatecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type candiceprivatecommunity_public_moderator_key = get_public_key( "candiceprivatecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type candiceprivatecommunity_public_admin_key = get_public_key( "candiceprivatecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      private_key_type candiceprivatecommunity_private_member_key = get_private_key( "candiceprivatecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type candiceprivatecommunity_private_moderator_key = get_private_key( "candiceprivatecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type candiceprivatecommunity_private_admin_key = get_private_key( "candiceprivatecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      public_key_type danexclusivecommunity_public_member_key = get_public_key( "danexclusivecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type danexclusivecommunity_public_moderator_key = get_public_key( "danexclusivecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type danexclusivecommunity_public_admin_key = get_public_key( "danexclusivecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      private_key_type danexclusivecommunity_private_member_key = get_private_key( "danexclusivecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type danexclusivecommunity_private_moderator_key = get_private_key( "danexclusivecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type danexclusivecommunity_private_admin_key = get_private_key( "danexclusivecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
       signed_transaction tx;
 
       community_create_operation create;
@@ -293,21 +365,22 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       create.founder = "alice";
       create.name = "aliceopencommunity";
       create.community_privacy = "open_public";
-      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_member_key = string( aliceopencommunity_public_member_key );
+      create.community_moderator_key = string( aliceopencommunity_public_moderator_key );
+      create.community_admin_key = string( aliceopencommunity_public_admin_key );
       create.display_name = "Alice Open Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, aliceopencommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
       create.validate();
 
       tx.operations.push_back( create );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -318,16 +391,16 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       create.founder = "bob";
       create.name = "bobpubliccommunity";
       create.community_privacy = "exclusive_public";
-      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_member_key = string( bobpubliccommunity_public_member_key );
+      create.community_moderator_key = string( bobpubliccommunity_public_moderator_key );
+      create.community_admin_key = string( bobpubliccommunity_public_admin_key );
       create.display_name = "Bob Public Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.json_private = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, bobpubliccommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
       create.validate();
 
@@ -342,16 +415,16 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       create.founder = "candice";
       create.name = "candiceprivatecommunity";
       create.community_privacy = "open_private";
-      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_member_key = string( candiceprivatecommunity_public_member_key );
+      create.community_moderator_key = string( candiceprivatecommunity_public_moderator_key );
+      create.community_admin_key = string(candiceprivatecommunity_public_admin_key );
       create.display_name = "Candice Private Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.json_private = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, candiceprivatecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
       create.validate();
 
@@ -366,16 +439,16 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       create.founder = "dan";
       create.name = "danexclusivecommunity";
       create.community_privacy = "exclusive_private";
-      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_member_key = string( danexclusivecommunity_public_member_key );
+      create.community_moderator_key = string( danexclusivecommunity_public_moderator_key );
+      create.community_admin_key = string( danexclusivecommunity_public_admin_key );
       create.display_name = "Dan Exclusive Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.json_private = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, danexclusivecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
       create.validate();
 
@@ -401,7 +474,7 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       comment.tags.push_back( tag_name_type( "test" ) );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
-      comment.parent_author = "";
+      comment.parent_author = ROOT_POST_PARENT;
       comment.parent_permlink = "ipsum";
       comment.json = "{ \"valid\": true }";
       comment.latitude = 37.8136;
@@ -439,7 +512,7 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       comment.signatory = "candice";
       comment.author = "candice";
       comment.community = "candiceprivatecommunity";
-      comment.public_key = string( get_public_key( comment.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      comment.public_key = string( candiceprivatecommunity_public_member_key );
       
       options.reach = "community";
       comment.options = options;
@@ -454,7 +527,7 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       comment.signatory = "dan";
       comment.author = "dan";
       comment.community = "danexclusivecommunity";
-      comment.public_key = string( get_public_key( comment.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      comment.public_key = string( danexclusivecommunity_public_member_key );
       
       tx.operations.push_back( comment );
       tx.sign( dan_private_posting_key, db.get_chain_id() );
@@ -470,22 +543,24 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       update.signatory = "alice";
       update.account = "alice";
       update.community = "aliceopencommunity";
-      update.community_member_key = string( get_public_key( update.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      update.community_moderator_key = string( get_public_key( update.community, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      update.community_admin_key = string( get_public_key( update.community, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      update.display_name = "Bob Public Community";
+      update.community_member_key = string( aliceopencommunity_public_member_key );
+      update.community_moderator_key = string( aliceopencommunity_public_moderator_key );
+      update.community_admin_key = string( aliceopencommunity_public_admin_key );
+      update.display_name = "Alice's Updated Open Community";
       update.details = "updated details";
       update.url = "https://www.newurl.com";
       update.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       update.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       update.json = "{ \"valid\": true }";
-      update.json_private = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, public_key_type( update.community_member_key ), "#{ \"valid\": true }" );
+      update.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, aliceopencommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       update.tags.insert( "test" );
       update.pinned_author = "alice";
       update.pinned_permlink = "lorem";
       update.validate();
 
       tx.operations.push_back( update );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -644,12 +719,37 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       fund_stake( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "leonie", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      string alice_private_connection_wif = graphene::utilities::key_to_wif( alice_private_connection_key );
-      string bob_private_connection_wif = graphene::utilities::key_to_wif( bob_private_connection_key );
-      string candice_private_connection_wif = graphene::utilities::key_to_wif( candice_private_connection_key );
-      string dan_private_connection_wif = graphene::utilities::key_to_wif( dan_private_connection_key );
-      string elon_private_connection_wif = graphene::utilities::key_to_wif( elon_private_connection_key );
-      string fred_private_connection_wif = graphene::utilities::key_to_wif( fred_private_connection_key );
+      public_key_type aliceopencommunity_public_member_key = get_public_key( "aliceopencommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type aliceopencommunity_public_moderator_key = get_public_key( "aliceopencommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type aliceopencommunity_public_admin_key = get_public_key( "aliceopencommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      private_key_type aliceopencommunity_private_member_key = get_private_key( "aliceopencommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type aliceopencommunity_private_moderator_key = get_private_key( "aliceopencommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type aliceopencommunity_private_admin_key = get_private_key( "aliceopencommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      public_key_type bobpubliccommunity_public_member_key = get_public_key( "bobpubliccommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type bobpubliccommunity_public_moderator_key = get_public_key( "bobpubliccommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type bobpubliccommunity_public_admin_key = get_public_key( "bobpubliccommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      private_key_type bobpubliccommunity_private_member_key = get_private_key( "bobpubliccommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type bobpubliccommunity_private_moderator_key = get_private_key( "bobpubliccommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type bobpubliccommunity_private_admin_key = get_private_key( "bobpubliccommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      public_key_type candiceprivatecommunity_public_member_key = get_public_key( "candiceprivatecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type candiceprivatecommunity_public_moderator_key = get_public_key( "candiceprivatecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type candiceprivatecommunity_public_admin_key = get_public_key( "candiceprivatecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      private_key_type candiceprivatecommunity_private_member_key = get_private_key( "candiceprivatecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type candiceprivatecommunity_private_moderator_key = get_private_key( "candiceprivatecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type candiceprivatecommunity_private_admin_key = get_private_key( "candiceprivatecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      public_key_type danexclusivecommunity_public_member_key = get_public_key( "danexclusivecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type danexclusivecommunity_public_moderator_key = get_public_key( "danexclusivecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type danexclusivecommunity_public_admin_key = get_public_key( "danexclusivecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      private_key_type danexclusivecommunity_private_member_key = get_private_key( "danexclusivecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type danexclusivecommunity_private_moderator_key = get_private_key( "danexclusivecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type danexclusivecommunity_private_admin_key = get_private_key( "danexclusivecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       generate_blocks( now() + fc::days(2), true );
 
@@ -661,21 +761,22 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       create.founder = "alice";
       create.name = "aliceopencommunity";
       create.community_privacy = "open_public";
-      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_member_key = string( aliceopencommunity_public_member_key );
+      create.community_moderator_key = string( aliceopencommunity_public_moderator_key );
+      create.community_admin_key = string( aliceopencommunity_public_admin_key );
       create.display_name = "Alice Open Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, aliceopencommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
       create.validate();
 
       tx.operations.push_back( create );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -701,16 +802,16 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       create.founder = "bob";
       create.name = "bobpubliccommunity";
       create.community_privacy = "exclusive_public";
-      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_member_key = string( bobpubliccommunity_public_member_key );
+      create.community_moderator_key = string( bobpubliccommunity_public_moderator_key );
+      create.community_admin_key = string( bobpubliccommunity_public_admin_key );
       create.display_name = "Bob Public Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.json_private = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, bobpubliccommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
       create.validate();
 
@@ -740,16 +841,16 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       create.founder = "candice";
       create.name = "candiceprivatecommunity";
       create.community_privacy = "open_private";
-      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_member_key = string( candiceprivatecommunity_public_member_key );
+      create.community_moderator_key = string( candiceprivatecommunity_public_moderator_key );
+      create.community_admin_key = string( candiceprivatecommunity_public_admin_key );
       create.display_name = "Candice Private Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.json_private = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, candiceprivatecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
       create.validate();
 
@@ -779,16 +880,16 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       create.founder = "dan";
       create.name = "danexclusivecommunity";
       create.community_privacy = "exclusive_private";
-      create.community_member_key = string( get_public_key( create.name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_moderator_key = string( get_public_key( create.name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      create.community_admin_key = string( get_public_key( create.name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      create.community_member_key = string( danexclusivecommunity_public_member_key );
+      create.community_moderator_key = string( danexclusivecommunity_public_moderator_key );
+      create.community_admin_key = string( danexclusivecommunity_public_admin_key );
       create.display_name = "Dan Exclusive Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, public_key_type( create.community_member_key ), "#{ \"valid\": true }" );
+      create.json_private = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, danexclusivecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
       create.validate();
 
@@ -821,7 +922,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       invite.member = "elon";
       invite.community = "aliceopencommunity";
       invite.message = "Hello";
-      invite.encrypted_community_key = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, elon_public_secure_key, alice_private_connection_wif );
+      invite.encrypted_community_key = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( aliceopencommunity_private_member_key ) );
       invite.invited = true;
       invite.validate();
 
@@ -845,7 +946,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       invite.signatory = "bob";
       invite.account = "bob";
       invite.community = "bobpubliccommunity";
-      invite.encrypted_community_key = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, elon_public_secure_key, bob_private_connection_wif );
+      invite.encrypted_community_key = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( bobpubliccommunity_private_member_key ) );
    
       tx.operations.push_back( invite );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
@@ -865,7 +966,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       invite.signatory = "candice";
       invite.account = "candice";
       invite.community = "candiceprivatecommunity";
-      invite.encrypted_community_key = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, elon_public_secure_key, candice_private_connection_wif );
+      invite.encrypted_community_key = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( candiceprivatecommunity_private_member_key ) );
    
       tx.operations.push_back( invite );
       tx.sign( candice_private_active_key, db.get_chain_id() );
@@ -885,7 +986,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       invite.signatory = "dan";
       invite.account = "dan";
       invite.community = "danexclusivecommunity";
-      invite.encrypted_community_key = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, elon_public_secure_key, dan_private_connection_wif );
+      invite.encrypted_community_key = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( danexclusivecommunity_private_member_key ) );
    
       tx.operations.push_back( invite );
       tx.sign( dan_private_posting_key, db.get_chain_id() );
@@ -906,7 +1007,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       invite.account = "dan";
       invite.member = "fred";
       invite.community = "danexclusivecommunity";
-      invite.encrypted_community_key = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, fred_public_secure_key, dan_private_connection_wif );
+      invite.encrypted_community_key = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, fred_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( danexclusivecommunity_private_member_key ) );
    
       tx.operations.push_back( invite );
       tx.sign( dan_private_posting_key, db.get_chain_id() );
@@ -932,10 +1033,12 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       invite.member = "george";
       invite.community = "aliceopencommunity";
       invite.message = "Hello";
-      invite.encrypted_community_key = get_encrypted_message( elon_private_secure_key, elon_public_secure_key, george_public_secure_key, alice_private_connection_wif );
+      invite.encrypted_community_key = get_encrypted_message( elon_private_secure_key, elon_public_secure_key, george_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( aliceopencommunity_private_member_key ) );
       invite.invited = true;
 
       tx.operations.push_back( invite );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( elon_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-member cannot send invitations
 
@@ -944,7 +1047,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       invite.member = "haz";
       invite.community = "bobpubliccommunity";
-      invite.encrypted_community_key = get_encrypted_message( elon_private_secure_key, elon_public_secure_key, haz_public_secure_key, bob_private_connection_wif );
+      invite.encrypted_community_key = get_encrypted_message( elon_private_secure_key, elon_public_secure_key, haz_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( bobpubliccommunity_private_member_key ) );
    
       tx.operations.push_back( invite );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
@@ -955,7 +1058,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       invite.member = "isabelle";
       invite.community = "candiceprivatecommunity";
-      invite.encrypted_community_key = get_encrypted_message( elon_private_secure_key, elon_public_secure_key, isabelle_public_secure_key, candice_private_connection_wif );
+      invite.encrypted_community_key = get_encrypted_message( elon_private_secure_key, elon_public_secure_key, isabelle_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( candiceprivatecommunity_private_member_key ) );
    
       tx.operations.push_back( invite );
       tx.sign( elon_private_active_key, db.get_chain_id() );
@@ -966,7 +1069,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       invite.member = "jayme";
       invite.community = "danexclusivecommunity";
-      invite.encrypted_community_key = get_encrypted_message( elon_private_secure_key, elon_public_secure_key, jayme_public_secure_key, dan_private_connection_wif );
+      invite.encrypted_community_key = get_encrypted_message( elon_private_secure_key, elon_public_secure_key, jayme_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( danexclusivecommunity_private_member_key ) );
    
       tx.operations.push_back( invite );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
@@ -989,6 +1092,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       request.validate();
 
       tx.operations.push_back( request );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( fred_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1061,6 +1166,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       invite_accept.validate();
 
       tx.operations.push_back( invite_accept );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1139,6 +1246,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       join_accept.validate();
 
       tx.operations.push_back( join_accept );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1194,6 +1303,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       invite.invited = true;
 
       tx.operations.push_back( invite );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1263,6 +1374,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       add_mod.validate();
 
       tx.operations.push_back( add_mod );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1325,6 +1438,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       vote_mod.validate();
 
       tx.operations.push_back( vote_mod );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1389,6 +1504,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       invite.invited = true;
 
       tx.operations.push_back( invite );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Invite already exists
 
@@ -1439,6 +1556,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       admin.validate();
 
       tx.operations.push_back( admin );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1499,6 +1618,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       invite.invited = true;
 
       tx.operations.push_back( invite );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Invite already exists
 
@@ -1548,7 +1669,160 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: handling moderator sending invites and failure when repeated invite" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: comment creation handling for members and non-members" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Community Federation request success" );
+
+      community_federation_operation federation;
+
+      federation.signatory = "alice";
+      federation.account = "alice";
+      federation.federation_id = "e643533a-37af-4634-a9a9-8caa756cfbe4";
+      federation.community = "aliceopencommunity";
+      federation.federated_community = "bobpubliccommunity";
+      federation.message = get_encrypted_message( aliceopencommunity_private_member_key, aliceopencommunity_public_member_key, bobpubliccommunity_public_member_key, string( "#Hello" ) );
+      federation.json = get_encrypted_message( aliceopencommunity_private_member_key, aliceopencommunity_public_member_key, bobpubliccommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      federation.federation_type = "member";
+      federation.encrypted_community_key = get_encrypted_message( aliceopencommunity_private_member_key, aliceopencommunity_public_member_key, bobpubliccommunity_public_member_key, string( "#" ) + graphene::utilities::key_to_wif( aliceopencommunity_private_member_key ) );
+      federation.share_accounts = true;
+      federation.accepted = true;
+      federation.validate();
+
+      tx.operations.push_back( federation );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      const auto& federation_idx = db.get_index< community_federation_index >().indices().get< by_communities >();
+      auto federation_itr = federation_idx.find( boost::make_tuple( federation.community, federation.federated_community ) );
+      BOOST_REQUIRE( federation_itr != federation_idx.end() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      federation.signatory = "alice";
+      federation.account = "alice";
+      federation.federation_id = "c02fece2-a58b-4393-bcc6-bf2d88b060a7";
+      federation.community = "aliceopencommunity";
+      federation.federated_community = "candiceprivatecommunity";
+      federation.message = get_encrypted_message( aliceopencommunity_private_member_key, aliceopencommunity_public_member_key, candiceprivatecommunity_public_member_key, string( "#Hello" ) );
+      federation.json = get_encrypted_message( aliceopencommunity_private_member_key, aliceopencommunity_public_member_key, candiceprivatecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      federation.federation_type = "member";
+      federation.encrypted_community_key = get_encrypted_message( aliceopencommunity_private_member_key, aliceopencommunity_public_member_key, candiceprivatecommunity_public_member_key, string( "#" ) + graphene::utilities::key_to_wif( aliceopencommunity_private_member_key ) );
+      federation.share_accounts = true;
+      federation.accepted = true;
+      federation.validate();
+
+      tx.operations.push_back( federation );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      federation_itr = federation_idx.find( boost::make_tuple( federation.community, federation.federated_community ) );
+      BOOST_REQUIRE( federation_itr != federation_idx.end() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      federation.signatory = "alice";
+      federation.account = "alice";
+      federation.federation_id = "713890b9-ecac-42e4-bca9-0b679cdc21b3";
+      federation.community = "aliceopencommunity";
+      federation.federated_community = "danexclusivecommunity";
+      federation.message = get_encrypted_message( aliceopencommunity_private_member_key, aliceopencommunity_public_member_key, danexclusivecommunity_public_member_key, string( "#Hello" ) );
+      federation.json = get_encrypted_message( aliceopencommunity_private_member_key, aliceopencommunity_public_member_key, danexclusivecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      federation.federation_type = "member";
+      federation.encrypted_community_key = get_encrypted_message( aliceopencommunity_private_member_key, aliceopencommunity_public_member_key, danexclusivecommunity_public_member_key, string( "#" ) + graphene::utilities::key_to_wif( aliceopencommunity_private_member_key ) );
+      federation.share_accounts = true;
+      federation.accepted = true;
+      federation.validate();
+
+      tx.operations.push_back( federation );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      federation_itr = federation_idx.find( boost::make_tuple( federation.community, federation.federated_community ) );
+      BOOST_REQUIRE( federation_itr != federation_idx.end() );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Community Federation creation" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Community Federation mutual acceptance" );
+
+      federation.signatory = "bob";
+      federation.account = "bob";
+      federation.federation_id = "e643533a-37af-4634-a9a9-8caa756cfbe4";
+      federation.community = "bobpubliccommunity";
+      federation.federated_community = "aliceopencommunity";
+      federation.message = get_encrypted_message( bobpubliccommunity_private_member_key, bobpubliccommunity_public_member_key, aliceopencommunity_public_member_key, string( "#Hello" ) );
+      federation.json = get_encrypted_message( bobpubliccommunity_private_member_key, bobpubliccommunity_public_member_key, aliceopencommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      federation.federation_type = "member";
+      federation.encrypted_community_key = get_encrypted_message( bobpubliccommunity_private_member_key, bobpubliccommunity_public_member_key, aliceopencommunity_public_member_key, string( "#" ) + graphene::utilities::key_to_wif( bobpubliccommunity_private_member_key ) );
+      federation.share_accounts = true;
+      federation.accepted = true;
+      federation.validate();
+
+      tx.operations.push_back( federation );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      federation_itr = federation_idx.find( boost::make_tuple( federation.federated_community, federation.community ) );
+      BOOST_REQUIRE( federation_itr != federation_idx.end() );
+
+      federation.signatory = "candice";
+      federation.account = "candice";
+      federation.federation_id = "c02fece2-a58b-4393-bcc6-bf2d88b060a7";
+      federation.community = "candiceprivatecommunity";
+      federation.federated_community = "aliceopencommunity";
+      federation.message = get_encrypted_message( candiceprivatecommunity_private_member_key, candiceprivatecommunity_public_member_key, aliceopencommunity_public_member_key, string( "#Hello" ) );
+      federation.json = get_encrypted_message( candiceprivatecommunity_private_member_key, candiceprivatecommunity_public_member_key, aliceopencommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      federation.federation_type = "member";
+      federation.encrypted_community_key = get_encrypted_message( candiceprivatecommunity_private_member_key, candiceprivatecommunity_public_member_key, aliceopencommunity_public_member_key, string( "#" ) + graphene::utilities::key_to_wif( candiceprivatecommunity_private_member_key ) );
+      federation.share_accounts = true;
+      federation.accepted = true;
+      federation.validate();
+
+      tx.operations.push_back( federation );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      federation_itr = federation_idx.find( boost::make_tuple( federation.federated_community, federation.community ) );
+      BOOST_REQUIRE( federation_itr != federation_idx.end() );
+
+      federation.signatory = "dan";
+      federation.account = "dan";
+      federation.federation_id = "713890b9-ecac-42e4-bca9-0b679cdc21b3";
+      federation.community = "danexclusivecommunity";
+      federation.federated_community = "aliceopencommunity";
+      federation.message = get_encrypted_message( danexclusivecommunity_private_member_key, danexclusivecommunity_public_member_key, aliceopencommunity_public_member_key, string( "#Hello" ) );
+      federation.json = get_encrypted_message( danexclusivecommunity_private_member_key, danexclusivecommunity_public_member_key, aliceopencommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      federation.federation_type = "member";
+      federation.encrypted_community_key = get_encrypted_message( danexclusivecommunity_private_member_key, danexclusivecommunity_public_member_key, aliceopencommunity_public_member_key, string( "#" ) + graphene::utilities::key_to_wif( danexclusivecommunity_private_member_key ) );
+      federation.share_accounts = true;
+      federation.accepted = true;
+      federation.validate();
+
+      tx.operations.push_back( federation );
+      tx.sign( dan_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      federation_itr = federation_idx.find( boost::make_tuple( federation.federated_community, federation.community ) );
+      BOOST_REQUIRE( federation_itr != federation_idx.end() );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Community Federation accept success" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Comment creation handling for members, non-members, and federated members" );
 
       generate_blocks( now() + fc::minutes(11), true );
 
@@ -1557,6 +1831,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.signatory = "george";
       comment.author = "george";
       comment.permlink = "lorem";
+      comment.parent_author = ROOT_POST_PARENT;
+      comment.parent_permlink = "lorem";
       comment.title = "Lorem Ipsum";
       comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
       comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
@@ -1567,8 +1843,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.tags.push_back( tag_name_type( "test" ) );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
-      comment.parent_author = ROOT_POST_PARENT;
-      comment.parent_permlink = "lorem";
       comment.json = "{ \"valid\": true }";
       comment.latitude = 37.8136;
       comment.longitude = 144.9631;
@@ -1584,8 +1858,12 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.validate();
 
       tx.operations.push_back( comment );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( george_private_posting_key, db.get_chain_id() );       // Non-members can create posts in open community
       db.push_transaction( tx, 0 );
+
+      generate_blocks( now() + fc::minutes(11) );
 
       const comment_object& george_comment = db.get_comment( comment.author, comment.permlink );
 
@@ -1601,48 +1879,105 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.public_key = string();
 
       tx.operations.push_back( comment );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( haz_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-members cannot create posts
+
+      generate_blocks( now() + fc::minutes(11) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       comment.signatory = "isabelle";
       comment.author = "isabelle";
+      comment.permlink = "lorem";
+      comment.parent_author = ROOT_POST_PARENT;
+      comment.parent_permlink = "lorem";
+      comment.title = "Lorem Ipsum";
+      comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+      comment.body_private = get_encrypted_message( isabelle_private_secure_key, isabelle_public_secure_key, candiceprivatecommunity_public_member_key, string( "#Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua." ) );
+      comment.url = "https://www.url.com";
+      comment.url_private = get_encrypted_message( isabelle_private_secure_key, isabelle_public_secure_key, candiceprivatecommunity_public_member_key, string( "#https://www.url.com" ) );
+      comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      comment.ipfs_private = get_encrypted_message( isabelle_private_secure_key, isabelle_public_secure_key, candiceprivatecommunity_public_member_key, string( "#QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" ) );
+      comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
+      comment.magnet_private = get_encrypted_message( isabelle_private_secure_key, isabelle_public_secure_key, candiceprivatecommunity_public_member_key, string( "#magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" ) );
+      comment.json = "{ \"valid\": true }";
+      comment.json_private = get_encrypted_message( isabelle_private_secure_key, isabelle_public_secure_key, candiceprivatecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       comment.community = "candiceprivatecommunity";
-      comment.public_key = string( get_public_key( comment.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      comment.public_key = string( candiceprivatecommunity_public_member_key );
+
       options.reach = "community";
       comment.options = options;
 
       tx.operations.push_back( comment );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( isabelle_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-members cannot create posts
+
+      generate_blocks( now() + fc::minutes(11) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       comment.signatory = "jayme";
       comment.author = "jayme";
+      comment.permlink = "lorem";
+      comment.parent_author = ROOT_POST_PARENT;
+      comment.parent_permlink = "lorem";
+      comment.title = "Lorem Ipsum";
+      comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+      comment.body_private = get_encrypted_message( jayme_private_secure_key, jayme_public_secure_key, danexclusivecommunity_public_member_key, string( "#Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua." ) );
+      comment.url = "https://www.url.com";
+      comment.url_private = get_encrypted_message( jayme_private_secure_key, jayme_public_secure_key, danexclusivecommunity_public_member_key, string( "#https://www.url.com" ) );
+      comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      comment.ipfs_private = get_encrypted_message( jayme_private_secure_key, jayme_public_secure_key, danexclusivecommunity_public_member_key, string( "#QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" ) );
+      comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
+      comment.magnet_private = get_encrypted_message( jayme_private_secure_key, jayme_public_secure_key, danexclusivecommunity_public_member_key, string( "#magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" ) );
+      comment.json = "{ \"valid\": true }";
+      comment.json_private = get_encrypted_message( jayme_private_secure_key, jayme_public_secure_key, danexclusivecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       comment.community = "danexclusivecommunity";
-      comment.public_key = string( get_public_key( comment.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      comment.public_key = string( danexclusivecommunity_public_member_key );
       options.reach = "community";
       comment.options = options;
 
       tx.operations.push_back( comment );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( jayme_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-members cannot create posts
+
+      generate_blocks( now() + fc::minutes(11) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       comment.signatory = "alice";
       comment.author = "alice";
+      comment.permlink = "lorem";
+      comment.parent_author = ROOT_POST_PARENT;
+      comment.parent_permlink = "lorem";
+      comment.title = "Lorem Ipsum";
+      comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+      comment.body_private = "";
+      comment.url = "https://www.url.com";
+      comment.url_private = "";
+      comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      comment.ipfs_private = "";
+      comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
+      comment.magnet_private = "";
+      comment.json = "{ \"valid\": true }";
+      comment.json_private = "";
       comment.community = "aliceopencommunity";
       comment.public_key = string();
       options.reach = "tag";
       comment.options = options;
 
       tx.operations.push_back( comment );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1655,12 +1990,28 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       comment.signatory = "bob";
       comment.author = "bob";
+      comment.permlink = "lorem";
+      comment.parent_author = ROOT_POST_PARENT;
+      comment.parent_permlink = "lorem";
+      comment.title = "Lorem Ipsum";
+      comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+      comment.body_private = "";
+      comment.url = "https://www.url.com";
+      comment.url_private = "";
+      comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      comment.ipfs_private = "";
+      comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
+      comment.magnet_private = "";
+      comment.json = "{ \"valid\": true }";
+      comment.json_private = "";
       comment.community = "bobpubliccommunity";
       comment.public_key = string();
       options.reach = "tag";
       comment.options = options;
 
       tx.operations.push_back( comment );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1673,12 +2024,28 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       comment.signatory = "candice";
       comment.author = "candice";
+      comment.permlink = "lorem";
+      comment.parent_author = ROOT_POST_PARENT;
+      comment.parent_permlink = "lorem";
+      comment.title = "Lorem Ipsum";
+      comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+      comment.body_private = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, candiceprivatecommunity_public_member_key, string( "#Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua." ) );
+      comment.url = "https://www.url.com";
+      comment.url_private = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, candiceprivatecommunity_public_member_key, string( "#https://www.url.com" ) );
+      comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      comment.ipfs_private = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, candiceprivatecommunity_public_member_key, string( "#QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" ) );
+      comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
+      comment.magnet_private = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, candiceprivatecommunity_public_member_key, string( "#magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" ) );
+      comment.json = "{ \"valid\": true }";
+      comment.json_private = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, candiceprivatecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       comment.community = "candiceprivatecommunity";
-      comment.public_key = string( get_public_key( comment.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      comment.public_key = string( candiceprivatecommunity_public_member_key );
       options.reach = "community";
       comment.options = options;
 
       tx.operations.push_back( comment );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1692,22 +2059,347 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       comment.signatory = "dan";
       comment.author = "dan";
+      comment.permlink = "lorem";
+      comment.parent_author = ROOT_POST_PARENT;
+      comment.parent_permlink = "lorem";
+      comment.title = "Lorem Ipsum";
+      comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+      comment.body_private = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, danexclusivecommunity_public_member_key, string( "#Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua." ) );
+      comment.url = "https://www.url.com";
+      comment.url_private = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, danexclusivecommunity_public_member_key, string( "#https://www.url.com" ) );
+      comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      comment.ipfs_private = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, danexclusivecommunity_public_member_key, string( "#QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" ) );
+      comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
+      comment.magnet_private = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, danexclusivecommunity_public_member_key, string( "#magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" ) );
+      comment.json = "{ \"valid\": true }";
+      comment.json_private = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, danexclusivecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       comment.community = "danexclusivecommunity";
-      comment.public_key = string( get_public_key( comment.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      comment.public_key = string( danexclusivecommunity_public_member_key );
       options.reach = "community";
       comment.options = options;
 
       tx.operations.push_back( comment );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( dan_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      generate_blocks( now() + fc::minutes(11) );
 
       const comment_object& dan_comment = db.get_comment( comment.author, comment.permlink );
 
       BOOST_REQUIRE( dan_comment.community == comment.community );
       BOOST_REQUIRE( dan_comment.is_encrypted() );
 
+      comment.signatory = "alice";
+      comment.author = "alice";
+      comment.permlink = "federated-post";
+      comment.parent_author = ROOT_POST_PARENT;
+      comment.parent_permlink = "lorem";
+      comment.title = "Lorem Ipsum";
+      comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+      comment.body_private = "";
+      comment.url = "https://www.url.com";
+      comment.url_private = "";
+      comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      comment.ipfs_private = "";
+      comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
+      comment.magnet_private = "";
+      comment.json = "{ \"valid\": true }";
+      comment.json_private = "";
+      comment.community = "bobpubliccommunity";
+      comment.public_key = string();
+      comment.tags.push_back( tag_name_type( "test" ) );
+      comment.interface = INIT_ACCOUNT;
+      comment.language = "en";
+      comment.latitude = 37.8136;
+      comment.longitude = 144.9631;
+      comment.comment_price = asset( 0, SYMBOL_COIN );
+      comment.premium_price = asset( 0, SYMBOL_COIN );
+
+      options.post_type = "article";
+      options.reach = "tag";
+      options.rating = 1;
+      comment.options = options;
+      comment.validate();
+
+      tx.operations.push_back( comment );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );       // Member of federated community can create posts in public community
+      db.push_transaction( tx, 0 );
+
       tx.operations.clear();
       tx.signatures.clear();
+
+      generate_blocks( now() + fc::minutes(11) );
+
+      const comment_object& alice_bob_federated_comment = db.get_comment( comment.author, comment.permlink );
+
+      BOOST_REQUIRE( alice_bob_federated_comment.author == comment.author );
+      BOOST_REQUIRE( alice_bob_federated_comment.community == comment.community );
+
+      comment.permlink = "federated-post2";
+      comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+      comment.body_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, candiceprivatecommunity_public_member_key, string( "#Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua." ) );
+      comment.url = "https://www.url.com";
+      comment.url_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, candiceprivatecommunity_public_member_key, string( "#https://www.url.com" ) );
+      comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      comment.ipfs_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, candiceprivatecommunity_public_member_key, string( "#QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" ) );
+      comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
+      comment.magnet_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, candiceprivatecommunity_public_member_key, string( "#magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" ) );
+      comment.json = "{ \"valid\": true }";
+      comment.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, candiceprivatecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      comment.community = "candiceprivatecommunity";
+      comment.public_key = string( candiceprivatecommunity_public_member_key );
+
+      options.post_type = "article";
+      options.reach = "community";
+      options.rating = 1;
+      comment.options = options;
+      comment.validate();
+      
+      tx.operations.push_back( comment );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );       // Member of federated community can create posts in private community
+      db.push_transaction( tx, 0 );
+
+      const comment_object& alice_candice_federated_comment = db.get_comment( comment.author, comment.permlink );
+
+      BOOST_REQUIRE( alice_candice_federated_comment.author == comment.author );
+      BOOST_REQUIRE( alice_candice_federated_comment.community == comment.community );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      generate_blocks( now() + fc::minutes(11) );
+
+      comment.permlink = "federated-post3";
+      comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+      comment.body_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, danexclusivecommunity_public_member_key, string( "#Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua." ) );
+      comment.url = "https://www.url.com";
+      comment.url_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, danexclusivecommunity_public_member_key, string( "#https://www.url.com" ) );
+      comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      comment.ipfs_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, danexclusivecommunity_public_member_key, string( "#QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" ) );
+      comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
+      comment.magnet_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, danexclusivecommunity_public_member_key, string( "#magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" ) );
+      comment.json = "{ \"valid\": true }";
+      comment.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, danexclusivecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      comment.community = "danexclusivecommunity";
+      comment.public_key = string( danexclusivecommunity_public_member_key );
+
+      options.post_type = "article";
+      options.reach = "community";
+      options.rating = 1;
+      comment.options = options;
+      comment.validate();
+      
+      tx.operations.push_back( comment );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );       // Member of federated community can create posts in exclusive community
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const comment_object& alice_dan_federated_comment = db.get_comment( comment.author, comment.permlink );
+
+      BOOST_REQUIRE( alice_dan_federated_comment.author == comment.author );
+      BOOST_REQUIRE( alice_dan_federated_comment.community == comment.community );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Comment creation handling for members, non-members, and federated members" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Message handling for members and non-members" );
+
+      message_operation message;
+
+      message.signatory = "george";
+      message.sender = "george";
+      message.community = "aliceopencommunity";
+      message.public_key = string( aliceopencommunity_public_member_key );
+      message.message = get_encrypted_message( george_private_secure_key, george_public_secure_key, aliceopencommunity_public_member_key, string( "#Hello" ) );
+      message.uuid = "f55004be-bf4b-4bc7-b6c6-4a2d16a2ef9a";
+      message.interface = INIT_ACCOUNT;
+      message.expiration = now() + fc::days(365);
+      message.validate();
+
+      tx.operations.push_back( message );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
+      tx.sign( george_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const auto& message_idx = db.get_index< message_index >().indices().get< by_sender_uuid >();
+      auto message_itr = message_idx.find( boost::make_tuple( account_name_type( "george" ), string( "f55004be-bf4b-4bc7-b6c6-4a2d16a2ef9a" ) ) );
+
+      BOOST_REQUIRE( message_itr != message_idx.end() );
+      BOOST_REQUIRE( to_string( message_itr->message ) == message.message );
+
+      message.signatory = "haz";
+      message.sender = "haz";
+      message.community = "bobpubliccommunity";
+      message.public_key = string( bobpubliccommunity_public_member_key );
+      message.message = get_encrypted_message( haz_private_secure_key, haz_public_secure_key, bobpubliccommunity_public_member_key, string( "#Hello" ) );
+      message.uuid = "cea25601-c5b2-4ced-b785-cf27d8124876";
+      message.interface = INIT_ACCOUNT;
+      message.expiration = now() + fc::days(365);
+      message.validate();
+
+      tx.operations.push_back( message );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( haz_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-members cannot create messages
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      message_itr = message_idx.find( boost::make_tuple( account_name_type( "haz" ), string( "cea25601-c5b2-4ced-b785-cf27d8124876" ) ) );
+
+      BOOST_REQUIRE( message_itr == message_idx.end() );
+
+      message.signatory = "isabelle";
+      message.sender = "isabelle";
+      message.community = "candiceprivatecommunity";
+      message.public_key = string( candiceprivatecommunity_public_member_key );
+      message.message = get_encrypted_message( isabelle_private_secure_key, isabelle_public_secure_key, candiceprivatecommunity_public_member_key, string( "#Hello" ) );
+      message.uuid = "2279c867-bae8-486c-9135-639821d7a651";
+      message.interface = INIT_ACCOUNT;
+      message.expiration = now() + fc::days(365);
+      message.validate();
+
+      tx.operations.push_back( message );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( isabelle_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-members cannot create messages
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      message_itr = message_idx.find( boost::make_tuple( account_name_type( "isabelle" ), string( "2279c867-bae8-486c-9135-639821d7a651" ) ) );
+
+      BOOST_REQUIRE( message_itr == message_idx.end() );
+
+      message.signatory = "jayme";
+      message.sender = "jayme";
+      message.community = "danexclusivecommunity";
+      message.public_key = string( danexclusivecommunity_public_member_key );
+      message.message = get_encrypted_message( jayme_private_secure_key, jayme_public_secure_key, danexclusivecommunity_public_member_key, string( "#Hello" ) );
+      message.uuid = "2e89bafc-1b29-4fc1-9e8c-c26055dc418d";
+      message.interface = INIT_ACCOUNT;
+      message.expiration = now() + fc::days(365);
+      message.validate();
+
+      tx.operations.push_back( message );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( jayme_private_posting_key, db.get_chain_id() );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-members cannot create messages
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      message_itr = message_idx.find( boost::make_tuple( account_name_type( "jayme" ), string( "2e89bafc-1b29-4fc1-9e8c-c26055dc418d" ) ) );
+
+      BOOST_REQUIRE( message_itr == message_idx.end() );
+
+      message.signatory = "alice";
+      message.sender = "alice";
+      message.community = "aliceopencommunity";
+      message.public_key = string( aliceopencommunity_public_member_key );
+      message.message = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, aliceopencommunity_public_member_key, string( "#Hello" ) );
+      message.uuid = "1a068a51-b724-4a64-b53d-acfd1e77d17d";
+      message.interface = INIT_ACCOUNT;
+      message.expiration = now() + fc::days(365);
+      message.validate();
+
+      tx.operations.push_back( message );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      message_itr = message_idx.find( boost::make_tuple( account_name_type( "alice" ), string( "1a068a51-b724-4a64-b53d-acfd1e77d17d" ) ) );
+
+      BOOST_REQUIRE( message_itr != message_idx.end() );
+      BOOST_REQUIRE( to_string( message_itr->message ) == message.message );
+
+      message.signatory = "bob";
+      message.sender = "bob";
+      message.community = "bobpubliccommunity";
+      message.public_key = string( bobpubliccommunity_public_member_key );
+      message.message = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, bobpubliccommunity_public_member_key, string( "#Hello" ) );
+      message.uuid = "1e3baa5c-4ba4-47cb-b4e8-8a8b93e442de";
+      message.interface = INIT_ACCOUNT;
+      message.expiration = now() + fc::days(365);
+      message.validate();
+
+      tx.operations.push_back( message );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      message_itr = message_idx.find( boost::make_tuple( account_name_type( "bob" ), string( "1e3baa5c-4ba4-47cb-b4e8-8a8b93e442de" ) ) );
+
+      BOOST_REQUIRE( message_itr != message_idx.end() );
+      BOOST_REQUIRE( to_string( message_itr->message ) == message.message );
+
+      message.signatory = "candice";
+      message.sender = "candice";
+      message.community = "candiceprivatecommunity";
+      message.public_key = string( candiceprivatecommunity_public_member_key );
+      message.message = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, candiceprivatecommunity_public_member_key, string( "#Hello" ) );
+      message.uuid = "e6596869-c7a4-4da6-bd3d-bf793b0aff63";
+      message.interface = INIT_ACCOUNT;
+      message.expiration = now() + fc::days(365);
+      message.validate();
+
+      tx.operations.push_back( message );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      message_itr = message_idx.find( boost::make_tuple( account_name_type( "candice" ), string( "e6596869-c7a4-4da6-bd3d-bf793b0aff63" ) ) );
+
+      BOOST_REQUIRE( message_itr != message_idx.end() );
+      BOOST_REQUIRE( to_string( message_itr->message ) == message.message );
+
+      message.signatory = "dan";
+      message.sender = "dan";
+      message.community = "danexclusivecommunity";
+      message.public_key = string( danexclusivecommunity_public_member_key );
+      message.message = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, danexclusivecommunity_public_member_key, string( "#Hello" ) );
+      message.uuid = "5f7ed3f7-d24e-40b1-a3e6-ecf13a40223e";
+      message.interface = INIT_ACCOUNT;
+      message.expiration = now() + fc::days(365);
+      message.validate();
+
+      tx.operations.push_back( message );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.sign( dan_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      message_itr = message_idx.find( boost::make_tuple( account_name_type( "dan" ), string( "5f7ed3f7-d24e-40b1-a3e6-ecf13a40223e" ) ) );
+
+      BOOST_REQUIRE( message_itr != message_idx.end() );
+      BOOST_REQUIRE( to_string( message_itr->message ) == message.message );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: comment creation handling for members and non-members" );
 
@@ -1724,13 +2416,15 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       vote.validate();
       
       tx.operations.push_back( vote );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( george_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_vote_object& george_alice_vote = db.get_comment_vote( vote.voter, alice_comment.id );
+      const comment_vote_object& george_alice_vote = db.get_comment_vote( vote.voter, db.get_comment( vote.author, vote.permlink ).id );
 
       BOOST_REQUIRE( george_alice_vote.voter == vote.voter );
-      BOOST_REQUIRE( george_alice_vote.comment == alice_comment.id );
+      BOOST_REQUIRE( george_alice_vote.comment == db.get_comment( vote.author, vote.permlink ).id );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -1743,10 +2437,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( haz_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_vote_object& haz_bob_vote = db.get_comment_vote( vote.voter, bob_comment.id );
+      const comment_vote_object& haz_bob_vote = db.get_comment_vote( vote.voter, db.get_comment( vote.author, vote.permlink ).id );
 
       BOOST_REQUIRE( haz_bob_vote.voter == vote.voter );
-      BOOST_REQUIRE( haz_bob_vote.comment == bob_comment.id );
+      BOOST_REQUIRE( haz_bob_vote.comment == db.get_comment( vote.author, vote.permlink ).id );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -1789,13 +2483,15 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       view.validate();
       
       tx.operations.push_back( view );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( george_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_view_object& george_view = db.get_comment_view( view.viewer, alice_comment.id );
+      const comment_view_object& george_view = db.get_comment_view( view.viewer, db.get_comment( view.author, view.permlink ).id );
 
       BOOST_REQUIRE( george_view.viewer == view.viewer );
-      BOOST_REQUIRE( george_view.comment == alice_comment.id );
+      BOOST_REQUIRE( george_view.comment == db.get_comment( view.author, view.permlink ).id );
       BOOST_REQUIRE( george_view.supernode == view.supernode );
       BOOST_REQUIRE( george_view.interface == view.interface );
       BOOST_REQUIRE( george_view.created == now() );
@@ -1811,10 +2507,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( haz_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_view_object& haz_view = db.get_comment_view( view.viewer, bob_comment.id );
+      const comment_view_object& haz_view = db.get_comment_view( view.viewer, db.get_comment( view.author, view.permlink ).id );
 
       BOOST_REQUIRE( haz_view.viewer == view.viewer );
-      BOOST_REQUIRE( haz_view.comment == bob_comment.id );
+      BOOST_REQUIRE( haz_view.comment == db.get_comment( view.author, view.permlink ).id );
       BOOST_REQUIRE( haz_view.supernode == view.supernode );
       BOOST_REQUIRE( haz_view.interface == view.interface );
       BOOST_REQUIRE( haz_view.created == now() );
@@ -1860,13 +2556,15 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       share.validate();
       
       tx.operations.push_back( share );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( george_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_share_object& george_share = db.get_comment_share( share.sharer, alice_comment.id );
+      const comment_share_object& george_share = db.get_comment_share( share.sharer, db.get_comment( share.author, share.permlink ).id );
 
       BOOST_REQUIRE( george_share.sharer == share.sharer );
-      BOOST_REQUIRE( george_share.comment == alice_comment.id );
+      BOOST_REQUIRE( george_share.comment == db.get_comment( share.author, share.permlink ).id );
       BOOST_REQUIRE( george_share.interface == share.interface );
       BOOST_REQUIRE( george_share.created == now() );
 
@@ -1881,10 +2579,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( haz_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_share_object& haz_bob_share = db.get_comment_share( share.sharer, bob_comment.id );
+      const comment_share_object& haz_bob_share = db.get_comment_share( share.sharer, db.get_comment( share.author, share.permlink ).id );
 
       BOOST_REQUIRE( haz_bob_share.sharer == share.sharer );
-      BOOST_REQUIRE( haz_bob_share.comment == bob_comment.id );
+      BOOST_REQUIRE( haz_bob_share.comment == db.get_comment( share.author, share.permlink ).id );
       BOOST_REQUIRE( haz_bob_share.interface == share.interface );
       BOOST_REQUIRE( haz_bob_share.created == now() );
 
@@ -1926,6 +2624,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       accept.validate();
 
       tx.operations.push_back( accept );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( george_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2009,7 +2709,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.signatory = "isabelle";
       comment.author = "isabelle";
       comment.community = "candiceprivatecommunity";
-      comment.public_key = string( get_public_key( comment.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      comment.public_key = string( candiceprivatecommunity_public_member_key );
       options.reach = "community";
       comment.options = options;
 
@@ -2028,7 +2728,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       comment.signatory = "jayme";
       comment.author = "jayme";
       comment.community = "danexclusivecommunity";
-      comment.public_key = string( get_public_key( comment.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      comment.public_key = string( danexclusivecommunity_public_member_key );
       options.reach = "community";
       comment.options = options;
 
@@ -2054,6 +2754,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       vote.permlink = "ipsum";
       
       tx.operations.push_back( vote );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( george_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2123,6 +2825,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       view.permlink = "ipsum";
 
       tx.operations.push_back( view );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( george_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2204,6 +2908,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       share.permlink = "ipsum";
       
       tx.operations.push_back( share );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( george_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2290,11 +2996,13 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tag.validate();
 
       tx.operations.push_back( tag );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       const auto& tag_idx = db.get_index< comment_moderation_index >().indices().get< by_comment_moderator >();
-      auto tag_itr = tag_idx.find( std::make_tuple( george_comment2.id, tag.moderator ) );
+      auto tag_itr = tag_idx.find( boost::make_tuple( george_comment2.id, tag.moderator ) );
 
       BOOST_REQUIRE( tag_itr != tag_idx.end() );
       BOOST_REQUIRE( to_string( tag_itr->details ) == tag.details );
@@ -2310,7 +3018,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      tag_itr = tag_idx.find( std::make_tuple( haz_comment.id, tag.moderator ) );
+      tag_itr = tag_idx.find( boost::make_tuple( haz_comment.id, tag.moderator ) );
 
       BOOST_REQUIRE( tag_itr != tag_idx.end() );
       BOOST_REQUIRE( to_string( tag_itr->details ) == tag.details );
@@ -2326,7 +3034,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      tag_itr = tag_idx.find( std::make_tuple( isabelle_comment.id, tag.moderator ) );
+      tag_itr = tag_idx.find( boost::make_tuple( isabelle_comment.id, tag.moderator ) );
 
       BOOST_REQUIRE( tag_itr != tag_idx.end() );
       BOOST_REQUIRE( to_string( tag_itr->details ) == tag.details );
@@ -2342,7 +3050,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      tag_itr = tag_idx.find( std::make_tuple( jayme_comment.id, tag.moderator ) );
+      tag_itr = tag_idx.find( boost::make_tuple( jayme_comment.id, tag.moderator ) );
 
       BOOST_REQUIRE( tag_itr != tag_idx.end() );
       BOOST_REQUIRE( to_string( tag_itr->details ) == tag.details );
@@ -2364,6 +3072,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       add_mod.validate();
 
       tx.operations.push_back( add_mod );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( elon_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2414,9 +3124,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       update.signatory = "elon";
       update.account = "elon";
       update.community = "aliceopencommunity";
-      update.community_member_key = string( get_public_key( update.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      update.community_moderator_key = string( get_public_key( update.community, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      update.community_admin_key = string( get_public_key( update.community, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      update.community_member_key = string( aliceopencommunity_public_member_key );
+      update.community_moderator_key = string( aliceopencommunity_public_moderator_key );
+      update.community_admin_key = string( aliceopencommunity_public_admin_key );
       update.display_name = "Alice Public Community";
       update.details = "updated details";
       update.url = "https://www.newurl.com";
@@ -2430,6 +3140,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       update.validate();
 
       tx.operations.push_back( update );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( elon_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2445,9 +3157,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       update.pinned_author = "bob";
       update.community = "bobpubliccommunity";
-      update.community_member_key = string( get_public_key( update.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      update.community_moderator_key = string( get_public_key( update.community, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      update.community_admin_key = string( get_public_key( update.community, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      update.community_member_key = string( bobpubliccommunity_public_member_key );
+      update.community_moderator_key = string( bobpubliccommunity_public_moderator_key );
+      update.community_admin_key = string( bobpubliccommunity_public_admin_key );
       update.validate();
 
       tx.operations.push_back( update );
@@ -2466,9 +3178,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       update.pinned_author = "candice";
       update.community = "candiceprivatecommunity";
-      update.community_member_key = string( get_public_key( update.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      update.community_moderator_key = string( get_public_key( update.community, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      update.community_admin_key = string( get_public_key( update.community, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      update.community_member_key = string( candiceprivatecommunity_public_member_key );
+      update.community_moderator_key = string( candiceprivatecommunity_public_moderator_key );
+      update.community_admin_key = string( candiceprivatecommunity_public_admin_key );
       update.validate();
 
       tx.operations.push_back( update );
@@ -2487,9 +3199,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       update.pinned_author = "dan";
       update.community = "danexclusivecommunity";
-      update.community_member_key = string( get_public_key( update.community, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      update.community_moderator_key = string( get_public_key( update.community, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      update.community_admin_key = string( get_public_key( update.community, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      update.community_member_key = string( danexclusivecommunity_public_member_key );
+      update.community_moderator_key = string( danexclusivecommunity_public_moderator_key );
+      update.community_admin_key = string( danexclusivecommunity_public_admin_key );
       update.validate();
 
       tx.operations.push_back( update );
@@ -2518,6 +3230,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       add_mod.validate();
 
       tx.operations.push_back( add_mod );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2582,6 +3296,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       remove.validate();
 
       tx.operations.push_back( remove );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Open Public boards cannot remove members
 
@@ -2644,6 +3360,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       subscribe.validate();
 
       tx.operations.push_back( subscribe );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2698,6 +3416,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       blacklist.validate();
 
       tx.operations.push_back( blacklist );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Open Public boards cannot blacklist
    
@@ -2761,6 +3481,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       transfer.validate();
 
       tx.operations.push_back( transfer );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2825,12 +3547,16 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       event.details = "Open house - BYO drinks";
       event.url = "https://www.staggeringbeauty.com";
       event.json = "{ \"valid\": true }";
+      event.interface = INIT_ACCOUNT;
+      event.event_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       event.event_start_time = now() + fc::days(1);
       event.event_end_time = now() + fc::days(1) + fc::hours(8);
       event.active = true;
       event.validate();
 
       tx.operations.push_back( event );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2839,7 +3565,6 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       const community_event_object& alice_event = db.get_community_event( event.community, event.event_id );
 
-      BOOST_REQUIRE( event.account == alice_event.account );
       BOOST_REQUIRE( event.community == alice_event.community );
       BOOST_REQUIRE( event.event_id == to_string( alice_event.event_id ) );
       BOOST_REQUIRE( event.event_name == to_string( alice_event.event_name ) );
@@ -2849,9 +3574,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       BOOST_REQUIRE( event.details == to_string( alice_event.details ) );
       BOOST_REQUIRE( event.url == to_string( alice_event.url ) );
       BOOST_REQUIRE( event.json == to_string( alice_event.json ) );
+      BOOST_REQUIRE( event.interface == alice_event.interface );
+      BOOST_REQUIRE( event.event_price == alice_event.event_price );
       BOOST_REQUIRE( event.event_start_time == alice_event.event_start_time );
       BOOST_REQUIRE( event.event_end_time == alice_event.event_end_time );
-      BOOST_REQUIRE( alice_event.active );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Create community event" );
 
@@ -2859,27 +3585,40 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       community_event_attend_operation attend;
 
-      attend.signatory = "george";
-      attend.account = "george";
+      attend.signatory = "elon";
+      attend.attendee = "elon";
       attend.community = "aliceopencommunity";
       attend.event_id = "a14e898a-9d92-4461-8011-64a43521c051";
+      attend.json = "{ \"valid\": true }";
+      attend.interface = INIT_ACCOUNT;
       attend.interested = true;
       attend.attending = true;
-      attend.not_attending = false;
+      attend.active = true;
       attend.validate();
 
       tx.operations.push_back( attend );
-      tx.sign( george_private_posting_key, db.get_chain_id() );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      const community_event_object& new_alice_event = db.get_community_event( attend.community, attend.event_id );
+      const auto& event_attend_idx = db.get_index< community_event_attend_index >().indices().get< by_event_id >();
+      auto event_attend_itr = event_attend_idx.find( boost::make_tuple( attend.community, attend.event_id, attend.attendee ) );
 
-      BOOST_REQUIRE( new_alice_event.is_interested( attend.account ) );
-      BOOST_REQUIRE( new_alice_event.is_attending( attend.account ) );
-      BOOST_REQUIRE( !new_alice_event.is_not_attending( attend.account ) );
+      BOOST_REQUIRE( event_attend_itr != event_attend_idx.end() );
+
+      const community_event_attend_object& elon_attend = *event_attend_itr;
+
+      BOOST_REQUIRE( attend.attendee == elon_attend.attendee );
+      BOOST_REQUIRE( attend.community == elon_attend.community );
+      BOOST_REQUIRE( attend.event_id == to_string( elon_attend.event_id ) );
+      BOOST_REQUIRE( attend.json == to_string( elon_attend.json ) );
+      BOOST_REQUIRE( attend.interface == elon_attend.interface );
+      BOOST_REQUIRE( attend.interested == elon_attend.interested );
+      BOOST_REQUIRE( attend.attending == elon_attend.attending );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Attend community event" );
 

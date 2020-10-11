@@ -737,6 +737,37 @@ void database::init_genesis()
       a.boost_top = EQUITY_BOOST_TOP_PERCENT;
    });
 
+   // Create Equity distribution
+
+   asset_unit init_input = asset_unit( INIT_ACCOUNT, BLOCKCHAIN_PRECISION, account_balance_values[ 0 ], GENESIS_TIME );
+   asset_unit sender_output = asset_unit( ASSET_UNIT_SENDER, 1, account_balance_values[ 0 ], GENESIS_TIME );
+
+   create< asset_distribution_object >( [&]( asset_distribution_object& a )
+   {
+      a.distribution_asset = SYMBOL_EQUITY;
+      a.fund_asset = SYMBOL_COIN;
+      from_string( a.details, EQUITY_DETAILS );
+      from_string( a.url, INIT_URL );
+      from_string( a.json, "" );
+      a.distribution_rounds = 250;
+      a.distribution_interval_days = 7;
+      a.max_intervals_missed = 250;
+      a.input_fund_unit.insert( init_input );
+      a.output_distribution_unit.insert( sender_output );
+      a.min_input_fund_units = 1;
+      a.max_input_fund_units = 1000000;
+      a.min_unit_ratio = 200000;
+      a.max_unit_ratio = 200000000000;
+      a.min_input_balance_units = 1;
+      a.max_input_balance_units = 1000000;
+      a.total_distributed = asset( 0, SYMBOL_EQUITY );
+      a.total_funded = asset( 0, SYMBOL_COIN );
+      a.begin_time = now + fc::days(7);
+      a.next_round_time = now + fc::days(7);
+      a.created = now;
+      a.last_updated = now;
+   });
+
    // Create USD asset
 
    create< asset_object >( [&]( asset_object& a )
@@ -2276,8 +2307,7 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< account_reset_update_evaluator           >();
    _my->_evaluator_registry.register_evaluator< account_recovery_update_evaluator        >();
    _my->_evaluator_registry.register_evaluator< account_decline_voting_evaluator         >();
-   _my->_evaluator_registry.register_evaluator< account_connection_request_evaluator     >();
-   _my->_evaluator_registry.register_evaluator< account_connection_accept_evaluator      >();
+   _my->_evaluator_registry.register_evaluator< account_connection_evaluator             >();
    _my->_evaluator_registry.register_evaluator< account_follow_evaluator                 >();
    _my->_evaluator_registry.register_evaluator< account_follow_tag_evaluator             >();
    _my->_evaluator_registry.register_evaluator< account_activity_evaluator               >();
@@ -2326,8 +2356,7 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< community_remove_member_evaluator        >();
    _my->_evaluator_registry.register_evaluator< community_blacklist_evaluator            >();
    _my->_evaluator_registry.register_evaluator< community_subscribe_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< community_federation_request_evaluator   >();
-   _my->_evaluator_registry.register_evaluator< community_federation_accept_evaluator    >();
+   _my->_evaluator_registry.register_evaluator< community_federation_evaluator           >();
    _my->_evaluator_registry.register_evaluator< community_event_evaluator                >();
    _my->_evaluator_registry.register_evaluator< community_event_attend_evaluator         >();
 
@@ -2476,7 +2505,6 @@ void database::initialize_indexes()
    add_core_index< account_following_index                 >(*this);
    add_core_index< account_tag_following_index             >(*this);
    add_core_index< account_connection_index                >(*this);
-   add_core_index< account_connection_request_index        >(*this);
    add_core_index< account_authority_history_index         >(*this);
    add_core_index< account_recovery_request_index          >(*this);
    add_core_index< account_recovery_update_request_index   >(*this);
@@ -2523,8 +2551,8 @@ void database::initialize_indexes()
    add_core_index< community_join_request_index            >(*this);
    add_core_index< community_join_invite_index             >(*this);
    add_core_index< community_federation_index              >(*this);
-   add_core_index< community_federation_request_index      >(*this);
    add_core_index< community_event_index                   >(*this);
+   add_core_index< community_event_attend_index            >(*this);
 
    // Advertising Indexes
 
@@ -2830,6 +2858,7 @@ void database::_apply_block( const signed_block& next_block )
    update_producer_set();
    governance_update_account_set();
    update_community_moderator_set();
+   process_community_membership_fees();
    update_business_account_set();
    update_comment_metrics();
    update_message_counter();
@@ -3301,16 +3330,6 @@ void database::init_hardforks()
 void database::clear_expired_operations()
 { try {
    time_point now = head_block_time();
-
-   // ilog( "Clear Expired Operations:", ("now", now) );
-   
-   const auto& connection_req_index = get_index< account_connection_request_index >().indices().get< by_expiration >();
-   while( !connection_req_index.empty() && connection_req_index.begin()->expiration <= now )
-   {
-      const account_connection_request_object& req = *connection_req_index.begin();
-      ilog( "Removed: ${v}",("v",req));
-      remove( req );
-   }
 
    const auto& limit_index = get_index< limit_order_index >().indices().get< by_expiration >();
    while( !limit_index.empty() && limit_index.begin()->expiration <= now )

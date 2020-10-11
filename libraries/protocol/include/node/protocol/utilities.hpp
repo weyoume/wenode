@@ -34,8 +34,8 @@ namespace node { namespace protocol {
 
    inline void validate_permlink( const string& permlink )
    {
-      FC_ASSERT( permlink.size() > MIN_PERMLINK_LENGTH && 
-         permlink.size() < MAX_PERMLINK_LENGTH, 
+      FC_ASSERT( permlink.size() >= MIN_PERMLINK_LENGTH && 
+         permlink.size() <= MAX_PERMLINK_LENGTH, 
          "Permlink is not a valid size." );
 
       for( auto c : permlink )
@@ -73,7 +73,7 @@ namespace node { namespace protocol {
 
    inline void validate_public_key( const string& key )
    {
-      FC_ASSERT( key.size() < MAX_URL_LENGTH,
+      FC_ASSERT( key.size() < MAX_URL_SIZE,
          "Public Key is too long" );
       FC_ASSERT( fc::is_utf8( key ),
          "Public key is not formatted in UTF8." );

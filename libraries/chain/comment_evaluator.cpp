@@ -121,15 +121,6 @@ void comment_evaluator::do_apply( const comment_operation& o )
    }
 
    connection_tier_type reply_connection = connection_tier_type::PUBLIC;
-
-   for( size_t i = 0; i < connection_tier_values.size(); i++ )
-   {
-      if( options.reply_connection == connection_tier_values[ i ] )
-      {
-         reply_connection = connection_tier_type( i );
-         break;
-      }
-   }
    
    const community_object* community_ptr = nullptr;
 
@@ -145,13 +136,13 @@ void comment_evaluator::do_apply( const comment_operation& o )
 
       if( o.parent_author == ROOT_POST_PARENT )
       {
-         FC_ASSERT( _db.is_federated_authorized_author( community_member, o.author ),
+         FC_ASSERT( community_member.is_authorized_author( o.author ),
             "User ${u} is not authorized to post in the community ${b}.",
             ("b",o.community)("u",auth.name));
       }
       else
       {
-         FC_ASSERT( _db.is_federated_authorized_interact( community_member, o.author ),
+         FC_ASSERT( community_member.is_authorized_interact( o.author ),
             "User ${u} is not authorized to interact with posts in the community ${b}.",
             ("b",o.community)("u",auth.name));
       }
@@ -163,8 +154,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
          case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
          {
-            FC_ASSERT( !o.public_key.size(), 
-               "Posts in Public communities should not be encrypted." );
+            // No public key required for public posts
          }
          break;
          case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
@@ -203,8 +193,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
       case feed_reach_type::FOLLOW_FEED:
       case feed_reach_type::MUTUAL_FEED:
       {
-         FC_ASSERT( !o.public_key.size(), 
-            "Follow, Mutual and Tag level posts should not be encrypted." );
+         // No public key required for public posts
       }
       break;
       case feed_reach_type::CONNECTION_FEED:
@@ -248,9 +237,9 @@ void comment_evaluator::do_apply( const comment_operation& o )
       case post_format_type::TEXT_POST:
       {
          FC_ASSERT( o.body.size() <= MAX_TEXT_POST_LENGTH,
-            "Comment rejected: Body size is too large for text post, maximum of 300 characters." );
+            "Body size is too large for text post, maximum of 300 characters." );
          FC_ASSERT( o.title.size() == 0,
-            "Comment rejected: Should not include title in text post." );
+            "Should not include title in text post." );
          if( community_ptr != nullptr )
          {
             FC_ASSERT( community_ptr->enable_text_posts(),
@@ -261,7 +250,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
       case post_format_type::IMAGE_POST:
       {
          FC_ASSERT( o.ipfs.size() >= 1,
-            "Comment rejected: Image post must contain at least one IPFS referenced image file." );
+            "Image post must contain at least one IPFS referenced image file." );
          if( community_ptr != nullptr )
          {
             FC_ASSERT( community_ptr->enable_image_posts(), 
@@ -272,7 +261,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
       case post_format_type::GIF_POST:
       {
          FC_ASSERT( o.ipfs.size() >= 1,
-            "Comment rejected: Image post must contain at least one IPFS referenced gif file." );
+            "Image post must contain at least one IPFS referenced gif file." );
          if( community_ptr != nullptr )
          {
             FC_ASSERT( community_ptr->enable_gif_posts(), 
@@ -283,9 +272,9 @@ void comment_evaluator::do_apply( const comment_operation& o )
       case post_format_type::VIDEO_POST:
       {
          FC_ASSERT( o.magnet.size() >= 1 || o.ipfs.size() >= 1,
-            "Comment rejected: Video post must contain at least one IPFS or magnet referenced video file." );
+            "Video post must contain at least one IPFS or magnet referenced video file." );
          FC_ASSERT( o.title.size() >= 1,
-            "Comment rejected: Should include title in video post." );
+            "Should include title in video post." );
          if( community_ptr != nullptr )
          {
             FC_ASSERT( community_ptr->enable_video_posts(), 
@@ -296,9 +285,9 @@ void comment_evaluator::do_apply( const comment_operation& o )
       case post_format_type::LINK_POST:
       {
          FC_ASSERT( o.url.size() >= 1,
-            "Comment rejected: Link post must contain at least a valid url link." );
+            "Link post must contain at least a valid url link." );
          FC_ASSERT( o.title.size() >= 1,
-            "Comment rejected: Should include title in link post." );
+            "Should include title in link post." );
          if( community_ptr != nullptr )
          {
             FC_ASSERT( community_ptr->enable_link_posts(), 
@@ -309,9 +298,9 @@ void comment_evaluator::do_apply( const comment_operation& o )
       case post_format_type::ARTICLE_POST:
       {
          FC_ASSERT( o.body.size() >=1,
-            "Comment rejected: Article post must include body." );
+            "Article post must include body." );
          FC_ASSERT( o.title.size() >=1,
-            "Comment rejected: Article post must include title." );
+            "Article post must include title." );
          if( community_ptr != nullptr )
          {
             FC_ASSERT( community_ptr->enable_article_posts(), 
@@ -322,9 +311,9 @@ void comment_evaluator::do_apply( const comment_operation& o )
       case post_format_type::AUDIO_POST:
       {
          FC_ASSERT( o.ipfs.size() >= 1,
-            "Comment rejected: Audio post must contain at least one IPFS referenced audio file." );
+            "Audio post must contain at least one IPFS referenced audio file." );
          FC_ASSERT( o.title.size() >= 1,
-            "Comment rejected: Audio post must contain title." );
+            "Audio post must contain title." );
          if( community_ptr != nullptr )
          {
             FC_ASSERT( community_ptr->enable_audio_posts(), 
@@ -335,9 +324,9 @@ void comment_evaluator::do_apply( const comment_operation& o )
       case post_format_type::FILE_POST:
       {
          FC_ASSERT( o.magnet.size() >= 1 || o.ipfs.size() >= 1,
-            "Comment rejected: File post must contain at least one IPFS or Magnet referenced file." );
+            "File post must contain at least one IPFS or Magnet referenced file." );
          FC_ASSERT( o.title.size() >= 1,
-            "Comment rejected: File post must contain title." );
+            "File post must contain title." );
          if( community_ptr != nullptr )
          {
             FC_ASSERT( community_ptr->enable_file_posts(), 
@@ -356,7 +345,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
       break;
       default:
       {
-         FC_ASSERT( false, "Comment rejected: Invalid post type." );
+         FC_ASSERT( false, "Invalid post type." );
       }
    }
 
@@ -448,7 +437,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
 
          const auto& account_connection_idx = _db.get_index< account_connection_index >().indices().get< by_accounts >();
 
-         switch( reply_connection )
+         switch( root.reply_connection )
          {
             case connection_tier_type::PUBLIC:
             {
@@ -458,28 +447,31 @@ void comment_evaluator::do_apply( const comment_operation& o )
             case connection_tier_type::CONNECTION:
             {
                auto con_itr = account_connection_idx.find( boost::make_tuple( account_a_name, account_b_name, reply_connection ) );
-               FC_ASSERT( con_itr != account_connection_idx.end(), 
-                  "Cannot create reply: No Connection between Account: ${a} and Account: ${b}", ("a", account_a_name)("b", account_b_name) );
+               FC_ASSERT( con_itr != account_connection_idx.end() && con_itr->approved(), 
+                  "Cannot create reply: No Approved Connection between Account: ${a} and Account: ${b}",
+                  ("a", account_a_name)("b", account_b_name));
             }
             break;
             case connection_tier_type::FRIEND:
             {
                auto con_itr = account_connection_idx.find( boost::make_tuple( account_a_name, account_b_name, reply_connection ) );
-               FC_ASSERT( con_itr != account_connection_idx.end(), 
-                  "Cannot create reply: No Friend Connection between Account: ${a} and Account: ${b}", ("a", account_a_name)("b", account_b_name) );
+               FC_ASSERT( con_itr != account_connection_idx.end() && con_itr->approved(), 
+                  "Cannot create reply: No Approved Friend Connection between Account: ${a} and Account: ${b}",
+                  ("a", account_a_name)("b", account_b_name));
             }
             break;
             case connection_tier_type::COMPANION:
             {
                auto con_itr = account_connection_idx.find( boost::make_tuple( account_a_name, account_b_name, reply_connection ) );
-               FC_ASSERT( con_itr != account_connection_idx.end(), 
-                  "Cannot create reply: No Companion Connection between Account: ${a} and Account: ${b}", ("a", account_a_name)("b", account_b_name) );
+               FC_ASSERT( con_itr != account_connection_idx.end() && con_itr->approved(), 
+                  "Cannot create reply: No Approved Companion Connection between Account: ${a} and Account: ${b}",
+                  ("a", account_a_name)("b", account_b_name));
             }
             break;
             case connection_tier_type::SECURE:
             {
-               FC_ASSERT( false, 
-                  "Cannot create reply: Post is set to Close replies.");
+               FC_ASSERT( account_a_name == account_b_name, 
+                  "Cannot create reply: Only root author can reply to a secure post.");
             }
             break;
             default:
@@ -965,7 +957,7 @@ void comment_vote_evaluator::do_apply( const comment_vote_operation& o )
    {
       community_ptr = _db.find_community( comment.community );     
       const community_member_object& community_member = _db.get_community_member( comment.community );
-      FC_ASSERT( _db.is_federated_authorized_interact( community_member, o.voter ), 
+      FC_ASSERT( community_member.is_authorized_interact( o.voter ), 
          "User ${u} is not authorized to interact with posts in the community ${b}.",
          ("b", comment.community)("u", voter.name));
    }
@@ -1051,6 +1043,14 @@ void comment_vote_evaluator::do_apply( const comment_vote_operation& o )
          if( o.interface.size() )
          {
             cv.interface = o.interface;
+         }
+         if( o.json.size() )
+         {
+            from_string( cv.json, o.json );
+         }
+         if( o.reaction.size() )
+         {
+            from_string( cv.reaction, o.reaction );
          }
 
          bool curation_reward_eligible = reward > 0 && comment.cashout_time != fc::time_point::maximum() && comment.allow_curation_rewards;
@@ -1172,6 +1172,14 @@ void comment_vote_evaluator::do_apply( const comment_vote_operation& o )
          cv.vote_percent = o.weight;
          cv.last_updated = now;
          cv.num_changes += 1;
+         if( o.json.size() )
+         {
+            from_string( cv.json, o.json );
+         }
+         if( o.reaction.size() )
+         {
+            from_string( cv.reaction, o.reaction );
+         }
 
          bool curation_reward_eligible = reward > 0 && comment.cashout_time != fc::time_point::maximum() && comment.allow_curation_rewards;
          
@@ -1243,7 +1251,7 @@ void comment_view_evaluator::do_apply( const comment_view_operation& o )
    {
       community_ptr = _db.find_community( comment.community );      
       const community_member_object& community_member = _db.get_community_member( comment.community );       
-      FC_ASSERT( _db.is_federated_authorized_interact( community_member, o.viewer ), 
+      FC_ASSERT( community_member.is_authorized_interact( o.viewer ), 
          "User ${u} is not authorized to interact with posts in the community ${b}.",
          ("b",comment.community)("u",viewer.name));
    }
@@ -1359,6 +1367,10 @@ void comment_view_evaluator::do_apply( const comment_view_operation& o )
          if( o.supernode.size() )
          {
             cv.supernode = o.supernode;
+         }
+         if( o.json.size() )
+         {
+            from_string( cv.json, o.json );
          }
          cv.reward = reward;
          cv.created = now;
@@ -1500,7 +1512,7 @@ void comment_share_evaluator::do_apply( const comment_share_operation& o )
    {
       community_ptr = _db.find_community( comment.community );      
       const community_member_object& community_member = _db.get_community_member( comment.community );       
-      FC_ASSERT( _db.is_federated_authorized_interact( community_member, o.sharer ), 
+      FC_ASSERT( community_member.is_authorized_interact( o.sharer ), 
          "User ${u} is not authorized to interact with posts in the community ${b}.",
          ("b", comment.community)("u", sharer.name));
    }
@@ -1539,6 +1551,17 @@ void comment_share_evaluator::do_apply( const comment_share_operation& o )
    const asset_reward_fund_object& rfo = _db.get_reward_fund( comment.reward_currency );
    share_type voting_power = _db.get_voting_power( o.sharer, rfo.symbol );    // Gets the user's voting power from their Equity and Staked coin balances
    share_type reward = ( voting_power.value * used_power ) / PERCENT_100;
+
+   feed_reach_type reach_type = feed_reach_type::FOLLOW_FEED;
+
+   for( size_t i = 0; i < feed_reach_values.size(); i++ )
+   {
+      if( o.reach == feed_reach_values[ i ] )
+      {
+         reach_type = feed_reach_type( i );
+         break;
+      }
+   }
 
    if( itr == comment_share_idx.end() )   // New share is being added to emtpy index
    {
@@ -1582,8 +1605,13 @@ void comment_share_evaluator::do_apply( const comment_share_operation& o )
             cs.interface = o.interface;
          }
          cs.reward = reward;
+         if( o.json.size() )
+         {
+            from_string( cs.json, o.json );
+         }
+         cs.reach = reach_type;
          cs.created = now;
-
+         
          bool curation_reward_eligible = reward > 0 && comment.cashout_time != fc::time_point::maximum() && comment.allow_curation_rewards;
   
          if( curation_reward_eligible )
@@ -1620,24 +1648,12 @@ void comment_share_evaluator::do_apply( const comment_share_operation& o )
          }
       });
 
-      feed_reach_type reach_type = feed_reach_type::FOLLOW_FEED;
-
-      for( size_t i = 0; i < feed_reach_values.size(); i++ )
-      {
-         if( o.reach == feed_reach_values[ i ] )
-         {
-            reach_type = feed_reach_type( i );
-            break;
-         }
-      }
-      
-      // Create blog and feed objects for sharer account's followers and connections. 
       _db.share_comment_to_feeds( sharer.name, reach_type, comment );
 
       if( o.community.valid() )
       {
          const community_member_object& community_member = _db.get_community_member( *o.community );       
-         FC_ASSERT( _db.is_federated_authorized_interact( community_member, o.sharer ), 
+         FC_ASSERT( community_member.is_authorized_interact( o.sharer ), 
             "User ${u} is not authorized to interact with posts in the community ${b}.",
             ("b", *o.community)("u", sharer.name));
 
@@ -1782,47 +1798,77 @@ void comment_moderation_evaluator::do_apply( const comment_moderation_operation&
       FC_ASSERT( o.applied,
          "Moderation tag does not exist, Applied should be set to true to create new moderation tag." );
 
-      _db.create< comment_moderation_object >( [&]( comment_moderation_object& mto )
+      _db.create< comment_moderation_object >( [&]( comment_moderation_object& cmo )
       {
-         mto.moderator = moderator.name;
-         mto.comment = comment.id;
-         mto.community = comment.community;
+         cmo.moderator = moderator.name;
+         cmo.comment = comment.id;
+         cmo.community = comment.community;
 
          for( auto t : o.tags )
          {
-            mto.tags.insert( t );
+            cmo.tags.insert( t );
          }
          if( o.interface.size() )
          {
-            mto.interface = o.interface;
+            cmo.interface = o.interface;
          }
 
-         mto.rating = o.rating;
-         from_string( mto.details, o.details );
-         mto.filter = o.filter;
-         mto.last_updated = now;
-         mto.created = now;  
+         cmo.rating = o.rating;
+         if( o.details.size() )
+         {
+            from_string( cmo.details, o.details );
+         }
+         if( o.json.size() )
+         {
+            from_string( cmo.json, o.details );
+         }
+
+         cmo.filter = o.filter;
+         cmo.removal_requested = o.removal_requested;
+
+         for( auto b : o.beneficiaries_requested )
+         {
+            cmo.beneficiaries_requested.insert( b );
+         }
+
+         cmo.last_updated = now;
+         cmo.created = now;  
       });
    }
    else    
    {
       if( o.applied )  // Editing existing moderation tag
       {
-         _db.modify( *mod_itr, [&]( comment_moderation_object& mto )
+         _db.modify( *mod_itr, [&]( comment_moderation_object& cmo )
          {
-            mto.tags.clear();
+            cmo.tags.clear();
             for( auto t : o.tags )
             {
-               mto.tags.insert( t );
+               cmo.tags.insert( t );
             }
             if( o.interface.size() )
             {
-               mto.interface = o.interface;
+               cmo.interface = o.interface;
             }
-            mto.rating = o.rating;
-            from_string( mto.details, o.details );
-            mto.filter = o.filter;
-            mto.last_updated = now;
+            cmo.rating = o.rating;
+            if( o.details.size() )
+            {
+               from_string( cmo.details, o.details );
+            }
+            if( o.json.size() )
+            {
+               from_string( cmo.json, o.details );
+            }
+            cmo.filter = o.filter;
+            cmo.removal_requested = o.removal_requested;
+            
+            cmo.beneficiaries_requested.clear();
+            for( auto b : o.beneficiaries_requested )
+            {
+               cmo.beneficiaries_requested.insert( b );
+            }
+
+            cmo.last_updated = now;
          });
       }
       else    // deleting moderation tag
@@ -1851,67 +1897,206 @@ void message_evaluator::do_apply( const message_operation& o )
       FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
-   const account_object& sender = _db.get_account( o.sender );
-   const account_object& recipient = _db.get_account( o.recipient );
-   time_point now = _db.head_block_time();
-   
-   account_name_type account_a_name;
-   account_name_type account_b_name;
 
-   if( sender.id < recipient.id )        // Connection objects are sorted with lowest ID is account A. 
+   const account_object& sender = _db.get_account( o.sender );
+   const auto& message_idx = _db.get_index< message_index >().indices().get< by_sender_uuid >();
+   auto message_itr = message_idx.find( boost::make_tuple( sender.name, o.uuid ) );
+   const message_object* parent_ptr = nullptr;
+
+   if( o.parent_sender != ROOT_POST_PARENT )
    {
-      account_a_name = sender.name;
-      account_b_name = recipient.name;
+      auto parent_itr = message_idx.find( boost::make_tuple( o.parent_sender, o.parent_uuid ) );
+      FC_ASSERT( parent_itr != message_idx.end(),
+         "Parent Message not found with this UUID." );
+      const message_object& parent_message = *parent_itr;
+      parent_ptr = &parent_message;
+   }
+
+   if( o.interface.size() )
+   {
+      const account_object& interface_acc = _db.get_account( o.interface );
+      FC_ASSERT( interface_acc.active, 
+         "Interface: ${s} must be active to broadcast transaction.",
+         ("s", o.interface) );
+      const interface_object& interface = _db.get_interface( o.interface );
+      FC_ASSERT( interface.active, 
+         "Interface: ${s} must be active to broadcast transaction.",
+         ("s", o.interface) );
+   }
+   
+   time_point now = _db.head_block_time();
+
+   public_key_type community_public_key = public_key_type();
+   public_key_type recipient_public_key = public_key_type();
+
+   if( o.community.size() )     // Community validity and permissioning checks
+   {
+      const community_object& community = _db.get_community( o.community );
+      const community_member_object& community_member = _db.get_community_member( o.community );
+
+      FC_ASSERT( community_member.is_authorized_author( o.sender ),
+         "User ${u} is not authorized to create private group messages in the community ${b}.",
+         ("b",o.community)("u",o.sender));
+
+      community_public_key = public_key_type( o.public_key );
+
+      FC_ASSERT( o.public_key.size(),
+         "Messages in Communities should be encrypted." );
+            
+      FC_ASSERT( community_public_key == community.community_member_key || 
+         community_public_key == community.community_moderator_key || 
+         community_public_key == community.community_admin_key,
+         "Posts in Private Communities must be encrypted with a community key." );
    }
    else
    {
-      account_b_name = sender.name;
-      account_a_name = recipient.name;
+      account_name_type account_a_name;
+      account_name_type account_b_name;
+
+      const account_object& recipient = _db.get_account( o.recipient );
+
+      FC_ASSERT( public_key_type( o.public_key ) == recipient.secure_public_key,
+         "Incorrect Public key for recipient account: ${a}",
+         ("a",o.recipient));
+
+      if( sender.id < recipient.id )        // Connection objects are sorted with lowest ID is account A. 
+      {
+         account_a_name = sender.name;
+         account_b_name = recipient.name;
+      }
+      else
+      {
+         account_b_name = sender.name;
+         account_a_name = recipient.name;
+      }
+
+      const auto& account_connection_idx = _db.get_index< account_connection_index >().indices().get< by_accounts >();
+      auto connection_itr = account_connection_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::CONNECTION ) );
+
+      FC_ASSERT( connection_itr != account_connection_idx.end() && 
+         connection_itr->approved(),
+         "Cannot send message: No Approved Connection between Account: ${a} and Account: ${b}",
+         ("a", account_a_name)("b", account_b_name) );
+
+      recipient_public_key = recipient.secure_public_key;
+
+      if( message_itr == message_idx.end() )
+      {
+         _db.modify( *connection_itr, [&]( account_connection_object& co )
+         {
+            if( account_a_name == sender.name )
+            {
+               co.last_message_time_a = now;
+            }
+            else if( account_b_name == sender.name )
+            {
+               co.last_message_time_b = now;
+            }
+            co.message_count++;
+         });
+      }
    }
 
-   const auto& account_connection_idx = _db.get_index< account_connection_index >().indices().get< by_accounts >();
-   auto connection_itr = account_connection_idx.find( boost::make_tuple( account_a_name, account_b_name, connection_tier_type::CONNECTION ) );
-
-   FC_ASSERT( connection_itr != account_connection_idx.end(), 
-      "Cannot send message: No Connection between Account: ${a} and Account: ${b}", ("a", account_a_name)("b", account_b_name) );
-
-   const auto& message_idx = _db.get_index< message_index >().indices().get< by_sender_uuid >();
-   auto message_itr = message_idx.find( boost::make_tuple( sender.name, o.uuid ) );
-
-   if( message_itr == message_idx.end() )         // Message uuid does not exist, creating new message
+   if( message_itr == message_idx.end() )    // Message uuid does not exist, creating new message
    {
-      _db.create< message_object >( [&]( message_object& mo )
+      FC_ASSERT( o.active, 
+         "Message not found with UUID to remove, please set message to active.");
+
+      const message_object& message = _db.create< message_object >( [&]( message_object& mo )
       {
-         mo.sender = sender.name;
-         mo.recipient = recipient.name;
+         mo.sender = o.sender;
          mo.sender_public_key = sender.secure_public_key;
-         mo.recipient_public_key = recipient.secure_public_key;
-         from_string( mo.message, o.message );
+
+         if( o.recipient.size() )
+         {
+            mo.recipient = o.recipient;
+            mo.recipient_public_key = recipient_public_key;
+         }
+         else if( o.community.size() )
+         {
+            mo.community = o.community;
+            mo.community_public_key = community_public_key;
+         }
+
+         if( parent_ptr != nullptr )
+         {
+            mo.parent_message = parent_ptr->id;
+         }
+         else
+         {
+            mo.parent_message = mo.id;
+         }
+
+         if( o.message.size() )
+         {
+            from_string( mo.message, o.message );
+         }
+         if( o.json.size() )
+         {
+            from_string( mo.json, o.json );
+         }
+         if( o.ipfs.size() )
+         {
+            from_string( mo.ipfs, o.ipfs );
+         }
+         
          from_string( mo.uuid, o.uuid );
+
+         if( o.interface.size() )
+         {
+            mo.interface = o.interface;
+         }
+
+         mo.expiration = o.expiration;
+         mo.forward = o.forward;
          mo.created = now;
          mo.last_updated = now;
       });
 
-      _db.modify( *connection_itr, [&]( account_connection_object& co )
-      {
-         if( account_a_name == sender.name )
-         {
-            co.last_message_time_a = now;
-         }
-         else if( account_b_name == sender.name )
-         {
-            co.last_message_time_b = now;
-         }
-         co.message_count++;
-      });
+      ilog( "Sender: ${s} created new message: \n ${m} \n",
+         ("m",message)("s",o.sender));
    }
    else
    {
-      _db.modify( *message_itr, [&]( message_object& mo )
+      const message_object& message = *message_itr;
+
+      if( o.active )
       {
-         from_string( mo.message, o.message );
-         mo.last_updated = now;
-      });
+         _db.modify( message, [&]( message_object& mo )
+         {
+            if( o.message.size() )
+            {
+               from_string( mo.message, o.message );
+            }
+            if( o.json.size() )
+            {
+               from_string( mo.json, o.json );
+            }
+            if( o.ipfs.size() )
+            {
+               from_string( mo.ipfs, o.ipfs );
+            }
+            if( parent_ptr != nullptr )
+            {
+               mo.parent_message = parent_ptr->id;
+            }
+            else
+            {
+               mo.parent_message = mo.id;
+            }
+            mo.forward = o.forward;
+            mo.last_updated = now;
+         });
+
+         ilog( "Sender: ${s} edited message: \n ${m} \n",
+            ("m",message)("s",o.sender));
+      }
+      else
+      {
+         ilog( "Sender: ${s} removed message: \n ${m} \n",
+            ("m",message)("s",o.sender));
+         _db.remove( message );
+      }
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
@@ -1937,57 +2122,83 @@ void list_evaluator::do_apply( const list_operation& o )
 
    FC_ASSERT( creator.active, 
       "Creator: ${s} must be active to broadcast transaction.",("s", o.creator) );
+
+   if( o.interface.size() )
+   {
+      const account_object& interface_acc = _db.get_account( o.interface );
+      FC_ASSERT( interface_acc.active, 
+         "Interface: ${s} must be active to broadcast transaction.",
+         ("s", o.interface) );
+      const interface_object& interface = _db.get_interface( o.interface );
+      FC_ASSERT( interface.active, 
+         "Interface: ${s} must be active to broadcast transaction.",
+         ("s", o.interface) );
+   }
    
    const auto& list_idx = _db.get_index< list_index >().indices().get< by_list_id >();
    auto list_itr = list_idx.find( boost::make_tuple( o.creator, o.list_id ) );
    
    if( list_itr == list_idx.end() )
    {
+      FC_ASSERT( o.active, 
+         "List does not exist with this ID to remove." );
+
       _db.create< list_object >( [&]( list_object& l )
       {
          l.creator = o.creator;
          from_string( l.list_id, o.list_id );
          from_string( l.name, o.name );
-
+         if( o.details.size() )
+         {
+            from_string( l.details, o.details );
+         }
+         if( o.json.size() )
+         {
+            from_string( l.json, o.json );
+         }
+         if( o.interface.size() )
+         {
+            l.interface = o.interface;
+         }
          for( int64_t id : o.accounts )
          {
-            l.accounts.insert( account_id_type( id ) );
+            l.accounts.push_back( account_id_type( id ) );
          }
          for( int64_t id : o.comments )
          {
-            l.comments.insert( comment_id_type( id ) );
+            l.comments.push_back( comment_id_type( id ) );
          }
          for( int64_t id : o.communities )
          {
-            l.communities.insert( community_id_type( id ) );
+            l.communities.push_back( community_id_type( id ) );
          }
          for( int64_t id : o.assets )
          {
-            l.assets.insert( asset_id_type( id ) );
+            l.assets.push_back( asset_id_type( id ) );
          }
          for( int64_t id : o.products )
          {
-            l.products.insert( product_sale_id_type( id ) );
+            l.products.push_back( product_sale_id_type( id ) );
          }
          for( int64_t id : o.auctions )
          {
-            l.auctions.insert( product_auction_sale_id_type( id ) );
+            l.auctions.push_back( product_auction_sale_id_type( id ) );
          }
          for( int64_t id : o.nodes )
          {
-            l.nodes.insert( graph_node_id_type( id ) );
+            l.nodes.push_back( graph_node_id_type( id ) );
          }
          for( int64_t id : o.edges )
          {
-            l.edges.insert( graph_edge_id_type( id ) );
+            l.edges.push_back( graph_edge_id_type( id ) );
          }
          for( int64_t id : o.node_types )
          {
-            l.node_types.insert( graph_node_property_id_type( id ) );
+            l.node_types.push_back( graph_node_property_id_type( id ) );
          }
          for( int64_t id : o.edge_types )
          {
-            l.edge_types.insert( graph_edge_property_id_type( id ) );
+            l.edge_types.push_back( graph_edge_property_id_type( id ) );
          }
 
          l.last_updated = now;
@@ -1998,64 +2209,79 @@ void list_evaluator::do_apply( const list_operation& o )
    {
       const list_object& list = *list_itr;
 
-      _db.modify( list, [&]( list_object& l )
+      if( o.active )
       {
-         from_string( l.name, o.name );
+         _db.modify( list, [&]( list_object& l )
+         {
+            from_string( l.name, o.name );
+            if( o.details.size() )
+            {
+               from_string( l.details, o.details );
+            }
+            if( o.json.size() )
+            {
+               from_string( l.json, o.json );
+            }
 
-         l.accounts.clear();
-         l.comments.clear();
-         l.communities.clear();
-         l.assets.clear();
-         l.products.clear();
-         l.auctions.clear();
-         l.nodes.clear();
-         l.edges.clear();
-         l.node_types.clear();
-         l.edge_types.clear();
+            l.accounts.clear();
+            l.comments.clear();
+            l.communities.clear();
+            l.assets.clear();
+            l.products.clear();
+            l.auctions.clear();
+            l.nodes.clear();
+            l.edges.clear();
+            l.node_types.clear();
+            l.edge_types.clear();
 
-         for( int64_t id : o.accounts )
-         {
-            l.accounts.insert( account_id_type( id ) );
-         }
-         for( int64_t id : o.comments )
-         {
-            l.comments.insert( comment_id_type( id ) );
-         }
-         for( int64_t id : o.communities )
-         {
-            l.communities.insert( community_id_type( id ) );
-         }
-         for( int64_t id : o.assets )
-         {
-            l.assets.insert( asset_id_type( id ) );
-         }
-         for( int64_t id : o.products )
-         {
-            l.products.insert( product_sale_id_type( id ) );
-         }
-         for( int64_t id : o.auctions )
-         {
-            l.auctions.insert( product_auction_sale_id_type( id ) );
-         }
-         for( int64_t id : o.nodes )
-         {
-            l.nodes.insert( graph_node_id_type( id ) );
-         }
-         for( int64_t id : o.edges )
-         {
-            l.edges.insert( graph_edge_id_type( id ) );
-         }
-         for( int64_t id : o.node_types )
-         {
-            l.node_types.insert( graph_node_property_id_type( id ) );
-         }
-         for( int64_t id : o.edge_types )
-         {
-            l.edge_types.insert( graph_edge_property_id_type( id ) );
-         }
+            for( int64_t id : o.accounts )
+            {
+               l.accounts.push_back( account_id_type( id ) );
+            }
+            for( int64_t id : o.comments )
+            {
+               l.comments.push_back( comment_id_type( id ) );
+            }
+            for( int64_t id : o.communities )
+            {
+               l.communities.push_back( community_id_type( id ) );
+            }
+            for( int64_t id : o.assets )
+            {
+               l.assets.push_back( asset_id_type( id ) );
+            }
+            for( int64_t id : o.products )
+            {
+               l.products.push_back( product_sale_id_type( id ) );
+            }
+            for( int64_t id : o.auctions )
+            {
+               l.auctions.push_back( product_auction_sale_id_type( id ) );
+            }
+            for( int64_t id : o.nodes )
+            {
+               l.nodes.push_back( graph_node_id_type( id ) );
+            }
+            for( int64_t id : o.edges )
+            {
+               l.edges.push_back( graph_edge_id_type( id ) );
+            }
+            for( int64_t id : o.node_types )
+            {
+               l.node_types.push_back( graph_node_property_id_type( id ) );
+            }
+            for( int64_t id : o.edge_types )
+            {
+               l.edge_types.push_back( graph_edge_property_id_type( id ) );
+            }
 
-         l.last_updated = now;
-      });
+            l.last_updated = now;
+         });
+      }
+      else
+      {
+         _db.remove( list );
+      }
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
@@ -2082,22 +2308,136 @@ void poll_evaluator::do_apply( const poll_operation& o )
    FC_ASSERT( creator.active, 
       "Creator: ${s} must be active to broadcast transaction.",
       ("s", o.creator) );
+
+   if( o.interface.size() )
+   {
+      const account_object& interface_acc = _db.get_account( o.interface );
+      FC_ASSERT( interface_acc.active, 
+         "Interface: ${s} must be active to broadcast transaction.",
+         ("s", o.interface) );
+      const interface_object& interface = _db.get_interface( o.interface );
+      FC_ASSERT( interface.active, 
+         "Interface: ${s} must be active to broadcast transaction.",
+         ("s", o.interface) );
+   }
    
    const auto& poll_idx = _db.get_index< poll_index >().indices().get< by_poll_id >();
    auto poll_itr = poll_idx.find( boost::make_tuple( o.creator, o.poll_id ) );
 
+   const community_object* community_ptr = nullptr;
+
+   if( o.community.size() )     // Community validity and permissioning checks
+   {
+      community_ptr = _db.find_community( o.community );
+
+      FC_ASSERT( community_ptr != nullptr, 
+         "Community Name: ${b} not found.", ("b", o.community ));
+      const community_object& community = *community_ptr;
+      const community_member_object& community_member = _db.get_community_member( o.community );
+
+      FC_ASSERT( community_member.is_authorized_author( o.creator ),
+         "User ${u} is not authorized to create polls in the community ${b}.",
+         ("b",o.community)("u",o.creator));
+      
+      switch( community.community_privacy )
+      {
+         case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
+         case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
+         case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
+         case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
+         {
+            // No public key required
+         }
+         break;
+         case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
+         case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
+         case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
+         case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
+         {
+            FC_ASSERT( o.public_key.size(),
+               "Posts in Private Communities should be encrypted." );
+            FC_ASSERT( public_key_type( o.public_key ) == community.community_member_key || 
+               public_key_type( o.public_key ) == community.community_moderator_key || 
+               public_key_type( o.public_key ) == community.community_admin_key,
+               "Posts in Private Communities must be encrypted with a community key.");
+         }
+         break;
+         default:
+         {
+            FC_ASSERT( false, "Invalid Community Privacy type." );
+         }
+         break;
+      }
+   }
+
    if( poll_itr == poll_idx.end() )
    {
+      FC_ASSERT( o.active, 
+         "Poll does not exist with this ID to remove." );
+
       _db.create< poll_object >( [&]( poll_object& p )
       {
          p.creator = o.creator;
          from_string( p.poll_id, o.poll_id );
-         from_string( p.details, o.details );
-
-         p.poll_options.reserve( o.poll_options.size() );
-         for( auto option : o.poll_options )
+         if( o.community.size() )
          {
-            p.poll_options.push_back( option );
+            p.community = o.community;
+         }
+         if( o.public_key.size() )
+         {
+            p.public_key = public_key_type( o.public_key );
+         }
+         if( o.interface.size() )
+         {
+            p.interface = o.interface;
+         }
+         if( o.details.size() )
+         {
+            from_string( p.details, o.details );
+         }
+         if( o.json.size() )
+         {
+            from_string( p.json, o.json );
+         }
+         if( o.poll_option_0.size() )
+         {
+            from_string( p.poll_option_0, o.poll_option_0 );
+         }
+         if( o.poll_option_1.size() )
+         {
+            from_string( p.poll_option_1, o.poll_option_1 );
+         }
+         if( o.poll_option_2.size() )
+         {
+            from_string( p.poll_option_2, o.poll_option_2 );
+         }
+         if( o.poll_option_3.size() )
+         {
+            from_string( p.poll_option_3, o.poll_option_3 );
+         }
+         if( o.poll_option_4.size() )
+         {
+            from_string( p.poll_option_4, o.poll_option_4 );
+         }
+         if( o.poll_option_5.size() )
+         {
+            from_string( p.poll_option_5, o.poll_option_5 );
+         }
+         if( o.poll_option_6.size() )
+         {
+            from_string( p.poll_option_6, o.poll_option_6 );
+         }
+         if( o.poll_option_7.size() )
+         {
+            from_string( p.poll_option_7, o.poll_option_7 );
+         }
+         if( o.poll_option_8.size() )
+         {
+            from_string( p.poll_option_8, o.poll_option_8 );
+         }
+         if( o.poll_option_9.size() )
+         {
+            from_string( p.poll_option_9, o.poll_option_9 );
          }
 
          p.completion_time = o.completion_time;
@@ -2110,32 +2450,96 @@ void poll_evaluator::do_apply( const poll_operation& o )
       const poll_object& poll = *poll_itr;
 
       const auto& vote_idx = _db.get_index< poll_vote_index >().indices().get< by_poll_id >();
-      auto vote_itr = vote_idx.find( boost::make_tuple( poll.creator, poll.poll_id ) );
-      
-      if( vote_itr == vote_idx.end() )    // No existing votes
-      {
-         _db.modify( poll, [&]( poll_object& p )
-         {
-            from_string( p.details, o.details );
+      auto vote_itr = vote_idx.lower_bound( boost::make_tuple( poll.creator, poll.poll_id ) );
 
-            p.poll_options.clear();
-            p.poll_options.reserve( o.poll_options.size() );
-            for( auto option : o.poll_options )
+      if( o.active )
+      {
+         if( vote_itr == vote_idx.end() || 
+            vote_itr->creator != poll.creator || 
+            vote_itr->poll_id != poll.poll_id )        // No Poll votes yet
+         {
+            _db.modify( poll, [&]( poll_object& p )
             {
-               p.poll_options.push_back( option );
-            }
+               if( o.details.size() )
+               {
+                  from_string( p.details, o.details );
+               }
+               if( o.json.size() )
+               {
+                  from_string( p.json, o.json );
+               }
+               if( o.poll_option_0.size() )
+               {
+                  from_string( p.poll_option_0, o.poll_option_0 );
+               }
+               if( o.poll_option_1.size() )
+               {
+                  from_string( p.poll_option_1, o.poll_option_1 );
+               }
+               if( o.poll_option_2.size() )
+               {
+                  from_string( p.poll_option_2, o.poll_option_2 );
+               }
+               if( o.poll_option_3.size() )
+               {
+                  from_string( p.poll_option_3, o.poll_option_3 );
+               }
+               if( o.poll_option_4.size() )
+               {
+                  from_string( p.poll_option_4, o.poll_option_4 );
+               }
+               if( o.poll_option_5.size() )
+               {
+                  from_string( p.poll_option_5, o.poll_option_5 );
+               }
+               if( o.poll_option_6.size() )
+               {
+                  from_string( p.poll_option_6, o.poll_option_6 );
+               }
+               if( o.poll_option_7.size() )
+               {
+                  from_string( p.poll_option_7, o.poll_option_7 );
+               }
+               if( o.poll_option_8.size() )
+               {
+                  from_string( p.poll_option_8, o.poll_option_8 );
+               }
+               if( o.poll_option_9.size() )
+               {
+                  from_string( p.poll_option_9, o.poll_option_9 );
+               }
 
-            p.completion_time = o.completion_time;
-            p.last_updated = now;
-         });
-      }
-      else     // Pre-existing votes
-      {
-         _db.modify( poll, [&]( poll_object& p )
+               p.completion_time = o.completion_time;
+               p.last_updated = now;
+            });
+         }
+         else     // Pre-existing votes
          {
-            from_string( p.details, o.details ); 
-            p.last_updated = now;
-         });
+            _db.modify( poll, [&]( poll_object& p )
+            {
+               if( o.details.size() )
+               {
+                  from_string( p.details, o.details );
+               }
+               if( o.json.size() )
+               {
+                  from_string( p.json, o.json );
+               }
+               p.last_updated = now;
+            });
+         }
+      }
+      else      /// Remove the poll and all existing votes
+      {
+         while( vote_itr != vote_idx.end() && 
+            vote_itr->creator == poll.creator && 
+            vote_itr->poll_id == poll.poll_id )
+         {
+            const poll_vote_object& vote = *vote_itr;
+            ++vote_itr;
+            _db.remove( vote );
+         }
+         _db.remove( poll );
       }
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
@@ -2161,26 +2565,61 @@ void poll_vote_evaluator::do_apply( const poll_vote_operation& o )
    time_point now = _db.head_block_time();
 
    FC_ASSERT( creator.active, 
-      "Creator: ${s} must be active to broadcast transaction.",("s", o.creator) );
+      "Creator: ${s} must be active to broadcast transaction.",
+      ("s", o.creator) );
 
    const poll_object& poll = _db.get_poll( o.creator, o.poll_id );
 
    FC_ASSERT( poll.completion_time > now, 
       "Poll has passed its completion time and is not accepting any more votes." );
-   FC_ASSERT( o.poll_option < poll.poll_options.size(), 
-      "Poll Option selection not found." );
+
+   const community_object* community_ptr = nullptr; 
+
+   if( poll.community.size() )     // Community validity and permissioning checks
+   {
+      community_ptr = _db.find_community( poll.community );
+
+      FC_ASSERT( community_ptr != nullptr, 
+         "Community Name: ${b} not found.",
+         ("b", poll.community ));
+
+      const community_member_object& community_member = _db.get_community_member( poll.community );
+
+      FC_ASSERT( community_member.is_authorized_interact( o.voter ),
+         "User ${u} is not authorized to vote in polls in the community ${b}.",
+         ("b",poll.community)("u",o.creator));
+   }
+
+   if( o.interface.size() )
+   {
+      const account_object& interface_acc = _db.get_account( o.interface );
+      FC_ASSERT( interface_acc.active, 
+         "Interface: ${s} must be active to broadcast transaction.",
+         ("s", o.interface) );
+      const interface_object& interface = _db.get_interface( o.interface );
+      FC_ASSERT( interface.active, 
+         "Interface: ${s} must be active to broadcast transaction.",
+         ("s", o.interface) );
+   }
 
    const auto& vote_idx = _db.get_index< poll_vote_index >().indices().get< by_voter_creator_poll_id >();
    auto vote_itr = vote_idx.find( boost::make_tuple( o.voter, o.creator, o.poll_id ) );
    
-   if( vote_itr == vote_idx.end() )
+   if( vote_itr == vote_idx.end() )     // New vote being created
    {
+      FC_ASSERT( o.active, 
+         "Poll Vote does not exist from the voter with this ID to remove." );
+
       _db.create< poll_vote_object >( [&]( poll_vote_object& p )
       {
          p.voter = o.voter;
          p.creator = o.creator;
          from_string( p.poll_id, o.poll_id );
-         p.poll_option = poll.poll_options[ o.poll_option ];
+         if( o.interface.size() )
+         {
+            p.interface = o.interface;
+         }
+         p.poll_option = o.poll_option;
          p.last_updated = now;
          p.created = now;
       });
@@ -2189,11 +2628,18 @@ void poll_vote_evaluator::do_apply( const poll_vote_operation& o )
    {
       const poll_vote_object& vote = *vote_itr;
 
-      _db.modify( vote, [&]( poll_vote_object& p )
+      if( o.active )
       {
-         p.poll_option = poll.poll_options[ o.poll_option ];
-         p.last_updated = now;
-      });
+         _db.modify( vote, [&]( poll_vote_object& p )
+         {
+            p.poll_option = o.poll_option;
+            p.last_updated = now;
+         });
+      }
+      else
+      {
+         _db.remove( vote );
+      }
    }
 } FC_CAPTURE_AND_RETHROW( ( o )) }
 
@@ -2233,6 +2679,18 @@ void premium_purchase_evaluator::do_apply( const premium_purchase_operation& o )
       "Account: ${a} has insufficient liquid balance: ${b} of premium price asset for purchase: ${p}.",
       ("a",o.account)("b",liquid)("p",comment.premium_price));
 
+   if( o.interface.size() )
+   {
+      const account_object& interface_acc = _db.get_account( o.interface );
+      FC_ASSERT( interface_acc.active, 
+         "Interface: ${s} must be active to broadcast transaction.",
+         ("s", o.interface) );
+      const interface_object& interface = _db.get_interface( o.interface );
+      FC_ASSERT( interface.active, 
+         "Interface: ${s} must be active to broadcast transaction.",
+         ("s", o.interface) );
+   }
+
    const auto& purchase_idx = _db.get_index< premium_purchase_index >().indices().get< by_account_comment >();
    auto purchase_itr = purchase_idx.find( boost::make_tuple( account.name, comment.id ) );
    
@@ -2245,9 +2703,13 @@ void premium_purchase_evaluator::do_apply( const premium_purchase_operation& o )
       _db.create< premium_purchase_object >( [&]( premium_purchase_object& ppo )
       {
          ppo.account = o.account;
+         ppo.author = comment.author;
          ppo.comment = comment.id;
          ppo.premium_price = comment.premium_price;
-         ppo.interface = o.interface;
+         if( o.interface.size() )
+         {
+            ppo.interface = o.interface;
+         }
          ppo.expiration = now + fc::days(1);
          ppo.released = false;
          ppo.last_updated = now;
@@ -2308,6 +2770,18 @@ void premium_release_evaluator::do_apply( const premium_release_operation& o )
       "Comment: ${a} ${c} must have a premium price in order to purchase.",
       ("a",comment.author)("c",comment.permlink));
 
+   if( o.interface.size() )
+   {
+      const account_object& interface_acc = _db.get_account( o.interface );
+      FC_ASSERT( interface_acc.active, 
+         "Interface: ${s} must be active to broadcast transaction.",
+         ("s", o.interface) );
+      const interface_object& interface = _db.get_interface( o.interface );
+      FC_ASSERT( interface.active, 
+         "Interface: ${s} must be active to broadcast transaction.",
+         ("s", o.interface) );
+   }
+
    const auto& purchase_idx = _db.get_index< premium_purchase_index >().indices().get< by_account_comment >();
    auto purchase_itr = purchase_idx.find( boost::make_tuple( o.account, comment.id ) );
    
@@ -2337,6 +2811,11 @@ void premium_release_evaluator::do_apply( const premium_release_operation& o )
          ppko.provider = o.provider;
          ppko.account = o.account;
          ppko.comment = comment.id;
+         ppko.author = comment.author;
+         if( o.interface.size() )
+         {
+            ppko.interface = o.interface;
+         }
          ppko.encrypted_key = encrypted_keypair_type( account.secure_public_key, comment.public_key, o.encrypted_key );
          ppko.last_updated = now;
          ppko.created = now;

@@ -101,7 +101,6 @@ enum object_type
    account_following_object_type,
    account_tag_following_object_type,
    account_connection_object_type,
-   account_connection_request_object_type,
    account_authority_history_object_type,
    account_recovery_request_object_type,
    account_recovery_update_request_object_type,
@@ -148,8 +147,8 @@ enum object_type
    community_join_request_object_type,
    community_join_invite_object_type,
    community_federation_object_type,
-   community_federation_request_object_type,
    community_event_object_type,
+   community_event_attend_object_type,
 
    // Advertising Objects
 
@@ -263,7 +262,6 @@ class account_member_key_object;
 class account_following_object;
 class account_tag_following_object;
 class account_connection_object;
-class account_connection_request_object;
 class account_authority_history_object;
 class account_recovery_request_object;
 class account_recovery_update_request_object;
@@ -310,8 +308,8 @@ class community_moderator_vote_object;
 class community_join_request_object;
 class community_join_invite_object;
 class community_federation_object;
-class community_federation_request_object;
 class community_event_object;
+class community_event_attend_object;
 
 // Advertising Objects
 
@@ -424,7 +422,6 @@ typedef oid< account_member_key_object                  > account_member_key_id_
 typedef oid< account_following_object                   > account_following_id_type;
 typedef oid< account_tag_following_object               > account_tag_following_id_type;
 typedef oid< account_connection_object                  > account_connection_id_type;
-typedef oid< account_connection_request_object          > account_connection_request_id_type;
 typedef oid< account_authority_history_object           > account_authority_history_id_type;
 typedef oid< account_recovery_request_object            > account_recovery_request_id_type;
 typedef oid< account_recovery_update_request_object     > account_recovery_update_request_id_type;
@@ -471,8 +468,8 @@ typedef oid< community_moderator_vote_object            > community_moderator_vo
 typedef oid< community_join_request_object              > community_join_request_id_type;
 typedef oid< community_join_invite_object               > community_join_invite_id_type;
 typedef oid< community_federation_object                > community_federation_id_type;
-typedef oid< community_federation_request_object        > community_federation_request_id_type;
 typedef oid< community_event_object                     > community_event_id_type;
+typedef oid< community_event_attend_object              > community_event_attend_id_type;
 
 // Advertising Objects
 
@@ -677,7 +674,6 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (account_following_object_type)
          (account_tag_following_object_type)
          (account_connection_object_type)
-         (account_connection_request_object_type)
          (account_authority_history_object_type)
          (account_recovery_request_object_type)
          (account_recovery_update_request_object_type)
@@ -724,8 +720,8 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (community_join_request_object_type)
          (community_join_invite_object_type)
          (community_federation_object_type)
-         (community_federation_request_object_type)
          (community_event_object_type)
+         (community_event_attend_object_type)
 
          // Advertising Objects
 

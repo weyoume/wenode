@@ -116,7 +116,7 @@ namespace node { namespace chain {
          
          feed_reach_type                   reach;                               ///< The reach of the post across followers, connections, friends and companions.
 
-         connection_tier_type              reply_connection;                    ///< Replies to the comment must be connected to the author to at least this level.
+         connection_tier_type              reply_connection;                    ///< Replies to a root comment must be connected to the root author with at least this level.
 
          shared_string                     category;                            ///< Permlink of root post that this comment is applied to.
 
@@ -304,7 +304,7 @@ namespace node { namespace chain {
 
          account_name_type                           account;               ///< Account that should see comment in their feed.
 
-         comment_id_type                             comment;               ///< ID of comment being shared
+         comment_id_type                             comment;               ///< ID of comment being shared.
 
          feed_reach_type                             feed_type;             ///< Type of feed, follow, connection, community, tag etc. 
 
@@ -343,7 +343,7 @@ namespace node { namespace chain {
 
          community_name_type       community;             ///< Community posted or shared to for community type blogs.
 
-         tag_name_type             tag;                   ///< Tag posted or shared to for tag type blogs.            
+         tag_name_type             tag;                   ///< Tag posted or shared to for tag type blogs.
 
          comment_id_type           comment;               ///< Comment ID.
 
@@ -375,10 +375,12 @@ namespace node { namespace chain {
    {
       public:
          template< typename Constructor, typename Allocator >
-         comment_vote_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c( *this );
-         }
+         comment_vote_object( Constructor&& c, allocator< Allocator > a ) :
+            reaction(a),
+            json(a)
+            {
+               c( *this );
+            }
 
          id_type                 id;
 
@@ -394,7 +396,11 @@ namespace node { namespace chain {
 
          share_type              reward;             ///< The amount of reward_curve this vote is responsible for
 
-         int16_t                 vote_percent;       ///< The percent weight of the vote
+         int16_t                 vote_percent;       ///< The percent weight of the vote.
+
+         shared_string           reaction;           ///< An Emoji selected as a reaction to the post while voting.
+
+         shared_string           json;               ///< JSON Metadata of the vote.
 
          time_point              last_updated;       ///< The time of the last update of the vote.
 
@@ -418,16 +424,17 @@ namespace node { namespace chain {
     * and determine the Supernode rewards for the Supernode that is listed.
     * 
     * Viewing power is slightly rate limited, such that an account
-    * recharges views at a rate of 100 per day
+    * recharges views at a rate of 100 per day.
     */
    class comment_view_object : public object< comment_view_object_type, comment_view_object >
    {
       public:
          template< typename Constructor, typename Allocator >
-         comment_view_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c( *this );
-         }
+         comment_view_object( Constructor&& c, allocator< Allocator > a ) :
+            json(a)
+            {
+               c( *this );
+            }
 
          id_type                 id;
 
@@ -445,8 +452,11 @@ namespace node { namespace chain {
 
          uint128_t               max_weight;         ///< Used to define relative contribution of this view to rewards.
 
+         shared_string           json;               ///< JSON Metadata of the view.
+
          time_point              created;            ///< Time the view was created.
    };
+
 
    /**
     * Comment Shares form the content cuation reward ranking.
@@ -468,10 +478,11 @@ namespace node { namespace chain {
    {
       public:
          template< typename Constructor, typename Allocator >
-         comment_share_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c( *this );
-         }
+         comment_share_object( Constructor&& c, allocator< Allocator > a ) :
+            json(a)
+            {
+               c( *this );
+            }
 
          id_type                 id;
 
@@ -487,24 +498,28 @@ namespace node { namespace chain {
 
          uint128_t               max_weight;         ///< Used to define relative contribution of this share to rewards.
 
+         shared_string           json;               ///< JSON Metadata of the Share.
+
+         feed_reach_type         reach;              ///< Level of reach for the Share.
+
          time_point              created;            ///< Time the share was created.
    };
 
 
    /**
-    * Used by community moderators and governance addresses to apply Moderation Tags.
+    * Used by community moderators and governance accounts to apply Moderation Tags.
     * 
     * Moderation Tags detail the type of content that they find on the network,
     * and may apply filtering policies to posts that are in opposition to the 
     * moderation policies of the community rules, 
-    * or the governance addresses content standards.
+    * or the governance account's content standards.
     * 
-    * Moderation Tags apply a rating from 1 to 10 assesing the subjective nature 
+    * Moderation Tags apply a rating from 1 to 10 assesing the subjective nature
     * of the severity of the content
     * for determining whether it is NSFW (5 and above)
     * 
     * Rating values are collected on posts, and the API finds the median rating
-    * from all the Governance account and moderators that the User is subscribed to.
+    * from all the Community moderators, and all Governance accounts that the User is subscribed to.
     */
    class comment_moderation_object : public object < comment_moderation_object_type, comment_moderation_object >
    {
@@ -513,43 +528,51 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          comment_moderation_object( Constructor&& c, allocator< Allocator > a ) :
-            details(a)
+            details(a),
+            json(a)
             {
                c( *this );
             }
 
          id_type                             id;
 
-         account_name_type                   moderator;        ///< Name of the moderator or goverance account that created the comment tag.
+         account_name_type                   moderator;                    ///< Name of the moderator or goverance account that created the comment tag.
 
-         comment_id_type                     comment;          ///< ID of the comment.
+         comment_id_type                     comment;                      ///< ID of the comment.
 
-         community_name_type                 community;        ///< The name of the community to which the post is uploaded to.
+         community_name_type                 community;                    ///< The name of the community to which the post is uploaded to.
 
-         flat_set< tag_name_type >           tags;             ///< Set of string tags for sorting the post by.
+         flat_set< tag_name_type >           tags;                         ///< Set of string tags for sorting the post by.
 
-         uint16_t                            rating;           ///< Moderator updated rating (1-10) as to the maturity of the content, and display sensitivity. 
+         uint16_t                            rating;                       ///< Moderator updated rating (1-10) as to the maturity of the content, and display sensitivity. 
 
-         shared_string                       details;          ///< Explaination as to what rule the post is in contravention of and why it was tagged.
+         shared_string                       details;                      ///< Explaination as to what rule the post is in contravention of and why it was tagged.
 
-         account_name_type                   interface;        ///< Interface account used for the transaction.
+         shared_string                       json;                         ///< JSON Metadata of the moderation tag.
 
-         bool                                filter;           ///< True if the post should be filtered by the community or governance address subscribers. 
+         account_name_type                   interface;                    ///< Interface account used for the transaction.
 
-         time_point                          last_updated;     ///< Time the comment tag was last edited by the author.
+         bool                                filter;                       ///< True if the post should be filtered by the community or governance address subscribers.
 
-         time_point                          created;          ///< Time that the comment tag was created.
+         bool                                removal_requested;            ///< True if the moderator formally requests that the post be removed by the author.
+
+         flat_set< beneficiary_route_type >  beneficiaries_requested;      ///< Beneficiary routes that are requested for revenue sharing with a claimant.
+
+         time_point                          last_updated;                 ///< Time the comment tag was last edited by the author.
+
+         time_point                          created;                      ///< Time that the comment tag was created.
    };
-
 
 
    /**
     * Tracks the Comment Metrics for post sorting and activity reward validation.
     * 
-    * Gets updated once per hour, with current average and median statistics of all posts on the network.
+    * Gets updated once per hour, with current average and 
+    * median statistics of all posts on the network.
     * Used for tag object sorting equalization formulae.
     * 
-    * Provides consensus level statistics, and determines the minimum interaction for a comment
+    * Provides consensus level statistics, 
+    * and determines the minimum interaction for a comment
     * to be acceptable for an activity reward.
     */
    class comment_metrics_object  : public object< comment_metrics_object_type, comment_metrics_object >
@@ -640,7 +663,8 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          message_object( Constructor&& c, allocator< Allocator > a ) :
-            message(a), 
+            message(a),
+            ipfs(a),
             json(a), 
             uuid(a)
             {
@@ -649,25 +673,38 @@ namespace node { namespace chain {
 
          id_type                 id;
 
-         account_name_type       sender;                   ///< Name of the message sender.
+         account_name_type       sender;                   ///< Account Name of the message sender.
 
-         account_name_type       recipient;                ///< Name of the intended message recipient.
+         account_name_type       recipient;                ///< Account Name of the intended message recipient.
+
+         community_name_type     community;                ///< Community Name of the intended community for group message.
 
          public_key_type         sender_public_key;        ///< Public secure key of the sender.
 
          public_key_type         recipient_public_key;     ///< Public secure key of the recipient.
 
+         public_key_type         community_public_key;     ///< Public key of the recipient community.
+
+         id_type                 parent_message;           ///< ID of the message that is being replied to or forwarded. Self for root message.
+
          shared_string           message;                  ///< Encrypted private message ciphertext.
+
+         shared_string           ipfs;                     ///< Encrypted Private IPFS file hash: images, videos, files.
 
          shared_string           json;                     ///< Encrypted Message metadata.
 
          shared_string           uuid;                     ///< uuidv4 uniquely identifying the message for local storage.
 
+         account_name_type       interface;                ///< Name of the interface account that was used to broadcast the transaction.
+
          time_point              last_updated;             ///< Time the message was last changed, used to reload encrypted message storage.
 
          time_point              created;                  ///< Time the message was sent.
-   };
 
+         time_point              expiration;               ///< Time that the message expires and is automatically deleted.
+
+         bool                    forward = false;          ///< True when the parent message is being forwarded into the conversation. 
+   };
 
 
    /**
@@ -675,7 +712,7 @@ namespace node { namespace chain {
     * 
     * Used to collect a group of objects for reference and browsing.
     * 
-    * By default, applications should create:
+    * By default, applications should create for each account:
     * 
     * - A list of posts called "Bookmarks"
     * - A list of products and auctions called "Wishlist"
@@ -693,42 +730,60 @@ namespace node { namespace chain {
          template< typename Constructor, typename Allocator >
          list_object( Constructor&& c, allocator< Allocator > a ) :
             list_id(a),
-            name(a)
+            name(a),
+            details(a),
+            json(a),
+            accounts( a.get_segment_manager() ),
+            comments( a.get_segment_manager() ),
+            communities( a.get_segment_manager() ),
+            assets( a.get_segment_manager() ),
+            products( a.get_segment_manager() ),
+            auctions( a.get_segment_manager() ),
+            nodes( a.get_segment_manager() ),
+            edges( a.get_segment_manager() ),
+            node_types( a.get_segment_manager() ),
+            edge_types( a.get_segment_manager() )
             {
                c( *this );
             }
 
-         id_type                                     id;
+         id_type                                            id;
 
-         account_name_type                           creator;          ///< Name of the account that created the list.
+         account_name_type                                  creator;          ///< Name of the account that created the list.
 
-         shared_string                               list_id;          ///< uuidv4 referring to the list.
+         shared_string                                      list_id;          ///< uuidv4 referring to the list.
          
-         shared_string                               name;             ///< Name of the list, unique for each account.
+         shared_string                                      name;             ///< Name of the list.
 
-         flat_set< account_id_type >                 accounts;         ///< Account IDs within the list.
+         shared_string                                      details;          ///< Public details description of the list.
 
-         flat_set< comment_id_type >                 comments;         ///< Comment IDs within the list.
+         shared_string                                      json;             ///< JSON metadata of the list.
 
-         flat_set< community_id_type >               communities;      ///< Community IDs within the list.
+         account_name_type                                  interface;        ///< Name of the interface account that was used to broadcast the transaction.
 
-         flat_set< asset_id_type >                   assets;           ///< Asset IDs within the list.
+         shared_vector< account_id_type >                   accounts;         ///< Account IDs within the list.
 
-         flat_set< product_sale_id_type >            products;         ///< Product IDs within the list.
+         shared_vector< comment_id_type >                   comments;         ///< Comment IDs within the list.
 
-         flat_set< product_auction_sale_id_type >    auctions;         ///< Auction IDs within the list.
+         shared_vector< community_id_type >                 communities;      ///< Community IDs within the list.
 
-         flat_set< graph_node_id_type >              nodes;            ///< Graph node IDs within the list.
+         shared_vector< asset_id_type >                     assets;           ///< Asset IDs within the list.
 
-         flat_set< graph_edge_id_type >              edges;            ///< Graph edge IDs within the list.
+         shared_vector< product_sale_id_type >              products;         ///< Product IDs within the list.
 
-         flat_set< graph_node_property_id_type >     node_types;       ///< Graph node property IDs within the list.
+         shared_vector< product_auction_sale_id_type >      auctions;         ///< Auction IDs within the list.
 
-         flat_set< graph_edge_property_id_type >     edge_types;       ///< Graph edge property IDs within the list.
+         shared_vector< graph_node_id_type >                nodes;            ///< Graph node IDs within the list.
 
-         time_point                                  last_updated;     ///< Time the list was last edited by the creator.
+         shared_vector< graph_edge_id_type >                edges;            ///< Graph edge IDs within the list.
 
-         time_point                                  created;          ///< Time that the list was created.
+         shared_vector< graph_node_property_id_type >       node_types;       ///< Graph node property IDs within the list.
+
+         shared_vector< graph_edge_property_id_type >       edge_types;       ///< Graph edge property IDs within the list.
+
+         time_point                                         last_updated;     ///< Time the list was last edited by the creator.
+
+         time_point                                         created;          ///< Time that the list was created.
    };
 
 
@@ -736,6 +791,9 @@ namespace node { namespace chain {
     * Polls enable accounts to vote on a series of options.
     * 
     * Polls have a fixed duration, and determine the winning option.
+    * 
+    * Polls can be included within communities, and can be encrypted with the 
+    * private community key
     */
    class poll_object : public object < poll_object_type, poll_object >
    {
@@ -746,26 +804,62 @@ namespace node { namespace chain {
          poll_object( Constructor&& c, allocator< Allocator > a ) :
             poll_id(a),
             details(a),
-            poll_options( a.get_segment_manager() )
+            json(a),
+            poll_option_0(a),
+            poll_option_1(a),
+            poll_option_2(a),
+            poll_option_3(a),
+            poll_option_4(a),
+            poll_option_5(a),
+            poll_option_6(a),
+            poll_option_7(a),
+            poll_option_8(a),
+            poll_option_9(a)
             {
                c( *this );
             }
 
          id_type                                     id;
 
-         account_name_type                           creator;             ///< Name of the account that created the poll.
+         account_name_type                           creator;                  ///< Name of the account that created the poll.
 
-         shared_string                               poll_id;             ///< uuidv4 referring to the poll.
+         shared_string                               poll_id;                  ///< uuidv4 referring to the poll.
 
-         shared_string                               details;             ///< Text describing the question being asked.
+         community_name_type                         community;                ///< Community that the poll is shown within. Null for no community.
 
-         shared_vector< fixed_string_32 >            poll_options;        ///< Available poll voting options.
+         public_key_type                             public_key;               ///< Public key for encrypting details and poll options.
 
-         time_point                                  completion_time;     ///< Time the poll voting completes.
+         account_name_type                           interface;                ///< Account of the interface that broadcasted the transaction.
 
-         time_point                                  last_updated;        ///< Time the poll was last edited by the creator.
+         shared_string                               details;                  ///< Text describing the question being asked.
 
-         time_point                                  created;             ///< Time that the poll was created.
+         shared_string                               json;                     ///< JSON metadata of the poll.
+
+         shared_string                               poll_option_0;            ///< Poll option zero, vote 0 to select.
+
+         shared_string                               poll_option_1;            ///< Poll option one, vote 1 to select.
+
+         shared_string                               poll_option_2;            ///< Poll option two, vote 2 to select.
+
+         shared_string                               poll_option_3;            ///< Poll option three, vote 3 to select.
+
+         shared_string                               poll_option_4;            ///< Poll option four, vote 4 to select.
+
+         shared_string                               poll_option_5;            ///< Poll option five, vote 5 to select.
+
+         shared_string                               poll_option_6;            ///< Poll option six, vote 6 to select.
+
+         shared_string                               poll_option_7;            ///< Poll option seven, vote 7 to select.
+
+         shared_string                               poll_option_8;            ///< Poll option eight, vote 8 to select.
+
+         shared_string                               poll_option_9;            ///< Poll option nine, vote 9 to select.
+
+         time_point                                  completion_time;          ///< Time the poll voting completes.
+
+         time_point                                  last_updated;             ///< Time the poll was last edited by the creator.
+
+         time_point                                  created;                  ///< Time that the poll was created.
    };
 
 
@@ -781,24 +875,34 @@ namespace node { namespace chain {
       public:
          template< typename Constructor, typename Allocator >
          poll_vote_object( Constructor&& c, allocator< Allocator > a ) :
-            poll_id(a)
+            poll_id(a),
+            json(a),
+            details(a)
             {
                c( *this );
             }
 
          id_type                                     id;
 
-         account_name_type                           voter;               ///< Name of the account that created the vote.
+         account_name_type                           voter;                    ///< Name of the account that created the vote.
 
-         account_name_type                           creator;             ///< Name of the account that created the poll.
+         account_name_type                           creator;                  ///< Name of the account that created the poll.
 
-         shared_string                               poll_id;             ///< uuidv4 referring to the poll.
+         shared_string                               poll_id;                  ///< uuidv4 referring to the poll.
 
-         fixed_string_32                             poll_option;         ///< Poll option chosen.
+         public_key_type                             public_key;               ///< Public key used to encrypt the json and details.
 
-         time_point                                  last_updated;        ///< Time the vote was last edited by the voter.
+         shared_string                               json;                     ///< JSON metadata of the poll vote.
 
-         time_point                                  created;             ///< Time that the vote was created.
+         shared_string                               details;                  ///< Text describing the reason for the vote.
+
+         uint16_t                                    poll_option;              ///< Poll option chosen [0,9]
+
+         account_name_type                           interface;                ///< Account of the interface that broadcasted the transaction.
+
+         time_point                                  last_updated;             ///< Time the vote was last edited by the voter.
+
+         time_point                                  created;                  ///< Time that the vote was created.
    };
 
 
@@ -821,7 +925,9 @@ namespace node { namespace chain {
 
          id_type                                     id;
 
-         account_name_type                           account;             ///< Name of the account that created the vote.
+         account_name_type                           account;             ///< Name of the account that created the purchase.
+
+         account_name_type                           author;              ///< Name of the account that created the post that is being purchased.
 
          comment_id_type                             comment;             ///< ID of the premium post being purchased.
 
@@ -862,7 +968,11 @@ namespace node { namespace chain {
 
          account_name_type                           account;             ///< Name of the account purchasing the premium content.
 
+         account_name_type                           author;              ///< Name of the account that created the post that is being purchased.
+
          comment_id_type                             comment;             ///< ID of the Premium Post being purchased.
+
+         account_name_type                           interface;           ///< Name of the interface account that was used to broadcast the transaction.
 
          encrypted_keypair_type                      encrypted_key;       ///< The private key used to encrypt the premium post, encrypted with the public secure key of the purchaser.
 
@@ -1448,6 +1558,7 @@ namespace node { namespace chain {
    struct by_sender_recipient;
    struct by_account_inbox;
    struct by_account_outbox;
+   struct by_community_inbox;
    struct by_sender_uuid;
 
 
@@ -1492,6 +1603,18 @@ namespace node { namespace chain {
          ordered_unique< tag< by_account_outbox >,
             composite_key< message_object,
                member< message_object, account_name_type, &message_object::sender >,
+               member< message_object, time_point, &message_object::created >,
+               member< message_object, message_id_type, &message_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::greater< time_point >, 
+               std::less< message_id_type > 
+            >
+         >,
+         ordered_unique< tag< by_community_inbox >,
+            composite_key< message_object,
+               member< message_object, community_name_type, &message_object::community >,
                member< message_object, time_point, &message_object::created >,
                member< message_object, message_id_type, &message_object::id >
             >,
@@ -1572,11 +1695,13 @@ namespace node { namespace chain {
             composite_key< poll_vote_object,
                member< poll_vote_object, account_name_type, &poll_vote_object::creator >,
                member< poll_vote_object, shared_string, &poll_vote_object::poll_id >,
+               member< poll_vote_object, uint16_t, &poll_vote_object::poll_option >,
                member< poll_vote_object, poll_vote_id_type, &poll_vote_object::id >
             >,
             composite_key_compare<
                std::less< account_name_type >,
                strcmp_less,
+               std::less< uint16_t >,
                std::less< poll_vote_id_type >
             >
          >
@@ -1586,6 +1711,7 @@ namespace node { namespace chain {
 
 
    struct by_account_comment;
+   struct by_author_comment;
 
 
    typedef multi_index_container<
@@ -1602,6 +1728,16 @@ namespace node { namespace chain {
                std::less< account_name_type >,
                std::less< comment_id_type >
             >
+         >,
+         ordered_unique< tag< by_author_comment >,
+            composite_key< premium_purchase_object,
+               member< premium_purchase_object, account_name_type, &premium_purchase_object::author >,
+               member< premium_purchase_object, comment_id_type, &premium_purchase_object::comment >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::less< comment_id_type >
+            >
          >
       >,
       allocator< premium_purchase_object >
@@ -1610,7 +1746,8 @@ namespace node { namespace chain {
 
    struct by_provider_account_comment;
    struct by_comment;
-   struct by_account;
+   struct by_account_comment;
+   struct by_author_comment;
 
 
    typedef multi_index_container<
@@ -1639,13 +1776,27 @@ namespace node { namespace chain {
                std::less< premium_purchase_key_id_type >
             >
          >,
-         ordered_unique< tag< by_account >,
+         ordered_unique< tag< by_account_comment >,
             composite_key< premium_purchase_key_object,
                member< premium_purchase_key_object, account_name_type, &premium_purchase_key_object::account >,
+               member< premium_purchase_key_object, comment_id_type, &premium_purchase_key_object::comment >,
                member< premium_purchase_key_object, premium_purchase_key_id_type, &premium_purchase_key_object::id >
             >,
             composite_key_compare<
                std::less< account_name_type >,
+               std::less< comment_id_type >,
+               std::less< premium_purchase_key_id_type >
+            >
+         >,
+         ordered_unique< tag< by_author_comment >,
+            composite_key< premium_purchase_key_object,
+               member< premium_purchase_key_object, account_name_type, &premium_purchase_key_object::author >,
+               member< premium_purchase_key_object, comment_id_type, &premium_purchase_key_object::comment >,
+               member< premium_purchase_key_object, premium_purchase_key_id_type, &premium_purchase_key_object::id >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::less< comment_id_type >,
                std::less< premium_purchase_key_id_type >
             >
          >
@@ -1655,6 +1806,7 @@ namespace node { namespace chain {
 
 
 } } // node::chain
+
 
 FC_REFLECT( node::chain::comment_object,
          (id)
@@ -1774,6 +1926,8 @@ FC_REFLECT( node::chain::comment_vote_object,
          (max_weight)
          (reward)
          (vote_percent)
+         (reaction)
+         (json)
          (last_updated)
          (created)
          (num_changes)
@@ -1790,6 +1944,7 @@ FC_REFLECT( node::chain::comment_view_object,
          (reward)
          (weight)
          (max_weight)
+         (json)
          (created)
          );
 
@@ -1803,6 +1958,8 @@ FC_REFLECT( node::chain::comment_share_object,
          (reward)
          (weight)
          (max_weight)
+         (json)
+         (reach)
          (created)
          );
 
@@ -1816,8 +1973,11 @@ FC_REFLECT( node::chain::comment_moderation_object,
          (tags)
          (rating)
          (details)
+         (json)
          (interface)
          (filter)
+         (removal_requested)
+         (beneficiaries_requested)
          (last_updated)
          (created)
          );
@@ -1863,13 +2023,20 @@ FC_REFLECT( node::chain::message_object,
          (id)
          (sender)
          (recipient)
+         (community)
          (sender_public_key)
          (recipient_public_key)
+         (community_public_key)
+         (parent_message)
          (message)
+         (ipfs)
          (json)
          (uuid)
+         (interface)
          (last_updated)
          (created)
+         (expiration)
+         (forward)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::message_object, node::chain::message_index );
@@ -1879,6 +2046,9 @@ FC_REFLECT( node::chain::list_object,
          (creator)
          (list_id)
          (name)
+         (details)
+         (json)
+         (interface)
          (accounts)
          (comments)
          (communities)
@@ -1899,8 +2069,21 @@ FC_REFLECT( node::chain::poll_object,
          (id)
          (creator)
          (poll_id)
+         (community)
+         (public_key)
+         (interface)
          (details)
-         (poll_options)
+         (json)
+         (poll_option_0)
+         (poll_option_1)
+         (poll_option_2)
+         (poll_option_3)
+         (poll_option_4)
+         (poll_option_5)
+         (poll_option_6)
+         (poll_option_7)
+         (poll_option_8)
+         (poll_option_9)
          (completion_time)
          (last_updated)
          (created)
@@ -1913,7 +2096,11 @@ FC_REFLECT( node::chain::poll_vote_object,
          (voter)
          (creator)
          (poll_id)
+         (public_key)
+         (json)
+         (details)
          (poll_option)
+         (interface)
          (last_updated)
          (created)
          );
@@ -1923,6 +2110,7 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::poll_vote_object, node::chain::poll_vote_
 FC_REFLECT( node::chain::premium_purchase_object,
          (id)
          (account)
+         (author)
          (comment)
          (premium_price)
          (interface)
@@ -1938,7 +2126,9 @@ FC_REFLECT( node::chain::premium_purchase_key_object,
          (id)
          (provider)
          (account)
+         (author)
          (comment)
+         (interface)
          (encrypted_key)
          (last_updated)
          (created)

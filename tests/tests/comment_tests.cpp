@@ -33,8 +33,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when no signatures" );
 
-      const median_chain_property_object& median_props = db.get_median_chain_properties();
-
       ACTORS( (alice)(bob)(candice) );
 
       fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -1541,8 +1539,12 @@ BOOST_AUTO_TEST_CASE( message_operation_test )
       message.signatory = "alice";
       message.sender = "alice";
       message.recipient = "bob";
-      message.message = "Hello";
+      message.public_key = string( bob_public_secure_key );
+      message.message = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, bob_public_secure_key, string( "Hello" ) );
+      message.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       message.uuid = "6a91e502-1e53-4531-a97a-379ac8a495ff";
+      message.interface = INIT_ACCOUNT;
+      message.expiration = now() + fc::days(365);
       message.validate();
 
       tx.operations.push_back( message );
@@ -1557,51 +1559,34 @@ BOOST_AUTO_TEST_CASE( message_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: message success with connection" );
 
-      account_connection_request_operation request;
+      account_connection_operation connection;
 
-      request.signatory = "alice";
-      request.account = "alice";
-      request.requested_account = "bob";
-      request.connection_type = "connection";
-      request.message = "Hello";
-      request.requested = true;
-      request.validate();
+      connection.signatory = "bob";
+      connection.account = "bob";
+      connection.connecting_account = "alice";
+      connection.connection_type = "connection";
+      connection.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
+      connection.encrypted_key = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, alice_public_secure_key, bob_private_connection_wif );
+      connection.connected = true;
+      connection.validate();
 
-      tx.operations.push_back( request );
-      tx.sign( alice_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      account_connection_accept_operation accept;
-
-      accept.signatory = "bob";
-      accept.account = "bob";
-      accept.requesting_account = "alice";
-      accept.connection_type = "connection";
-      accept.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
-      accept.encrypted_key = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, alice_public_secure_key, bob_private_connection_wif );
-      accept.connected = true;
-      accept.validate();
-
-      tx.operations.push_back( accept );
+      tx.operations.push_back( connection );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      accept.signatory = "alice";
-      accept.account = "alice";
-      accept.requesting_account = "bob";
-      accept.connection_type = "connection";
-      accept.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
-      accept.encrypted_key = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, bob_public_secure_key, alice_private_connection_wif );
-      accept.connected = true;
-      accept.validate();
+      connection.signatory = "alice";
+      connection.account = "alice";
+      connection.connecting_account = "bob";
+      connection.connection_type = "connection";
+      connection.connection_id = "eb634e76-f478-49d5-8441-54ae22a4092c";
+      connection.encrypted_key = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, bob_public_secure_key, alice_private_connection_wif );
+      connection.connected = true;
+      connection.validate();
 
-      tx.operations.push_back( accept );
+      tx.operations.push_back( connection );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1694,8 +1679,8 @@ BOOST_AUTO_TEST_CASE( list_operation_test )
       list.creator = "alice";
       list.list_id = "8a5c4916-6008-4d40-a1f2-3d50b44ac535";
       list.name = "Alice's Favourites";
-      list.accounts.insert( bob_id._id );
-      list.comments.insert( alice_comment.id._id );
+      list.accounts.push_back( bob_id._id );
+      list.comments.push_back( alice_comment.id._id );
       list.validate();
 
       tx.operations.push_back( list );
@@ -1705,8 +1690,6 @@ BOOST_AUTO_TEST_CASE( list_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      validate_database();
-
       const list_object& alice_list = db.get_list( account_name_type( "alice" ), string( "8a5c4916-6008-4d40-a1f2-3d50b44ac535" ) );
 
       BOOST_REQUIRE( list.creator == alice_list.creator );
@@ -1714,6 +1697,8 @@ BOOST_AUTO_TEST_CASE( list_operation_test )
       BOOST_REQUIRE( list.name == to_string( alice_list.name ) );
       BOOST_REQUIRE( *list.accounts.begin() == *alice_list.accounts.begin() );
       BOOST_REQUIRE( *list.comments.begin() == *alice_list.comments.begin() );
+
+      validate_database();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Creating new List" );
 
@@ -1755,7 +1740,8 @@ BOOST_AUTO_TEST_CASE( poll_operation_test )
       poll.creator = "alice";
       poll.poll_id = "2aafe6cf-8d37-4467-a8ce-d55d12a3f492";
       poll.details = "Would you rather fight 100 duck sized horses, or 1 horse sized duck?";
-      poll.poll_options = { "100 Duck sized horses", "1 Horse sized duck" };
+      poll.poll_option_0 = "100 Duck sized horses";
+      poll.poll_option_1 = "1 Horse sized duck";
       poll.completion_time = now() + fc::days(3);
       poll.validate();
 
@@ -1772,12 +1758,9 @@ BOOST_AUTO_TEST_CASE( poll_operation_test )
       BOOST_REQUIRE( poll.creator == alice_poll.creator );
       BOOST_REQUIRE( poll.poll_id == to_string( alice_poll.poll_id ) );
       BOOST_REQUIRE( poll.details == to_string( alice_poll.details ) );
-
-      for( size_t i = 0; i < poll.poll_options.size(); i++ )
-      {
-         BOOST_REQUIRE( poll.poll_options[ i ] == alice_poll.poll_options[ i ] );
-      }
-
+      BOOST_REQUIRE( poll.poll_option_0 == to_string( alice_poll.poll_option_0 ) );
+      BOOST_REQUIRE( poll.poll_option_1 == to_string( alice_poll.poll_option_1 ) );
+      
       BOOST_TEST_MESSAGE( "│   ├── Passed: Creating new Poll" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Creating Poll vote" );
@@ -1788,7 +1771,7 @@ BOOST_AUTO_TEST_CASE( poll_operation_test )
       vote.voter = "bob";
       vote.creator = "alice";
       vote.poll_id = "2aafe6cf-8d37-4467-a8ce-d55d12a3f492";
-      vote.poll_option = 1;
+      vote.poll_option = 0;
       vote.validate();
 
       tx.operations.push_back( vote );
@@ -1805,7 +1788,6 @@ BOOST_AUTO_TEST_CASE( poll_operation_test )
       BOOST_REQUIRE( vote.creator == bob_vote.creator );
       BOOST_REQUIRE( vote.voter == bob_vote.voter );
       BOOST_REQUIRE( vote.poll_id == to_string( bob_vote.poll_id ) );
-      BOOST_REQUIRE( alice_poll.poll_options[ vote.poll_option ] == bob_vote.poll_option );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Creating Poll vote" );
 
@@ -1813,5 +1795,160 @@ BOOST_AUTO_TEST_CASE( poll_operation_test )
    }
    FC_LOG_AND_RETHROW()
 }
+
+
+BOOST_AUTO_TEST_CASE( premium_operation_test_sequence )
+{
+   try
+   {
+      BOOST_TEST_MESSAGE( "├── Testing: PREMIUM PURCHASE OPERATION SEQUENCE" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Premium Purchase Success" );
+
+      ACTORS( (alice)(bob)(candice) );
+
+      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      generate_blocks( BLOCKS_PER_DAY );
+
+      private_key_type alice_private_premium_key = get_private_key( "alice", "lorem", INIT_ACCOUNT_PASSWORD );
+      public_key_type alice_public_premium_key = get_public_key( "alice", "lorem", INIT_ACCOUNT_PASSWORD );
+
+      string alice_private_premium_wif = graphene::utilities::key_to_wif( alice_private_premium_key );
+
+      comment_operation comment;
+
+      comment.signatory = "alice";
+      comment.author = "alice";
+      comment.permlink = "lorem";
+      comment.parent_author = ROOT_POST_PARENT;
+      comment.parent_permlink = "lorem";
+      comment.title = "Lorem Ipsum";
+      comment.body = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+      comment.body_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_premium_key, string( "#Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua." ) );
+      comment.url = "https://www.url.com";
+      comment.url_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_premium_key, string( "#https://www.url.com" ) );
+      comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      comment.ipfs_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_premium_key, string( "#QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB" ) );
+      comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
+      comment.magnet_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_premium_key, string( "#magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&" ) );
+      comment.json = "{ \"valid\": true }";
+      comment.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_premium_key, string( "#{ \"valid\": true }" ) );
+      comment.language = "en";
+      comment.community = INIT_COMMUNITY;
+      comment.public_key = string( alice_public_premium_key );
+      comment.tags.push_back( tag_name_type( "test" ) );
+      comment.supernodes.push_back( INIT_ACCOUNT );
+      comment.interface = INIT_ACCOUNT;
+      comment.latitude = 37.8136;
+      comment.longitude = 144.9631;
+      comment.comment_price = asset( 0, SYMBOL_COIN );
+      comment.premium_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      comment.validate();
+      
+      comment_options options;
+
+      options.post_type = "article";
+      options.reach = "tag";
+      options.rating = 1;
+      options.max_accepted_payout = MAX_ACCEPTED_PAYOUT;
+      comment.options = options;
+      comment.validate();
+
+      signed_transaction tx;
+
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
+      tx.operations.push_back( comment );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.signatures.clear();
+      tx.operations.clear();
+
+      premium_purchase_operation purchase;
+
+      purchase.signatory = "bob";
+      purchase.account = "bob";
+      purchase.author = "alice";
+      purchase.permlink = "lorem";
+      purchase.interface = INIT_ACCOUNT;
+      purchase.purchased = true;
+      purchase.validate();
+
+      tx.operations.push_back( purchase );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.signatures.clear();
+      tx.operations.clear();
+
+      const comment_object& alice_comment = db.get_comment( comment.author, comment.permlink );
+
+      const premium_purchase_object& bob_purchase = db.get_premium_purchase( purchase.account, alice_comment.id );
+
+      BOOST_REQUIRE( bob_purchase.premium_price == alice_comment.premium_price );
+      BOOST_REQUIRE( !bob_purchase.released );
+
+      generate_block();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Premium Purchase Success" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Purchase Release success" );
+
+      premium_release_operation release;
+
+      release.signatory = INIT_ACCOUNT;
+      release.provider = INIT_ACCOUNT;
+      release.account = "bob";
+      release.author = "alice";
+      release.permlink = "lorem";
+      release.interface = INIT_ACCOUNT;
+      release.encrypted_key = get_encrypted_message( init_account_private_secure_key, init_account_public_secure_key, bob_public_secure_key, string( "#" ) + alice_private_premium_wif );
+      release.validate();
+
+      tx.operations.push_back( release );
+      tx.sign( init_account_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      comment_view_operation view;
+
+      view.signatory = "bob";
+      view.viewer = "bob";
+      view.author = "alice";
+      view.permlink = "lorem";
+      view.interface = INIT_ACCOUNT;
+      view.supernode = INIT_ACCOUNT;
+      view.validate();
+
+      tx.operations.push_back( view );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      const auto& purchase_idx = db.get_index< premium_purchase_index >().indices().get< by_account_comment >();
+      auto purchase_itr = purchase_idx.find( std::make_tuple( account_name_type( "bob" ), alice_comment.id ) );
+
+      BOOST_REQUIRE( purchase_itr == purchase_idx.end() );
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Purchase Release success" );
+
+      BOOST_TEST_MESSAGE( "├── Passed: PREMIUM PURCHASE OPERATION SEQUENCE" );
+   }
+   FC_LOG_AND_RETHROW()
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -13,10 +13,9 @@ using namespace node::chain;
 
 typedef chain::account_recovery_update_request_object  account_recovery_update_request_api_obj;
 typedef chain::block_summary_object                    block_summary_api_obj;
-typedef chain::comment_vote_object                     comment_vote_api_obj;
-typedef chain::comment_view_object                     comment_view_api_obj;
-typedef chain::comment_share_object                    comment_share_api_obj;
+typedef chain::comment_metrics_object                  comment_metrics_api_obj;
 typedef chain::unstake_asset_route_object              unstake_asset_route_api_obj;
+typedef chain::community_moderator_vote_object         community_moderator_api_obj;
 typedef chain::account_decline_voting_request_object   account_decline_voting_request_api_obj;
 typedef chain::producer_vote_object                    producer_vote_api_obj;
 typedef chain::producer_schedule_object                producer_schedule_api_obj;
@@ -577,7 +576,8 @@ struct account_officer_vote_api_obj
 struct account_permission_api_obj
 {
    account_permission_api_obj( const chain::account_permission_object& a ):
-      id( a.id )
+      id( a.id ),
+      account( a.account )
       {
          whitelisted_accounts.reserve( a.whitelisted_accounts.size() );
          for( auto name : a.whitelisted_accounts )
@@ -589,6 +589,7 @@ struct account_permission_api_obj
          {
             blacklisted_accounts.push_back( name );
          }
+         
          whitelisted_assets.reserve( a.whitelisted_assets.size() );
          for( auto name : a.whitelisted_assets )
          {
@@ -598,6 +599,17 @@ struct account_permission_api_obj
          for( auto name : a.blacklisted_assets )
          {
             blacklisted_assets.push_back( name );
+         }
+
+         whitelisted_communities.reserve( a.whitelisted_communities.size() );
+         for( auto name : a.whitelisted_communities )
+         {
+            whitelisted_communities.push_back( name );
+         }
+         blacklisted_communities.reserve( a.blacklisted_communities.size() );
+         for( auto name : a.blacklisted_communities )
+         {
+            blacklisted_communities.push_back( name );
          }
       }
 
@@ -609,6 +621,8 @@ struct account_permission_api_obj
    vector< account_name_type >              blacklisted_accounts;          ///< List of accounts that are not able to receive transfers from this account.
    vector< asset_symbol_type >              whitelisted_assets;            ///< List of assets that the account has whitelisted to receieve transfers of. 
    vector< asset_symbol_type >              blacklisted_assets;            ///< List of assets that the account has blacklisted against incoming transfers.
+   vector< community_name_type >            whitelisted_communities;       ///< List of communities that the account has whitelisted to interact with. 
+   vector< community_name_type >            blacklisted_communities;       ///< List of communities that the account has blacklisted against interactions.
 };
 
 
@@ -757,6 +771,22 @@ struct account_following_api_obj
          {
             followed_communities.push_back( community );
          }
+         for( auto community : a.member_communities )
+         {
+            member_communities.push_back( community );
+         }
+         for( auto community : a.moderator_communities )
+         {
+            moderator_communities.push_back( community );
+         }
+         for( auto community : a.admin_communities )
+         {
+            admin_communities.push_back( community );
+         }
+         for( auto community : a.founder_communities )
+         {
+            founder_communities.push_back( community );
+         }
          for( auto tag : a.followed_tags )
          {
             followed_tags.push_back( tag );
@@ -778,19 +808,23 @@ struct account_following_api_obj
    account_following_api_obj(){}
 
    account_following_id_type       id;
-   account_name_type               account;                ///< Name of the account.
-   vector< account_name_type >     followers;              ///< Accounts that follow this account.
-   vector< account_name_type >     following;              ///< Accounts that this account follows.
-   vector< account_name_type >     mutual_followers;       ///< Accounts that are both following and followers of this account.
-   vector< account_name_type >     connections;            ///< Accounts that are connections of this account.
-   vector< account_name_type >     friends;                ///< Accounts that are friends of this account.
-   vector< account_name_type >     companions;             ///< Accounts that are companions of this account.
-   vector< community_name_type >   followed_communities;   ///< Communities that the account subscribes to.
-   vector< tag_name_type >         followed_tags;          ///< Tags that the account follows.
-   vector< account_name_type >     filtered;               ///< Accounts that this account has filtered. Interfaces should not show posts by these users.
-   vector< community_name_type >   filtered_communities;   ///< Communities that this account has filtered. Posts will not display if they are in these communities.
-   vector< tag_name_type >         filtered_tags;          ///< Tags that this account has filtered. Posts will not display if they have any of these tags. 
-   time_point                      last_updated;           ///< Last time that the account changed its following sets.
+   account_name_type               account;                 ///< Name of the account.
+   vector< account_name_type >     followers;               ///< Accounts that follow this account.
+   vector< account_name_type >     following;               ///< Accounts that this account follows.
+   vector< account_name_type >     mutual_followers;        ///< Accounts that are both following and followers of this account.
+   vector< account_name_type >     connections;             ///< Accounts that are connections of this account.
+   vector< account_name_type >     friends;                 ///< Accounts that are friends of this account.
+   vector< account_name_type >     companions;              ///< Accounts that are companions of this account.
+   vector< community_name_type >   followed_communities;    ///< Communities that the account subscribes to.
+   vector< community_name_type >   member_communities;      ///< Communities that the account is a member within.
+   vector< community_name_type >   moderator_communities;   ///< Communities that the account is a moderator within.
+   vector< community_name_type >   admin_communities;       ///< Communities that the account is an admin within.
+   vector< community_name_type >   founder_communities;     ///< Communities that the account is a founder of.
+   vector< tag_name_type >         followed_tags;           ///< Tags that the account follows.
+   vector< account_name_type >     filtered;                ///< Accounts that this account has filtered. Interfaces should not show posts by these users.
+   vector< community_name_type >   filtered_communities;    ///< Communities that this account has filtered. Posts will not display if they are in these communities.
+   vector< tag_name_type >         filtered_tags;           ///< Tags that this account has filtered. Posts will not display if they have any of these tags. 
+   time_point                      last_updated;            ///< Last time that the account changed its following sets.
 };
 
 
@@ -824,8 +858,12 @@ struct account_connection_api_obj
       id( c.id ),
       account_a( c.account_a ),
       encrypted_key_a( c.encrypted_key_a ),
+      message_a( to_string( c.message_a ) ),
+      json_a( to_string( c.json_a ) ),
       account_b( c.account_b ),
       encrypted_key_b( c.encrypted_key_b ),
+      message_b( to_string( c.message_b ) ),
+      json_b( to_string( c.json_b ) ),
       connection_type( connection_tier_values[ int( c.connection_type ) ] ),
       connection_id( to_string( c.connection_id ) ),
       message_count( c.message_count ),
@@ -837,40 +875,23 @@ struct account_connection_api_obj
 
    account_connection_api_obj(){}
 
-   account_connection_id_type   id;                 
+   account_connection_id_type   id;
    account_name_type            account_a;                ///< Account with the lower ID.
    encrypted_keypair_type       encrypted_key_a;          ///< A's private connection key, encrypted with the public secure key of account B.
+   string                       message_a;                ///< A's Connection encrypted accompanying message for reference.
+   string                       json_a;                   ///< A's Encrypted JSON metadata.
    account_name_type            account_b;                ///< Account with the greater ID.
    encrypted_keypair_type       encrypted_key_b;          ///< B's private connection key, encrypted with the public secure key of account A.
+   string                       message_b;                ///< B's Connection encrypted accompanying message for reference.
+   string                       json_b;                   ///< B's Encrypted JSON metadata.
    string                       connection_type;          ///< The connection level shared in this object
    string                       connection_id;            ///< Unique uuidv4 for the connection, for local storage of decryption key.
-   uint32_t                     message_count;      ///< Number of total messages sent between connections
+   uint32_t                     message_count;            ///< Number of total messages sent between connections
    uint32_t                     consecutive_days;         ///< Number of consecutive days that the connected accounts have both sent a message.
    time_point                   last_message_time_a;      ///< Time since the account A last sent a message
    time_point                   last_message_time_b;      ///< Time since the account B last sent a message
    time_point                   last_updated;             ///< Time that the connection was lat updated.
    time_point                   created;                  ///< Time the connection was created. 
-};
-
-
-struct account_connection_request_api_obj
-{
-   account_connection_request_api_obj( const chain::account_connection_request_object& c ):
-      id( c.id ),
-      account( c.account ),
-      requested_account( c.requested_account ),
-      connection_type( connection_tier_values[ int( c.connection_type ) ] ),
-      message( to_string( c.message ) ),
-      expiration( c.expiration ){}
-
-   account_connection_request_api_obj(){}
-
-   account_connection_request_id_type              id;                 
-   account_name_type                       account;               ///< Account that created the request
-   account_name_type                       requested_account;  
-   string                                  connection_type;
-   string                                  message;
-   time_point                              expiration;   
 };
 
 
@@ -1471,73 +1492,274 @@ struct comment_api_obj
    bool                              root;                                ///< True if post is a root post.
    bool                              encrypted;                           ///< True if the post is encrypted. False if it is plaintext.
    bool                              deleted;                             ///< True if author selects to remove from display in all interfaces, removed from API node distribution, cannot be interacted with.
-   
 };
+
+
+
+struct comment_feed_api_obj
+{
+   comment_feed_api_obj( const chain::comment_feed_object& o ):
+      id( o.id ),
+      account( o.account ),
+      comment( o.comment ),
+      feed_type( feed_reach_values[ int( o.feed_type ) ] ),
+      first_shared_by( o.first_shared_by ),
+      shares( o.shares ),
+      feed_time( o.feed_time )
+      {
+         for( auto s : o.shared_by )
+         {
+            shared_by[ s.first ] = s.second;
+         }
+         for( auto b : o.communities )
+         {
+            for( auto s : b.second )
+            {
+               communities[ b.first ][ s.first ] = s.second;
+            }
+         }
+         for( auto t : o.tags )
+         {
+            for( auto s : t.second )
+            {
+               tags[ t.first ][ s.first ] = s.second;
+            }
+         }
+      }
+
+   comment_feed_api_obj(){}
+
+   comment_feed_id_type                                               id;
+   account_name_type                                                  account;               ///< Account that should see comment in their feed.
+   comment_id_type                                                    comment;               ///< ID of comment being shared.
+   string                                                             feed_type;             ///< Type of feed, follow, connection, community, tag etc.
+   map< account_name_type, time_point >                               shared_by;             ///< Map of the times that accounts that have shared the comment.
+   map< community_name_type, map< account_name_type, time_point > >   communities;           ///< Map of all communities that the comment has been shared with.
+   map< tag_name_type, map< account_name_type, time_point > >         tags;                  ///< Map of all tags that the comment has been shared with.
+   account_name_type                                                  first_shared_by;       ///< First account that shared the comment with account.
+   uint32_t                                                           shares;                ///< Number of accounts that have shared the comment with account.
+   time_point                                                         feed_time;             ///< Time that the comment was added or last shared with account.
+};
+
+
+
+struct comment_blog_api_obj
+{
+   comment_blog_api_obj( const chain::comment_blog_object& o ):
+      id( o.id ),
+      account( o.account ),
+      community( o.community ),
+      tag( o.tag ),
+      comment( o.comment ),
+      blog_type( blog_reach_values[ int( o.blog_type ) ] ),
+      first_shared_by( o.first_shared_by ),
+      shares( o.shares ),
+      blog_time( o.blog_time )
+      {
+         for( auto s : o.shared_by )
+         {
+            shared_by[ s.first ] =  s.second;
+         }
+      }
+      
+   comment_blog_api_obj(){}
+
+   comment_blog_id_type                    id;
+   account_name_type                       account;               ///< Blog or sharing account for account type blogs, null for other types.
+   community_name_type                     community;             ///< Community posted or shared to for community type blogs.
+   tag_name_type                           tag;                   ///< Tag posted or shared to for tag type blogs.          
+   comment_id_type                         comment;               ///< Comment ID.
+   map< account_name_type, time_point >    shared_by;             ///< Map of the times that accounts that have shared the comment in the blog.
+   string                                  blog_type;             ///< Account, Community, or Tag blog.
+   account_name_type                       first_shared_by;       ///< First account that shared the comment with the account, community or tag.
+   uint32_t                                shares;                ///< Number of accounts that have shared the comment with account, community or tag.
+   time_point                              blog_time;             ///< Latest time that the comment was shared on the account, community or tag.
+};
+
+
+
+struct comment_vote_api_obj
+{
+   comment_vote_api_obj( const chain::comment_vote_object& o ) :
+      id( o.id ),
+      voter( o.voter ),
+      comment( o.comment ),
+      interface( o.interface ),
+      weight( o.weight ),
+      max_weight( o.max_weight ),
+      reward( o.reward ),
+      vote_percent( o.vote_percent ),
+      reaction( to_string( o.reaction ) ),
+      json( to_string( o.json ) ),
+      last_updated( o.last_updated ),
+      created( o.created ),
+      num_changes( o.num_changes ){}
+
+   comment_vote_api_obj(){}
+
+   comment_vote_id_type           id;
+   account_name_type              voter;              ///< Name of the account that voted for the comment.
+   comment_id_type                comment;            ///< ID of the comment.
+   account_name_type              interface;          ///< Name of the interface account that was used to broadcast the transaction and view the post.
+   uint128_t                      weight;             ///< Used to define the curation reward this vote receives. Decays with time and additional votes.
+   uint128_t                      max_weight;         ///< Used to define relative contribution of this comment to rewards.
+   share_type                     reward;             ///< The amount of reward_curve this vote is responsible for
+   int16_t                        vote_percent;       ///< The percent weight of the vote.
+   string                         reaction;           ///< An Emoji selected as a reaction to the post while voting.
+   string                         json;               ///< JSON Metadata of the vote.
+   time_point                     last_updated;       ///< The time of the last update of the vote.
+   time_point                     created;            ///< Time the vote was created.
+   int8_t                         num_changes;        ///< Number of times the vote has been adjusted.
+};
+
+
+
+struct comment_view_api_obj
+{
+   comment_view_api_obj( const chain::comment_view_object& o ) :
+      id( o.id ),
+      viewer( o.viewer ),
+      comment( o.comment ),
+      interface( o.interface ),
+      supernode( o.supernode ),
+      reward( o.reward ),
+      weight( o.weight ),
+      max_weight( o.max_weight ),
+      json( to_string( o.json ) ),
+      created( o.created ){}
+
+   comment_view_api_obj(){}
+
+   comment_view_id_type           id;
+   account_name_type              viewer;             ///< Name of the viewing account.
+   comment_id_type                comment;            ///< ID of the comment.
+   account_name_type              interface;          ///< Name of the interface account that was used to broadcast the transaction and view the post. 
+   account_name_type              supernode;          ///< Name of the supernode account that served the IPFS file data in the post.
+   share_type                     reward;             ///< The amount of voting power this view contributed.
+   uint128_t                      weight;             ///< The curation reward weight of the view. Decays with time and additional views.
+   uint128_t                      max_weight;         ///< Used to define relative contribution of this view to rewards.
+   string                         json;               ///< JSON Metadata of the view.
+   time_point                     created;            ///< Time the view was created.
+};
+
+
+
+struct comment_share_api_obj
+{
+   comment_share_api_obj( const chain::comment_share_object& o ) :
+      id( o.id ),
+      sharer( o.sharer ),
+      comment( o.comment ),
+      interface( o.interface ),
+      reward( o.reward ),
+      weight( o.weight ),
+      max_weight( o.max_weight ),
+      json( to_string( o.json ) ),
+      reach( feed_reach_values[ int( o.reach ) ] ),
+      created( o.created ){}
+
+   comment_share_api_obj(){}
+
+   comment_share_id_type          id;
+   account_name_type              sharer;             ///< Name of the sharing account.
+   comment_id_type                comment;            ///< ID of the comment.
+   account_name_type              interface;          ///< Name of the interface account that was used to broadcast the transaction and share the post. 
+   share_type                     reward;             ///< The amount of voting power this share contributed.
+   uint128_t                      weight;             ///< The curation reward weight of the share. Decays with time and additional shares.
+   uint128_t                      max_weight;         ///< Used to define relative contribution of this share to rewards.
+   string                         json;               ///< JSON Metadata of the share.
+   string                         reach;              ///< Level of reach for the Share.
+   time_point                     created;            ///< Time the share was created.
+};
+
 
 
 struct comment_moderation_api_obj
 {
-   comment_moderation_api_obj( const chain::comment_moderation_object& m ) :
-      id( m.id ),
-      moderator( m.moderator ),
-      comment( m.comment ),
-      community( m.community ),
-      rating( m.rating ),
-      details( to_string( m.details ) ),
-      interface( m.interface ),
-      filter( m.filter ),
-      last_updated( m.last_updated ),
-      created( m.created )
+   comment_moderation_api_obj( const chain::comment_moderation_object& o ) :
+      id( o.id ),
+      moderator( o.moderator ),
+      comment( o.comment ),
+      community( o.community ),
+      rating( o.rating ),
+      details( to_string( o.details ) ),
+      json( to_string( o.json ) ),
+      interface( o.interface ),
+      filter( o.filter ),
+      removal_requested( o.removal_requested ),
+      last_updated( o.last_updated ),
+      created( o.created )
       {
-         for( auto tag : m.tags )
+         for( auto tag : o.tags )
          {
             tags.push_back( tag );
+         }
+         for( auto& route : o.beneficiaries_requested )
+         {
+            beneficiaries_requested.push_back( route );
          }
       }
 
    comment_moderation_api_obj(){}
 
-   comment_moderation_id_type         id;
-   account_name_type              moderator;        ///< Name of the moderator or goverance account that created the comment tag.
-   comment_id_type                comment;          ///< ID of the comment.
-   community_name_type            community;        ///< The name of the community to which the post is uploaded to.
-   vector< tag_name_type >        tags;             ///< Set of string tags for sorting the post by
-   uint16_t                       rating;           ///< Moderator updated rating as to the maturity of the content, and display sensitivity. 
-   string                         details;          ///< Explaination as to what rule the post is in contravention of and why it was tagged.
-   account_name_type              interface;        ///< Name of the interface application that broadcasted the transaction.
-   bool                           filter;           ///< True if the post should be filtered by the community or governance address subscribers. 
-   time_point                     last_updated;     ///< Time the comment tag was last edited by the author.
-   time_point                     created;          ///< Time that the comment tag was created.
+   comment_moderation_id_type        id;
+   account_name_type                 moderator;                   ///< Name of the moderator or goverance account that created the comment tag.
+   comment_id_type                   comment;                     ///< ID of the comment.
+   community_name_type               community;                   ///< The name of the community to which the post is uploaded to.
+   vector< tag_name_type >           tags;                        ///< Set of string tags for sorting the post by.
+   uint16_t                          rating;                      ///< Moderator updated rating as to the maturity of the content, and display sensitivity. 
+   string                            details;                     ///< Explaination as to what rule the post is in contravention of and why it was tagged.
+   string                            json;                        ///< JSON Metadata of the moderation tag.
+   account_name_type                 interface;                   ///< Name of the interface application that broadcasted the transaction.
+   bool                              filter;                      ///< True if the post should be filtered by the community or governance address subscribers.
+   bool                              removal_requested;           ///< True if the moderator formally requests that the post be removed by the author.
+   vector< beneficiary_route_type >  beneficiaries_requested;     ///< Vector of beneficiary routes that receive a content reward distribution.
+   time_point                        last_updated;                ///< Time the comment tag was last edited by the author.
+   time_point                        created;                     ///< Time that the comment tag was created.
 };
+
 
 
 struct message_api_obj
 {
-   message_api_obj( const chain::message_object& m ):
-      id( m.id ),
-      sender( m.sender ),
-      recipient( m.recipient ),
-      sender_public_key( m.sender_public_key ),
-      recipient_public_key( m.recipient_public_key ),
-      message( to_string( m.message ) ),
-      json( to_string( m.json ) ),
-      uuid( to_string( m.uuid ) ),
-      last_updated( m.last_updated ),
-      created( m.created ){}
+   message_api_obj( const chain::message_object& o ):
+      id( o.id ),
+      sender( o.sender ),
+      recipient( o.recipient ),
+      community( o.community ),
+      sender_public_key( o.sender_public_key ),
+      recipient_public_key( o.recipient_public_key ),
+      community_public_key( o.community_public_key ),
+      parent_message( o.parent_message ),
+      message( to_string( o.message ) ),
+      ipfs( to_string( o.ipfs ) ),
+      json( to_string( o.json ) ),
+      uuid( to_string( o.uuid ) ),
+      interface( o.interface ),
+      last_updated( o.last_updated ),
+      created( o.created ),
+      expiration( o.expiration ){}
 
    message_api_obj(){}
 
    message_id_type         id;
    account_name_type       sender;                   ///< Name of the message sender.
    account_name_type       recipient;                ///< Name of the intended message recipient.
+   community_name_type     community;                ///< Name of the intended community for group message.
    public_key_type         sender_public_key;        ///< Public secure key of the sender.
    public_key_type         recipient_public_key;     ///< Public secure key of the recipient.
+   public_key_type         community_public_key;     ///< Public key of the recipient community.
+   message_id_type         parent_message;           ///< ID of the message that is being replied to. Self for root message.
    string                  message;                  ///< Encrypted private message ciphertext.
+   string                  ipfs;                     ///< Encrypted Private IPFS file hash: images, videos, files.
    string                  json;                     ///< Encrypted Message metadata.
    string                  uuid;                     ///< uuidv4 uniquely identifying the message for local storage.
+   account_name_type       interface;                ///< Name of the interface account that was used to broadcast the transaction.
    time_point              last_updated;             ///< Time the message was last changed, used to reload encrypted message storage.
    time_point              created;                  ///< Time the message was sent.
+   time_point              expiration;               ///< Time that the message expires and is automatically deleted.
 };
+
 
 
 struct list_api_obj
@@ -1547,6 +1769,9 @@ struct list_api_obj
       creator( o.creator ),
       list_id( to_string( o.list_id ) ),
       name( to_string( o.name ) ),
+      details( to_string( o.details ) ),
+      json( to_string( o.json ) ),
+      interface( o.interface ),
       last_updated( o.last_updated ),
       created( o.created )
       {
@@ -1597,7 +1822,10 @@ struct list_api_obj
    list_id_type                   id;
    account_name_type              creator;             ///< Name of the account that created the list.
    string                         list_id;             ///< uuidv4 referring to the list.
-   string                         name;                ///< Name of the list, unique for each account.
+   string                         name;                ///< Name of the list.
+   string                         details;             ///< Public details description of the list.
+   string                         json;                ///< JSON metadata of the list.
+   account_name_type              interface;           ///< Name of the interface account that was used to broadcast the transaction.
    set< int64_t >                 accounts;            ///< Account IDs within the list.
    set< int64_t >                 comments;            ///< Comment IDs within the list.
    set< int64_t >                 communities;         ///< Community IDs within the list.
@@ -1613,34 +1841,58 @@ struct list_api_obj
 };
 
 
+
 struct poll_api_obj
 {
    poll_api_obj( const chain::poll_object& o ) :
       id( o.id ),
       creator( o.creator ),
       poll_id( to_string( o.poll_id ) ),
+      community( o.community ),
+      public_key( o.public_key ),
+      interface( o.interface ),
       details( to_string( o.details ) ),
+      json( to_string( o.json ) ),
+      poll_option_0( to_string( o.poll_option_0 ) ),
+      poll_option_1( to_string( o.poll_option_1 ) ),
+      poll_option_2( to_string( o.poll_option_2 ) ),
+      poll_option_3( to_string( o.poll_option_3 ) ),
+      poll_option_4( to_string( o.poll_option_4 ) ),
+      poll_option_5( to_string( o.poll_option_5 ) ),
+      poll_option_6( to_string( o.poll_option_6 ) ),
+      poll_option_7( to_string( o.poll_option_7 ) ),
+      poll_option_8( to_string( o.poll_option_8 ) ),
+      poll_option_9( to_string( o.poll_option_9 ) ),
       completion_time( o.completion_time ),
       last_updated( o.last_updated ),
       created( o.created )
-      {
-         for( auto p : o.poll_options )
-         {
-            poll_options.push_back( p );
-         }
-      }
+      {}
 
    poll_api_obj(){}
 
    poll_id_type                   id;
-   account_name_type              creator;             ///< Name of the account that created the poll.
-   string                         poll_id;             ///< uuidv4 referring to the list.
-   string                         details;             ///< Text describing the question being asked.
-   vector< fixed_string_32 >      poll_options;        ///< Available poll voting options.
-   time_point                     completion_time;     ///< Time the poll voting completes.
-   time_point                     last_updated;        ///< Time the list was last edited by the creator.
-   time_point                     created;             ///< Time that the comment tag was created.
+   account_name_type              creator;                  ///< Name of the account that created the poll.
+   string                         poll_id;                  ///< uuidv4 referring to the poll.
+   community_name_type            community;                ///< Community that the poll is shown within. Null for no community.
+   public_key_type                public_key;               ///< Public key of the recipient community for encrypting details and options.
+   account_name_type              interface;                ///< Account of the interface that broadcasted the transaction.
+   string                         details;                  ///< Text describing the question being asked.
+   string                         json;                     ///< JSON metadata of the poll.
+   string                         poll_option_0;            ///< Poll option zero, vote 0 to select.
+   string                         poll_option_1;            ///< Poll option one, vote 1 to select.
+   string                         poll_option_2;            ///< Poll option two, vote 2 to select.
+   string                         poll_option_3;            ///< Poll option three, vote 3 to select.
+   string                         poll_option_4;            ///< Poll option four, vote 4 to select.
+   string                         poll_option_5;            ///< Poll option five, vote 5 to select.
+   string                         poll_option_6;            ///< Poll option six, vote 6 to select.
+   string                         poll_option_7;            ///< Poll option seven, vote 7 to select.
+   string                         poll_option_8;            ///< Poll option eight, vote 8 to select.
+   string                         poll_option_9;            ///< Poll option nine, vote 9 to select.
+   time_point                     completion_time;          ///< Time the poll voting completes.
+   time_point                     last_updated;             ///< Time the poll was last edited by the creator.
+   time_point                     created;                  ///< Time that the poll was created.
 };
+
 
 
 struct poll_vote_api_obj
@@ -1650,7 +1902,11 @@ struct poll_vote_api_obj
       voter( o.voter ),
       creator( o.creator ),
       poll_id( to_string( o.poll_id ) ),
+      public_key( o.public_key ),
+      json( to_string( o.json ) ),
+      details( to_string( o.json ) ),
       poll_option( o.poll_option ),
+      interface( o.interface ),
       last_updated( o.last_updated ),
       created( o.created ){}
 
@@ -1660,89 +1916,67 @@ struct poll_vote_api_obj
    account_name_type           voter;               ///< Name of the account that created the vote.
    account_name_type           creator;             ///< Name of the account that created the poll.
    string                      poll_id;             ///< uuidv4 referring to the poll.
-   fixed_string_32             poll_option;         ///< Poll option chosen.
+   public_key_type             public_key;          ///< Public key used to encrypt the json and details.
+   string                      json;                ///< JSON metadata of the poll vote.
+   string                      details;             ///< Text describing the reason for the vote.
+   uint16_t                    poll_option;         ///< Poll option chosen [0,9]
+   account_name_type           interface;           ///< Account of the interface that broadcasted the transaction.
    time_point                  last_updated;        ///< Time the vote was last edited by the voter.
    time_point                  created;             ///< Time that the vote was created.
 };
 
 
-struct blog_api_obj
+
+struct premium_purchase_api_obj
 {
-   blog_api_obj( const chain::comment_blog_object& o ):
+   premium_purchase_api_obj( const chain::premium_purchase_object& o ) :
       id( o.id ),
       account( o.account ),
-      community( o.community ),
-      tag( o.tag ),
       comment( o.comment ),
-      blog_type( blog_reach_values[ int( o.blog_type ) ] ),
-      first_shared_by( o.first_shared_by ),
-      shares( o.shares ),
-      blog_time( o.blog_time )
-      {
-         for( auto s : o.shared_by )
-         {
-            shared_by[ s.first ] =  s.second;
-         }
-      }
-      
-   blog_api_obj(){}
+      premium_price( o.premium_price ),
+      interface( o.interface ),
+      expiration( o.expiration ),
+      last_updated( o.last_updated ),
+      created( o.created ),
+      released( o.released ){}
 
-   comment_blog_id_type                            id;
-   account_name_type                       account;               ///< Blog or sharing account for account type blogs, null for other types.
-   community_name_type                     community;             ///< Community posted or shared to for community type blogs.
-   tag_name_type                           tag;                   ///< Tag posted or shared to for tag type blogs.          
-   comment_id_type                         comment;               ///< Comment ID.
-   map< account_name_type, time_point >    shared_by;             ///< Map of the times that accounts that have shared the comment in the blog.
-   string                                  blog_type;             ///< Account, Community, or Tag blog.
-   account_name_type                       first_shared_by;       ///< First account that shared the comment with the account, community or tag.
-   uint32_t                                shares;                ///< Number of accounts that have shared the comment with account, community or tag.
-   time_point                              blog_time;             ///< Latest time that the comment was shared on the account, community or tag.
+   premium_purchase_api_obj(){}
+
+   premium_purchase_id_type           id;
+   account_name_type                  account;             ///< Name of the account that created the vote.
+   comment_id_type                    comment;             ///< ID of the premium post being purchased.
+   asset                              premium_price;       ///< Amount of asset paid to purchase the post.
+   account_name_type                  interface;           ///< Interface account used for the transaction.
+   time_point                         expiration;          ///< Time that the purchase must be completed before expiring.
+   time_point                         last_updated;        ///< Time the vote was last edited by the voter.
+   time_point                         created;             ///< Time that the vote was created.
+   bool                               released;            ///< True when the purchase has been matched by at least one premium purchase key.
 };
 
 
-struct feed_api_obj
+
+struct premium_purchase_key_api_obj
 {
-   feed_api_obj( const chain::comment_feed_object& o ):
+   premium_purchase_key_api_obj( const chain::premium_purchase_key_object& o ) :
       id( o.id ),
+      provider( o.provider ),
       account( o.account ),
       comment( o.comment ),
-      feed_type( feed_reach_values[ int( o.feed_type ) ] ),
-      first_shared_by( o.first_shared_by ),
-      shares( o.shares ),
-      feed_time( o.feed_time )
-      {
-         for( auto s : o.shared_by )
-         {
-            shared_by[ s.first ] = s.second;
-         }
-         for( auto b : o.communities )
-         {
-            for( auto s : b.second )
-            {
-               communities[ b.first ][ s.first ] = s.second;
-            }
-         }
-         for( auto t : o.tags )
-         {
-            for( auto s : t.second )
-            {
-               tags[ t.first ][ s.first ] = s.second;
-            }
-         }
-      }
+      interface( o.interface ),
+      encrypted_key( o.encrypted_key ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
 
-   feed_api_obj(){}
+   premium_purchase_key_api_obj(){}
 
-   comment_feed_id_type                                id;
-   account_name_type                           account;               ///< Account that should see comment in their feed.
-   comment_id_type                             comment;               ///< ID of comment being shared
-   string                                      feed_type;             ///< Type of feed, follow, connection, community, tag etc. 
-   map< account_name_type, time_point >        shared_by;             ///< Map of the times that accounts that have shared the comment.
-   map< community_name_type, map< account_name_type, time_point > >   communities;  ///< Map of all communities that the comment has been shared with
-   map< tag_name_type, map< account_name_type, time_point > >     tags;    ///< Map of all tags that the comment has been shared with.
-   account_name_type                           first_shared_by;       ///< First account that shared the comment with account. 
-   uint32_t                                    shares;                ///< Number of accounts that have shared the comment with account.
-   time_point                                  feed_time;             ///< Time that the comment was added or last shared with account. 
+   premium_purchase_key_id_type       id;
+   account_name_type                  provider;            ///< Name of the account releasing the premium content. Post author or designated Supernode. 
+   account_name_type                  account;             ///< Name of the account purchasing the premium content.
+   comment_id_type                    comment;             ///< ID of the Premium Post being purchased.
+   account_name_type                  interface;           ///< Interface account used for the transaction.
+   encrypted_keypair_type             encrypted_key;       ///< The private key used to encrypt the premium post, encrypted with the public secure key of the purchaser.
+   time_point                         last_updated;        ///< Time the vote was last edited by the voter.
+   time_point                         created;             ///< Time that the vote was created.
 };
 
 
@@ -1772,6 +2006,8 @@ struct community_api_obj
       community_member_key( b.community_member_key ),
       community_moderator_key( b.community_moderator_key ),
       community_admin_key( b.community_admin_key ),
+      reward_currency( b.reward_currency ),
+      membership_price( b.membership_price ),
       max_rating( b.max_rating ),
       flags( b.flags ),
       permissions( b.permissions ),
@@ -1781,7 +2017,6 @@ struct community_api_obj
       vote_count( b.vote_count ),
       view_count( b.view_count ),
       share_count( b.share_count ),
-      reward_currency( b.reward_currency ),
       created( b.created ),
       last_updated( b.last_updated ),
       last_post( b.last_post ),
@@ -1813,6 +2048,8 @@ struct community_api_obj
    public_key_type                    community_member_key;               ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted members.
    public_key_type                    community_moderator_key;            ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted moderators.
    public_key_type                    community_admin_key;                ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted admins.
+   asset_symbol_type                  reward_currency;                    ///< The Currency asset used for content rewards in the community.
+   asset                              membership_price;                   ///< Price paid per day by all community members to community founder.
    uint16_t                           max_rating;                         ///< Highest severity rating that posts in the community can have.
    uint32_t                           flags;                              ///< The currently active flags on the community for content settings.
    uint32_t                           permissions;                        ///< The flag permissions that can be activated on the community for content settings.
@@ -1822,7 +2059,6 @@ struct community_api_obj
    uint32_t                           vote_count;                         ///< Accumulated number of votes received by all posts in the community.
    uint32_t                           view_count;                         ///< Accumulated number of views on posts in the community.
    uint32_t                           share_count;                        ///< Accumulated number of shares on posts in the community.
-   asset_symbol_type                  reward_currency;                    ///< The Currency asset used for content rewards in the community. 
    time_point                         created;                            ///< Time that the community was created.
    time_point                         last_updated;                       ///< Time that the community's details were last updated.
    time_point                         last_post;                          ///< Time that the user most recently created a comment.
@@ -1831,9 +2067,10 @@ struct community_api_obj
 };
 
 
+
 struct community_request_api_obj
 {
-   community_request_api_obj( const chain::community_join_request_object& o ):
+   community_request_api_obj( const chain::community_join_request_object& o ) :
       id( o.id ),
       account( o.account ),
       community( o.community),
@@ -1850,9 +2087,10 @@ struct community_request_api_obj
 };
 
 
+
 struct community_invite_api_obj
 {
-   community_invite_api_obj( const chain::community_join_invite_object& o ):
+   community_invite_api_obj( const chain::community_join_invite_object& o ) :
       id( o.id ),
       account( o.account ),
       community( o.community ),
@@ -1871,13 +2109,60 @@ struct community_invite_api_obj
 };
 
 
+
+struct community_federation_api_obj
+{
+   community_federation_api_obj( const chain::community_federation_object& o ) :
+      id( o.id ),
+      community_a( o.community_a ),
+      encrypted_key_a( o.encrypted_key_a ),
+      message_a( to_string( o.message_a ) ),
+      json_a( to_string( o.json_a ) ),
+      community_b( o.community_b ),
+      encrypted_key_b( o.encrypted_key_b ),
+      message_b( to_string( o.message_b ) ),
+      json_b( to_string( o.json_b ) ),
+      federation_type( community_federation_values[ int( o.federation_type ) ] ),
+      federation_id( to_string( o.federation_id ) ),
+      share_accounts_a( o.share_accounts_a ),
+      share_accounts_b( o.share_accounts_b ),
+      approved_a( o.approved_a ),
+      approved_b( o.approved_b ),
+      last_updated( o.last_updated ),
+      created( o.created ),
+      approved( o.approved() ){}
+
+   community_federation_api_obj(){}
+
+   community_federation_id_type     id;                 
+   community_name_type              community_a;                   ///< Community with the lower ID.
+   encrypted_keypair_type           encrypted_key_a;               ///< A's private community key, encrypted with the equivalent private community key of Community B.
+   string                           message_a;                     ///< Encrypted message from A to the community B membership, encrypted with equivalent community public key.
+   string                           json_a;                        ///< Encrypted JSON metadata from A to community B, encrypted with equivalent community public key.
+   community_name_type              community_b;                   ///< Community with the higher ID.
+   encrypted_keypair_type           encrypted_key_b;               ///< B's private community key, encrypted with the equivalent private community key of Community A.
+   string                           message_b;                     ///< Encrypted message from B to the community A membership, encrypted with equivalent community public key.
+   string                           json_b;                        ///< Encrypted JSON metadata from B to community A, encrypted with equivalent community public key.
+   string                           federation_type;               ///< Determines the level of Federation between the Communities.
+   string                           federation_id;                 ///< Reference uuidv4 for the federation, for local storage of decryption keys.
+   bool                             share_accounts_a;              ///< True when community A accepts incoming memberships from B.
+   bool                             share_accounts_b;              ///< True when community B accepts incoming memberships from A.
+   bool                             approved_a;                    ///< True when community A approves the federation.
+   bool                             approved_b;                    ///< True when account B approves the federation.
+   time_point                       last_updated;                  ///< Time the connection keys were last updated.
+   time_point                       created;                       ///< Time the connection was created.
+   bool                             approved;                      ///< True when both communities approve the federation.
+};
+
+
+
 struct community_event_api_obj
 {
-   community_event_api_obj( const chain::community_event_object& o ):
+   community_event_api_obj( const chain::community_event_object& o ) :
       id( o.id ),
-      account( o.account ),
       community( o.community ),
       event_id( to_string( o.event_id ) ),
+      public_key( o.public_key ),
       event_name( to_string( o.event_name ) ),
       location( to_string( o.location ) ),
       latitude( o.latitude ),
@@ -1885,32 +2170,22 @@ struct community_event_api_obj
       details( to_string( o.details ) ),
       url( to_string( o.url ) ),
       json( to_string( o.json ) ),
+      interface( o.interface ),
+      event_price( o.event_price ),
+      interested( o.interested ),
+      attending( o.attending ),
+      not_attending( o.not_attending ),
       event_start_time( o.event_start_time ),
       event_end_time( o.event_end_time ),
       last_updated( o.last_updated ),
-      created( o.created ),
-      active( o.active )
-      {
-         for( auto name : o.interested )
-         {
-            interested.push_back( name );
-         }
-         for( auto name : o.attending )
-         {
-            attending.push_back( name );
-         }
-         for( auto name : o.not_attending )
-         {
-            not_attending.push_back( name );
-         }
-      }
+      created( o.created ){}
 
    community_event_api_obj(){}
 
    community_event_id_type               id;                 
-   account_name_type                     account;                ///< Account that created the event.
    community_name_type                   community;              ///< Community being invited to join.
    string                                event_id;               ///< UUIDv4 referring to the event within the Community. Unique on community/event_id.
+   public_key_type                       public_key;             ///< Public key for encrypting the event details. Null if public event.
    string                                event_name;             ///< The Name of the event.
    string                                location;               ///< Address location of the event.
    double                                latitude;               ///< Latitude co-ordinates of the event.
@@ -1918,15 +2193,49 @@ struct community_event_api_obj
    string                                details;                ///< Event details describing the purpose of the event.
    string                                url;                    ///< Reference URL for the event.
    string                                json;                   ///< Additional Event JSON data.
-   vector< account_name_type >           invited;                ///< Members that are invited to the event, all members if empty.
-   vector< account_name_type >           interested;             ///< Members that are interested in the event.
-   vector< account_name_type >           attending;              ///< Members that have confirmed that they will be attending the event.
-   vector< account_name_type >           not_attending;          ///< Members that have confirmed that they will not be attending the event.
+   account_name_type                     interface;              ///< Account of the interface that broadcasted the transaction.
+   asset                                 event_price;            ///< Amount paid to join the attending list as a ticket holder to the event.
+   uint64_t                              interested;             ///< Number of Accounts that are interested in the event.
+   uint64_t                              attending;              ///< Members that have confirmed that they will be attending the event.
+   uint64_t                              not_attending;          ///< Members that have confirmed that they will not be attending the event.
    time_point                            event_start_time;       ///< Time that the Event will begin.
    time_point                            event_end_time;         ///< Time that the event will end.
    time_point                            last_updated;           ///< Time that the event was last updated.
    time_point                            created;                ///< Time that the event was created.
-   bool                                  active;                 ///< True if the community is active, false to suspend all interaction to cancel or end the event.
+};
+
+
+
+struct community_event_attend_api_obj
+{
+   community_event_attend_api_obj( const chain::community_event_attend_object& o ) :
+      id( o.id ),
+      attendee( o.attendee ),
+      community( o.community ),
+      event_id( to_string( o.event_id ) ),
+      public_key( o.public_key ),
+      interface( o.interface ),
+      message( to_string( o.message ) ),
+      json( to_string( o.json ) ),
+      interested( o.interested ),
+      attending( o.attending ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
+
+   community_event_attend_api_obj(){}
+
+   community_event_attend_id_type        id;                 
+   account_name_type                     attendee;               ///< Account that is attending the event.
+   community_name_type                   community;              ///< Community hosting the event, and all members are being invited to attend.
+   string                                event_id;               ///< UUIDv4 referring to the event within the Community. Unique on community/event_id.
+   public_key_type                       public_key;             ///< Public key for encrypting the event details. Null if public event.
+   account_name_type                     interface;              ///< Account of the interface that broadcasted the transaction.
+   string                                message;                ///< Encrypted message to the community operating the event.
+   string                                json;                   ///< Additional Event Attendance JSON metadata.
+   bool                                  interested;             ///< True when the attendee is interested in the event.
+   bool                                  attending;              ///< True when the attendee has confirmed that they will be attending the event, and paid the event price.
+   time_point                            last_updated;           ///< Time that the attendance was last updated.
+   time_point                            created;                ///< Time that the attendance was created.
 };
 
 
@@ -3857,6 +4166,68 @@ struct tag_api_obj
 };
 
 
+struct account_curation_metrics_api_obj
+{
+   account_curation_metrics_api_obj( const tags::account_curation_metrics_object& o ):
+      id( o.id ),
+      account( o.account )
+      {
+         for( auto a : o.author_votes )
+         {
+            author_votes[ a.first ] = a.second;
+         }
+         for( auto a : o.community_votes )
+         {
+            community_votes[ a.first ] = a.second;
+         }
+         for( auto a : o.tag_votes )
+         {
+            tag_votes[ a.first ] = a.second;
+         }
+
+         for( auto a : o.author_views )
+         {
+            author_views[ a.first ] = a.second;
+         }
+         for( auto a : o.community_views )
+         {
+            community_views[ a.first ] = a.second;
+         }
+         for( auto a : o.tag_views )
+         {
+            tag_views[ a.first ] = a.second;
+         }
+
+         for( auto a : o.author_shares )
+         {
+            author_shares[ a.first ] = a.second;
+         }
+         for( auto a : o.community_shares )
+         {
+            community_shares[ a.first ] = a.second;
+         }
+         for( auto a : o.tag_shares )
+         {
+            tag_shares[ a.first ] = a.second;
+         }
+      }
+
+   account_curation_metrics_api_obj(){}
+
+   tags::account_curation_metrics_id_type       id;
+   account_name_type                            account;
+   map< account_name_type, uint32_t >           author_votes;
+   map< community_name_type, uint32_t >         community_votes;
+   map< tag_name_type, uint32_t >               tag_votes;
+   map< account_name_type, uint32_t >           author_views;
+   map< community_name_type, uint32_t >         community_views;
+   map< tag_name_type, uint32_t >               tag_views;
+   map< account_name_type, uint32_t >           author_shares;
+   map< community_name_type, uint32_t >         community_shares;
+   map< tag_name_type, uint32_t >               tag_shares;
+};
+
+
 struct signed_block_api_obj : public signed_block
 {
    signed_block_api_obj( const signed_block& block ) : signed_block( block )
@@ -4124,6 +4495,8 @@ FC_REFLECT( node::app::account_permission_api_obj,
          (blacklisted_accounts)
          (whitelisted_assets)
          (blacklisted_assets)
+         (whitelisted_communities)
+         (blacklisted_communities)
          );
 
 FC_REFLECT( node::app::account_request_api_obj,
@@ -4183,6 +4556,10 @@ FC_REFLECT( node::app::account_following_api_obj,
          (friends)
          (companions)
          (followed_communities)
+         (member_communities)
+         (moderator_communities)
+         (admin_communities)
+         (founder_communities)
          (followed_tags)
          (filtered)
          (filtered_communities)
@@ -4201,8 +4578,12 @@ FC_REFLECT( node::app::account_connection_api_obj,
          (id)
          (account_a)
          (encrypted_key_a)
+         (message_a)
+         (json_a)
          (account_b)
          (encrypted_key_b)
+         (message_b)
+         (json_b)
          (connection_type)
          (connection_id)
          (message_count)
@@ -4211,15 +4592,6 @@ FC_REFLECT( node::app::account_connection_api_obj,
          (last_message_time_b)
          (last_updated)
          (created)
-         );
-
-FC_REFLECT( node::app::account_connection_request_api_obj,
-         (id)
-         (account)
-         (requested_account)
-         (connection_type)
-         (message)
-         (expiration)
          );
 
 FC_REFLECT( node::app::owner_authority_history_api_obj,
@@ -4495,6 +4867,74 @@ FC_REFLECT( node::app::comment_api_obj,
          (deleted)
          );
 
+FC_REFLECT( node::app::comment_feed_api_obj,
+         (id)
+         (account)
+         (comment)
+         (feed_type)
+         (shared_by)
+         (communities)
+         (tags)
+         (first_shared_by)
+         (shares)
+         (feed_time)
+         );
+
+FC_REFLECT( node::app::comment_blog_api_obj,
+         (id)
+         (account)
+         (community)
+         (tag)
+         (comment)
+         (shared_by)
+         (blog_type)
+         (first_shared_by)
+         (shares)
+         (blog_time)
+         );
+
+FC_REFLECT( node::app::comment_vote_api_obj,
+         (id)
+         (voter)
+         (comment)
+         (interface)
+         (weight)
+         (max_weight)
+         (reward)
+         (vote_percent)
+         (reaction)
+         (json)
+         (last_updated)
+         (created)
+         (num_changes)
+         );
+
+FC_REFLECT( node::app::comment_view_api_obj,
+         (id)
+         (viewer)
+         (comment)
+         (interface)
+         (supernode)
+         (reward)
+         (weight)
+         (max_weight)
+         (json)
+         (created)
+         );
+
+FC_REFLECT( node::app::comment_share_api_obj,
+         (id)
+         (sharer)
+         (comment)
+         (interface)
+         (reward)
+         (weight)
+         (max_weight)
+         (json)
+         (reach)
+         (created)
+         );
+
 FC_REFLECT( node::app::comment_moderation_api_obj,
          (id)
          (moderator)
@@ -4503,8 +4943,11 @@ FC_REFLECT( node::app::comment_moderation_api_obj,
          (tags)
          (rating)
          (details)
+         (json)
          (interface)
          (filter)
+         (removal_requested)
+         (beneficiaries_requested)
          (last_updated)
          (created)
          );
@@ -4513,13 +4956,19 @@ FC_REFLECT( node::app::message_api_obj,
          (id)
          (sender)
          (recipient)
+         (community)
          (sender_public_key)
          (recipient_public_key)
+         (community_public_key)
+         (parent_message)
          (message)
+         (ipfs)
          (json)
          (uuid)
+         (interface)
          (last_updated)
          (created)
+         (expiration)
          );
 
 FC_REFLECT( node::app::list_api_obj,
@@ -4527,6 +4976,9 @@ FC_REFLECT( node::app::list_api_obj,
          (creator)
          (list_id)
          (name)
+         (details)
+         (json)
+         (interface)
          (accounts)
          (comments)
          (communities)
@@ -4545,8 +4997,21 @@ FC_REFLECT( node::app::poll_api_obj,
          (id)
          (creator)
          (poll_id)
+         (community)
+         (public_key)
+         (interface)
          (details)
-         (poll_options)
+         (json)
+         (poll_option_0)
+         (poll_option_1)
+         (poll_option_2)
+         (poll_option_3)
+         (poll_option_4)
+         (poll_option_5)
+         (poll_option_6)
+         (poll_option_7)
+         (poll_option_8)
+         (poll_option_9)
          (completion_time)
          (last_updated)
          (created)
@@ -4557,35 +5022,36 @@ FC_REFLECT( node::app::poll_vote_api_obj,
          (voter)
          (creator)
          (poll_id)
+         (public_key)
+         (json)
+         (details)
          (poll_option)
+         (interface)
          (last_updated)
          (created)
          );
 
-FC_REFLECT( node::app::blog_api_obj,
+FC_REFLECT( node::app::premium_purchase_api_obj,
          (id)
          (account)
-         (community)
-         (tag)
          (comment)
-         (shared_by)
-         (blog_type)
-         (first_shared_by)
-         (shares)
-         (blog_time)
+         (premium_price)
+         (interface)
+         (expiration)
+         (last_updated)
+         (created)
+         (released)
          );
 
-FC_REFLECT( node::app::feed_api_obj,
+FC_REFLECT( node::app::premium_purchase_key_api_obj,
          (id)
+         (provider)
          (account)
          (comment)
-         (feed_type)
-         (shared_by)
-         (communities)
-         (tags)
-         (first_shared_by)
-         (shares)
-         (feed_time)
+         (interface)
+         (encrypted_key)
+         (last_updated)
+         (created)
          );
 
 
@@ -4612,6 +5078,8 @@ FC_REFLECT( node::app::community_api_obj,
          (community_member_key)
          (community_moderator_key)
          (community_admin_key)
+         (reward_currency)
+         (membership_price)
          (max_rating)
          (flags)
          (permissions)
@@ -4621,7 +5089,6 @@ FC_REFLECT( node::app::community_api_obj,
          (vote_count)
          (view_count)
          (share_count)
-         (reward_currency)
          (created)
          (last_updated)
          (last_post)
@@ -4646,11 +5113,32 @@ FC_REFLECT( node::app::community_invite_api_obj,
          (expiration)
          );
 
+FC_REFLECT( node::app::community_federation_api_obj,
+         (id)
+         (community_a)
+         (encrypted_key_a)
+         (message_a)
+         (json_a)
+         (community_b)
+         (encrypted_key_b)
+         (message_b)
+         (json_b)
+         (federation_type)
+         (federation_id)
+         (share_accounts_a)
+         (share_accounts_b)
+         (approved_a)
+         (approved_b)
+         (last_updated)
+         (created)
+         (approved)
+         );
+
 FC_REFLECT( node::app::community_event_api_obj,
          (id)
-         (account)
          (community)
          (event_id)
+         (public_key)
          (event_name)
          (location)
          (latitude)
@@ -4658,7 +5146,8 @@ FC_REFLECT( node::app::community_event_api_obj,
          (details)
          (url)
          (json)
-         (invited)
+         (interface)
+         (event_price)
          (interested)
          (attending)
          (not_attending)
@@ -4666,13 +5155,27 @@ FC_REFLECT( node::app::community_event_api_obj,
          (event_end_time)
          (last_updated)
          (created)
-         (active)
          );
+
+FC_REFLECT( node::app::community_event_attend_api_obj,
+         (id)
+         (attendee)
+         (community)
+         (event_id)
+         (public_key)
+         (interface)
+         (message)
+         (json)
+         (interested)
+         (attending)
+         (last_updated)
+         (created)
+         );
+
 
 //=====================================//
 // ===== Advertising API Objects ===== //
 //=====================================//
-
 
 
 FC_REFLECT( node::app::ad_creative_api_obj,
@@ -5474,4 +5977,18 @@ FC_REFLECT_DERIVED( node::app::signed_block_api_obj, (node::protocol::signed_blo
          (block_id)
          (signing_key)
          (transaction_ids)
+         );
+
+FC_REFLECT( node::app::account_curation_metrics_api_obj,
+         (id)
+         (account)
+         (author_votes)
+         (community_votes)
+         (tag_votes)
+         (author_views)
+         (community_views)
+         (tag_views)
+         (author_shares)
+         (community_shares)
+         (tag_shares)
          );

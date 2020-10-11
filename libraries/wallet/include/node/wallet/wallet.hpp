@@ -510,7 +510,7 @@ class wallet_api
        * @param names The names of the accounts to provide message information.
        * @returns Message state information pertaining to the specified accounts.
        */
-      vector< message_state >                         get_messages( vector< string > names ) const;
+      vector< account_message_state >                 get_account_messages( vector< string > names ) const;
 
 
       /** 
@@ -1901,42 +1901,21 @@ class wallet_api
 
 
       /**
-       * Requests that a connection be created between two accounts.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account Account sending the request.
-       * @param requested_account Account that is being requested to connect.
-       * @param connection_type Type of connection level.
-       * @param message Message attached to the request, encrypted with recipient's secure public key.
-       * @param requested Set true to request, false to cancel request.
-       * @param broadcast Set True to broadcast transaction.
-       */ 
-      annotated_signed_transaction           account_connection_request(
-         string signatory,
-         string account,
-         string requested_account,
-         string connection_type,
-         string message,
-         bool requested, 
-         bool broadcast );
-
-
-      /**
        * Accepts an incoming connection request by providing an encrypted posting key.
        *
        * @param signatory The name of the account signing the transaction.
        * @param account Account accepting the request.
-       * @param requesting_account Account that originally requested to connect.
+       * @param connecting_account Account that originally requested to connect.
        * @param connection_id uuidv4 for the connection, for local storage of decryption key.
        * @param connection_type Type of connection level.
        * @param encrypted_key The private connection key of the user, encrypted with the public secure key of the requesting account.
        * @param connected Set true to connect, false to delete connection.
        * @param broadcast Set True to broadcast transaction.
        */ 
-      annotated_signed_transaction           account_connection_accept(
+      annotated_signed_transaction           account_connection(
          string signatory,
          string account,
-         string requesting_account,
+         string connecting_account,
          string connection_id,
          string connection_type,
          string encrypted_key,
@@ -2245,25 +2224,6 @@ class wallet_api
 
 
       /**
-       * Claims a milestone from a community enterprise proposal.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param creator The name of the account that created the community enterprise proposal.
-       * @param enterprise_id uuidv4 referring to the proposal.
-       * @param milestone Number of the milestone that is being claimed as completed. Number 0 for initial acceptance. 
-       * @param details Description of completion of milestone, with supporting evidence.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           enterprise_fund(
-         string signatory,
-         string creator,
-         string enterprise_id,
-         uint16_t milestone,
-         string details,
-         bool broadcast );
-
-
-      /**
        * Approves a milestone claim from a community enterprise proposal.
        *
        * @param signatory The name of the account signing the transaction.
@@ -2284,6 +2244,26 @@ class wallet_api
          uint16_t vote_rank,
          bool approved,
          bool broadcast );
+
+
+      /**
+       * Claims a milestone from a community enterprise proposal.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param creator The name of the account that created the community enterprise proposal.
+       * @param enterprise_id uuidv4 referring to the proposal.
+       * @param milestone Number of the milestone that is being claimed as completed. Number 0 for initial acceptance. 
+       * @param details Description of completion of milestone, with supporting evidence.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           enterprise_fund(
+         string signatory,
+         string creator,
+         string enterprise_id,
+         uint16_t milestone,
+         string details,
+         bool broadcast );
+         
 
 
       //=======================================//
@@ -2371,25 +2351,6 @@ class wallet_api
          comment_options options,
          bool deleted,
          bool broadcast );
-
-
-      /**
-       * Creates a private encrypted message between two accounts.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param sender The account sending the message.
-       * @param recipient The receiving account of the message.
-       * @param message Encrypted ciphertext of the message being sent. 
-       * @param uuid uuidv4 uniquely identifying the message for local storage.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           message(
-         string signatory,
-         string sender,
-         string recipient,
-         string message,
-         string uuid,
-         bool broadcast );
       
 
       /**
@@ -2401,6 +2362,8 @@ class wallet_api
        * @param permlink Permlink of the post being voted on.
        * @param weight Percentage weight of the voting power applied to the post.
        * @param interface Name of the interface account that was used to broadcast the transaction. 
+       * @param reaction An Emoji selected as a reaction to the post while voting.
+       * @param json JSON Metadata of the vote.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           comment_vote(
@@ -2410,6 +2373,8 @@ class wallet_api
          string permlink, 
          int16_t weight,
          string interface,
+         string reaction,
+         string json,
          bool broadcast );
 
 
@@ -2422,6 +2387,7 @@ class wallet_api
        * @param permlink Permlink of the post being viewed.
        * @param interface Name of the interface account that was used to broadcast the transaction and view the post.
        * @param supernode Name of the supernode account that served the IPFS file data in the post.
+       * @param json JSON Metadata of the view.
        * @param viewed True if viewing the post, false if removing view object.
        * @param broadcast Set True to broadcast transaction.
        */
@@ -2432,6 +2398,7 @@ class wallet_api
          string permlink,
          string interface,
          string supernode,
+         string json,
          bool viewed,
          bool broadcast );
 
@@ -2447,6 +2414,7 @@ class wallet_api
        * @param interface Name of the interface account that was used to broadcast the transaction and share the post.
        * @param community Optionally share the post with a new community.
        * @param tag Optionally share the post with a new tag.
+       * @param json JSON Metadata of the share.
        * @param shared True if sharing the post, false if removing share.
        * @param broadcast Set True to broadcast transaction.
        */
@@ -2459,6 +2427,7 @@ class wallet_api
          string interface,
          string community,
          string tag,
+         string json,
          bool shared,
          bool broadcast );
 
@@ -2473,8 +2442,11 @@ class wallet_api
        * @param tags Set of tags to apply to the post for selective interface side filtering.
        * @param rating Newly proposed rating for the post.
        * @param details String explaining the reason for the tag to the author.
+       * @param json JSON Metadata of the moderation tag.
        * @param interface Interface account used for the transaction.
        * @param filter True if the post should be filtered from the community and governance account subscribers.
+       * @param removal_requested True if the moderator formally requests that the post be removed by the author.
+       * @param beneficiaries_requested Beneficiary routes that are requested for revenue sharing with a claimant.
        * @param applied True if applying the tag, false if removing the tag.
        * @param broadcast Set True to broadcast transaction.
        */
@@ -2486,9 +2458,51 @@ class wallet_api
          vector< string > tags,
          uint16_t rating,
          string details,
+         string json,
          string interface,
          bool filter,
+         bool removal_requested,
+         vector< beneficiary_route_type > beneficiaries_requested,
          bool applied,
+         bool broadcast );
+
+
+      /**
+       * Creates a private encrypted message between two accounts.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param sender The account sending the message.
+       * @param recipient The receiving account of the message.
+       * @param community The name of the community that the message should be sent to.
+       * @param public_key The public key used to encrypt the post, holders of the private key may decrypt.
+       * @param message Encrypted ciphertext of the message being sent.
+       * @param ipfs Encrypted Private IPFS file hash: Voice message audio, images, videos, files.
+       * @param json Encrypted Message metadata.
+       * @param uuid uuidv4 uniquely identifying the message for local storage.
+       * @param interface Interface account used for the transaction.
+       * @param parent_sender The account sending the message that this message replies to.
+       * @param parent_uuid uuidv4 of the message that this message replies to.
+       * @param expiration Time that the message expires and is automatically deleted from API access.
+       * @param forward True when the parent message is being forwarded into the conversation.
+       * @param active True to send or edit message, false to delete message.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           message(
+         string signatory,
+         string sender,
+         string recipient,
+         string community,
+         string public_key,
+         string message,
+         string ipfs,
+         string json
+         string uuid,
+         string interface,
+         string parent_sender,
+         string parent_uuid,
+         time_point expiration,
+         bool forward,
+         bool active,
          bool broadcast );
 
 
@@ -2499,6 +2513,9 @@ class wallet_api
        * @param creator Name of the account that created the list.
        * @param list_id uuidv4 referring to the list.
        * @param name Name of the list, unique for each account.
+       * @param details Public details description of the list.
+       * @param json Public JSON metadata of the list.
+       * @param interface Account of the interface that broadcasted the transaction.
        * @param accounts Account IDs within the list.
        * @param comments Comment IDs within the list.
        * @param communities Community IDs within the list.
@@ -2509,6 +2526,7 @@ class wallet_api
        * @param edges Graph edge IDs within the list.
        * @param node_types Graph node property IDs within the list.
        * @param edge_types Graph edge property IDs within the list.
+       * @param active True when the list is active, false to remove list.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           list(
@@ -2516,6 +2534,9 @@ class wallet_api
          string creator,
          string list_id,
          string name,
+         string details,
+         string json,
+         string interface,
          flat_set< int64_t > accounts,
          flat_set< int64_t > comments,
          flat_set< int64_t > communities,
@@ -2526,6 +2547,7 @@ class wallet_api
          flat_set< int64_t > edges,
          flat_set< int64_t > node_types,
          flat_set< int64_t > edge_types,
+         bool active,
          bool broadcast );
 
 
@@ -2535,18 +2557,46 @@ class wallet_api
        * @param signatory The name of the account signing the transaction.
        * @param creator Name of the account that created the poll.
        * @param poll_id uuidv4 referring to the poll.
+       * @param community Community that the poll is shown within. Null for no community.
+       * @param public_key Public key for encrypting details and poll options.
+       * @param interface Account of the interface that broadcasted the transaction.
        * @param details Text describing the question being asked.
-       * @param poll_options Available poll voting options.
+       * @param json JSON metadata of the poll.
+       * @param poll_option_0 Poll option zero, vote 0 to select.
+       * @param poll_option_1 Poll option one, vote 1 to select.
+       * @param poll_option_2 Poll option two, vote 2 to select.
+       * @param poll_option_3 Poll option three, vote 3 to select.
+       * @param poll_option_4 Poll option four, vote 4 to select.
+       * @param poll_option_5 Poll option five, vote 5 to select.
+       * @param poll_option_6 Poll option six, vote 6 to select.
+       * @param poll_option_7 Poll option seven, vote 7 to select.
+       * @param poll_option_8 Poll option eight, vote 8 to select.
+       * @param poll_option_9 Poll option nine, vote 9 to select.
        * @param completion_time Time the poll voting completes.
+       * @param active True when the poll is active, false to remove the poll and all poll votes.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           poll(
          string signatory,
          string creator,
          string poll_id,
+         string community,
+         string public_key,
+         string interface,
          string details,
-         vector< string > poll_options,
+         string json,
+         string poll_option_0,
+         string poll_option_1,
+         string poll_option_2,
+         string poll_option_3,
+         string poll_option_4,
+         string poll_option_5,
+         string poll_option_6,
+         string poll_option_7,
+         string poll_option_8,
+         string poll_option_9,
          time_point completion_time,
+         bool active,
          bool broadcast );
 
 
@@ -2557,7 +2607,9 @@ class wallet_api
        * @param voter Name of the account that created the vote.
        * @param creator Name of the account that created the poll.
        * @param poll_id uuidv4 referring to the poll.
+       * @param interface Account of the interface that broadcasted the transaction.
        * @param poll_option Poll option chosen.
+       * @param active True when the poll vote is active, false to remove.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           poll_vote(
@@ -2565,7 +2617,53 @@ class wallet_api
          string voter,
          string creator,
          string poll_id,
+         string interface,
          uint16_t poll_option,
+         bool active,
+         bool broadcast );
+
+
+      /**
+       * Premium purchase requests that a Premium Post to be made available for decryption to a purchaser.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Name of the account purchasing the premium content.
+       * @param author Name of the author of the premium post.
+       * @param permlink Permlink of the premium post.
+       * @param interface Account of the interface that broadcasted the transaction.
+       * @param purchased True to purchase the premium content, false to cancel existing undelivered purchase. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           premium_purchase(
+         string signatory,
+         string account,
+         string author,
+         string permlink,
+         string interface,
+         bool purchased,
+         bool broadcast );
+
+
+      /**
+       * Premium Release enables a Premium Post to be decrypted by a purchaser.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param provider Name of the account releasing the premium content.
+       * @param account Name of the account purchasing the premium content.
+       * @param author Name of the author of the premium post.
+       * @param permlink Permlink of the premium post.
+       * @param interface Account of the interface that broadcasted the transaction.
+       * @param encrypted_key  The private decryption key of the post, encrypted with the public secure key of the purchasing account.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           premium_release(
+         string signatory,
+         string provider,
+         string account,
+         string author,
+         string permlink,
+         string interface,
+         string encrypted_key,
          bool broadcast );
 
 
@@ -2595,6 +2693,7 @@ class wallet_api
        * @param community_moderator_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted moderators.
        * @param community_admin_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted admins.
        * @param reward_currency The Currency asset used for content rewards in the community.
+       * @param membership_price Price paid per day by all community members to community founder.
        * @param max_rating Highest severity rating that posts in the community can have.
        * @param flags The currently active flags on the community for content settings.
        * @param permissions The flag permissions that can be activated on the community for content settings.
@@ -2617,6 +2716,7 @@ class wallet_api
          string community_moderator_key,
          string community_admin_key,
          string reward_currency,
+         asset membership_price,
          uint16_t max_rating,
          uint32_t flags,
          uint32_t permissions,
@@ -2643,7 +2743,6 @@ class wallet_api
        * @param community_member_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted members.
        * @param community_moderator_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted moderators.
        * @param community_admin_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted admins.
-       * @param reward_currency The Currency asset used for content rewards in the community.
        * @param max_rating Highest severity rating that posts in the community can have.
        * @param flags The currently active flags on the community for content settings.
        * @param permissions The flag permissions that can be activated on the community for content settings.
@@ -2668,7 +2767,6 @@ class wallet_api
          string community_member_key,
          string community_moderator_key,
          string community_admin_key,
-         string reward_currency,
          uint16_t max_rating,
          uint32_t flags,
          uint32_t permissions,
@@ -2888,6 +2986,36 @@ class wallet_api
          bool subscribed,
          bool broadcast );
 
+      /**
+       * Used to create a federation connection between two communities.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Admin within the community creating the federation.
+       * @param federation_id uuidv4 for the federation, for local storage of decryption key.
+       * @param community Community that the account is an admin within.
+       * @param federated_community Community that the account is an admin within.
+       * @param message Encrypted Message to include to the members of the requested community, encrypted with equivalent community key.
+       * @param json Encrypted JSON metadata, encrypted with equivalent community key.
+       * @param federation_type Type of Federation level.
+       * @param encrypted_community_key The Federated Community Private Key, encrypted with the member's secure public key.
+       * @param share_accounts True to share accounts across the Federation, false to only share decryption keys.
+       * @param accepted True to accept request, false to reject federation.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           community_federation(
+         string signatory,
+         string account,
+         string federation_id,
+         string community,
+         string federated_community,
+         string message,
+         string json,
+         string federation_type,
+         string encrypted_community_key,
+         bool share_accounts,
+         bool accepted,
+         bool broadcast );
+
 
       /**
        * Creates or updates a community event.
@@ -2896,6 +3024,7 @@ class wallet_api
        * @param account Account that created the event.
        * @param community Community being invited to join.
        * @param event_id UUIDv4 referring to the event within the Community. Unique on community/event_id.
+       * @param public_key Public key for encrypting the event details. Null if public event.
        * @param event_name The Name of the event. Unique within each community.
        * @param location Address of the location of the event.
        * @param latitude Latitude co-ordinates of the event.
@@ -2903,6 +3032,8 @@ class wallet_api
        * @param details Event details describing the purpose of the event.
        * @param url Link containining additional event information.
        * @param json Additional Event JSON data.
+       * @param interface Account of the interface that broadcasted the transaction.
+       * @param event_price Amount paid to join the attending list as a ticket holder to the event.
        * @param event_start_time Time that the Event will begin.
        * @param event_end_time Time that the event will end.
        * @param active True if the community is active, false to suspend all interaction to cancel or end the event.
@@ -2913,6 +3044,7 @@ class wallet_api
          string account,
          string community,
          string event_id,
+         string public_key,
          string event_name,
          string location,
          double latitude,
@@ -2920,6 +3052,8 @@ class wallet_api
          string details,
          string url,
          string json,
+         string interface,
+         asset event_price,
          time_point event_start_time,
          time_point event_end_time,
          bool active,
@@ -2930,22 +3064,30 @@ class wallet_api
        * Denotes the status of an account attending an event.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param account Account that is attending the event.
+       * @param attendee Account that is attending the event.
        * @param community Community that the event is within.
        * @param event_id UUIDv4 referring to the event within the Community. Unique on community/event_id.
-       * @param interested True to set interested in the event, and receive notifications about it, false to remove interedt status.
-       * @param attending True to attend the event, false to remove attending status.
-       * @param not_attending True to state not attending the event, false to remove not attending status.
+       * @param public_key Public key for encrypting the event details. Null if public event.
+       * @param message Encrypted message to the community operating the event.
+       * @param json Additional Event JSON data. Encrypted if private event.
+       * @param interface Account of the interface that broadcasted the transaction.
+       * @param interested True to set interested in the event, and receive notifications about it, false for not interested.
+       * @param attending True to attend the event, false to for not attending.
+       * @param active True to create attendance for the event, false to remove.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           community_event_attend(
          string signatory,
-         string account,
+         string attendee,
          string community,
          string event_id,
+         string public_key,
+         string message,
+         string json,
+         string interface,
          bool interested,
          bool attending,
-         bool not_attending,
+         bool active,
          bool broadcast );
 
 
@@ -4708,7 +4850,7 @@ FC_API( node::wallet::wallet_api,
          (get_concise_accounts)
          (get_full_accounts)
          (get_account_history)
-         (get_messages)
+         (get_account_messages)
          (get_balances)
          (get_confidential_balances)
          (get_keychains)
@@ -4809,8 +4951,7 @@ FC_API( node::wallet::wallet_api,
          (account_reset_update)
          (account_recovery_update)
          (account_decline_voting)
-         (account_connection_request)
-         (account_connection_accept)
+         (account_connection)
          (account_follow)
          (tag_follow)
          (activity_reward)
@@ -4828,13 +4969,15 @@ FC_API( node::wallet::wallet_api,
          (enterprise_vote)
          (comment)
          (message)
-         (vote)
-         (view)
-         (share)
+         (comment_vote)
+         (comment_view)
+         (comment_share)
          (comment_moderation)
          (list)
          (poll)
          (poll_vote)
+         (premium_purchase)
+         (premium_release)
          (community_create)
          (community_update)
          (community_add_mod)
@@ -4848,6 +4991,7 @@ FC_API( node::wallet::wallet_api,
          (community_remove_member)
          (community_blacklist)
          (community_subscribe)
+         (community_federation)
          (community_event)
          (community_event_attend)
          (ad_creative)

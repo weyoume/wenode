@@ -722,62 +722,41 @@ namespace node { namespace protocol {
 
 
    /**
-    * Requests that a connection be created between two accounts.
+    * Creates or updates a connection between two accounts.
     * 
     * Used for the purposes of exchanging encrypted 
     * connection keys that can be used to decrypt
     * private posts made by the account, and enables the creation of private 
     * message transactions between the two accounts. 
     * 
-    * Initiates a 3 step connection exchange process:
+    * Initiates the 2 step connection exchange process:
     * 
-    * 1 - Alice sends Request txn.
-    * 2 - Bob sends Acceptance txn with encrypted private key.
-    * 3 - Alice sends returns with Acceptance txn with encrypted private key.
+    * 1 - Alice sends Connection with encrypted private key.
+    * 2 - Bob confirms and returns a connection txn with encrypted private key.
+    * 
+    * Encrypted key should be decryptable by the recipient's private secure key.
+    * 
+    * This operation assumes that the account includes 
+    * a valid encrypted private key and that the initial account 
+    * confirms by returning an additional acceptance transaction.
     */
-   struct account_connection_request_operation : public base_operation 
-   {
-      account_name_type             signatory;
-
-      account_name_type             account;                        ///< Account sending the request.
-
-      account_name_type             requested_account;              ///< Account that is being requested to connect.
-
-      string                        connection_type;                ///< Type of connection level.
-
-      string                        message;                        ///< Message attached to the request, encrypted with recipient's secure public key.
-
-      bool                          requested = true;               ///< Set true to request, false to cancel request.
-
-      void                          validate()const;
-      void                          get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                          get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
-   };
-
-
-   /**
-    * Accepts an incoming connection request by providing an encrypted posting key.
-    * 
-    * Encrypted key should be decryptable by the recipient that initiated the request.
-    * 
-    * This operation assumes that the account includes a valid encrypted private key
-    * and that the initial account confirms by returning an additional acceptance transaction.
-    * The protocol cannot ensure the reciprocity of the original sender, or
-    * the accuracy of the private keys included.
-    */
-   struct account_connection_accept_operation : public base_operation
+   struct account_connection_operation : public base_operation
    {
       account_name_type             signatory;
 
       account_name_type             account;               ///< Account accepting the request.
 
-      account_name_type             requesting_account;    ///< Account that originally requested to connect.
+      account_name_type             connecting_account;    ///< Account that should be connected to.
 
       string                        connection_id;         ///< uuidv4 for the connection, for local storage of decryption key.
 
       string                        connection_type;       ///< Type of connection level.
 
-      string                        encrypted_key;         ///< The private connection key of the user, encrypted with the public secure key of the requesting account.
+      string                        message;               ///< Message attached to the connection, encrypted with recipient's secure public key.
+
+      string                        json;                  ///< JSON metadata attached to the connection, encrypted with recipient's secure public key.
+
+      string                        encrypted_key;         ///< The encrypted private connection/friend/companion key of the user.
 
       bool                          connected = true;      ///< Set true to connect, false to delete connection.
 
@@ -1082,7 +1061,7 @@ namespace node { namespace protocol {
    {
       account_name_type              signatory;
 
-      account_name_type              account;                  ///< The account subscribing to the governance address
+      account_name_type              account;                  ///< The account subscribing to the governance address.
       
       account_name_type              governance_account;       ///< The name of the governance account.
 
@@ -1247,30 +1226,6 @@ namespace node { namespace protocol {
 
 
    /**
-    * Directly sends funds to an enterprise proposal.
-    * 
-    * 50% of enterprise pool funding is distributed to the projects 
-    * based on the total amount sent in direct funding by accounts.
-    */
-   struct enterprise_fund_operation : public base_operation
-   {
-      account_name_type              signatory;
-
-      account_name_type              funder;                     ///< The name of the account sending the funding.
-
-      account_name_type              account;                    ///< The name of the account that created the proposal.
-
-      string                         enterprise_id;              ///< UUIDv4 referring to the proposal.
-
-      asset                          amount;                     ///< Amount of funding that is to be paid to the enterprise proposal.
-         
-      void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( funder ); }
-      void                           validate() const;
-   };
-
-
-   /**
     * Votes for an enterprise proposal to receive funding.
     * 
     * 50% of enterprise pool funding is distributed to the proposals 
@@ -1292,6 +1247,30 @@ namespace node { namespace protocol {
          
       void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( voter ); }
+      void                           validate() const;
+   };
+
+
+   /**
+    * Directly sends funds to an enterprise proposal.
+    * 
+    * 50% of enterprise pool funding is distributed to the projects 
+    * based on the total amount sent in direct funding by accounts.
+    */
+   struct enterprise_fund_operation : public base_operation
+   {
+      account_name_type              signatory;
+
+      account_name_type              funder;                     ///< The name of the account sending the funding.
+
+      account_name_type              account;                    ///< The name of the account that created the proposal.
+
+      string                         enterprise_id;              ///< UUIDv4 referring to the proposal.
+
+      asset                          amount;                     ///< Amount of funding that is to be paid to the enterprise proposal.
+         
+      void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( funder ); }
       void                           validate() const;
    };
    
@@ -1520,7 +1499,11 @@ namespace node { namespace protocol {
 
       int16_t                        weight = 0;      ///< Percentage weight of the voting power applied to the post.
 
-      account_name_type              interface;       ///< Name of the interface account that was used to broadcast the transaction. 
+      account_name_type              interface;       ///< Name of the interface account that was used to broadcast the transaction.
+
+      string                         reaction;        ///< An Emoji selected as a reaction to the post while voting.
+
+      string                         json;            ///< JSON Metadata of the vote.
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1546,7 +1529,9 @@ namespace node { namespace protocol {
 
       account_name_type              interface;        ///< Name of the interface account that was used to broadcast the transaction and view the post. 
 
-      account_name_type              supernode;        ///< Name of the supernode account that served the IPFS file data in the post. 
+      account_name_type              supernode;        ///< Name of the supernode account that served the IPFS file data in the post.
+
+      string                         json;             ///< JSON Metadata of the view.
 
       bool                           viewed = true;    ///< True if viewing the post, false if removing view object.
 
@@ -1582,6 +1567,8 @@ namespace node { namespace protocol {
 
       optional< tag_name_type >      tag;              ///< Optionally share the post with a new tag.
 
+      string                         json;             ///< JSON Metadata of the share.
+
       bool                           shared = true;    ///< True if sharing the post, false if removing share.
 
       void                           validate()const;
@@ -1611,23 +1598,29 @@ namespace node { namespace protocol {
    {
       account_name_type              signatory;
 
-      account_name_type              moderator;          ///< Account creating the tag: can be a governance address or a community moderator. 
+      account_name_type              moderator;                         ///< Account creating the tag: can be a governance address or a community moderator. 
 
-      account_name_type              author;             ///< Author of the post being tagged.
+      account_name_type              author;                            ///< Author of the post being moderated.
 
-      string                         permlink;           ///< Permlink of the post being tagged.
+      string                         permlink;                          ///< Permlink of the post being moderated.
 
-      vector< tag_name_type >        tags;               ///< Set of tags to apply to the post for selective interface side filtering.
+      vector< tag_name_type >        tags;                              ///< Set of tags to apply to the post for selective interface side filtering.
 
-      uint16_t                       rating;             ///< Newly proposed rating for the post.
+      uint16_t                       rating;                            ///< Moderator's assigned rating for the post.
 
-      string                         details;            ///< String explaining the reason for the tag to the author.
+      string                         details;                           ///< String explaining the reason for the tag to the author.
 
-      account_name_type              interface;          ///< Interface account used for the transaction.
+      string                         json;                              ///< JSON Metadata of the moderation tag.
 
-      bool                           filter = false;     ///< True if the post should be filtered from the community and governance account subscribers.
+      account_name_type              interface;                         ///< Interface account used for the transaction.
 
-      bool                           applied = true;     ///< True if applying the tag, false if removing the tag.
+      bool                           filter = false;                    ///< True if the post should be filtered from the community and governance account subscribers.
+
+      bool                           removal_requested = false;         ///< True if the moderator formally requests that the post be removed by the author.
+
+      vector< beneficiary_route_type >  beneficiaries_requested;        ///< Beneficiary routes that are requested for revenue sharing with a claimant.
+
+      bool                           applied = true;                    ///< True if applying the tag, false if removing the tag.
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1636,23 +1629,48 @@ namespace node { namespace protocol {
 
 
    /**
-    * Creates a private encrypted message between two accounts.
+    * Creates a private encrypted message.
     * 
-    * Collected into an inbox structure for direct private messaging
-    * using a series of encrypted private keys, 
-    * exchanged during a account_connection_accept_operation
+    * Collected into an inbox structure for direct private messaging.
+    * 
+    * Messages can be sent to connected accounts, 
+    * where they are encrypted with 
+    * the secure keys of the sender and reciever.
+    * 
+    * Messages can be sent to communities, where they can be read by all
+    * community members with the equivalent private community decryption key.
     */
    struct message_operation : public base_operation
    {
       account_name_type              signatory;
 
-      account_name_type              sender;         ///< The account sending the message.
+      account_name_type              sender;                  ///< The account sending the message.
 
-      account_name_type              recipient;      ///< The receiving account of the message.
+      account_name_type              recipient;               ///< The receiving account of the message.
 
-      string                         message;        ///< Encrypted ciphertext of the message being sent. 
+      community_name_type            community;               ///< The name of the community that the message should be sent to.
 
-      string                         uuid;           ///< uuidv4 uniquely identifying the message for local storage.
+      string                         public_key;              ///< The public key used to encrypt the message, the recipient holder of the private key may decrypt.
+
+      string                         message;                 ///< Encrypted ciphertext of the message being sent.
+
+      string                         ipfs;                    ///< Encrypted Private IPFS file hash: Voice message audio, images, videos, files.
+
+      string                         json;                    ///< Encrypted Message metadata.
+
+      string                         uuid;                    ///< uuidv4 uniquely identifying the message for local storage.
+
+      account_name_type              interface;               ///< Account of the interface that broadcasted the transaction.
+      
+      account_name_type              parent_sender;           ///< The account sending the message that this message replies to.
+
+      string                         parent_uuid;             ///< uuidv4 of the message that this message replies to.
+
+      time_point                     expiration;              ///< Time that the message expires and is automatically deleted from API access.
+
+      bool                           forward = false;         ///< True when the parent message is being forwarded into the conversation.
+
+      bool                           active = true;           ///< True to send or edit message, false to delete message.
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1673,27 +1691,35 @@ namespace node { namespace protocol {
 
       string                         list_id;             ///< uuidv4 referring to the list.
 
-      string                         name;                ///< Name of the list, unique for each account.
+      string                         name;                ///< Name of the list.
 
-      flat_set< int64_t >            accounts;            ///< Account IDs within the list.
+      string                         details;             ///< Public details description of the list.
 
-      flat_set< int64_t >            comments;            ///< Comment IDs within the list.
+      string                         json;                ///< Public JSON metadata of the list.
 
-      flat_set< int64_t >            communities;         ///< Community IDs within the list.
+      account_name_type              interface;           ///< Account of the interface that broadcasted the transaction.
 
-      flat_set< int64_t >            assets;              ///< Asset IDs within the list.
+      vector< int64_t >              accounts;            ///< Account IDs within the list.
 
-      flat_set< int64_t >            products;            ///< Product IDs within the list.
+      vector< int64_t >              comments;            ///< Comment IDs within the list.
 
-      flat_set< int64_t >            auctions;            ///< Auction IDs within the list.
+      vector< int64_t >              communities;         ///< Community IDs within the list.
 
-      flat_set< int64_t >            nodes;               ///< Graph node IDs within the list.
+      vector< int64_t >              assets;              ///< Asset IDs within the list.
 
-      flat_set< int64_t >            edges;               ///< Graph edge IDs within the list.
+      vector< int64_t >              products;            ///< Product IDs within the list.
 
-      flat_set< int64_t >            node_types;          ///< Graph node property IDs within the list.
+      vector< int64_t >              auctions;            ///< Auction IDs within the list.
 
-      flat_set< int64_t >            edge_types;          ///< Graph edge property IDs within the list.
+      vector< int64_t >              nodes;               ///< Graph node IDs within the list.
+
+      vector< int64_t >              edges;               ///< Graph edge IDs within the list.
+
+      vector< int64_t >              node_types;          ///< Graph node property IDs within the list.
+
+      vector< int64_t >              edge_types;          ///< Graph edge property IDs within the list.
+
+      bool                           active = true;       ///< True when the list is active, false to remove list.
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1710,15 +1736,43 @@ namespace node { namespace protocol {
    {
       account_name_type              signatory;
 
-      account_name_type              creator;             ///< Name of the account that created the poll.
+      account_name_type              creator;                  ///< Name of the account that created the poll.
 
-      string                         poll_id;             ///< uuidv4 referring to the poll.
+      string                         poll_id;                  ///< uuidv4 referring to the poll.
 
-      string                         details;             ///< Text describing the question being asked.
+      community_name_type            community;                ///< Community that the poll is shown within. Null for no community.
 
-      vector< fixed_string_32 >      poll_options;        ///< Available poll voting options.
+      string                         public_key;               ///< Public key for encrypting details and poll options.
 
-      time_point                     completion_time;     ///< Time the poll voting completes.
+      account_name_type              interface;                ///< Account of the interface that broadcasted the transaction.
+
+      string                         details;                  ///< Text describing the question being asked.
+
+      string                         json;                     ///< JSON metadata of the poll.
+
+      string                         poll_option_0;            ///< Poll option zero, vote 0 to select.
+
+      string                         poll_option_1;            ///< Poll option one, vote 1 to select.
+
+      string                         poll_option_2;            ///< Poll option two, vote 2 to select.
+
+      string                         poll_option_3;            ///< Poll option three, vote 3 to select.
+
+      string                         poll_option_4;            ///< Poll option four, vote 4 to select.
+
+      string                         poll_option_5;            ///< Poll option five, vote 5 to select.
+
+      string                         poll_option_6;            ///< Poll option six, vote 6 to select.
+
+      string                         poll_option_7;            ///< Poll option seven, vote 7 to select.
+
+      string                         poll_option_8;            ///< Poll option eight, vote 8 to select.
+
+      string                         poll_option_9;            ///< Poll option nine, vote 9 to select.
+
+      time_point                     completion_time;          ///< Time the poll voting completes.
+
+      bool                           active = true;            ///< True when the poll is active, false to remove the poll and all poll votes.
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1741,7 +1795,11 @@ namespace node { namespace protocol {
 
       string                         poll_id;             ///< uuidv4 referring to the poll.
 
+      account_name_type              interface;           ///< Account of the interface that broadcasted the transaction.
+
       uint16_t                       poll_option;         ///< Poll option chosen.
+
+      bool                           active = true;       ///< True when the poll vote is active, false to remove.
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1867,7 +1925,9 @@ namespace node { namespace protocol {
 
       account_name_type              author;                ///< Name of the author of the premium post.
 
-      string                         permlink;              ///< Permlink of the post.
+      string                         permlink;              ///< Permlink of the premium post.
+
+      account_name_type              interface;             ///< Account of the interface that broadcasted the transaction.
 
       string                         encrypted_key;         ///< The private decryption key of the post, encrypted with the public secure key of the purchasing account.
 
@@ -1931,7 +1991,11 @@ namespace node { namespace protocol {
 
       string                             community_admin_key;                ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted admins.
 
+      account_name_type                  interface;                          ///< Account of the interface that broadcasted the transaction.
+      
       asset_symbol_type                  reward_currency = SYMBOL_COIN;      ///< The Currency asset used for content rewards in the community.
+
+      asset                              membership_price = asset( 0, SYMBOL_COIN );  ///< Price paid per week by all community members to community founder.
 
       uint16_t                           max_rating = 9;                     ///< Highest severity rating that posts in the community can have.
 
@@ -1984,8 +2048,6 @@ namespace node { namespace protocol {
       string                         community_moderator_key;            ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted moderators.
 
       string                         community_admin_key;                ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted admins.
-
-      asset_symbol_type              reward_currency = SYMBOL_COIN;      ///< The Currency asset used for content rewards in the community.
 
       uint16_t                       max_rating = 9;                     ///< Highest severity rating that posts in the community can have.
 
@@ -2278,70 +2340,57 @@ namespace node { namespace protocol {
 
 
    /**
-    * Used to request a federation connection between two communities.
+    * Used to create a federation connection between two communities.
     * 
     * Federated Communities share their community private keys between members, 
     * enabling them to decrypt all private posts and messages within the other.
     * 
     * The Federation type determines whether the Federation connection shares
-    * Members, Moderator, and Admin permissions between communities.
+    * Members, Moderator, and Admin accounts between communities.
     * 
-    * In a Direct Federation, Permissions are not shared, only the decryption keys. 
+    * When an account is added as a member to a community, they are added as member to
+    * all downstream federated communities. 
+    * When an account is added as a moderator, they are added as a moderator to all 
+    * downstream communities with at least a moderator level federation.
+    * When an account is added as an admin, they are added as an admin to all 
+    * downstream communities with at least an admin level federation.
     * 
-    * In a General Federation, Members of one community inheirit all the permissions
-    * of Membership in the other community.
+    * Directed Federated communities act as concentric circles, where membership in 
+    * one is membership in the other, but membership in the outer circle
+    * does not grant membership to the inner circle. 
+    * Mutually Federated communities act as mirrors, that combine the membership of 
+    * both communities into both communities.
+    * Making a new community and Federating with an existing community 
+    * effectively duplicates the membership base of an existing community into
+    * the new community. 
     * 
-    * In a Complete Federation, Shared permissions are transitive between all other communities
-    * that the communities have a Complete Federation with.
-    * A Complete Federation with one community within
-    * a completely Federated set of Communities is eqivalent to a Federation with all of them.
-    */
-   struct community_federation_request_operation : public base_operation
-   {
-      account_name_type              signatory;
-
-      account_name_type              account;                      ///< Account that wants to request the federation between the two communities.
-
-      community_name_type            requesting_community;         ///< Community that the account is an admin within.
-
-      community_name_type            requested_community;          ///< Community to create a new federation with.
-
-      string                         federation_type;              ///< Type of Federation level.
-
-      string                         message;                      ///< Message to include to the admins of the requsted community.
-
-      bool                           requested = true;             ///< Set true to request, false to cancel request.
-
-      void                           validate()const;
-      void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
-   };
-
-
-   /**
-    * Used to accept to a Federation request and create a new federation.
-    * 
-    * This operation discloses the encrypted_community_key
+    * This operation discloses the private encrypted_community_key
     * for decrypting posts, from an existing 
     * member of the community that has access to it.
     */
-   struct community_federation_accept_operation : public base_operation
+   struct community_federation_operation : public base_operation
    {
       account_name_type              signatory;
 
-      account_name_type              account;                      ///< Account within the community accepting the request.
+      account_name_type              account;                      ///< Admin within the community creating the federation.
 
       string                         federation_id;                ///< uuidv4 for the federation, for local storage of decryption key.
 
       community_name_type            community;                    ///< Community that the account is an admin within.
 
-      community_name_type            requested_community;          ///< Community to create a new federation with.
+      community_name_type            federated_community;          ///< Community to create a new federation with.
+
+      string                         message;                      ///< Encrypted Message to include to the members of the requested community, encrypted with equivalent community key.
+
+      string                         json;                         ///< Encrypted JSON metadata, encrypted with equivalent community key.
 
       string                         federation_type;              ///< Type of Federation level.
 
-      string                         encrypted_community_key;      ///< The Requesting Community Private Key, encrypted with the member's secure public key.
+      string                         encrypted_community_key;      ///< The Community Private Key, encrypted with the federated communities public key.
 
-      bool                           accepted = true;              ///< True to accept request, false to reject request.
+      bool                           share_accounts = true;        ///< True to share accounts across the Federation, false to only share decryption keys.
+
+      bool                           accepted = true;              ///< True to accept request, false to remove federation.
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -2369,25 +2418,31 @@ namespace node { namespace protocol {
 
       string                         event_id;               ///< UUIDv4 referring to the event within the Community. Unique on community/event_id
 
-      string                         event_name;             ///< The Display Name of the event.
+      string                         public_key;             ///< Public key for encrypting the event details. Null if public event
 
-      string                         location;               ///< Address of the location of the event.
+      string                         event_name;             ///< The Display Name of the event. Encrypted if private event.
+
+      string                         location;               ///< Address of the location of the event. Encrypted if private event.
 
       double                         latitude;               ///< Latitude co-ordinates of the event.
 
       double                         longitude;              ///< Longitude co-ordinates of the event.
 
-      string                         details;                ///< Event details describing the purpose of the event.
+      string                         details;                ///< Event details describing the purpose of the event. Encrypted if private event.
 
-      string                         url;                    ///< Link containining additional event information.
+      string                         url;                    ///< Link containining additional event information. Encrypted if private event.
 
-      string                         json;                   ///< Additional Event JSON data.
+      string                         json;                   ///< Additional Event JSON data. Encrypted if private event.
+
+      account_name_type              interface;              ///< Account of the interface that broadcasted the transaction.
+
+      asset                          event_price;            ///< Amount paid to join the attending list as a ticket holder to the event. 
 
       time_point                     event_start_time;       ///< Time that the Event will begin.
 
       time_point                     event_end_time;         ///< Time that the event will end.
 
-      bool                           active;                 ///< True if the community is active, false to suspend all interaction to cancel or end the event.
+      bool                           active = true;          ///< True if the event is active, false to remove the event.
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -2404,21 +2459,29 @@ namespace node { namespace protocol {
    {
       account_name_type              signatory;
 
-      account_name_type              account;                    ///< Account that is attending the event.
+      account_name_type              attendee;                    ///< Account that is attending the event.
 
       community_name_type            community;                  ///< Community that the event is within.
 
       string                         event_id;                   ///< UUIDv4 referring to the event within the Community. Unique on community/event_id.
 
-      bool                           interested = true;          ///< True to set interested in the event, and receive notifications about it, false to remove interedt status.
+      string                         public_key;                 ///< Public key for encrypting details. Null if public event.
 
-      bool                           attending = true;           ///< True to attend the event, false to remove attending status.
+      string                         message;                    ///< Encrypted message to the community operating the event.
 
-      bool                           not_attending = false;      ///< True to state not attending the event, false to remove not attending status.
+      string                         json;                       ///< Additional Event JSON data. Encrypted if private event.
+
+      account_name_type              interface;                  ///< Account of the interface that broadcasted the transaction.
+
+      bool                           interested = true;          ///< True to set interested in the event, and receive notifications about it, false for not interested.
+
+      bool                           attending = true;           ///< True to attend the event, false to for not attending.
+
+      bool                           active = true;              ///< True to create attendance for the event, false to remove.
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( attendee ); }
    };
 
 
@@ -5385,32 +5448,25 @@ FC_REFLECT( node::protocol::account_recovery_update_operation,
          (new_recovery_account)
          );
 
-FC_REFLECT( node::protocol::account_decline_voting_operation, 
+FC_REFLECT( node::protocol::account_decline_voting_operation,
          (signatory)
          (account)
          (declined)
          );
 
-FC_REFLECT( node::protocol::account_connection_request_operation, 
+FC_REFLECT( node::protocol::account_connection_operation,
          (signatory)
          (account)
-         (requested_account)
-         (connection_type)
-         (message)
-         (requested)
-         );       
-
-FC_REFLECT( node::protocol::account_connection_accept_operation, 
-         (signatory)
-         (account)
-         (requesting_account)
+         (connecting_account)
          (connection_id)
          (connection_type)
+         (message)
+         (json)
          (encrypted_key)
          (connected)
          );
 
-FC_REFLECT( node::protocol::account_follow_operation, 
+FC_REFLECT( node::protocol::account_follow_operation,
          (signatory)
          (follower)
          (following)
@@ -5657,6 +5713,8 @@ FC_REFLECT( node::protocol::comment_vote_operation,
          (permlink)
          (weight)
          (interface)
+         (reaction)
+         (json)
          );
 
 FC_REFLECT( node::protocol::comment_view_operation,
@@ -5666,6 +5724,7 @@ FC_REFLECT( node::protocol::comment_view_operation,
          (permlink)
          (interface)
          (supernode)
+         (json)
          (viewed)
          );
 
@@ -5678,6 +5737,7 @@ FC_REFLECT( node::protocol::comment_share_operation,
          (interface)
          (community)
          (tag)
+         (json)
          (shared)
          );
 
@@ -5689,8 +5749,11 @@ FC_REFLECT( node::protocol::comment_moderation_operation,
          (tags)
          (rating)
          (details)
+         (json)
          (interface)
          (filter)
+         (removal_requested)
+         (beneficiaries_requested)
          (applied)
          );
 
@@ -5698,8 +5761,18 @@ FC_REFLECT( node::protocol::message_operation,
          (signatory)
          (sender)
          (recipient)
+         (community)
+         (public_key)
          (message)
+         (ipfs)
+         (json)
          (uuid)
+         (interface)
+         (parent_sender)
+         (parent_uuid)
+         (expiration)
+         (forward)
+         (active)
          );
 
 FC_REFLECT( node::protocol::list_operation,
@@ -5707,6 +5780,9 @@ FC_REFLECT( node::protocol::list_operation,
          (creator)
          (list_id)
          (name)
+         (details)
+         (json)
+         (interface)
          (accounts)
          (comments)
          (communities)
@@ -5717,15 +5793,30 @@ FC_REFLECT( node::protocol::list_operation,
          (edges)
          (node_types)
          (edge_types)
+         (active)
          );
 
 FC_REFLECT( node::protocol::poll_operation,
          (signatory)
          (creator)
          (poll_id)
+         (community)
+         (public_key)
+         (interface)
          (details)
-         (poll_options)
+         (json)
+         (poll_option_0)
+         (poll_option_1)
+         (poll_option_2)
+         (poll_option_3)
+         (poll_option_4)
+         (poll_option_5)
+         (poll_option_6)
+         (poll_option_7)
+         (poll_option_8)
+         (poll_option_9)
          (completion_time)
+         (active)
          );
 
 FC_REFLECT( node::protocol::poll_vote_operation,
@@ -5733,7 +5824,9 @@ FC_REFLECT( node::protocol::poll_vote_operation,
          (voter)
          (creator)
          (poll_id)
+         (interface)
          (poll_option)
+         (active)
          );
 
 FC_REFLECT( node::protocol::premium_purchase_operation,
@@ -5751,6 +5844,7 @@ FC_REFLECT( node::protocol::premium_release_operation,
          (account)
          (author)
          (permlink)
+         (interface)
          (encrypted_key)
          );
 
@@ -5776,7 +5870,9 @@ FC_REFLECT( node::protocol::community_create_operation,
          (community_member_key)
          (community_moderator_key)
          (community_admin_key)
+         (interface)
          (reward_currency)
+         (membership_price)
          (max_rating)
          (flags)
          (permissions)
@@ -5799,7 +5895,6 @@ FC_REFLECT( node::protocol::community_update_operation,
          (community_member_key)
          (community_moderator_key)
          (community_admin_key)
-         (reward_currency)
          (max_rating)
          (flags)
          (permissions)
@@ -5896,24 +5991,17 @@ FC_REFLECT( node::protocol::community_subscribe_operation,
          (subscribed)
          );
 
-FC_REFLECT( node::protocol::community_federation_request_operation,
-         (signatory)
-         (account)
-         (requesting_community)
-         (requested_community)
-         (federation_type)
-         (message)
-         (requested)
-         );
-
-FC_REFLECT( node::protocol::community_federation_accept_operation,
+FC_REFLECT( node::protocol::community_federation_operation,
          (signatory)
          (account)
          (federation_id)
          (community)
-         (requested_community)
+         (federated_community)
+         (message)
+         (json)
          (federation_type)
          (encrypted_community_key)
+         (share_accounts)
          (accepted)
          );
 
@@ -5922,6 +6010,7 @@ FC_REFLECT( node::protocol::community_event_operation,
          (account)
          (community)
          (event_id)
+         (public_key)
          (event_name)
          (location)
          (latitude)
@@ -5929,6 +6018,8 @@ FC_REFLECT( node::protocol::community_event_operation,
          (details)
          (url)
          (json)
+         (interface)
+         (event_price)
          (event_start_time)
          (event_end_time)
          (active)
@@ -5936,12 +6027,16 @@ FC_REFLECT( node::protocol::community_event_operation,
 
 FC_REFLECT( node::protocol::community_event_attend_operation,
          (signatory)
-         (account)
+         (attendee)
          (community)
          (event_id)
+         (public_key)
+         (message)
+         (json)
+         (interface)
          (interested)
          (attending)
-         (not_attending)
+         (active)
          );
 
 

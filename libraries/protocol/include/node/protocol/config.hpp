@@ -278,9 +278,9 @@
 #define MAX_ACCOUNT_NAME_LENGTH                (32)
 #define MIN_ASSET_SYMBOL_LENGTH                (3)
 #define MAX_ASSET_SYMBOL_LENGTH                (32)
-#define MIN_PERMLINK_LENGTH                    (0)
-#define MAX_PERMLINK_LENGTH                    (2048)
-#define MAX_STRING_LENGTH                      (2048)
+#define MIN_PERMLINK_LENGTH                    (3)
+#define MAX_PERMLINK_LENGTH                    (127)
+#define MAX_STRING_SIZE                        (2048)
 #define MAX_TEXT_POST_LENGTH                   (300)
 #define MAX_SIG_CHECK_DEPTH                    (2)
 #define MAX_GOV_ACCOUNTS                       (5)
@@ -350,15 +350,15 @@
 #define ASSET_SETTLEMENT_OFFSET                0                            
 #define ASSET_SETTLEMENT_MAX_VOLUME            (20 * PERCENT_1)              // 20% of an asset can be settled per day
 #define PRICE_FEED_LIFETIME                    fc::days(1)                   // 1 day
-#define MAX_AUTHORITY_MEMBERSHIP               100
-#define MAX_ASSET_WHITELIST_AUTHORITIES        1000
-#define MAX_ASSET_FEED_PUBLISHERS              100
-#define MAX_URL_LENGTH                         127
-#define MIN_TRANSACTION_SIZE_LIMIT             1024
+#define MAX_AUTHORITY_MEMBERSHIP               (100)
+#define MAX_ASSET_WHITELIST_AUTHORITIES        (1000)
+#define MAX_ASSET_FEED_PUBLISHERS              (100)
+#define MAX_URL_SIZE                           (127)
+#define MIN_TRANSACTION_SIZE_LIMIT             (1024)
 #define MAX_TRANSACTION_SIZE                   (1024 * 64)
 #define MIN_BLOCK_SIZE_LIMIT                   (MAX_TRANSACTION_SIZE)
 #define MAX_BLOCK_SIZE                         (MAX_TRANSACTION_SIZE * 10000) // MAX_TRANSACTION_SIZE*10000 per block
-#define MIN_BLOCK_SIZE                         131
+#define MIN_BLOCK_SIZE                         (131)
 #define MIN_FEED_LIFETIME                      fc::seconds(60)
 #define MIN_SETTLEMENT_DELAY                   fc::seconds(60)
 #define CONNECTION_REQUEST_DURATION            fc::days(7)
@@ -375,6 +375,8 @@
 #define MESSAGE_COUNT_INTERVAL                 fc::days(1)                   // Updates consecutive days
 #define MESSAGE_COUNT_INTERVAL_BLOCKS          uint64_t( MESSAGE_COUNT_INTERVAL.count() / BLOCK_INTERVAL.count() )
 #define COMMENT_FEED_INTERVAL_BLOCKS           (BLOCKS_PER_HOUR)             // Updates feeds once per hour
+#define COMMUNITY_FEE_INTERVAL                 fc::days(7)
+#define COMMUNITY_FEE_INTERVAL_BLOCKS          uint64_t( COMMUNITY_FEE_INTERVAL.count() / BLOCK_INTERVAL.count() )
 #define FEED_HISTORY_WINDOW                    fc::hours(84)                 // 3.5 days
 #define MAX_FEED_AGE                           fc::days(30)                  // 30 days
 #define MIN_FEEDS                              (TOTAL_PRODUCERS / 4)         // protects the network from conversions before price has been established

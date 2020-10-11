@@ -1254,8 +1254,8 @@ void database::process_asset_distribution()
    {
       const asset_distribution_object& distribution = *distribution_itr;
 
-      ilog( "Begin Processing Asset Distribution: ${d}",
-         ("d",distribution.distribution_asset));
+      ilog( "Begin Processing Asset Distribution: \n ${d} \n",
+         ("d",distribution));
       
       asset total_input = asset( 0, distribution.fund_asset );
       share_type total_input_units = 0;
@@ -1273,6 +1273,9 @@ void database::process_asset_distribution()
          ++balance_itr;
          total_input_units += ( balance.amount.amount / input_unit_amount );
          total_input += balance.amount;
+
+         ilog( "Input Balance: \n ${b} \n Total Input: ${t} Total Input Units: ${u}",
+         ("t",total_input.to_string())("u",total_input_units));
       }
 
       bool distributed = false;
@@ -1372,10 +1375,10 @@ void database::process_asset_distribution()
                   }
                }
 
-               ilog( "Account: ${a} Received Distribution Input: ${i}",
-                  ("a",input_account)("i",input_asset.to_string()) );
-
                total_funded += balance.amount;
+
+               ilog( "Account: ${a} Received Distribution Input: ${i} Total Funded: ${t}",
+                  ("a",input_account)("i",input_asset.to_string())("t",total_funded.to_string()) );
             }
 
             for( asset_unit u : output_distribution_unit )     // Pay newly distributed assets to the asset output unit accounts
@@ -1439,10 +1442,10 @@ void database::process_asset_distribution()
                   }
                }
 
-               ilog( "Account: ${a} Received Distribution Output: ${o}",
-                  ("a",output_account)("o",output_asset.to_string()) );
-               
                total_distributed += output_asset;
+
+               ilog( "Account: ${a} Received Distribution Output: ${o} Total Distributed: ${d}",
+                  ("a",output_account)("o",output_asset.to_string())("d",total_distributed.to_string()) );
             }
 
             ilog( "Removed: ${v}",("v",balance));
