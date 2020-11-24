@@ -65,21 +65,31 @@ namespace node { namespace chain {
 
          shared_string                      pinned_permlink;                    ///< Permlink of Post pinned to the top of the community's page, encrypted with the member key if private community.
 
-         flat_set< tag_name_type >          tags;                               ///< Set of tags of the topics within the community to enable discovery.
-
-         community_privacy_type             community_privacy;                  ///< Community privacy level: Open_Public, General_Public, Exclusive_Public, Closed_Public, Open_Private, General_Private, Exclusive_Private, Closed_Private.
+         flat_set< tag_name_type >          tags;                               ///< Set of recommended tags of the topics within the community to enable discovery.
 
          public_key_type                    community_member_key;               ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted members.
 
          public_key_type                    community_moderator_key;            ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted moderators.
 
-         public_key_type                    community_admin_key;                ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted Admin .
+         public_key_type                    community_admin_key;                ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted admins.
 
-         account_name_type                  interface;                          ///< Account of the interface that broadcasted the transaction.
-         
+         public_key_type                    community_secure_key;               ///< Key used for encrypting and decrypting posts and messages. Private key held only by the community founder.
+
+         public_key_type                    community_standard_premium_key;     ///< Key used for encrypting and decrypting posts and messages. Private key shared with standard premium members.
+
+         public_key_type                    community_mid_premium_key;          ///< Key used for encrypting and decrypting posts and messages. Private key shared with mid premium members.
+
+         public_key_type                    community_top_premium_key;          ///< Key used for encrypting and decrypting posts and messages. Private key shared with top premium members.
+
+         account_name_type                  interface;                          ///< Account of the interface that enabled the creation of the community. Gets a share of membership payments.
+
          asset_symbol_type                  reward_currency = SYMBOL_COIN;      ///< The Currency asset used for content rewards in the community.
 
-         asset                              membership_price = asset( 0, SYMBOL_COIN ); ///< Price paid per week by all community members to community founder.
+         asset                              standard_membership_price = MEMBERSHIP_FEE_BASE;      ///< Price paid per month by community standard members to community founder.
+
+         asset                              mid_membership_price = MEMBERSHIP_FEE_MID;            ///< Price paid per month by all mid level community members to community founder.
+
+         asset                              top_membership_price = MEMBERSHIP_FEE_TOP;            ///< Price paid per month by all top level community members to community founder.
 
          uint16_t                           max_rating = 9;                     ///< Highest severity rating that posts in the community can have.
 
@@ -90,7 +100,7 @@ namespace node { namespace chain {
          uint32_t                           subscriber_count = 0;               ///< Number of accounts that are subscribed to the community.
 
          uint32_t                           post_count = 0;                     ///< Number of posts created in the community.
-         
+
          uint32_t                           comment_count = 0;                  ///< Number of comments on posts in the community.
 
          uint32_t                           vote_count = 0;                     ///< Accumulated number of votes received by all posts in the community.
@@ -109,19 +119,14 @@ namespace node { namespace chain {
 
          bool                               active;                             ///< True if the community is active, false to suspend all interaction.
 
-         share_type membership_amount()const                                    ///< Returns the amount of the membership price of the community.
-         {
-            return membership_price.amount;
+         bool enable_events()const                                              ///< True if events are enabled
+         { 
+            return !( flags & int( community_permission_flags::disable_events ) );
          }
 
-         bool require_member_whitelist()const                                   ///< True if members must be whitelisted by founder.
+         bool enable_polls()const                                               ///< True if polls are enabled
          { 
-            return ( flags & int( community_permission_flags::member_whitelist ) );
-         }
-
-         bool require_verified()const                                           ///< True if new members must have an existing verification from an current member to send a join request or be invited
-         { 
-            return ( flags & int( community_permission_flags::require_verified ) );
+            return !( flags & int( community_permission_flags::disable_polls ) );
          }
 
          bool enable_messages()const                                            ///< True if Community messages are enabled
@@ -173,55 +178,35 @@ namespace node { namespace chain {
          { 
             return !( flags & int( community_permission_flags::disable_livestream_posts ) );
          }
+
+         bool enable_directives()const                                          ///< True if directives are enabled
+         { 
+            return !( flags & int( community_permission_flags::disable_directives ) );
+         }
    };
 
 
    /**
     * Manages the membership, moderation, and administration lists of communities, 
-    * implements community permissioning methods according to the following Table:
+    * implements community permissioning methods that determine which accounts can 
+    * take community actions.
     * 
-    *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========|
-    *   |   Permissions         ||   O_PUB   |   G_PUB   |   E_PUB   |   C_PUB   |   O_PRI   |   G_PRI   |   E_PRI   |   C_PRI   |
-    *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========| 
-    *   |   Read Posts          ||   All     |   All     |   All     |   All     |   Mem     |   Mem     |   Mem     |   Mem     |
-    *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========| 
-    *   |   Share Posts         ||   All     |   All     |   All     |   Mem     |   None    |   None    |   None    |   None    |
-    *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========|
-    *   |   Interact Posts      ||   All     |   All     |   All     |   Mem     |   Mem     |   Mem     |   Mem     |   Mem     |
-    *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========|
-    *   |   Create Posts        ||   All     |   All     |   Mem     |   Mem     |   Mem     |   Mem     |   Mem     |   Mem     |
-    *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========|
-    *   |   Invite+Accept       ||   Mem     |   Mem     |   Mem     |   Mod     |   Mod     |   Admin   |   Admin   |   Admin   |
-    *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========|
-    *   |   Request Join        ||   All     |   All     |   All     |   All     |   All     |   All     |   None    |   None    |
-    *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========|
-    *   |   Moderate posts      ||   Mod     |   Mod     |   Mod     |   Mod     |   Mod     |   Mod     |   Mod     |   Mod     |
-    *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========|
-    *   |   Update community    ||   Admin   |   Admin   |   Admin   |   Admin   |   Admin   |   Admin   |   Admin   |   Admin   |
-    *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========|
-    *   |   Blacklist Accounts  ||   None    |   Mod     |   Mod     |   Mod     |   Admin   |   Admin   |   Admin   |   Admin   |
-    *   |=======================++===========+===========+===========+===========+===========+===========+===========+===========|
+    * A standard Practice implemented in interfaces would create three communities
+    * that act as concentric circles of trust within a group.
+    * New accounts would begin by joining the main public group, 
+    * then be advanced into the outer private community, 
+    * then into the inner core Private community.
     * 
-    * A standard Practice implemented in interfaces would involve the creation of 8 communities
-    * that act as concentric circles of trust within a group. New people would begin by joining
-    * the outer public group, and be progressively advanced up the levels, until reaching the
-    * Open Private community.
-    * 
-    * An automated mechanism for making and inviting a team of people to the desired level of community
-    * would be created for managing the concentric rings of communities
-    * and mirroring the memberships, admin and moderator roles across all lower levels for seperation
-    * of communications and posts depending on the community level.
-    * 
-    * Downstream federated communities recieve all incoming membership and role changes, 
+    * Downstream federated communities recieve all incoming membership and role changes,
     * and create an automated hierarchial community structure.
     */
-   class community_member_object : public object< community_member_object_type, community_member_object >
+   class community_permission_object : public object< community_permission_object_type, community_permission_object >
    {
-      community_member_object() = delete;
+      community_permission_object() = delete;
 
       public:
          template< typename Constructor, typename Allocator >
-         community_member_object( Constructor&& c, allocator< Allocator > a )
+         community_permission_object( Constructor&& c, allocator< Allocator > a )
          {
             c( *this );
          }
@@ -232,17 +217,47 @@ namespace node { namespace chain {
 
          account_name_type                              founder;                              ///< Name of the founding account of the community. Has full permissions.
 
-         community_privacy_type                         community_privacy;                    ///< Community privacy level: Open_Public, General_Public, Exclusive_Public, Closed_Public, Open_Private, General_Private, Exclusive_Private, Closed_Private.
+         bool                                           private_community = false;            ///< True when the community is private, and all posts must be encrypted.
+
+         community_permission_type                      author_permission;                    ///< Determines which accounts can create root posts.
+
+         community_permission_type                      reply_permission;                     ///< Determines which accounts can create replies to root posts.
+
+         community_permission_type                      vote_permission;                      ///< Determines which accounts can create comment votes on posts and comments.
+
+         community_permission_type                      view_permission;                      ///< Determines which accounts can create comment views on posts and comments.
+
+         community_permission_type                      share_permission;                     ///< Determines which accounts can create comment shares on posts and comments.
+
+         community_permission_type                      message_permission;                   ///< Determines which accounts can create direct messages in the community.
+         
+         community_permission_type                      poll_permission;                      ///< Determines which accounts can create polls in the community.
+
+         community_permission_type                      event_permission;                     ///< Determines which accounts can create events in the community.
+
+         community_permission_type                      directive_permission;                 ///< Determines which accounts can create directives and directive votes in the community.
+
+         community_permission_type                      add_permission;                       ///< Determines which accounts can add new members, and accept membership requests.
+
+         community_permission_type                      request_permission;                   ///< Determines which accounts can request to join the community.
+
+         community_permission_type                      remove_permission;                    ///< Determines which accounts can remove and blacklist.
 
          flat_set< account_name_type >                  subscribers;                          ///< List of accounts that subscribe to the posts made in the community.
 
-         flat_set< account_name_type >                  members;                              ///< List of accounts that are permitted to post in the community. Can invite and accept on public communities.
+         flat_set< account_name_type >                  members;                              ///< List of accounts that are members of the community.
+
+         flat_set< account_name_type >                  standard_premium_members;             ///< List of accounts that have paid the standard premium membership of the community.
+
+         flat_set< account_name_type >                  mid_premium_members;                  ///< List of accounts that have paid (at least) the mid premium membership of the community.
+
+         flat_set< account_name_type >                  top_premium_members;                  ///< List of accounts that have paid (at least) the top premium membership of the community.
  
-         flat_set< account_name_type >                  moderators;                           ///< Accounts able to filter posts. Can invite and accept on private communities.
+         flat_set< account_name_type >                  moderators;                           ///< Accounts that are moderators of the community.
 
-         flat_set< account_name_type >                  administrators;                       ///< Accounts able to add and remove moderators and update community details. Can invite and accept on Exclusive communities.
+         flat_set< account_name_type >                  administrators;                       ///< Accounts that are administrators of the community.
 
-         flat_set< account_name_type >                  blacklist;                            ///< Accounts that are not able to post in this community, or request to join.
+         flat_set< account_name_type >                  blacklist;                            ///< Accounts that are not able to interact with the community.
 
          flat_set< community_name_type >                upstream_member_federations;          ///< Communities that this community recieves incoming members from.
 
@@ -256,9 +271,15 @@ namespace node { namespace chain {
 
          flat_set< community_name_type >                downstream_admin_federations;         ///< Communities that Receive incoming admins from this community.
 
-         flat_map< account_name_type, share_type >      mod_weight;                           ///< Map of all moderator voting weights for distributing rewards.
+         flat_map< account_name_type, share_type >      vote_weight;                          ///< Map of all moderator voting weights for distributing rewards.
 
-         share_type                                     total_mod_weight = 0;                 ///< Total of all moderator weights.
+         share_type                                     total_vote_weight = 0;                ///< Total of all moderator weights.
+
+         flat_set< account_name_type >                  verifiers;                            ///< Accounts that are considered ground truth sources of verification authority, wth degree 0.
+
+         uint64_t                                       min_verification_count = 0;           ///< Minimum number of incoming verification transaction to be considered verified by this community.
+
+         uint64_t                                       max_verification_distance = 0;        ///< Maximum number of degrees of seperation from a verfier to be considered verified by this community.
 
          time_point                                     last_updated;                         ///< Time that the community was last updated.
 
@@ -267,7 +288,7 @@ namespace node { namespace chain {
           * accounts, communities and tags that they have in common with eachother. 
           * this value is used for the determination of post recommendations.
           */
-         share_type adjacency_value( const community_member_object& m )const
+         share_type adjacency_value( const community_permission_object& m )const
          {
             vector< account_name_type > common_subscribers;
             common_subscribers.reserve( subscribers.size() );
@@ -290,7 +311,7 @@ namespace node { namespace chain {
          };
 
          /**
-          * Determines Permission to create a new root post in the community.
+          * Determines Permission to create new root posts in the community.
           */
          bool is_authorized_author( const account_name_type& account )const
          {
@@ -299,68 +320,577 @@ namespace node { namespace chain {
                return false;
             }
 
-            switch( community_privacy )
+            switch( author_permission )
             {
-               case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
-               case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
+               case community_permission_type::ALL_PERMISSION:
                {
                   return true;
                }
                break;
-               case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
-               case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
-               case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
-               case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
-               case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
+               case community_permission_type::MEMBER_PERMISSION:
                {
                   return is_member( account );
                }
                break;
-               case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
+               case community_permission_type::STANDARD_PREMIUM_PERMISSION:
+               {
+                  return is_standard_premium_member( account );
+               }
+               break;
+               case community_permission_type::MID_PREMIUM_PERMISSION:
+               {
+                  return is_mid_premium_member( account );
+               }
+               break;
+               case community_permission_type::TOP_PREMIUM_PERMISSION:
+               {
+                  return is_top_premium_member( account );
+               }
+               break;
+               case community_permission_type::MODERATOR_PERMISSION:
                {
                   return is_moderator( account );
                }
                break;
+               case community_permission_type::ADMIN_PERMISSION:
+               {
+                  return is_administrator( account );
+               }
+               break;
+               case community_permission_type::FOUNDER_PERMISSION:
+               {
+                  return (founder == account);
+               }
+               break;
+               case community_permission_type::NONE_PERMISSION:
+               {
+                  return false;
+               }
+               break;
                default:
                {
-                  FC_ASSERT( false, "Invalid community privacy: ${t}.",
-                     ("t",community_privacy) );
+                  FC_ASSERT( false, "Invalid community permission: ${t}.",
+                     ("t",author_permission) );
                }
             }
          };
 
          /**
-          * Determines Permission to vote, view, comment or share posts in the community.
+          * Determines Permission to reply to posts in the community.
           */
-         bool is_authorized_interact( const account_name_type& account )const
+         bool is_authorized_reply( const account_name_type& account )const
          {
             if( is_blacklisted( account ) )
             {
                return false;
             }
 
-            switch( community_privacy )
+            switch( reply_permission )
             {
-               case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
-               case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
-               case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
+               case community_permission_type::ALL_PERMISSION:
                {
                   return true;
                }
                break;
-               case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
-               case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
-               case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
-               case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
-               case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
+               case community_permission_type::MEMBER_PERMISSION:
                {
                   return is_member( account );
                }
                break;
+               case community_permission_type::STANDARD_PREMIUM_PERMISSION:
+               {
+                  return is_standard_premium_member( account );
+               }
+               break;
+               case community_permission_type::MID_PREMIUM_PERMISSION:
+               {
+                  return is_mid_premium_member( account );
+               }
+               break;
+               case community_permission_type::TOP_PREMIUM_PERMISSION:
+               {
+                  return is_top_premium_member( account );
+               }
+               break;
+               case community_permission_type::MODERATOR_PERMISSION:
+               {
+                  return is_moderator( account );
+               }
+               break;
+               case community_permission_type::ADMIN_PERMISSION:
+               {
+                  return is_administrator( account );
+               }
+               break;
+               case community_permission_type::FOUNDER_PERMISSION:
+               {
+                  return (founder == account);
+               }
+               break;
+               case community_permission_type::NONE_PERMISSION:
+               {
+                  return false;
+               }
+               break;
                default:
                {
-                  FC_ASSERT( false, "Invalid community privacy: ${t}.",
-                     ("t",community_privacy) );
+                  FC_ASSERT( false, "Invalid community permission: ${t}.",
+                     ("t",reply_permission) );
+               }
+            }
+         };
+
+         /**
+          * Determines Permission to vote on posts in the community.
+          */
+         bool is_authorized_vote( const account_name_type& account )const
+         {
+            if( is_blacklisted( account ) )
+            {
+               return false;
+            }
+
+            switch( vote_permission )
+            {
+               case community_permission_type::ALL_PERMISSION:
+               {
+                  return true;
+               }
+               break;
+               case community_permission_type::MEMBER_PERMISSION:
+               {
+                  return is_member( account );
+               }
+               break;
+               case community_permission_type::STANDARD_PREMIUM_PERMISSION:
+               {
+                  return is_standard_premium_member( account );
+               }
+               break;
+               case community_permission_type::MID_PREMIUM_PERMISSION:
+               {
+                  return is_mid_premium_member( account );
+               }
+               break;
+               case community_permission_type::TOP_PREMIUM_PERMISSION:
+               {
+                  return is_top_premium_member( account );
+               }
+               break;
+               case community_permission_type::MODERATOR_PERMISSION:
+               {
+                  return is_moderator( account );
+               }
+               break;
+               case community_permission_type::ADMIN_PERMISSION:
+               {
+                  return is_administrator( account );
+               }
+               break;
+               case community_permission_type::FOUNDER_PERMISSION:
+               {
+                  return (founder == account);
+               }
+               break;
+               case community_permission_type::NONE_PERMISSION:
+               {
+                  return false;
+               }
+               break;
+               default:
+               {
+                  FC_ASSERT( false, "Invalid community permission: ${t}.",
+                     ("t",vote_permission) );
+               }
+            }
+         };
+
+         /**
+          * Determines Permission to view posts in the community.
+          */
+         bool is_authorized_view( const account_name_type& account )const
+         {
+            if( is_blacklisted( account ) )
+            {
+               return false;
+            }
+
+            switch( view_permission )
+            {
+               case community_permission_type::ALL_PERMISSION:
+               {
+                  return true;
+               }
+               break;
+               case community_permission_type::MEMBER_PERMISSION:
+               {
+                  return is_member( account );
+               }
+               break;
+               case community_permission_type::STANDARD_PREMIUM_PERMISSION:
+               {
+                  return is_standard_premium_member( account );
+               }
+               break;
+               case community_permission_type::MID_PREMIUM_PERMISSION:
+               {
+                  return is_mid_premium_member( account );
+               }
+               break;
+               case community_permission_type::TOP_PREMIUM_PERMISSION:
+               {
+                  return is_top_premium_member( account );
+               }
+               break;
+               case community_permission_type::MODERATOR_PERMISSION:
+               {
+                  return is_moderator( account );
+               }
+               break;
+               case community_permission_type::ADMIN_PERMISSION:
+               {
+                  return is_administrator( account );
+               }
+               break;
+               case community_permission_type::FOUNDER_PERMISSION:
+               {
+                  return (founder == account);
+               }
+               break;
+               case community_permission_type::NONE_PERMISSION:
+               {
+                  return false;
+               }
+               break;
+               default:
+               {
+                  FC_ASSERT( false, "Invalid community permission: ${t}.",
+                     ("t",view_permission) );
+               }
+            }
+         };
+
+         /**
+          * Determines Permission to share posts in the community.
+          */
+         bool is_authorized_share( const account_name_type& account )const
+         {
+            if( is_blacklisted( account ) )
+            {
+               return false;
+            }
+
+            switch( share_permission )
+            {
+               case community_permission_type::ALL_PERMISSION:
+               {
+                  return true;
+               }
+               break;
+               case community_permission_type::MEMBER_PERMISSION:
+               {
+                  return is_member( account );
+               }
+               break;
+               case community_permission_type::STANDARD_PREMIUM_PERMISSION:
+               {
+                  return is_standard_premium_member( account );
+               }
+               break;
+               case community_permission_type::MID_PREMIUM_PERMISSION:
+               {
+                  return is_mid_premium_member( account );
+               }
+               break;
+               case community_permission_type::TOP_PREMIUM_PERMISSION:
+               {
+                  return is_top_premium_member( account );
+               }
+               break;
+               case community_permission_type::MODERATOR_PERMISSION:
+               {
+                  return is_moderator( account );
+               }
+               break;
+               case community_permission_type::ADMIN_PERMISSION:
+               {
+                  return is_administrator( account );
+               }
+               break;
+               case community_permission_type::FOUNDER_PERMISSION:
+               {
+                  return (founder == account);
+               }
+               break;
+               case community_permission_type::NONE_PERMISSION:
+               {
+                  return false;
+               }
+               break;
+               default:
+               {
+                  FC_ASSERT( false, "Invalid community permission: ${t}.",
+                     ("t",share_permission) );
+               }
+            }
+         };
+
+         /**
+          * Determines Permission to create community messages.
+          */
+         bool is_authorized_message( const account_name_type& account )const
+         {
+            if( is_blacklisted( account ) )
+            {
+               return false;
+            }
+
+            switch( message_permission )
+            {
+               case community_permission_type::ALL_PERMISSION:
+               {
+                  return true;
+               }
+               break;
+               case community_permission_type::MEMBER_PERMISSION:
+               {
+                  return is_member( account );
+               }
+               break;
+               case community_permission_type::STANDARD_PREMIUM_PERMISSION:
+               {
+                  return is_standard_premium_member( account );
+               }
+               break;
+               case community_permission_type::MID_PREMIUM_PERMISSION:
+               {
+                  return is_mid_premium_member( account );
+               }
+               break;
+               case community_permission_type::TOP_PREMIUM_PERMISSION:
+               {
+                  return is_top_premium_member( account );
+               }
+               break;
+               case community_permission_type::MODERATOR_PERMISSION:
+               {
+                  return is_moderator( account );
+               }
+               break;
+               case community_permission_type::ADMIN_PERMISSION:
+               {
+                  return is_administrator( account );
+               }
+               break;
+               case community_permission_type::FOUNDER_PERMISSION:
+               {
+                  return (founder == account);
+               }
+               break;
+               case community_permission_type::NONE_PERMISSION:
+               {
+                  return false;
+               }
+               break;
+               default:
+               {
+                  FC_ASSERT( false, "Invalid community permission: ${t}.",
+                     ("t",message_permission) );
+               }
+            }
+         };
+
+         /**
+          * Determines Permission to create polls within the community.
+          */
+         bool is_authorized_poll( const account_name_type& account )const
+         {
+            if( is_blacklisted( account ) )
+            {
+               return false;
+            }
+
+            switch( poll_permission )
+            {
+               case community_permission_type::ALL_PERMISSION:
+               {
+                  return true;
+               }
+               break;
+               case community_permission_type::MEMBER_PERMISSION:
+               {
+                  return is_member( account );
+               }
+               break;
+               case community_permission_type::STANDARD_PREMIUM_PERMISSION:
+               {
+                  return is_standard_premium_member( account );
+               }
+               break;
+               case community_permission_type::MID_PREMIUM_PERMISSION:
+               {
+                  return is_mid_premium_member( account );
+               }
+               break;
+               case community_permission_type::TOP_PREMIUM_PERMISSION:
+               {
+                  return is_top_premium_member( account );
+               }
+               break;
+               case community_permission_type::MODERATOR_PERMISSION:
+               {
+                  return is_moderator( account );
+               }
+               break;
+               case community_permission_type::ADMIN_PERMISSION:
+               {
+                  return is_administrator( account );
+               }
+               break;
+               case community_permission_type::FOUNDER_PERMISSION:
+               {
+                  return (founder == account);
+               }
+               break;
+               case community_permission_type::NONE_PERMISSION:
+               {
+                  return false;
+               }
+               break;
+               default:
+               {
+                  FC_ASSERT( false, "Invalid community permission: ${t}.",
+                     ("t",poll_permission) );
+               }
+            }
+         };
+
+         /**
+          * Determines Permission to create events in the community.
+          */
+         bool is_authorized_event( const account_name_type& account )const
+         {
+            if( is_blacklisted( account ) )
+            {
+               return false;
+            }
+
+            switch( event_permission )
+            {
+               case community_permission_type::ALL_PERMISSION:
+               {
+                  return true;
+               }
+               break;
+               case community_permission_type::MEMBER_PERMISSION:
+               {
+                  return is_member( account );
+               }
+               break;
+               case community_permission_type::STANDARD_PREMIUM_PERMISSION:
+               {
+                  return is_standard_premium_member( account );
+               }
+               break;
+               case community_permission_type::MID_PREMIUM_PERMISSION:
+               {
+                  return is_mid_premium_member( account );
+               }
+               break;
+               case community_permission_type::TOP_PREMIUM_PERMISSION:
+               {
+                  return is_top_premium_member( account );
+               }
+               break;
+               case community_permission_type::MODERATOR_PERMISSION:
+               {
+                  return is_moderator( account );
+               }
+               break;
+               case community_permission_type::ADMIN_PERMISSION:
+               {
+                  return is_administrator( account );
+               }
+               break;
+               case community_permission_type::FOUNDER_PERMISSION:
+               {
+                  return (founder == account);
+               }
+               break;
+               case community_permission_type::NONE_PERMISSION:
+               {
+                  return false;
+               }
+               break;
+               default:
+               {
+                  FC_ASSERT( false, "Invalid community permission: ${t}.",
+                     ("t",event_permission) );
+               }
+            }
+         };
+
+         /**
+          * Determines Permission to create directives and vote on directives in the community.
+          */
+         bool is_authorized_directive( const account_name_type& account )const
+         {
+            if( is_blacklisted( account ) )
+            {
+               return false;
+            }
+
+            switch( directive_permission )
+            {
+               case community_permission_type::ALL_PERMISSION:
+               {
+                  return true;
+               }
+               break;
+               case community_permission_type::MEMBER_PERMISSION:
+               {
+                  return is_member( account );
+               }
+               break;
+               case community_permission_type::STANDARD_PREMIUM_PERMISSION:
+               {
+                  return is_standard_premium_member( account );
+               }
+               break;
+               case community_permission_type::MID_PREMIUM_PERMISSION:
+               {
+                  return is_mid_premium_member( account );
+               }
+               break;
+               case community_permission_type::TOP_PREMIUM_PERMISSION:
+               {
+                  return is_top_premium_member( account );
+               }
+               break;
+               case community_permission_type::MODERATOR_PERMISSION:
+               {
+                  return is_moderator( account );
+               }
+               break;
+               case community_permission_type::ADMIN_PERMISSION:
+               {
+                  return is_administrator( account );
+               }
+               break;
+               case community_permission_type::FOUNDER_PERMISSION:
+               {
+                  return (founder == account);
+               }
+               break;
+               case community_permission_type::NONE_PERMISSION:
+               {
+                  return false;
+               }
+               break;
+               default:
+               {
+                  FC_ASSERT( false, "Invalid community permission: ${t}.",
+                     ("t",directive_permission) );
                }
             }
          };
@@ -375,108 +905,187 @@ namespace node { namespace chain {
                return false;
             }
 
-            switch( community_privacy )
+            switch( request_permission )
             {
-               case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
-               case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
-               case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
-               case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
-               case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
-               case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
+               case community_permission_type::ALL_PERMISSION:
                {
                   return true;
                }
                break;
-               case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
-               case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
-               {
-                  return false;
-               }
-               break;
-               default:
-               {
-                  FC_ASSERT( false, "Invalid community privacy: ${t}.",
-                     ("t",community_privacy) );
-               }
-            }
-         };
-
-         /**
-          * Determines Permission to send invites, accept incoming community join requests.
-          */
-         bool is_authorized_invite( const account_name_type& account )const
-         {
-            if( is_blacklisted( account ) )
-            {
-               return false;
-            }
-
-            switch( community_privacy )
-            {
-               case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
-               case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
-               case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
+               case community_permission_type::MEMBER_PERMISSION:
                {
                   return is_member( account );
                }
                break;
-               case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
-               case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
+               case community_permission_type::STANDARD_PREMIUM_PERMISSION:
+               {
+                  return is_standard_premium_member( account );
+               }
+               break;
+               case community_permission_type::MID_PREMIUM_PERMISSION:
+               {
+                  return is_mid_premium_member( account );
+               }
+               break;
+               case community_permission_type::TOP_PREMIUM_PERMISSION:
+               {
+                  return is_top_premium_member( account );
+               }
+               break;
+               case community_permission_type::MODERATOR_PERMISSION:
                {
                   return is_moderator( account );
                }
                break;
-               case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
-               case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
-               case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
+               case community_permission_type::ADMIN_PERMISSION:
                {
                   return is_administrator( account );
                }
                break;
+               case community_permission_type::FOUNDER_PERMISSION:
+               {
+                  return (founder == account);
+               }
+               break;
+               case community_permission_type::NONE_PERMISSION:
+               {
+                  return false;
+               }
+               break;
                default:
                {
-                  FC_ASSERT( false, "Invalid community privacy: ${t}.",
-                     ("t",community_privacy) );
+                  FC_ASSERT( false, "Invalid community permission: ${t}.",
+                     ("t",request_permission) );
                }
             }
          };
-
+         
          /**
-          * Determines Permission to blacklist an account from the community.
+          * Determines Permission to invite and accept new members.
           */
-         bool is_authorized_blacklist( const account_name_type& account )const
+         bool is_authorized_add( const account_name_type& account )const
          {
             if( is_blacklisted( account ) )
             {
                return false;
             }
 
-            switch( community_privacy )
+            switch( add_permission )
             {
-               case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
+               case community_permission_type::ALL_PERMISSION:
                {
-                  return false;
+                  return true;
                }
                break;
-               case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
-               case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
-               case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
+               case community_permission_type::MEMBER_PERMISSION:
+               {
+                  return is_member( account );
+               }
+               break;
+               case community_permission_type::STANDARD_PREMIUM_PERMISSION:
+               {
+                  return is_standard_premium_member( account );
+               }
+               break;
+               case community_permission_type::MID_PREMIUM_PERMISSION:
+               {
+                  return is_mid_premium_member( account );
+               }
+               break;
+               case community_permission_type::TOP_PREMIUM_PERMISSION:
+               {
+                  return is_top_premium_member( account );
+               }
+               break;
+               case community_permission_type::MODERATOR_PERMISSION:
                {
                   return is_moderator( account );
                }
                break;
-               case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
-               case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
-               case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
-               case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
+               case community_permission_type::ADMIN_PERMISSION:
                {
                   return is_administrator( account );
                }
                break;
+               case community_permission_type::FOUNDER_PERMISSION:
+               {
+                  return (founder == account);
+               }
+               break;
+               case community_permission_type::NONE_PERMISSION:
+               {
+                  return false;
+               }
+               break;
                default:
                {
-                  FC_ASSERT( false, "Invalid community privacy: ${t}.",
-                     ("t",community_privacy) );
+                  FC_ASSERT( false, "Invalid community permission: ${t}.",
+                     ("t",add_permission) );
+               }
+            }
+         };
+
+         /**
+          * Determines Permission to remove or blacklist an account from the community.
+          */
+         bool is_authorized_remove( const account_name_type& account )const
+         {
+            if( is_blacklisted( account ) )
+            {
+               return false;
+            }
+
+            switch( remove_permission )
+            {
+               case community_permission_type::ALL_PERMISSION:
+               {
+                  return true;
+               }
+               break;
+               case community_permission_type::MEMBER_PERMISSION:
+               {
+                  return is_member( account );
+               }
+               break;
+               case community_permission_type::STANDARD_PREMIUM_PERMISSION:
+               {
+                  return is_standard_premium_member( account );
+               }
+               break;
+               case community_permission_type::MID_PREMIUM_PERMISSION:
+               {
+                  return is_mid_premium_member( account );
+               }
+               break;
+               case community_permission_type::TOP_PREMIUM_PERMISSION:
+               {
+                  return is_top_premium_member( account );
+               }
+               break;
+               case community_permission_type::MODERATOR_PERMISSION:
+               {
+                  return is_moderator( account );
+               }
+               break;
+               case community_permission_type::ADMIN_PERMISSION:
+               {
+                  return is_administrator( account );
+               }
+               break;
+               case community_permission_type::FOUNDER_PERMISSION:
+               {
+                  return (founder == account);
+               }
+               break;
+               case community_permission_type::NONE_PERMISSION:
+               {
+                  return false;
+               }
+               break;
+               default:
+               {
+                  FC_ASSERT( false, "Invalid community permission: ${t}.",
+                     ("t",remove_permission) );
                }
             }
          };
@@ -489,6 +1098,21 @@ namespace node { namespace chain {
          bool is_member( const account_name_type& account )const
          {
             return std::find( members.begin(), members.end(), account ) != members.end();
+         };
+
+         bool is_standard_premium_member( const account_name_type& account )const
+         {
+            return std::find( standard_premium_members.begin(), standard_premium_members.end(), account ) != standard_premium_members.end();
+         };
+
+         bool is_mid_premium_member( const account_name_type& account )const
+         {
+            return std::find( mid_premium_members.begin(), mid_premium_members.end(), account ) != mid_premium_members.end();
+         };
+
+         bool is_top_premium_member( const account_name_type& account )const
+         {
+            return std::find( top_premium_members.begin(), top_premium_members.end(), account ) != top_premium_members.end();
          };
       
          bool is_moderator( const account_name_type& account )const
@@ -505,6 +1129,134 @@ namespace node { namespace chain {
          {
             return std::find( blacklist.begin(), blacklist.end(), account ) != blacklist.end();
          };
+
+         void                                   add_subscriber( const account_name_type& a )
+         {
+            if( !is_subscriber( a ) )
+            {
+               subscribers.insert( a );
+            }
+         }
+
+         void                                   add_member( const account_name_type& a )
+         {
+            if( !is_member( a ) )
+            {
+               members.insert( a );
+            }
+         }
+
+         void                                   add_standard_premium_member( const account_name_type& a )
+         {
+            if( !is_standard_premium_member( a ) )
+            {
+               standard_premium_members.insert( a );
+            }
+         }
+
+         void                                   add_mid_premium_member( const account_name_type& a )
+         {
+            if( !is_mid_premium_member( a ) )
+            {
+               mid_premium_members.insert( a );
+            }
+         }
+
+         void                                   add_top_premium_member( const account_name_type& a )
+         {
+            if( !is_top_premium_member( a ) )
+            {
+               top_premium_members.insert( a );
+            }
+         }
+
+         void                                   add_moderator( const account_name_type& a )
+         {
+            if( !is_moderator( a ) )
+            {
+               moderators.insert( a );
+            }
+         }
+
+         void                                   add_administrator( const account_name_type& a )
+         {
+            if( !is_administrator( a ) )
+            {
+               administrators.insert( a );
+            }
+         }
+
+         void                                   add_blacklist( const account_name_type& a )
+         {
+            if( !is_blacklisted( a ) )
+            {
+               blacklist.insert( a );
+            }
+         }
+
+         void                                   remove_subscriber( const account_name_type& a )
+         {
+            if( is_subscriber( a ) )
+            {
+               subscribers.erase( a );
+            }
+         }
+
+         void                                   remove_member( const account_name_type& a )
+         {
+            if( is_member( a ) )
+            {
+               members.erase( a );
+            }
+         }
+
+         void                                   remove_standard_premium_member( const account_name_type& a )
+         {
+            if( is_standard_premium_member( a ) )
+            {
+               standard_premium_members.erase( a );
+            }
+         }
+
+         void                                   remove_mid_premium_member( const account_name_type& a )
+         {
+            if( is_mid_premium_member( a ) )
+            {
+               mid_premium_members.erase( a );
+            }
+         }
+
+         void                                   remove_top_premium_member( const account_name_type& a )
+         {
+            if( is_top_premium_member( a ) )
+            {
+               top_premium_members.erase( a );
+            }
+         }
+
+         void                                   remove_moderator( const account_name_type& a )
+         {
+            if( is_moderator( a ) )
+            {
+               moderators.erase( a );
+            }
+         }
+
+         void                                   remove_administrator( const account_name_type& a )
+         {
+            if( is_administrator( a ) )
+            {
+               administrators.erase( a );
+            }
+         }
+
+         void                                   remove_blacklist( const account_name_type& a )
+         {
+            if( is_blacklisted( a ) )
+            {
+               blacklist.erase( a );
+            }
+         }
    };
 
 
@@ -513,46 +1265,91 @@ namespace node { namespace chain {
     * encrypted with the secure key of the member of a community.
     * 
     * The member connected into the community can then refer to this 
-    * decryption key to unlock private posts
-    * created within the private community.
+    * decryption key to unlock private and premium posts created within the community.
     */
-   class community_member_key_object : public object< community_member_key_object_type, community_member_key_object >
+   class community_member_object : public object< community_member_object_type, community_member_object >
    {
-      community_member_key_object() = delete;
+      community_member_object() = delete;
 
       public:
          template< typename Constructor, typename Allocator >
-         community_member_key_object( Constructor&& c, allocator< Allocator > a )
+         community_member_object( Constructor&& c, allocator< Allocator > a )
          {
             c( *this );
          }
 
          id_type                          id;                 
 
-         account_name_type                account;                    ///< Account that created the Community key for the new member.
+         account_name_type                account;                               ///< Account that added the member as a community member, and provided the access key.
 
-         account_name_type                member;                     ///< Account of the new community member.
+         account_name_type                member;                                ///< Account of the admitted community member.
 
-         community_name_type              community;                  ///< Community that the key enables access to.
+         community_name_type              community;                             ///< Community that the member is granted access permission to.
 
-         community_federation_type        community_key_type;         ///< Key encryption level of this key object.
+         community_permission_type        member_type;                           ///< Membership and Key encryption access and permission level.
 
-         encrypted_keypair_type           encrypted_community_key;    ///< The community's private key, encrypted with the member's secure public key.
+         account_name_type                interface;                             ///< Account of the interface that most recently updated the membership key.
+
+         encrypted_keypair_type           encrypted_community_key;               ///< The community's private key, encrypted with the member's secure public key.
+
+         time_point                       expiration;                            ///< Time that the membership and key will be expired, and a new key must be generated.
+
+         time_point                       last_updated;                          ///< Time that the membership was last updated.
+
+         time_point                       created;                               ///< The time the membership was created.
    };
 
 
    /**
-    * Community moderator votes elect the moderators of a community.
+    * Community Member Requests  enables an account to seek permission to join a community.
     * 
-    * The highest voted moderators get a larger share of the moderation rewards of a community.
+    * Contains a message from the account to the moderators of the community.
+    * Requests can be accepted by existing members of the community by 
     */
-   class community_moderator_vote_object : public object< community_moderator_vote_object_type, community_moderator_vote_object >
+   class community_member_request_object : public object< community_member_request_object_type, community_member_request_object >
    {
-      community_moderator_vote_object() = delete;
+      community_member_request_object() = delete;
 
       public:
          template< typename Constructor, typename Allocator >
-         community_moderator_vote_object( Constructor&& c, allocator< Allocator > a )
+         community_member_request_object( Constructor&& c, allocator< Allocator > a ) :
+            message(a)
+            {
+               c( *this );
+            }
+
+         id_type                         id;                 
+
+         account_name_type               account;          ///< Account that created the request.
+
+         community_name_type             community;        ///< Community being requested to join.
+
+         account_name_type               interface;        ///< Account of the interface that most recently updated the membership key.
+
+         community_permission_type       member_type;      ///< Membership and Key encryption access and permission level.
+
+         shared_string                   message;          ///< Encrypted message to the communities management team, encrypted with community public key.
+
+         time_point                      expiration;       ///< Request expiry time.
+
+         time_point                      last_updated;     ///< Time that the request was last updated.
+
+         time_point                      created;          ///< The time the request was created.
+   };
+
+
+   /**
+    * Community member votes place voting support on members of a community for reward distribution.
+    * 
+    * The highest voted members get a larger share of the moderation rewards of a community.
+    */
+   class community_member_vote_object : public object< community_member_vote_object_type, community_member_vote_object >
+   {
+      community_member_vote_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         community_member_vote_object( Constructor&& c, allocator< Allocator > a )
          {
             c( *this );
          }
@@ -563,73 +1360,13 @@ namespace node { namespace chain {
 
          community_name_type       community;       ///< Community that the moderator is being voted into.
 
-         account_name_type         moderator;       ///< The name of the moderator being voted for.
+         account_name_type         member;          ///< The name of the moderator being voted for.
 
          uint16_t                  vote_rank = 1;   ///< The rank of the vote for the community moderator.
 
          time_point                last_updated;    ///< Time that the vote was last updated.
 
          time_point                created;         ///< The time the vote was created.
-   };
-
-
-   /**
-    * Community Join request enables an account to seek to join a community.
-    * 
-    * Contains a message from the account to the moderators of the community.
-    */
-   class community_join_request_object : public object< community_join_request_object_type, community_join_request_object >
-   {
-      community_join_request_object() = delete;
-
-      public:
-         template< typename Constructor, typename Allocator >
-         community_join_request_object( Constructor&& c, allocator< Allocator > a ) :
-         message(a)
-         {
-            c( *this );
-         }
-
-         id_type                    id;                 
-
-         account_name_type          account;          ///< Account that created the request.
-
-         community_name_type        community;        ///< Community being requested to join.
-
-         shared_string              message;          ///< Encrypted message to the communities management team, encrypted with community public key.
-
-         time_point                 expiration;       ///< Request expiry time.
-   };
-
-
-   /**
-    * Community Join invite enables a community moderator to introduce a new member to a community.
-    * 
-    * Contains a message from the moderator to the account.
-    */
-   class community_join_invite_object : public object< community_join_invite_object_type, community_join_invite_object >
-   {
-      community_join_invite_object() = delete;
-
-      public:
-         template< typename Constructor, typename Allocator >
-         community_join_invite_object( Constructor&& c, allocator< Allocator > a ) :
-         message(a)
-         {
-            c( *this );
-         }
-
-         id_type                    id;                 
-
-         account_name_type          account;                ///< Account that created the invite.
-
-         account_name_type          member;                 ///< Account being invited to join the community membership.
-
-         community_name_type        community;              ///< Community being invited to join.
-
-         shared_string              message;                ///< Encrypted message to the communities management team, encrypted with the members secure public key.
-
-         time_point                 expiration;             ///< Invite expiry time.
    };
 
 
@@ -816,6 +1553,245 @@ namespace node { namespace chain {
    };
 
 
+   /**
+    * A Community directive that contains action instructions and deliverables for community members.
+    * 
+    * Community Directives enable four simultaneous collective 
+    * decision making and leadership flows to run in parallel.
+    * Each Directive can have a subdirective tree, 
+    * indicating multiple stages of action progress completion.
+    * 
+    * Command: [Single Elected Commander]
+    * 
+    * A single commander is voted for by the entire community,
+    * which makes broadcast directives for all community members.
+    * 
+    * Delegate: [Elected Representatives]
+    * 
+    * Each account votes for delegates within the community,
+    * and accepts the directives of the highest voted approved delegate from thier selection.
+    * 
+    * Consensus: [Elected Directives]
+    * 
+    * Each account votes for directives within the community,
+    * highest voted directive is applied to all community members as the consensus selection.
+    * 
+    * Emergent: [Individual Selection]
+    * 
+    * Each account votes for directives within the community,
+    * and accepts the highest voted approved directive from thier selection.
+    * 
+    * UI Convention for directives would display them in a structure of increasing specificity:
+    * 
+    * 0 Depth is a board
+    * 1 Depth is a list, within a board
+    * 2 Depth is a card, within a list
+    * 3 depth is a task, within a card
+    */
+   class community_directive_object : public object< community_directive_object_type, community_directive_object >
+   {
+      community_directive_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         community_directive_object( Constructor&& c, allocator< Allocator > a ) :
+            directive_id(a),
+            parent_directive_id(a),
+            details(a),
+            cover_image(a),
+            ipfs(a),
+            json(a)
+            {
+               c( *this );
+            }
+
+         id_type                               id;
+
+         account_name_type                     account;                    ///< Account that created the directive.
+
+         shared_string                         directive_id;               ///< UUIDv4 referring to the directive. Unique on account/directive_id.
+
+         account_name_type                     parent_account;             ///< Account that created the directive.
+
+         shared_string                         parent_directive_id;        ///< UUIDv4 referring to the directive. Unique on account/directive_id.
+
+         community_name_type                   community;                  ///< Community that the directive is given to.
+
+         public_key_type                       public_key;                 ///< Public key for encrypting the directive details. Null if public directive.
+
+         account_name_type                     interface;                  ///< Account of the interface that broadcasted the transaction.
+
+         shared_string                         details;                    ///< Text details of the directive. Should explain the action items.
+
+         shared_string                         cover_image;                ///< IPFS image for display of this directive in the interface. 
+
+         shared_string                         ipfs;                       ///< IPFS file reference for the directive. Images or other files can be attatched.
+
+         shared_string                         json;                       ///< Additional Directive JSON metadata.
+
+         id_type                               root_directive;             ///< Directive that this is a subdirective of.
+
+         uint16_t                              depth = 0;                  ///< The number of subdirectives deep this directive is. 0 for root directive.
+
+         int32_t                               net_votes = 0;              ///< The amount of approval votes, minus disapprovals on the post.
+
+         time_point                            directive_start_time;       ///< Time that the Directive will begin.
+
+         time_point                            directive_end_time;         ///< Time that the Directive must be completed by.
+
+         time_point                            last_updated;               ///< Time that the directive was last updated.
+
+         time_point                            created;                    ///< Time that the directive was created.
+
+         bool                                  root = true;                ///< True if the directive is a root directive.
+
+         bool                                  completed = false;          ///< True when the directive has been completed.
+
+         bool                                  member_active = false;      ///< True when the directive is designated as currently outgoing.
+   };
+
+
+   /**
+    * Votes to approve or disapprove a directive made by a member of a community.
+    * 
+    * Used for Consensus directive selection, and for directive feedback.
+    */
+   class community_directive_vote_object : public object< community_directive_vote_object_type, community_directive_vote_object >
+   {
+      community_directive_vote_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         community_directive_vote_object( Constructor&& c, allocator< Allocator > a ) :
+            details(a),
+            json(a)
+            {
+               c( *this );
+            }
+
+         id_type                               id;
+
+         account_name_type                     voter;                      ///< Account creating the directive vote.
+
+         community_directive_id_type           directive;                  ///< The ID of the directive being voted on.
+
+         community_name_type                   community;                  ///< Community that the directive is contained within.
+
+         public_key_type                       public_key;                 ///< Public key for encrypting the directive vote details. Null if public directive vote.
+
+         account_name_type                     interface;                  ///< Account of the interface that broadcasted the transaction.
+
+         shared_string                         details;                    ///< Text details of the directive vote. Should contain directive feedback.
+
+         shared_string                         json;                       ///< Additional Directive JSON metadata.
+
+         bool                                  approve = true;             ///< True when the directive is approved, false when it is opposed. 
+
+         time_point                            last_updated;               ///< Time that the vote was last updated.
+
+         time_point                            created;                    ///< Time that the vote was created.
+   };
+
+
+   /**
+    * Determines the State of an account's incoming and outgoing directives.
+    * 
+    * All members of a community have a directive member object created upoon joining,
+    * which manages the directives that they are currently interacting with from the
+    * four decision making flows.
+    */
+   class community_directive_member_object : public object< community_directive_member_object_type, community_directive_member_object >
+   {
+      community_directive_member_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         community_directive_member_object( Constructor&& c, allocator< Allocator > a ) :
+            details(a), 
+            json(a),
+            command_directive_id(a),
+            delegate_directive_id(a),
+            consensus_directive_id(a),
+            emergent_directive_id(a)
+            {
+               c( *this );
+            }
+
+         id_type                               id;
+
+         account_name_type                     account;                             ///< Account recieving and creating directives within a community. 
+
+         community_name_type                   community;                           ///< Community that the directives assignment is contained within.
+
+         public_key_type                       public_key;                          ///< Public key for encrypting the directive member details. Null if public directive member.
+
+         account_name_type                     interface;                           ///< Account of the interface that broadcasted the transaction.
+
+         shared_string                         details;                             ///< Text details of the directive member. Should elaborate interests and prorities for voting selection.
+
+         shared_string                         json;                                ///< Additional Directive Member JSON metadata.
+
+         shared_string                         command_directive_id;                ///< The Current outgoing directive as community command co-ordinator.
+
+         shared_string                         delegate_directive_id;               ///< The Current outgoing directive to all hierachy subordinate members.
+
+         shared_string                         consensus_directive_id;              ///< The Current outgoing directive for community consensus selection.
+
+         shared_string                         emergent_directive_id;               ///< The Current outgoing emergent directive for selection by other members.
+
+         int32_t                               net_votes = 0;                       ///< The amount of approval votes.
+
+         bool                                  active;                              ///< True when the account is active for directive distribution.
+
+         time_point                            last_updated;                        ///< Time that the member was last updated.
+
+         time_point                            created;                             ///< Time that the member was created.
+   };
+
+
+   /**
+    * Votes to approve or disapprove a directive made by a member of a community.
+    * 
+    * Used for Consensus directive selection, and for directive feedback.
+    */
+   class community_directive_member_vote_object : public object< community_directive_member_vote_object_type, community_directive_member_vote_object >
+   {
+      community_directive_member_vote_object() = delete;
+
+      public:
+         template< typename Constructor, typename Allocator >
+         community_directive_member_vote_object( Constructor&& c, allocator< Allocator > a ) :
+            details(a),
+            json(a)
+            {
+               c( *this );
+            }
+
+         id_type                               id;
+
+         account_name_type                     voter;                      ///< Account creating the directive member vote.
+
+         account_name_type                     member;                     ///< Account being voted on.
+
+         community_name_type                   community;                  ///< Community that the directive member vote is contained within.
+
+         public_key_type                       public_key;                 ///< Public key for encrypting the directive member vote details. Null if public directive member vote.
+
+         account_name_type                     interface;                  ///< Account of the interface that broadcasted the transaction.
+
+         shared_string                         details;                    ///< Text details of the directive member vote. Should contain directive member feedback.
+
+         shared_string                         json;                       ///< Additional Directive member vote JSON metadata.
+
+         bool                                  approve = true;             ///< True when the directive member is approved, false when they is opposed.
+
+         time_point                            last_updated;               ///< Time that the vote was last updated.
+
+         time_point                            created;                    ///< Time that the vote was created.
+   };
+
+
+
    struct by_name;
    struct by_founder;
    struct by_last_post;
@@ -823,7 +1799,9 @@ namespace node { namespace chain {
    struct by_post_count;
    struct by_vote_count;
    struct by_view_count;
-   struct by_membership_price;
+   struct by_standard_membership_price;
+   struct by_mid_membership_price;
+   struct by_top_membership_price;
 
 
    typedef multi_index_container<
@@ -892,16 +1870,6 @@ namespace node { namespace chain {
                std::greater< uint32_t >, 
                std::less< community_id_type > 
             >
-         >,
-         ordered_unique< tag< by_membership_price >,
-            composite_key< community_object,
-               const_mem_fun< community_object, share_type, &community_object::membership_amount >,
-               member< community_object, community_id_type, &community_object::id >
-            >,
-            composite_key_compare< 
-               std::greater< share_type >, 
-               std::less< community_id_type > 
-            >
          >
       >,
       allocator< community_object >
@@ -910,161 +1878,177 @@ namespace node { namespace chain {
    struct by_name;
 
    typedef multi_index_container<
+      community_permission_object,
+      indexed_by<
+         ordered_unique< tag< by_id >,
+            member< community_permission_object, community_permission_id_type, &community_permission_object::id > >,
+         ordered_unique< tag< by_name >,
+            member< community_permission_object, community_name_type, &community_permission_object::name > > 
+      >,
+      allocator< community_permission_object >
+   > community_permission_index;
+
+
+   struct by_member_community_type;
+   struct by_community_type_member;
+   struct by_expiration;
+
+
+   typedef multi_index_container<
       community_member_object,
       indexed_by<
          ordered_unique< tag< by_id >,
             member< community_member_object, community_member_id_type, &community_member_object::id > >,
-         ordered_unique< tag< by_name >,
-            member< community_member_object, community_name_type, &community_member_object::name > > 
+         ordered_non_unique< tag< by_expiration >,
+            member< community_member_object, time_point, &community_member_object::expiration > >,
+         ordered_unique< tag< by_member_community_type >,
+            composite_key< community_member_object,
+               member< community_member_object, account_name_type, &community_member_object::member >, 
+               member< community_member_object, community_name_type, &community_member_object::community >,
+               member< community_member_object, community_permission_type, &community_member_object::member_type >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::less< community_name_type >,
+               std::less< community_permission_type >
+            >
+         >,
+         ordered_unique< tag< by_community_type_member >,
+            composite_key< community_member_object,
+               member< community_member_object, community_name_type, &community_member_object::community >,
+               member< community_member_object, community_permission_type, &community_member_object::member_type >,
+               member< community_member_object, account_name_type, &community_member_object::member >
+            >,
+            composite_key_compare<
+               std::less< community_name_type >,
+               std::less< community_permission_type >,
+               std::less< account_name_type >
+            >
+         >
       >,
       allocator< community_member_object >
    > community_member_index;
 
-   struct by_member_community_type;
+
+   struct by_account_community_type;
+   struct by_community_type_account;
+   
 
    typedef multi_index_container<
-      community_member_key_object,
+      community_member_request_object,
       indexed_by<
          ordered_unique< tag< by_id >,
-            member< community_member_key_object, community_member_key_id_type, &community_member_key_object::id > >,
-         ordered_unique< tag< by_member_community_type >,
-            composite_key< community_member_key_object,
-               member< community_member_key_object, account_name_type, &community_member_key_object::member >, 
-               member< community_member_key_object, community_name_type, &community_member_key_object::community >,
-               member< community_member_key_object, community_federation_type, &community_member_key_object::community_key_type >
-            >
-         >
-      >,
-      allocator< community_member_key_object >
-   > community_member_key_index;
-
-
-   struct by_community;
-   struct by_community_moderator;
-   struct by_account;
-   struct by_moderator_community_rank;
-   struct by_account_community_moderator;
-   struct by_account_community_rank;
-
-
-   typedef multi_index_container<
-      community_moderator_vote_object,
-      indexed_by<
-         ordered_unique< tag< by_id >,
-            member< community_moderator_vote_object, community_moderator_vote_id_type, &community_moderator_vote_object::id > >,
-         ordered_unique< tag< by_community >,
-            composite_key< community_moderator_vote_object,
-               member< community_moderator_vote_object, community_name_type, &community_moderator_vote_object::community >,
-               member< community_moderator_vote_object, community_moderator_vote_id_type, &community_moderator_vote_object::id >
-            >
-         >,
-         ordered_unique< tag< by_account >,
-            composite_key< community_moderator_vote_object,
-               member< community_moderator_vote_object, account_name_type, &community_moderator_vote_object::account >,
-               member< community_moderator_vote_object, community_moderator_vote_id_type, &community_moderator_vote_object::id >
-            >
-         >,
-         ordered_unique< tag< by_account_community_rank >,
-            composite_key< community_moderator_vote_object,
-               member< community_moderator_vote_object, account_name_type, &community_moderator_vote_object::account >,
-               member< community_moderator_vote_object, community_name_type, &community_moderator_vote_object::community >,
-               member< community_moderator_vote_object, uint16_t, &community_moderator_vote_object::vote_rank >
-            >
-         >,
-         ordered_unique< tag< by_moderator_community_rank >,
-            composite_key< community_moderator_vote_object,
-               member< community_moderator_vote_object, account_name_type, &community_moderator_vote_object::moderator >,
-               member< community_moderator_vote_object, community_name_type, &community_moderator_vote_object::community >,
-               member< community_moderator_vote_object, uint16_t, &community_moderator_vote_object::vote_rank >,
-               member< community_moderator_vote_object, community_moderator_vote_id_type, &community_moderator_vote_object::id >
-            >
-         >,
-         ordered_unique< tag< by_account_community_moderator >,
-            composite_key< community_moderator_vote_object,
-               member< community_moderator_vote_object, account_name_type, &community_moderator_vote_object::account >,
-               member< community_moderator_vote_object, community_name_type, &community_moderator_vote_object::community >,
-               member< community_moderator_vote_object, account_name_type, &community_moderator_vote_object::moderator >
-            >
-         >,
-         ordered_unique< tag< by_community_moderator >,
-            composite_key< community_moderator_vote_object,
-               member< community_moderator_vote_object, community_name_type, &community_moderator_vote_object::community >,
-               member< community_moderator_vote_object, account_name_type, &community_moderator_vote_object::moderator >,
-               member< community_moderator_vote_object, community_moderator_vote_id_type, &community_moderator_vote_object::id >
-            >
-         >
-      >,
-      allocator< community_moderator_vote_object >
-   > community_moderator_vote_index;
-
-   struct by_account_community;
-   struct by_community_account;
-   struct by_expiration;
-
-   typedef multi_index_container<
-      community_join_request_object,
-      indexed_by<
-         ordered_unique< tag< by_id >,
-            member< community_join_request_object, community_join_request_id_type, &community_join_request_object::id > >,
+            member< community_member_request_object, community_member_request_id_type, &community_member_request_object::id > >,
          ordered_non_unique< tag< by_expiration >,
-            member< community_join_request_object, time_point, &community_join_request_object::expiration > >,
-         ordered_unique< tag< by_account_community >,
-            composite_key< community_join_request_object,
-               member< community_join_request_object, account_name_type, &community_join_request_object::account >,
-               member< community_join_request_object, community_name_type, &community_join_request_object::community >
+            member< community_member_request_object, time_point, &community_member_request_object::expiration > >,
+         ordered_unique< tag< by_account_community_type >,
+            composite_key< community_member_request_object,
+               member< community_member_request_object, account_name_type, &community_member_request_object::account >,
+               member< community_member_request_object, account_name_type, &community_member_request_object::community >,
+               member< community_member_request_object, community_permission_type, &community_member_request_object::member_type >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >, 
+               std::less< account_name_type >,
+               std::less< community_permission_type > 
             >
          >,
-         ordered_unique< tag< by_community_account >,
-            composite_key< community_join_request_object,
-               member< community_join_request_object, community_name_type, &community_join_request_object::community >,
-               member< community_join_request_object, account_name_type, &community_join_request_object::account >
+         ordered_unique< tag< by_community_type_account >,
+            composite_key< community_member_request_object,
+               member< community_member_request_object, community_name_type, &community_member_request_object::community >,
+               member< community_member_request_object, community_permission_type, &community_member_request_object::member_type >,
+               member< community_member_request_object, account_name_type, &community_member_request_object::account >
+            >,
+            composite_key_compare< 
+               std::less< community_name_type >, 
+               std::less< community_permission_type >,
+               std::less< account_name_type > 
             >
          > 
       >,
-      allocator< community_join_request_object >
-   > community_join_request_index;
+      allocator< community_member_request_object >
+   > community_member_request_index;
+
+
+   struct by_community;
+   struct by_community_member;
+   struct by_account;
+   struct by_member_community_rank;
+   struct by_account_community_member;
+   struct by_account_community_rank;
+   struct by_community_member_account_rank;
+
+
+   typedef multi_index_container<
+      community_member_vote_object,
+      indexed_by<
+         ordered_unique< tag< by_id >,
+            member< community_member_vote_object, community_member_vote_id_type, &community_member_vote_object::id > >,
+         ordered_unique< tag< by_account_community_rank >,
+            composite_key< community_member_vote_object,
+               member< community_member_vote_object, account_name_type, &community_member_vote_object::account >,
+               member< community_member_vote_object, community_name_type, &community_member_vote_object::community >,
+               member< community_member_vote_object, uint16_t, &community_member_vote_object::vote_rank >,
+               member< community_member_vote_object, account_name_type, &community_member_vote_object::member >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::less< community_name_type >,
+               std::less< uint16_t >,
+               std::less< account_name_type >
+            >
+         >,
+         ordered_unique< tag< by_account_community_member >,
+            composite_key< community_member_vote_object,
+               member< community_member_vote_object, account_name_type, &community_member_vote_object::account >,
+               member< community_member_vote_object, community_name_type, &community_member_vote_object::community >,
+               member< community_member_vote_object, account_name_type, &community_member_vote_object::member >,
+               member< community_member_vote_object, uint16_t, &community_member_vote_object::vote_rank >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::less< community_name_type >,
+               std::less< account_name_type >,
+               std::less< uint16_t >
+            >
+         >,
+         ordered_unique< tag< by_member_community_rank >,
+            composite_key< community_member_vote_object,
+               member< community_member_vote_object, account_name_type, &community_member_vote_object::member >,
+               member< community_member_vote_object, community_name_type, &community_member_vote_object::community >,
+               member< community_member_vote_object, uint16_t, &community_member_vote_object::vote_rank >,
+               member< community_member_vote_object, account_name_type, &community_member_vote_object::account >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::less< community_name_type >,
+               std::less< uint16_t >,
+               std::less< account_name_type >
+            >
+         >,
+         ordered_unique< tag< by_community_member_account_rank >,
+            composite_key< community_member_vote_object,
+               member< community_member_vote_object, community_name_type, &community_member_vote_object::community >,
+               member< community_member_vote_object, account_name_type, &community_member_vote_object::member >,
+               member< community_member_vote_object, account_name_type, &community_member_vote_object::account >,
+               member< community_member_vote_object, uint16_t, &community_member_vote_object::vote_rank >
+            >,
+            composite_key_compare<
+               std::less< community_name_type >,
+               std::less< account_name_type >,
+               std::less< account_name_type >,
+               std::less< uint16_t >
+            >
+         >
+      >,
+      allocator< community_member_vote_object >
+   > community_member_vote_index;
+
 
    struct by_member_community;
    struct by_community;
    struct by_account;
    struct by_member;
-
-   typedef multi_index_container<
-      community_join_invite_object,
-      indexed_by<
-         ordered_unique< tag< by_id >,
-            member< community_join_invite_object, community_join_invite_id_type, &community_join_invite_object::id > >,
-         ordered_non_unique< tag< by_expiration >,
-            member< community_join_invite_object, time_point, &community_join_invite_object::expiration > >,
-         ordered_unique< tag< by_member_community >,
-            composite_key< community_join_invite_object,
-               member< community_join_invite_object, account_name_type, &community_join_invite_object::member >, 
-               member< community_join_invite_object, community_name_type, &community_join_invite_object::community > 
-            >
-         >,
-         ordered_unique< tag< by_community >,
-            composite_key< community_join_invite_object,
-               member< community_join_invite_object, community_name_type, &community_join_invite_object::community >,
-               member< community_join_invite_object, community_join_invite_id_type, &community_join_invite_object::id >
-            >
-         >,
-         ordered_unique< tag< by_account >,
-            composite_key< community_join_invite_object,
-               member< community_join_invite_object, account_name_type, &community_join_invite_object::account >,
-               member< community_join_invite_object, community_join_invite_id_type, &community_join_invite_object::id >
-            >
-         >,
-         ordered_unique< tag< by_member >,
-            composite_key< community_join_invite_object,
-               member< community_join_invite_object, account_name_type, &community_join_invite_object::member >,
-               member< community_join_invite_object, community_join_invite_id_type, &community_join_invite_object::id >
-            >
-         >
-      >,
-      allocator< community_join_invite_object >
-   > community_join_invite_index;
-
-
    struct by_communities;
    struct by_community_a;
    struct by_community_b;
@@ -1215,6 +2199,252 @@ namespace node { namespace chain {
       allocator< community_event_attend_object >
    > community_event_attend_index;
 
+
+   struct by_directive_id;
+   struct by_parent_directive;
+   struct by_root_directive;
+   struct by_community_votes;
+
+
+   typedef multi_index_container<
+      community_directive_object,
+      indexed_by<
+         ordered_unique< tag< by_id >,
+            member< community_directive_object, community_directive_id_type, &community_directive_object::id > >,
+         ordered_unique< tag< by_directive_id >,
+            composite_key< community_directive_object,
+               member< community_directive_object, account_name_type, &community_directive_object::account >,
+               member< community_directive_object, shared_string, &community_directive_object::directive_id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >,
+               strcmp_less
+            >
+         >,
+         ordered_unique< tag< by_parent_directive >,
+            composite_key< community_directive_object,
+               member< community_directive_object, account_name_type, &community_directive_object::parent_account >,
+               member< community_directive_object, shared_string, &community_directive_object::parent_directive_id >,
+               member< community_directive_object, community_directive_id_type, &community_directive_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >,
+               strcmp_less,
+               std::less< community_directive_id_type >
+            >
+         >,
+         ordered_unique< tag< by_root_directive >,
+            composite_key< community_directive_object,
+               member< community_directive_object, community_directive_id_type, &community_directive_object::root_directive >,
+               member< community_directive_object, community_directive_id_type, &community_directive_object::id >
+            >,
+            composite_key_compare< 
+               std::less< community_directive_id_type >,
+               std::less< community_directive_id_type >
+            >
+         >,
+         ordered_unique< tag< by_community_votes >,
+            composite_key< community_directive_object,
+               member< community_directive_object, community_name_type, &community_directive_object::community >,
+               member< community_directive_object, bool, &community_directive_object::member_active >,
+               member< community_directive_object, int32_t, &community_directive_object::net_votes >,
+               member< community_directive_object, community_directive_id_type, &community_directive_object::id >
+            >,
+            composite_key_compare< 
+               std::less< community_name_type >,
+               std::greater< bool >,
+               std::greater< int32_t >,
+               std::less< community_directive_id_type >
+            >
+         >
+      >,
+      allocator< community_directive_object >
+   > community_directive_index;
+
+
+   struct by_voter_community_directive;
+   struct by_directive_voter;
+   struct by_voter_recent;
+   struct by_directive_approve;
+
+
+   typedef multi_index_container<
+      community_directive_vote_object,
+      indexed_by<
+         ordered_unique< tag< by_id >,
+            member< community_directive_vote_object, community_directive_vote_id_type, &community_directive_vote_object::id > >,
+         ordered_unique< tag< by_voter_community_directive >,
+            composite_key< community_directive_vote_object,
+               member< community_directive_vote_object, account_name_type, &community_directive_vote_object::voter >,
+               member< community_directive_vote_object, community_name_type, &community_directive_vote_object::community >,
+               member< community_directive_vote_object, community_directive_id_type, &community_directive_vote_object::directive >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::less< community_name_type >,
+               std::less< community_directive_id_type >
+            >
+         >,
+         ordered_unique< tag< by_directive_voter >,
+            composite_key< community_directive_vote_object,
+               member< community_directive_vote_object, community_directive_id_type, &community_directive_vote_object::directive >,
+               member< community_directive_vote_object, account_name_type, &community_directive_vote_object::voter >
+            >,
+            composite_key_compare< 
+               std::less< community_directive_id_type >,
+               std::less< account_name_type >
+            >
+         >,
+         ordered_unique< tag< by_directive_approve >,
+            composite_key< community_directive_vote_object,
+               member< community_directive_vote_object, community_directive_id_type, &community_directive_vote_object::directive >,
+               member< community_directive_vote_object, bool, &community_directive_vote_object::approve >,
+               member< community_directive_vote_object, community_directive_vote_id_type, &community_directive_vote_object::id >
+            >,
+            composite_key_compare< 
+               std::less< community_directive_id_type >,
+               std::less< bool >,
+               std::less< community_directive_vote_id_type >
+            >
+         >,
+         ordered_unique< tag< by_voter_recent >,
+            composite_key< community_directive_vote_object,
+               member< community_directive_vote_object, account_name_type, &community_directive_vote_object::voter >,
+               member< community_directive_vote_object, community_directive_vote_id_type, &community_directive_vote_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::greater< community_directive_vote_id_type >
+            >
+         >
+      >,
+      allocator< community_directive_vote_object >
+   > community_directive_vote_index;
+
+
+   struct by_member_community;
+   struct by_community_member;
+   struct by_community_votes;
+
+
+   typedef multi_index_container<
+      community_directive_member_object,
+      indexed_by<
+         ordered_unique< tag< by_id >,
+            member< community_directive_member_object, community_directive_member_id_type, &community_directive_member_object::id > >,
+         ordered_unique< tag< by_member_community >,
+            composite_key< community_directive_member_object,
+               member< community_directive_member_object, account_name_type, &community_directive_member_object::account >,
+               member< community_directive_member_object, community_name_type, &community_directive_member_object::community >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::less< community_name_type >
+            >
+         >,
+         ordered_unique< tag< by_community_member >,
+            composite_key< community_directive_member_object,
+               member< community_directive_member_object, community_name_type, &community_directive_member_object::community >,
+               member< community_directive_member_object, account_name_type, &community_directive_member_object::account >
+            >,
+            composite_key_compare< 
+               std::less< community_name_type >,
+               std::less< account_name_type >
+            >
+         >,
+         ordered_unique< tag< by_community_votes >,
+            composite_key< community_directive_member_object,
+               member< community_directive_member_object, community_name_type, &community_directive_member_object::community >,
+               member< community_directive_member_object, bool, &community_directive_member_object::active >,
+               member< community_directive_member_object, int32_t, &community_directive_member_object::net_votes >,
+               member< community_directive_member_object, community_directive_member_id_type, &community_directive_member_object::id >
+            >,
+            composite_key_compare< 
+               std::less< community_name_type >,
+               std::greater< bool >,
+               std::greater< int32_t >,
+               std::less< community_directive_member_id_type >
+            >
+         >
+      >,
+      allocator< community_directive_member_object >
+   > community_directive_member_index;
+
+
+   struct by_voter_community_member;
+   struct by_community_voter_member;
+   struct by_member_community_voter;
+   struct by_voter_recent;
+   struct by_member_recent;
+   
+   
+   typedef multi_index_container<
+      community_directive_member_vote_object,
+      indexed_by<
+         ordered_unique< tag< by_id >,
+            member< community_directive_member_vote_object, community_directive_member_vote_id_type, &community_directive_member_vote_object::id > >,
+         ordered_unique< tag< by_voter_community_member >,
+            composite_key< community_directive_member_vote_object,
+               member< community_directive_member_vote_object, account_name_type, &community_directive_member_vote_object::voter >,
+               member< community_directive_member_vote_object, community_name_type, &community_directive_member_vote_object::community >,
+               member< community_directive_member_vote_object, account_name_type, &community_directive_member_vote_object::member >
+               
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::less< community_name_type >,
+               std::less< account_name_type >
+            >
+         >,
+         ordered_unique< tag< by_community_voter_member >,
+            composite_key< community_directive_member_vote_object,
+               member< community_directive_member_vote_object, community_name_type, &community_directive_member_vote_object::community >,
+               member< community_directive_member_vote_object, account_name_type, &community_directive_member_vote_object::voter >,
+               member< community_directive_member_vote_object, account_name_type, &community_directive_member_vote_object::member >
+            >,
+            composite_key_compare<
+               std::less< community_name_type >,
+               std::less< account_name_type >,
+               std::less< account_name_type >
+            >
+         >,
+         ordered_unique< tag< by_member_community_voter >,
+            composite_key< community_directive_member_vote_object,
+               member< community_directive_member_vote_object, account_name_type, &community_directive_member_vote_object::member >,
+               member< community_directive_member_vote_object, community_name_type, &community_directive_member_vote_object::community >,
+               member< community_directive_member_vote_object, account_name_type, &community_directive_member_vote_object::voter >
+            >,
+            composite_key_compare<
+               std::less< account_name_type >,
+               std::less< community_name_type >,
+               std::less< account_name_type >
+            >
+         >,
+         ordered_unique< tag< by_voter_recent >,
+            composite_key< community_directive_member_vote_object,
+               member< community_directive_member_vote_object, account_name_type, &community_directive_member_vote_object::voter >,
+               member< community_directive_member_vote_object, community_directive_member_vote_id_type, &community_directive_member_vote_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::greater< community_directive_member_vote_id_type >
+            >
+         >,
+         ordered_unique< tag< by_member_recent >,
+            composite_key< community_directive_member_vote_object,
+               member< community_directive_member_vote_object, account_name_type, &community_directive_member_vote_object::member >,
+               member< community_directive_member_vote_object, community_directive_member_vote_id_type, &community_directive_member_vote_object::id >
+            >,
+            composite_key_compare< 
+               std::less< account_name_type >,
+               std::greater< community_directive_member_vote_id_type >
+            >
+         >
+      >,
+      allocator< community_directive_member_vote_object >
+   > community_directive_member_vote_index;
+
+
 } } // node::chain
 
 
@@ -1232,13 +2462,18 @@ FC_REFLECT( node::chain::community_object,
          (pinned_author)
          (pinned_permlink)
          (tags)
-         (community_privacy)
          (community_member_key)
          (community_moderator_key)
          (community_admin_key)
+         (community_secure_key)
+         (community_standard_premium_key)
+         (community_mid_premium_key)
+         (community_top_premium_key)
          (interface)
          (reward_currency)
-         (membership_price)
+         (standard_membership_price)
+         (mid_membership_price)
+         (top_membership_price)
          (max_rating)
          (flags)
          (permissions)
@@ -1257,13 +2492,28 @@ FC_REFLECT( node::chain::community_object,
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::community_object, node::chain::community_index );
 
-FC_REFLECT( node::chain::community_member_object,
+FC_REFLECT( node::chain::community_permission_object,
          (id)
          (name)
          (founder)
-         (community_privacy)
+         (private_community)
+         (author_permission)
+         (reply_permission)
+         (vote_permission)
+         (view_permission)
+         (share_permission)
+         (message_permission)
+         (poll_permission)
+         (event_permission)
+         (directive_permission)
+         (add_permission)
+         (request_permission)
+         (remove_permission)
          (subscribers)
          (members)
+         (standard_premium_members)
+         (mid_premium_members)
+         (top_premium_members)
          (moderators)
          (administrators)
          (blacklist)
@@ -1273,56 +2523,56 @@ FC_REFLECT( node::chain::community_member_object,
          (downstream_member_federations)
          (downstream_moderator_federations)
          (downstream_admin_federations)
-         (mod_weight)
-         (total_mod_weight)
+         (vote_weight)
+         (total_vote_weight)
+         (verifiers)
+         (min_verification_count)
+         (max_verification_distance)
          (last_updated)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::community_permission_object, node::chain::community_permission_index );
+
+FC_REFLECT( node::chain::community_member_object,
+         (id)
+         (account)
+         (member)
+         (community)
+         (member_type)
+         (interface)
+         (encrypted_community_key)
+         (expiration)
+         (last_updated)
+         (created)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::community_member_object, node::chain::community_member_index );
 
-FC_REFLECT( node::chain::community_moderator_vote_object,
+FC_REFLECT( node::chain::community_member_request_object,
          (id)
          (account)
          (community)
-         (moderator)
+         (interface)
+         (member_type)
+         (message)
+         (expiration)
+         (last_updated)
+         (created)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::community_member_request_object, node::chain::community_member_request_index );
+
+FC_REFLECT( node::chain::community_member_vote_object,
+         (id)
+         (account)
+         (community)
+         (member)
          (vote_rank)
          (last_updated)
          (created)
          );
 
-CHAINBASE_SET_INDEX_TYPE( node::chain::community_moderator_vote_object, node::chain::community_moderator_vote_index );
-
-FC_REFLECT( node::chain::community_join_request_object,
-         (id)
-         (account)
-         (community)
-         (message)
-         (expiration)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::community_join_request_object, node::chain::community_join_request_index );
-
-FC_REFLECT( node::chain::community_join_invite_object,
-         (id)
-         (account)
-         (member)
-         (community)
-         (message)
-         (expiration)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::community_join_invite_object, node::chain::community_join_invite_index );
-
-FC_REFLECT( node::chain::community_member_key_object,
-         (id)
-         (account)
-         (member)
-         (community)
-         (community_key_type)
-         (encrypted_community_key)
-         );
-
-CHAINBASE_SET_INDEX_TYPE( node::chain::community_member_key_object, node::chain::community_member_key_index );
+CHAINBASE_SET_INDEX_TYPE( node::chain::community_member_vote_object, node::chain::community_member_vote_index );
 
 FC_REFLECT( node::chain::community_federation_object,
          (id)
@@ -1387,3 +2637,82 @@ FC_REFLECT( node::chain::community_event_attend_object,
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::community_event_attend_object, node::chain::community_event_attend_index );
+
+FC_REFLECT( node::chain::community_directive_object,
+         (id)
+         (account)
+         (directive_id)
+         (parent_account)
+         (parent_directive_id)
+         (community)
+         (public_key)
+         (interface)
+         (details)
+         (cover_image)
+         (ipfs)
+         (json)
+         (root_directive)
+         (depth)
+         (net_votes)
+         (directive_start_time)
+         (directive_end_time)
+         (last_updated)
+         (created)
+         (root)
+         (completed)
+         (member_active)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::community_directive_object, node::chain::community_directive_index );
+
+FC_REFLECT( node::chain::community_directive_vote_object,
+         (id)
+         (voter)
+         (directive)
+         (community)
+         (public_key)
+         (interface)
+         (details)
+         (json)
+         (approve)
+         (last_updated)
+         (created)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::community_directive_vote_object, node::chain::community_directive_vote_index );
+
+FC_REFLECT( node::chain::community_directive_member_object,
+         (id)
+         (account)
+         (community)
+         (public_key)
+         (interface)
+         (details)
+         (json)
+         (command_directive_id)
+         (delegate_directive_id)
+         (consensus_directive_id)
+         (emergent_directive_id)
+         (net_votes)
+         (active)
+         (last_updated)
+         (created)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::community_directive_member_object, node::chain::community_directive_member_index );
+
+FC_REFLECT( node::chain::community_directive_member_vote_object,
+         (id)
+         (voter)
+         (member)
+         (community)
+         (public_key)
+         (interface)
+         (details)
+         (json)
+         (approve)
+         (last_updated)
+         (created)
+         );
+
+CHAINBASE_SET_INDEX_TYPE( node::chain::community_directive_member_vote_object, node::chain::community_directive_member_vote_index );

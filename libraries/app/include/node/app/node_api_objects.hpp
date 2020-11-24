@@ -15,7 +15,7 @@ typedef chain::account_recovery_update_request_object  account_recovery_update_r
 typedef chain::block_summary_object                    block_summary_api_obj;
 typedef chain::comment_metrics_object                  comment_metrics_api_obj;
 typedef chain::unstake_asset_route_object              unstake_asset_route_api_obj;
-typedef chain::community_moderator_vote_object         community_moderator_api_obj;
+typedef chain::community_member_vote_object            community_member_vote_api_obj;
 typedef chain::account_decline_voting_request_object   account_decline_voting_request_api_obj;
 typedef chain::producer_vote_object                    producer_vote_api_obj;
 typedef chain::producer_schedule_object                producer_schedule_api_obj;
@@ -1989,41 +1989,47 @@ struct premium_purchase_key_api_obj
 
 struct community_api_obj
 {
-   community_api_obj( const chain::community_object& b ):
-      id( b.id ),
-      name( b.name ),
-      founder( b.founder ),
-      display_name( to_string( b.display_name ) ),
-      details( to_string( b.details ) ),
-      url( to_string( b.url ) ),
-      profile_image( to_string( b.profile_image ) ),
-      cover_image( to_string( b.cover_image ) ),
-      json( to_string( b.json ) ),
-      json_private( to_string( b.json_private ) ),
-      pinned_author( b.pinned_author ),
-      pinned_permlink( to_string( b.pinned_permlink ) ),
-      community_privacy( community_privacy_values[ int( b.community_privacy ) ] ),
-      community_member_key( b.community_member_key ),
-      community_moderator_key( b.community_moderator_key ),
-      community_admin_key( b.community_admin_key ),
-      reward_currency( b.reward_currency ),
-      membership_price( b.membership_price ),
-      max_rating( b.max_rating ),
-      flags( b.flags ),
-      permissions( b.permissions ),
-      subscriber_count( b.subscriber_count ),
-      post_count( b.post_count ),
-      comment_count( b.comment_count ),
-      vote_count( b.vote_count ),
-      view_count( b.view_count ),
-      share_count( b.share_count ),
-      created( b.created ),
-      last_updated( b.last_updated ),
-      last_post( b.last_post ),
-      last_root_post( b.last_root_post ),
-      active( b.active )
+   community_api_obj( const chain::community_object& o ):
+      id( o.id ),
+      name( o.name ),
+      founder( o.founder ),
+      display_name( to_string( o.display_name ) ),
+      details( to_string( o.details ) ),
+      url( to_string( o.url ) ),
+      profile_image( to_string( o.profile_image ) ),
+      cover_image( to_string( o.cover_image ) ),
+      json( to_string( o.json ) ),
+      json_private( to_string( o.json_private ) ),
+      pinned_author( o.pinned_author ),
+      pinned_permlink( to_string( o.pinned_permlink ) ),
+      community_member_key( o.community_member_key ),
+      community_moderator_key( o.community_moderator_key ),
+      community_admin_key( o.community_admin_key ),
+      community_secure_key( o.community_secure_key ),
+      community_standard_premium_key( o.community_standard_premium_key ),
+      community_mid_premium_key( o.community_mid_premium_key ),
+      community_top_premium_key( o.community_top_premium_key ),
+      interface( o.interface ),
+      reward_currency( o.reward_currency ),
+      standard_membership_price( o.standard_membership_price ),
+      mid_membership_price( o.mid_membership_price ),
+      top_membership_price( o.top_membership_price ),
+      max_rating( o.max_rating ),
+      flags( o.flags ),
+      permissions( o.permissions ),
+      subscriber_count( o.subscriber_count ),
+      post_count( o.post_count ),
+      comment_count( o.comment_count ),
+      vote_count( o.vote_count ),
+      view_count( o.view_count ),
+      share_count( o.share_count ),
+      created( o.created ),
+      last_updated( o.last_updated ),
+      last_post( o.last_post ),
+      last_root_post( o.last_root_post ),
+      active( o.active )
       {
-         for( auto t : b.tags )
+         for( auto t : o.tags )
          {
             tags.insert( t );
          }
@@ -2044,12 +2050,18 @@ struct community_api_obj
    account_name_type                  pinned_author;                      ///< Author of Post pinned to the top of the community's page.
    string                             pinned_permlink;                    ///< Permlink of Post pinned to the top of the community's page, encrypted with the member key if private community.
    set< tag_name_type >               tags;                               ///< Set of tags of the topics within the community to enable discovery.
-   string                             community_privacy;                  ///< Community privacy level: Open_Public, General_Public, Exclusive_Public, Closed_Public, Open_Private, General_Private, Exclusive_Private, Closed_Private.
    public_key_type                    community_member_key;               ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted members.
    public_key_type                    community_moderator_key;            ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted moderators.
    public_key_type                    community_admin_key;                ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted admins.
+   public_key_type                    community_secure_key;               ///< Key used for encrypting and decrypting posts and messages. Private key held only by the community founder.
+   public_key_type                    community_standard_premium_key;     ///< Key used for encrypting and decrypting posts and messages. Private key shared with standard premium members.
+   public_key_type                    community_mid_premium_key;          ///< Key used for encrypting and decrypting posts and messages. Private key shared with mid premium members.
+   public_key_type                    community_top_premium_key;          ///< Key used for encrypting and decrypting posts and messages. Private key shared with top premium members.
+   account_name_type                  interface;                          ///< Account of the interface that enabled the creation of the community. Gets a share of membership payments.
    asset_symbol_type                  reward_currency;                    ///< The Currency asset used for content rewards in the community.
-   asset                              membership_price;                   ///< Price paid per day by all community members to community founder.
+   asset                              standard_membership_price;          ///< Price paid per month by community standard members to community founder.
+   asset                              mid_membership_price;               ///< Price paid per month by all mid level community members to community founder.
+   asset                              top_membership_price;               ///< Price paid per month by all top level community members to community founder.
    uint16_t                           max_rating;                         ///< Highest severity rating that posts in the community can have.
    uint32_t                           flags;                              ///< The currently active flags on the community for content settings.
    uint32_t                           permissions;                        ///< The flag permissions that can be activated on the community for content settings.
@@ -2067,47 +2079,191 @@ struct community_api_obj
 };
 
 
-
-struct community_request_api_obj
+struct community_permission_api_obj
 {
-   community_request_api_obj( const chain::community_join_request_object& o ) :
+   community_permission_api_obj( const chain::community_permission_object& o ):
       id( o.id ),
-      account( o.account ),
-      community( o.community),
-      message( to_string( o.message ) ),
-      expiration( o.expiration ){}
+      name( o.name ),
+      founder( o.founder ),
+      private_community( o.private_community ),
+      author_permission( community_permission_values[ int( o.author_permission ) ] ),
+      reply_permission( community_permission_values[ int( o.reply_permission ) ] ),
+      vote_permission( community_permission_values[ int( o.vote_permission ) ] ),
+      view_permission( community_permission_values[ int( o.view_permission ) ] ),
+      share_permission( community_permission_values[ int( o.share_permission ) ] ),
+      message_permission( community_permission_values[ int( o.message_permission ) ] ),
+      poll_permission( community_permission_values[ int( o.poll_permission ) ] ),
+      event_permission( community_permission_values[ int( o.event_permission ) ] ),
+      directive_permission( community_permission_values[ int( o.directive_permission ) ] ),
+      add_permission( community_permission_values[ int( o.add_permission ) ] ),
+      request_permission( community_permission_values[ int( o.request_permission ) ] ),
+      remove_permission( community_permission_values[ int( o.remove_permission ) ] ),
+      total_vote_weight( o.total_vote_weight.value ),
+      min_verification_count( o.min_verification_count ),
+      max_verification_distance( o.max_verification_distance ),
+      last_updated( o.last_updated )
+      {
+         for( auto a : o.subscribers )
+         {
+            subscribers.insert( a );
+         }
+         for( auto a : o.members )
+         {
+            members.insert( a );
+         }
+         for( auto a : o.standard_premium_members )
+         {
+            standard_premium_members.insert( a );
+         }
+         for( auto a : o.mid_premium_members )
+         {
+            mid_premium_members.insert( a );
+         }
+         for( auto a : o.top_premium_members )
+         {
+            top_premium_members.insert( a );
+         }
+         for( auto a : o.moderators )
+         {
+            moderators.insert( a );
+         }
+         for( auto a : o.administrators )
+         {
+            administrators.insert( a );
+         }
+         for( auto a : o.blacklist )
+         {
+            blacklist.insert( a );
+         }
+         for( auto a : o.upstream_member_federations )
+         {
+            upstream_member_federations.insert( a );
+         }
+         for( auto a : o.upstream_moderator_federations )
+         {
+            upstream_moderator_federations.insert( a );
+         }
+         for( auto a : o.upstream_admin_federations )
+         {
+            upstream_admin_federations.insert( a );
+         }
+         for( auto a : o.downstream_member_federations )
+         {
+            downstream_member_federations.insert( a );
+         }
+         for( auto a : o.downstream_moderator_federations )
+         {
+            downstream_moderator_federations.insert( a );
+         }
+         for( auto a : o.downstream_admin_federations )
+         {
+            downstream_admin_federations.insert( a );
+         }
+         for( auto a : o.vote_weight )
+         {
+            vote_weight[ a.first ] = a.second.value;
+         }
+         for( auto a : o.verifiers )
+         {
+            verifiers.insert( a );
+         }
+      }
 
-   community_request_api_obj(){}
+   community_permission_api_obj(){}
 
-   community_join_request_id_type          id;                 
-   account_name_type                       account;        
-   community_name_type                     community;  
-   string                                  message;
-   time_point                              expiration;   
+   community_permission_id_type                   id;
+   community_name_type                            name;                                 ///< Name of the community with permissions set.
+   account_name_type                              founder;                              ///< Name of the founding account of the community. Has full permissions.
+   bool                                           private_community;                    ///< True when the community is private, and all posts must be encrypted.
+   string                                         author_permission;                    ///< Determines which accounts can create root posts.
+   string                                         reply_permission;                     ///< Determines which accounts can create replies to root posts.
+   string                                         vote_permission;                      ///< Determines which accounts can create comment votes on posts and comments.
+   string                                         view_permission;                      ///< Determines which accounts can create comment views on posts and comments.
+   string                                         share_permission;                     ///< Determines which accounts can create comment shares on posts and comments.
+   string                                         message_permission;                   ///< Determines which accounts can create direct messages in the community.
+   string                                         poll_permission;                      ///< Determines which accounts can create polls in the community.
+   string                                         event_permission;                     ///< Determines which accounts can create events in the community.
+   string                                         directive_permission;                 ///< Determines which accounts can create directives and directive votes in the community.
+   string                                         add_permission;                       ///< Determines which accounts can add new members, and accept membership requests.
+   string                                         request_permission;                   ///< Determines which accounts can request to join the community.
+   string                                         remove_permission;                    ///< Determines which accounts can remove and blacklist.
+   set< account_name_type >                       subscribers;                          ///< List of accounts that subscribe to the posts made in the community.
+   set< account_name_type >                       members;                              ///< List of accounts that are members of the community.
+   set< account_name_type >                       standard_premium_members;             ///< List of accounts that have paid the standard premium membership of the community.
+   set< account_name_type >                       mid_premium_members;                  ///< List of accounts that have paid (at least) the mid premium membership of the community.
+   set< account_name_type >                       top_premium_members;                  ///< List of accounts that have paid (at least) the top premium membership of the community.
+   set< account_name_type >                       moderators;                           ///< Accounts that are moderators of the community.
+   set< account_name_type >                       administrators;                       ///< Accounts that are administrators of the community.
+   set< account_name_type >                       blacklist;                            ///< Accounts that are not able to interact with the community.
+   set< community_name_type >                     upstream_member_federations;          ///< Communities that this community recieves incoming members from.
+   set< community_name_type >                     upstream_moderator_federations;       ///< Communities that this community recieves incoming moderators from.
+   set< community_name_type >                     upstream_admin_federations;           ///< Communities that this community recieves incoming admins from.
+   set< community_name_type >                     downstream_member_federations;        ///< Communities that Receive incoming members from this community.
+   set< community_name_type >                     downstream_moderator_federations;     ///< Communities that Receive incoming moderators from this community.
+   set< community_name_type >                     downstream_admin_federations;         ///< Communities that Receive incoming admins from this community.
+   map< account_name_type, int64_t >              vote_weight;                          ///< Map of all moderator voting weights for distributing rewards.
+   int64_t                                        total_vote_weight;                    ///< Total of all moderator weights.
+   set< account_name_type >                       verifiers;                            ///< Accounts that are considered ground truth sources of verification authority, wth degree 0.
+   uint64_t                                       min_verification_count;               ///< Minimum number of incoming verification transaction to be considered verified by this community.
+   uint64_t                                       max_verification_distance;            ///< Maximum number of degrees of seperation from a verfier to be considered verified by this community.
+   time_point                                     last_updated;                         ///< Time that the community was last updated.
 };
 
 
-
-struct community_invite_api_obj
+struct community_member_api_obj
 {
-   community_invite_api_obj( const chain::community_join_invite_object& o ) :
+   community_member_api_obj( const chain::community_member_object& o ) :
+      id( o.id ),
+      account( o.account ),
+      member( o.member ),
+      community( o.community ),
+      member_type( community_permission_values[ int( o.member_type ) ] ),
+      interface( o.interface ),
+      encrypted_community_key( o.encrypted_community_key ),
+      expiration( o.expiration ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
+
+   community_member_api_obj(){}
+
+   community_member_id_type         id;
+   account_name_type                account;                               ///< Account that added the member as a community member, and provided the access key.
+   account_name_type                member;                                ///< Account of the admitted community member.
+   community_name_type              community;                             ///< Community that the member is granted access permission to.
+   string                           member_type;                           ///< Membership and Key encryption access and permission level.
+   account_name_type                interface;                             ///< Account of the interface that most recently updated the membership key.
+   encrypted_keypair_type           encrypted_community_key;               ///< The community's private key, encrypted with the member's secure public key.
+   time_point                       expiration;                            ///< Time that the membership and key will be expired, and a new key must be generated.
+   time_point                       last_updated;                          ///< Time that the membership was last updated.
+   time_point                       created;                               ///< The time the membership was created.
+};
+
+
+struct community_member_request_api_obj
+{
+   community_member_request_api_obj( const chain::community_member_request_object& o ) :
       id( o.id ),
       account( o.account ),
       community( o.community ),
-      member( o.member ),
+      interface( o.interface ),
+      member_type( community_permission_values[ int( o.member_type ) ] ),
       message( to_string( o.message ) ),
-      expiration( o.expiration ){}
+      expiration( o.expiration ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
 
-   community_invite_api_obj(){}
+   community_member_request_api_obj(){}
 
-   community_join_invite_id_type           id;                 
-   account_name_type                       account;             
-   community_name_type                     community; 
-   account_name_type                       member;      
-   string                                  message;
-   time_point                              expiration;   
+   community_member_request_id_type        id;
+   account_name_type                       account;          ///< Account that created the request.
+   community_name_type                     community;        ///< Community being requested to join.
+   account_name_type                       interface;        ///< Account of the interface that most recently updated the membership key.
+   string                                  member_type;      ///< Membership and Key encryption access and permission level.
+   string                                  message;          ///< Encrypted message to the communities management team, encrypted with community public key.
+   time_point                              expiration;       ///< Request expiry time.
+   time_point                              last_updated;     ///< Time that the request was last updated.
+   time_point                              created;          ///< The time the request was created.
 };
-
 
 
 struct community_federation_api_obj
@@ -2155,7 +2311,6 @@ struct community_federation_api_obj
 };
 
 
-
 struct community_event_api_obj
 {
    community_event_api_obj( const chain::community_event_object& o ) :
@@ -2183,7 +2338,7 @@ struct community_event_api_obj
    community_event_api_obj(){}
 
    community_event_id_type               id;                 
-   community_name_type                   community;              ///< Community being invited to join.
+   community_name_type                   community;              ///< Community being that the event is contained within.
    string                                event_id;               ///< UUIDv4 referring to the event within the Community. Unique on community/event_id.
    public_key_type                       public_key;             ///< Public key for encrypting the event details. Null if public event.
    string                                event_name;             ///< The Name of the event.
@@ -2203,7 +2358,6 @@ struct community_event_api_obj
    time_point                            last_updated;           ///< Time that the event was last updated.
    time_point                            created;                ///< Time that the event was created.
 };
-
 
 
 struct community_event_attend_api_obj
@@ -2236,6 +2390,161 @@ struct community_event_attend_api_obj
    bool                                  attending;              ///< True when the attendee has confirmed that they will be attending the event, and paid the event price.
    time_point                            last_updated;           ///< Time that the attendance was last updated.
    time_point                            created;                ///< Time that the attendance was created.
+};
+
+
+struct community_directive_api_obj
+{
+   community_directive_api_obj( const chain::community_directive_object& o ) :
+      id( o.id ),
+      account( o.account ),
+      directive_id( to_string( o.directive_id ) ),
+      parent_account( o.parent_account ),
+      parent_directive_id( to_string( o.parent_directive_id ) ),
+      community( o.community ),
+      public_key( o.public_key ),
+      interface( o.interface ),
+      details( to_string( o.details ) ),
+      cover_image( to_string( o.cover_image ) ),
+      ipfs( to_string( o.ipfs ) ),
+      json( to_string( o.json ) ),
+      root_directive( o.root_directive ),
+      depth( o.depth ),
+      net_votes( o.net_votes ),
+      directive_start_time( o.directive_start_time ),
+      directive_end_time( o.directive_end_time ),
+      last_updated( o.last_updated ),
+      created( o.created ),
+      root( o.root ),
+      completed( o.completed ),
+      member_active( o.member_active ){}
+
+   community_directive_api_obj(){}
+
+   community_directive_id_type           id;                 
+   account_name_type                     account;                    ///< Account that created the directive.
+   string                                directive_id;               ///< UUIDv4 referring to the directive. Unique on account/directive_id.
+   account_name_type                     parent_account;             ///< Account that created the directive.
+   string                                parent_directive_id;        ///< UUIDv4 referring to the directive. Unique on account/directive_id.
+   community_name_type                   community;                  ///< Community that the directive is given to.
+   public_key_type                       public_key;                 ///< Public key for encrypting the directive details. Null if public directive.
+   account_name_type                     interface;                  ///< Account of the interface that broadcasted the transaction.
+   string                                details;                    ///< Text details of the directive. Should explain the action items.
+   string                                cover_image;                ///< IPFS image for display of this directive in the interface. 
+   string                                ipfs;                       ///< IPFS file reference for the directive. Images or other files can be attatched.
+   string                                json;                       ///< Additional Directive JSON metadata.
+   community_directive_id_type           root_directive;             ///< Directive that this is a subdirective of.
+   uint16_t                              depth;                      ///< The number of subdirectives deep this directive is. 0 for root directive.
+   int32_t                               net_votes;                  ///< The amount of approval votes, minus disapprovals on the post.
+   time_point                            directive_start_time;       ///< Time that the Directive will begin.
+   time_point                            directive_end_time;         ///< Time that the Directive must be completed by.
+   time_point                            last_updated;               ///< Time that the directive was last updated.
+   time_point                            created;                    ///< Time that the directive was created.
+   bool                                  root;                       ///< True if the directive is a root directive.
+   bool                                  completed;                  ///< True when the directive has been completed.
+   bool                                  member_active;              ///< True when the directive is designated as currently outgoing.
+};
+
+
+struct community_directive_vote_api_obj
+{
+   community_directive_vote_api_obj( const chain::community_directive_vote_object& o ) :
+      id( o.id ),
+      voter( o.voter ),
+      directive( o.directive ),
+      community( o.community ),
+      public_key( o.public_key ),
+      interface( o.interface ),
+      details( to_string( o.details ) ),
+      json( to_string( o.json ) ),
+      approve( o.approve ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
+
+   community_directive_vote_api_obj(){}
+
+   community_directive_vote_id_type      id;                 
+   account_name_type                     voter;                      ///< Account creating the directive vote.
+   community_directive_id_type           directive;                  ///< The ID of the directive being voted on.
+   community_name_type                   community;                  ///< Community that the directive is contained within.
+   public_key_type                       public_key;                 ///< Public key for encrypting the directive vote details. Null if public directive vote.
+   account_name_type                     interface;                  ///< Account of the interface that broadcasted the transaction.
+   string                                details;                    ///< Text details of the directive vote. Should contain directive feedback.
+   string                                json;                       ///< Additional Directive JSON metadata.
+   bool                                  approve;                    ///< True when the directive is approved, false when it is opposed. 
+   time_point                            last_updated;               ///< Time that the vote was last updated.
+   time_point                            created;                    ///< Time that the vote was created.
+};
+
+
+struct community_directive_member_api_obj
+{
+   community_directive_member_api_obj( const chain::community_directive_member_object& o ) :
+      id( o.id ),
+      account( o.account ),
+      community( o.community ),
+      public_key( o.public_key ),
+      interface( o.interface ),
+      details( to_string( o.details ) ),
+      json( to_string( o.json ) ),
+      command_directive_id( to_string( o.command_directive_id ) ),
+      delegate_directive_id( to_string( o.delegate_directive_id ) ),
+      consensus_directive_id( to_string( o.consensus_directive_id ) ),
+      emergent_directive_id( to_string( o.emergent_directive_id ) ),
+      net_votes( o.net_votes ),
+      active( o.active ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
+
+   community_directive_member_api_obj(){}
+
+   community_directive_member_id_type      id;                 
+   account_name_type                       account;                             ///< Account recieving and creating directives within a community.
+   community_name_type                     community;                           ///< Community that the directives assignment is contained within.
+   public_key_type                         public_key;                          ///< Public key for encrypting the directive member details. Null if public directive member.
+   account_name_type                       interface;                           ///< Account of the interface that broadcasted the transaction.
+   string                                  details;                             ///< Text details of the directive member. Should elaborate interests and prorities for voting selection.
+   string                                  json;                                ///< Additional Directive Member JSON metadata.
+   string                                  command_directive_id;                ///< The Current outgoing directive as community command co-ordinator.
+   string                                  delegate_directive_id;               ///< The Current outgoing directive to all hierachy subordinate members.
+   string                                  consensus_directive_id;              ///< The Current outgoing directive for community consensus selection.
+   string                                  emergent_directive_id;               ///< The Current outgoing emergent directive for selection by other members.
+   int32_t                                 net_votes;                           ///< The amount of approval votes.
+   bool                                    active;                              ///< True when the account is active for directive distribution.
+   time_point                              last_updated;                        ///< Time that the member was last updated.
+   time_point                              created;                             ///< Time that the member was created.
+};
+
+
+
+struct community_directive_member_vote_api_obj
+{
+   community_directive_member_vote_api_obj( const chain::community_directive_member_vote_object& o ) :
+      id( o.id ),
+      voter( o.voter ),
+      member( o.member ),
+      community( o.community ),
+      public_key( o.public_key ),
+      interface( o.interface ),
+      details( to_string( o.details ) ),
+      json( to_string( o.json ) ),
+      approve( o.approve ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
+
+   community_directive_member_vote_api_obj(){}
+
+   community_directive_member_vote_id_type      id;                 
+   account_name_type                            voter;                      ///< Account creating the directive member vote.
+   account_name_type                            member;                     ///< Account being voted on.
+   community_name_type                          community;                  ///< Community that the directive member vote is contained within.
+   public_key_type                              public_key;                 ///< Public key for encrypting the directive member vote details. Null if public directive member vote.
+   account_name_type                            interface;                  ///< Account of the interface that broadcasted the transaction.
+   string                                       details;                    ///< Text details of the directive member vote. Should contain directive member feedback.
+   string                                       json;                       ///< Additional Directive member vote JSON metadata.
+   bool                                         approve;                    ///< True when the directive member is approved, false when they is opposed.
+   time_point                                   last_updated;               ///< Time that the vote was last updated.
+   time_point                                   created;                    ///< Time that the vote was created.
 };
 
 
@@ -3258,38 +3567,38 @@ struct option_order_api_obj
 
 struct asset_api_obj
 {
-   asset_api_obj( const chain::asset_object& a ) :
-      id( a.id ),
-      symbol( a.symbol ),
-      asset_type( asset_property_values[ int( a.asset_type ) ] ),
-      issuer( a.issuer ),
-      display_symbol( to_string( a.display_symbol ) ),
-      details( to_string( a.details ) ),
-      json( to_string( a.json ) ),
-      url( to_string( a.url ) ),
-      max_supply( a.max_supply.value ),
-      stake_intervals( a.stake_intervals ),
-      unstake_intervals( a.unstake_intervals ),
-      market_fee_percent( a.market_fee_percent ),
-      market_fee_share_percent( a.market_fee_share_percent ),
-      issuer_permissions( a.issuer_permissions ),
-      flags( a.flags ),
-      created( a.created ),
-      last_updated( a.last_updated )
+   asset_api_obj( const chain::asset_object& o ) :
+      id( o.id ),
+      symbol( o.symbol ),
+      asset_type( asset_property_values[ int( o.asset_type ) ] ),
+      issuer( o.issuer ),
+      display_symbol( to_string( o.display_symbol ) ),
+      details( to_string( o.details ) ),
+      json( to_string( o.json ) ),
+      url( to_string( o.url ) ),
+      max_supply( o.max_supply.value ),
+      stake_intervals( o.stake_intervals ),
+      unstake_intervals( o.unstake_intervals ),
+      market_fee_percent( o.market_fee_percent ),
+      market_fee_share_percent( o.market_fee_share_percent ),
+      issuer_permissions( o.issuer_permissions ),
+      flags( o.flags ),
+      created( o.created ),
+      last_updated( o.last_updated )
       {
-         for( auto auth : a.whitelist_authorities )
+         for( auto auth : o.whitelist_authorities )
          {
             whitelist_authorities.push_back( auth );
          }
-         for( auto auth : a.blacklist_authorities )
+         for( auto auth : o.blacklist_authorities )
          {
             blacklist_authorities.push_back( auth );
          }
-         for( auto market : a.whitelist_markets )
+         for( auto market : o.whitelist_markets )
          {
             whitelist_markets.push_back( market );
          }
-         for( auto market : a.blacklist_markets )
+         for( auto market : o.blacklist_markets )
          {
             blacklist_markets.push_back( market );
          }
@@ -3325,19 +3634,19 @@ struct asset_api_obj
 
 struct asset_dynamic_data_api_obj
 {
-   asset_dynamic_data_api_obj( const chain::asset_dynamic_data_object& a ) :
-      id( a.id ),
-      symbol( a.symbol ),
-      total_supply( a.get_total_supply().amount.value ),
-      liquid_supply( a.liquid_supply.value ),
-      staked_supply( a.staked_supply.value ),
-      reward_supply( a.reward_supply.value ),
-      savings_supply( a.savings_supply.value ),
-      vesting_supply( a.vesting_supply.value ),
-      delegated_supply( a.delegated_supply.value ),
-      receiving_supply( a.receiving_supply.value ),
-      pending_supply( a.pending_supply.value ),
-      confidential_supply( a.confidential_supply.value ){}
+   asset_dynamic_data_api_obj( const chain::asset_dynamic_data_object& o ) :
+      id( o.id ),
+      symbol( o.symbol ),
+      total_supply( o.get_total_supply().amount.value ),
+      liquid_supply( o.liquid_supply.value ),
+      staked_supply( o.staked_supply.value ),
+      reward_supply( o.reward_supply.value ),
+      savings_supply( o.savings_supply.value ),
+      vesting_supply( o.vesting_supply.value ),
+      delegated_supply( o.delegated_supply.value ),
+      receiving_supply( o.receiving_supply.value ),
+      pending_supply( o.pending_supply.value ),
+      confidential_supply( o.confidential_supply.value ){}
 
    asset_dynamic_data_api_obj(){}
 
@@ -3359,28 +3668,28 @@ struct asset_dynamic_data_api_obj
 
 struct currency_data_api_obj
 {
-   currency_data_api_obj( const chain::asset_currency_data_object& a ) :
-      id( a.id ),
-      symbol( a.symbol ),
-      block_reward( a.block_reward ),
-      block_reward_reduction_percent( a.block_reward_reduction_percent ),
-      block_reward_reduction_days( a.block_reward_reduction_days ),
-      content_reward_percent( a.content_reward_percent ),
-      equity_asset( a.equity_asset ),
-      equity_reward_percent( a.equity_reward_percent ),
-      producer_reward_percent( a.producer_reward_percent ),
-      supernode_reward_percent( a.supernode_reward_percent ),
-      power_reward_percent( a.power_reward_percent ),
-      enterprise_fund_reward_percent( a.enterprise_fund_reward_percent ),
-      development_reward_percent( a.development_reward_percent ),
-      marketing_reward_percent( a.marketing_reward_percent ),
-      advocacy_reward_percent( a.advocacy_reward_percent ),
-      activity_reward_percent( a.activity_reward_percent ),
-      producer_block_reward_percent( a.producer_block_reward_percent ),
-      validation_reward_percent( a.validation_reward_percent ),
-      txn_stake_reward_percent( a.txn_stake_reward_percent ),
-      work_reward_percent( a.work_reward_percent ),
-      producer_activity_reward_percent( a.producer_activity_reward_percent ){}
+   currency_data_api_obj( const chain::asset_currency_data_object& o ) :
+      id( o.id ),
+      symbol( o.symbol ),
+      block_reward( o.block_reward ),
+      block_reward_reduction_percent( o.block_reward_reduction_percent ),
+      block_reward_reduction_days( o.block_reward_reduction_days ),
+      content_reward_percent( o.content_reward_percent ),
+      equity_asset( o.equity_asset ),
+      equity_reward_percent( o.equity_reward_percent ),
+      producer_reward_percent( o.producer_reward_percent ),
+      supernode_reward_percent( o.supernode_reward_percent ),
+      power_reward_percent( o.power_reward_percent ),
+      enterprise_fund_reward_percent( o.enterprise_fund_reward_percent ),
+      development_reward_percent( o.development_reward_percent ),
+      marketing_reward_percent( o.marketing_reward_percent ),
+      advocacy_reward_percent( o.advocacy_reward_percent ),
+      activity_reward_percent( o.activity_reward_percent ),
+      producer_block_reward_percent( o.producer_block_reward_percent ),
+      validation_reward_percent( o.validation_reward_percent ),
+      txn_stake_reward_percent( o.txn_stake_reward_percent ),
+      work_reward_percent( o.work_reward_percent ),
+      producer_activity_reward_percent( o.producer_activity_reward_percent ){}
 
    currency_data_api_obj(){}
 
@@ -3497,21 +3806,21 @@ struct asset_collateral_bid_api_obj
 
 struct equity_data_api_obj
 {
-   equity_data_api_obj( const chain::asset_equity_data_object& e ):
-      id( e.id ),
-      business_account( e.business_account ),
-      symbol( e.symbol ),
-      last_dividend( e.last_dividend ),
-      dividend_share_percent( e.dividend_share_percent ),
-      min_active_time( e.min_active_time ),
-      min_balance( e.min_balance.value ),
-      min_producers( e.min_producers ),
-      boost_balance( e.boost_balance.value ),
-      boost_activity( e.boost_activity.value ),
-      boost_producers( e.boost_producers.value ),
-      boost_top( e.boost_top )
+   equity_data_api_obj( const chain::asset_equity_data_object& o ):
+      id( o.id ),
+      business_account( o.business_account ),
+      symbol( o.symbol ),
+      last_dividend( o.last_dividend ),
+      dividend_share_percent( o.dividend_share_percent ),
+      min_active_time( o.min_active_time ),
+      min_balance( o.min_balance.value ),
+      min_producers( o.min_producers ),
+      boost_balance( o.boost_balance.value ),
+      boost_activity( o.boost_activity.value ),
+      boost_producers( o.boost_producers.value ),
+      boost_top( o.boost_top )
       {
-         for( auto a: e.dividend_pool )
+         for( auto a : o.dividend_pool )
          {
             dividend_pool[ a.first ] = a.second;
          }
@@ -5074,12 +5383,18 @@ FC_REFLECT( node::app::community_api_obj,
          (pinned_author)
          (pinned_permlink)
          (tags)
-         (community_privacy)
          (community_member_key)
          (community_moderator_key)
          (community_admin_key)
+         (community_secure_key)
+         (community_standard_premium_key)
+         (community_mid_premium_key)
+         (community_top_premium_key)
+         (interface)
          (reward_currency)
-         (membership_price)
+         (standard_membership_price)
+         (mid_membership_price)
+         (top_membership_price)
          (max_rating)
          (flags)
          (permissions)
@@ -5096,21 +5411,68 @@ FC_REFLECT( node::app::community_api_obj,
          (active)
          );
 
-FC_REFLECT( node::app::community_request_api_obj,
+FC_REFLECT( node::app::community_permission_api_obj,
          (id)
-         (account)
-         (community)
-         (message)
-         (expiration)
+         (name)
+         (founder)
+         (private_community)
+         (author_permission)
+         (reply_permission)
+         (vote_permission)
+         (view_permission)
+         (share_permission)
+         (message_permission)
+         (poll_permission)
+         (event_permission)
+         (directive_permission)
+         (add_permission)
+         (request_permission)
+         (remove_permission)
+         (subscribers)
+         (members)
+         (standard_premium_members)
+         (mid_premium_members)
+         (top_premium_members)
+         (moderators)
+         (administrators)
+         (blacklist)
+         (upstream_member_federations)
+         (upstream_moderator_federations)
+         (upstream_admin_federations)
+         (downstream_member_federations)
+         (downstream_moderator_federations)
+         (downstream_admin_federations)
+         (vote_weight)
+         (total_vote_weight)
+         (verifiers)
+         (min_verification_count)
+         (max_verification_distance)
+         (last_updated)
          );
 
-FC_REFLECT( node::app::community_invite_api_obj,
+FC_REFLECT( node::app::community_member_api_obj,
+         (id)
+         (account)
+         (member)
+         (community)
+         (member_type)
+         (interface)
+         (encrypted_community_key)
+         (expiration)
+         (last_updated)
+         (created)
+         );
+
+FC_REFLECT( node::app::community_member_request_api_obj,
          (id)
          (account)
          (community)
-         (member)
+         (interface)
+         (member_type)
          (message)
          (expiration)
+         (last_updated)
+         (created)
          );
 
 FC_REFLECT( node::app::community_federation_api_obj,
@@ -5168,6 +5530,77 @@ FC_REFLECT( node::app::community_event_attend_api_obj,
          (json)
          (interested)
          (attending)
+         (last_updated)
+         (created)
+         );
+
+FC_REFLECT( node::app::community_directive_api_obj,
+         (id)
+         (account)
+         (directive_id)
+         (parent_account)
+         (parent_directive_id)
+         (community)
+         (public_key)
+         (interface)
+         (details)
+         (cover_image)
+         (ipfs)
+         (json)
+         (root_directive)
+         (depth)
+         (net_votes)
+         (directive_start_time)
+         (directive_end_time)
+         (last_updated)
+         (created)
+         (root)
+         (completed)
+         (member_active)
+         );
+
+FC_REFLECT( node::app::community_directive_vote_api_obj,
+         (id)
+         (voter)
+         (directive)
+         (community)
+         (public_key)
+         (interface)
+         (details)
+         (json)
+         (approve)
+         (last_updated)
+         (created)
+         );
+
+FC_REFLECT( node::app::community_directive_member_api_obj,
+         (id)
+         (account)
+         (community)
+         (public_key)
+         (interface)
+         (details)
+         (json)
+         (command_directive_id)
+         (delegate_directive_id)
+         (consensus_directive_id)
+         (emergent_directive_id)
+         (net_votes)
+         (active)
+         (last_updated)
+         (created)
+         );
+
+FC_REFLECT( node::app::community_directive_member_vote_api_obj,
+         (id)
+         (voter)
+         (member)
+         (community)
+         (public_key)
+         (interface)
+         (details)
+         (json)
+         (approve)
          (last_updated)
          (created)
          );

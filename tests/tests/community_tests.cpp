@@ -56,42 +56,82 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       public_key_type aliceopencommunity_public_member_key = get_public_key( "aliceopencommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type aliceopencommunity_public_moderator_key = get_public_key( "aliceopencommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type aliceopencommunity_public_admin_key = get_public_key( "aliceopencommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type aliceopencommunity_public_secure_key = get_public_key( "aliceopencommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type aliceopencommunity_public_standard_premium_key = get_public_key( "aliceopencommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type aliceopencommunity_public_mid_premium_key = get_public_key( "aliceopencommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type aliceopencommunity_public_top_premium_key = get_public_key( "aliceopencommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       private_key_type aliceopencommunity_private_member_key = get_private_key( "aliceopencommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type aliceopencommunity_private_moderator_key = get_private_key( "aliceopencommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type aliceopencommunity_private_admin_key = get_private_key( "aliceopencommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type aliceopencommunity_private_secure_key = get_private_key( "aliceopencommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type aliceopencommunity_private_standard_premium_key = get_private_key( "aliceopencommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type aliceopencommunity_private_mid_premium_key = get_private_key( "aliceopencommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type aliceopencommunity_private_top_premium_key = get_private_key( "aliceopencommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       public_key_type bobpubliccommunity_public_member_key = get_public_key( "bobpubliccommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type bobpubliccommunity_public_moderator_key = get_public_key( "bobpubliccommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type bobpubliccommunity_public_admin_key = get_public_key( "bobpubliccommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type bobpubliccommunity_public_secure_key = get_public_key( "bobpubliccommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type bobpubliccommunity_public_standard_premium_key = get_public_key( "bobpubliccommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type bobpubliccommunity_public_mid_premium_key = get_public_key( "bobpubliccommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type bobpubliccommunity_public_top_premium_key = get_public_key( "bobpubliccommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       private_key_type bobpubliccommunity_private_member_key = get_private_key( "bobpubliccommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type bobpubliccommunity_private_moderator_key = get_private_key( "bobpubliccommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type bobpubliccommunity_private_admin_key = get_private_key( "bobpubliccommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type bobpubliccommunity_private_secure_key = get_private_key( "bobpubliccommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type bobpubliccommunity_private_standard_premium_key = get_private_key( "bobpubliccommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type bobpubliccommunity_private_mid_premium_key = get_private_key( "bobpubliccommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type bobpubliccommunity_private_top_premium_key = get_private_key( "bobpubliccommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       public_key_type candiceprivatecommunity_public_member_key = get_public_key( "candiceprivatecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type candiceprivatecommunity_public_moderator_key = get_public_key( "candiceprivatecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type candiceprivatecommunity_public_admin_key = get_public_key( "candiceprivatecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type candiceprivatecommunity_public_secure_key = get_public_key( "candiceprivatecommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type candiceprivatecommunity_public_standard_premium_key = get_public_key( "candiceprivatecommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type candiceprivatecommunity_public_mid_premium_key = get_public_key( "candiceprivatecommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type candiceprivatecommunity_public_top_premium_key = get_public_key( "candiceprivatecommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       private_key_type candiceprivatecommunity_private_member_key = get_private_key( "candiceprivatecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type candiceprivatecommunity_private_moderator_key = get_private_key( "candiceprivatecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type candiceprivatecommunity_private_admin_key = get_private_key( "candiceprivatecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type candiceprivatecommunity_private_secure_key = get_private_key( "candiceprivatecommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type candiceprivatecommunity_private_standard_premium_key = get_private_key( "candiceprivatecommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type candiceprivatecommunity_private_mid_premium_key = get_private_key( "candiceprivatecommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type candiceprivatecommunity_private_top_premium_key = get_private_key( "candiceprivatecommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       public_key_type danexclusivecommunity_public_member_key = get_public_key( "danexclusivecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type danexclusivecommunity_public_moderator_key = get_public_key( "danexclusivecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type danexclusivecommunity_public_admin_key = get_public_key( "danexclusivecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type danexclusivecommunity_public_secure_key = get_public_key( "danexclusivecommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type danexclusivecommunity_public_standard_premium_key = get_public_key( "danexclusivecommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type danexclusivecommunity_public_mid_premium_key = get_public_key( "danexclusivecommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type danexclusivecommunity_public_top_premium_key = get_public_key( "danexclusivecommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       private_key_type danexclusivecommunity_private_member_key = get_private_key( "danexclusivecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type danexclusivecommunity_private_moderator_key = get_private_key( "danexclusivecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type danexclusivecommunity_private_admin_key = get_private_key( "danexclusivecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type danexclusivecommunity_private_secure_key = get_private_key( "danexclusivecommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type danexclusivecommunity_private_standard_premium_key = get_private_key( "danexclusivecommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type danexclusivecommunity_private_mid_premium_key = get_private_key( "danexclusivecommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type danexclusivecommunity_private_top_premium_key = get_private_key( "danexclusivecommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       public_key_type mysecondcommunity_public_member_key = get_public_key( "mysecondcommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type mysecondcommunity_public_moderator_key = get_public_key( "mysecondcommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type mysecondcommunity_public_admin_key = get_public_key( "mysecondcommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type mysecondcommunity_public_secure_key = get_public_key( "mysecondcommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type mysecondcommunity_public_standard_premium_key = get_public_key( "mysecondcommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type mysecondcommunity_public_mid_premium_key = get_public_key( "mysecondcommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type mysecondcommunity_public_top_premium_key = get_public_key( "mysecondcommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       private_key_type mysecondcommunity_private_member_key = get_private_key( "mysecondcommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type mysecondcommunity_private_moderator_key = get_private_key( "mysecondcommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type mysecondcommunity_private_admin_key = get_private_key( "mysecondcommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type mysecondcommunity_private_secure_key = get_private_key( "mysecondcommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type mysecondcommunity_private_standard_premium_key = get_private_key( "mysecondcommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type mysecondcommunity_private_mid_premium_key = get_private_key( "mysecondcommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type mysecondcommunity_private_top_premium_key = get_private_key( "mysecondcommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       signed_transaction tx;
 
@@ -100,18 +140,45 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.signatory = "alice";
       create.founder = "alice";
       create.name = "aliceopencommunity";
-      create.community_privacy = "open_public";
-      create.community_member_key = string( aliceopencommunity_public_member_key );
-      create.community_moderator_key = string( aliceopencommunity_public_moderator_key );
-      create.community_admin_key = string( aliceopencommunity_public_admin_key );
       create.display_name = "Alice Open Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, aliceopencommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      create.json_private = get_encrypted_message( aliceopencommunity_private_secure_key, aliceopencommunity_public_secure_key, aliceopencommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
+      create.private_community = false;
+      create.author_permission = "all";
+      create.reply_permission = "all";
+      create.vote_permission = "all";
+      create.view_permission = "all";
+      create.share_permission = "all";
+      create.message_permission = "member";
+      create.poll_permission = "administrator";
+      create.event_permission = "administrator";
+      create.directive_permission = "member";
+      create.add_permission = "member";
+      create.request_permission = "all";
+      create.remove_permission = "administrator";
+      create.community_member_key = string( aliceopencommunity_public_member_key );
+      create.community_moderator_key = string( aliceopencommunity_public_moderator_key );
+      create.community_admin_key = string( aliceopencommunity_public_admin_key );
+      create.community_secure_key = string( aliceopencommunity_public_secure_key );
+      create.community_standard_premium_key = string( aliceopencommunity_public_standard_premium_key );
+      create.community_mid_premium_key = string( aliceopencommunity_public_mid_premium_key );
+      create.community_top_premium_key = string( aliceopencommunity_public_top_premium_key );
+      create.interface = INIT_ACCOUNT;
+      create.reward_currency = SYMBOL_COIN;
+      create.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      create.mid_membership_price = MEMBERSHIP_FEE_MID;
+      create.top_membership_price = MEMBERSHIP_FEE_TOP;
+      create.verifiers.insert( INIT_ACCOUNT );
+      create.min_verification_count = 0;
+      create.max_verification_distance = 0;
+      create.max_rating = 9;
+      create.flags = 0;
+      create.permissions = COMMUNITY_PERMISSION_MASK;
       create.validate();
 
       tx.operations.push_back( create );
@@ -123,7 +190,6 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
 
       BOOST_REQUIRE( alice_community.founder == create.founder );
       BOOST_REQUIRE( alice_community.name == create.name );
-      BOOST_REQUIRE( alice_community.community_privacy == community_privacy_type::OPEN_PUBLIC_COMMUNITY );
       BOOST_REQUIRE( alice_community.created == now() );
 
       tx.operations.clear();
@@ -132,18 +198,45 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.signatory = "bob";
       create.founder = "bob";
       create.name = "bobpubliccommunity";
-      create.community_privacy = "exclusive_public";
-      create.community_member_key = string( bobpubliccommunity_public_member_key );
-      create.community_moderator_key = string( bobpubliccommunity_public_moderator_key );
-      create.community_admin_key = string( bobpubliccommunity_public_admin_key );
       create.display_name = "Bob Public Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, bobpubliccommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      create.json_private = get_encrypted_message( bobpubliccommunity_private_secure_key, bobpubliccommunity_public_secure_key, bobpubliccommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
+      create.private_community = false;
+      create.author_permission = "member";
+      create.reply_permission = "all";
+      create.vote_permission = "all";
+      create.view_permission = "all";
+      create.share_permission = "all";
+      create.message_permission = "member";
+      create.poll_permission = "administrator";
+      create.event_permission = "administrator";
+      create.directive_permission = "member";
+      create.add_permission = "member";
+      create.request_permission = "all";
+      create.remove_permission = "administrator";
+      create.community_member_key = string( bobpubliccommunity_public_member_key );
+      create.community_moderator_key = string( bobpubliccommunity_public_moderator_key );
+      create.community_admin_key = string( bobpubliccommunity_public_admin_key );
+      create.community_secure_key = string( bobpubliccommunity_public_secure_key );
+      create.community_standard_premium_key = string( bobpubliccommunity_public_standard_premium_key );
+      create.community_mid_premium_key = string( bobpubliccommunity_public_mid_premium_key );
+      create.community_top_premium_key = string( bobpubliccommunity_public_top_premium_key );
+      create.interface = INIT_ACCOUNT;
+      create.reward_currency = SYMBOL_COIN;
+      create.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      create.mid_membership_price = MEMBERSHIP_FEE_MID;
+      create.top_membership_price = MEMBERSHIP_FEE_TOP;
+      create.verifiers.insert( INIT_ACCOUNT );
+      create.min_verification_count = 0;
+      create.max_verification_distance = 0;
+      create.max_rating = 9;
+      create.flags = 0;
+      create.permissions = COMMUNITY_PERMISSION_MASK;
       create.validate();
 
       tx.operations.push_back( create );
@@ -154,7 +247,6 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
 
       BOOST_REQUIRE( bob_community.founder == create.founder );
       BOOST_REQUIRE( bob_community.name == create.name );
-      BOOST_REQUIRE( bob_community.community_privacy == community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY );
       BOOST_REQUIRE( bob_community.created == now() );
 
       tx.operations.clear();
@@ -163,10 +255,6 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.signatory = "candice";
       create.founder = "candice";
       create.name = "candiceprivatecommunity";
-      create.community_privacy = "open_private";
-      create.community_member_key = string( candiceprivatecommunity_public_member_key );
-      create.community_moderator_key = string( candiceprivatecommunity_public_moderator_key );
-      create.community_admin_key = string( candiceprivatecommunity_public_admin_key );
       create.display_name = "Candice Private Community";
       create.details = "details";
       create.url = "https://www.url.com";
@@ -175,6 +263,37 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.json = "{ \"valid\": true }";
       create.json_private = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, candiceprivatecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
+      create.private_community = true;
+      create.author_permission = "member";
+      create.reply_permission = "member";
+      create.vote_permission = "member";
+      create.view_permission = "member";
+      create.share_permission = "member";
+      create.message_permission = "member";
+      create.poll_permission = "administrator";
+      create.event_permission = "administrator";
+      create.directive_permission = "member";
+      create.add_permission = "member";
+      create.request_permission = "all";
+      create.remove_permission = "administrator";
+      create.community_member_key = string( candiceprivatecommunity_public_member_key );
+      create.community_moderator_key = string( candiceprivatecommunity_public_moderator_key );
+      create.community_admin_key = string( candiceprivatecommunity_public_admin_key );
+      create.community_secure_key = string( candiceprivatecommunity_public_secure_key );
+      create.community_standard_premium_key = string( candiceprivatecommunity_public_standard_premium_key );
+      create.community_mid_premium_key = string( candiceprivatecommunity_public_mid_premium_key );
+      create.community_top_premium_key = string( candiceprivatecommunity_public_top_premium_key );
+      create.interface = INIT_ACCOUNT;
+      create.reward_currency = SYMBOL_COIN;
+      create.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      create.mid_membership_price = MEMBERSHIP_FEE_MID;
+      create.top_membership_price = MEMBERSHIP_FEE_TOP;
+      create.verifiers.insert( INIT_ACCOUNT );
+      create.min_verification_count = 0;
+      create.max_verification_distance = 0;
+      create.max_rating = 9;
+      create.flags = 0;
+      create.permissions = COMMUNITY_PERMISSION_MASK;
       create.validate();
 
       tx.operations.push_back( create );
@@ -185,7 +304,6 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
 
       BOOST_REQUIRE( candice_community.founder == create.founder );
       BOOST_REQUIRE( candice_community.name == create.name );
-      BOOST_REQUIRE( candice_community.community_privacy == community_privacy_type::OPEN_PRIVATE_COMMUNITY );
       BOOST_REQUIRE( candice_community.created == now() );
 
       tx.operations.clear();
@@ -194,10 +312,6 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.signatory = "dan";
       create.founder = "dan";
       create.name = "danexclusivecommunity";
-      create.community_privacy = "exclusive_private";
-      create.community_member_key = string( danexclusivecommunity_public_member_key );
-      create.community_moderator_key = string( danexclusivecommunity_public_moderator_key );
-      create.community_admin_key = string( danexclusivecommunity_public_admin_key );
       create.display_name = "Dan Exclusive Community";
       create.details = "details";
       create.url = "https://www.url.com";
@@ -206,7 +320,37 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.json = "{ \"valid\": true }";
       create.json_private = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, danexclusivecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
-      
+      create.private_community = true;
+      create.author_permission = "member";
+      create.reply_permission = "member";
+      create.vote_permission = "member";
+      create.view_permission = "member";
+      create.share_permission = "member";
+      create.message_permission = "member";
+      create.poll_permission = "administrator";
+      create.event_permission = "administrator";
+      create.directive_permission = "member";
+      create.add_permission = "administrator";
+      create.request_permission = "member";
+      create.remove_permission = "administrator";
+      create.community_member_key = string( danexclusivecommunity_public_member_key );
+      create.community_moderator_key = string( danexclusivecommunity_public_moderator_key );
+      create.community_admin_key = string( danexclusivecommunity_public_admin_key );
+      create.community_secure_key = string( danexclusivecommunity_public_secure_key );
+      create.community_standard_premium_key = string( danexclusivecommunity_public_standard_premium_key );
+      create.community_mid_premium_key = string( danexclusivecommunity_public_mid_premium_key );
+      create.community_top_premium_key = string( danexclusivecommunity_public_top_premium_key );
+      create.interface = INIT_ACCOUNT;
+      create.reward_currency = SYMBOL_COIN;
+      create.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      create.mid_membership_price = MEMBERSHIP_FEE_MID;
+      create.top_membership_price = MEMBERSHIP_FEE_TOP;
+      create.verifiers.insert( INIT_ACCOUNT );
+      create.min_verification_count = 0;
+      create.max_verification_distance = 0;
+      create.max_rating = 9;
+      create.flags = 0;
+      create.permissions = COMMUNITY_PERMISSION_MASK;
       create.validate();
 
       tx.operations.push_back( create );
@@ -217,7 +361,6 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
 
       BOOST_REQUIRE( dan_community.founder == create.founder );
       BOOST_REQUIRE( dan_community.name == create.name );
-      BOOST_REQUIRE( dan_community.community_privacy == community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY );
       BOOST_REQUIRE( dan_community.created == now() );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: successful community creation" );
@@ -232,17 +375,46 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.signatory = "alice";
       create.founder = "alice";
       create.name = "mysecondcommunity";
-      create.community_member_key = string( mysecondcommunity_public_member_key );
-      create.community_moderator_key = string( mysecondcommunity_public_moderator_key );
-      create.community_admin_key = string( mysecondcommunity_public_admin_key );
       create.display_name = "My Second Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, mysecondcommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      create.json_private = get_encrypted_message( mysecondcommunity_private_secure_key, mysecondcommunity_public_secure_key, mysecondcommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
+      create.private_community = false;
+      create.author_permission = "all";
+      create.reply_permission = "all";
+      create.vote_permission = "all";
+      create.view_permission = "all";
+      create.share_permission = "all";
+      create.message_permission = "member";
+      create.poll_permission = "administrator";
+      create.event_permission = "administrator";
+      create.directive_permission = "member";
+      create.add_permission = "member";
+      create.request_permission = "all";
+      create.remove_permission = "administrator";
+      create.community_member_key = string( mysecondcommunity_public_member_key );
+      create.community_moderator_key = string( mysecondcommunity_public_moderator_key );
+      create.community_admin_key = string( mysecondcommunity_public_admin_key );
+      create.community_secure_key = string( mysecondcommunity_public_secure_key );
+      create.community_standard_premium_key = string( mysecondcommunity_public_standard_premium_key );
+      create.community_mid_premium_key = string( mysecondcommunity_public_mid_premium_key );
+      create.community_top_premium_key = string( mysecondcommunity_public_top_premium_key );
+      create.interface = INIT_ACCOUNT;
+      create.reward_currency = SYMBOL_COIN;
+      create.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      create.mid_membership_price = MEMBERSHIP_FEE_MID;
+      create.top_membership_price = MEMBERSHIP_FEE_TOP;
+      create.verifiers.insert( INIT_ACCOUNT );
+      create.min_verification_count = 0;
+      create.max_verification_distance = 0;
+      create.max_rating = 9;
+      create.flags = 0;
+      create.permissions = COMMUNITY_PERMISSION_MASK;
+      create.validate();
       create.validate();
 
       tx.operations.push_back( create );
@@ -273,16 +445,13 @@ BOOST_AUTO_TEST_CASE( community_create_operation_test )
       create.signatory = "elon";
       create.founder = "elon";
       create.name = "aliceopencommunity";
-      create.community_member_key = string( aliceopencommunity_public_member_key );
-      create.community_moderator_key = string( aliceopencommunity_public_moderator_key );
-      create.community_admin_key = string( aliceopencommunity_public_admin_key );
       create.display_name = "My Second Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( elon_private_secure_key, elon_public_secure_key, aliceopencommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      create.json_private = get_encrypted_message( aliceopencommunity_private_secure_key, aliceopencommunity_public_secure_key, aliceopencommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
       create.validate();
 
@@ -328,34 +497,66 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       public_key_type aliceopencommunity_public_member_key = get_public_key( "aliceopencommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type aliceopencommunity_public_moderator_key = get_public_key( "aliceopencommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type aliceopencommunity_public_admin_key = get_public_key( "aliceopencommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type aliceopencommunity_public_secure_key = get_public_key( "aliceopencommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type aliceopencommunity_public_standard_premium_key = get_public_key( "aliceopencommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type aliceopencommunity_public_mid_premium_key = get_public_key( "aliceopencommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type aliceopencommunity_public_top_premium_key = get_public_key( "aliceopencommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       private_key_type aliceopencommunity_private_member_key = get_private_key( "aliceopencommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type aliceopencommunity_private_moderator_key = get_private_key( "aliceopencommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type aliceopencommunity_private_admin_key = get_private_key( "aliceopencommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type aliceopencommunity_private_secure_key = get_private_key( "aliceopencommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type aliceopencommunity_private_standard_premium_key = get_private_key( "aliceopencommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type aliceopencommunity_private_mid_premium_key = get_private_key( "aliceopencommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type aliceopencommunity_private_top_premium_key = get_private_key( "aliceopencommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       public_key_type bobpubliccommunity_public_member_key = get_public_key( "bobpubliccommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type bobpubliccommunity_public_moderator_key = get_public_key( "bobpubliccommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type bobpubliccommunity_public_admin_key = get_public_key( "bobpubliccommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type bobpubliccommunity_public_secure_key = get_public_key( "bobpubliccommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type bobpubliccommunity_public_standard_premium_key = get_public_key( "bobpubliccommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type bobpubliccommunity_public_mid_premium_key = get_public_key( "bobpubliccommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type bobpubliccommunity_public_top_premium_key = get_public_key( "bobpubliccommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       private_key_type bobpubliccommunity_private_member_key = get_private_key( "bobpubliccommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type bobpubliccommunity_private_moderator_key = get_private_key( "bobpubliccommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type bobpubliccommunity_private_admin_key = get_private_key( "bobpubliccommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type bobpubliccommunity_private_secure_key = get_private_key( "bobpubliccommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type bobpubliccommunity_private_standard_premium_key = get_private_key( "bobpubliccommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type bobpubliccommunity_private_mid_premium_key = get_private_key( "bobpubliccommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type bobpubliccommunity_private_top_premium_key = get_private_key( "bobpubliccommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       public_key_type candiceprivatecommunity_public_member_key = get_public_key( "candiceprivatecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type candiceprivatecommunity_public_moderator_key = get_public_key( "candiceprivatecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type candiceprivatecommunity_public_admin_key = get_public_key( "candiceprivatecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type candiceprivatecommunity_public_secure_key = get_public_key( "candiceprivatecommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type candiceprivatecommunity_public_standard_premium_key = get_public_key( "candiceprivatecommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type candiceprivatecommunity_public_mid_premium_key = get_public_key( "candiceprivatecommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type candiceprivatecommunity_public_top_premium_key = get_public_key( "candiceprivatecommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       private_key_type candiceprivatecommunity_private_member_key = get_private_key( "candiceprivatecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type candiceprivatecommunity_private_moderator_key = get_private_key( "candiceprivatecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type candiceprivatecommunity_private_admin_key = get_private_key( "candiceprivatecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type candiceprivatecommunity_private_secure_key = get_private_key( "candiceprivatecommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type candiceprivatecommunity_private_standard_premium_key = get_private_key( "candiceprivatecommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type candiceprivatecommunity_private_mid_premium_key = get_private_key( "candiceprivatecommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type candiceprivatecommunity_private_top_premium_key = get_private_key( "candiceprivatecommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       public_key_type danexclusivecommunity_public_member_key = get_public_key( "danexclusivecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type danexclusivecommunity_public_moderator_key = get_public_key( "danexclusivecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type danexclusivecommunity_public_admin_key = get_public_key( "danexclusivecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type danexclusivecommunity_public_secure_key = get_public_key( "danexclusivecommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type danexclusivecommunity_public_standard_premium_key = get_public_key( "danexclusivecommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type danexclusivecommunity_public_mid_premium_key = get_public_key( "danexclusivecommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type danexclusivecommunity_public_top_premium_key = get_public_key( "danexclusivecommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       private_key_type danexclusivecommunity_private_member_key = get_private_key( "danexclusivecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type danexclusivecommunity_private_moderator_key = get_private_key( "danexclusivecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type danexclusivecommunity_private_admin_key = get_private_key( "danexclusivecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type danexclusivecommunity_private_secure_key = get_private_key( "danexclusivecommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type danexclusivecommunity_private_standard_premium_key = get_private_key( "danexclusivecommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type danexclusivecommunity_private_mid_premium_key = get_private_key( "danexclusivecommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type danexclusivecommunity_private_top_premium_key = get_private_key( "danexclusivecommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       signed_transaction tx;
 
@@ -364,18 +565,45 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       create.signatory = "alice";
       create.founder = "alice";
       create.name = "aliceopencommunity";
-      create.community_privacy = "open_public";
-      create.community_member_key = string( aliceopencommunity_public_member_key );
-      create.community_moderator_key = string( aliceopencommunity_public_moderator_key );
-      create.community_admin_key = string( aliceopencommunity_public_admin_key );
       create.display_name = "Alice Open Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, aliceopencommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      create.json_private = get_encrypted_message( aliceopencommunity_private_secure_key, aliceopencommunity_public_secure_key, aliceopencommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
+      create.private_community = false;
+      create.author_permission = "all";
+      create.reply_permission = "all";
+      create.vote_permission = "all";
+      create.view_permission = "all";
+      create.share_permission = "all";
+      create.message_permission = "member";
+      create.poll_permission = "administrator";
+      create.event_permission = "administrator";
+      create.directive_permission = "member";
+      create.add_permission = "member";
+      create.request_permission = "all";
+      create.remove_permission = "administrator";
+      create.community_member_key = string( aliceopencommunity_public_member_key );
+      create.community_moderator_key = string( aliceopencommunity_public_moderator_key );
+      create.community_admin_key = string( aliceopencommunity_public_admin_key );
+      create.community_secure_key = string( aliceopencommunity_public_secure_key );
+      create.community_standard_premium_key = string( aliceopencommunity_public_standard_premium_key );
+      create.community_mid_premium_key = string( aliceopencommunity_public_mid_premium_key );
+      create.community_top_premium_key = string( aliceopencommunity_public_top_premium_key );
+      create.interface = INIT_ACCOUNT;
+      create.reward_currency = SYMBOL_COIN;
+      create.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      create.mid_membership_price = MEMBERSHIP_FEE_MID;
+      create.top_membership_price = MEMBERSHIP_FEE_TOP;
+      create.verifiers.insert( INIT_ACCOUNT );
+      create.min_verification_count = 0;
+      create.max_verification_distance = 0;
+      create.max_rating = 9;
+      create.flags = 0;
+      create.permissions = COMMUNITY_PERMISSION_MASK;
       create.validate();
 
       tx.operations.push_back( create );
@@ -390,18 +618,45 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       create.signatory = "bob";
       create.founder = "bob";
       create.name = "bobpubliccommunity";
-      create.community_privacy = "exclusive_public";
-      create.community_member_key = string( bobpubliccommunity_public_member_key );
-      create.community_moderator_key = string( bobpubliccommunity_public_moderator_key );
-      create.community_admin_key = string( bobpubliccommunity_public_admin_key );
       create.display_name = "Bob Public Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, bobpubliccommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      create.json_private = get_encrypted_message( bobpubliccommunity_private_secure_key, bobpubliccommunity_public_secure_key, bobpubliccommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
+      create.private_community = false;
+      create.author_permission = "member";
+      create.reply_permission = "all";
+      create.vote_permission = "all";
+      create.view_permission = "all";
+      create.share_permission = "all";
+      create.message_permission = "member";
+      create.poll_permission = "administrator";
+      create.event_permission = "administrator";
+      create.directive_permission = "member";
+      create.add_permission = "member";
+      create.request_permission = "all";
+      create.remove_permission = "administrator";
+      create.community_member_key = string( bobpubliccommunity_public_member_key );
+      create.community_moderator_key = string( bobpubliccommunity_public_moderator_key );
+      create.community_admin_key = string( bobpubliccommunity_public_admin_key );
+      create.community_secure_key = string( bobpubliccommunity_public_secure_key );
+      create.community_standard_premium_key = string( bobpubliccommunity_public_standard_premium_key );
+      create.community_mid_premium_key = string( bobpubliccommunity_public_mid_premium_key );
+      create.community_top_premium_key = string( bobpubliccommunity_public_top_premium_key );
+      create.interface = INIT_ACCOUNT;
+      create.reward_currency = SYMBOL_COIN;
+      create.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      create.mid_membership_price = MEMBERSHIP_FEE_MID;
+      create.top_membership_price = MEMBERSHIP_FEE_TOP;
+      create.verifiers.insert( INIT_ACCOUNT );
+      create.min_verification_count = 0;
+      create.max_verification_distance = 0;
+      create.max_rating = 9;
+      create.flags = 0;
+      create.permissions = COMMUNITY_PERMISSION_MASK;
       create.validate();
 
       tx.operations.push_back( create );
@@ -414,10 +669,6 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       create.signatory = "candice";
       create.founder = "candice";
       create.name = "candiceprivatecommunity";
-      create.community_privacy = "open_private";
-      create.community_member_key = string( candiceprivatecommunity_public_member_key );
-      create.community_moderator_key = string( candiceprivatecommunity_public_moderator_key );
-      create.community_admin_key = string(candiceprivatecommunity_public_admin_key );
       create.display_name = "Candice Private Community";
       create.details = "details";
       create.url = "https://www.url.com";
@@ -426,6 +677,37 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       create.json = "{ \"valid\": true }";
       create.json_private = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, candiceprivatecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
+      create.private_community = true;
+      create.author_permission = "member";
+      create.reply_permission = "member";
+      create.vote_permission = "member";
+      create.view_permission = "member";
+      create.share_permission = "member";
+      create.message_permission = "member";
+      create.poll_permission = "administrator";
+      create.event_permission = "administrator";
+      create.directive_permission = "member";
+      create.add_permission = "member";
+      create.request_permission = "all";
+      create.remove_permission = "administrator";
+      create.community_member_key = string( candiceprivatecommunity_public_member_key );
+      create.community_moderator_key = string( candiceprivatecommunity_public_moderator_key );
+      create.community_admin_key = string( candiceprivatecommunity_public_admin_key );
+      create.community_secure_key = string( candiceprivatecommunity_public_secure_key );
+      create.community_standard_premium_key = string( candiceprivatecommunity_public_standard_premium_key );
+      create.community_mid_premium_key = string( candiceprivatecommunity_public_mid_premium_key );
+      create.community_top_premium_key = string( candiceprivatecommunity_public_top_premium_key );
+      create.interface = INIT_ACCOUNT;
+      create.reward_currency = SYMBOL_COIN;
+      create.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      create.mid_membership_price = MEMBERSHIP_FEE_MID;
+      create.top_membership_price = MEMBERSHIP_FEE_TOP;
+      create.verifiers.insert( INIT_ACCOUNT );
+      create.min_verification_count = 0;
+      create.max_verification_distance = 0;
+      create.max_rating = 9;
+      create.flags = 0;
+      create.permissions = COMMUNITY_PERMISSION_MASK;
       create.validate();
 
       tx.operations.push_back( create );
@@ -438,10 +720,6 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       create.signatory = "dan";
       create.founder = "dan";
       create.name = "danexclusivecommunity";
-      create.community_privacy = "exclusive_private";
-      create.community_member_key = string( danexclusivecommunity_public_member_key );
-      create.community_moderator_key = string( danexclusivecommunity_public_moderator_key );
-      create.community_admin_key = string( danexclusivecommunity_public_admin_key );
       create.display_name = "Dan Exclusive Community";
       create.details = "details";
       create.url = "https://www.url.com";
@@ -450,6 +728,37 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       create.json = "{ \"valid\": true }";
       create.json_private = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, danexclusivecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
+      create.private_community = true;
+      create.author_permission = "member";
+      create.reply_permission = "member";
+      create.vote_permission = "member";
+      create.view_permission = "member";
+      create.share_permission = "member";
+      create.message_permission = "member";
+      create.poll_permission = "administrator";
+      create.event_permission = "administrator";
+      create.directive_permission = "member";
+      create.add_permission = "administrator";
+      create.request_permission = "member";
+      create.remove_permission = "administrator";
+      create.community_member_key = string( danexclusivecommunity_public_member_key );
+      create.community_moderator_key = string( danexclusivecommunity_public_moderator_key );
+      create.community_admin_key = string( danexclusivecommunity_public_admin_key );
+      create.community_secure_key = string( danexclusivecommunity_public_secure_key );
+      create.community_standard_premium_key = string( danexclusivecommunity_public_standard_premium_key );
+      create.community_mid_premium_key = string( danexclusivecommunity_public_mid_premium_key );
+      create.community_top_premium_key = string( danexclusivecommunity_public_top_premium_key );
+      create.interface = INIT_ACCOUNT;
+      create.reward_currency = SYMBOL_COIN;
+      create.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      create.mid_membership_price = MEMBERSHIP_FEE_MID;
+      create.top_membership_price = MEMBERSHIP_FEE_TOP;
+      create.verifiers.insert( INIT_ACCOUNT );
+      create.min_verification_count = 0;
+      create.max_verification_distance = 0;
+      create.max_rating = 9;
+      create.flags = 0;
+      create.permissions = COMMUNITY_PERMISSION_MASK;
       create.validate();
 
       tx.operations.push_back( create );
@@ -458,6 +767,8 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      generate_block();
 
       comment_operation comment;
 
@@ -543,19 +854,46 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
       update.signatory = "alice";
       update.account = "alice";
       update.community = "aliceopencommunity";
-      update.community_member_key = string( aliceopencommunity_public_member_key );
-      update.community_moderator_key = string( aliceopencommunity_public_moderator_key );
-      update.community_admin_key = string( aliceopencommunity_public_admin_key );
       update.display_name = "Alice's Updated Open Community";
       update.details = "updated details";
       update.url = "https://www.newurl.com";
       update.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       update.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       update.json = "{ \"valid\": true }";
-      update.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, aliceopencommunity_public_member_key, string( "#{ \"valid\": true }" ) );
-      update.tags.insert( "test" );
+      update.json_private = get_encrypted_message( aliceopencommunity_private_secure_key, aliceopencommunity_public_secure_key, aliceopencommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       update.pinned_author = "alice";
       update.pinned_permlink = "lorem";
+      update.tags.insert( "test" );
+      update.private_community = false;
+      update.author_permission = "all";
+      update.reply_permission = "all";
+      update.vote_permission = "all";
+      update.view_permission = "all";
+      update.share_permission = "all";
+      update.message_permission = "member";
+      update.poll_permission = "administrator";
+      update.event_permission = "administrator";
+      update.directive_permission = "member";
+      update.add_permission = "member";
+      update.request_permission = "all";
+      update.remove_permission = "administrator";
+      update.community_member_key = string( aliceopencommunity_public_member_key );
+      update.community_moderator_key = string( aliceopencommunity_public_moderator_key );
+      update.community_admin_key = string( aliceopencommunity_public_admin_key );
+      update.community_secure_key = string( aliceopencommunity_public_secure_key );
+      update.community_standard_premium_key = string( aliceopencommunity_public_standard_premium_key );
+      update.community_mid_premium_key = string( aliceopencommunity_public_mid_premium_key );
+      update.community_top_premium_key = string( aliceopencommunity_public_top_premium_key );
+      update.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      update.mid_membership_price = MEMBERSHIP_FEE_MID;
+      update.top_membership_price = MEMBERSHIP_FEE_TOP;
+      update.verifiers.insert( INIT_ACCOUNT );
+      update.min_verification_count = 0;
+      update.max_verification_distance = 0;
+      update.max_rating = 9;
+      update.flags = 0;
+      update.permissions = COMMUNITY_PERMISSION_MASK;
+      update.active = true;
       update.validate();
 
       tx.operations.push_back( update );
@@ -576,8 +914,47 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
 
       update.signatory = "bob";
       update.account = "bob";
-      update.pinned_author = "bob";
       update.community = "bobpubliccommunity";
+      update.display_name = "Bob's Updated Public Community";
+      update.details = "updated details";
+      update.url = "https://www.newurl.com";
+      update.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      update.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      update.json = "{ \"valid\": true }";
+      update.json_private = get_encrypted_message( bobpubliccommunity_private_secure_key, bobpubliccommunity_public_secure_key, bobpubliccommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      update.pinned_author = "bob";
+      update.pinned_permlink = "lorem";
+      update.tags.insert( "test" );
+      update.private_community = false;
+      update.author_permission = "member";
+      update.reply_permission = "all";
+      update.vote_permission = "all";
+      update.view_permission = "all";
+      update.share_permission = "all";
+      update.message_permission = "member";
+      update.poll_permission = "administrator";
+      update.event_permission = "administrator";
+      update.directive_permission = "member";
+      update.add_permission = "member";
+      update.request_permission = "all";
+      update.remove_permission = "administrator";
+      update.community_member_key = string( bobpubliccommunity_public_member_key );
+      update.community_moderator_key = string( bobpubliccommunity_public_moderator_key );
+      update.community_admin_key = string( bobpubliccommunity_public_admin_key );
+      update.community_secure_key = string( bobpubliccommunity_public_secure_key );
+      update.community_standard_premium_key = string( bobpubliccommunity_public_standard_premium_key );
+      update.community_mid_premium_key = string( bobpubliccommunity_public_mid_premium_key );
+      update.community_top_premium_key = string( bobpubliccommunity_public_top_premium_key );
+      update.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      update.mid_membership_price = MEMBERSHIP_FEE_MID;
+      update.top_membership_price = MEMBERSHIP_FEE_TOP;
+      update.verifiers.insert( INIT_ACCOUNT );
+      update.min_verification_count = 0;
+      update.max_verification_distance = 0;
+      update.max_rating = 9;
+      update.flags = 0;
+      update.permissions = COMMUNITY_PERMISSION_MASK;
+      update.active = true;
       update.validate();
 
       tx.operations.push_back( update );
@@ -596,8 +973,47 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
 
       update.signatory = "candice";
       update.account = "candice";
-      update.pinned_author = "candice";
       update.community = "candiceprivatecommunity";
+      update.display_name = "Candice's Updated Private Community";
+      update.details = "updated details";
+      update.url = "https://www.newurl.com";
+      update.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      update.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      update.json = "{ \"valid\": true }";
+      update.json_private = get_encrypted_message( candiceprivatecommunity_private_secure_key, candiceprivatecommunity_public_secure_key, candiceprivatecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      update.pinned_author = "candice";
+      update.pinned_permlink = "lorem";
+      update.tags.insert( "test" );
+      update.private_community = true;
+      update.author_permission = "member";
+      update.reply_permission = "member";
+      update.vote_permission = "member";
+      update.view_permission = "member";
+      update.share_permission = "member";
+      update.message_permission = "member";
+      update.poll_permission = "administrator";
+      update.event_permission = "administrator";
+      update.directive_permission = "member";
+      update.add_permission = "member";
+      update.request_permission = "all";
+      update.remove_permission = "administrator";
+      update.community_member_key = string( candiceprivatecommunity_public_member_key );
+      update.community_moderator_key = string( candiceprivatecommunity_public_moderator_key );
+      update.community_admin_key = string( candiceprivatecommunity_public_admin_key );
+      update.community_secure_key = string( candiceprivatecommunity_public_secure_key );
+      update.community_standard_premium_key = string( candiceprivatecommunity_public_standard_premium_key );
+      update.community_mid_premium_key = string( candiceprivatecommunity_public_mid_premium_key );
+      update.community_top_premium_key = string( candiceprivatecommunity_public_top_premium_key );
+      update.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      update.mid_membership_price = MEMBERSHIP_FEE_MID;
+      update.top_membership_price = MEMBERSHIP_FEE_TOP;
+      update.verifiers.insert( INIT_ACCOUNT );
+      update.min_verification_count = 0;
+      update.max_verification_distance = 0;
+      update.max_rating = 9;
+      update.flags = 0;
+      update.permissions = COMMUNITY_PERMISSION_MASK;
+      update.active = true;
       update.validate();
 
       tx.operations.push_back( update );
@@ -616,8 +1032,47 @@ BOOST_AUTO_TEST_CASE( community_update_operation_test )
 
       update.signatory = "dan";
       update.account = "dan";
-      update.pinned_author = "dan";
       update.community = "danexclusivecommunity";
+      update.display_name = "Dan's Updated Exclusive Community";
+      update.details = "updated details";
+      update.url = "https://www.newurl.com";
+      update.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      update.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      update.json = "{ \"valid\": true }";
+      update.json_private = get_encrypted_message( danexclusivecommunity_private_secure_key, danexclusivecommunity_public_secure_key, danexclusivecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      update.pinned_author = "dan";
+      update.pinned_permlink = "lorem";
+      update.tags.insert( "test" );
+      update.private_community = true;
+      update.author_permission = "member";
+      update.reply_permission = "member";
+      update.vote_permission = "member";
+      update.view_permission = "member";
+      update.share_permission = "member";
+      update.message_permission = "member";
+      update.poll_permission = "administrator";
+      update.event_permission = "administrator";
+      update.directive_permission = "member";
+      update.add_permission = "administrator";
+      update.request_permission = "member";
+      update.remove_permission = "administrator";
+      update.community_member_key = string( danexclusivecommunity_public_member_key );
+      update.community_moderator_key = string( danexclusivecommunity_public_moderator_key );
+      update.community_admin_key = string( danexclusivecommunity_public_admin_key );
+      update.community_secure_key = string( danexclusivecommunity_public_secure_key );
+      update.community_standard_premium_key = string( danexclusivecommunity_public_standard_premium_key );
+      update.community_mid_premium_key = string( danexclusivecommunity_public_mid_premium_key );
+      update.community_top_premium_key = string( danexclusivecommunity_public_top_premium_key );
+      update.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      update.mid_membership_price = MEMBERSHIP_FEE_MID;
+      update.top_membership_price = MEMBERSHIP_FEE_TOP;
+      update.verifiers.insert( INIT_ACCOUNT );
+      update.min_verification_count = 0;
+      update.max_verification_distance = 0;
+      update.max_rating = 9;
+      update.flags = 0;
+      update.permissions = COMMUNITY_PERMISSION_MASK;
+      update.active = true;
       update.validate();
 
       tx.operations.push_back( update );
@@ -678,7 +1133,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
    {
       BOOST_TEST_MESSAGE( "├── Passed: COMMUNITY MANAGEMENT OPERATION SEQUENCE" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: Founder invite members" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Founder create communities" );
 
       ACTORS( (alice)(bob)(candice)(dan)(elon)(fred)(george)(haz)(isabelle)
          (jayme)(kathryn)(leonie)(margot)(natalie) );
@@ -722,34 +1177,66 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       public_key_type aliceopencommunity_public_member_key = get_public_key( "aliceopencommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type aliceopencommunity_public_moderator_key = get_public_key( "aliceopencommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type aliceopencommunity_public_admin_key = get_public_key( "aliceopencommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type aliceopencommunity_public_secure_key = get_public_key( "aliceopencommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type aliceopencommunity_public_standard_premium_key = get_public_key( "aliceopencommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type aliceopencommunity_public_mid_premium_key = get_public_key( "aliceopencommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type aliceopencommunity_public_top_premium_key = get_public_key( "aliceopencommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       private_key_type aliceopencommunity_private_member_key = get_private_key( "aliceopencommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type aliceopencommunity_private_moderator_key = get_private_key( "aliceopencommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type aliceopencommunity_private_admin_key = get_private_key( "aliceopencommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type aliceopencommunity_private_secure_key = get_private_key( "aliceopencommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type aliceopencommunity_private_standard_premium_key = get_private_key( "aliceopencommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type aliceopencommunity_private_mid_premium_key = get_private_key( "aliceopencommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type aliceopencommunity_private_top_premium_key = get_private_key( "aliceopencommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       public_key_type bobpubliccommunity_public_member_key = get_public_key( "bobpubliccommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type bobpubliccommunity_public_moderator_key = get_public_key( "bobpubliccommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type bobpubliccommunity_public_admin_key = get_public_key( "bobpubliccommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type bobpubliccommunity_public_secure_key = get_public_key( "bobpubliccommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type bobpubliccommunity_public_standard_premium_key = get_public_key( "bobpubliccommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type bobpubliccommunity_public_mid_premium_key = get_public_key( "bobpubliccommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type bobpubliccommunity_public_top_premium_key = get_public_key( "bobpubliccommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       private_key_type bobpubliccommunity_private_member_key = get_private_key( "bobpubliccommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type bobpubliccommunity_private_moderator_key = get_private_key( "bobpubliccommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type bobpubliccommunity_private_admin_key = get_private_key( "bobpubliccommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type bobpubliccommunity_private_secure_key = get_private_key( "bobpubliccommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type bobpubliccommunity_private_standard_premium_key = get_private_key( "bobpubliccommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type bobpubliccommunity_private_mid_premium_key = get_private_key( "bobpubliccommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type bobpubliccommunity_private_top_premium_key = get_private_key( "bobpubliccommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       public_key_type candiceprivatecommunity_public_member_key = get_public_key( "candiceprivatecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type candiceprivatecommunity_public_moderator_key = get_public_key( "candiceprivatecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type candiceprivatecommunity_public_admin_key = get_public_key( "candiceprivatecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type candiceprivatecommunity_public_secure_key = get_public_key( "candiceprivatecommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type candiceprivatecommunity_public_standard_premium_key = get_public_key( "candiceprivatecommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type candiceprivatecommunity_public_mid_premium_key = get_public_key( "candiceprivatecommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type candiceprivatecommunity_public_top_premium_key = get_public_key( "candiceprivatecommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       private_key_type candiceprivatecommunity_private_member_key = get_private_key( "candiceprivatecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type candiceprivatecommunity_private_moderator_key = get_private_key( "candiceprivatecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type candiceprivatecommunity_private_admin_key = get_private_key( "candiceprivatecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type candiceprivatecommunity_private_secure_key = get_private_key( "candiceprivatecommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type candiceprivatecommunity_private_standard_premium_key = get_private_key( "candiceprivatecommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type candiceprivatecommunity_private_mid_premium_key = get_private_key( "candiceprivatecommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type candiceprivatecommunity_private_top_premium_key = get_private_key( "candiceprivatecommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       public_key_type danexclusivecommunity_public_member_key = get_public_key( "danexclusivecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type danexclusivecommunity_public_moderator_key = get_public_key( "danexclusivecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       public_key_type danexclusivecommunity_public_admin_key = get_public_key( "danexclusivecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type danexclusivecommunity_public_secure_key = get_public_key( "danexclusivecommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type danexclusivecommunity_public_standard_premium_key = get_public_key( "danexclusivecommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type danexclusivecommunity_public_mid_premium_key = get_public_key( "danexclusivecommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type danexclusivecommunity_public_top_premium_key = get_public_key( "danexclusivecommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       private_key_type danexclusivecommunity_private_member_key = get_private_key( "danexclusivecommunity", MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type danexclusivecommunity_private_moderator_key = get_private_key( "danexclusivecommunity", MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       private_key_type danexclusivecommunity_private_admin_key = get_private_key( "danexclusivecommunity", ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type danexclusivecommunity_private_secure_key = get_private_key( "danexclusivecommunity", SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type danexclusivecommunity_private_standard_premium_key = get_private_key( "danexclusivecommunity", STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type danexclusivecommunity_private_mid_premium_key = get_private_key( "danexclusivecommunity", MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type danexclusivecommunity_private_top_premium_key = get_private_key( "danexclusivecommunity", TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       generate_blocks( now() + fc::days(2), true );
 
@@ -760,18 +1247,45 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       create.signatory = "alice";
       create.founder = "alice";
       create.name = "aliceopencommunity";
-      create.community_privacy = "open_public";
-      create.community_member_key = string( aliceopencommunity_public_member_key );
-      create.community_moderator_key = string( aliceopencommunity_public_moderator_key );
-      create.community_admin_key = string( aliceopencommunity_public_admin_key );
       create.display_name = "Alice Open Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, aliceopencommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      create.json_private = get_encrypted_message( aliceopencommunity_private_secure_key, aliceopencommunity_public_secure_key, aliceopencommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
+      create.private_community = false;
+      create.author_permission = "all";
+      create.reply_permission = "all";
+      create.vote_permission = "all";
+      create.view_permission = "all";
+      create.share_permission = "all";
+      create.message_permission = "member";
+      create.poll_permission = "administrator";
+      create.event_permission = "administrator";
+      create.directive_permission = "member";
+      create.add_permission = "member";
+      create.request_permission = "all";
+      create.remove_permission = "administrator";
+      create.community_member_key = string( aliceopencommunity_public_member_key );
+      create.community_moderator_key = string( aliceopencommunity_public_moderator_key );
+      create.community_admin_key = string( aliceopencommunity_public_admin_key );
+      create.community_secure_key = string( aliceopencommunity_public_secure_key );
+      create.community_standard_premium_key = string( aliceopencommunity_public_standard_premium_key );
+      create.community_mid_premium_key = string( aliceopencommunity_public_mid_premium_key );
+      create.community_top_premium_key = string( aliceopencommunity_public_top_premium_key );
+      create.interface = INIT_ACCOUNT;
+      create.reward_currency = SYMBOL_COIN;
+      create.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      create.mid_membership_price = MEMBERSHIP_FEE_MID;
+      create.top_membership_price = MEMBERSHIP_FEE_TOP;
+      create.verifiers.insert( INIT_ACCOUNT );
+      create.min_verification_count = 0;
+      create.max_verification_distance = 0;
+      create.max_rating = 9;
+      create.flags = 0;
+      create.permissions = COMMUNITY_PERMISSION_MASK;
       create.validate();
 
       tx.operations.push_back( create );
@@ -780,117 +1294,195 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
+      tx.operations.clear();
+      tx.signatures.clear();
+
       const community_object& alice_community = db.get_community( create.name );
-      const community_member_object& alice_community_member = db.get_community_member( create.name );
+      const community_permission_object& alice_community_permission = db.get_community_permission( create.name );
 
       BOOST_REQUIRE( alice_community.founder == create.founder );
-      BOOST_REQUIRE( alice_community.community_privacy == community_privacy_type::OPEN_PUBLIC_COMMUNITY );
       BOOST_REQUIRE( alice_community.community_member_key == public_key_type( create.community_member_key ) );
       BOOST_REQUIRE( alice_community.community_moderator_key == public_key_type( create.community_moderator_key ) );
       BOOST_REQUIRE( alice_community.community_admin_key == public_key_type( create.community_admin_key ) );
 
-      BOOST_REQUIRE( alice_community_member.founder == create.founder );
-      BOOST_REQUIRE( alice_community_member.is_administrator( create.founder ) );
-      BOOST_REQUIRE( alice_community_member.is_moderator( create.founder ) );
-      BOOST_REQUIRE( alice_community_member.is_member( create.founder ) );
-      BOOST_REQUIRE( alice_community_member.is_subscriber( create.founder ) );
-
-      tx.operations.clear();
-      tx.signatures.clear();
+      BOOST_REQUIRE( alice_community_permission.founder == create.founder );
+      BOOST_REQUIRE( alice_community_permission.is_administrator( create.founder ) );
+      BOOST_REQUIRE( alice_community_permission.is_moderator( create.founder ) );
+      BOOST_REQUIRE( alice_community_permission.is_member( create.founder ) );
+      BOOST_REQUIRE( alice_community_permission.is_subscriber( create.founder ) );
 
       create.signatory = "bob";
       create.founder = "bob";
       create.name = "bobpubliccommunity";
-      create.community_privacy = "exclusive_public";
-      create.community_member_key = string( bobpubliccommunity_public_member_key );
-      create.community_moderator_key = string( bobpubliccommunity_public_moderator_key );
-      create.community_admin_key = string( bobpubliccommunity_public_admin_key );
       create.display_name = "Bob Public Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, bobpubliccommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      create.json_private = get_encrypted_message( bobpubliccommunity_private_secure_key, bobpubliccommunity_public_secure_key, bobpubliccommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
+      create.private_community = false;
+      create.author_permission = "member";
+      create.reply_permission = "all";
+      create.vote_permission = "all";
+      create.view_permission = "all";
+      create.share_permission = "all";
+      create.message_permission = "member";
+      create.poll_permission = "administrator";
+      create.event_permission = "administrator";
+      create.directive_permission = "member";
+      create.add_permission = "member";
+      create.request_permission = "all";
+      create.remove_permission = "administrator";
+      create.community_member_key = string( bobpubliccommunity_public_member_key );
+      create.community_moderator_key = string( bobpubliccommunity_public_moderator_key );
+      create.community_admin_key = string( bobpubliccommunity_public_admin_key );
+      create.community_secure_key = string( bobpubliccommunity_public_secure_key );
+      create.community_standard_premium_key = string( bobpubliccommunity_public_standard_premium_key );
+      create.community_mid_premium_key = string( bobpubliccommunity_public_mid_premium_key );
+      create.community_top_premium_key = string( bobpubliccommunity_public_top_premium_key );
+      create.interface = INIT_ACCOUNT;
+      create.reward_currency = SYMBOL_COIN;
+      create.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      create.mid_membership_price = MEMBERSHIP_FEE_MID;
+      create.top_membership_price = MEMBERSHIP_FEE_TOP;
+      create.verifiers.insert( INIT_ACCOUNT );
+      create.min_verification_count = 0;
+      create.max_verification_distance = 0;
+      create.max_rating = 9;
+      create.flags = 0;
+      create.permissions = COMMUNITY_PERMISSION_MASK;
       create.validate();
 
       tx.operations.push_back( create );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
+      tx.operations.clear();
+      tx.signatures.clear();
+
       const community_object& bob_community = db.get_community( create.name );
-      const community_member_object& bob_community_member = db.get_community_member( create.name );
+      const community_permission_object& bob_community_permission = db.get_community_permission( create.name );
 
       BOOST_REQUIRE( bob_community.founder == create.founder );
-      BOOST_REQUIRE( bob_community.community_privacy == community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY );
       BOOST_REQUIRE( bob_community.community_member_key == public_key_type( create.community_member_key ) );
       BOOST_REQUIRE( bob_community.community_moderator_key == public_key_type( create.community_moderator_key ) );
       BOOST_REQUIRE( bob_community.community_admin_key == public_key_type( create.community_admin_key ) );
 
-      BOOST_REQUIRE( bob_community_member.founder == create.founder );
-      BOOST_REQUIRE( bob_community_member.is_administrator( create.founder ) );
-      BOOST_REQUIRE( bob_community_member.is_moderator( create.founder ) );
-      BOOST_REQUIRE( bob_community_member.is_member( create.founder ) );
-      BOOST_REQUIRE( bob_community_member.is_subscriber( create.founder ) );
-
-      tx.operations.clear();
-      tx.signatures.clear();
+      BOOST_REQUIRE( bob_community_permission.founder == create.founder );
+      BOOST_REQUIRE( bob_community_permission.is_administrator( create.founder ) );
+      BOOST_REQUIRE( bob_community_permission.is_moderator( create.founder ) );
+      BOOST_REQUIRE( bob_community_permission.is_member( create.founder ) );
+      BOOST_REQUIRE( bob_community_permission.is_subscriber( create.founder ) );
 
       create.signatory = "candice";
       create.founder = "candice";
       create.name = "candiceprivatecommunity";
-      create.community_privacy = "open_private";
-      create.community_member_key = string( candiceprivatecommunity_public_member_key );
-      create.community_moderator_key = string( candiceprivatecommunity_public_moderator_key );
-      create.community_admin_key = string( candiceprivatecommunity_public_admin_key );
       create.display_name = "Candice Private Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, candiceprivatecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      create.json_private = get_encrypted_message( candiceprivatecommunity_private_secure_key, candiceprivatecommunity_public_secure_key, candiceprivatecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
+      create.private_community = true;
+      create.author_permission = "member";
+      create.reply_permission = "member";
+      create.vote_permission = "member";
+      create.view_permission = "member";
+      create.share_permission = "member";
+      create.message_permission = "member";
+      create.poll_permission = "administrator";
+      create.event_permission = "administrator";
+      create.directive_permission = "member";
+      create.add_permission = "member";
+      create.request_permission = "all";
+      create.remove_permission = "administrator";
+      create.community_member_key = string( candiceprivatecommunity_public_member_key );
+      create.community_moderator_key = string( candiceprivatecommunity_public_moderator_key );
+      create.community_admin_key = string( candiceprivatecommunity_public_admin_key );
+      create.community_secure_key = string( candiceprivatecommunity_public_secure_key );
+      create.community_standard_premium_key = string( candiceprivatecommunity_public_standard_premium_key );
+      create.community_mid_premium_key = string( candiceprivatecommunity_public_mid_premium_key );
+      create.community_top_premium_key = string( candiceprivatecommunity_public_top_premium_key );
+      create.interface = INIT_ACCOUNT;
+      create.reward_currency = SYMBOL_COIN;
+      create.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      create.mid_membership_price = MEMBERSHIP_FEE_MID;
+      create.top_membership_price = MEMBERSHIP_FEE_TOP;
+      create.verifiers.insert( INIT_ACCOUNT );
+      create.min_verification_count = 0;
+      create.max_verification_distance = 0;
+      create.max_rating = 9;
+      create.flags = 0;
+      create.permissions = COMMUNITY_PERMISSION_MASK;
       create.validate();
 
       tx.operations.push_back( create );
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
+      tx.operations.clear();
+      tx.signatures.clear();
+
       const community_object& candice_community = db.get_community( create.name );
-      const community_member_object& candice_community_member = db.get_community_member( create.name );
+      const community_permission_object& candice_community_permission = db.get_community_permission( create.name );
 
       BOOST_REQUIRE( candice_community.founder == create.founder );
-      BOOST_REQUIRE( candice_community.community_privacy == community_privacy_type::OPEN_PRIVATE_COMMUNITY );
       BOOST_REQUIRE( candice_community.community_member_key == public_key_type( create.community_member_key ) );
       BOOST_REQUIRE( candice_community.community_moderator_key == public_key_type( create.community_moderator_key ) );
       BOOST_REQUIRE( candice_community.community_admin_key == public_key_type( create.community_admin_key ) );
 
-      BOOST_REQUIRE( candice_community_member.founder == create.founder );
-      BOOST_REQUIRE( candice_community_member.is_administrator( create.founder ) );
-      BOOST_REQUIRE( candice_community_member.is_moderator( create.founder ) );
-      BOOST_REQUIRE( candice_community_member.is_member( create.founder ) );
-      BOOST_REQUIRE( candice_community_member.is_subscriber( create.founder ) );
-
-      tx.operations.clear();
-      tx.signatures.clear();
+      BOOST_REQUIRE( candice_community_permission.founder == create.founder );
+      BOOST_REQUIRE( candice_community_permission.is_administrator( create.founder ) );
+      BOOST_REQUIRE( candice_community_permission.is_moderator( create.founder ) );
+      BOOST_REQUIRE( candice_community_permission.is_member( create.founder ) );
+      BOOST_REQUIRE( candice_community_permission.is_subscriber( create.founder ) );
 
       create.signatory = "dan";
       create.founder = "dan";
       create.name = "danexclusivecommunity";
-      create.community_privacy = "exclusive_private";
-      create.community_member_key = string( danexclusivecommunity_public_member_key );
-      create.community_moderator_key = string( danexclusivecommunity_public_moderator_key );
-      create.community_admin_key = string( danexclusivecommunity_public_admin_key );
       create.display_name = "Dan Exclusive Community";
       create.details = "details";
       create.url = "https://www.url.com";
       create.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       create.json = "{ \"valid\": true }";
-      create.json_private = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, danexclusivecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      create.json_private = get_encrypted_message( danexclusivecommunity_private_secure_key, danexclusivecommunity_public_secure_key, danexclusivecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       create.tags.insert( "test" );
+      create.private_community = true;
+      create.author_permission = "member";
+      create.reply_permission = "member";
+      create.vote_permission = "member";
+      create.view_permission = "member";
+      create.share_permission = "member";
+      create.message_permission = "member";
+      create.poll_permission = "administrator";
+      create.event_permission = "administrator";
+      create.directive_permission = "member";
+      create.add_permission = "administrator";
+      create.request_permission = "member";
+      create.remove_permission = "administrator";
+      create.community_member_key = string( danexclusivecommunity_public_member_key );
+      create.community_moderator_key = string( danexclusivecommunity_public_moderator_key );
+      create.community_admin_key = string( danexclusivecommunity_public_admin_key );
+      create.community_secure_key = string( danexclusivecommunity_public_secure_key );
+      create.community_standard_premium_key = string( danexclusivecommunity_public_standard_premium_key );
+      create.community_mid_premium_key = string( danexclusivecommunity_public_mid_premium_key );
+      create.community_top_premium_key = string( danexclusivecommunity_public_top_premium_key );
+      create.interface = INIT_ACCOUNT;
+      create.reward_currency = SYMBOL_COIN;
+      create.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      create.mid_membership_price = MEMBERSHIP_FEE_MID;
+      create.top_membership_price = MEMBERSHIP_FEE_TOP;
+      create.verifiers.insert( INIT_ACCOUNT );
+      create.min_verification_count = 0;
+      create.max_verification_distance = 0;
+      create.max_rating = 9;
+      create.flags = 0;
+      create.permissions = COMMUNITY_PERMISSION_MASK;
       create.validate();
 
       tx.operations.push_back( create );
@@ -900,195 +1492,36 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      generate_block();
+
       const community_object& dan_community = db.get_community( create.name );
-      const community_member_object& dan_community_member = db.get_community_member( create.name );
+      const community_permission_object& dan_community_permission = db.get_community_permission( create.name );
 
       BOOST_REQUIRE( dan_community.founder == create.founder );
-      BOOST_REQUIRE( dan_community.community_privacy == community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY );
       BOOST_REQUIRE( dan_community.community_member_key == public_key_type( create.community_member_key ) );
       BOOST_REQUIRE( dan_community.community_moderator_key == public_key_type( create.community_moderator_key ) );
       BOOST_REQUIRE( dan_community.community_admin_key == public_key_type( create.community_admin_key ) );
 
-      BOOST_REQUIRE( dan_community_member.founder == create.founder );
-      BOOST_REQUIRE( dan_community_member.is_administrator( create.founder ) );
-      BOOST_REQUIRE( dan_community_member.is_moderator( create.founder ) );
-      BOOST_REQUIRE( dan_community_member.is_member( create.founder ) );
-      BOOST_REQUIRE( dan_community_member.is_subscriber( create.founder ) );
+      BOOST_REQUIRE( dan_community_permission.founder == create.founder );
+      BOOST_REQUIRE( dan_community_permission.is_administrator( create.founder ) );
+      BOOST_REQUIRE( dan_community_permission.is_moderator( create.founder ) );
+      BOOST_REQUIRE( dan_community_permission.is_member( create.founder ) );
+      BOOST_REQUIRE( dan_community_permission.is_subscriber( create.founder ) );
 
-      community_join_invite_operation invite;
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Founder create communities" );
 
-      invite.signatory = "alice";
-      invite.account = "alice";
-      invite.member = "elon";
-      invite.community = "aliceopencommunity";
-      invite.message = "Hello";
-      invite.encrypted_community_key = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( aliceopencommunity_private_member_key ) );
-      invite.invited = true;
-      invite.validate();
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Community join requests" );
 
-      tx.operations.push_back( invite );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      const auto& invite_idx = db.get_index< community_join_invite_index >().indices().get< by_member_community >();
-
-      auto invite_itr = invite_idx.find( boost::make_tuple( invite.member, invite.community ) );
-
-      BOOST_REQUIRE( invite_itr != invite_idx.end() );
-      BOOST_REQUIRE( invite_itr->account == invite.account );
-      BOOST_REQUIRE( invite_itr->member == invite.member );
-      BOOST_REQUIRE( invite_itr->community == invite.community );
-      BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      invite.signatory = "bob";
-      invite.account = "bob";
-      invite.community = "bobpubliccommunity";
-      invite.encrypted_community_key = get_encrypted_message( bob_private_secure_key, bob_public_secure_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( bobpubliccommunity_private_member_key ) );
-   
-      tx.operations.push_back( invite );
-      tx.sign( bob_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      invite_itr = invite_idx.find( boost::make_tuple( invite.member, invite.community ) );
-
-      BOOST_REQUIRE( invite_itr != invite_idx.end() );
-      BOOST_REQUIRE( invite_itr->account == invite.account );
-      BOOST_REQUIRE( invite_itr->member == invite.member );
-      BOOST_REQUIRE( invite_itr->community == invite.community );
-      BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      invite.signatory = "candice";
-      invite.account = "candice";
-      invite.community = "candiceprivatecommunity";
-      invite.encrypted_community_key = get_encrypted_message( candice_private_secure_key, candice_public_secure_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( candiceprivatecommunity_private_member_key ) );
-   
-      tx.operations.push_back( invite );
-      tx.sign( candice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      invite_itr = invite_idx.find( boost::make_tuple( invite.member, invite.community ) );
-
-      BOOST_REQUIRE( invite_itr != invite_idx.end() );
-      BOOST_REQUIRE( invite_itr->account == invite.account );
-      BOOST_REQUIRE( invite_itr->member == invite.member );
-      BOOST_REQUIRE( invite_itr->community == invite.community );
-      BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      invite.signatory = "dan";
-      invite.account = "dan";
-      invite.community = "danexclusivecommunity";
-      invite.encrypted_community_key = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( danexclusivecommunity_private_member_key ) );
-   
-      tx.operations.push_back( invite );
-      tx.sign( dan_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      invite_itr = invite_idx.find( boost::make_tuple( invite.member, invite.community ) );
-
-      BOOST_REQUIRE( invite_itr != invite_idx.end() );
-      BOOST_REQUIRE( invite_itr->account == invite.account );
-      BOOST_REQUIRE( invite_itr->member == invite.member );
-      BOOST_REQUIRE( invite_itr->community == invite.community );
-      BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      invite.signatory = "dan";
-      invite.account = "dan";
-      invite.member = "fred";
-      invite.community = "danexclusivecommunity";
-      invite.encrypted_community_key = get_encrypted_message( dan_private_secure_key, dan_public_secure_key, fred_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( danexclusivecommunity_private_member_key ) );
-   
-      tx.operations.push_back( invite );
-      tx.sign( dan_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      invite_itr = invite_idx.find( boost::make_tuple( invite.member, invite.community ) );
-
-      BOOST_REQUIRE( invite_itr != invite_idx.end() );
-      BOOST_REQUIRE( invite_itr->account == invite.account );
-      BOOST_REQUIRE( invite_itr->member == invite.member );
-      BOOST_REQUIRE( invite_itr->community == invite.community );
-      BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: founder invite members" );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: failure when non-member sends invites" );
-
-      invite.signatory = "elon";
-      invite.account = "elon";
-      invite.member = "george";
-      invite.community = "aliceopencommunity";
-      invite.message = "Hello";
-      invite.encrypted_community_key = get_encrypted_message( elon_private_secure_key, elon_public_secure_key, george_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( aliceopencommunity_private_member_key ) );
-      invite.invited = true;
-
-      tx.operations.push_back( invite );
-      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.set_reference_block( db.head_block_id() );
-      tx.sign( elon_private_active_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-member cannot send invitations
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      invite.member = "haz";
-      invite.community = "bobpubliccommunity";
-      invite.encrypted_community_key = get_encrypted_message( elon_private_secure_key, elon_public_secure_key, haz_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( bobpubliccommunity_private_member_key ) );
-   
-      tx.operations.push_back( invite );
-      tx.sign( elon_private_posting_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-member cannot send invitations
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      invite.member = "isabelle";
-      invite.community = "candiceprivatecommunity";
-      invite.encrypted_community_key = get_encrypted_message( elon_private_secure_key, elon_public_secure_key, isabelle_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( candiceprivatecommunity_private_member_key ) );
-   
-      tx.operations.push_back( invite );
-      tx.sign( elon_private_active_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-member cannot send invitations
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      invite.member = "jayme";
-      invite.community = "danexclusivecommunity";
-      invite.encrypted_community_key = get_encrypted_message( elon_private_secure_key, elon_public_secure_key, jayme_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( danexclusivecommunity_private_member_key ) );
-   
-      tx.operations.push_back( invite );
-      tx.sign( elon_private_posting_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-member cannot send invitations
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: failure when non-member sends invites" );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: community join request" );
-
-      community_join_request_operation request;
+      community_member_request_operation request;
 
       request.signatory = "fred";
       request.account = "fred";
       request.community = "aliceopencommunity";
-      request.message = "Hello";
+      request.message = get_encrypted_message( fred_private_secure_key, fred_public_secure_key, aliceopencommunity_public_member_key, string( "#Hello" ) );
+      request.interface = INIT_ACCOUNT;
+      request.member_type = "member";
       request.requested = true;
+      request.expiration = now() + fc::days(31);
       request.validate();
 
       tx.operations.push_back( request );
@@ -1097,577 +1530,432 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( fred_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const auto& request_idx = db.get_index< community_join_request_index >().indices().get< by_account_community >();
-      auto request_itr = request_idx.find( boost::make_tuple( request.account, request.community ) );
+      const auto& request_idx = db.get_index< community_member_request_index >().indices().get< by_account_community_type >();
+      auto request_itr = request_idx.find( boost::make_tuple( request.account, request.community, community_permission_type::MEMBER_PERMISSION ) );
 
       BOOST_REQUIRE( request_itr != request_idx.end() );
       BOOST_REQUIRE( request_itr->account == request.account );
       BOOST_REQUIRE( request_itr->community == request.community );
-      BOOST_REQUIRE( request_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       request.community = "bobpubliccommunity";
+      request.message = get_encrypted_message( fred_private_secure_key, fred_public_secure_key, bobpubliccommunity_public_member_key, string( "#Hello" ) );
    
       tx.operations.push_back( request );
       tx.sign( fred_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      request_itr = request_idx.find( boost::make_tuple( request.account, request.community ) );
+      request_itr = request_idx.find( boost::make_tuple( request.account, request.community, community_permission_type::MEMBER_PERMISSION ) );
 
       BOOST_REQUIRE( request_itr != request_idx.end() );
       BOOST_REQUIRE( request_itr->account == request.account );
       BOOST_REQUIRE( request_itr->community == request.community );
-      BOOST_REQUIRE( request_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       request.community = "candiceprivatecommunity";
+      request.message = get_encrypted_message( fred_private_secure_key, fred_public_secure_key, candiceprivatecommunity_public_member_key, string( "#Hello" ) );
    
       tx.operations.push_back( request );
       tx.sign( fred_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      request_itr = request_idx.find( boost::make_tuple( request.account, request.community ) );
+      request_itr = request_idx.find( boost::make_tuple( request.account, request.community, community_permission_type::MEMBER_PERMISSION ) );
 
       BOOST_REQUIRE( request_itr != request_idx.end() );
       BOOST_REQUIRE( request_itr->account == request.account );
       BOOST_REQUIRE( request_itr->community == request.community );
-      BOOST_REQUIRE( request_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
 
       tx.operations.clear();
       tx.signatures.clear();
 
       request.community = "danexclusivecommunity";
+      request.message = get_encrypted_message( fred_private_secure_key, fred_public_secure_key, danexclusivecommunity_public_member_key, string( "#Hello" ) );
    
       tx.operations.push_back( request );
       tx.sign( fred_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // No join requests for exclusive community
 
-      request_itr = request_idx.find( boost::make_tuple( request.account, request.community ) );
+      request_itr = request_idx.find( boost::make_tuple( request.account, request.community, community_permission_type::MEMBER_PERMISSION ) );
 
       BOOST_REQUIRE( request_itr == request_idx.end() );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: community join request" );
+      generate_block();
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: accept invite by incoming member" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Community join requests" );
+      
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Founder add community members" );
 
-      community_invite_accept_operation invite_accept;
+      community_member_operation community_member;
 
-      invite_accept.signatory = "elon";
-      invite_accept.account = "elon";
-      invite_accept.community = "aliceopencommunity";
-      invite_accept.accepted = true;
-      invite_accept.validate();
+      community_member.signatory = "alice";
+      community_member.account = "alice";
+      community_member.member = "fred";
+      community_member.community = "aliceopencommunity";
+      community_member.interface = INIT_ACCOUNT;
+      community_member.member_type = "member";
+      community_member.encrypted_community_key = get_encrypted_message( aliceopencommunity_private_member_key, aliceopencommunity_public_member_key, fred_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( aliceopencommunity_private_member_key ) );
+      community_member.accepted = true;
+      community_member.expiration = now() + fc::days(31);
+      community_member.validate();
 
-      tx.operations.push_back( invite_accept );
-      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.set_reference_block( db.head_block_id() );
-      tx.sign( elon_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_community_member( invite_accept.community ).is_member( invite_accept.account ) );
-      invite_itr = invite_idx.find( boost::make_tuple( invite_accept.account, invite_accept.community ) );
-      BOOST_REQUIRE( invite_itr == invite_idx.end() );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      invite_accept.community = "bobpubliccommunity";
-
-      tx.operations.push_back( invite_accept );
-      tx.sign( elon_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_community_member( invite_accept.community ).is_member( invite_accept.account ) );
-      invite_itr = invite_idx.find( boost::make_tuple( invite_accept.account, invite_accept.community ) );
-      BOOST_REQUIRE( invite_itr == invite_idx.end() );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      invite_accept.community = "candiceprivatecommunity";
-
-      tx.operations.push_back( invite_accept );
-      tx.sign( elon_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_community_member( invite_accept.community ).is_member( invite_accept.account ) );
-      invite_itr = invite_idx.find( boost::make_tuple( invite_accept.account, invite_accept.community ) );
-      BOOST_REQUIRE( invite_itr == invite_idx.end() );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      invite_accept.community = "danexclusivecommunity";
-
-      tx.operations.push_back( invite_accept );
-      tx.sign( elon_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_community_member( invite_accept.community ).is_member( invite_accept.account ) );
-      invite_itr = invite_idx.find( boost::make_tuple( invite_accept.account, invite_accept.community ) );
-      BOOST_REQUIRE( invite_itr == invite_idx.end() );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      invite_accept.signatory = "fred";
-      invite_accept.account = "fred";
-
-      tx.operations.push_back( invite_accept );
-      tx.sign( fred_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_community_member( invite_accept.community ).is_member( invite_accept.account ) );
-      invite_itr = invite_idx.find( boost::make_tuple( invite_accept.account, invite_accept.community ) );
-      BOOST_REQUIRE( invite_itr == invite_idx.end() );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: accept invite by incoming member" );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: founder accept join request" );
-
-      community_join_accept_operation join_accept;
-
-      join_accept.signatory = "alice";
-      join_accept.account = "alice";
-      join_accept.member = "fred";
-      join_accept.community = "aliceopencommunity";
-      join_accept.encrypted_community_key = string( alice_public_posting_key );
-      join_accept.accepted = true;
-      join_accept.validate();
-
-      tx.operations.push_back( join_accept );
+      tx.operations.push_back( community_member );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.set_reference_block( db.head_block_id() );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( join_accept.community ).is_member( join_accept.member ) );
-      request_itr = request_idx.find( boost::make_tuple( join_accept.member, join_accept.community ) );
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_member( community_member.member ) );
+      request_itr = request_idx.find( boost::make_tuple( community_member.member, community_member.community ) );
       BOOST_REQUIRE( request_itr == request_idx.end() );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      join_accept.signatory = "bob";
-      join_accept.account = "bob";
-      join_accept.community = "bobpubliccommunity";
-      join_accept.encrypted_community_key = string( bob_public_posting_key );
+      community_member.signatory = "bob";
+      community_member.account = "bob";
+      community_member.community = "bobpubliccommunity";
+      community_member.encrypted_community_key = get_encrypted_message( bobpubliccommunity_private_member_key, bobpubliccommunity_public_member_key, fred_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( bobpubliccommunity_private_member_key ) );
 
-      tx.operations.push_back( join_accept );
+      tx.operations.push_back( community_member );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( join_accept.community ).is_member( join_accept.member ) );
-      request_itr = request_idx.find( boost::make_tuple( join_accept.member, join_accept.community ) );
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_member( community_member.member ) );
+      request_itr = request_idx.find( boost::make_tuple( community_member.member, community_member.community ) );
       BOOST_REQUIRE( request_itr == request_idx.end() );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      join_accept.signatory = "candice";
-      join_accept.account = "candice";
-      join_accept.community = "candiceprivatecommunity";
-      join_accept.encrypted_community_key = string( candice_public_posting_key );
+      community_member.signatory = "candice";
+      community_member.account = "candice";
+      community_member.community = "candiceprivatecommunity";
+      community_member.encrypted_community_key = get_encrypted_message( candiceprivatecommunity_private_member_key, candiceprivatecommunity_public_member_key, fred_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( candiceprivatecommunity_private_member_key ) );
       
-      tx.operations.push_back( join_accept );
+      tx.operations.push_back( community_member );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( join_accept.community ).is_member( join_accept.member ) );
-      request_itr = request_idx.find( boost::make_tuple( join_accept.member, join_accept.community ) );
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_member( community_member.member ) );
+      request_itr = request_idx.find( boost::make_tuple( community_member.member, community_member.community ) );
       BOOST_REQUIRE( request_itr == request_idx.end() );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: founder accept join request" );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: handling member sending invites" );
-
-      invite.signatory = "elon";
-      invite.account = "elon";
-      invite.member = "george";
-      invite.community = "aliceopencommunity";
-      invite.message = "Hello";
-      invite.encrypted_community_key = string( alice_public_posting_key );
-      invite.invited = true;
-
-      tx.operations.push_back( invite );
-      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.set_reference_block( db.head_block_id() );
-      tx.sign( elon_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      invite_itr = invite_idx.find( boost::make_tuple( invite.member, invite.community ) );
-
-      BOOST_REQUIRE( invite_itr != invite_idx.end() );
-      BOOST_REQUIRE( invite_itr->account == invite.account );
-      BOOST_REQUIRE( invite_itr->member == invite.member );
-      BOOST_REQUIRE( invite_itr->community == invite.community );
-      BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      invite.member = "haz";
-      invite.community = "bobpubliccommunity";
-      invite.encrypted_community_key = string( bob_public_posting_key );
-   
-      tx.operations.push_back( invite );
-      tx.sign( elon_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      invite_itr = invite_idx.find( boost::make_tuple( invite.member, invite.community ) );
+      community_member.signatory = "dan";
+      community_member.account = "dan";
+      community_member.community = "danexclusivecommunity";
+      community_member.encrypted_community_key = get_encrypted_message( danexclusivecommunity_private_member_key, danexclusivecommunity_public_member_key, fred_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( danexclusivecommunity_private_member_key ) );
       
-      BOOST_REQUIRE( invite_itr != invite_idx.end() );
-      BOOST_REQUIRE( invite_itr->account == invite.account );
-      BOOST_REQUIRE( invite_itr->member == invite.member );
-      BOOST_REQUIRE( invite_itr->community == invite.community );
-      BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      invite.member = "isabelle";
-      invite.community = "candiceprivatecommunity";
-      invite.encrypted_community_key = string( candice_public_posting_key );
-   
-      tx.operations.push_back( invite );
-      tx.sign( elon_private_posting_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Member cannot send invitations
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      invite.member = "jayme";
-      invite.community = "danexclusivecommunity";
-      invite.encrypted_community_key = string( dan_public_posting_key );
-   
-      tx.operations.push_back( invite );
-      tx.sign( elon_private_posting_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Member cannot send invitations
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: handling member sending invites" );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: founder add moderator" );
-
-      community_add_mod_operation add_mod;
-
-      add_mod.signatory = "alice";
-      add_mod.account = "alice";
-      add_mod.community = "aliceopencommunity";
-      add_mod.moderator = "elon";
-      add_mod.added = true;
-      add_mod.validate();
-
-      tx.operations.push_back( add_mod );
-      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.set_reference_block( db.head_block_id() );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_community_member( add_mod.community ).is_moderator( add_mod.moderator ) );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      add_mod.signatory = "bob";
-      add_mod.account = "bob";
-      add_mod.community = "bobpubliccommunity";
-
-      tx.operations.push_back( add_mod );
-      tx.sign( bob_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_community_member( add_mod.community ).is_moderator( add_mod.moderator ) );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      add_mod.signatory = "candice";
-      add_mod.account = "candice";
-      add_mod.community = "candiceprivatecommunity";
-
-      tx.operations.push_back( add_mod );
-      tx.sign( candice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_community_member( add_mod.community ).is_moderator( add_mod.moderator ) );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      add_mod.signatory = "dan";
-      add_mod.account = "dan";
-      add_mod.community = "danexclusivecommunity";
-
-      tx.operations.push_back( add_mod );
-      tx.sign( dan_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      BOOST_REQUIRE( db.get_community_member( add_mod.community ).is_moderator( add_mod.moderator ) );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      BOOST_TEST_MESSAGE( "│   ├── Passed: founder add moderator" );
-
-      BOOST_TEST_MESSAGE( "│   ├── Testing: founder vote moderator" );
-
-      community_vote_mod_operation vote_mod;
-
-      vote_mod.signatory = "alice";
-      vote_mod.account = "alice";
-      vote_mod.community = "aliceopencommunity";
-      vote_mod.moderator = "elon";
-      vote_mod.vote_rank = 1;
-      vote_mod.approved = true;
-      vote_mod.validate();
-
-      tx.operations.push_back( vote_mod );
-      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.set_reference_block( db.head_block_id() );
-      tx.sign( alice_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      flat_map< account_name_type, share_type > m = db.get_community_member( vote_mod.community ).mod_weight;
-      BOOST_REQUIRE( m[ vote_mod.moderator ] > 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      vote_mod.signatory = "bob";
-      vote_mod.account = "bob";
-      vote_mod.community = "bobpubliccommunity";
-
-      tx.operations.push_back( vote_mod );
-      tx.sign( bob_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      m = db.get_community_member( vote_mod.community ).mod_weight;
-      BOOST_REQUIRE( m[ vote_mod.moderator ] > 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      vote_mod.signatory = "candice";
-      vote_mod.account = "candice";
-      vote_mod.community = "candiceprivatecommunity";
-
-      tx.operations.push_back( vote_mod );
-      tx.sign( candice_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      m = db.get_community_member( vote_mod.community ).mod_weight;
-      BOOST_REQUIRE( m[ vote_mod.moderator ] > 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      vote_mod.signatory = "dan";
-      vote_mod.account = "dan";
-      vote_mod.community = "danexclusivecommunity";
-
-      tx.operations.push_back( vote_mod );
+      tx.operations.push_back( community_member );
       tx.sign( dan_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      m = db.get_community_member( vote_mod.community ).mod_weight;
-      BOOST_REQUIRE( m[ vote_mod.moderator ] > 0 );
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_member( community_member.member ) );
+      request_itr = request_idx.find( boost::make_tuple( community_member.member, community_member.community ) );
+      BOOST_REQUIRE( request_itr == request_idx.end() );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: founder vote moderator" );
+      generate_block();
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: handling moderator sending invites and failure when repeated invite" );
+      community_member.signatory = "alice";
+      community_member.account = "alice";
+      community_member.member = "elon";
+      community_member.community = "aliceopencommunity";
+      community_member.interface = INIT_ACCOUNT;
+      community_member.member_type = "member";
+      community_member.encrypted_community_key = get_encrypted_message( aliceopencommunity_private_member_key, aliceopencommunity_public_member_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( aliceopencommunity_private_member_key ) );
+      community_member.accepted = true;
+      community_member.expiration = now() + fc::days(31);
+      community_member.validate();
 
-      invite.signatory = "elon";
-      invite.account = "elon";
-      invite.member = "george";
-      invite.community = "aliceopencommunity";
-      invite.message = "Hello";
-      invite.encrypted_community_key = string( alice_public_posting_key );
-      invite.invited = true;
-
-      tx.operations.push_back( invite );
+      tx.operations.push_back( community_member );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.set_reference_block( db.head_block_id() );
-      tx.sign( elon_private_posting_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Invite already exists
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      invite.member = "haz";
-      invite.community = "bobpubliccommunity";
-      invite.encrypted_community_key = string( bob_public_posting_key );
-   
-      tx.operations.push_back( invite );
-      tx.sign( elon_private_posting_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Invite already exists
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      invite.member = "isabelle";
-      invite.community = "candiceprivatecommunity";
-      invite.encrypted_community_key = string( candice_public_posting_key );
-   
-      tx.operations.push_back( invite );
-      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_member( community_member.member ) );
+
       tx.operations.clear();
       tx.signatures.clear();
 
-      invite_itr = invite_idx.find( boost::make_tuple( invite.member, invite.community ) );
+      community_member.signatory = "bob";
+      community_member.account = "bob";
+      community_member.community = "bobpubliccommunity";
+      community_member.encrypted_community_key = get_encrypted_message( bobpubliccommunity_private_member_key, bobpubliccommunity_public_member_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( bobpubliccommunity_private_member_key ) );
 
-      BOOST_REQUIRE( invite_itr != invite_idx.end() );
-      BOOST_REQUIRE( invite_itr->account == invite.account );
-      BOOST_REQUIRE( invite_itr->member == invite.member );
-      BOOST_REQUIRE( invite_itr->community == invite.community );
-      BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
+      tx.operations.push_back( community_member );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: handling moderator sending invites and failure when repeated invite" );
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_member( community_member.member ) );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: founder add administrator" );
+      tx.operations.clear();
+      tx.signatures.clear();
 
-      community_add_admin_operation admin;
+      community_member.signatory = "candice";
+      community_member.account = "candice";
+      community_member.community = "candiceprivatecommunity";
+      community_member.encrypted_community_key = get_encrypted_message( candiceprivatecommunity_private_member_key, candiceprivatecommunity_public_member_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( candiceprivatecommunity_private_member_key ) );
+      
+      tx.operations.push_back( community_member );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
 
-      admin.signatory = "alice";
-      admin.account = "alice";
-      admin.community = "aliceopencommunity";
-      admin.admin = "elon";
-      admin.added = true;
-      admin.validate();
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_member( community_member.member ) );
 
-      tx.operations.push_back( admin );
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      community_member.signatory = "dan";
+      community_member.account = "dan";
+      community_member.community = "danexclusivecommunity";
+      community_member.encrypted_community_key = get_encrypted_message( danexclusivecommunity_private_member_key, danexclusivecommunity_public_member_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( danexclusivecommunity_private_member_key ) );
+      
+      tx.operations.push_back( community_member );
+      tx.sign( dan_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_member( community_member.member ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      generate_block();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Founder add community members" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Founder add moderator" );
+
+      community_member.signatory = "alice";
+      community_member.account = "alice";
+      community_member.community = "aliceopencommunity";
+      community_member.member = "elon";
+      community_member.member_type = "moderator";
+      community_member.encrypted_community_key = get_encrypted_message( aliceopencommunity_private_moderator_key, aliceopencommunity_public_moderator_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( aliceopencommunity_private_moderator_key ) );
+      community_member.accepted = true;
+      community_member.expiration = now() + fc::days(31);
+      community_member.validate();
+
+      tx.operations.push_back( community_member );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.set_reference_block( db.head_block_id() );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( admin.community ).is_administrator( admin.admin ) );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_moderator( community_member.member ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      admin.signatory = "bob";
-      admin.account = "bob";
-      admin.community = "bobpubliccommunity";
+      community_member.signatory = "bob";
+      community_member.account = "bob";
+      community_member.community = "bobpubliccommunity";
+      community_member.encrypted_community_key = get_encrypted_message( bobpubliccommunity_private_moderator_key, bobpubliccommunity_public_moderator_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( bobpubliccommunity_private_moderator_key ) );
 
-      tx.operations.push_back( admin );
+      tx.operations.push_back( community_member );
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( admin.community ).is_administrator( admin.admin ) );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_moderator( community_member.member ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      admin.signatory = "candice";
-      admin.account = "candice";
-      admin.community = "candiceprivatecommunity";
+      community_member.signatory = "candice";
+      community_member.account = "candice";
+      community_member.community = "candiceprivatecommunity";
+      community_member.encrypted_community_key = get_encrypted_message( candiceprivatecommunity_private_moderator_key, candiceprivatecommunity_public_moderator_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( candiceprivatecommunity_private_moderator_key ) );
 
-      tx.operations.push_back( admin );
+      tx.operations.push_back( community_member );
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( admin.community ).is_administrator( admin.admin ) );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_moderator( community_member.member ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      admin.signatory = "dan";
-      admin.account = "dan";
-      admin.community = "danexclusivecommunity";
+      community_member.signatory = "dan";
+      community_member.account = "dan";
+      community_member.community = "danexclusivecommunity";
+      community_member.encrypted_community_key = get_encrypted_message( danexclusivecommunity_private_moderator_key, danexclusivecommunity_public_moderator_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( danexclusivecommunity_private_moderator_key ) );
 
-      tx.operations.push_back( admin );
+      tx.operations.push_back( community_member );
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( admin.community ).is_administrator( admin.admin ) );
+      generate_block();
+
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_moderator( community_member.member ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: founder add administrator" );
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Founder add moderator" );
 
-      BOOST_TEST_MESSAGE( "│   ├── Testing: handling administrators sending invites and failure when repeated invite" );
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Founder vote moderator" );
 
-      invite.signatory = "elon";
-      invite.account = "elon";
-      invite.member = "george";
-      invite.community = "aliceopencommunity";
-      invite.message = "Hello";
-      invite.encrypted_community_key = string( alice_public_posting_key );
-      invite.invited = true;
+      community_member_vote_operation community_member_vote;
 
-      tx.operations.push_back( invite );
+      community_member_vote.signatory = "alice";
+      community_member_vote.account = "alice";
+      community_member_vote.community = "aliceopencommunity";
+      community_member_vote.member = "elon";
+      community_member_vote.interface = INIT_ACCOUNT;
+      community_member_vote.vote_rank = 1;
+      community_member_vote.approved = true;
+      community_member_vote.validate();
+
+      tx.operations.push_back( community_member_vote );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.set_reference_block( db.head_block_id() );
-      tx.sign( elon_private_posting_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Invite already exists
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      invite.member = "haz";
-      invite.community = "bobpubliccommunity";
-      invite.encrypted_community_key = string( bob_public_posting_key );
-   
-      tx.operations.push_back( invite );
-      tx.sign( elon_private_posting_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Invite already exists
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      invite.member = "isabelle";
-      invite.community = "candiceprivatecommunity";
-      invite.encrypted_community_key = string( candice_public_posting_key );
-   
-      tx.operations.push_back( invite );
-      tx.sign( elon_private_posting_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Invite already exists
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      invite.member = "jayme";
-      invite.community = "danexclusivecommunity";
-      invite.encrypted_community_key = string( dan_public_posting_key );
-   
-      tx.operations.push_back( invite );
-      tx.sign( elon_private_posting_key, db.get_chain_id() );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      invite_itr = invite_idx.find( boost::make_tuple( invite.member, invite.community ) );
+      generate_block();
 
-      BOOST_REQUIRE( invite_itr != invite_idx.end() );
-      BOOST_REQUIRE( invite_itr->account == invite.account );
-      BOOST_REQUIRE( invite_itr->member == invite.member );
-      BOOST_REQUIRE( invite_itr->community == invite.community );
-      BOOST_REQUIRE( invite_itr->expiration == now() + CONNECTION_REQUEST_DURATION );
+      flat_map< account_name_type, share_type > m = db.get_community_permission( community_member_vote.community ).vote_weight;
+      BOOST_REQUIRE( m[ community_member_vote.member ] > 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: handling moderator sending invites and failure when repeated invite" );
+      community_member_vote.signatory = "bob";
+      community_member_vote.account = "bob";
+      community_member_vote.community = "bobpubliccommunity";
+
+      tx.operations.push_back( community_member_vote );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      generate_block();
+
+      m = db.get_community_permission( community_member_vote.community ).vote_weight;
+      BOOST_REQUIRE( m[ community_member_vote.member ] > 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      community_member_vote.signatory = "candice";
+      community_member_vote.account = "candice";
+      community_member_vote.community = "candiceprivatecommunity";
+
+      tx.operations.push_back( community_member_vote );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      generate_block();
+
+      m = db.get_community_permission( community_member_vote.community ).vote_weight;
+      BOOST_REQUIRE( m[ community_member_vote.member ] > 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      community_member_vote.signatory = "dan";
+      community_member_vote.account = "dan";
+      community_member_vote.community = "danexclusivecommunity";
+
+      tx.operations.push_back( community_member_vote );
+      tx.sign( dan_private_posting_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      generate_block();
+
+      m = db.get_community_permission( community_member_vote.community ).vote_weight;
+      BOOST_REQUIRE( m[ community_member_vote.member ] > 0 );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Founder vote moderator" );
+
+      BOOST_TEST_MESSAGE( "│   ├── Testing: Founder add administrator" );
+
+      community_member.signatory = "alice";
+      community_member.account = "alice";
+      community_member.community = "aliceopencommunity";
+      community_member.member_type = "administrator";
+      community_member.member = "elon";
+      community_member.encrypted_community_key = get_encrypted_message( aliceopencommunity_private_admin_key, aliceopencommunity_public_admin_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( aliceopencommunity_private_admin_key ) );
+      community_member.accepted = true;
+      community_member.expiration = now() + fc::days(31);
+      community_member.validate();
+
+      tx.operations.push_back( community_member );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_administrator( community_member.member ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      community_member.signatory = "bob";
+      community_member.account = "bob";
+      community_member.community = "bobpubliccommunity";
+      community_member.encrypted_community_key = get_encrypted_message( bobpubliccommunity_private_admin_key, bobpubliccommunity_public_admin_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( bobpubliccommunity_private_admin_key ) );
+
+      tx.operations.push_back( community_member );
+      tx.sign( bob_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_administrator( community_member.member ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      community_member.signatory = "candice";
+      community_member.account = "candice";
+      community_member.community = "candiceprivatecommunity";
+      community_member.encrypted_community_key = get_encrypted_message( candiceprivatecommunity_private_admin_key, candiceprivatecommunity_public_admin_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( candiceprivatecommunity_private_admin_key ) );
+
+      tx.operations.push_back( community_member );
+      tx.sign( candice_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_administrator( community_member.member ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      community_member.signatory = "dan";
+      community_member.account = "dan";
+      community_member.community = "danexclusivecommunity";
+      community_member.encrypted_community_key = get_encrypted_message( danexclusivecommunity_private_admin_key, danexclusivecommunity_public_admin_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( danexclusivecommunity_private_admin_key ) );
+
+      tx.operations.push_back( community_member );
+      tx.sign( dan_private_active_key, db.get_chain_id() );
+      db.push_transaction( tx, 0 );
+
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_administrator( community_member.member ) );
+
+      tx.operations.clear();
+      tx.signatures.clear();
+
+      generate_block();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: Founder add administrator" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Community Federation request success" );
 
@@ -1744,6 +2032,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      generate_block();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Community Federation creation" );
 
@@ -2232,7 +2522,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.set_reference_block( db.head_block_id() );
       tx.sign( george_private_posting_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
+      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Non-members cannot create messages
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2240,9 +2530,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       const auto& message_idx = db.get_index< message_index >().indices().get< by_sender_uuid >();
       auto message_itr = message_idx.find( boost::make_tuple( account_name_type( "george" ), string( "f55004be-bf4b-4bc7-b6c6-4a2d16a2ef9a" ) ) );
 
-      BOOST_REQUIRE( message_itr != message_idx.end() );
-      BOOST_REQUIRE( to_string( message_itr->message ) == message.message );
-
+      BOOST_REQUIRE( message_itr == message_idx.end() );
+      
       message.signatory = "haz";
       message.sender = "haz";
       message.community = "bobpubliccommunity";
@@ -2401,6 +2690,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       BOOST_REQUIRE( message_itr != message_idx.end() );
       BOOST_REQUIRE( to_string( message_itr->message ) == message.message );
 
+      generate_block();
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: comment creation handling for members and non-members" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: comment vote handling before becoming members" );
@@ -2466,6 +2757,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      generate_block();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: comment vote handling before becoming members" );
 
@@ -2540,6 +2833,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      generate_block();
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: comment view handling before becoming members" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: comment share handling before becoming members" );
@@ -2611,55 +2906,65 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      generate_block();
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: comment share handling before becoming members" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: comment creation handling by members" );
 
-      community_invite_accept_operation accept;
+      community_member.signatory = "alice";
+      community_member.account = "alice";
+      community_member.community = "aliceopencommunity";
+      community_member.member_type = "member";
+      community_member.member = "george";
+      community_member.encrypted_community_key = get_encrypted_message( aliceopencommunity_private_member_key, aliceopencommunity_public_member_key, george_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( aliceopencommunity_private_member_key ) );
+      community_member.accepted = true;
+      community_member.expiration = now() + fc::days(31);
+      community_member.validate();
 
-      accept.signatory = "george";
-      accept.account = "george";
-      accept.community = "aliceopencommunity";
-      accept.accepted = true;
-      accept.validate();
-
-      tx.operations.push_back( accept );
+      tx.operations.push_back( community_member );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.set_reference_block( db.head_block_id() );
-      tx.sign( george_private_posting_key, db.get_chain_id() );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      accept.signatory = "haz";
-      accept.account = "haz";
-      accept.community = "bobpubliccommunity";
+      community_member.signatory = "bob";
+      community_member.account = "bob";
+      community_member.community = "bobpubliccommunity";
+      community_member.member = "haz";
+      community_member.encrypted_community_key = get_encrypted_message( bobpubliccommunity_private_member_key, bobpubliccommunity_public_member_key, haz_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( bobpubliccommunity_private_member_key ) );
 
-      tx.operations.push_back( accept );
-      tx.sign( haz_private_posting_key, db.get_chain_id() );
+      tx.operations.push_back( community_member );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      accept.signatory = "isabelle";
-      accept.account = "isabelle";
-      accept.community = "candiceprivatecommunity";
+      community_member.signatory = "candice";
+      community_member.account = "candice";
+      community_member.community = "candiceprivatecommunity";
+      community_member.member = "isabelle";
+      community_member.encrypted_community_key = get_encrypted_message( candiceprivatecommunity_private_member_key, candiceprivatecommunity_public_member_key, isabelle_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( candiceprivatecommunity_private_member_key ) );
 
-      tx.operations.push_back( accept );
-      tx.sign( isabelle_private_posting_key, db.get_chain_id() );
+      tx.operations.push_back( community_member );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      accept.signatory = "jayme";
-      accept.account = "jayme";
-      accept.community = "danexclusivecommunity";
+      community_member.signatory = "dan";
+      community_member.account = "dan";
+      community_member.community = "danexclusivecommunity";
+      community_member.member = "jayme";
+      community_member.encrypted_community_key = get_encrypted_message( candiceprivatecommunity_private_member_key, candiceprivatecommunity_public_member_key, isabelle_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( candiceprivatecommunity_private_member_key ) );
 
-      tx.operations.push_back( accept );
-      tx.sign( jayme_private_posting_key, db.get_chain_id() );
+      tx.operations.push_back( community_member );
+      tx.sign( dan_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -2744,6 +3049,8 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      generate_block();
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: comment creation handling by members" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: comment vote handling by members" );
@@ -2759,10 +3066,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( george_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_vote_object& george_vote = db.get_comment_vote( vote.voter, george_comment2.id );
+      const comment_vote_object& george_vote = db.get_comment_vote( vote.voter, db.get_comment( vote.voter, vote.permlink ).id );
 
       BOOST_REQUIRE( george_vote.voter == vote.voter );
-      BOOST_REQUIRE( george_vote.comment == george_comment2.id );
+      BOOST_REQUIRE( george_vote.comment == db.get_comment( vote.voter, vote.permlink ).id );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2775,10 +3082,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( haz_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_vote_object& haz_vote = db.get_comment_vote( vote.voter, haz_comment.id );
+      const comment_vote_object& haz_vote = db.get_comment_vote( vote.voter, db.get_comment( vote.voter, vote.permlink ).id );
 
       BOOST_REQUIRE( haz_vote.voter == vote.voter );
-      BOOST_REQUIRE( haz_vote.comment == haz_comment.id );
+      BOOST_REQUIRE( haz_vote.comment == db.get_comment( vote.voter, vote.permlink ).id );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2791,10 +3098,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( isabelle_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_vote_object& isabelle_vote = db.get_comment_vote( vote.voter, isabelle_comment.id );
+      const comment_vote_object& isabelle_vote = db.get_comment_vote( vote.voter, db.get_comment( vote.voter, vote.permlink ).id );
 
       BOOST_REQUIRE( isabelle_vote.voter == vote.voter );
-      BOOST_REQUIRE( isabelle_vote.comment == isabelle_comment.id );
+      BOOST_REQUIRE( isabelle_vote.comment == db.get_comment( vote.voter, vote.permlink ).id );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -2807,13 +3114,15 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( jayme_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_vote_object& jayme_vote = db.get_comment_vote( vote.voter, jayme_comment.id );
+      const comment_vote_object& jayme_vote = db.get_comment_vote( vote.voter, db.get_comment( vote.voter, vote.permlink ).id );
 
       BOOST_REQUIRE( jayme_vote.voter == vote.voter );
-      BOOST_REQUIRE( jayme_vote.comment == jayme_comment.id );
+      BOOST_REQUIRE( jayme_vote.comment == db.get_comment( vote.voter, vote.permlink ).id );
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      generate_block();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: comment vote handling by members" );
 
@@ -2830,10 +3139,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( george_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_view_object& george_george_view = db.get_comment_view( view.viewer, george_comment2.id );
+      const comment_view_object& george_george_view = db.get_comment_view( view.viewer, db.get_comment( view.viewer, view.permlink ).id );
 
       BOOST_REQUIRE( george_george_view.viewer == view.viewer );
-      BOOST_REQUIRE( george_george_view.comment == george_comment2.id );
+      BOOST_REQUIRE( george_george_view.comment == db.get_comment( view.viewer, view.permlink ).id );
       BOOST_REQUIRE( george_george_view.supernode == view.supernode );
       BOOST_REQUIRE( george_george_view.interface == view.interface );
       BOOST_REQUIRE( george_george_view.created == now() );
@@ -2849,10 +3158,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( haz_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_view_object& haz_haz_view = db.get_comment_view( view.viewer, haz_comment.id );
+      const comment_view_object& haz_haz_view = db.get_comment_view( view.viewer, db.get_comment( view.viewer, view.permlink ).id );
 
       BOOST_REQUIRE( haz_haz_view.viewer == view.viewer );
-      BOOST_REQUIRE( haz_haz_view.comment == haz_comment.id );
+      BOOST_REQUIRE( haz_haz_view.comment == db.get_comment( view.viewer, view.permlink ).id );
       BOOST_REQUIRE( haz_haz_view.supernode == view.supernode );
       BOOST_REQUIRE( haz_haz_view.interface == view.interface );
       BOOST_REQUIRE( haz_haz_view.created == now() );
@@ -2868,10 +3177,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( isabelle_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_view_object& isabelle_isabelle_view = db.get_comment_view( view.viewer, isabelle_comment.id );
+      const comment_view_object& isabelle_isabelle_view = db.get_comment_view( view.viewer, db.get_comment( view.viewer, view.permlink ).id );
 
       BOOST_REQUIRE( isabelle_isabelle_view.viewer == view.viewer );
-      BOOST_REQUIRE( isabelle_isabelle_view.comment == isabelle_comment.id );
+      BOOST_REQUIRE( isabelle_isabelle_view.comment == db.get_comment( view.viewer, view.permlink ).id );
       BOOST_REQUIRE( isabelle_isabelle_view.supernode == view.supernode );
       BOOST_REQUIRE( isabelle_isabelle_view.interface == view.interface );
       BOOST_REQUIRE( isabelle_isabelle_view.created == now() );
@@ -2887,16 +3196,18 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( jayme_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_view_object& jayme_jayme_view = db.get_comment_view( view.viewer, jayme_comment.id );
+      const comment_view_object& jayme_jayme_view = db.get_comment_view( view.viewer, db.get_comment( view.viewer, view.permlink ).id );
 
       BOOST_REQUIRE( jayme_jayme_view.viewer == view.viewer );
-      BOOST_REQUIRE( jayme_jayme_view.comment == jayme_comment.id );
+      BOOST_REQUIRE( jayme_jayme_view.comment == db.get_comment( view.viewer, view.permlink ).id );
       BOOST_REQUIRE( jayme_jayme_view.supernode == view.supernode );
       BOOST_REQUIRE( jayme_jayme_view.interface == view.interface );
       BOOST_REQUIRE( jayme_jayme_view.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      generate_block();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: comment view handling by members" );
 
@@ -2913,10 +3224,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( george_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_share_object& george_george_share = db.get_comment_share( share.sharer, george_comment2.id );
+      const comment_share_object& george_george_share = db.get_comment_share( share.sharer, db.get_comment( share.sharer, share.permlink ).id );
 
       BOOST_REQUIRE( george_george_share.sharer == share.sharer );
-      BOOST_REQUIRE( george_george_share.comment == george_comment2.id );
+      BOOST_REQUIRE( george_george_share.comment == db.get_comment( share.sharer, share.permlink ).id );
       BOOST_REQUIRE( george_george_share.interface == share.interface );
       BOOST_REQUIRE( george_george_share.created == now() );
 
@@ -2931,10 +3242,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( haz_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_share_object& haz_haz_share = db.get_comment_share( share.sharer, haz_comment.id );
+      const comment_share_object& haz_haz_share = db.get_comment_share( share.sharer, db.get_comment( share.sharer, share.permlink ).id );
 
       BOOST_REQUIRE( haz_haz_share.sharer == share.sharer );
-      BOOST_REQUIRE( haz_haz_share.comment == haz_comment.id );
+      BOOST_REQUIRE( haz_haz_share.comment == db.get_comment( share.sharer, share.permlink ).id );
       BOOST_REQUIRE( haz_haz_share.interface == share.interface );
       BOOST_REQUIRE( haz_haz_share.created == now() );
 
@@ -2949,10 +3260,10 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( isabelle_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_share_object& isabelle_isabelle_share = db.get_comment_share( share.sharer, isabelle_comment.id );
+      const comment_share_object& isabelle_isabelle_share = db.get_comment_share( share.sharer, db.get_comment( share.sharer, share.permlink ).id );
 
       BOOST_REQUIRE( isabelle_isabelle_share.sharer == share.sharer );
-      BOOST_REQUIRE( isabelle_isabelle_share.comment == isabelle_comment.id );
+      BOOST_REQUIRE( isabelle_isabelle_share.comment == db.get_comment( share.sharer, share.permlink ).id );
       BOOST_REQUIRE( isabelle_isabelle_share.interface == share.interface );
       BOOST_REQUIRE( isabelle_isabelle_share.created == now() );
 
@@ -2967,15 +3278,17 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( jayme_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      const comment_share_object& jayme_jayme_share = db.get_comment_share( share.sharer, jayme_comment.id );
+      const comment_share_object& jayme_jayme_share = db.get_comment_share( share.sharer, db.get_comment( share.sharer, share.permlink ).id );
 
       BOOST_REQUIRE( jayme_jayme_share.sharer == share.sharer );
-      BOOST_REQUIRE( jayme_jayme_share.comment == jayme_comment.id );
+      BOOST_REQUIRE( jayme_jayme_share.comment == db.get_comment( share.sharer, share.permlink ).id );
       BOOST_REQUIRE( jayme_jayme_share.interface == share.interface );
       BOOST_REQUIRE( jayme_jayme_share.created == now() );
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      generate_block();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: comment share handling by members" );
 
@@ -3002,7 +3315,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       db.push_transaction( tx, 0 );
 
       const auto& tag_idx = db.get_index< comment_moderation_index >().indices().get< by_comment_moderator >();
-      auto tag_itr = tag_idx.find( boost::make_tuple( george_comment2.id, tag.moderator ) );
+      auto tag_itr = tag_idx.find( boost::make_tuple( db.get_comment( tag.author, tag.permlink ).id, tag.moderator ) );
 
       BOOST_REQUIRE( tag_itr != tag_idx.end() );
       BOOST_REQUIRE( to_string( tag_itr->details ) == tag.details );
@@ -3018,7 +3331,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      tag_itr = tag_idx.find( boost::make_tuple( haz_comment.id, tag.moderator ) );
+      tag_itr = tag_idx.find( boost::make_tuple( db.get_comment( tag.author, tag.permlink ).id, tag.moderator ) );
 
       BOOST_REQUIRE( tag_itr != tag_idx.end() );
       BOOST_REQUIRE( to_string( tag_itr->details ) == tag.details );
@@ -3034,7 +3347,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      tag_itr = tag_idx.find( boost::make_tuple( isabelle_comment.id, tag.moderator ) );
+      tag_itr = tag_idx.find( boost::make_tuple( db.get_comment( tag.author, tag.permlink ).id, tag.moderator ) );
 
       BOOST_REQUIRE( tag_itr != tag_idx.end() );
       BOOST_REQUIRE( to_string( tag_itr->details ) == tag.details );
@@ -3050,7 +3363,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      tag_itr = tag_idx.find( boost::make_tuple( jayme_comment.id, tag.moderator ) );
+      tag_itr = tag_idx.find( boost::make_tuple( db.get_comment( tag.author, tag.permlink ).id, tag.moderator ) );
 
       BOOST_REQUIRE( tag_itr != tag_idx.end() );
       BOOST_REQUIRE( to_string( tag_itr->details ) == tag.details );
@@ -3060,60 +3373,70 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
+      generate_block();
+
       BOOST_TEST_MESSAGE( "│   ├── Passed: moderator tag by community moderator" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: administrator add moderator" );
 
-      add_mod.signatory = "elon";
-      add_mod.account = "elon";
-      add_mod.community = "aliceopencommunity";
-      add_mod.moderator = "fred";
-      add_mod.added = true;
-      add_mod.validate();
+      community_member.signatory = "elon";
+      community_member.account = "elon";
+      community_member.community = "aliceopencommunity";
+      community_member.member = "fred";
+      community_member.member_type = "moderator";
+      community_member.encrypted_community_key = get_encrypted_message( aliceopencommunity_private_moderator_key, aliceopencommunity_public_moderator_key, fred_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( aliceopencommunity_private_moderator_key ) );
+      community_member.accepted = true;
+      community_member.expiration = now() + fc::days(31);
+      community_member.validate();
 
-      tx.operations.push_back( add_mod );
+      tx.operations.push_back( community_member );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.set_reference_block( db.head_block_id() );
-      tx.sign( elon_private_active_key, db.get_chain_id() );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_REQUIRE( db.get_community_member( add_mod.community ).is_moderator( add_mod.moderator ) );
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_moderator( community_member.member ) );
 
-      add_mod.community = "bobpubliccommunity";
+      community_member.community = "bobpubliccommunity";
+      community_member.encrypted_community_key = get_encrypted_message( bobpubliccommunity_private_moderator_key, bobpubliccommunity_public_moderator_key, fred_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( bobpubliccommunity_private_moderator_key ) );
 
-      tx.operations.push_back( add_mod );
-      tx.sign( elon_private_active_key, db.get_chain_id() );
+      tx.operations.push_back( community_member );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_REQUIRE( db.get_community_member( add_mod.community ).is_moderator( add_mod.moderator ) );
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_moderator( community_member.member ) );
 
-      add_mod.community = "candiceprivatecommunity";
+      community_member.community = "candiceprivatecommunity";
+      community_member.encrypted_community_key = get_encrypted_message( candiceprivatecommunity_private_moderator_key, candiceprivatecommunity_public_moderator_key, fred_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( candiceprivatecommunity_private_moderator_key ) );
 
-      tx.operations.push_back( add_mod );
-      tx.sign( elon_private_active_key, db.get_chain_id() );
+      tx.operations.push_back( community_member );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_REQUIRE( db.get_community_member( add_mod.community ).is_moderator( add_mod.moderator ) );
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_moderator( community_member.member ) );
 
-      add_mod.community = "danexclusivecommunity";
+      community_member.community = "danexclusivecommunity";
+      community_member.encrypted_community_key = get_encrypted_message( danexclusivecommunity_private_moderator_key, danexclusivecommunity_public_moderator_key, fred_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( danexclusivecommunity_private_moderator_key ) );
 
-      tx.operations.push_back( add_mod );
-      tx.sign( elon_private_active_key, db.get_chain_id() );
+      tx.operations.push_back( community_member );
+      tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_REQUIRE( db.get_community_member( add_mod.community ).is_moderator( add_mod.moderator ) );
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_moderator( community_member.member ) );
+
+      generate_block();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: administrator add moderator" );
 
@@ -3124,19 +3447,46 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       update.signatory = "elon";
       update.account = "elon";
       update.community = "aliceopencommunity";
-      update.community_member_key = string( aliceopencommunity_public_member_key );
-      update.community_moderator_key = string( aliceopencommunity_public_moderator_key );
-      update.community_admin_key = string( aliceopencommunity_public_admin_key );
-      update.display_name = "Alice Public Community";
+      update.display_name = "Alice's Updated Open Community";
       update.details = "updated details";
       update.url = "https://www.newurl.com";
       update.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       update.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       update.json = "{ \"valid\": true }";
-      update.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, public_key_type( update.community_member_key ), "#{ \"valid\": true }" );
-      update.tags.insert( "test" );
+      update.json_private = get_encrypted_message( aliceopencommunity_private_secure_key, aliceopencommunity_public_secure_key, aliceopencommunity_public_member_key, string( "#{ \"valid\": true }" ) );
       update.pinned_author = "alice";
       update.pinned_permlink = "lorem";
+      update.tags.insert( "test" );
+      update.private_community = false;
+      update.author_permission = "all";
+      update.reply_permission = "all";
+      update.vote_permission = "all";
+      update.view_permission = "all";
+      update.share_permission = "all";
+      update.message_permission = "member";
+      update.poll_permission = "administrator";
+      update.event_permission = "administrator";
+      update.directive_permission = "member";
+      update.add_permission = "member";
+      update.request_permission = "all";
+      update.remove_permission = "administrator";
+      update.community_member_key = string( aliceopencommunity_public_member_key );
+      update.community_moderator_key = string( aliceopencommunity_public_moderator_key );
+      update.community_admin_key = string( aliceopencommunity_public_admin_key );
+      update.community_secure_key = string( aliceopencommunity_public_secure_key );
+      update.community_standard_premium_key = string( aliceopencommunity_public_standard_premium_key );
+      update.community_mid_premium_key = string( aliceopencommunity_public_mid_premium_key );
+      update.community_top_premium_key = string( aliceopencommunity_public_top_premium_key );
+      update.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      update.mid_membership_price = MEMBERSHIP_FEE_MID;
+      update.top_membership_price = MEMBERSHIP_FEE_TOP;
+      update.verifiers.insert( INIT_ACCOUNT );
+      update.min_verification_count = 0;
+      update.max_verification_distance = 0;
+      update.max_rating = 9;
+      update.flags = 0;
+      update.permissions = COMMUNITY_PERMISSION_MASK;
+      update.active = true;
       update.validate();
 
       tx.operations.push_back( update );
@@ -3155,11 +3505,49 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      update.pinned_author = "bob";
+      update.signatory = "elon";
+      update.account = "elon";
       update.community = "bobpubliccommunity";
+      update.display_name = "Bob's Updated Public Community";
+      update.details = "updated details";
+      update.url = "https://www.newurl.com";
+      update.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      update.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      update.json = "{ \"valid\": true }";
+      update.json_private = get_encrypted_message( bobpubliccommunity_private_secure_key, bobpubliccommunity_public_secure_key, bobpubliccommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      update.pinned_author = "bob";
+      update.pinned_permlink = "lorem";
+      update.tags.insert( "test" );
+      update.private_community = false;
+      update.author_permission = "member";
+      update.reply_permission = "member";
+      update.vote_permission = "member";
+      update.view_permission = "member";
+      update.share_permission = "member";
+      update.message_permission = "member";
+      update.poll_permission = "administrator";
+      update.event_permission = "administrator";
+      update.directive_permission = "member";
+      update.add_permission = "member";
+      update.request_permission = "all";
+      update.remove_permission = "administrator";
       update.community_member_key = string( bobpubliccommunity_public_member_key );
       update.community_moderator_key = string( bobpubliccommunity_public_moderator_key );
       update.community_admin_key = string( bobpubliccommunity_public_admin_key );
+      update.community_secure_key = string( bobpubliccommunity_public_secure_key );
+      update.community_standard_premium_key = string( bobpubliccommunity_public_standard_premium_key );
+      update.community_mid_premium_key = string( bobpubliccommunity_public_mid_premium_key );
+      update.community_top_premium_key = string( bobpubliccommunity_public_top_premium_key );
+      update.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      update.mid_membership_price = MEMBERSHIP_FEE_MID;
+      update.top_membership_price = MEMBERSHIP_FEE_TOP;
+      update.verifiers.insert( INIT_ACCOUNT );
+      update.min_verification_count = 0;
+      update.max_verification_distance = 0;
+      update.max_rating = 9;
+      update.flags = 0;
+      update.permissions = COMMUNITY_PERMISSION_MASK;
+      update.active = true;
       update.validate();
 
       tx.operations.push_back( update );
@@ -3176,11 +3564,49 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      update.pinned_author = "candice";
+      update.signatory = "elon";
+      update.account = "elon";
       update.community = "candiceprivatecommunity";
+      update.display_name = "Candice's Updated Private Community";
+      update.details = "updated details";
+      update.url = "https://www.newurl.com";
+      update.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      update.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      update.json = "{ \"valid\": true }";
+      update.json_private = get_encrypted_message( candiceprivatecommunity_private_secure_key, candiceprivatecommunity_public_secure_key, candiceprivatecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      update.pinned_author = "candice";
+      update.pinned_permlink = "lorem";
+      update.tags.insert( "test" );
+      update.private_community = true;
+      update.author_permission = "member";
+      update.reply_permission = "member";
+      update.vote_permission = "member";
+      update.view_permission = "member";
+      update.share_permission = "member";
+      update.message_permission = "member";
+      update.poll_permission = "administrator";
+      update.event_permission = "administrator";
+      update.directive_permission = "member";
+      update.add_permission = "member";
+      update.request_permission = "all";
+      update.remove_permission = "administrator";
       update.community_member_key = string( candiceprivatecommunity_public_member_key );
       update.community_moderator_key = string( candiceprivatecommunity_public_moderator_key );
       update.community_admin_key = string( candiceprivatecommunity_public_admin_key );
+      update.community_secure_key = string( candiceprivatecommunity_public_secure_key );
+      update.community_standard_premium_key = string( candiceprivatecommunity_public_standard_premium_key );
+      update.community_mid_premium_key = string( candiceprivatecommunity_public_mid_premium_key );
+      update.community_top_premium_key = string( candiceprivatecommunity_public_top_premium_key );
+      update.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      update.mid_membership_price = MEMBERSHIP_FEE_MID;
+      update.top_membership_price = MEMBERSHIP_FEE_TOP;
+      update.verifiers.insert( INIT_ACCOUNT );
+      update.min_verification_count = 0;
+      update.max_verification_distance = 0;
+      update.max_rating = 9;
+      update.flags = 0;
+      update.permissions = COMMUNITY_PERMISSION_MASK;
+      update.active = true;
       update.validate();
 
       tx.operations.push_back( update );
@@ -3197,11 +3623,49 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      update.pinned_author = "dan";
+      update.signatory = "elon";
+      update.account = "elon";
       update.community = "danexclusivecommunity";
+      update.display_name = "Dan's Updated Exclusive Community";
+      update.details = "updated details";
+      update.url = "https://www.newurl.com";
+      update.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      update.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
+      update.json = "{ \"valid\": true }";
+      update.json_private = get_encrypted_message( danexclusivecommunity_private_secure_key, danexclusivecommunity_public_secure_key, danexclusivecommunity_public_member_key, string( "#{ \"valid\": true }" ) );
+      update.pinned_author = "dan";
+      update.pinned_permlink = "lorem";
+      update.tags.insert( "test" );
+      update.private_community = true;
+      update.author_permission = "member";
+      update.reply_permission = "member";
+      update.vote_permission = "member";
+      update.view_permission = "member";
+      update.share_permission = "member";
+      update.message_permission = "member";
+      update.poll_permission = "administrator";
+      update.event_permission = "administrator";
+      update.directive_permission = "member";
+      update.add_permission = "administrator";
+      update.request_permission = "member";
+      update.remove_permission = "administrator";
       update.community_member_key = string( danexclusivecommunity_public_member_key );
       update.community_moderator_key = string( danexclusivecommunity_public_moderator_key );
       update.community_admin_key = string( danexclusivecommunity_public_admin_key );
+      update.community_secure_key = string( danexclusivecommunity_public_secure_key );
+      update.community_standard_premium_key = string( danexclusivecommunity_public_standard_premium_key );
+      update.community_mid_premium_key = string( danexclusivecommunity_public_mid_premium_key );
+      update.community_top_premium_key = string( danexclusivecommunity_public_top_premium_key );
+      update.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      update.mid_membership_price = MEMBERSHIP_FEE_MID;
+      update.top_membership_price = MEMBERSHIP_FEE_TOP;
+      update.verifiers.insert( INIT_ACCOUNT );
+      update.min_verification_count = 0;
+      update.max_verification_distance = 0;
+      update.max_rating = 9;
+      update.flags = 0;
+      update.permissions = COMMUNITY_PERMISSION_MASK;
+      update.active = true;
       update.validate();
 
       tx.operations.push_back( update );
@@ -3217,135 +3681,142 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      generate_block();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: administrator update community" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: founder remove moderator" );
 
-      add_mod.signatory = "alice";
-      add_mod.account = "alice";
-      add_mod.community = "aliceopencommunity";
-      add_mod.moderator = "fred";
-      add_mod.added = false;
-      add_mod.validate();
+      community_member.signatory = "alice";
+      community_member.account = "alice";
+      community_member.community = "aliceopencommunity";
+      community_member.member = "fred";
+      community_member.member_type = "moderator";
+      community_member.accepted = false;
+      community_member.validate();
 
-      tx.operations.push_back( add_mod );
+      tx.operations.push_back( community_member );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.set_reference_block( db.head_block_id() );
-      tx.sign( alice_private_active_key, db.get_chain_id() );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( add_mod.community ).is_member( add_mod.moderator ) );
-      BOOST_REQUIRE( !db.get_community_member( add_mod.community ).is_moderator( add_mod.moderator ) );
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_member( community_member.member ) );
+      BOOST_REQUIRE( !db.get_community_permission( community_member.community ).is_moderator( community_member.member ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      add_mod.signatory = "bob";
-      add_mod.account = "bob";
-      add_mod.community = "bobpubliccommunity";
+      community_member.signatory = "bob";
+      community_member.account = "bob";
+      community_member.community = "bobpubliccommunity";
 
-      tx.operations.push_back( add_mod );
-      tx.sign( bob_private_active_key, db.get_chain_id() );
+      tx.operations.push_back( community_member );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( add_mod.community ).is_member( add_mod.moderator ) );
-      BOOST_REQUIRE( !db.get_community_member( add_mod.community ).is_moderator( add_mod.moderator ) );
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_member( community_member.member ) );
+      BOOST_REQUIRE( !db.get_community_permission( community_member.community ).is_moderator( community_member.member ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      add_mod.signatory = "candice";
-      add_mod.account = "candice";
-      add_mod.community = "candiceprivatecommunity";
+      community_member.signatory = "candice";
+      community_member.account = "candice";
+      community_member.community = "candiceprivatecommunity";
 
-      tx.operations.push_back( add_mod );
-      tx.sign( candice_private_active_key, db.get_chain_id() );
+      tx.operations.push_back( community_member );
+      tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( add_mod.community ).is_member( add_mod.moderator ) );
-      BOOST_REQUIRE( !db.get_community_member( add_mod.community ).is_moderator( add_mod.moderator ) );
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_member( community_member.member ) );
+      BOOST_REQUIRE( !db.get_community_permission( community_member.community ).is_moderator( community_member.member ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      add_mod.signatory = "dan";
-      add_mod.account = "dan";
-      add_mod.community = "danexclusivecommunity";
+      community_member.signatory = "dan";
+      community_member.account = "dan";
+      community_member.community = "danexclusivecommunity";
 
-      tx.operations.push_back( add_mod );
-      tx.sign( dan_private_active_key, db.get_chain_id() );
+      tx.operations.push_back( community_member );
+      tx.sign( dan_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( add_mod.community ).is_member( add_mod.moderator ) );
-      BOOST_REQUIRE( !db.get_community_member( add_mod.community ).is_moderator( add_mod.moderator ) );
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).is_member( community_member.member ) );
+      BOOST_REQUIRE( !db.get_community_permission( community_member.community ).is_moderator( community_member.member ) );
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      generate_block();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: founder remove moderator" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: founder remove member" );
 
-      community_remove_member_operation remove;
+      community_member.signatory = "alice";
+      community_member.account = "alice";
+      community_member.community = "aliceopencommunity";
+      community_member.member = "fred";
+      community_member.member_type = "member";
+      community_member.accepted = false;
+      community_member.validate();
 
-      remove.signatory = "alice";
-      remove.account = "alice";
-      remove.community = "aliceopencommunity";
-      remove.member = "fred";
-      remove.validate();
-
-      tx.operations.push_back( remove );
+      tx.operations.push_back( community_member );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.set_reference_block( db.head_block_id() );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Open Public boards cannot remove members
+      db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( remove.community ).is_member( remove.member ) );
+      BOOST_REQUIRE( !db.get_community_permission( community_member.community ).is_member( community_member.member ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      remove.signatory = "bob";
-      remove.account = "bob";
-      remove.community = "bobpubliccommunity";
+      community_member.signatory = "bob";
+      community_member.account = "bob";
+      community_member.community = "bobpubliccommunity";
 
-      tx.operations.push_back( remove );
+      tx.operations.push_back( community_member );
       tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( !db.get_community_member( remove.community ).is_member( remove.member ) );
+      BOOST_REQUIRE( !db.get_community_permission( community_member.community ).is_member( community_member.member ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      remove.signatory = "candice";
-      remove.account = "candice";
-      remove.community = "candiceprivatecommunity";
+      community_member.signatory = "candice";
+      community_member.account = "candice";
+      community_member.community = "candiceprivatecommunity";
 
-      tx.operations.push_back( remove );
+      tx.operations.push_back( community_member );
       tx.sign( candice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( !db.get_community_member( remove.community ).is_member( remove.member ) );
+      BOOST_REQUIRE( !db.get_community_permission( community_member.community ).is_member( community_member.member ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      remove.signatory = "dan";
-      remove.account = "dan";
-      remove.community = "danexclusivecommunity";
+      community_member.signatory = "dan";
+      community_member.account = "dan";
+      community_member.community = "danexclusivecommunity";
 
-      tx.operations.push_back( remove );
+      tx.operations.push_back( community_member );
       tx.sign( dan_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( !db.get_community_member( remove.community ).is_member( remove.member ) );
+      BOOST_REQUIRE( !db.get_community_permission( community_member.community ).is_member( community_member.member ) );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      BOOST_TEST_MESSAGE( "│   ├── Passed: founder remove moderator" );
+      generate_block();
+
+      BOOST_TEST_MESSAGE( "│   ├── Passed: founder remove member" );
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: community subscription" );
 
@@ -3365,7 +3836,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( subscribe.community ).is_subscriber( subscribe.account ) );
+      BOOST_REQUIRE( db.get_community_permission( subscribe.community ).is_subscriber( subscribe.account ) );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -3376,7 +3847,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( subscribe.community ).is_subscriber( subscribe.account ) );
+      BOOST_REQUIRE( db.get_community_permission( subscribe.community ).is_subscriber( subscribe.account ) );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -3387,7 +3858,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( subscribe.community ).is_subscriber( subscribe.account ) );
+      BOOST_REQUIRE( db.get_community_permission( subscribe.community ).is_subscriber( subscribe.account ) );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -3398,10 +3869,12 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( elon_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( subscribe.community ).is_subscriber( subscribe.account ) );
+      BOOST_REQUIRE( db.get_community_permission( subscribe.community ).is_subscriber( subscribe.account ) );
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      generate_block();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: community subscription" );
 
@@ -3419,9 +3892,9 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.set_reference_block( db.head_block_id() );
       tx.sign( alice_private_active_key, db.get_chain_id() );
-      REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );     // Open Public boards cannot blacklist
+      db.push_transaction( tx, 0 );
    
-      BOOST_REQUIRE( !db.get_community_member( blacklist.community ).is_blacklisted( blacklist.member ) );
+      BOOST_REQUIRE( db.get_community_permission( blacklist.community ).is_blacklisted( blacklist.member ) );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -3434,7 +3907,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( bob_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( blacklist.community ).is_blacklisted( blacklist.member ) );
+      BOOST_REQUIRE( db.get_community_permission( blacklist.community ).is_blacklisted( blacklist.member ) );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -3447,7 +3920,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( candice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( blacklist.community ).is_blacklisted( blacklist.member ) );
+      BOOST_REQUIRE( db.get_community_permission( blacklist.community ).is_blacklisted( blacklist.member ) );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -3460,7 +3933,7 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
       tx.sign( dan_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( blacklist.community ).is_blacklisted( blacklist.member ) );
+      BOOST_REQUIRE( db.get_community_permission( blacklist.community ).is_blacklisted( blacklist.member ) );
 
       tx.operations.clear();
       tx.signatures.clear();
@@ -3469,66 +3942,73 @@ BOOST_AUTO_TEST_CASE( community_management_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: transfer community ownership" );
 
-      community_transfer_ownership_operation transfer;
-
       generate_blocks( now() + fc::minutes(11), true );
       generate_block();
 
-      transfer.signatory = "alice";
-      transfer.account = "alice";
-      transfer.community = "aliceopencommunity";
-      transfer.new_founder = "elon";
-      transfer.validate();
+      community_member.signatory = "alice";
+      community_member.account = "alice";
+      community_member.community = "aliceopencommunity";
+      community_member.member_type = "founder";
+      community_member.member = "elon";
+      community_member.encrypted_community_key = get_encrypted_message( aliceopencommunity_private_secure_key, aliceopencommunity_public_secure_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( aliceopencommunity_private_secure_key ) );
+      community_member.accepted = true;
+      community_member.expiration = now() + fc::days(31);
+      community_member.validate();
 
-      tx.operations.push_back( transfer );
+      tx.operations.push_back( community_member );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.set_reference_block( db.head_block_id() );
-      tx.sign( alice_private_owner_key, db.get_chain_id() );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( transfer.community ).founder == transfer.new_founder );
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).founder == community_member.member );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      transfer.signatory = "bob";
-      transfer.account = "bob";
-      transfer.community = "bobpubliccommunity";
+      community_member.signatory = "bob";
+      community_member.account = "bob";
+      community_member.community = "bobpubliccommunity";
+      community_member.encrypted_community_key = get_encrypted_message( bobpubliccommunity_private_secure_key, bobpubliccommunity_public_secure_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( bobpubliccommunity_private_secure_key ) );
 
-      tx.operations.push_back( transfer );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      tx.operations.push_back( community_member );
+      tx.sign( bob_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( transfer.community ).founder == transfer.new_founder );
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).founder == community_member.member );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      transfer.signatory = "candice";
-      transfer.account = "candice";
-      transfer.community = "candiceprivatecommunity";
+      community_member.signatory = "candice";
+      community_member.account = "candice";
+      community_member.community = "candiceprivatecommunity";
+      community_member.encrypted_community_key = get_encrypted_message( candiceprivatecommunity_private_secure_key, candiceprivatecommunity_public_secure_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( candiceprivatecommunity_private_secure_key ) );
 
-      tx.operations.push_back( transfer );
+      tx.operations.push_back( community_member );
       tx.sign( candice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( transfer.community ).founder == transfer.new_founder );
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).founder == community_member.member );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      transfer.signatory = "dan";
-      transfer.account = "dan";
-      transfer.community = "danexclusivecommunity";
+      community_member.signatory = "dan";
+      community_member.account = "dan";
+      community_member.community = "danexclusivecommunity";
+      community_member.encrypted_community_key = get_encrypted_message( danexclusivecommunity_private_secure_key, danexclusivecommunity_public_secure_key, elon_public_secure_key, string( "#" ) + graphene::utilities::key_to_wif( danexclusivecommunity_private_secure_key ) );
 
-      tx.operations.push_back( transfer );
+      tx.operations.push_back( community_member );
       tx.sign( dan_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db.get_community_member( transfer.community ).founder == transfer.new_founder );
+      BOOST_REQUIRE( db.get_community_permission( community_member.community ).founder == community_member.member );
 
       tx.operations.clear();
       tx.signatures.clear();
+
+      generate_block();
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: transfer community ownership" );
 

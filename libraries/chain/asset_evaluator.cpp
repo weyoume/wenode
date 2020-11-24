@@ -832,9 +832,10 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
 /**
  * Loop through assets, looking for ones that are backed by the asset being changed. 
  * When found, perform checks to verify validity.
- *
- * @param op the stablecoin update operation being performed
- * @param new_backing_asset
+ * 
+ * @param db The Database being operated on.
+ * @param o the stablecoin update operation being performed.
+ * @param new_backing_asset The Asset object of the new backing asset of the stabelcoin.
  */
 void check_children_of_stablecoin( database& db, const asset_update_operation& o, const asset_object& new_backing_asset )
 {

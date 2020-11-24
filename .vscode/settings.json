@@ -91,7 +91,13 @@
 		"slist": "cpp",
 		"sph_blake.h": "c",
 		"sph_bmw.h": "c",
-		"sph_types.h": "c"
+		"sph_types.h": "c",
+		"cassert": "cpp",
+		"cerrno": "cpp",
+		"cfloat": "cpp",
+		"ciso646": "cpp",
+		"climits": "cpp",
+		"cstdbool": "cpp"
 	},
 	"C_Cpp.errorSquiggles": "Enabled",
 	"C_Cpp.intelliSenseEngineFallback": "Enabled",

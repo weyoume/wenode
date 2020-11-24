@@ -72,20 +72,18 @@ namespace node { namespace protocol {
 
             community_create_operation,
             community_update_operation,
-            community_add_mod_operation,
-            community_add_admin_operation,
-            community_vote_mod_operation,
-            community_transfer_ownership_operation,
-            community_join_request_operation,
-            community_join_accept_operation,
-            community_join_invite_operation,
-            community_invite_accept_operation,
-            community_remove_member_operation,
-            community_blacklist_operation,
+            community_member_operation,
+            community_member_request_operation,
+            community_member_vote_operation,
             community_subscribe_operation,
+            community_blacklist_operation,
             community_federation_operation,
             community_event_operation,
             community_event_attend_operation,
+            community_directive_operation,
+            community_directive_vote_operation,
+            community_directive_member_operation,
+            community_directive_member_vote_operation,
 
             // Advertising Operations
 

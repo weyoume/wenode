@@ -132,51 +132,35 @@ void comment_evaluator::do_apply( const comment_operation& o )
          "Community Name: ${b} not found.", ("b", o.community ));
       const community_object& community = *community_ptr;
       feed_reach_type community_feed_type = feed_reach_type::COMMUNITY_FEED;
-      const community_member_object& community_member = _db.get_community_member( o.community );
+      const community_permission_object& community_permission = _db.get_community_permission( o.community );
 
       if( o.parent_author == ROOT_POST_PARENT )
       {
-         FC_ASSERT( community_member.is_authorized_author( o.author ),
+         FC_ASSERT( community_permission.is_authorized_author( o.author ),
             "User ${u} is not authorized to post in the community ${b}.",
             ("b",o.community)("u",auth.name));
       }
       else
       {
-         FC_ASSERT( community_member.is_authorized_interact( o.author ),
-            "User ${u} is not authorized to interact with posts in the community ${b}.",
+         FC_ASSERT( community_permission.is_authorized_reply( o.author ),
+            "User ${u} is not authorized to reply to posts in the community ${b}.",
             ("b",o.community)("u",auth.name));
       }
       
-      switch( community.community_privacy )
+      if( community_permission.private_community )
       {
-         case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
-         case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
-         case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
-         case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
-         {
-            // No public key required for public posts
-         }
-         break;
-         case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
-         case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
-         case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
-         case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
-         {
-            FC_ASSERT( o.public_key.size(),
-               "Posts in Private Communities should be encrypted." );
-            FC_ASSERT( public_key_type( o.public_key ) == community.community_member_key || 
-               public_key_type( o.public_key ) == community.community_moderator_key || 
-               public_key_type( o.public_key ) == community.community_admin_key,
-               "Posts in Private Communities must be encrypted with a community key.");
-            FC_ASSERT( reach_type == community_feed_type, 
-               "Posts in Private Communities should have reach limited to only community level subscribers.");
-         }
-         break;
-         default:
-         {
-            FC_ASSERT( false, "Invalid Community Privacy type." );
-         }
-         break;
+         FC_ASSERT( o.public_key.size(),
+            "Posts in Private Communities should be encrypted." );
+         FC_ASSERT( public_key_type( o.public_key ) == community.community_member_key || 
+            public_key_type( o.public_key ) == community.community_moderator_key || 
+            public_key_type( o.public_key ) == community.community_admin_key ||
+            public_key_type( o.public_key ) == community.community_secure_key ||
+            public_key_type( o.public_key ) == community.community_standard_premium_key ||
+            public_key_type( o.public_key ) == community.community_mid_premium_key ||
+            public_key_type( o.public_key ) == community.community_top_premium_key,
+            "Posts in Private Communities must be encrypted with a community key.");
+         FC_ASSERT( reach_type == community_feed_type, 
+            "Posts in Private Communities should have reach limited to only community level subscribers.");
       }
 
       FC_ASSERT( o.options.rating <= community.max_rating, 
@@ -220,7 +204,11 @@ void comment_evaluator::do_apply( const comment_operation& o )
             "Community level posts must be made within a valid community.");
          FC_ASSERT( public_key_type( o.public_key ) == community_ptr->community_member_key || 
             public_key_type( o.public_key ) == community_ptr->community_moderator_key || 
-            public_key_type( o.public_key ) == community_ptr->community_admin_key,
+            public_key_type( o.public_key ) == community_ptr->community_admin_key ||
+            public_key_type( o.public_key ) == community_ptr->community_secure_key ||
+            public_key_type( o.public_key ) == community_ptr->community_standard_premium_key ||
+            public_key_type( o.public_key ) == community_ptr->community_mid_premium_key ||
+            public_key_type( o.public_key ) == community_ptr->community_top_premium_key,
             "Community level posts must be encrypted with a community public key.");
       }
       break;
@@ -956,8 +944,8 @@ void comment_vote_evaluator::do_apply( const comment_vote_operation& o )
    if( comment.community.size() )
    {
       community_ptr = _db.find_community( comment.community );     
-      const community_member_object& community_member = _db.get_community_member( comment.community );
-      FC_ASSERT( community_member.is_authorized_interact( o.voter ), 
+      const community_permission_object& community_permission = _db.get_community_permission( comment.community );
+      FC_ASSERT( community_permission.is_authorized_vote( o.voter ), 
          "User ${u} is not authorized to interact with posts in the community ${b}.",
          ("b", comment.community)("u", voter.name));
    }
@@ -1250,8 +1238,8 @@ void comment_view_evaluator::do_apply( const comment_view_operation& o )
    if( comment.community.size() )
    {
       community_ptr = _db.find_community( comment.community );      
-      const community_member_object& community_member = _db.get_community_member( comment.community );       
-      FC_ASSERT( community_member.is_authorized_interact( o.viewer ), 
+      const community_permission_object& community_permission = _db.get_community_permission( comment.community );       
+      FC_ASSERT( community_permission.is_authorized_view( o.viewer ), 
          "User ${u} is not authorized to interact with posts in the community ${b}.",
          ("b",comment.community)("u",viewer.name));
    }
@@ -1511,8 +1499,8 @@ void comment_share_evaluator::do_apply( const comment_share_operation& o )
    if( comment.community.size() )
    {
       community_ptr = _db.find_community( comment.community );      
-      const community_member_object& community_member = _db.get_community_member( comment.community );       
-      FC_ASSERT( community_member.is_authorized_interact( o.sharer ), 
+      const community_permission_object& community_permission = _db.get_community_permission( comment.community );       
+      FC_ASSERT( community_permission.is_authorized_share( o.sharer ), 
          "User ${u} is not authorized to interact with posts in the community ${b}.",
          ("b", comment.community)("u", sharer.name));
    }
@@ -1652,8 +1640,8 @@ void comment_share_evaluator::do_apply( const comment_share_operation& o )
 
       if( o.community.valid() )
       {
-         const community_member_object& community_member = _db.get_community_member( *o.community );       
-         FC_ASSERT( community_member.is_authorized_interact( o.sharer ), 
+         const community_permission_object& community_permission = _db.get_community_permission( *o.community );
+         FC_ASSERT( community_permission.is_authorized_share( o.sharer ),
             "User ${u} is not authorized to interact with posts in the community ${b}.",
             ("b", *o.community)("u", sharer.name));
 
@@ -1764,11 +1752,11 @@ void comment_moderation_evaluator::do_apply( const comment_moderation_operation&
 
    if( community_ptr != nullptr || gov_ptr != nullptr )
    {
-      const community_member_object* community_member_ptr = _db.find_community_member( comment.community );
-      FC_ASSERT( community_member_ptr != nullptr || gov_ptr != nullptr,
+      const community_permission_object* community_permission_ptr = _db.find_community_permission( comment.community );
+      FC_ASSERT( community_permission_ptr != nullptr || gov_ptr != nullptr,
          "Account must be a community moderator or governance account to create moderation tag." );
 
-      if( community_member_ptr == nullptr )     // No community, must be governance account.
+      if( community_permission_ptr == nullptr )     // No community, must be governance account.
       {
          FC_ASSERT( gov_ptr != nullptr,
             "Account must be a governance account to create moderation tag." );
@@ -1777,14 +1765,14 @@ void comment_moderation_evaluator::do_apply( const comment_moderation_operation&
       }
       else if( gov_ptr == nullptr )         // Not governance account, must be moderator.
       {
-         FC_ASSERT( community_member_ptr != nullptr,
+         FC_ASSERT( community_permission_ptr != nullptr,
             "Account must be a community moderator to create moderation tag." );
-         FC_ASSERT( community_member_ptr->is_moderator( o.moderator ),
+         FC_ASSERT( community_permission_ptr->is_moderator( o.moderator ),
             "Account must be a community moderator to create moderation tag." );
       }
       else
       {
-         FC_ASSERT( community_member_ptr->is_moderator( o.moderator ) || gov_ptr->account == o.moderator,
+         FC_ASSERT( community_permission_ptr->is_moderator( o.moderator ) || gov_ptr->account == o.moderator,
             "Account must be a community moderator or governance account to create moderation tag." );
       } 
    }
@@ -1932,9 +1920,9 @@ void message_evaluator::do_apply( const message_operation& o )
    if( o.community.size() )     // Community validity and permissioning checks
    {
       const community_object& community = _db.get_community( o.community );
-      const community_member_object& community_member = _db.get_community_member( o.community );
+      const community_permission_object& community_permission = _db.get_community_permission( o.community );
 
-      FC_ASSERT( community_member.is_authorized_author( o.sender ),
+      FC_ASSERT( community_permission.is_authorized_message( o.sender ),
          "User ${u} is not authorized to create private group messages in the community ${b}.",
          ("b",o.community)("u",o.sender));
 
@@ -2333,40 +2321,24 @@ void poll_evaluator::do_apply( const poll_operation& o )
       FC_ASSERT( community_ptr != nullptr, 
          "Community Name: ${b} not found.", ("b", o.community ));
       const community_object& community = *community_ptr;
-      const community_member_object& community_member = _db.get_community_member( o.community );
+      const community_permission_object& community_permission = _db.get_community_permission( o.community );
 
-      FC_ASSERT( community_member.is_authorized_author( o.creator ),
+      FC_ASSERT( community_permission.is_authorized_poll( o.creator ),
          "User ${u} is not authorized to create polls in the community ${b}.",
          ("b",o.community)("u",o.creator));
       
-      switch( community.community_privacy )
+      if( community_permission.private_community )
       {
-         case community_privacy_type::OPEN_PUBLIC_COMMUNITY:
-         case community_privacy_type::GENERAL_PUBLIC_COMMUNITY:
-         case community_privacy_type::EXCLUSIVE_PUBLIC_COMMUNITY:
-         case community_privacy_type::CLOSED_PUBLIC_COMMUNITY:
-         {
-            // No public key required
-         }
-         break;
-         case community_privacy_type::OPEN_PRIVATE_COMMUNITY:
-         case community_privacy_type::GENERAL_PRIVATE_COMMUNITY:
-         case community_privacy_type::EXCLUSIVE_PRIVATE_COMMUNITY:
-         case community_privacy_type::CLOSED_PRIVATE_COMMUNITY:
-         {
-            FC_ASSERT( o.public_key.size(),
-               "Posts in Private Communities should be encrypted." );
-            FC_ASSERT( public_key_type( o.public_key ) == community.community_member_key || 
-               public_key_type( o.public_key ) == community.community_moderator_key || 
-               public_key_type( o.public_key ) == community.community_admin_key,
-               "Posts in Private Communities must be encrypted with a community key.");
-         }
-         break;
-         default:
-         {
-            FC_ASSERT( false, "Invalid Community Privacy type." );
-         }
-         break;
+         FC_ASSERT( o.public_key.size(),
+            "Posts in Private Communities should be encrypted." );
+         FC_ASSERT( public_key_type( o.public_key ) == community.community_member_key || 
+            public_key_type( o.public_key ) == community.community_moderator_key || 
+            public_key_type( o.public_key ) == community.community_admin_key ||
+            public_key_type( o.public_key ) == community.community_secure_key ||
+            public_key_type( o.public_key ) == community.community_standard_premium_key ||
+            public_key_type( o.public_key ) == community.community_mid_premium_key ||
+            public_key_type( o.public_key ) == community.community_top_premium_key,
+            "Posts in Private Communities must be encrypted with a community key.");
       }
    }
 
@@ -2583,9 +2555,9 @@ void poll_vote_evaluator::do_apply( const poll_vote_operation& o )
          "Community Name: ${b} not found.",
          ("b", poll.community ));
 
-      const community_member_object& community_member = _db.get_community_member( poll.community );
+      const community_permission_object& community_permission = _db.get_community_permission( poll.community );
 
-      FC_ASSERT( community_member.is_authorized_interact( o.voter ),
+      FC_ASSERT( community_permission.is_member( o.voter ),
          "User ${u} is not authorized to vote in polls in the community ${b}.",
          ("b",poll.community)("u",o.creator));
    }

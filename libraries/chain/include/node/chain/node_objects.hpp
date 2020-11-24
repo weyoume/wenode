@@ -50,7 +50,7 @@ namespace node { namespace chain {
    using node::protocol::executive_officer_set;
    using chainbase::shared_vector;
 
-   using node::protocol::community_privacy_type;
+   using node::protocol::community_permission_type;
    using node::protocol::community_federation_type;
    using node::protocol::business_structure_type;
    using node::protocol::membership_tier_type;

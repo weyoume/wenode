@@ -4013,13 +4013,34 @@ annotated_signed_transaction      wallet_api::community_create(
    string json,
    string json_private,
    vector< string > tags,
-   string community_privacy,
+   bool private_community,
+   string author_permission,
+   string reply_permission,
+   string vote_permission,
+   string view_permission,
+   string share_permission,
+   string message_permission,
+   string poll_permission,
+   string event_permission,
+   string directive_permission,
+   string add_permission,
+   string request_permission,
+   string remove_permission,
    string community_member_key,
    string community_moderator_key,
    string community_admin_key,
-   sring interface,
+   string community_secure_key,
+   string community_standard_premium_key,
+   string community_mid_premium_key,
+   string community_top_premium_key,
+   string interface,
    string reward_currency,
-   asset membership_price,
+   asset standard_membership_price,
+   asset mid_membership_price,
+   asset top_membership_price,
+   vector< string > verifiers,
+   uint64_t min_verification_count,
+   uint64_t max_verification_distance,
    uint16_t max_rating,
    uint32_t flags,
    uint32_t permissions,
@@ -4045,13 +4066,39 @@ annotated_signed_transaction      wallet_api::community_create(
       op.tags.insert( t );
    }
 
-   op.community_privacy = community_privacy;
+   op.private_community = private_community;
+   op.author_permission = author_permission;
+   op.reply_permission = reply_permission;
+   op.vote_permission = vote_permission;
+   op.view_permission = view_permission;
+   op.share_permission = share_permission;
+   op.message_permission = message_permission;
+   op.poll_permission = poll_permission;
+   op.event_permission = event_permission;
+   op.directive_permission = directive_permission;
+   op.add_permission = add_permission;
+   op.request_permission = request_permission;
+   op.remove_permission = remove_permission;
    op.community_member_key = community_member_key;
    op.community_moderator_key = community_moderator_key;
    op.community_admin_key = community_admin_key;
+   op.community_secure_key = community_secure_key;
+   op.community_standard_premium_key = community_standard_premium_key;
+   op.community_mid_premium_key = community_mid_premium_key;
+   op.community_top_premium_key = community_top_premium_key;
    op.interface = interface;
    op.reward_currency = reward_currency;
-   op.membership_price = membership_price;
+   op.standard_membership_price = standard_membership_price;
+   op.mid_membership_price = mid_membership_price;
+   op.top_membership_price = top_membership_price;
+
+   for( auto v : verifiers )
+   {
+      op.verifiers.insert( v );
+   }
+
+   op.min_verification_count = min_verification_count;
+   op.max_verification_distance = max_verification_distance;
    op.max_rating = max_rating;
    op.flags = flags;
    op.permissions = permissions;
@@ -4066,8 +4113,8 @@ annotated_signed_transaction      wallet_api::community_create(
 
 annotated_signed_transaction      wallet_api::community_update(
    string signatory,
-   string founder,
-   string name,
+   string account,
+   string community,
    string display_name,
    string details,
    string url,
@@ -4078,10 +4125,32 @@ annotated_signed_transaction      wallet_api::community_update(
    string pinned_author,
    string pinned_permlink,
    vector< string > tags,
-   string community_privacy,
+   bool private_community,
+   string author_permission,
+   string reply_permission,
+   string vote_permission,
+   string view_permission,
+   string share_permission,
+   string message_permission,
+   string poll_permission,
+   string event_permission,
+   string directive_permission,
+   string add_permission,
+   string request_permission,
+   string remove_permission,
    string community_member_key,
    string community_moderator_key,
    string community_admin_key,
+   string community_secure_key,
+   string community_standard_premium_key,
+   string community_mid_premium_key,
+   string community_top_premium_key,
+   asset standard_membership_price,
+   asset mid_membership_price,
+   asset top_membership_price,
+   vector< string > verifiers,
+   uint64_t min_verification_count,
+   uint64_t max_verification_distance,
    uint16_t max_rating,
    uint32_t flags,
    uint32_t permissions,
@@ -4093,8 +4162,8 @@ annotated_signed_transaction      wallet_api::community_update(
    community_update_operation op;
 
    op.signatory = signatory;
-   op.founder = founder;
-   op.name = name;
+   op.account = account;
+   op.community = community;
    op.display_name = display_name;
    op.details = details;
    op.url = url;
@@ -4110,10 +4179,37 @@ annotated_signed_transaction      wallet_api::community_update(
       op.tags.insert( t );
    }
 
-   op.community_privacy = community_privacy;
+   op.private_community = private_community;
+   op.author_permission = author_permission;
+   op.reply_permission = reply_permission;
+   op.vote_permission = vote_permission;
+   op.view_permission = view_permission;
+   op.share_permission = share_permission;
+   op.message_permission = message_permission;
+   op.poll_permission = poll_permission;
+   op.event_permission = event_permission;
+   op.directive_permission = directive_permission;
+   op.add_permission = add_permission;
+   op.request_permission = request_permission;
+   op.remove_permission = remove_permission;
    op.community_member_key = community_member_key;
    op.community_moderator_key = community_moderator_key;
    op.community_admin_key = community_admin_key;
+   op.community_secure_key = community_secure_key;
+   op.community_standard_premium_key = community_standard_premium_key;
+   op.community_mid_premium_key = community_mid_premium_key;
+   op.community_top_premium_key = community_top_premium_key;
+   op.standard_membership_price = standard_membership_price;
+   op.mid_membership_price = mid_membership_price;
+   op.top_membership_price = top_membership_price;
+
+   for( auto v : verifiers )
+   {
+      op.verifiers.insert( v );
+   }
+
+   op.min_verification_count = min_verification_count;
+   op.max_verification_distance = max_verification_distance;
    op.max_rating = max_rating;
    op.flags = flags;
    op.permissions = permissions;
@@ -4127,23 +4223,29 @@ annotated_signed_transaction      wallet_api::community_update(
 } FC_CAPTURE_AND_RETHROW() }
 
 
-annotated_signed_transaction      wallet_api::community_add_mod(
+annotated_signed_transaction      wallet_api::community_member(
    string signatory,
    string account,
+   string member,
    string community,
-   string moderator,
-   bool added,
+   string interface,
+   string member_type,
+   string encrypted_community_key,
+   bool accepted,
    bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
 
-   community_add_mod_operation op;
+   community_member_operation op;
 
    op.signatory = signatory;
    op.account = account;
+   op.member = member;
    op.community = community;
-   op.moderator = moderator;
-   op.added = added;
+   op.interface = interface;
+   op.member_type = member_type;
+   op.encrypted_community_key = encrypted_community_key;
+   op.accepted = accepted;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -4153,99 +4255,25 @@ annotated_signed_transaction      wallet_api::community_add_mod(
 } FC_CAPTURE_AND_RETHROW() }
 
 
-annotated_signed_transaction      wallet_api::community_add_admin(
+annotated_signed_transaction      wallet_api::community_member_request(
    string signatory,
    string account,
    string community,
-   string admin,
-   bool added,
-   bool broadcast )
-{ try {
-   FC_ASSERT( !is_locked() );
-
-   community_add_admin_operation op;
-
-   op.signatory = signatory;
-   op.account = account;
-   op.community = community;
-   op.admin = admin;
-   op.added = added;
-
-   signed_transaction tx;
-   tx.operations.push_back( op );
-   tx.validate();
-
-   return my->sign_transaction( tx, broadcast );
-} FC_CAPTURE_AND_RETHROW() }
-
-
-annotated_signed_transaction      wallet_api::community_vote_mod(
-   string signatory,
-   string account,
-   string community,
-   string moderator,
-   uint16_t vote_rank,
-   bool approved,
-   bool broadcast )
-{ try {
-   FC_ASSERT( !is_locked() );
-
-   community_vote_mod_operation op;
-
-   op.signatory = signatory;
-   op.account = account;
-   op.community = community;
-   op.moderator = moderator;
-   op.vote_rank = vote_rank;
-   op.approved = approved;
-
-   signed_transaction tx;
-   tx.operations.push_back( op );
-   tx.validate();
-
-   return my->sign_transaction( tx, broadcast );
-} FC_CAPTURE_AND_RETHROW() }
-
-
-annotated_signed_transaction      wallet_api::community_transfer_ownership(
-   string signatory,
-   string account,
-   string community,
-   string new_founder,
-   bool broadcast )
-{ try {
-   FC_ASSERT( !is_locked() );
-
-   community_transfer_ownership_operation op;
-
-   op.signatory = signatory;
-   op.account = account;
-   op.community = community;
-   op.new_founder = new_founder;
-
-   signed_transaction tx;
-   tx.operations.push_back( op );
-   tx.validate();
-
-   return my->sign_transaction( tx, broadcast );
-} FC_CAPTURE_AND_RETHROW() }
-
-
-annotated_signed_transaction      wallet_api::community_join_request(
-   string signatory,
-   string account,
-   string community,
+   string interface,
+   string member_type,
    string message,
    bool requested,
    bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
 
-   community_join_request_operation op;
+   community_member_request_operation op;
 
    op.signatory = signatory;
    op.account = account;
    op.community = community;
+   op.interface = interface;
+   op.member_type = member_type;
    op.message = message;
    op.requested = requested;
 
@@ -4257,128 +4285,27 @@ annotated_signed_transaction      wallet_api::community_join_request(
 } FC_CAPTURE_AND_RETHROW() }
 
 
-annotated_signed_transaction      wallet_api::community_join_invite(
+annotated_signed_transaction      wallet_api::community_member_vote(
    string signatory,
    string account,
-   string member,
    string community,
-   string message,
-   string encrypted_community_key,
-   bool invited,
+   string member,
+   string interface,
+   uint16_t vote_rank,
+   bool approved,
    bool broadcast )
 { try {
    FC_ASSERT( !is_locked() );
 
-   community_join_invite_operation op;
+   community_member_vote_operation op;
 
    op.signatory = signatory;
    op.account = account;
    op.community = community;
-   op.message = message;
-   op.encrypted_community_key = encrypted_community_key;
-   op.invited = invited;
-
-   signed_transaction tx;
-   tx.operations.push_back( op );
-   tx.validate();
-
-   return my->sign_transaction( tx, broadcast );
-} FC_CAPTURE_AND_RETHROW() }
-
-
-annotated_signed_transaction      wallet_api::community_join_accept(
-   string signatory,
-   string account,
-   string member,
-   string community,
-   string encrypted_community_key,
-   bool accepted,
-   bool broadcast )
-{ try {
-   FC_ASSERT( !is_locked() );
-
-   community_join_accept_operation op;
-
-   op.signatory = signatory;
-   op.account = account;
    op.member = member;
-   op.community = community;
-   op.encrypted_community_key = encrypted_community_key;
-   op.accepted = accepted;
-
-   signed_transaction tx;
-   tx.operations.push_back( op );
-   tx.validate();
-
-   return my->sign_transaction( tx, broadcast );
-} FC_CAPTURE_AND_RETHROW() }
-
-
-annotated_signed_transaction      wallet_api::community_invite_accept(
-   string signatory,
-   string account,
-   string community,
-   bool accepted,
-   bool broadcast )
-{ try {
-   FC_ASSERT( !is_locked() );
-
-   community_invite_accept_operation op;
-
-   op.signatory = signatory;
-   op.account = account;
-   op.community = community;
-   op.accepted = accepted;
-
-   signed_transaction tx;
-   tx.operations.push_back( op );
-   tx.validate();
-
-   return my->sign_transaction( tx, broadcast );
-} FC_CAPTURE_AND_RETHROW() }
-
-
-annotated_signed_transaction      wallet_api::community_remove_member(
-   string signatory,
-   string account,
-   string member,
-   string community,
-   bool broadcast )
-{ try {
-   FC_ASSERT( !is_locked() );
-
-   community_remove_member_operation op;
-
-   op.signatory = signatory;
-   op.account = account;
-   op.member = member;
-   op.community = community;
-
-   signed_transaction tx;
-   tx.operations.push_back( op );
-   tx.validate();
-
-   return my->sign_transaction( tx, broadcast );
-} FC_CAPTURE_AND_RETHROW() }
-
-
-annotated_signed_transaction      wallet_api::community_blacklist(
-   string signatory,
-   string account,
-   string member,
-   string community,
-   bool blacklisted,
-   bool broadcast )
-{ try {
-   FC_ASSERT( !is_locked() );
-
-   community_blacklist_operation op;
-
-   op.signatory = signatory;
-   op.account = account;
-   op.member = member;
-   op.community = community;
-   op.blacklisted = blacklisted;
+   op.interface = interface;
+   op.vote_rank = vote_rank;
+   op.approved = approved;
 
    signed_transaction tx;
    tx.operations.push_back( op );
@@ -4415,6 +4342,31 @@ annotated_signed_transaction      wallet_api::community_subscribe(
    return my->sign_transaction( tx, broadcast );
 } FC_CAPTURE_AND_RETHROW() }
 
+
+annotated_signed_transaction      wallet_api::community_blacklist(
+   string signatory,
+   string account,
+   string member,
+   string community,
+   bool blacklisted,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   community_blacklist_operation op;
+
+   op.signatory = signatory;
+   op.account = account;
+   op.member = member;
+   op.community = community;
+   op.blacklisted = blacklisted;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
 
 
 annotated_signed_transaction      wallet_api::community_federation(
@@ -4528,6 +4480,166 @@ annotated_signed_transaction      wallet_api::community_event_attend(
    op.interested = interested;
    op.attending = attending;
    op.not_attending = not_attending;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::community_directive(
+   string signatory,
+   string account,
+   string directive_id,
+   string parent_account,
+   string parent_directive_id,
+   string community,
+   string public_key,
+   string interface,
+   string details, 
+   string cover_image,
+   string ipfs,
+   string json,
+   time_point directive_start_time,
+   time_point directive_end_time,
+   bool completed,
+   bool active,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   community_directive_operation op;
+
+   op.signatory = signatory;
+   op.account = account;
+   op.directive_id = directive_id;
+   op.parent_account = parent_account;
+   op.parent_directive_id = parent_directive_id;
+   op.community = community;
+   op.public_key = public_key;
+   op.interface = interface;
+   op.details = details;
+   op.cover_image = cover_image;
+   op.ipfs = ipfs;
+   op.json = json;
+   op.directive_start_time = directive_start_time;
+   op.directive_end_time = directive_end_time;
+   op.completed = completed;
+   op.active = active;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::community_directive_vote(
+   string signatory,
+   string voter,
+   string account,
+   string directive_id,
+   string public_key,
+   string interface,
+   string details,
+   string json,
+   bool approve,
+   bool active,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   community_directive_vote_operation op;
+
+   op.signatory = signatory;
+   op.voter = voter;
+   op.account = account;
+   op.directive_id = directive_id;
+   op.public_key = public_key;
+   op.interface = interface;
+   op.details = details;
+   op.json = json;
+   op.approve = approve;
+   op.active = active;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::community_directive_member(
+   string signatory,
+   string account,
+   string community,
+   string interface,
+   string public_key,
+   string details,
+   string json,
+   string command_directive_id,
+   string delegate_directive_id,
+   string consensus_directive_id,
+   string emergent_directive_id,
+   bool active,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   community_directive_member_operation op;
+
+   op.signatory = signatory;
+   op.account = account;
+   op.community = community;
+   op.interface = interface;
+   op.public_key = public_key;
+   op.details = details;
+   op.json = json;
+   op.command_directive_id = command_directive_id;
+   op.delegate_directive_id = delegate_directive_id;
+   op.consensus_directive_id = consensus_directive_id;
+   op.emergent_directive_id = emergent_directive_id;
+   op.active = active;
+
+   signed_transaction tx;
+   tx.operations.push_back( op );
+   tx.validate();
+
+   return my->sign_transaction( tx, broadcast );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+annotated_signed_transaction      wallet_api::community_directive_member_vote(
+   string signatory,
+   string voter,
+   string member,
+   string community,
+   string public_key,
+   string interface,
+   string details,
+   string json, 
+   bool approve,
+   bool active,
+   bool broadcast )
+{ try {
+   FC_ASSERT( !is_locked() );
+
+   community_directive_member_operation op;
+
+   op.signatory = signatory;
+   op.voter = voter;
+   op.member = member;
+   op.community = community;
+   op.public_key = public_key;
+   op.interface = interface;
+   op.details = details;
+   op.json = json;
+   op.approve = approve;
+   op.active = active;
 
    signed_transaction tx;
    tx.operations.push_back( op );

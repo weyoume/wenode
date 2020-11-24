@@ -460,8 +460,8 @@ asset database::pay_storage( const comment_object& c, const asset& max_rewards )
  */
 asset database::pay_moderators( const comment_object& c, const asset& max_rewards )
 { try {
-   const community_member_object& community_member = get_community_member( c.community );
-   uint128_t total_weight( community_member.total_mod_weight.value );
+   const community_permission_object& community_permission = get_community_permission( c.community );
+   uint128_t total_weight( community_permission.total_vote_weight.value );
    asset unclaimed_rewards = max_rewards;
 
    if( !c.allow_curation_rewards )
@@ -470,7 +470,7 @@ asset database::pay_moderators( const comment_object& c, const asset& max_reward
    }
    else if( c.total_view_weight > 0 )
    {
-      for( auto mod : community_member.mod_weight )
+      for( auto mod : community_permission.vote_weight )
       {
          uint128_t weight( mod.second.value );
          uint128_t reward_amount = ( max_rewards.amount.value * weight ) / total_weight;
@@ -900,11 +900,11 @@ void database::add_comment_to_feeds( const comment_object& comment )
    const comment_id_type& comment_id = comment.id;
    const auto& comment_feed_idx = get_index< comment_feed_index >().indices().get< by_account_comment_type >();
    const account_following_object& acc_following = get_account_following( comment.author );
-   const community_member_object* community_member_ptr = nullptr;
+   const community_permission_object* community_permission_ptr = nullptr;
 
    if( comment.community != community_name_type() )
    {
-      community_member_ptr = find_community_member( comment.community );
+      community_permission_ptr = find_community_permission( comment.community );
    }
 
    const auto& account_comment_blog_idx = get_index< comment_blog_index >().indices().get< by_comment_account >();
@@ -951,7 +951,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
       }
    }
 
-   if( community_member_ptr != nullptr )
+   if( community_permission_ptr != nullptr )
    {
       const auto& community_comment_blog_idx = get_index< comment_blog_index >().indices().get< by_comment_community >();
       auto community_comment_blog_itr = community_comment_blog_idx.find( boost::make_tuple( comment_id, comment.community ) );
@@ -969,7 +969,7 @@ void database::add_comment_to_feeds( const comment_object& comment )
          });
       }
 
-      for( const account_name_type& account : community_member_ptr->subscribers )    // Add post to community feeds. 
+      for( const account_name_type& account : community_permission_ptr->subscribers )    // Add post to community feeds. 
       {
          auto comment_feed_itr = comment_feed_idx.find( boost::make_tuple( account, comment_id, feed_reach_type::COMMUNITY_FEED ) );
          if( comment_feed_itr == comment_feed_idx.end() )         // Comment is not already in account's communities feed for the type of community. 
@@ -1375,7 +1375,7 @@ void database::share_comment_to_community( const account_name_type& sharer,
 { try {
    time_point now = head_block_time();
    const comment_id_type& comment_id = comment.id;
-   const community_member_object& community_member = get_community_member( community );
+   const community_permission_object& community_permission = get_community_permission( community );
    const auto& comment_feed_idx = get_index< comment_feed_index >().indices().get< by_account_comment_type >();
    feed_reach_type feed_type = feed_reach_type::COMMUNITY_FEED;
 
@@ -1404,7 +1404,7 @@ void database::share_comment_to_community( const account_name_type& sharer,
       });
    }
 
-   for( const account_name_type& account : community_member.subscribers )
+   for( const account_name_type& account : community_permission.subscribers )
    {
       auto comment_feed_itr = comment_feed_idx.find( boost::make_tuple( account, comment_id, feed_type ) );
       if( comment_feed_itr == comment_feed_idx.end() )         // Comment is not already in account's communities feed for the type of community. 

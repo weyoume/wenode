@@ -962,11 +962,13 @@ void database::init_genesis()
       from_string( bo.json, "" );
       from_string( bo.json_private, "" );
 
-      bo.community_privacy = community_privacy_type::OPEN_PUBLIC_COMMUNITY;
-
       bo.community_member_key = get_public_key( INIT_COMMUNITY, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
       bo.community_moderator_key = get_public_key( INIT_COMMUNITY, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
       bo.community_admin_key = get_public_key( INIT_COMMUNITY, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      bo.community_secure_key = get_public_key( INIT_COMMUNITY, SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      bo.community_standard_premium_key = get_public_key( INIT_COMMUNITY, STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      bo.community_mid_premium_key = get_public_key( INIT_COMMUNITY, MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      bo.community_top_premium_key = get_public_key( INIT_COMMUNITY, TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
 
       bo.max_rating = 9;
       
@@ -979,24 +981,37 @@ void database::init_genesis()
       bo.active = true;
    });
 
-   create< community_member_object >( [&]( community_member_object& bmo )
+   create< community_permission_object >( [&]( community_permission_object& cpo )
    {
-      bmo.name = INIT_COMMUNITY;
-      bmo.founder = INIT_ACCOUNT;
-      bmo.subscribers.insert( INIT_ACCOUNT );
-      bmo.members.insert( INIT_ACCOUNT );
-      bmo.moderators.insert( INIT_ACCOUNT );
-      bmo.administrators.insert( INIT_ACCOUNT );
-      bmo.community_privacy = community_privacy_type::OPEN_PUBLIC_COMMUNITY;
-      bmo.last_updated = now;
+      cpo.name = INIT_COMMUNITY;
+      cpo.founder = INIT_ACCOUNT;
+      cpo.subscribers.insert( INIT_ACCOUNT );
+      cpo.members.insert( INIT_ACCOUNT );
+      cpo.moderators.insert( INIT_ACCOUNT );
+      cpo.administrators.insert( INIT_ACCOUNT );
+      cpo.author_permission = community_permission_type::ALL_PERMISSION;
+      cpo.reply_permission = community_permission_type::ALL_PERMISSION;
+      cpo.vote_permission = community_permission_type::ALL_PERMISSION;
+      cpo.view_permission = community_permission_type::ALL_PERMISSION;
+      cpo.share_permission = community_permission_type::ALL_PERMISSION;
+      cpo.message_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.poll_permission = community_permission_type::ADMIN_PERMISSION;
+      cpo.event_permission = community_permission_type::ADMIN_PERMISSION;
+      cpo.directive_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.add_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.request_permission = community_permission_type::ALL_PERMISSION;
+      cpo.remove_permission = community_permission_type::ADMIN_PERMISSION;
+      cpo.last_updated = now;
    });
 
-   create< community_moderator_vote_object >( [&]( community_moderator_vote_object& v )
+   create< community_member_vote_object >( [&]( community_member_vote_object& cmvo )
    {
-      v.moderator = INIT_ACCOUNT;
-      v.account = INIT_ACCOUNT;
-      v.community = INIT_COMMUNITY;
-      v.vote_rank = 1;
+      cmvo.member = INIT_ACCOUNT;
+      cmvo.account = INIT_ACCOUNT;
+      cmvo.community = INIT_COMMUNITY;
+      cmvo.vote_rank = 1;
+      cmvo.last_updated = now;
+      cmvo.created = now;
    });
 
    // Allocate Genesis block reward to Init Account and create primary asset liquidity and credit pools.
@@ -2286,180 +2301,178 @@ void database::initialize_evaluators()
 {
    // Account Evaluators
 
-   _my->_evaluator_registry.register_evaluator< account_create_evaluator                 >();
-   _my->_evaluator_registry.register_evaluator< account_update_evaluator                 >();
-   _my->_evaluator_registry.register_evaluator< account_verification_evaluator           >();
-   _my->_evaluator_registry.register_evaluator< account_business_evaluator               >();
-   _my->_evaluator_registry.register_evaluator< account_membership_evaluator             >();
-   _my->_evaluator_registry.register_evaluator< account_vote_executive_evaluator         >();
-   _my->_evaluator_registry.register_evaluator< account_vote_officer_evaluator           >();
-   _my->_evaluator_registry.register_evaluator< account_member_request_evaluator         >();
-   _my->_evaluator_registry.register_evaluator< account_member_invite_evaluator          >();
-   _my->_evaluator_registry.register_evaluator< account_accept_request_evaluator         >();
-   _my->_evaluator_registry.register_evaluator< account_accept_invite_evaluator          >();
-   _my->_evaluator_registry.register_evaluator< account_remove_member_evaluator          >();
-   _my->_evaluator_registry.register_evaluator< account_update_list_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< account_producer_vote_evaluator          >();
-   _my->_evaluator_registry.register_evaluator< account_update_proxy_evaluator           >();
-   _my->_evaluator_registry.register_evaluator< account_request_recovery_evaluator       >();
-   _my->_evaluator_registry.register_evaluator< account_recover_evaluator                >();
-   _my->_evaluator_registry.register_evaluator< account_reset_evaluator                  >();
-   _my->_evaluator_registry.register_evaluator< account_reset_update_evaluator           >();
-   _my->_evaluator_registry.register_evaluator< account_recovery_update_evaluator        >();
-   _my->_evaluator_registry.register_evaluator< account_decline_voting_evaluator         >();
-   _my->_evaluator_registry.register_evaluator< account_connection_evaluator             >();
-   _my->_evaluator_registry.register_evaluator< account_follow_evaluator                 >();
-   _my->_evaluator_registry.register_evaluator< account_follow_tag_evaluator             >();
-   _my->_evaluator_registry.register_evaluator< account_activity_evaluator               >();
+   _my->_evaluator_registry.register_evaluator< account_create_evaluator                      >();
+   _my->_evaluator_registry.register_evaluator< account_update_evaluator                      >();
+   _my->_evaluator_registry.register_evaluator< account_verification_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< account_business_evaluator                    >();
+   _my->_evaluator_registry.register_evaluator< account_membership_evaluator                  >();
+   _my->_evaluator_registry.register_evaluator< account_vote_executive_evaluator              >();
+   _my->_evaluator_registry.register_evaluator< account_vote_officer_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< account_member_request_evaluator              >();
+   _my->_evaluator_registry.register_evaluator< account_member_invite_evaluator               >();
+   _my->_evaluator_registry.register_evaluator< account_accept_request_evaluator              >();
+   _my->_evaluator_registry.register_evaluator< account_accept_invite_evaluator               >();
+   _my->_evaluator_registry.register_evaluator< account_remove_member_evaluator               >();
+   _my->_evaluator_registry.register_evaluator< account_update_list_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< account_producer_vote_evaluator               >();
+   _my->_evaluator_registry.register_evaluator< account_update_proxy_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< account_request_recovery_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< account_recover_evaluator                     >();
+   _my->_evaluator_registry.register_evaluator< account_reset_evaluator                       >();
+   _my->_evaluator_registry.register_evaluator< account_reset_update_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< account_recovery_update_evaluator             >();
+   _my->_evaluator_registry.register_evaluator< account_decline_voting_evaluator              >();
+   _my->_evaluator_registry.register_evaluator< account_connection_evaluator                  >();
+   _my->_evaluator_registry.register_evaluator< account_follow_evaluator                      >();
+   _my->_evaluator_registry.register_evaluator< account_follow_tag_evaluator                  >();
+   _my->_evaluator_registry.register_evaluator< account_activity_evaluator                    >();
 
    // Network Evaluators
 
-   _my->_evaluator_registry.register_evaluator< network_officer_update_evaluator         >();
-   _my->_evaluator_registry.register_evaluator< network_officer_vote_evaluator           >();
-   _my->_evaluator_registry.register_evaluator< executive_board_update_evaluator         >();
-   _my->_evaluator_registry.register_evaluator< executive_board_vote_evaluator           >();
-   _my->_evaluator_registry.register_evaluator< governance_update_evaluator              >();
-   _my->_evaluator_registry.register_evaluator< governance_subscribe_evaluator           >();
-   _my->_evaluator_registry.register_evaluator< supernode_update_evaluator               >();
-   _my->_evaluator_registry.register_evaluator< interface_update_evaluator               >();
-   _my->_evaluator_registry.register_evaluator< mediator_update_evaluator                >();
-   _my->_evaluator_registry.register_evaluator< enterprise_update_evaluator              >();
-   _my->_evaluator_registry.register_evaluator< enterprise_fund_evaluator                >();
-   _my->_evaluator_registry.register_evaluator< enterprise_vote_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< network_officer_update_evaluator              >();
+   _my->_evaluator_registry.register_evaluator< network_officer_vote_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< executive_board_update_evaluator              >();
+   _my->_evaluator_registry.register_evaluator< executive_board_vote_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< governance_update_evaluator                   >();
+   _my->_evaluator_registry.register_evaluator< governance_subscribe_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< supernode_update_evaluator                    >();
+   _my->_evaluator_registry.register_evaluator< interface_update_evaluator                    >();
+   _my->_evaluator_registry.register_evaluator< mediator_update_evaluator                     >();
+   _my->_evaluator_registry.register_evaluator< enterprise_update_evaluator                   >();
+   _my->_evaluator_registry.register_evaluator< enterprise_fund_evaluator                     >();
+   _my->_evaluator_registry.register_evaluator< enterprise_vote_evaluator                     >();
 
    // Comment Evaluators
 
-   _my->_evaluator_registry.register_evaluator< comment_evaluator                        >();
-   _my->_evaluator_registry.register_evaluator< message_evaluator                        >();
-   _my->_evaluator_registry.register_evaluator< comment_vote_evaluator                   >();
-   _my->_evaluator_registry.register_evaluator< comment_view_evaluator                   >();
-   _my->_evaluator_registry.register_evaluator< comment_share_evaluator                  >();
-   _my->_evaluator_registry.register_evaluator< comment_moderation_evaluator             >();
-   _my->_evaluator_registry.register_evaluator< list_evaluator                           >();
-   _my->_evaluator_registry.register_evaluator< poll_evaluator                           >();
-   _my->_evaluator_registry.register_evaluator< poll_vote_evaluator                      >();
-   _my->_evaluator_registry.register_evaluator< premium_purchase_evaluator               >();
-   _my->_evaluator_registry.register_evaluator< premium_release_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< comment_evaluator                             >();
+   _my->_evaluator_registry.register_evaluator< message_evaluator                             >();
+   _my->_evaluator_registry.register_evaluator< comment_vote_evaluator                        >();
+   _my->_evaluator_registry.register_evaluator< comment_view_evaluator                        >();
+   _my->_evaluator_registry.register_evaluator< comment_share_evaluator                       >();
+   _my->_evaluator_registry.register_evaluator< comment_moderation_evaluator                  >();
+   _my->_evaluator_registry.register_evaluator< list_evaluator                                >();
+   _my->_evaluator_registry.register_evaluator< poll_evaluator                                >();
+   _my->_evaluator_registry.register_evaluator< poll_vote_evaluator                           >();
+   _my->_evaluator_registry.register_evaluator< premium_purchase_evaluator                    >();
+   _my->_evaluator_registry.register_evaluator< premium_release_evaluator                     >();
 
    // Community Evaluators
 
-   _my->_evaluator_registry.register_evaluator< community_create_evaluator               >();
-   _my->_evaluator_registry.register_evaluator< community_update_evaluator               >();
-   _my->_evaluator_registry.register_evaluator< community_add_mod_evaluator              >();
-   _my->_evaluator_registry.register_evaluator< community_add_admin_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< community_vote_mod_evaluator             >();
-   _my->_evaluator_registry.register_evaluator< community_transfer_ownership_evaluator   >();
-   _my->_evaluator_registry.register_evaluator< community_join_request_evaluator         >();
-   _my->_evaluator_registry.register_evaluator< community_join_accept_evaluator          >();
-   _my->_evaluator_registry.register_evaluator< community_join_invite_evaluator          >();
-   _my->_evaluator_registry.register_evaluator< community_invite_accept_evaluator        >();
-   _my->_evaluator_registry.register_evaluator< community_remove_member_evaluator        >();
-   _my->_evaluator_registry.register_evaluator< community_blacklist_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< community_subscribe_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< community_federation_evaluator           >();
-   _my->_evaluator_registry.register_evaluator< community_event_evaluator                >();
-   _my->_evaluator_registry.register_evaluator< community_event_attend_evaluator         >();
+   _my->_evaluator_registry.register_evaluator< community_create_evaluator                    >();
+   _my->_evaluator_registry.register_evaluator< community_update_evaluator                    >();
+   _my->_evaluator_registry.register_evaluator< community_member_evaluator                    >();
+   _my->_evaluator_registry.register_evaluator< community_member_request_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< community_member_vote_evaluator               >();
+   _my->_evaluator_registry.register_evaluator< community_subscribe_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< community_blacklist_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< community_federation_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< community_event_evaluator                     >();
+   _my->_evaluator_registry.register_evaluator< community_event_attend_evaluator              >();
+   _my->_evaluator_registry.register_evaluator< community_directive_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< community_directive_vote_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< community_directive_member_evaluator          >();
+   _my->_evaluator_registry.register_evaluator< community_directive_member_vote_evaluator     >();
 
    // Advertising Evaluators
 
-   _my->_evaluator_registry.register_evaluator< ad_creative_evaluator                    >();
-   _my->_evaluator_registry.register_evaluator< ad_campaign_evaluator                    >();
-   _my->_evaluator_registry.register_evaluator< ad_inventory_evaluator                   >();
-   _my->_evaluator_registry.register_evaluator< ad_audience_evaluator                    >();
-   _my->_evaluator_registry.register_evaluator< ad_bid_evaluator                         >();
+   _my->_evaluator_registry.register_evaluator< ad_creative_evaluator                         >();
+   _my->_evaluator_registry.register_evaluator< ad_campaign_evaluator                         >();
+   _my->_evaluator_registry.register_evaluator< ad_inventory_evaluator                        >();
+   _my->_evaluator_registry.register_evaluator< ad_audience_evaluator                         >();
+   _my->_evaluator_registry.register_evaluator< ad_bid_evaluator                              >();
 
    // Graph Data Evaluators
 
-   _my->_evaluator_registry.register_evaluator< graph_node_evaluator                     >();
-   _my->_evaluator_registry.register_evaluator< graph_edge_evaluator                     >();
-   _my->_evaluator_registry.register_evaluator< graph_node_property_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< graph_edge_property_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< graph_node_evaluator                          >();
+   _my->_evaluator_registry.register_evaluator< graph_edge_evaluator                          >();
+   _my->_evaluator_registry.register_evaluator< graph_node_property_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< graph_edge_property_evaluator                 >();
 
    // Transfer Evaluators
 
-   _my->_evaluator_registry.register_evaluator< transfer_evaluator                       >();
-   _my->_evaluator_registry.register_evaluator< transfer_request_evaluator               >();
-   _my->_evaluator_registry.register_evaluator< transfer_accept_evaluator                >();
-   _my->_evaluator_registry.register_evaluator< transfer_recurring_evaluator             >();
-   _my->_evaluator_registry.register_evaluator< transfer_recurring_request_evaluator     >();
-   _my->_evaluator_registry.register_evaluator< transfer_recurring_accept_evaluator      >();
-   _my->_evaluator_registry.register_evaluator< transfer_confidential_evaluator          >();
-   _my->_evaluator_registry.register_evaluator< transfer_to_confidential_evaluator       >();
-   _my->_evaluator_registry.register_evaluator< transfer_from_confidential_evaluator     >();
+   _my->_evaluator_registry.register_evaluator< transfer_evaluator                            >();
+   _my->_evaluator_registry.register_evaluator< transfer_request_evaluator                    >();
+   _my->_evaluator_registry.register_evaluator< transfer_accept_evaluator                     >();
+   _my->_evaluator_registry.register_evaluator< transfer_recurring_evaluator                  >();
+   _my->_evaluator_registry.register_evaluator< transfer_recurring_request_evaluator          >();
+   _my->_evaluator_registry.register_evaluator< transfer_recurring_accept_evaluator           >();
+   _my->_evaluator_registry.register_evaluator< transfer_confidential_evaluator               >();
+   _my->_evaluator_registry.register_evaluator< transfer_to_confidential_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< transfer_from_confidential_evaluator          >();
 
    // Balance Evaluators
 
-   _my->_evaluator_registry.register_evaluator< claim_reward_balance_evaluator           >();
-   _my->_evaluator_registry.register_evaluator< stake_asset_evaluator                    >();
-   _my->_evaluator_registry.register_evaluator< unstake_asset_evaluator                  >();
-   _my->_evaluator_registry.register_evaluator< unstake_asset_route_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< transfer_to_savings_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< transfer_from_savings_evaluator          >();
-   _my->_evaluator_registry.register_evaluator< delegate_asset_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< claim_reward_balance_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< stake_asset_evaluator                         >();
+   _my->_evaluator_registry.register_evaluator< unstake_asset_evaluator                       >();
+   _my->_evaluator_registry.register_evaluator< unstake_asset_route_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< transfer_to_savings_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< transfer_from_savings_evaluator               >();
+   _my->_evaluator_registry.register_evaluator< delegate_asset_evaluator                      >();
    
    // Marketplace Evaluators
    
-   _my->_evaluator_registry.register_evaluator< product_sale_evaluator                   >();
-   _my->_evaluator_registry.register_evaluator< product_purchase_evaluator               >();
-   _my->_evaluator_registry.register_evaluator< product_auction_sale_evaluator           >();
-   _my->_evaluator_registry.register_evaluator< product_auction_bid_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< escrow_transfer_evaluator                >();
-   _my->_evaluator_registry.register_evaluator< escrow_approve_evaluator                 >();
-   _my->_evaluator_registry.register_evaluator< escrow_dispute_evaluator                 >();
-   _my->_evaluator_registry.register_evaluator< escrow_release_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< product_sale_evaluator                        >();
+   _my->_evaluator_registry.register_evaluator< product_purchase_evaluator                    >();
+   _my->_evaluator_registry.register_evaluator< product_auction_sale_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< product_auction_bid_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< escrow_transfer_evaluator                     >();
+   _my->_evaluator_registry.register_evaluator< escrow_approve_evaluator                      >();
+   _my->_evaluator_registry.register_evaluator< escrow_dispute_evaluator                      >();
+   _my->_evaluator_registry.register_evaluator< escrow_release_evaluator                      >();
    
    // Trading Evaluators
 
-   _my->_evaluator_registry.register_evaluator< limit_order_evaluator                    >();
-   _my->_evaluator_registry.register_evaluator< margin_order_evaluator                   >();
-   _my->_evaluator_registry.register_evaluator< auction_order_evaluator                  >();
-   _my->_evaluator_registry.register_evaluator< call_order_evaluator                     >();
-   _my->_evaluator_registry.register_evaluator< option_order_evaluator                   >();
+   _my->_evaluator_registry.register_evaluator< limit_order_evaluator                         >();
+   _my->_evaluator_registry.register_evaluator< margin_order_evaluator                        >();
+   _my->_evaluator_registry.register_evaluator< auction_order_evaluator                       >();
+   _my->_evaluator_registry.register_evaluator< call_order_evaluator                          >();
+   _my->_evaluator_registry.register_evaluator< option_order_evaluator                        >();
 
    // Pool Evaluators
    
-   _my->_evaluator_registry.register_evaluator< liquidity_pool_create_evaluator          >();
-   _my->_evaluator_registry.register_evaluator< liquidity_pool_exchange_evaluator        >();
-   _my->_evaluator_registry.register_evaluator< liquidity_pool_fund_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< liquidity_pool_withdraw_evaluator        >();
-   _my->_evaluator_registry.register_evaluator< credit_pool_collateral_evaluator         >();
-   _my->_evaluator_registry.register_evaluator< credit_pool_borrow_evaluator             >();
-   _my->_evaluator_registry.register_evaluator< credit_pool_lend_evaluator               >();
-   _my->_evaluator_registry.register_evaluator< credit_pool_withdraw_evaluator           >();
-   _my->_evaluator_registry.register_evaluator< option_pool_create_evaluator             >();
-   _my->_evaluator_registry.register_evaluator< prediction_pool_create_evaluator         >();
-   _my->_evaluator_registry.register_evaluator< prediction_pool_exchange_evaluator       >();
-   _my->_evaluator_registry.register_evaluator< prediction_pool_resolve_evaluator        >();
+   _my->_evaluator_registry.register_evaluator< liquidity_pool_create_evaluator               >();
+   _my->_evaluator_registry.register_evaluator< liquidity_pool_exchange_evaluator             >();
+   _my->_evaluator_registry.register_evaluator< liquidity_pool_fund_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< liquidity_pool_withdraw_evaluator             >();
+   _my->_evaluator_registry.register_evaluator< credit_pool_collateral_evaluator              >();
+   _my->_evaluator_registry.register_evaluator< credit_pool_borrow_evaluator                  >();
+   _my->_evaluator_registry.register_evaluator< credit_pool_lend_evaluator                    >();
+   _my->_evaluator_registry.register_evaluator< credit_pool_withdraw_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< option_pool_create_evaluator                  >();
+   _my->_evaluator_registry.register_evaluator< prediction_pool_create_evaluator              >();
+   _my->_evaluator_registry.register_evaluator< prediction_pool_exchange_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< prediction_pool_resolve_evaluator             >();
    
    // Asset Evaluators
 
-   _my->_evaluator_registry.register_evaluator< asset_create_evaluator                   >();
-   _my->_evaluator_registry.register_evaluator< asset_update_evaluator                   >();
-   _my->_evaluator_registry.register_evaluator< asset_issue_evaluator                    >();
-   _my->_evaluator_registry.register_evaluator< asset_reserve_evaluator                  >();
-   _my->_evaluator_registry.register_evaluator< asset_update_issuer_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< asset_distribution_evaluator             >();
-   _my->_evaluator_registry.register_evaluator< asset_distribution_fund_evaluator        >();
-   _my->_evaluator_registry.register_evaluator< asset_option_exercise_evaluator          >();
-   _my->_evaluator_registry.register_evaluator< asset_stimulus_fund_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< asset_update_feed_producers_evaluator    >();
-   _my->_evaluator_registry.register_evaluator< asset_publish_feed_evaluator             >();
-   _my->_evaluator_registry.register_evaluator< asset_settle_evaluator                   >();
-   _my->_evaluator_registry.register_evaluator< asset_global_settle_evaluator            >();
-   _my->_evaluator_registry.register_evaluator< asset_collateral_bid_evaluator           >();
+   _my->_evaluator_registry.register_evaluator< asset_create_evaluator                        >();
+   _my->_evaluator_registry.register_evaluator< asset_update_evaluator                        >();
+   _my->_evaluator_registry.register_evaluator< asset_issue_evaluator                         >();
+   _my->_evaluator_registry.register_evaluator< asset_reserve_evaluator                       >();
+   _my->_evaluator_registry.register_evaluator< asset_update_issuer_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< asset_distribution_evaluator                  >();
+   _my->_evaluator_registry.register_evaluator< asset_distribution_fund_evaluator             >();
+   _my->_evaluator_registry.register_evaluator< asset_option_exercise_evaluator               >();
+   _my->_evaluator_registry.register_evaluator< asset_stimulus_fund_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< asset_update_feed_producers_evaluator         >();
+   _my->_evaluator_registry.register_evaluator< asset_publish_feed_evaluator                  >();
+   _my->_evaluator_registry.register_evaluator< asset_settle_evaluator                        >();
+   _my->_evaluator_registry.register_evaluator< asset_global_settle_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< asset_collateral_bid_evaluator                >();
    
    // Block Producer Evaluators
 
-   _my->_evaluator_registry.register_evaluator< producer_update_evaluator                >();
-   _my->_evaluator_registry.register_evaluator< proof_of_work_evaluator                  >();
-   _my->_evaluator_registry.register_evaluator< verify_block_evaluator                   >();
-   _my->_evaluator_registry.register_evaluator< commit_block_evaluator                   >();
-   _my->_evaluator_registry.register_evaluator< producer_violation_evaluator             >();
+   _my->_evaluator_registry.register_evaluator< producer_update_evaluator                     >();
+   _my->_evaluator_registry.register_evaluator< proof_of_work_evaluator                       >();
+   _my->_evaluator_registry.register_evaluator< verify_block_evaluator                        >();
+   _my->_evaluator_registry.register_evaluator< commit_block_evaluator                        >();
+   _my->_evaluator_registry.register_evaluator< producer_violation_evaluator                  >();
 
    // Custom Evaluators
 
-   _my->_evaluator_registry.register_evaluator< custom_evaluator                         >();
-   _my->_evaluator_registry.register_evaluator< custom_json_evaluator                    >();
+   _my->_evaluator_registry.register_evaluator< custom_evaluator                              >();
+   _my->_evaluator_registry.register_evaluator< custom_json_evaluator                         >();
 }
 
 
@@ -2545,14 +2558,17 @@ void database::initialize_indexes()
    // Community Indexes
 
    add_core_index< community_index                         >(*this);
+   add_core_index< community_permission_index              >(*this);
    add_core_index< community_member_index                  >(*this);
-   add_core_index< community_member_key_index              >(*this);
-   add_core_index< community_moderator_vote_index          >(*this);
-   add_core_index< community_join_request_index            >(*this);
-   add_core_index< community_join_invite_index             >(*this);
+   add_core_index< community_member_request_index          >(*this);
+   add_core_index< community_member_vote_index             >(*this);
    add_core_index< community_federation_index              >(*this);
    add_core_index< community_event_index                   >(*this);
    add_core_index< community_event_attend_index            >(*this);
+   add_core_index< community_directive_index               >(*this);
+   add_core_index< community_directive_vote_index          >(*this);
+   add_core_index< community_directive_member_index        >(*this);
+   add_core_index< community_directive_member_vote_index   >(*this);
 
    // Advertising Indexes
 
@@ -2858,7 +2874,6 @@ void database::_apply_block( const signed_block& next_block )
    update_producer_set();
    governance_update_account_set();
    update_community_moderator_set();
-   process_community_membership_fees();
    update_business_account_set();
    update_comment_metrics();
    update_message_counter();
@@ -3369,28 +3384,20 @@ void database::clear_expired_operations()
       remove( req );
    }
 
-   const auto& account_member_invite_idx = get_index< account_member_invite_index >().indices().get< by_expiration >();
-   while( !account_member_invite_idx.empty() && account_member_invite_idx.begin()->expiration <= now )
+   const auto& community_member_request_idx = get_index< community_member_request_index >().indices().get< by_expiration >();
+   while( !community_member_request_idx.empty() && community_member_request_idx.begin()->expiration <= now )
    {
-      const account_member_invite_object& inv = *account_member_invite_idx.begin();
-      ilog( "Removed: ${v}",("v",inv));
-      remove( inv );
-   }
-
-   const auto& community_join_request_idx = get_index< community_join_request_index >().indices().get< by_expiration >();
-   while( !community_join_request_idx.empty() && community_join_request_idx.begin()->expiration <= now )
-   {
-      const community_join_request_object& req = *community_join_request_idx.begin();
+      const community_member_request_object& req = *community_member_request_idx.begin();
       ilog( "Removed: ${v}",("v",req));
       remove( req );
    }
 
-   const auto& community_join_invite_idx = get_index< community_join_invite_index >().indices().get< by_expiration >();
-   while( !community_join_invite_idx.empty() && community_join_invite_idx.begin()->expiration <= now )
+   const auto& community_member_idx = get_index< community_member_index >().indices().get< by_expiration >();
+   while( !community_member_idx.empty() && community_member_idx.begin()->expiration <= now )
    {
-      const community_join_invite_object& inv = *community_join_invite_idx.begin();
-      ilog( "Removed: ${v}",("v",inv));
-      remove( inv );
+      const community_member_object& mem = *community_member_idx.begin();
+      ilog( "Removed: ${v}",("v",mem));
+      remove( mem );
    }
 
    const auto& bid_idx = get_index< ad_bid_index >().indices().get< by_expiration >();

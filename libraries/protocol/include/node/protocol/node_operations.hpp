@@ -246,15 +246,13 @@ namespace node { namespace protocol {
 
 
    /**
-    * Accounts can purchase a membership subscription for their account to gain
-    * protocol benefits:
+    * Accounts can purchase a membership subscription for their account to gain protocol benefits:
     * 
     * Top Level Membership:
-    * Price $250.00 per month.
+    * Price $100.00 per month.
 
       • Governance account, and Interface account revenue activation.
       • Access to WeYouMe Pro Suite for enterprise.
-      • $750.00 per month of Premium Partners Content Credit.
       • WYM Stakeholder Dividend boosted by 10%.
       • Access to the WeYouMe FlashChain for interface management.
       • 30% Voting power boost.
@@ -265,17 +263,15 @@ namespace node { namespace protocol {
       Price: $25.00 per month.
 
       • Posts eligible for WeYouMe Featured page.
-      • $50.00 per month of Premium Partners Content Credit.
       • 20% Voting power boost.
       • Activity pool reward share boosted by 50%.
       • 10% Content reward boost.
       • 10% refund on marketplace fees, premium content, subscription content, and exchange trading fees.
 
       Standard Membership:
-      Price: $2.50 per month.
+      Price: $10.00 per month.
 
       • Disable all Advertising.
-      • $2.50 per month of Premium Partners Content Credit.
       • 10% Voting power boost.
       • Ability to join the Developer, Advocate and Marketing pools.
       • Activity pool reward share boosted by 50%.
@@ -292,7 +288,7 @@ namespace node { namespace protocol {
 
       account_name_type             interface;            ///< Name of the interface application facilitating the transaction.
 
-      bool                          recurring = true;     ///< True for membership to automatically recur each month from liquid balance. 
+      bool                          recurring = true;     ///< True for membership to automatically recur each month from liquid balance.
 
       void                          validate() const;
       void                          get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -1203,25 +1199,25 @@ namespace node { namespace protocol {
     */
    struct enterprise_update_operation : public base_operation
    {
-      account_name_type                                 signatory;
+      account_name_type              signatory;
 
-      account_name_type                                 account;                  ///< The name of the account that created the enterprise proposal.
+      account_name_type              account;                  ///< The name of the account that created the enterprise proposal.
 
-      string                                            enterprise_id;            ///< UUIDv4 referring to the enterprise proposal.
+      string                         enterprise_id;            ///< UUIDv4 referring to the enterprise proposal.
 
-      string                                            details;                  ///< The enterprise proposals's details description.
+      string                         details;                  ///< The enterprise proposals's details description.
 
-      string                                            url;                      ///< The enterprise proposals's reference URL.
+      string                         url;                      ///< The enterprise proposals's reference URL.
 
-      string                                            json;                     ///< JSON metadata of the enterprise proposal.
+      string                         json;                     ///< JSON metadata of the enterprise proposal.
 
-      asset                                             budget;                   ///< Total amount requested for enterprise funding. Enterprise is completed when budget is received.
+      asset                          budget;                   ///< Total amount requested for enterprise funding. Enterprise is completed when budget is received.
 
-      bool                                              active = true;            ///< True to set the proposal to activate, false to deactivate an existing proposal and delay funding. 
+      bool                           active = true;            ///< True to set the proposal to activate, false to deactivate an existing proposal and delay funding. 
          
-      void                                              get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                                              get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
-      void                                              validate() const;
+      void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
+      void                           validate() const;
    };
 
 
@@ -1244,7 +1240,7 @@ namespace node { namespace protocol {
       int16_t                        vote_rank = 1;               ///< The rank of the approval for enterprise proposals.
 
       bool                           approved = true;             ///< True to approve the milestone claim, false to remove approval.
-         
+
       void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( voter ); }
       void                           validate() const;
@@ -1268,7 +1264,7 @@ namespace node { namespace protocol {
       string                         enterprise_id;              ///< UUIDv4 referring to the proposal.
 
       asset                          amount;                     ///< Amount of funding that is to be paid to the enterprise proposal.
-         
+
       void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( funder ); }
       void                           validate() const;
@@ -1945,18 +1941,7 @@ namespace node { namespace protocol {
    /**
     * Creates a new community for collecting posts about a specific topic.
     * 
-    * Communities have 8 Privacy and permission options: 
-    * 
-    * OPEN_PUBLIC_COMMUNITY:       All Users can read, interact, post, and request to join. Accounts cannot be blacklisted.
-    * GENERAL_PUBLIC_COMMUNITY:    All Users can read, interact, post, and request to join.
-    * EXCLUSIVE_PUBLIC_COMMUNITY:  All users can read, interact, and request to join. Members can post and invite.
-    * CLOSED_PUBLIC_COMMUNITY:     All users can read, and request to join. Members can interact, post, and invite.
-    * OPEN_PRIVATE_COMMUNITY:      Members can read and interact, and create posts. Moderators can invite and accept.
-    * GENERAL_PRIVATE_COMMUNITY:   Members can read and interact, and create posts. Moderators can invite and accept. Cannot share posts.
-    * EXCLUSIVE_PRIVATE_COMMUNITY: Members can read and interact, and post. Cannot share posts or request to join. Admins can invite and accept.
-    * CLOSED_PRIVATE_COMMUNITY:    Members can read and interact. Moderators can post. Cannot share posts or request to join. Admins can invite and accept.
-    * 
-    * Communities contain a collective public key for encrypting private posts with
+    * Communities contain a series of collective public keys for encrypting private posts with,
     * and the private key is shared with newly added members when they join.
     */
    struct community_create_operation : public base_operation
@@ -1965,7 +1950,7 @@ namespace node { namespace protocol {
 
       account_name_type                  founder;                            ///< The account that created the community, able to add and remove administrators.
 
-      community_name_type                name;                               ///< Name of the community.
+      community_name_type                name;                               ///< Name of the community. Should be randomized string if private community. 
 
       string                             display_name;                       ///< The full name of the community (non-consensus), encrypted with the member key if private community.
 
@@ -1983,7 +1968,31 @@ namespace node { namespace protocol {
 
       flat_set< tag_name_type >          tags;                               ///< Set of tags of the topics within the community to enable discovery.
 
-      string                             community_privacy;                  ///< Community privacy level: Open_Public, General_Public, Exclusive_Public, Closed_Public, Open_Private, General_Private, Exclusive_Private, Closed_Private.
+      bool                               private_community = false;          ///< True when the community is private, and all posts, events, directives, polls must be encrypted.
+
+      string                             author_permission;                  ///< Determines which accounts can create root posts.
+
+      string                             reply_permission;                   ///< Determines which accounts can create replies to root posts.
+
+      string                             vote_permission;                    ///< Determines which accounts can create comment votes on posts and comments.
+
+      string                             view_permission;                    ///< Determines which accounts can create comment views on posts and comments.
+
+      string                             share_permission;                   ///< Determines which accounts can create comment shares on posts and comments.
+
+      string                             message_permission;                 ///< Determines which accounts can create direct messages in the community.
+
+      string                             poll_permission;                    ///< Determines which accounts can create polls in the community.
+
+      string                             event_permission;                   ///< Determines which accounts can create events in the community.
+
+      string                             directive_permission;               ///< Determines which accounts can create directives and directive votes in the community.
+
+      string                             add_permission;                     ///< Determines which accounts can add new members, and accept member requests.
+
+      string                             request_permission;                 ///< Determines which accounts can request to join the community.
+
+      string                             remove_permission;                  ///< Determines which accounts can remove and blacklist.
 
       string                             community_member_key;               ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted members.
 
@@ -1991,12 +2000,30 @@ namespace node { namespace protocol {
 
       string                             community_admin_key;                ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted admins.
 
+      string                             community_secure_key;               ///< Key used for encrypting and decrypting posts and messages. Private key held only by the community founder.
+
+      string                             community_standard_premium_key;     ///< Key used for encrypting and decrypting posts and messages. Private key shared with standard premium members.
+
+      string                             community_mid_premium_key;          ///< Key used for encrypting and decrypting posts and messages. Private key shared with mid premium members.
+
+      string                             community_top_premium_key;          ///< Key used for encrypting and decrypting posts and messages. Private key shared with top premium members.
+
       account_name_type                  interface;                          ///< Account of the interface that broadcasted the transaction.
       
       asset_symbol_type                  reward_currency = SYMBOL_COIN;      ///< The Currency asset used for content rewards in the community.
 
-      asset                              membership_price = asset( 0, SYMBOL_COIN );  ///< Price paid per week by all community members to community founder.
+      asset                              standard_membership_price;          ///< Price paid per month by community standard members.
 
+      asset                              mid_membership_price;               ///< Price paid per month by all mid level community members.
+
+      asset                              top_membership_price;               ///< Price paid per month by all top level community members.
+
+      flat_set< account_name_type >      verifiers;                          ///< Accounts that are considered ground truth sources of verification authority, wth degree 0.
+
+      uint64_t                           min_verification_count = 0;         ///< Minimum number of incoming verification transaction to be considered verified by this community.
+
+      uint64_t                           max_verification_distance = 0;      ///< Maximum number of degrees of seperation from a verfier to be considered verified by this community.
+      
       uint16_t                           max_rating = 9;                     ///< Highest severity rating that posts in the community can have.
 
       uint32_t                           flags = 0;                          ///< The currently active flags on the community for content settings.
@@ -2013,7 +2040,7 @@ namespace node { namespace protocol {
     * Updates the details of an existing community.
     * 
     * If the community public key is changed, all existing members must be reinitiated
-    * by creating a new community_member_key_object containing an encrypted copy of the new key.
+    * by creating a new community_member_object containing an encrypted copy of the new key.
     */
    struct community_update_operation : public base_operation
    {
@@ -2021,7 +2048,7 @@ namespace node { namespace protocol {
 
       account_name_type              account;                            ///< Account updating the community. Administrator of the community.
 
-      community_name_type            community;                          ///< Name of the community.
+      community_name_type            community;                          ///< Name of the community. Should be randomized string if private community. 
 
       string                         display_name;                       ///< The full name of the community (non-consensus), encrypted with the member key if private community.
 
@@ -2043,12 +2070,58 @@ namespace node { namespace protocol {
 
       flat_set< tag_name_type >      tags;                               ///< Set of tags of the topics within the community to enable discovery.
 
+      bool                           private_community;                  ///< True when the community is private, and all posts must be encrypted.
+
+      string                         author_permission;                  ///< Determines which accounts can create root posts.
+
+      string                         reply_permission;                   ///< Determines which accounts can create replies to root posts.
+
+      string                         vote_permission;                    ///< Determines which accounts can create comment votes on posts and comments.
+
+      string                         view_permission;                    ///< Determines which accounts can create comment views on posts and comments.
+
+      string                         share_permission;                   ///< Determines which accounts can create comment shares on posts and comments.
+
+      string                         message_permission;                 ///< Determines which accounts can create direct messages in the community.
+
+      string                         poll_permission;                    ///< Determines which accounts can create polls in the community.
+
+      string                         event_permission;                   ///< Determines which accounts can create events in the community.
+
+      string                         directive_permission;               ///< Determines which accounts can create directives and directive votes in the community.
+
+      string                         add_permission;                     ///< Determines which accounts can add new members, and accept member requests.
+
+      string                         request_permission;                 ///< Determines which accounts can request to join the community.
+
+      string                         remove_permission;                  ///< Determines which accounts can remove and blacklist.
+
       string                         community_member_key;               ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted members.
 
       string                         community_moderator_key;            ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted moderators.
 
       string                         community_admin_key;                ///< Key used for encrypting and decrypting posts and messages. Private key shared with accepted admins.
 
+      string                         community_secure_key;               ///< Key used for encrypting and decrypting posts and messages. Private key held only by the community founder.
+
+      string                         community_standard_premium_key;     ///< Key used for encrypting and decrypting posts and messages. Private key shared with standard premium members.
+
+      string                         community_mid_premium_key;          ///< Key used for encrypting and decrypting posts and messages. Private key shared with mid premium members.
+
+      string                         community_top_premium_key;          ///< Key used for encrypting and decrypting posts and messages. Private key shared with top premium members.
+
+      asset                          standard_membership_price;          ///< Price paid per month by communitys standard members.
+
+      asset                          mid_membership_price;               ///< Price paid per month by all mid level community members.
+
+      asset                          top_membership_price;               ///< Price paid per month by all top level community members.
+
+      flat_set< account_name_type >  verifiers;                          ///< Accounts that are considered ground truth sources of verification authority, wth degree 0.
+
+      uint64_t                       min_verification_count = 0;         ///< Minimum number of incoming verification transaction to be considered verified by this community.
+
+      uint64_t                       max_verification_distance = 0;      ///< Maximum number of degrees of seperation from a verfier to be considered verified by this community.
+      
       uint16_t                       max_rating = 9;                     ///< Highest severity rating that posts in the community can have.
 
       uint32_t                       flags = 0;                          ///< The currently active flags on the community for content settings.
@@ -2064,62 +2137,76 @@ namespace node { namespace protocol {
 
 
    /**
-    * Adds a new moderator to a community.
+    * Used to add or remove a member from a community, to a specified level of permission.
     * 
-    * Moderators have a heightened authority delegated to them
-    * to enable the to enforce a community's rules and topic suitability.
-    * Moderators all earn a share of the community's posts content rewards.
+    * This operation discloses the encrypted_community_key
+    * for decrypting posts, from an existing 
+    * member of the community that has access to it. 
     */
-   struct community_add_mod_operation : public base_operation
+   struct community_member_operation : public base_operation
    {
       account_name_type              signatory;
 
-      account_name_type              account;           ///< Account of an administrator of the community.
+      account_name_type              account;                    ///< Account within the community accepting the request.
 
-      community_name_type            community;         ///< Community that the moderator is being added to.
+      account_name_type              member;                     ///< Account to accept into the community.
 
-      account_name_type              moderator;         ///< New moderator account.
+      community_name_type            community;                  ///< Community that is being joined.
 
-      bool                           added = true;      ///< True when adding a new moderator, false when removing.
+      account_name_type              interface;                  ///< Name of the interface account that was used to broadcast the transaction.
+
+      string                         member_type;                ///< Membership and Key encryption access and permission level.
+
+      string                         encrypted_community_key;    ///< The Community Private Key of the member_type level, encrypted with the member's secure public key.
+
+      time_point                     expiration;                 ///< Time that the membership will expire, and the key must be renewed.
+      
+      bool                           accepted = true;            ///< True to add member, false to remove member from that member type.
 
       void                           validate()const;
-      void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
    /**
-    * Adds a new administrator to a community.
+    * Requests that an account be added as a new member of a community.
     * 
-    * Admins have a very high authority delegated to them
-    * to enable management and appointment of moderators.
-    * Admins can update the details of a community. 
+    * Must be accepted using community_member_operation by a member of the community with at least that rank.
+    * Cannot be used to join a community with request permission set to NONE.
+    * Used to pay premium membership fees to the founder, and highly voted community members.
     */
-   struct community_add_admin_operation : public base_operation
+   struct community_member_request_operation : public base_operation
    {
       account_name_type              signatory;
 
-      account_name_type              account;          ///< Account of the founder of the community.
+      account_name_type              account;            ///< Account that wants to join the community.
 
-      community_name_type            community;        ///< Community that the admin is being added to.
+      community_name_type            community;          ///< Community that is being requested to join.
 
-      account_name_type              admin;            ///< New administrator account.
+      account_name_type              interface;          ///< Name of the interface account that was used to broadcast the transaction.
 
-      bool                           added = true;     ///< True when adding a new administrator, false when removing.
+      string                         member_type;        ///< Membership and Key encryption access and permission level.
+
+      string                         message;            ///< Message attatched to the request, encrypted with the communities public key.
+
+      time_point                     expiration;         ///< Time that the request will expire, and must be renewed.
+
+      bool                           requested = true;   ///< Set true to request, false to cancel request.
 
       void                           validate()const;
-      void                           get_required_active_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
    };
 
 
    /**
-    * Votes for a moderator to increase their mod weight.
+    * Votes for a member to increase their membership approval weight.
     * 
-    * Moderators with a higher mod weight receive a higher 
-    * proportion of incoming moderator rewards in a community.
+    * Moderators and Admins with a higher approval weight receive a higher 
+    * proportion of incoming community management rewards and premium membership fees.
     */
-   struct community_vote_mod_operation : public base_operation
+   struct community_member_vote_operation : public base_operation
    {
       account_name_type              signatory;
 
@@ -2127,7 +2214,9 @@ namespace node { namespace protocol {
 
       community_name_type            community;        ///< Community that the moderator is being voted into.
 
-      account_name_type              moderator;        ///< Moderator account.
+      account_name_type              member;           ///< Account of the member being voted for.
+
+      account_name_type              interface;        ///< Name of the interface account that was used to broadcast the transaction.
 
       uint16_t                       vote_rank = 1;    ///< Voting rank for the specified community moderator
 
@@ -2140,148 +2229,25 @@ namespace node { namespace protocol {
 
 
    /**
-    * Transfers a community to a new account as the founder.
+    * Adds a community to an account's subscriptions.
     * 
-    * Can be used to pass communities from one account to another
-    * in the case of restructuring a moderation team
-    * or a founder changing to a new account.
+    * Subscribed communities are included in an account's communities
+    * feed, and can be browsed in feeds. 
+    * Optionally, communities can be filtered and posts from that community will never be shown in feeds.
     */
-   struct community_transfer_ownership_operation : public base_operation
+   struct community_subscribe_operation : public base_operation
    {
       account_name_type              signatory;
 
-      account_name_type              account;        ///< Account that created the community.
+      account_name_type              account;             ///< Account that wants to subscribe to the community.
 
-      community_name_type            community;      ///< Community that is being transferred.
+      community_name_type            community;           ///< Community to suscribe to.
 
-      account_name_type              new_founder;    ///< Account of the new founder.
+      account_name_type              interface;           ///< Name of the interface account that was used to broadcast the transaction and subscribe to the community.
 
-      void                           validate()const;
-      void                           get_required_owner_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
-   };
-
-
-   /**
-    * Requests that an account be added as a new member of a community.
-    * 
-    * Must be accepted using community_join_accept_operation
-    * by a member of the community.
-    * 
-    * Cannot be used to join an exclusive community.
-    */
-   struct community_join_request_operation : public base_operation
-   {
-      account_name_type              signatory;
-
-      account_name_type              account;            ///< Account that wants to join the community.
-
-      community_name_type            community;          ///< Community that is being requested to join.
-
-      string                         message;            ///< Message attatched to the request, encrypted with the communities public key. 
-
-      bool                           requested = true;   ///< Set true to request, false to cancel request.
-
-      void                           validate()const;
-      void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
-   };
-
-
-   /**
-    * Invite a new member to a community.
-    * 
-    * The account must then accept the invitation to be added.
-    * Invitation includes the encrypted_community_key for
-    * accessing private content within the community. 
-    */
-   struct community_join_invite_operation : public base_operation
-   {
-      account_name_type              signatory;
-
-      account_name_type              account;                   ///< Account sending the invitation.
-
-      account_name_type              member;                    ///< New community member account being invited.
-
-      community_name_type            community;                 ///< Community that is the member is being invited to.
-
-      string                         message;                   ///< Message attatched to the invite, encrypted with the member's secure public key.
-
-      string                         encrypted_community_key;   ///< The Community Private Key, encrypted with the member's secure public key.
-
-      bool                           invited = true;            ///< Set true to invite, false to cancel invite.
-
-      void                           validate()const;
-      void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
-   };
-
-
-   /**
-    * Used to accept to a request and admit a new member.
-    * 
-    * This operation discloses the encrypted_community_key
-    * for decrypting posts, from an existing 
-    * member of the community that has access to it. 
-    */
-   struct community_join_accept_operation : public base_operation
-   {
-      account_name_type              signatory;
-
-      account_name_type              account;                    ///< Account within the community accepting the request.
-
-      account_name_type              member;                     ///< Account to accept into the community.
-
-      community_name_type            community;                  ///< Community that is being joined.
-
-      string                         encrypted_community_key;    ///< The Community Private Key, encrypted with the member's secure public key.
-
-      bool                           accepted = true;            ///< True to accept request, false to reject request.
-
-      void                           validate()const;
-      void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
-   };
-
-
-   /**
-    * Accepts a community invitation.
-    * 
-    * Adds the invited account to become a new member of the
-    * specifed community.
-    */
-   struct community_invite_accept_operation : public base_operation
-   {
-      account_name_type              signatory;
-
-      account_name_type              account;             ///< A new member of the community.
-
-      community_name_type            community;           ///< Community that the account was invited to.
-
-      bool                           accepted = true;     ///< True to accept invite, false to reject invite.
-
-      void                           validate()const;
-      void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
-   };
-
-
-   /**
-    * Removes a specifed member of a community.
-    * 
-    * Enables the moderation team of a community to remove
-    * members that become problematic and fail to follow a communities rules,
-    * or are added by mistake.
-    */
-   struct community_remove_member_operation : public base_operation
-   {
-      account_name_type              signatory;
-
-      account_name_type              account;        ///< Either the member of the community leaving OR a moderator of the community removing the member.
-
-      account_name_type              member;         ///< Account to be removed from the community membership.
-
-      community_name_type            community;      ///< Community that member is being removed from.
+      bool                           added = true;        ///< True to add to community subscription feed, false to remove.
+      
+      bool                           subscribed = true;   ///< true if subscribing, false if filtering. 
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -2306,32 +2272,6 @@ namespace node { namespace protocol {
       community_name_type            community;             ///< Community that member is being blacklisted from.
 
       bool                           blacklisted = true;    ///< Set to true to add account to blacklist, set to false to remove from blacklist. 
-
-      void                           validate()const;
-      void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
-      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
-   };
-
-
-   /**
-    * Adds a community to an account's subscriptions.
-    * 
-    * Subscribed communities are included in an account's communities
-    * feed, and can be browsed in feeds.
-    */
-   struct community_subscribe_operation : public base_operation
-   {
-      account_name_type              signatory;
-
-      account_name_type              account;             ///< Account that wants to subscribe to the community.
-
-      community_name_type            community;           ///< Community to suscribe to.
-
-      account_name_type              interface;           ///< Name of the interface account that was used to broadcast the transaction and subscribe to the community.
-
-      bool                           added = true;        ///< True to add to lists, false to remove.
-      
-      bool                           subscribed = true;   ///< true if subscribing, false if filtering. 
 
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
@@ -2482,6 +2422,151 @@ namespace node { namespace protocol {
       void                           validate()const;
       void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
       void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( attendee ); }
+   };
+
+
+   /**
+    * A Community directive that contains action instructions and deliverables for community members.
+    */
+   struct community_directive_operation : public base_operation
+   {
+      account_name_type              signatory;
+
+      account_name_type              account;                    ///< Account that created the directive.
+
+      string                         directive_id;               ///< UUIDv4 referring to the directive. Unique on account/directive_id.
+
+      account_name_type              parent_account;             ///< Account that created the parent directive.
+
+      string                         parent_directive_id;        ///< UUIDv4 referring to the parent directive. Unique on account/directive_id.
+
+      community_name_type            community;                  ///< Community that the directive is given to.
+
+      string                         public_key;                 ///< Public key for encrypting the directive details. Null if public directive.
+
+      account_name_type              interface;                  ///< Account of the interface that broadcasted the transaction.
+
+      string                         details;                    ///< Text details of the directive. Should explain the action items.
+
+      string                         cover_image;                ///< IPFS image for display of this directive in the interface. 
+
+      string                         ipfs;                       ///< IPFS file reference for the directive. Images or other files can be attatched.
+
+      string                         json;                       ///< Additional Directive JSON metadata.
+
+      time_point                     directive_start_time;       ///< Time that the Directive will begin.
+
+      time_point                     directive_end_time;         ///< Time that the Directive must be completed by.
+
+      bool                           completed = false;          ///< True when the directive has been completed.
+
+      bool                           active = true;              ///< True while the directive is active, false to remove.
+
+      void                           validate()const;
+      void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
+   };
+
+
+   /**
+    * Votes to approve or disapprove a directive made by a member of a community.
+    * 
+    * Used for Consensus directive selection, and for directive feedback.
+    */
+   struct community_directive_vote_operation : public base_operation
+   {
+      account_name_type              signatory;
+
+      account_name_type              voter;                      ///< Account creating the directive vote.
+
+      account_name_type              account;                    ///< Account that created the directive.
+
+      string                         directive_id;               ///< UUIDv4 referring to the directive. Unique on account/directive_id.
+
+      string                         public_key;                 ///< Public key for encrypting the directive vote details. Null if public directive vote.
+
+      account_name_type              interface;                  ///< Account of the interface that broadcasted the transaction.
+
+      string                         details;                    ///< Text details of the directive vote. Should contain directive feedback.
+
+      string                         json;                       ///< Additional Directive JSON metadata.
+
+      bool                           approve = true;             ///< True when the directive is approved, false when it is opposed.
+
+      bool                           active = true;              ///< True while the directive vote is active, false to remove.
+
+      void                           validate()const;
+      void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( voter ); }
+   };
+
+
+   /**
+    * Determines the State of an account's active 
+    * directive selection, and its outgoing directives.
+    */
+   struct community_directive_member_operation : public base_operation
+   {
+      account_name_type              signatory;
+
+      account_name_type              account;                       ///< Account recieving and creating directives within a community. 
+
+      community_name_type            community;                     ///< Community that the directive member is contained within.
+
+      account_name_type              interface;                     ///< Account of the interface that broadcasted the transaction.
+      
+      string                         public_key;                    ///< Public key for encrypting the directive member details. Null if public directive member.
+
+      string                         details;                       ///< Text details of the directive member. Should elaborate interests and priorities for voting selection.
+
+      string                         json;                          ///< Additional Directive Member JSON metadata.
+
+      string                         command_directive_id;          ///< The Current outgoing directive as community co-ordinator.
+
+      string                         delegate_directive_id;         ///< The Current outgoing directive to all hierachy subordinate members.
+
+      string                         consensus_directive_id;        ///< The Current outgoing directive for community consensus selection.
+
+      string                         emergent_directive_id;         ///< The Current outgoing emergent directive for selection by other members.
+
+      bool                           active = true;                 ///< True when the account is active for the directive distribution.
+
+      void                           validate()const;
+      void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( account ); }
+   };
+
+
+   /**
+    * Votes to approve or disapprove a directive made by a member of a community.
+    * 
+    * Used for Consensus directive selection, and for directive feedback.
+    */
+   struct community_directive_member_vote_operation : public base_operation
+   {
+      account_name_type              signatory;
+
+      account_name_type              voter;                      ///< Account creating the directive member vote.
+
+      account_name_type              member;                     ///< Account being voted on.
+
+      community_name_type            community;                  ///< Community that the directive member vote is contained within.
+
+      string                         public_key;                 ///< Public key for encrypting the directive member vote details. Null if public directive member vote.
+
+      account_name_type              interface;                  ///< Account of the interface that broadcasted the transaction.
+
+      string                         details;                    ///< Text details of the directive member vote. Should contain directive member feedback.
+
+      string                         json;                       ///< Additional Directive member vote JSON metadata.
+
+      bool                           approve = true;             ///< True when the directive member is approved, false when they is opposed.
+
+      bool                           active = true;              ///< True while the directive member vote is active, false to remove.
+
+      void                           validate()const;
+      void                           get_required_posting_authorities( flat_set<account_name_type>& a )const{ a.insert( signatory ); }
+      void                           get_creator_name( flat_set<account_name_type>& a )const{ a.insert( voter ); }
    };
 
 
@@ -5866,13 +5951,34 @@ FC_REFLECT( node::protocol::community_create_operation,
          (json)
          (json_private)
          (tags)
-         (community_privacy)
+         (private_community)
+         (author_permission)
+         (reply_permission)
+         (vote_permission)
+         (view_permission)
+         (share_permission)
+         (message_permission)
+         (poll_permission)
+         (event_permission)
+         (directive_permission)
+         (add_permission)
+         (request_permission)
+         (remove_permission)
          (community_member_key)
          (community_moderator_key)
          (community_admin_key)
+         (community_secure_key)
+         (community_standard_premium_key)
+         (community_mid_premium_key)
+         (community_top_premium_key)
          (interface)
          (reward_currency)
-         (membership_price)
+         (standard_membership_price)
+         (mid_membership_price)
+         (top_membership_price)
+         (verifiers)
+         (min_verification_count)
+         (max_verification_distance)
          (max_rating)
          (flags)
          (permissions)
@@ -5892,94 +5998,69 @@ FC_REFLECT( node::protocol::community_update_operation,
          (pinned_author)
          (pinned_permlink)
          (tags)
+         (private_community)
+         (author_permission)
+         (reply_permission)
+         (vote_permission)
+         (view_permission)
+         (share_permission)
+         (message_permission)
+         (poll_permission)
+         (event_permission)
+         (directive_permission)
+         (add_permission)
+         (request_permission)
+         (remove_permission)
          (community_member_key)
          (community_moderator_key)
          (community_admin_key)
+         (community_secure_key)
+         (community_standard_premium_key)
+         (community_mid_premium_key)
+         (community_top_premium_key)
+         (standard_membership_price)
+         (mid_membership_price)
+         (top_membership_price)
+         (verifiers)
+         (min_verification_count)
+         (max_verification_distance)
          (max_rating)
          (flags)
          (permissions)
          (active)
          );
 
-FC_REFLECT( node::protocol::community_add_mod_operation,
+FC_REFLECT( node::protocol::community_member_operation,
          (signatory)
          (account)
+         (member)
          (community)
-         (moderator)
-         (added)
+         (interface)
+         (member_type)
+         (encrypted_community_key)
+         (expiration)
+         (accepted)
          );
 
-FC_REFLECT( node::protocol::community_add_admin_operation,
+FC_REFLECT( node::protocol::community_member_request_operation,
          (signatory)
          (account)
          (community)
-         (admin)
-         (added)
-         );
-
-FC_REFLECT( node::protocol::community_vote_mod_operation,
-         (signatory)
-         (account)
-         (community)
-         (moderator)
-         (vote_rank)
-         (approved)
-         );
-
-FC_REFLECT( node::protocol::community_transfer_ownership_operation,
-         (signatory)
-         (account)
-         (community)
-         (new_founder)
-         );
-
-FC_REFLECT( node::protocol::community_join_request_operation,
-         (signatory)
-         (account)
-         (community)
+         (interface)
+         (member_type)
          (message)
+         (expiration)
          (requested)
          );
 
-FC_REFLECT( node::protocol::community_join_invite_operation,
+FC_REFLECT( node::protocol::community_member_vote_operation,
          (signatory)
          (account)
+         (community)
          (member)
-         (community)
-         (message)
-         (encrypted_community_key)
-         (invited)
-         );
-
-FC_REFLECT( node::protocol::community_join_accept_operation,
-         (signatory)
-         (account)
-         (member)
-         (community)
-         (encrypted_community_key)
-         (accepted)
-         );
-
-FC_REFLECT( node::protocol::community_invite_accept_operation,
-         (signatory)
-         (account)
-         (community)
-         (accepted)
-         );
-
-FC_REFLECT( node::protocol::community_remove_member_operation,
-         (signatory)
-         (account)
-         (member)
-         (community)
-         );
-
-FC_REFLECT( node::protocol::community_blacklist_operation,
-         (signatory)
-         (account)
-         (member)
-         (community)
-         (blacklisted)
+         (interface)
+         (vote_rank)
+         (approved)
          );
 
 FC_REFLECT( node::protocol::community_subscribe_operation,
@@ -5989,6 +6070,14 @@ FC_REFLECT( node::protocol::community_subscribe_operation,
          (interface)
          (added)
          (subscribed)
+         );
+
+FC_REFLECT( node::protocol::community_blacklist_operation,
+         (signatory)
+         (account)
+         (member)
+         (community)
+         (blacklisted)
          );
 
 FC_REFLECT( node::protocol::community_federation_operation,
@@ -6036,6 +6125,66 @@ FC_REFLECT( node::protocol::community_event_attend_operation,
          (interface)
          (interested)
          (attending)
+         (active)
+         );
+
+FC_REFLECT( node::protocol::community_directive_operation,
+         (signatory)
+         (account)
+         (directive_id)
+         (parent_account)
+         (parent_directive_id)
+         (community)
+         (public_key)
+         (interface)
+         (details)
+         (cover_image)
+         (ipfs)
+         (json)
+         (directive_start_time)
+         (directive_end_time)
+         (completed)
+         (active)
+         );
+
+FC_REFLECT( node::protocol::community_directive_vote_operation,
+         (signatory)
+         (voter)
+         (account)
+         (directive_id)
+         (public_key)
+         (interface)
+         (details)
+         (json)
+         (approve)
+         (active)
+         );
+
+FC_REFLECT( node::protocol::community_directive_member_operation,
+         (signatory)
+         (account)
+         (community)
+         (interface)
+         (public_key)
+         (details)
+         (json)
+         (command_directive_id)
+         (delegate_directive_id)
+         (consensus_directive_id)
+         (emergent_directive_id)
+         (active)
+         );
+
+FC_REFLECT( node::protocol::community_directive_member_vote_operation,
+         (signatory)
+         (voter)
+         (member)
+         (community)
+         (public_key)
+         (interface)
+         (details)
+         (json)
+         (approve)
          (active)
          );
 

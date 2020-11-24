@@ -1221,7 +1221,7 @@ namespace node { namespace protocol {
       FC_ASSERT( latitude <= 90 && latitude >= -90,
          "Latitude must be between +-90 degrees." );
       FC_ASSERT( longitude <= 180 && longitude >= -180,
-         "Latitude must be between +-180 degrees." );
+         "Longitude must be between +-180 degrees." );
       FC_ASSERT( comment_price.amount >= 0,
          "Comment price cannot be negative." );
       FC_ASSERT( premium_price.amount >= 0,
@@ -1825,10 +1825,65 @@ namespace node { namespace protocol {
          validate_tag_name( t );
       }
 
-      FC_ASSERT( community_privacy.size() < MAX_URL_SIZE,
-         "Community privacy Type is invalid." );
-      FC_ASSERT( fc::is_utf8( community_privacy ),
-         "Community privacy Type is invalid." );
+      FC_ASSERT( author_permission.size() < MAX_URL_SIZE,
+         "Author Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( author_permission ),
+         "Author Permission Type is invalid." );
+
+      FC_ASSERT( reply_permission.size() < MAX_URL_SIZE,
+         "Reply Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( reply_permission ),
+         "Reply Permission Type is invalid." );
+
+      FC_ASSERT( vote_permission.size() < MAX_URL_SIZE,
+         "Vote Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( vote_permission ),
+         "Vote Permission Type is invalid." );
+
+      FC_ASSERT( view_permission.size() < MAX_URL_SIZE,
+         "View Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( view_permission ),
+         "View Permission Type is invalid." );
+
+      FC_ASSERT( share_permission.size() < MAX_URL_SIZE,
+         "Share Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( share_permission ),
+         "Share Permission Type is invalid." );
+
+      FC_ASSERT( message_permission.size() < MAX_URL_SIZE,
+         "Message Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( message_permission ),
+         "Message Permission Type is invalid." );
+
+      FC_ASSERT( poll_permission.size() < MAX_URL_SIZE,
+         "Poll Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( poll_permission ),
+         "Poll Permission Type is invalid." );
+
+      FC_ASSERT( event_permission.size() < MAX_URL_SIZE,
+         "Event Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( event_permission ),
+         "Event Permission Type is invalid." );
+
+      FC_ASSERT( directive_permission.size() < MAX_URL_SIZE,
+         "Directive Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( directive_permission ),
+         "Directive Permission Type is invalid." );
+
+      FC_ASSERT( add_permission.size() < MAX_URL_SIZE,
+         "Add Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( add_permission ),
+         "Add Permission Type is invalid." );
+
+      FC_ASSERT( request_permission.size() < MAX_URL_SIZE,
+         "Request Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( request_permission ),
+         "Request Permission Type is invalid." );
+
+      FC_ASSERT( remove_permission.size() < MAX_URL_SIZE,
+         "Remove Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( remove_permission ),
+         "Remove Permission Type is invalid." );
 
       FC_ASSERT( community_member_key.size() < MAX_URL_SIZE,
          "Community Member key is too long." );
@@ -1842,15 +1897,46 @@ namespace node { namespace protocol {
          "Community Admin key is too long." );
       validate_public_key( community_admin_key );
 
-      FC_ASSERT( is_valid_symbol( reward_currency ), 
+      FC_ASSERT( community_secure_key.size() < MAX_URL_SIZE,
+         "Community Secure key is too long." );
+      validate_public_key( community_secure_key );
+
+      FC_ASSERT( community_standard_premium_key.size() < MAX_URL_SIZE,
+         "Community Standard Premium key is too long." );
+      validate_public_key( community_standard_premium_key );
+
+      FC_ASSERT( community_mid_premium_key.size() < MAX_URL_SIZE,
+         "Community Mid Premium key is too long." );
+      validate_public_key( community_mid_premium_key );
+
+      FC_ASSERT( community_top_premium_key.size() < MAX_URL_SIZE,
+         "Community Top Premium key is too long." );
+      validate_public_key( community_top_premium_key );
+
+      FC_ASSERT( is_valid_symbol( reward_currency ),
          "Reward Currency asset symbol invalid." );
-      FC_ASSERT( is_valid_symbol( membership_price.symbol ), 
-         "Membership price asset symbol invalid." );
-      FC_ASSERT( membership_price.symbol == reward_currency, 
-         "Membership price and reward currency must be the same asset." );
-      FC_ASSERT( membership_price.amount >= 0 , 
-         "Membership price must be greater than or equal to 0" );
-      FC_ASSERT( max_rating >= 1 && max_rating <= 9, 
+
+      FC_ASSERT( is_valid_symbol( standard_membership_price.symbol ),
+         "Standard Membership price asset symbol invalid." );
+      FC_ASSERT( standard_membership_price.amount >= 0,
+         "Standard Membership price must be greater than or equal to 0" );
+
+      FC_ASSERT( is_valid_symbol( mid_membership_price.symbol ),
+         "Mid Membership price asset symbol invalid." );
+      FC_ASSERT( mid_membership_price.amount >= 0,
+         "Mid Membership price must be greater than or equal to 0" );
+
+      FC_ASSERT( is_valid_symbol( top_membership_price.symbol ),
+         "Top Membership price asset symbol invalid." );
+      FC_ASSERT( top_membership_price.amount >= 0,
+         "Top Membership price must be greater than or equal to 0" );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
+      FC_ASSERT( max_rating >= 1 && max_rating <= 9,
          "Post Max Rating level should be between 1 and 9" );
    }
 
@@ -1927,6 +2013,66 @@ namespace node { namespace protocol {
          validate_tag_name( t );
       }
 
+      FC_ASSERT( author_permission.size() < MAX_URL_SIZE,
+         "Author Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( author_permission ),
+         "Author Permission Type is invalid." );
+
+      FC_ASSERT( reply_permission.size() < MAX_URL_SIZE,
+         "Reply Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( reply_permission ),
+         "Reply Permission Type is invalid." );
+
+      FC_ASSERT( vote_permission.size() < MAX_URL_SIZE,
+         "Vote Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( vote_permission ),
+         "Vote Permission Type is invalid." );
+
+      FC_ASSERT( view_permission.size() < MAX_URL_SIZE,
+         "View Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( view_permission ),
+         "View Permission Type is invalid." );
+
+      FC_ASSERT( share_permission.size() < MAX_URL_SIZE,
+         "Share Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( share_permission ),
+         "Share Permission Type is invalid." );
+
+      FC_ASSERT( message_permission.size() < MAX_URL_SIZE,
+         "Message Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( message_permission ),
+         "Message Permission Type is invalid." );
+
+      FC_ASSERT( poll_permission.size() < MAX_URL_SIZE,
+         "Poll Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( poll_permission ),
+         "Poll Permission Type is invalid." );
+
+      FC_ASSERT( event_permission.size() < MAX_URL_SIZE,
+         "Event Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( event_permission ),
+         "Event Permission Type is invalid." );
+
+      FC_ASSERT( directive_permission.size() < MAX_URL_SIZE,
+         "Directive Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( directive_permission ),
+         "Directive Permission Type is invalid." );
+
+      FC_ASSERT( add_permission.size() < MAX_URL_SIZE,
+         "Add Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( add_permission ),
+         "Add Permission Type is invalid." );
+
+      FC_ASSERT( request_permission.size() < MAX_URL_SIZE,
+         "Request Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( request_permission ),
+         "Request Permission Type is invalid." );
+
+      FC_ASSERT( remove_permission.size() < MAX_URL_SIZE,
+         "Remove Permission Type is invalid." );
+      FC_ASSERT( fc::is_utf8( remove_permission ),
+         "Remove Permission Type is invalid." );
+
       FC_ASSERT( community_member_key.size() < MAX_URL_SIZE,
          "Community Member key is too long." );
       validate_public_key( community_member_key );
@@ -1938,106 +2084,85 @@ namespace node { namespace protocol {
       FC_ASSERT( community_admin_key.size() < MAX_URL_SIZE,
          "Community Admin key is too long." );
       validate_public_key( community_admin_key );
+
+      FC_ASSERT( community_secure_key.size() < MAX_URL_SIZE,
+         "Community Secure key is too long." );
+      validate_public_key( community_secure_key );
+
+      FC_ASSERT( community_standard_premium_key.size() < MAX_URL_SIZE,
+         "Community Standard Premium key is too long." );
+      validate_public_key( community_standard_premium_key );
+
+      FC_ASSERT( community_mid_premium_key.size() < MAX_URL_SIZE,
+         "Community Mid Premium key is too long." );
+      validate_public_key( community_mid_premium_key );
+
+      FC_ASSERT( community_top_premium_key.size() < MAX_URL_SIZE,
+         "Community Top Premium key is too long." );
+      validate_public_key( community_top_premium_key );
       
       FC_ASSERT( max_rating >= 1 && max_rating <= 9, 
          "Post Max Rating level should be between 1 and 9" );
    }
 
-   void community_add_mod_operation::validate() const
+   void community_member_operation::validate() const
    {
       validate_account_name( signatory );
       validate_account_name( account );
-      validate_account_name( moderator );
+      validate_account_name( member );
       validate_community_name( community );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
+      FC_ASSERT( member_type.size() < MAX_URL_SIZE,
+         "Member Type is invalid." );
+      FC_ASSERT( fc::is_utf8( member_type ),
+         "Member Type is invalid." );
+      FC_ASSERT( encrypted_community_key.size() < MAX_STRING_SIZE,
+         "Encrypted community key is too long." );
+      FC_ASSERT( fc::is_utf8( encrypted_community_key ),
+         "Encrypted community key is invalid." );
    }
 
-   void community_add_admin_operation::validate() const
+   void community_member_request_operation::validate() const
    {
       validate_account_name( signatory );
       validate_account_name( account );
-      validate_account_name( admin );
       validate_community_name( community );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
+      FC_ASSERT( member_type.size() < MAX_URL_SIZE,
+         "Member Type is invalid." );
+      FC_ASSERT( fc::is_utf8( member_type ),
+         "Member Type is invalid." );
+
+      FC_ASSERT( message.size() < MAX_STRING_SIZE,
+         "Message is too long." );
+      FC_ASSERT( fc::is_utf8( message ),
+         "Message is invalid." );
    }
 
-   void community_vote_mod_operation::validate() const
+   void community_member_vote_operation::validate() const
    {
       validate_account_name( signatory );
       validate_account_name( account );
-      validate_account_name( moderator );
       validate_community_name( community );
+      validate_account_name( member );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+      
       FC_ASSERT( vote_rank >= 1 && vote_rank <= 100,
          "Vote rank must be between zero and one hundred." );
-   }
-
-   void community_transfer_ownership_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      validate_account_name( new_founder );
-      validate_community_name( community );
-   }
-
-   void community_join_request_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      validate_community_name( community );
-      FC_ASSERT( message.size() < MAX_STRING_SIZE,
-         "Message is too long." );
-   }
-
-   void community_join_invite_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      validate_account_name( member );
-      validate_community_name( community );
-      FC_ASSERT( account != member,
-      "Account: ${a} cannot invite itself to join a community: ${b} .",
-       ("a", member)("b", community));
-      FC_ASSERT( message.size() < MAX_STRING_SIZE,
-         "Message is too long." );
-      FC_ASSERT( encrypted_community_key.size() < MAX_STRING_SIZE,
-         "Message is too long." );
-   }
-
-   void community_join_accept_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      validate_account_name( member );
-      validate_community_name( community );
-      FC_ASSERT( encrypted_community_key.size() < MAX_STRING_SIZE,
-         "Message is too long." );
-      FC_ASSERT( account != member, 
-         "Account: ${a} cannot accept its own join request to a community: ${b}.", 
-      ("a", member)("b", community));
-   }
-
-   void community_invite_accept_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      validate_community_name( community );
-   }
-
-   void community_remove_member_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      validate_account_name( member );
-      validate_community_name( community );
-   }
-
-   void community_blacklist_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      validate_account_name( member );
-      validate_community_name( community );
-      FC_ASSERT( account != member, 
-         "Account: ${a} cannot add or remove itself from the blacklist of community: ${b} .",
-         ("a", member)("b", community));
    }
 
    void community_subscribe_operation::validate() const
@@ -2053,24 +2178,46 @@ namespace node { namespace protocol {
       validate_community_name( community );
    }
 
+   void community_blacklist_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_account_name( member );
+      validate_community_name( community );
+      FC_ASSERT( account != member, 
+         "Account: ${a} cannot add or remove itself from the blacklist of community: ${b} .",
+         ("a", member)("b", community));
+   }
+   
    void community_federation_operation::validate() const
    {
       validate_account_name( signatory );
       validate_account_name( account );
+
+      FC_ASSERT( federation_id.size(),
+         "Federation ID is required." );
+      FC_ASSERT( federation_id.size() < MAX_STRING_SIZE,
+         "Federation ID is too long." );
+      validate_uuidv4( federation_id );
+
       validate_community_name( community );
       validate_community_name( federated_community );
 
       if( message.size() > 0 )
       {
-         FC_ASSERT( message.size() < MAX_STRING_SIZE,
+         FC_ASSERT( message.size() < MAX_BODY_SIZE,
             "Message is too long." );
          FC_ASSERT( fc::is_utf8( message ),
             "Message is not UTF8." );
       }
 
-      FC_ASSERT( federation_id.size() < MAX_STRING_SIZE,
-         "Federation ID is too long." );
-      validate_uuidv4( federation_id );
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( json.size() < MAX_BODY_SIZE,
+            "JSON is too long." );
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON is not UTF8." );
+      }
 
       FC_ASSERT( federation_type.size() < MAX_URL_SIZE,
          "Federation Type is too long." );
@@ -2089,28 +2236,70 @@ namespace node { namespace protocol {
       validate_account_name( account );
       validate_community_name( community );
 
+      FC_ASSERT( event_id.size(),
+         "Event ID is required." );
+      FC_ASSERT( event_id.size() < MAX_STRING_SIZE,
+         "Event ID is too long." );
+      validate_uuidv4( event_id );
+
+      if( public_key.size() > 0 )
+      {
+         FC_ASSERT( public_key.size() < MAX_URL_SIZE,
+            "Public Key is too long." );
+         validate_public_key( public_key );
+      }
+
       FC_ASSERT( event_name.size() < MAX_STRING_SIZE,
          "Event Name is too long." );
       FC_ASSERT( fc::is_utf8( event_name ),
          "Event Name is not formatted in UTF8." );
 
-      FC_ASSERT( details.size() < MAX_STRING_SIZE,
-         "Details are too long." );
-      FC_ASSERT( fc::is_utf8( details ),
-         "Details is not formatted in UTF8." );
+      FC_ASSERT( latitude <= 90 && latitude >= -90,
+         "Latitude must be between +-90 degrees." );
+      FC_ASSERT( longitude <= 180 && longitude >= -180,
+         "Longitude must be between +-180 degrees." );
 
-      FC_ASSERT( location.size() < MAX_STRING_SIZE,
-         "Location is too long." );
-      FC_ASSERT( fc::is_utf8( location ),
-         "Location is not formatted in UTF8." );
+      if( location.size() > 0 )
+      {
+         FC_ASSERT( location.size() < MAX_STRING_SIZE,
+            "Location is too long." );
+         FC_ASSERT( fc::is_utf8( location ),
+            "Location is not formatted in UTF8." );
+      }
+
+      if( details.size() > 0 )
+      {
+         FC_ASSERT( details.size() < MAX_STRING_SIZE,
+            "Details are too long." );
+         FC_ASSERT( fc::is_utf8( details ),
+            "Details is not formatted in UTF8." );
+      }
+
+      if( url.size() > 0 )
+      {
+         FC_ASSERT( url.size() < MAX_STRING_SIZE,
+            "URL is too long." );
+         FC_ASSERT( fc::is_utf8( url ),
+            "URL is not formatted in UTF8." );
+      }
 
       if( json.size() > 0 )
       {
+         FC_ASSERT( json.size() < MAX_BODY_SIZE,
+            "JSON is too long." );
          FC_ASSERT( fc::is_utf8( json ),
             "JSON Metadata not formatted in UTF8." );
-         FC_ASSERT( fc::json::is_valid( json ),
-            "JSON Metadata not valid JSON." );
       }
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
+      FC_ASSERT( event_price.amount >= 0,
+         "Event price must be at least 0." );
+      FC_ASSERT( is_valid_symbol( event_price.symbol ),
+         "Event price must have a valid symbol." );
 
       FC_ASSERT( event_start_time > GENESIS_TIME,
          "Begin time must be after genesis time." );
@@ -2125,6 +2314,262 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( attendee );
       validate_community_name( community );
+
+      FC_ASSERT( event_id.size(),
+         "Event ID is required." );
+      FC_ASSERT( event_id.size() < MAX_STRING_SIZE,
+         "Event ID is too long." );
+      validate_uuidv4( event_id );
+
+      if( public_key.size() > 0 )
+      {
+         FC_ASSERT( public_key.size() < MAX_URL_SIZE,
+            "Public Key is too long." );
+         validate_public_key( public_key );
+      }
+
+      if( message.size() > 0 )
+      {
+         FC_ASSERT( message.size() < MAX_BODY_SIZE,
+            "Message is too long." );
+         FC_ASSERT( fc::is_utf8( message ),
+            "Message is invalid." );
+      }
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( json.size() < MAX_BODY_SIZE,
+            "JSON is too long." );
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8." );
+      }
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+   }
+
+   void community_directive_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+
+      FC_ASSERT( directive_id.size(),
+         "Directive ID is required." );
+      FC_ASSERT( directive_id.size() < MAX_STRING_SIZE,
+         "Directive ID is too long." );
+      validate_uuidv4( directive_id );
+
+      validate_account_name( parent_account );
+      FC_ASSERT( parent_directive_id.size() < MAX_STRING_SIZE,
+         "Parent Directive ID is too long." );
+      validate_uuidv4( parent_directive_id );
+
+      validate_community_name( community );
+
+      if( public_key.size() > 0 )
+      {
+         FC_ASSERT( public_key.size() < MAX_URL_SIZE,
+            "Public Key is too long." );
+         validate_public_key( public_key );
+      }
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
+      if( details.size() > 0 )
+      {
+         FC_ASSERT( details.size() < MAX_BODY_SIZE,
+            "Details is too long." );
+         FC_ASSERT( fc::is_utf8( details ),
+            "Details Metadata not formatted in UTF8." );
+      }
+
+      if( cover_image.size() )
+      {
+         FC_ASSERT( cover_image.size() < MAX_STRING_SIZE,
+            "Cover Image is too long" );
+         FC_ASSERT( fc::is_utf8( cover_image ),
+            "Cover Image is not UTF8" );
+         FC_ASSERT( cover_image.size() == 46 && cover_image[0] == 'Q' && cover_image[1] == 'm',
+            "Cover Image IPFS string should be 46 characters long and begin with 'Qm'." );
+      }
+
+      if( ipfs.size() )
+      {
+         FC_ASSERT( ipfs.size() < MAX_STRING_SIZE,
+            "IPFS is too long" );
+         FC_ASSERT( fc::is_utf8( ipfs ),
+            "IPFS is not UTF8" );
+         FC_ASSERT( ipfs.size() == 46 && ipfs[0] == 'Q' && ipfs[1] == 'm',
+            "IPFS string should be 46 characters long and begin with 'Qm'." );
+      }
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( json.size() < MAX_BODY_SIZE,
+            "JSON is too long." );
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8." );
+      }
+
+      FC_ASSERT( directive_start_time > GENESIS_TIME,
+         "Directive Start time must be after genesis time." );
+      FC_ASSERT( directive_end_time > GENESIS_TIME,
+         "Directive End time must be after genesis time." );
+      FC_ASSERT( directive_end_time > directive_start_time,
+         "Directive End time must be after Directive start time." );
+   }
+
+   void community_directive_vote_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( voter );
+      validate_account_name( account );
+
+      FC_ASSERT( directive_id.size(),
+         "Directive ID is required." );
+      FC_ASSERT( directive_id.size() < MAX_URL_SIZE,
+         "Directive ID is too long." );
+      validate_uuidv4( directive_id );
+
+      if( public_key.size() > 0 )
+      {
+         FC_ASSERT( public_key.size() < MAX_URL_SIZE,
+            "Public Key is too long." );
+         validate_public_key( public_key );
+      }
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
+      if( details.size() > 0 )
+      {
+         FC_ASSERT( details.size() < MAX_BODY_SIZE,
+            "Details is too long." );
+         FC_ASSERT( fc::is_utf8( details ),
+            "Details are invalid." );
+      }
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( json.size() < MAX_BODY_SIZE,
+            "JSON is too long." );
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8." );
+      }
+   }
+
+   void community_directive_member_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( account );
+      validate_community_name( community );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
+      if( public_key.size() > 0 )
+      {
+         FC_ASSERT( public_key.size() < MAX_URL_SIZE,
+            "Public Key is too long." );
+         validate_public_key( public_key );
+      }
+
+      if( details.size() > 0 )
+      {
+         FC_ASSERT( details.size() < MAX_BODY_SIZE,
+            "Details is too long." );
+         FC_ASSERT( fc::is_utf8( details ),
+            "Details are invalid." );
+      }
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( json.size() < MAX_BODY_SIZE,
+            "JSON is too long." );
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8." );
+      }
+
+      if( command_directive_id.size() > 0 )
+      {
+         FC_ASSERT( command_directive_id.size() < MAX_URL_SIZE,
+            "Directive ID is too long." );
+         validate_uuidv4( command_directive_id );
+         FC_ASSERT( fc::is_utf8( command_directive_id ),
+            "Command Directive ID must be UTF-8" );
+      }
+
+      if( delegate_directive_id.size() > 0 )
+      {
+         FC_ASSERT( delegate_directive_id.size() < MAX_URL_SIZE,
+            "Directive ID is too long." );
+         validate_uuidv4( delegate_directive_id );
+         FC_ASSERT( fc::is_utf8( delegate_directive_id ),
+            "Delegate Directive ID must be UTF-8" );
+      }
+
+      if( consensus_directive_id.size() > 0 )
+      {
+         FC_ASSERT( consensus_directive_id.size() < MAX_URL_SIZE,
+            "Directive ID is too long." );
+         validate_uuidv4( consensus_directive_id );
+         FC_ASSERT( fc::is_utf8( consensus_directive_id ),
+            "Consensus Directive ID must be UTF-8" );
+      }
+
+      if( emergent_directive_id.size() > 0 )
+      {
+         FC_ASSERT( emergent_directive_id.size() < MAX_URL_SIZE,
+            "Directive ID is too long." );
+         validate_uuidv4( emergent_directive_id );
+         FC_ASSERT( fc::is_utf8( emergent_directive_id ),
+            "Emergent Directive ID must be UTF-8" );
+      }
+   }
+
+   void community_directive_member_vote_operation::validate() const
+   {
+      validate_account_name( signatory );
+      validate_account_name( voter );
+      validate_account_name( member );
+      validate_community_name( community );
+
+      if( public_key.size() > 0 )
+      {
+         FC_ASSERT( public_key.size() < MAX_URL_SIZE,
+            "Public Key is too long." );
+         validate_public_key( public_key );
+      }
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
+      if( details.size() > 0 )
+      {
+         FC_ASSERT( details.size() < MAX_BODY_SIZE,
+            "Details is too long." );
+         FC_ASSERT( fc::is_utf8( details ),
+            "Details are invalid." );
+      }
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( json.size() < MAX_BODY_SIZE,
+            "JSON is too long." );
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8." );
+      }
    }
 
 
@@ -2138,12 +2583,8 @@ namespace node { namespace protocol {
    void ad_creative_operation::validate() const
    {
       validate_account_name( signatory );
+      validate_account_name( account );
       validate_account_name( author );
-
-      FC_ASSERT( format_type.size() < MAX_URL_SIZE,
-         "Format Type is invalid." );
-      FC_ASSERT( fc::is_utf8( format_type ),
-         "Format Type is invalid." );
 
       FC_ASSERT( creative_id.size(),
          "Creative has no creative ID." );
@@ -2151,7 +2592,6 @@ namespace node { namespace protocol {
          "Creative ID is too long." );
       FC_ASSERT( fc::is_utf8( creative_id ),
          "Creative ID must be UTF-8" );
-
       validate_uuidv4( creative_id );
 
       FC_ASSERT( objective.size(),
@@ -2170,11 +2610,16 @@ namespace node { namespace protocol {
 
       if( json.size() > 0 )
       {
+         FC_ASSERT( json.size() < MAX_BODY_SIZE,
+            "JSON is too long." );
          FC_ASSERT( fc::is_utf8( json ),
             "JSON Metadata not formatted in UTF8." );
-         FC_ASSERT( fc::json::is_valid( json ),
-            "JSON Metadata not valid JSON." );
       }
+
+      FC_ASSERT( format_type.size() < MAX_URL_SIZE,
+         "Format Type is invalid." );
+      FC_ASSERT( fc::is_utf8( format_type ),
+         "Format Type is invalid." );
    }
 
 
@@ -2183,27 +2628,17 @@ namespace node { namespace protocol {
       validate_account_name( signatory );
       validate_account_name( account );
 
-      if( interface.size() )
-      {
-         validate_account_name( interface );
-      }
-
       FC_ASSERT( campaign_id.size() < MAX_STRING_SIZE,
          "Campaign ID is too long." );
       FC_ASSERT( campaign_id.size() > 0,
          "Campaign has no campaign ID." );
-      FC_ASSERT( budget.amount >= 0,
-         "Campaign requires a budget greater than or equal to 0." );
-         
       validate_uuidv4( campaign_id );
 
-      if( json.size() > 0 )
-      {
-         FC_ASSERT( fc::is_utf8( json ),
-            "JSON Metadata not formatted in UTF8." );
-         FC_ASSERT( fc::json::is_valid( json ),
-            "JSON Metadata not valid JSON." );
-      }
+      FC_ASSERT( budget.amount >= 0,
+         "Campaign requires a budget greater than or equal to 0." );
+      FC_ASSERT( is_valid_symbol( budget.symbol ),
+         "Symbol ${s} is not a valid symbol",
+         ("s", budget.symbol) );
 
       FC_ASSERT( begin > GENESIS_TIME,
          "Begin time must be after genesis time." );
@@ -2211,14 +2646,23 @@ namespace node { namespace protocol {
          "Begin time must be after genesis time." );
       FC_ASSERT( end > begin,
          "Begin time must be after genesis time." );
-      FC_ASSERT( budget.amount > 0,
-         "Budget required." );
-      FC_ASSERT( is_valid_symbol( budget.symbol ),
-         "Symbol ${symbol} is not a valid symbol", ("symbol", budget.symbol) );
+      
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( json.size() < MAX_BODY_SIZE,
+            "JSON is too long." );
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8." );
+      }
 
       for( auto name : agents )
       {
          validate_account_name( name );
+      }
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
       }
    }
 
@@ -2227,36 +2671,44 @@ namespace node { namespace protocol {
    {
       validate_account_name( signatory );
       validate_account_name( provider );
-      FC_ASSERT( inventory_id.size() > 0,
+
+      FC_ASSERT( inventory_id.size(),
          "Inventory ID is required." );
-      FC_ASSERT( fc::is_utf8( inventory_id ),
-         "inventory ID must be UTF-8" );
-      FC_ASSERT( min_price.amount > 0,
-         "Minimum inventory price must be greater than 0");
       FC_ASSERT( inventory_id.size() < MAX_STRING_SIZE,
          "Inventory ID is too long." );
-      FC_ASSERT( is_valid_symbol( min_price.symbol ),
-         "Symbol ${symbol} is not a valid symbol", ( "symbol", min_price.symbol ) );
-      FC_ASSERT( inventory > 0,
-         "Inventory must be greater than zero." );
+      FC_ASSERT( fc::is_utf8( inventory_id ),
+         "Inventory ID must be UTF-8" );
       validate_uuidv4( inventory_id );
+
+      FC_ASSERT( audience_id.size(),
+         "Audience ID is required." );
+      FC_ASSERT( audience_id.size() < MAX_STRING_SIZE,
+         "Audience ID is too long." );
+      FC_ASSERT( fc::is_utf8( audience_id ),
+         "Audience ID must be UTF-8" );
+      validate_uuidv4( audience_id );
 
       FC_ASSERT( metric.size() < MAX_URL_SIZE,
          "Metric Type is invalid." );
       FC_ASSERT( fc::is_utf8( metric ),
          "Metric Type is invalid." );
 
+      FC_ASSERT( min_price.amount > 0,
+         "Minimum inventory price must be greater than 0");
+      FC_ASSERT( is_valid_symbol( min_price.symbol ),
+         "Symbol ${s} is not a valid symbol",
+         ("s", min_price.symbol));
+
+      FC_ASSERT( inventory > 0,
+         "Inventory available must be greater than zero." );
+      
       if( json.size() > 0 )
       {
+         FC_ASSERT( json.size() < MAX_BODY_SIZE,
+            "JSON is too long." );
          FC_ASSERT( fc::is_utf8( json ),
             "JSON Metadata not formatted in UTF8." );
-         FC_ASSERT( fc::json::is_valid( json ),
-            "JSON Metadata not valid JSON." );
       }
-
-      FC_ASSERT( audience_id.size() < MAX_STRING_SIZE,
-         "Audience ID is too long." );
-      validate_uuidv4( audience_id );
    }
 
 
@@ -2271,21 +2723,21 @@ namespace node { namespace protocol {
          "Audience ID is too long." );
       FC_ASSERT( fc::is_utf8( audience_id ),
          "Audience ID must be UTF-8" );
-      FC_ASSERT( audience.size(),
-         "Audience must include at least one account." );
       validate_uuidv4( audience_id );
-
-      for( auto name : audience )
-      {
-         validate_account_name( name );
-      }
 
       if( json.size() > 0 )
       {
+         FC_ASSERT( json.size() < MAX_BODY_SIZE,
+            "JSON is too long." );
          FC_ASSERT( fc::is_utf8( json ),
             "JSON Metadata not formatted in UTF8." );
-         FC_ASSERT( fc::json::is_valid( json ),
-            "JSON Metadata not valid JSON." );
+      }
+
+      FC_ASSERT( audience.size(),
+         "Audience must include at least one account." );
+      for( auto name : audience )
+      {
+         validate_account_name( name );
       }
    }
 
@@ -2299,69 +2751,61 @@ namespace node { namespace protocol {
       validate_account_name( provider );
 
       FC_ASSERT( bid_id.size(),
-         "bid has no bid ID." );
+         "Bid has no Bid ID." );
       FC_ASSERT( bid_id.size() < MAX_STRING_SIZE,
-         "bid ID is too long." );
+         "Bid ID is too long." );
       FC_ASSERT( fc::is_utf8( bid_id ),
-         "bid ID must be UTF-8" );
+         "Bid ID must be UTF-8" );
       validate_uuidv4( bid_id );
 
       FC_ASSERT( campaign_id.size(),
-         "Bid has no campaign ID." );
+         "Bid has no Campaign ID." );
       FC_ASSERT( campaign_id.size() < MAX_STRING_SIZE,
-         "Bid ID is too long." );
+         "Bid Campaign ID is too long." );
       FC_ASSERT( fc::is_utf8( campaign_id ),
-         "Bid ID must be UTF-8" );
+         "Bid Campaign ID must be UTF-8" );
       validate_uuidv4( campaign_id );
 
       FC_ASSERT( creative_id.size(),
-         "Bid has no creative ID." );
+         "Bid has no Creative ID." );
       FC_ASSERT( creative_id.size() < MAX_STRING_SIZE,
-         "Bid ID is too long." );
+         "Bid Creative ID is too long." );
       FC_ASSERT( fc::is_utf8( creative_id ),
-         "Bid ID must be UTF-8" );
+         "Bid Creative ID must be UTF-8" );
       validate_uuidv4( creative_id );
 
       FC_ASSERT( inventory_id.size(),
-         "Bid has no inventory ID." );
+         "Bid has no Inventory ID." );
       FC_ASSERT( inventory_id.size() < MAX_STRING_SIZE,
-         "Bid ID is too long." );
+         "Bid Inventory ID is too long." );
       FC_ASSERT( fc::is_utf8( inventory_id ),
-         "Bid ID must be UTF-8" );
+         "Bid Inventory ID must be UTF-8" );
       validate_uuidv4( inventory_id );
-
-      if( json.size() > 0 )
-      {
-         FC_ASSERT( fc::is_utf8( json ),
-            "JSON Metadata not formatted in UTF8." );
-         FC_ASSERT( fc::json::is_valid( json ),
-            "JSON Metadata not valid JSON." );
-      }
 
       FC_ASSERT( bid_price.amount > 0,
          "Minimum bid price must be greater than 0." );
-      FC_ASSERT( requested > 0,
-         "Inventory requested must be greater than 0." );
-
-      FC_ASSERT( bid_price.amount > 0,
-         "Bid price must be greater than zero." );
-      FC_ASSERT( is_valid_symbol( bid_price.symbol ),
-         "Symbol ${symbol} is not a valid symbol", ( "symbol", bid_price.symbol ) );
       FC_ASSERT( bid_price.symbol == SYMBOL_COIN,
          "Bid Price must be denominated in core asset." );
-      FC_ASSERT( expiration > GENESIS_TIME,
-         "Begin time must be after genesis time." );
 
+      FC_ASSERT( requested > 0,
+         "Inventory requested must be greater than 0." );
+      
       for( auto aud : included_audiences )
       {
          FC_ASSERT( aud.size() < MAX_STRING_SIZE,
             "Audience ID is too long." );
+         FC_ASSERT( fc::is_utf8( aud ),
+            "Audience ID must be UTF-8" );
+         validate_uuidv4( aud );
       }
 
       for( auto aud : excluded_audiences )
       {
          FC_ASSERT( aud.size() < MAX_STRING_SIZE,
             "Audience ID is too long." );
+         FC_ASSERT( fc::is_utf8( aud ),
+            "Audience ID must be UTF-8" );
+         validate_uuidv4( aud );
       }
 
       FC_ASSERT( audience_id.size(),
@@ -2371,6 +2815,17 @@ namespace node { namespace protocol {
       FC_ASSERT( fc::is_utf8( audience_id ),
          "Audience ID must be UTF-8" );
       validate_uuidv4( audience_id );
+
+      if( json.size() > 0 )
+      {
+         FC_ASSERT( fc::is_utf8( json ),
+            "JSON Metadata not formatted in UTF8." );
+         FC_ASSERT( json.size() < MAX_BODY_SIZE,
+            "JSON is too long." );
+      }
+
+      FC_ASSERT( expiration > GENESIS_TIME,
+         "Begin time must be after genesis time." );
    }
 
 
@@ -4399,7 +4854,7 @@ namespace node { namespace protocol {
       FC_ASSERT( latitude <= 90 && latitude >= -90,
          "Latitude must be between +-90 degrees." );
       FC_ASSERT( longitude <= 180 && longitude >= -180,
-         "Latitude must be between +-180 degrees." );
+         "Longitude must be between +-180 degrees." );
       FC_ASSERT( block_signing_key.size() < MAX_STRING_SIZE,
          "Block signing key size is too large." );
 

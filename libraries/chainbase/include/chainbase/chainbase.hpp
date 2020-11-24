@@ -218,9 +218,10 @@ namespace chainbase {
             };
 
             auto insert_result = _indices.emplace( constructor, _indices.get_allocator() );
+            std::string type_name = boost::core::demangle( typeid( value_type ).name() );
 
             if( !insert_result.second ) {
-               BOOST_THROW_EXCEPTION( std::logic_error("could not insert object, most likely a uniqueness constraint was violated") );
+               BOOST_THROW_EXCEPTION( std::logic_error( "Could not insert object ID: " + boost::lexical_cast<std::string>(new_id._id) + " of type: " + type_name + "\n [Most likely a uniqueness constraint was violated]." ) );
             }
 
             ++_next_id;
@@ -232,7 +233,8 @@ namespace chainbase {
          void modify( const value_type& obj, Modifier&& m ) {
             on_modify( obj );
             auto ok = _indices.modify( _indices.iterator_to( obj ), m );
-            if( !ok ) BOOST_THROW_EXCEPTION( std::logic_error( "Could not modify object, most likely a uniqueness constraint was violated" ) );
+            std::string type_name = boost::core::demangle( typeid( value_type ).name() );
+            if( !ok ) BOOST_THROW_EXCEPTION( std::logic_error( "Could not modify object ID: " + boost::lexical_cast<std::string>(obj.id._id) + " of type: " + type_name + "\n [Most likely a uniqueness constraint was violated]." ) );
          }
 
          void remove( const value_type& obj ) {
@@ -325,7 +327,8 @@ namespace chainbase {
                auto ok = _indices.modify( _indices.find( item.second.id ), [&]( value_type& v ) {
                   v = std::move( item.second );
                });
-               if( !ok ) BOOST_THROW_EXCEPTION( std::logic_error( "Could not modify object, most likely a uniqueness constraint was violated" ) );
+               std::string type_name = boost::core::demangle( typeid( value_type ).name() );
+               if( !ok ) BOOST_THROW_EXCEPTION( std::logic_error( "Could not modify object ID: " + boost::lexical_cast<std::string>(item.second.id._id) + " of type: " + type_name + "\n [Most likely a uniqueness constraint was violated]." ) );
             }
 
             for( auto id : head.new_ids )
@@ -336,7 +339,8 @@ namespace chainbase {
 
             for( auto& item : head.removed_values ) {
                bool ok = _indices.emplace( std::move( item.second ) ).second;
-               if( !ok ) BOOST_THROW_EXCEPTION( std::logic_error( "Could not restore object, most likely a uniqueness constraint was violated" ) );
+               std::string type_name = boost::core::demangle( typeid( value_type ).name() );
+               if( !ok ) BOOST_THROW_EXCEPTION( std::logic_error( "Could not restore object ID: " + boost::lexical_cast<std::string>(item.second.id._id) + " of type: " + type_name + "\n [Most likely a uniqueness constraint was violated]." ) );
             }
 
             _stack.pop_back();

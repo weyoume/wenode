@@ -10,7 +10,7 @@ using namespace node::protocol;
 using std::string;
 using std::map;
 
-using node::protocol::community_privacy_type;
+using node::protocol::community_permission_type;
 using node::protocol::community_federation_type;
 using node::protocol::business_structure_type;
 using node::protocol::membership_tier_type;

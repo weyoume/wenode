@@ -138,10 +138,10 @@
 #define COMMENT_CURATION_DECAY          (100)                 // Curation reward decays by 50% per 100 comments.
 
 #define DECLINE_VOTING_RIGHTS_DURATION                   fc::days(3)
-#define MIN_COMMUNITY_CREATE_INTERVAL                    fc::days(1)
-#define MIN_ASSET_CREATE_INTERVAL                        fc::days(1)
-#define MIN_COMMUNITY_UPDATE_INTERVAL                    fc::minutes(10)
-#define MIN_ASSET_UPDATE_INTERVAL                        fc::minutes(10)
+#define MIN_COMMUNITY_CREATE_INTERVAL                    fc::hours(1)
+#define MIN_ASSET_CREATE_INTERVAL                        fc::hours(1)
+#define MIN_COMMUNITY_UPDATE_INTERVAL                    fc::minutes(1)
+#define MIN_ASSET_UPDATE_INTERVAL                        fc::minutes(1)
 
 #define GENESIS_PRODUCER_AMOUNT                   (120)
 #define TOTAL_PRODUCERS                           (GENESIS_PRODUCER_AMOUNT)
@@ -265,8 +265,8 @@
 
 #define SUBSCRIPTION_FEE_PERCENT               (2 * PERCENT_1)   // Percentage fee charged on subscription content purchases: 2%
 #define NETWORK_SUBSCRIPTION_FEE_PERCENT       (50 * PERCENT_1)  // Percentage of subscription fee consumed as network revenue: 50%
-#define INTERFACE_SUBSCRIPTION_FEE_PERCENT     (25 * PERCENT_1)  // Percentage of subscription fee shared with the purchaser's interface: 50%
-#define NODE_SUBSCRIPTION_FEE_PERCENT          (25 * PERCENT_1)  // Percentage of subscription fee shared with hosting supernodes: 50%
+#define INTERFACE_SUBSCRIPTION_FEE_PERCENT     (50 * PERCENT_1)  // Percentage of subscription fee shared with the purchaser's interface: 50%
+#define MEMBER_VOTE_SUBSCRIPTION_PERCENT       (50 * PERCENT_1)  // Percentage of premium subscription revenue that is shared with the community members: 50%
 
 #define MIN_ACTIVITY_PRODUCERS                 (10)              // Accounts need at least 10 producer votes to claim activity reward. 
 #define ACTIVITY_BOOST_STANDARD_PERCENT        (125 * PERCENT_1) // Boost activty reward by 25%
@@ -430,3 +430,6 @@
 #define MEMBER_KEY_STR                  "member"                                      // String included in the key generation formula
 #define MODERATOR_KEY_STR               "moderator"                                   // String included in the key generation formula
 #define ADMIN_KEY_STR                   "admin"                                       // String included in the key generation formula
+#define STANDARD_PREMIUM_KEY_STR        "standard_premium"                            // String included in the key generation formula
+#define MID_PREMIUM_KEY_STR             "mid_premium"                                 // String included in the key generation formula
+#define TOP_PREMIUM_KEY_STR             "top_premium"                                 // String included in the key generation formula

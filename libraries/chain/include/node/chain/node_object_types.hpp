@@ -44,7 +44,7 @@ using node::protocol::fixed_string_32;
 using node::protocol::encrypted_keypair_type;
 using node::protocol::date_type;
 
-using node::protocol::community_privacy_type;
+using node::protocol::community_permission_type;
 using node::protocol::community_federation_type;
 using node::protocol::business_structure_type;
 using node::protocol::membership_tier_type;
@@ -141,14 +141,17 @@ enum object_type
    // Community Objects
 
    community_object_type,
+   community_permission_object_type,
    community_member_object_type,
-   community_member_key_object_type,
-   community_moderator_vote_object_type,
-   community_join_request_object_type,
-   community_join_invite_object_type,
+   community_member_request_object_type,
+   community_member_vote_object_type,
    community_federation_object_type,
    community_event_object_type,
    community_event_attend_object_type,
+   community_directive_object_type,
+   community_directive_member_object_type,
+   community_directive_vote_object_type,
+   community_directive_member_vote_object_type,
 
    // Advertising Objects
 
@@ -302,14 +305,17 @@ class premium_purchase_key_object;
 // Community Objects
 
 class community_object;
+class community_permission_object;
 class community_member_object;
-class community_member_key_object;
-class community_moderator_vote_object;
-class community_join_request_object;
-class community_join_invite_object;
+class community_member_request_object;
+class community_member_vote_object;
 class community_federation_object;
 class community_event_object;
 class community_event_attend_object;
+class community_directive_object;
+class community_directive_member_object;
+class community_directive_vote_object;
+class community_directive_member_vote_object;
 
 // Advertising Objects
 
@@ -462,14 +468,17 @@ typedef oid< premium_purchase_key_object                > premium_purchase_key_i
 // Community Objects
 
 typedef oid< community_object                           > community_id_type;
+typedef oid< community_permission_object                > community_permission_id_type;
 typedef oid< community_member_object                    > community_member_id_type;
-typedef oid< community_member_key_object                > community_member_key_id_type;
-typedef oid< community_moderator_vote_object            > community_moderator_vote_id_type;
-typedef oid< community_join_request_object              > community_join_request_id_type;
-typedef oid< community_join_invite_object               > community_join_invite_id_type;
+typedef oid< community_member_request_object            > community_member_request_id_type;
+typedef oid< community_member_vote_object               > community_member_vote_id_type;
 typedef oid< community_federation_object                > community_federation_id_type;
 typedef oid< community_event_object                     > community_event_id_type;
 typedef oid< community_event_attend_object              > community_event_attend_id_type;
+typedef oid< community_directive_object                 > community_directive_id_type;
+typedef oid< community_directive_member_object          > community_directive_member_id_type;
+typedef oid< community_directive_vote_object            > community_directive_vote_id_type;
+typedef oid< community_directive_member_vote_object     > community_directive_member_vote_id_type;
 
 // Advertising Objects
 
@@ -714,14 +723,17 @@ FC_REFLECT_ENUM( node::chain::object_type,
          // Community Objects
 
          (community_object_type)
+         (community_permission_object_type)
          (community_member_object_type)
-         (community_member_key_object_type)
-         (community_moderator_vote_object_type)
-         (community_join_request_object_type)
-         (community_join_invite_object_type)
+         (community_member_request_object_type)
+         (community_member_vote_object_type)
          (community_federation_object_type)
          (community_event_object_type)
          (community_event_attend_object_type)
+         (community_directive_object_type)
+         (community_directive_member_object_type)
+         (community_directive_vote_object_type)
+         (community_directive_member_vote_object_type)
 
          // Advertising Objects
 

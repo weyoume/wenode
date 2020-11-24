@@ -275,11 +275,7 @@ namespace node { namespace chain {
       const community_object& community_create(
          const string& name,
          const string& founder,
-         const string& community_privacy,
-         const private_key_type& founder_key,
-         const public_key_type& community_member_key,
-         const public_key_type& community_moderator_key,
-         const public_key_type& community_admin_key
+         const private_key_type& founder_key
       );
 
       const asset_object& asset_create(

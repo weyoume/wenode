@@ -537,7 +537,7 @@ namespace node { namespace chain {
             }
          };
 
-         bool is_authorized_blacklist( const account_name_type& account, const account_permission_object& obj )const // Determines Permission to blacklist an account from the community. 
+         bool is_authorized_remove( const account_name_type& account, const account_permission_object& obj )const // Determines Permission to blacklist an account from the community. 
          {
             if( obj.blacklisted_accounts.size() )
             {
@@ -1000,39 +1000,45 @@ namespace node { namespace chain {
 
          id_type                                id;
 
-         account_name_type                      account;                 ///< Name of the account.
+         account_name_type                      account;                                  ///< Name of the account.
 
-         flat_set< account_name_type >          followers;               ///< Accounts that follow this account.
+         flat_set< account_name_type >          followers;                                ///< Accounts that follow this account.
 
-         flat_set< account_name_type >          following;               ///< Accounts that this account follows.
+         flat_set< account_name_type >          following;                                ///< Accounts that this account follows.
 
-         flat_set< account_name_type >          mutual_followers;        ///< Accounts that are both following and followers of this account.
+         flat_set< account_name_type >          mutual_followers;                         ///< Accounts that are both following and followers of this account.
 
-         flat_set< account_name_type >          connections;             ///< Accounts that are connections of this account.
+         flat_set< account_name_type >          connections;                              ///< Accounts that are connections of this account.
 
-         flat_set< account_name_type >          friends;                 ///< Accounts that are friends of this account.
+         flat_set< account_name_type >          friends;                                  ///< Accounts that are friends of this account.
 
-         flat_set< account_name_type >          companions;              ///< Accounts that are companions of this account.
+         flat_set< account_name_type >          companions;                               ///< Accounts that are companions of this account.
 
-         flat_set< community_name_type >        followed_communities;    ///< Communities that the account subscribes to.
+         flat_set< community_name_type >        followed_communities;                     ///< Communities that the account subscribes to.
 
-         flat_set< community_name_type >        member_communities;      ///< Communities that the account is a member within.
+         flat_set< community_name_type >        member_communities;                       ///< Communities that the account is a member within.
 
-         flat_set< community_name_type >        moderator_communities;   ///< Communities that the account is a moderator within.
+         flat_set< community_name_type >        standard_premium_member_communities;      ///< Communities that the account is a standard premium member within.
 
-         flat_set< community_name_type >        admin_communities;       ///< Communities that the account is an admin within.
+         flat_set< community_name_type >        mid_premium_member_communities;           ///< Communities that the account is a mid premium member within.
 
-         flat_set< community_name_type >        founder_communities;     ///< Communities that the account is a founder of.
+         flat_set< community_name_type >        top_premium_member_communities;           ///< Communities that the account is a top premium member within.
 
-         flat_set< tag_name_type >              followed_tags;           ///< Tags that the account follows.
+         flat_set< community_name_type >        moderator_communities;                    ///< Communities that the account is a moderator within.
 
-         flat_set< account_name_type >          filtered;                ///< Accounts that this account has filtered. Interfaces should not show posts by these users.
+         flat_set< community_name_type >        admin_communities;                        ///< Communities that the account is an admin within.
 
-         flat_set< community_name_type >        filtered_communities;    ///< Communities that this account has filtered. Posts will not display if they are in these communities.
+         flat_set< community_name_type >        founder_communities;                      ///< Communities that the account is a founder of.
 
-         flat_set< tag_name_type >              filtered_tags;           ///< Tags that this account has filtered. Posts will not display if they have any of these tags. 
+         flat_set< tag_name_type >              followed_tags;                            ///< Tags that the account follows.
 
-         time_point                             last_updated;            ///< Last time that the account changed its following sets.
+         flat_set< account_name_type >          filtered;                                 ///< Accounts that this account has filtered. Interfaces should not show posts by these users.
+
+         flat_set< community_name_type >        filtered_communities;                     ///< Communities that this account has filtered. Posts will not display if they are in these communities.
+
+         flat_set< tag_name_type >              filtered_tags;                            ///< Tags that this account has filtered. Posts will not display if they have any of these tags. 
+
+         time_point                             last_updated;                             ///< Last time that the account changed its following sets.
 
          /**
           * Adjacency value determines how similar two accounts are by comparing the 
@@ -1078,29 +1084,29 @@ namespace node { namespace chain {
             return result;
          };
 
-         bool                                   is_connection( const account_name_type& account )const
+         bool                                   is_connection( const account_name_type& a )const
          {
-            return std::find( connections.begin(), connections.end(), account ) != connections.end();
+            return std::find( connections.begin(), connections.end(), a ) != connections.end();
          };
 
-         bool                                   is_friend( const account_name_type& account )const
+         bool                                   is_friend( const account_name_type& a )const
          {
-            return std::find( friends.begin(), friends.end(), account ) != friends.end();
+            return std::find( friends.begin(), friends.end(), a ) != friends.end();
          };
 
-         bool                                   is_companion( const account_name_type& account )const
+         bool                                   is_companion( const account_name_type& a )const
          {
-            return std::find( companions.begin(), companions.end(), account ) != companions.end();
+            return std::find( companions.begin(), companions.end(), a ) != companions.end();
          };
 
-         bool                                   is_follower( const account_name_type& account )const
+         bool                                   is_follower( const account_name_type& a )const
          {
-            return std::find( followers.begin(), followers.end(), account ) != followers.end();
+            return std::find( followers.begin(), followers.end(), a ) != followers.end();
          };
 
-         bool                                   is_following( const account_name_type& account )const
+         bool                                   is_following( const account_name_type& a )const
          {
-            return std::find( following.begin(), following.end(), account ) != following.end();
+            return std::find( following.begin(), following.end(), a ) != following.end();
          };
 
          bool                                   is_followed_tag( const tag_name_type& tag )const
@@ -1118,6 +1124,21 @@ namespace node { namespace chain {
             return std::find( member_communities.begin(), member_communities.end(), community ) != member_communities.end();
          };
 
+         bool                                   is_standard_premium_member_community( const community_name_type& community )const
+         {
+            return std::find( standard_premium_member_communities.begin(), standard_premium_member_communities.end(), community ) != standard_premium_member_communities.end();
+         };
+
+         bool                                   is_mid_premium_member_community( const community_name_type& community )const
+         {
+            return std::find( mid_premium_member_communities.begin(), mid_premium_member_communities.end(), community ) != mid_premium_member_communities.end();
+         };
+
+         bool                                   is_top_premium_member_community( const community_name_type& community )const
+         {
+            return std::find( top_premium_member_communities.begin(), top_premium_member_communities.end(), community ) != top_premium_member_communities.end();
+         };
+
          bool                                   is_moderator_community( const community_name_type& community )const
          {
             return std::find( moderator_communities.begin(), moderator_communities.end(), community ) != moderator_communities.end();
@@ -1133,14 +1154,14 @@ namespace node { namespace chain {
             return std::find( founder_communities.begin(), founder_communities.end(), community ) != founder_communities.end();
          };
 
-         bool                                   is_mutual( const account_name_type& account )const
+         bool                                   is_mutual( const account_name_type& a )const
          {
-            return std::find( mutual_followers.begin(), mutual_followers.end(), account ) != mutual_followers.end();
+            return std::find( mutual_followers.begin(), mutual_followers.end(), a ) != mutual_followers.end();
          };
 
-         bool                                   is_filtered( const account_name_type& account )const
+         bool                                   is_filtered( const account_name_type& a )const
          {
-            return std::find( filtered.begin(), filtered.end(), account ) != filtered.end();
+            return std::find( filtered.begin(), filtered.end(), a ) != filtered.end();
          };
 
          bool                                   is_filtered_tag( const tag_name_type& tag )const
@@ -1153,39 +1174,63 @@ namespace node { namespace chain {
             return std::find( filtered_communities.begin(), filtered_communities.end(), community ) != filtered_communities.end();
          };
 
-         void                                   add_follower( const account_name_type& account )
+         void                                   add_follower( const account_name_type& a )
          {
-            if( !is_follower( account ) )
+            if( !is_follower( a ) )
             {
-               followers.insert( account );
+               followers.insert( a );
             }
-            if( is_following( account ) )
+            if( is_following( a ) )
             {
-               mutual_followers.insert( account );
+               mutual_followers.insert( a );
             }
          }
 
-         void                                   remove_follower( const account_name_type& account )
+         void                                   remove_follower( const account_name_type& a )
          {
-            if( is_follower( account ) )
+            if( is_follower( a ) )
             {
-               if( is_mutual( account ) )
+               if( is_mutual( a ) )
                {
-                  mutual_followers.erase( account );
+                  mutual_followers.erase( a );
                }
-               followers.erase( account );
+               followers.erase( a );
             }
          }
 
-         void                                   add_following( const account_name_type& account )
+         void                                   add_following( const account_name_type& a )
          {
-            if( !is_following( account ) )
+            if( !is_following( a ) )
             {
-               following.insert( account );
+               following.insert( a );
             }
-            if( is_follower( account ) )
+            if( is_follower( a ) )
             {
-               mutual_followers.insert( account );
+               mutual_followers.insert( a );
+            }
+         }
+
+         void                                   add_connection( const account_name_type& a )
+         {
+            if( !is_connection( a ) )
+            {
+               connections.insert( a );
+            }
+         }
+
+         void                                   add_friend( const account_name_type& a )
+         {
+            if( !is_friend( a ) )
+            {
+               friends.insert( a );
+            }
+         }
+
+         void                                   add_companion( const account_name_type& a )
+         {
+            if( !is_companion( a ) )
+            {
+               companions.insert( a );
             }
          }
 
@@ -1213,6 +1258,30 @@ namespace node { namespace chain {
             }
          }
 
+         void                                   add_standard_premium_member_community( const community_name_type& community )
+         {
+            if( !is_standard_premium_member_community( community ) )
+            {
+               standard_premium_member_communities.insert( community );
+            }
+         }
+
+         void                                   add_mid_premium_member_community( const community_name_type& community )
+         {
+            if( !is_mid_premium_member_community( community ) )
+            {
+               mid_premium_member_communities.insert( community );
+            }
+         }
+
+         void                                   add_top_premium_member_community( const community_name_type& community )
+         {
+            if( !is_top_premium_member_community( community ) )
+            {
+               top_premium_member_communities.insert( community );
+            }
+         }
+
          void                                   add_moderator_community( const community_name_type& community )
          {
             if( !is_moderator_community( community ) )
@@ -1237,15 +1306,39 @@ namespace node { namespace chain {
             }
          }
 
-         void                                   remove_following( const account_name_type& account )
+         void                                   remove_following( const account_name_type& a )
          {
-            if( is_following( account ) )
+            if( is_following( a ) )
             {
-               if( is_mutual( account ) )
+               if( is_mutual( a ) )
                {
-                  mutual_followers.erase( account );
+                  mutual_followers.erase( a );
                }
-               following.erase( account );
+               following.erase( a );
+            }
+         }
+
+         void                                   remove_connection( const account_name_type& a )
+         {
+            if( is_connection( a ) )
+            {
+               connections.erase( a );
+            }
+         }
+
+         void                                   remove_friend( const account_name_type& a )
+         {
+            if( is_friend( a ) )
+            {
+               friends.erase( a );
+            }
+         }
+
+         void                                   remove_companion( const account_name_type& a )
+         {
+            if( is_companion( a ) )
+            {
+               companions.erase( a );
             }
          }
 
@@ -1273,6 +1366,30 @@ namespace node { namespace chain {
             }
          }
 
+         void                                   remove_standard_premium_member_community( const community_name_type& community )
+         {
+            if( is_standard_premium_member_community( community ) )
+            {
+               standard_premium_member_communities.erase( community );
+            }
+         }
+
+         void                                   remove_mid_premium_member_community( const community_name_type& community )
+         {
+            if( is_mid_premium_member_community( community ) )
+            {
+               mid_premium_member_communities.erase( community );
+            }
+         }
+
+         void                                   remove_top_premium_member_community( const community_name_type& community )
+         {
+            if( is_top_premium_member_community( community ) )
+            {
+               top_premium_member_communities.erase( community );
+            }
+         }
+
          void                                   remove_moderator_community( const community_name_type& community )
          {
             if( is_moderator_community( community ) )
@@ -1297,19 +1414,19 @@ namespace node { namespace chain {
             }
          }         
 
-         void                                   add_filtered( const account_name_type& account )
+         void                                   add_filtered( const account_name_type& a )
          {
-            if( !is_filtered( account ) )
+            if( !is_filtered( a ) )
             {
-               filtered.insert( account );
+               filtered.insert( a );
             }
          }
 
-         void                                   remove_filtered( const account_name_type& account )
+         void                                   remove_filtered( const account_name_type& a )
          {
-            if( is_filtered( account ) )
+            if( is_filtered( a ) )
             {
-               filtered.erase( account );
+               filtered.erase( a );
             }
          }
 
@@ -1382,24 +1499,24 @@ namespace node { namespace chain {
             return result;
          };
 
-         bool                              is_follower( const account_name_type& account ) const
+         bool                              is_follower( const account_name_type& a ) const
          {
-            return std::find( followers.begin(), followers.end(), account ) != followers.end();
+            return std::find( followers.begin(), followers.end(), a ) != followers.end();
          };
 
-         void                              add_follower( const account_name_type& account )
+         void                              add_follower( const account_name_type& a )
          {
-            if( !is_follower( account ) )
+            if( !is_follower( a ) )
             {
-               followers.insert( account );
+               followers.insert( a );
             }
          }
 
-         void                              remove_follower( const account_name_type& account )
+         void                              remove_follower( const account_name_type& a )
          {
-            if( is_follower( account ) )
+            if( is_follower( a ) )
             {
-               followers.erase( account );
+               followers.erase( a );
             }
          }
    };
@@ -2429,6 +2546,9 @@ FC_REFLECT( node::chain::account_following_object,
          (companions)
          (followed_communities)
          (member_communities)
+         (standard_premium_member_communities)
+         (mid_premium_member_communities)
+         (top_premium_member_communities)
          (moderator_communities)
          (admin_communities)
          (founder_communities)

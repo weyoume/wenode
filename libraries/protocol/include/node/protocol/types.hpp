@@ -94,34 +94,37 @@ namespace node {
 
 
       /**
-       * Privacy levels of communities, used for determining encryption levels, and access controls for community administration.
+       * Permission levels for communities, used for determining access controls for community administration.
        */
-      enum class community_privacy_type : int
+      enum class community_permission_type : int
       {
-         OPEN_PUBLIC_COMMUNITY,         ///< All Users can read, interact, post, and request to join. Accounts cannot be blacklisted. Posts can be shared.
-         GENERAL_PUBLIC_COMMUNITY,      ///< All Users can read, interact, post, and request to join. Posts can be shared.
-         EXCLUSIVE_PUBLIC_COMMUNITY,    ///< All users can read, interact, and request to join. Members can post and invite. Posts can be shared.
-         CLOSED_PUBLIC_COMMUNITY,       ///< All users can read, and request to join. Members can interact, post, and invite. Posts can be shared.
-         OPEN_PRIVATE_COMMUNITY,        ///< Members can read and interact, and create posts. Moderators can invite and accept. Posts cannot be shared.
-         GENERAL_PRIVATE_COMMUNITY,     ///< Members can read and interact, and create posts. Admins can invite and accept. Posts cannot be shared.
-         EXCLUSIVE_PRIVATE_COMMUNITY,   ///< Members can read and interact, and post. Cannot request to join. Admins can invite and accept. Posts cannot be shared.
-         CLOSED_PRIVATE_COMMUNITY       ///< Members can read and interact. Moderators can post. Cannot request to join. Admins can invite and accept. Posts cannot be shared.
+         ALL_PERMISSION,                   ///< All users, including non-members can take a community action.
+         MEMBER_PERMISSION,                ///< Members can take a community action.
+         STANDARD_PREMIUM_PERMISSION,      ///< Standard Premium paying Members can take a community action.
+         MID_PREMIUM_PERMISSION,           ///< Mid Premium paying Members can take a community action.
+         TOP_PREMIUM_PERMISSION,           ///< Top Premium paying Members can take a community action.
+         MODERATOR_PERMISSION,             ///< Moderators can take a community action.
+         ADMIN_PERMISSION,                 ///< Admins can take a community action.
+         FOUNDER_PERMISSION,               ///< Founder can take a community action.
+         NONE_PERMISSION                   ///< No accounts can take a community action, disabling the feature.
       };
 
-      const static vector< string > community_privacy_values = 
+      const static vector< string > community_permission_values = 
       {
-         "open_public",
-         "general_public",
-         "exclusive_public",
-         "closed_public",
-         "open_private",
-         "general_private",
-         "exclusive_private",
-         "closed_private"
+         "all",
+         "member",
+         "standard_premium",
+         "mid_premium",
+         "top_premium",
+         "moderator",
+         "administrator",
+         "founder",
+         "none"
       };
+
 
       /**
-       * Role Level of a Community Federation, determines which tier of community participants are carried over to federated communities. 
+       * Role Level of a Community Federation, determines which tier of community participants are carried over to federated communities.
        */
       enum class community_federation_type : int
       {
@@ -561,8 +564,8 @@ namespace node {
 
       enum class community_permission_flags : int
       {
-         member_whitelist            = 1,        ///< Accounts must be whitelisted by the founder to request membership or be invited.
-         require_verified            = 2,        ///< Accounts must have a valid verification from an existing member to request membership or be invited.
+         disable_events              = 1,        ///< Community does not allow events to be created.
+         disable_polls               = 2,        ///< Community does not allow polls to be created.
          disable_messages            = 4,        ///< Accounts cannot send community messages.
          disable_text_posts          = 8,        ///< Community does not allow text type posts.  
          disable_image_posts         = 16,       ///< Community does not allow image type posts.
@@ -572,12 +575,13 @@ namespace node {
          disable_article_posts       = 256,      ///< Community does not allow article type posts.
          disable_audio_posts         = 512,      ///< Community does not allow audio type posts.
          disable_file_posts          = 1024,     ///< Community does not allow file type posts.
-         disable_livestream_posts    = 2048      ///< Community does not allow livestream type posts.
+         disable_livestream_posts    = 2048,     ///< Community does not allow livestream type posts.
+         disable_directives          = 4096      ///< Community does not allow directives to be created.
       };
 
       const static uint32_t COMMUNITY_PERMISSION_MASK =
-         int( community_permission_flags::member_whitelist )
-         | int( community_permission_flags::require_verified )
+         int( community_permission_flags::disable_events )
+         | int( community_permission_flags::disable_polls )
          | int( community_permission_flags::disable_messages )
          | int( community_permission_flags::disable_text_posts )
          | int( community_permission_flags::disable_image_posts )
@@ -587,7 +591,8 @@ namespace node {
          | int( community_permission_flags::disable_article_posts )
          | int( community_permission_flags::disable_audio_posts )
          | int( community_permission_flags::disable_file_posts )
-         | int( community_permission_flags::disable_livestream_posts );
+         | int( community_permission_flags::disable_livestream_posts )
+         | int( community_permission_flags::disable_directives );
 
       struct public_key_type
       {
@@ -746,15 +751,16 @@ namespace fc
    void from_variant( const fc::variant& var, node::protocol::extended_private_key_type& vo );
 };
 
-FC_REFLECT_ENUM( node::protocol::community_privacy_type,
-         (OPEN_PUBLIC_COMMUNITY)
-         (GENERAL_PUBLIC_COMMUNITY)
-         (EXCLUSIVE_PUBLIC_COMMUNITY)
-         (CLOSED_PUBLIC_COMMUNITY)
-         (OPEN_PRIVATE_COMMUNITY)
-         (GENERAL_PRIVATE_COMMUNITY)
-         (EXCLUSIVE_PRIVATE_COMMUNITY)
-         (CLOSED_PRIVATE_COMMUNITY)
+FC_REFLECT_ENUM( node::protocol::community_permission_type,
+         (ALL_PERMISSION)
+         (MEMBER_PERMISSION)
+         (STANDARD_PREMIUM_PERMISSION)
+         (MID_PREMIUM_PERMISSION)
+         (TOP_PREMIUM_PERMISSION)
+         (MODERATOR_PERMISSION)
+         (ADMIN_PERMISSION)
+         (FOUNDER_PERMISSION)
+         (NONE_PERMISSION)
          );
 
 FC_REFLECT_ENUM( node::protocol::community_federation_type,
@@ -935,8 +941,8 @@ FC_REFLECT_ENUM( node::protocol::asset_issuer_permission_flags,
          );
 
 FC_REFLECT_ENUM( node::protocol::community_permission_flags,
-         (member_whitelist)
-         (require_verified)
+         (disable_events)
+         (disable_polls)
          (disable_messages)
          (disable_text_posts)
          (disable_image_posts)
@@ -947,6 +953,7 @@ FC_REFLECT_ENUM( node::protocol::community_permission_flags,
          (disable_audio_posts)
          (disable_file_posts)
          (disable_livestream_posts)
+         (disable_directives)
          );
 
 FC_REFLECT( node::protocol::public_key_type, 

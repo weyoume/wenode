@@ -624,7 +624,7 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
 
    const auto& business_idx = _db.get_index< account_business_index >().indices().get< by_account >();
    const auto& bus_key_idx = _db.get_index< account_member_key_index >().indices().get< by_member_business >();
-   const auto& community_key_idx = _db.get_index< community_member_key_index >().indices().get< by_member_community_type >();
+   const auto& community_member_idx = _db.get_index< community_member_index >().indices().get< by_member_community_type >();
    const auto& following_idx = _db.get_index< account_following_index >().indices().get< by_account >();
    const auto& permission_idx = _db.get_index< account_permission_index >().indices().get< by_account >();
    const auto& connection_a_idx = _db.get_index< account_connection_index >().indices().get< by_account_a >();
@@ -652,14 +652,21 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
    const auto& outgoing_account_officer_idx = _db.get_index< account_officer_vote_index >().indices().get< by_account_business_rank >();
    const auto& outgoing_account_exec_idx = _db.get_index< account_executive_vote_index >().indices().get< by_account_business_role_rank >();
 
-   const auto& community_req_idx = _db.get_index< community_join_request_index >().indices().get< by_account_community >();
-   const auto& community_acc_inv_idx = _db.get_index< community_join_invite_index >().indices().get< by_account >();
-   const auto& community_member_inv_idx = _db.get_index< community_join_invite_index >().indices().get< by_member >();
-   const auto& incoming_moderator_idx = _db.get_index< community_moderator_vote_index >().indices().get< by_moderator_community_rank >();
-   const auto& outgoing_moderator_idx = _db.get_index< community_moderator_vote_index >().indices().get< by_account_community_rank >();
+   const auto& community_req_idx = _db.get_index< community_member_request_index >().indices().get< by_account_community_type >();
+   const auto& incoming_member_idx = _db.get_index< community_member_vote_index >().indices().get< by_member_community_rank >();
+   const auto& outgoing_member_idx = _db.get_index< community_member_vote_index >().indices().get< by_account_community_rank >();
    const auto& community_event_idx = _db.get_index< community_event_index >().indices().get< by_event_id >();
    const auto& community_event_attend_idx = _db.get_index< community_event_attend_index >().indices().get< by_attendee >();
    const auto& community_event_attend_id_idx = _db.get_index< community_event_attend_index >().indices().get< by_event_id >();
+
+   const auto& directive_member_idx = _db.get_index< community_directive_member_index >().indices().get< by_member_community >();
+   const auto& directive_member_votes_idx = _db.get_index< community_directive_member_index >().indices().get< by_community_votes >();
+   const auto& member_vote_idx = _db.get_index< community_directive_member_vote_index >().indices().get< by_community_voter_member >();
+   const auto& member_community_voter_idx = _db.get_index< community_directive_member_vote_index >().indices().get< by_member_community_voter >();
+   const auto& directive_idx = _db.get_index< community_directive_index >().indices().get< by_community_votes >();
+   const auto& directive_id_idx = _db.get_index< community_directive_index >().indices().get< by_directive_id >();
+   const auto& directive_vote_idx = _db.get_index< community_directive_vote_index >().indices().get< by_voter_community_directive >();
+   const auto& directive_approve_idx = _db.get_index< community_directive_vote_index >().indices().get< by_directive_approve >();
 
    const auto& transfer_req_idx = _db.get_index< transfer_request_index >().indices().get< by_request_id >();
    const auto& transfer_from_req_idx = _db.get_index< transfer_request_index >().indices().get< by_from_account >();
@@ -1090,74 +1097,248 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
          }
 
          auto community_req_itr = community_req_idx.lower_bound( name );
-         auto community_acc_inv_itr = community_acc_inv_idx.lower_bound( name );
-         auto community_member_inv_itr = community_member_inv_idx.lower_bound( name );
-         auto incoming_moderator_itr = incoming_moderator_idx.lower_bound( name );
-         auto outgoing_moderator_itr = outgoing_moderator_idx.lower_bound( name );
+         auto incoming_member_itr = incoming_member_idx.lower_bound( name );
+         auto outgoing_member_itr = outgoing_member_idx.lower_bound( name );
 
-         while( community_req_itr != community_req_idx.end() && 
+         while( community_req_itr != community_req_idx.end() &&
             community_req_itr->account == name )
          {
-            results.back().communities.pending_requests[ community_req_itr->account ] = community_request_api_obj( *community_req_itr );
+            results.back().communities.pending_requests[ community_req_itr->community ] = community_member_request_api_obj( *community_req_itr );
             ++community_req_itr;
          }
 
-         while( community_acc_inv_itr != community_acc_inv_idx.end() && 
-            community_acc_inv_itr->account == name )
+         while( incoming_member_itr != incoming_member_idx.end() && 
+            incoming_member_itr->member == name )
          {
-            results.back().communities.outgoing_invites[ community_acc_inv_itr->member ] = community_invite_api_obj( *community_acc_inv_itr );
-            ++community_acc_inv_itr;
+            results.back().communities.incoming_member_votes[ incoming_member_itr->community ].push_back( community_member_vote_api_obj( *incoming_member_itr ) );
+            ++incoming_member_itr;
          }
 
-         while( community_member_inv_itr != community_member_inv_idx.end() && 
-            community_member_inv_itr->member == name )
+         while( outgoing_member_itr != outgoing_member_idx.end() && 
+            outgoing_member_itr->account == name )
          {
-            results.back().communities.incoming_invites[ community_member_inv_itr->community ] = community_invite_api_obj( *community_member_inv_itr );
-            ++community_member_inv_itr;
+            results.back().communities.outgoing_member_votes[ outgoing_member_itr->community ].push_back( community_member_vote_api_obj( *outgoing_member_itr ) );
+            ++outgoing_member_itr;
          }
 
-         while( incoming_moderator_itr != incoming_moderator_idx.end() && 
-            incoming_moderator_itr->moderator == name )
+         auto community_member_itr = community_member_idx.lower_bound( name );
+         while( community_member_itr != community_member_idx.end() && 
+            community_member_itr->member == name )
          {
-            results.back().communities.incoming_moderator_votes[ incoming_moderator_itr->community ].push_back( community_moderator_api_obj( *incoming_moderator_itr ) );
-            ++incoming_moderator_itr;
-         }
-
-         while( outgoing_moderator_itr != outgoing_moderator_idx.end() && 
-            outgoing_moderator_itr->account == name )
-         {
-            results.back().communities.outgoing_moderator_votes[ outgoing_moderator_itr->community ].push_back( community_moderator_api_obj( *outgoing_moderator_itr ) );
-            ++outgoing_moderator_itr;
-         }
-
-         auto community_key_itr = community_key_idx.lower_bound( name );
-         while( community_key_itr != community_key_idx.end() && 
-            community_key_itr->member == name )
-         {
-            switch( community_key_itr->community_key_type )
+            switch( community_member_itr->member_type )
             {
-               case community_federation_type::MEMBER_FEDERATION:
+               case community_permission_type::MEMBER_PERMISSION:
                {
-                  results.back().keychain.community_member_keys[ community_key_itr->community ] = community_key_itr->encrypted_community_key;
+                  results.back().keychain.community_member_keys[ community_member_itr->community ] = community_member_itr->encrypted_community_key;
                }
                break;
-               case community_federation_type::MODERATOR_FEDERATION:
+               case community_permission_type::MODERATOR_PERMISSION:
                {
-                  results.back().keychain.community_moderator_keys[ community_key_itr->community ] = community_key_itr->encrypted_community_key;
+                  results.back().keychain.community_moderator_keys[ community_member_itr->community ] = community_member_itr->encrypted_community_key;
                }
                break;
-               case community_federation_type::ADMIN_FEDERATION:
+               case community_permission_type::ADMIN_PERMISSION:
                {
-                  results.back().keychain.community_admin_keys[ community_key_itr->community ] = community_key_itr->encrypted_community_key;
+                  results.back().keychain.community_admin_keys[ community_member_itr->community ] = community_member_itr->encrypted_community_key;
+               }
+               break;
+               case community_permission_type::FOUNDER_PERMISSION:
+               {
+                  results.back().keychain.community_secure_keys[ community_member_itr->community ] = community_member_itr->encrypted_community_key;
+               }
+               break;
+               case community_permission_type::STANDARD_PREMIUM_PERMISSION:
+               {
+                  results.back().keychain.community_standard_premium_keys[ community_member_itr->community ] = community_member_itr->encrypted_community_key;
+               }
+               break;
+               case community_permission_type::MID_PREMIUM_PERMISSION:
+               {
+                  results.back().keychain.community_mid_premium_keys[ community_member_itr->community ] = community_member_itr->encrypted_community_key;
+               }
+               break;
+               case community_permission_type::TOP_PREMIUM_PERMISSION:
+               {
+                  results.back().keychain.community_top_premium_keys[ community_member_itr->community ] = community_member_itr->encrypted_community_key;
                }
                break;
                default:
                {
-                  FC_ASSERT( false, "Invalid Federation type" );
+                  FC_ASSERT( false, "InvaliD Communiy Member type" );
                }
             }
             
-            ++community_key_itr;
+            ++community_member_itr;
+         }
+
+         auto directive_member_itr = directive_member_idx.lower_bound( name );
+
+         while( directive_member_itr != directive_member_idx.end() && 
+            directive_member_itr->account == name )
+         {
+            const community_directive_member_object& member = *directive_member_itr;
+            results.back().communities.directive_members[ member.community ] = community_directive_member_api_obj( member );
+
+            auto incoming_vote_itr = member_community_voter_idx.lower_bound( boost::make_tuple( member.account, member.community ) );
+
+            while( incoming_vote_itr != member_community_voter_idx.end() &&
+               incoming_vote_itr->member == member.account &&
+               incoming_vote_itr->community == member.community )
+            {
+               const community_directive_member_vote_object& vote = *incoming_vote_itr;
+
+               results.back().communities.incoming_directive_member_votes[ member.community ].push_back( community_directive_member_vote_api_obj( vote ) );
+               ++incoming_vote_itr;
+            }
+
+            auto directive_member_votes_itr = directive_member_votes_idx.lower_bound( member.community );
+
+            const community_directive_object* command_directive_ptr = nullptr;
+         
+            if( directive_member_votes_itr != directive_member_votes_idx.end() && 
+               directive_member_votes_itr->community == member.community )
+            {
+               const community_directive_member_object& member = *directive_member_votes_itr;
+               command_directive_ptr = _db.find_community_directive( member.account, member.command_directive_id );
+            }
+
+            const community_directive_object* consensus_directive_ptr = nullptr;
+
+            auto consensus_itr = directive_idx.lower_bound( boost::make_tuple( member.community, true ) );
+
+            if( consensus_itr != directive_idx.end() )
+            {
+               consensus_directive_ptr = &(*consensus_itr);
+            }
+
+            const community_directive_object* delegate_directive_ptr = nullptr;
+            
+            auto delegate_vote_itr = member_vote_idx.lower_bound( boost::make_tuple( member.community, member.account ) );
+            int32_t top_delegate_votes = 0;
+
+            while( delegate_vote_itr != member_vote_idx.end() &&
+               delegate_vote_itr->community == member.community &&
+               delegate_vote_itr->voter == member.account )
+            {
+               const community_directive_member_vote_object& vote = *delegate_vote_itr;
+
+               results.back().communities.outgoing_directive_member_votes[ member.community ].push_back( community_directive_member_vote_api_obj( vote ) );
+               const community_directive_member_object& voted_member = _db.get_community_directive_member( vote.member, vote.community );
+
+               if( voted_member.net_votes > top_delegate_votes && vote.approve )
+               {
+                  top_delegate_votes = voted_member.net_votes;
+                  delegate_directive_ptr = _db.find_community_directive( voted_member.account, voted_member.delegate_directive_id );
+               }
+
+               ++delegate_vote_itr;
+            }
+
+            const community_directive_object* emergent_directive_ptr = nullptr;
+
+            auto emergent_vote_itr = directive_vote_idx.lower_bound( boost::make_tuple( member.account, member.community ) );
+            int32_t top_emergent_votes = 0;
+
+            while( emergent_vote_itr != directive_vote_idx.end() && 
+               emergent_vote_itr->voter == member.account &&
+               emergent_vote_itr->community == member.community )
+            {
+               const community_directive_vote_object& vote = *emergent_vote_itr;
+
+               results.back().communities.outgoing_directive_votes[ member.community ].push_back( community_directive_vote_api_obj( vote ) );
+               const community_directive_object& emergent_directive = _db.get( vote.directive );
+
+               if( emergent_directive.net_votes > top_emergent_votes && vote.approve )
+               {
+                  top_emergent_votes = emergent_directive.net_votes;
+                  emergent_directive_ptr = &emergent_directive;
+               }
+
+               ++emergent_vote_itr;
+            }
+
+            if( command_directive_ptr != nullptr )
+            {
+               community_directive_state cdstate = community_directive_state( *command_directive_ptr );
+               auto directive_approve_itr = directive_approve_idx.lower_bound( command_directive_ptr->id );
+
+               while( directive_approve_itr != directive_approve_idx.end() && 
+                  directive_approve_itr->directive == command_directive_ptr->id )
+               {
+                  cdstate.votes.push_back( community_directive_vote_api_obj( *directive_approve_itr ) );
+                  ++directive_approve_itr;
+               }
+
+               results.back().communities.incoming_directives[ member.community ].push_back( cdstate );
+            }
+
+            if( delegate_directive_ptr != nullptr )
+            {
+               community_directive_state cdstate = community_directive_state( *delegate_directive_ptr );
+               auto directive_approve_itr = directive_approve_idx.lower_bound( delegate_directive_ptr->id );
+
+               while( directive_approve_itr != directive_approve_idx.end() && 
+                  directive_approve_itr->directive == delegate_directive_ptr->id )
+               {
+                  cdstate.votes.push_back( community_directive_vote_api_obj( *directive_approve_itr ) );
+                  ++directive_approve_itr;
+               }
+
+               results.back().communities.incoming_directives[ member.community ].push_back( cdstate );
+            }
+
+            if( consensus_directive_ptr != nullptr )
+            {
+               community_directive_state cdstate = community_directive_state( *consensus_directive_ptr );
+               auto directive_approve_itr = directive_approve_idx.lower_bound( consensus_directive_ptr->id );
+
+               while( directive_approve_itr != directive_approve_idx.end() && 
+                  directive_approve_itr->directive == consensus_directive_ptr->id )
+               {
+                  cdstate.votes.push_back( community_directive_vote_api_obj( *directive_approve_itr ) );
+                  ++directive_approve_itr;
+               }
+
+               results.back().communities.incoming_directives[ member.community ].push_back( cdstate );
+            }
+
+            if( emergent_directive_ptr != nullptr )
+            {
+               community_directive_state cdstate = community_directive_state( *emergent_directive_ptr );
+               auto directive_approve_itr = directive_approve_idx.lower_bound( emergent_directive_ptr->id );
+
+               while( directive_approve_itr != directive_approve_idx.end() && 
+                  directive_approve_itr->directive == emergent_directive_ptr->id )
+               {
+                  cdstate.votes.push_back( community_directive_vote_api_obj( *directive_approve_itr ) );
+                  ++directive_approve_itr;
+               }
+
+               results.back().communities.incoming_directives[ member.community ].push_back( cdstate );
+            }
+
+            auto directive_id_itr = directive_id_idx.lower_bound( member.account );
+
+            while( directive_id_itr != directive_id_idx.end() && 
+               directive_id_itr->account == member.account )
+            {
+               community_directive_state cdstate = community_directive_state( *directive_id_itr );
+               auto directive_approve_itr = directive_approve_idx.lower_bound( directive_id_itr->id );
+
+               while( directive_approve_itr != directive_approve_idx.end() && 
+                  directive_approve_itr->directive == directive_id_itr->id )
+               {
+                  cdstate.votes.push_back( community_directive_vote_api_obj( *directive_approve_itr ) );
+                  results.back().communities.incoming_directive_votes[ member.community ].push_back( community_directive_vote_api_obj( *directive_approve_itr ) );
+                  ++directive_approve_itr;
+               }
+
+               results.back().communities.outgoing_directives[ member.community ].push_back( cdstate );
+
+               ++directive_approve_itr;
+            }
+
+            ++directive_member_itr;
          }
 
          auto community_event_attend_itr = community_event_attend_idx.lower_bound( name );
@@ -1182,22 +1363,22 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
             {
                if( attend.attending )
                {
-                  results.back().events.interested_attending.push_back( estate );
+                  results.back().communities.interested_attending[ attend.community ].push_back( estate );
                }
                else
                {
-                  results.back().events.interested_not_attending.push_back( estate );
+                  results.back().communities.interested_not_attending[ attend.community ].push_back( estate );
                }
             }
             else
             {
                if( attend.attending )
                {
-                  results.back().events.not_interested_attending.push_back( estate );
+                  results.back().communities.not_interested_attending[ attend.community ].push_back( estate );
                }
                else
                {
-                  results.back().events.not_interested_not_attending.push_back( estate );
+                  results.back().communities.not_interested_not_attending[ attend.community ].push_back( estate );
                }
             }
             
@@ -1699,20 +1880,18 @@ vector< extended_account > database_api_impl::get_full_accounts( vector< string 
                break;
                case operation::tag<community_create_operation>::value:
                case operation::tag<community_update_operation>::value:
-               case operation::tag<community_add_mod_operation>::value:
-               case operation::tag<community_add_admin_operation>::value:
-               case operation::tag<community_vote_mod_operation>::value:
-               case operation::tag<community_transfer_ownership_operation>::value:
-               case operation::tag<community_join_request_operation>::value:
-               case operation::tag<community_join_accept_operation>::value:
-               case operation::tag<community_join_invite_operation>::value:
-               case operation::tag<community_invite_accept_operation>::value:
-               case operation::tag<community_remove_member_operation>::value:
-               case operation::tag<community_blacklist_operation>::value:
+               case operation::tag<community_member_operation>::value:
+               case operation::tag<community_member_request_operation>::value:
+               case operation::tag<community_member_vote_operation>::value:
                case operation::tag<community_subscribe_operation>::value:
+               case operation::tag<community_blacklist_operation>::value:
                case operation::tag<community_federation_operation>::value:
                case operation::tag<community_event_operation>::value:
                case operation::tag<community_event_attend_operation>::value:
+               case operation::tag<community_directive_operation>::value:
+               case operation::tag<community_directive_vote_operation>::value:
+               case operation::tag<community_directive_member_operation>::value:
+               case operation::tag<community_directive_member_vote_operation>::value:
                {
                   results.back().operations.community_history[ item.first ] = item.second;
                }
@@ -2427,7 +2606,7 @@ vector< key_state > database_api_impl::get_keychains( vector< string > names )co
 {
    const auto& connection_a_idx = _db.get_index< account_connection_index >().indices().get< by_account_a >();
    const auto& connection_b_idx = _db.get_index< account_connection_index >().indices().get< by_account_b >();
-   const auto& community_key_idx = _db.get_index< community_member_key_index >().indices().get< by_member_community_type >();
+   const auto& community_member_idx = _db.get_index< community_member_index >().indices().get< by_member_community_type >();
    const auto& business_idx = _db.get_index< account_member_key_index >().indices().get< by_member_business >();
 
    vector< key_state > results;
@@ -2487,25 +2666,45 @@ vector< key_state > database_api_impl::get_keychains( vector< string > names )co
          ++connection_b_itr;
       }
 
-      auto community_key_itr = community_key_idx.lower_bound( name );
-      while( community_key_itr != community_key_idx.end() && 
-         community_key_itr->member == name )
+      auto community_member_itr = community_member_idx.lower_bound( name );
+      while( community_member_itr != community_member_idx.end() && 
+         community_member_itr->member == name )
       {
-         switch( community_key_itr->community_key_type )
+         switch( community_member_itr->member_type )
          {
-            case community_federation_type::MEMBER_FEDERATION:
+            case community_permission_type::MEMBER_PERMISSION:
             {
-               kstate.community_member_keys[ community_key_itr->community ] = community_key_itr->encrypted_community_key;
+               kstate.community_member_keys[ community_member_itr->community ] = community_member_itr->encrypted_community_key;
             }
             break;
-            case community_federation_type::MODERATOR_FEDERATION:
+            case community_permission_type::STANDARD_PREMIUM_PERMISSION:
             {
-               kstate.community_moderator_keys[ community_key_itr->community ] = community_key_itr->encrypted_community_key;
+               kstate.community_standard_premium_keys[ community_member_itr->community ] = community_member_itr->encrypted_community_key;
             }
             break;
-            case community_federation_type::ADMIN_FEDERATION:
+            case community_permission_type::MID_PREMIUM_PERMISSION:
             {
-               kstate.community_admin_keys[ community_key_itr->community ] = community_key_itr->encrypted_community_key;
+               kstate.community_mid_premium_keys[ community_member_itr->community ] = community_member_itr->encrypted_community_key;
+            }
+            break;
+            case community_permission_type::TOP_PREMIUM_PERMISSION:
+            {
+               kstate.community_top_premium_keys[ community_member_itr->community ] = community_member_itr->encrypted_community_key;
+            }
+            break;
+            case community_permission_type::MODERATOR_PERMISSION:
+            {
+               kstate.community_moderator_keys[ community_member_itr->community ] = community_member_itr->encrypted_community_key;
+            }
+            break;
+            case community_permission_type::ADMIN_PERMISSION:
+            {
+               kstate.community_admin_keys[ community_member_itr->community ] = community_member_itr->encrypted_community_key;
+            }
+            break;
+            case community_permission_type::FOUNDER_PERMISSION:
+            {
+               kstate.community_secure_keys[ community_member_itr->community ] = community_member_itr->encrypted_community_key;
             }
             break;
             default:
@@ -2514,7 +2713,7 @@ vector< key_state > database_api_impl::get_keychains( vector< string > names )co
             }
          }
          
-         ++community_key_itr;
+         ++community_member_itr;
       }
 
       auto business_itr = business_idx.lower_bound( name );
@@ -2774,49 +2973,50 @@ vector< extended_community > database_api_impl::get_communities( vector< string 
 {
    vector< extended_community > results;
    const auto& community_idx = _db.get_index< community_index >().indices().get< by_name >();
-   const auto& community_mem_idx = _db.get_index< community_member_index >().indices().get< by_name >();
-   const auto& community_inv_idx = _db.get_index< community_join_invite_index >().indices().get< by_community >();
-   const auto& community_req_idx = _db.get_index< community_join_request_index >().indices().get< by_community_account >();
+   const auto& community_permission_idx = _db.get_index< community_permission_index >().indices().get< by_name >();
+   const auto& community_req_idx = _db.get_index< community_member_request_index >().indices().get< by_community_type_account >();
    const auto& community_event_idx = _db.get_index< community_event_index >().indices().get< by_community_time >();
    const auto& community_event_attend_idx = _db.get_index< community_event_attend_index >().indices().get< by_event_id >();
    const auto& community_federation_a_idx = _db.get_index< community_federation_index >().indices().get< by_community_a >();
    const auto& community_federation_b_idx = _db.get_index< community_federation_index >().indices().get< by_community_b >();
    const auto& community_inbox_idx = _db.get_index< message_index >().indices().get< by_community_inbox >();
    const auto& comment_blog_idx = _db.get_index< comment_blog_index >().indices().get< by_new_community_blog >();
+   const auto& directive_idx = _db.get_index< community_directive_index >().indices().get< by_community_votes >();
+   const auto& directive_approve_idx = _db.get_index< community_directive_vote_index >().indices().get< by_directive_approve >();
    
    for( string community : communities )
    {
       auto community_itr = community_idx.find( community );
       if( community_itr != community_idx.end() )
       results.push_back( extended_community( *community_itr ) );
-      auto community_mem_itr = community_mem_idx.find( community );
-      if( community_mem_itr != community_mem_idx.end() )
+      auto community_permission_itr = community_permission_idx.find( community );
+      if( community_permission_itr != community_permission_idx.end() )
       {
-         for( auto sub : community_mem_itr->subscribers )
+         for( auto sub : community_permission_itr->subscribers )
          {
             results.back().subscribers.push_back( sub );
          }
-         for( auto mem : community_mem_itr->members )
+         for( auto mem : community_permission_itr->members )
          {
             results.back().members.push_back( mem );
          }
-         for( auto mod : community_mem_itr->moderators )
+         for( auto mod : community_permission_itr->moderators )
          {
             results.back().moderators.push_back( mod );
          }
-         for( auto admin : community_mem_itr->administrators )
+         for( auto admin : community_permission_itr->administrators )
          {
             results.back().administrators.push_back( admin );
          }
-         for( auto bl : community_mem_itr->blacklist )
+         for( auto bl : community_permission_itr->blacklist )
          {
             results.back().blacklist.push_back( bl );
          }
-         for( auto weight : community_mem_itr->mod_weight )
+         for( auto weight : community_permission_itr->vote_weight )
          {
-            results.back().mod_weight[ weight.first ] = weight.second.value;
+            results.back().vote_weight[ weight.first ] = weight.second.value;
          }
-         results.back().total_mod_weight = community_mem_itr->total_mod_weight.value;
+         results.back().total_vote_weight = community_permission_itr->total_vote_weight.value;
       }
       
       auto community_inbox_itr = community_inbox_idx.lower_bound( community );
@@ -2942,17 +3142,30 @@ vector< extended_community > database_api_impl::get_communities( vector< string 
          ++community_event_itr;
       }
 
-      auto community_inv_itr = community_inv_idx.lower_bound( community );
-      while( community_inv_itr != community_inv_idx.end() && community_inv_itr->community == community )
+      auto directive_itr = directive_idx.lower_bound( boost::make_tuple( community, true ) );
+
+      while( directive_itr != directive_idx.end() && 
+         directive_itr->community == community &&
+         directive_itr->member_active )
       {
-         results.back().invites[ community_inv_itr->member ] = community_invite_api_obj( *community_inv_itr );
-         ++community_inv_itr;
+         community_directive_state cdstate = community_directive_state( *directive_itr );
+         auto directive_approve_itr = directive_approve_idx.lower_bound( directive_itr->id );
+
+         while( directive_approve_itr != directive_approve_idx.end() && 
+            directive_approve_itr->directive == directive_itr->id )
+         {
+            cdstate.votes.push_back( community_directive_vote_api_obj( *directive_approve_itr ) );
+            ++directive_approve_itr;
+         }
+
+         results.back().directives.push_back( cdstate );
+         ++directive_approve_itr;
       }
 
       auto community_req_itr = community_req_idx.lower_bound( community );
       while( community_req_itr != community_req_idx.end() && community_req_itr->community == community )
       {
-         results.back().requests[ community_inv_itr->account ] = community_request_api_obj( *community_req_itr );
+         results.back().requests[ community_req_itr->account ] = community_member_request_api_obj( *community_req_itr );
          ++community_req_itr;
       }
 
@@ -2987,10 +3200,8 @@ vector< extended_community > database_api_impl::get_communities_by_subscribers( 
 
    const auto& community_idx = _db.get_index< community_index >().indices().get< by_subscriber_count >();
    const auto& name_idx = _db.get_index< community_index >().indices().get< by_name >();
-
-   const auto& community_mem_idx = _db.get_index< community_member_index >().indices().get< by_name >();
-   const auto& community_inv_idx = _db.get_index< community_join_invite_index >().indices().get< by_community >();
-   const auto& community_req_idx = _db.get_index< community_join_request_index >().indices().get< by_community_account >();
+   const auto& community_permission_idx = _db.get_index< community_permission_index >().indices().get< by_name >();
+   const auto& community_req_idx = _db.get_index< community_member_request_index >().indices().get< by_community_type_account >();
    const auto& community_event_idx = _db.get_index< community_event_index >().indices().get< by_community_time >();
    const auto& community_event_attend_idx = _db.get_index< community_event_attend_index >().indices().get< by_event_id >();
    const auto& community_federation_a_idx = _db.get_index< community_federation_index >().indices().get< by_community_a >();
@@ -3014,34 +3225,34 @@ vector< extended_community > database_api_impl::get_communities_by_subscribers( 
       results.push_back( extended_community( *community_itr ) );
       community_name_type community = community_itr->name;
       
-      auto community_mem_itr = community_mem_idx.find( community );
-      if( community_mem_itr != community_mem_idx.end() )
+      auto community_permission_itr = community_permission_idx.find( community );
+      if( community_permission_itr != community_permission_idx.end() )
       {
-         for( auto sub : community_mem_itr->subscribers )
+         for( auto sub : community_permission_itr->subscribers )
          {
             results.back().subscribers.push_back( sub );
          }
-         for( auto mem : community_mem_itr->members )
+         for( auto mem : community_permission_itr->members )
          {
             results.back().members.push_back( mem );
          }
-         for( auto mod : community_mem_itr->moderators )
+         for( auto mod : community_permission_itr->moderators )
          {
             results.back().moderators.push_back( mod );
          }
-         for( auto admin : community_mem_itr->administrators )
+         for( auto admin : community_permission_itr->administrators )
          {
             results.back().administrators.push_back( admin );
          }
-         for( auto bl : community_mem_itr->blacklist )
+         for( auto bl : community_permission_itr->blacklist )
          {
             results.back().blacklist.push_back( bl );
          }
-         for( auto weight : community_mem_itr->mod_weight )
+         for( auto weight : community_permission_itr->vote_weight )
          {
-            results.back().mod_weight[ weight.first ] = weight.second.value;
+            results.back().vote_weight[ weight.first ] = weight.second.value;
          }
-         results.back().total_mod_weight = community_mem_itr->total_mod_weight.value;
+         results.back().total_vote_weight = community_permission_itr->total_vote_weight.value;
       }
       
       auto community_inbox_itr = community_inbox_idx.lower_bound( community );
@@ -3167,17 +3378,10 @@ vector< extended_community > database_api_impl::get_communities_by_subscribers( 
          ++community_event_itr;
       }
 
-      auto community_inv_itr = community_inv_idx.lower_bound( community );
-      while( community_inv_itr != community_inv_idx.end() && community_inv_itr->community == community )
-      {
-         results.back().invites[ community_inv_itr->member ] = community_invite_api_obj( *community_inv_itr );
-         ++community_inv_itr;
-      }
-
       auto community_req_itr = community_req_idx.lower_bound( community );
       while( community_req_itr != community_req_idx.end() && community_req_itr->community == community )
       {
-         results.back().requests[ community_inv_itr->account ] = community_request_api_obj( *community_req_itr );
+         results.back().requests[ community_req_itr->account ] = community_member_request_api_obj( *community_req_itr );
          ++community_req_itr;
       }
 
@@ -6513,7 +6717,7 @@ vector< discussion > database_api_impl::get_discussions(
 
          if( d.community != community_name_type() )
          {
-            const community_member_object& community = _db.get_community_member( d.community );
+            const community_permission_object& community = _db.get_community_permission( d.community );
             for( account_name_type mod : community.moderators )
             {
                accepted_moderators.push_back( mod );

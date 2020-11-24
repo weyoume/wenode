@@ -194,6 +194,10 @@ namespace node { namespace app {
       map< community_name_type, encrypted_keypair_type >     community_member_keys;
       map< community_name_type, encrypted_keypair_type >     community_moderator_keys;
       map< community_name_type, encrypted_keypair_type >     community_admin_keys;
+      map< community_name_type, encrypted_keypair_type >     community_secure_keys;
+      map< community_name_type, encrypted_keypair_type >     community_standard_premium_keys;
+      map< community_name_type, encrypted_keypair_type >     community_mid_premium_keys;
+      map< community_name_type, encrypted_keypair_type >     community_top_premium_keys;
       map< account_name_type, encrypted_keypair_type >       business_keys;
    };
 
@@ -228,7 +232,7 @@ namespace node { namespace app {
    };
 
 
-   struct transfer_state
+   struct account_transfer_state
    {
       map< account_name_type, transfer_request_api_obj >                       incoming_requests;
       map< account_name_type, transfer_request_api_obj >                       outgoing_requests;
@@ -236,21 +240,46 @@ namespace node { namespace app {
       map< account_name_type, transfer_recurring_api_obj >                     outgoing_recurring_transfers;
       map< account_name_type, transfer_recurring_request_api_obj >             incoming_recurring_transfer_requests;
       map< account_name_type, transfer_recurring_request_api_obj >             outgoing_recurring_transfer_requests;
-
    };
 
 
-   struct community_state
+   struct community_event_state : public community_event_api_obj
    {
-      map< community_name_type, community_request_api_obj >                    pending_requests;
-      map< community_name_type, community_invite_api_obj >                     incoming_invites;
-      map< community_name_type, community_invite_api_obj >                     outgoing_invites;
-      map< community_name_type, vector< community_moderator_api_obj > >        incoming_moderator_votes;
-      map< community_name_type, vector< community_moderator_api_obj > >        outgoing_moderator_votes;
+      community_event_state( const community_event_object& a ):community_event_api_obj( a ){}
+      community_event_state(){}
+
+      vector< community_event_attend_api_obj >            attend_objs;
+   };
+
+   struct community_directive_state : public community_directive_api_obj
+   {
+      community_directive_state( const community_directive_object& a ):community_directive_api_obj( a ){}
+      community_directive_state(){}
+
+      vector< community_directive_vote_api_obj >           votes;
    };
 
 
-   struct connection_state
+   struct account_community_state
+   {
+      map< community_name_type, community_member_request_api_obj >                     pending_requests;
+      map< community_name_type, vector< community_member_vote_api_obj > >              incoming_member_votes;
+      map< community_name_type, vector< community_member_vote_api_obj > >              outgoing_member_votes;
+      map< community_name_type, community_directive_member_api_obj >                   directive_members;
+      map< community_name_type, vector< community_directive_member_vote_api_obj > >    incoming_directive_member_votes;
+      map< community_name_type, vector< community_directive_member_vote_api_obj > >    outgoing_directive_member_votes;
+      map< community_name_type, vector< community_directive_vote_api_obj > >           incoming_directive_votes;
+      map< community_name_type, vector< community_directive_vote_api_obj > >           outgoing_directive_votes;
+      map< community_name_type, vector< community_directive_state > >                  incoming_directives;
+      map< community_name_type, vector< community_directive_state > >                  outgoing_directives;
+      map< community_name_type, vector< community_event_state > >                      interested_attending;
+      map< community_name_type, vector< community_event_state > >                      interested_not_attending;
+      map< community_name_type, vector< community_event_state > >                      not_interested_attending;
+      map< community_name_type, vector< community_event_state > >                      not_interested_not_attending;
+   };
+
+
+   struct account_connection_state
    {
       map< account_name_type, account_connection_api_obj >                     connections;
       map< account_name_type, account_connection_api_obj >                     friends;
@@ -425,40 +454,21 @@ namespace node { namespace app {
    };
 
 
-   struct community_event_state : public community_event_api_obj
-   {
-      community_event_state( const community_event_object& a ):community_event_api_obj( a ){}
-      community_event_state(){}
-
-      vector< community_event_attend_api_obj >            attend_objs;
-   };
-
-
-   struct account_event_state
-   {
-      vector< community_event_state >         interested_attending;
-      vector< community_event_state >         interested_not_attending;
-      vector< community_event_state >         not_interested_attending;
-      vector< community_event_state >         not_interested_not_attending;
-   };
-
-
    struct extended_account : public account_api_obj
    {
       extended_account( const account_object& a, const database& db ):account_api_obj( a, db ){}
       extended_account(){}
 
       account_following_api_obj                         following;         ///< Account following relations to other accounts and communities
-      connection_state                                  connections;       ///< Connections shared by the account
+      account_connection_state                          connections;       ///< Connections shared by the account
       account_permission_api_obj                        permissions;       ///< Permission lists that the account selects to interact with others
       business_account_state                            business;          ///< Business account details
       balance_state                                     balances;          ///< Asset account balances of the account
       order_state                                       orders;            ///< Open trading orders held by the account
       key_state                                         keychain;          ///< Encrypted private keys shared with the account
       account_message_state                             messages;          ///< Private messages sent to and from the account and its member communities
-      transfer_state                                    transfers;         ///< Transfers to and from the account
-      community_state                                   communities;       ///< Communities that the account is a member within
-      account_event_state                               events;            ///< Events that the account has interacted with
+      account_transfer_state                            transfers;         ///< Transfers to and from the account
+      account_community_state                           communities;       ///< Communities that the account is a member within
       account_network_state                             network;           ///< Network objects that the account controls
       account_ad_state                                  ads;               ///< Advertising objects that the account owns and operates
       account_product_state                             products;          ///< Products that the account has created and purchased
@@ -490,10 +500,10 @@ namespace node { namespace app {
       map< community_name_type, community_federation_api_obj >    downstream_moderator_federations;     ///< Communities that have a downstream Moderator Federation with this community.
       map< community_name_type, community_federation_api_obj >    downstream_admin_federations;         ///< Communities that have a downstream Admin Federation with this community.
       vector< community_event_state >                             events;                               ///< Events for the community.
-      map< account_name_type, int64_t >                           mod_weight;                           ///< Map of all moderator voting weights for distributing rewards. 
-      int64_t                                                     total_mod_weight;                     ///< Total of all moderator weights.
-      map< account_name_type, community_request_api_obj >         requests;                             ///< Active Requests to join the community.
-      map< account_name_type, community_invite_api_obj >          invites;                              ///< Active Invitations to join the community.
+      vector< community_directive_state >                         directives;                           ///< Directives created within the community.
+      map< account_name_type, int64_t >                           vote_weight;                          ///< Map of all moderator voting weights for distributing rewards. 
+      int64_t                                                     total_vote_weight;                    ///< Total of all moderator weights.
+      map< account_name_type, community_member_request_api_obj >  requests;                             ///< Active Requests to join the community.
       discussion                                                  pinned_post;                          ///< The Communities's pinned post
       discussion                                                  latest_post;                          ///< The Communities's most recent post
    };
@@ -786,7 +796,7 @@ FC_REFLECT( node::app::operation_state,
          (other_history)
          );
 
-FC_REFLECT( node::app::transfer_state,
+FC_REFLECT( node::app::account_transfer_state,
          (incoming_requests)
          (outgoing_requests)
          (incoming_recurring_transfers)
@@ -795,15 +805,32 @@ FC_REFLECT( node::app::transfer_state,
          (outgoing_recurring_transfer_requests)
          );
 
-FC_REFLECT( node::app::community_state,
-         (pending_requests)
-         (incoming_invites)
-         (outgoing_invites)
-         (incoming_moderator_votes)
-         (outgoing_moderator_votes)
+FC_REFLECT_DERIVED( node::app::community_event_state, ( node::app::community_event_api_obj ),
+         (attend_objs)
          );
 
-FC_REFLECT( node::app::connection_state,
+FC_REFLECT_DERIVED( node::app::community_directive_state, ( node::app::community_directive_api_obj ),
+         (votes)
+         );
+
+FC_REFLECT( node::app::account_community_state,
+         (pending_requests)
+         (incoming_member_votes)
+         (outgoing_member_votes)
+         (directive_members)
+         (incoming_directive_member_votes)
+         (outgoing_directive_member_votes)
+         (incoming_directive_votes)
+         (outgoing_directive_votes)
+         (incoming_directives)
+         (outgoing_directives)
+         (interested_attending)
+         (interested_not_attending)
+         (not_interested_attending)
+         (not_interested_not_attending)
+         );
+
+FC_REFLECT( node::app::account_connection_state,
          (connections)
          (friends)
          (companions)
@@ -872,7 +899,6 @@ FC_REFLECT_DERIVED( node::app::extended_account, ( node::app::account_api_obj ),
          (messages)
          (transfers)
          (communities)
-         (events)
          (network)
          (ads)
          (products)
@@ -899,10 +925,10 @@ FC_REFLECT_DERIVED( node::app::extended_community, ( node::app::community_api_ob
          (downstream_moderator_federations)
          (downstream_admin_federations)
          (events)
-         (mod_weight)
-         (total_mod_weight)
+         (directives)
+         (vote_weight)
+         (total_vote_weight)
          (requests)
-         (invites)
          (pinned_post)
          (latest_post)
          );
@@ -949,6 +975,10 @@ FC_REFLECT( node::app::key_state,
          (community_member_keys)
          (community_moderator_keys)
          (community_admin_keys)
+         (community_secure_keys)
+         (community_standard_premium_keys)
+         (community_mid_premium_keys)
+         (community_top_premium_keys)
          (business_keys)
          );
 
@@ -1060,17 +1090,6 @@ FC_REFLECT_DERIVED( node::app::poll_state, ( node::app::poll_api_obj ),
 
 FC_REFLECT( node::app::account_poll_state,
          (polls)
-         );
-
-FC_REFLECT_DERIVED( node::app::community_event_state, ( node::app::community_event_api_obj ),
-         (attend_objs)
-         );
-
-FC_REFLECT( node::app::account_event_state,
-         (interested_attending)
-         (interested_not_attending)
-         (not_interested_attending)
-         (not_interested_not_attending)
          );
 
 FC_REFLECT_DERIVED( node::app::ad_bid_state, ( node::app::ad_bid_api_obj ),

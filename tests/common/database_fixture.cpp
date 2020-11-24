@@ -320,32 +320,64 @@ const account_object& database_fixture::account_create(
 const community_object& database_fixture::community_create(
    const string& name,
    const string& founder,
-   const string& community_privacy,
-   const private_key_type& founder_key,
-   const public_key_type& community_member_key,
-   const public_key_type& community_moderator_key,
-   const public_key_type& community_admin_key )
+   const private_key_type& founder_key )
 {
    try
    {
+      public_key_type public_member_key = get_public_key( name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type public_moderator_key = get_public_key( name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type public_admin_key = get_public_key( name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type public_secure_key = get_public_key( name, SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type public_standard_premium_key = get_public_key( name, STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type public_mid_premium_key = get_public_key( name, MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type public_top_premium_key = get_public_key( name, TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+
+      private_key_type private_secure_key = get_private_key( name, SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+   
       community_create_operation op;
 
       op.signatory = founder;
       op.founder = founder;
       op.name = name;
       op.display_name = name;
-      op.details = "Community Details";
+      op.details = "details";
       op.url = "https://www.url.com";
       op.profile_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       op.cover_image = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       op.json = "{ \"valid\": true }";
-      op.json_private = "{ \"valid\": true }";
+      op.json_private = get_encrypted_message( private_secure_key, public_secure_key, public_member_key, string( "#{ \"valid\": true }" ) );
       op.tags.insert( "test" );
-      op.community_privacy = community_privacy;
-      op.community_member_key = string( community_member_key );
-      op.community_moderator_key = string( community_moderator_key );
-      op.community_admin_key = string( community_admin_key );
-      
+      op.private_community = false;
+      op.author_permission = "all";
+      op.reply_permission = "all";
+      op.vote_permission = "all";
+      op.view_permission = "all";
+      op.share_permission = "all";
+      op.message_permission = "member";
+      op.poll_permission = "admin";
+      op.event_permission = "admin";
+      op.directive_permission = "member";
+      op.add_permission = "member";
+      op.request_permission = "all";
+      op.remove_permission = "admin";
+      op.community_member_key = string( public_member_key );
+      op.community_moderator_key = string( public_moderator_key );
+      op.community_admin_key = string( public_admin_key );
+      op.community_secure_key = string( public_secure_key );
+      op.community_standard_premium_key = string( public_standard_premium_key );
+      op.community_mid_premium_key = string( public_mid_premium_key );
+      op.community_top_premium_key = string( public_top_premium_key );
+      op.interface = INIT_ACCOUNT;
+      op.reward_currency = SYMBOL_COIN;
+      op.standard_membership_price = MEMBERSHIP_FEE_BASE;
+      op.mid_membership_price = MEMBERSHIP_FEE_MID;
+      op.top_membership_price = MEMBERSHIP_FEE_TOP;
+      op.verifiers.insert( INIT_ACCOUNT );
+      op.min_verification_count = 0;
+      op.max_verification_distance = 0;
+      op.max_rating = 9;
+      op.flags = 0;
+      op.permissions = COMMUNITY_PERMISSION_MASK;
       op.validate();
       
       trx.operations.push_back( op );

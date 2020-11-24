@@ -1093,7 +1093,7 @@ void account_member_invite_evaluator::do_apply( const account_member_invite_oper
    }
    
    const account_object& account = _db.get_account( o.account );
-   const account_object& member = _db.get_account( o.member);
+   const account_object& member = _db.get_account( o.member );
    FC_ASSERT( member.active, 
       "Account: ${s} must be active to accept member invites.",("s", o.member) );
    const account_object& business = _db.get_account( o.business_account );
@@ -1278,7 +1278,7 @@ void account_remove_member_evaluator::do_apply( const account_remove_member_oper
       FC_ASSERT( signed_acc.active, 
          "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_blacklist( o.signatory, _db.get_account_permissions( signed_for ) ), 
+      FC_ASSERT( b.is_authorized_remove( o.signatory, _db.get_account_permissions( signed_for ) ), 
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    const account_object& account = _db.get_account( o.account ); 
@@ -1301,7 +1301,7 @@ void account_remove_member_evaluator::do_apply( const account_remove_member_oper
 
    if( account.name != member_acc.name )     // Account can remove itself from  membership.  
    {
-      FC_ASSERT( bus_acc.is_authorized_blacklist( o.account, _db.get_account_permissions( o.business_account ) ), 
+      FC_ASSERT( bus_acc.is_authorized_remove( o.account, _db.get_account_permissions( o.business_account ) ), 
          "Account: ${a} is not authorised to remove accounts from the Business: ${b}",
          ("a", o.account)("b", o.business_account)); 
    }
@@ -1336,7 +1336,7 @@ void account_update_list_evaluator::do_apply( const account_update_list_operatio
       FC_ASSERT( signed_acc.active, 
          "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
       const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_blacklist( o.signatory, _db.get_account_permissions( signed_for ) ),
+      FC_ASSERT( b.is_authorized_remove( o.signatory, _db.get_account_permissions( signed_for ) ),
          "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
    }
    
@@ -2049,15 +2049,15 @@ void account_connection_evaluator::do_apply( const account_connection_operation&
          {
             if( connection_tier == connection_tier_type::CONNECTION )
             {
-               afo.connections.insert( account_b_name );
+               afo.add_connection( account_b_name );
             }
             else if( connection_tier == connection_tier_type::FRIEND )
             {
-               afo.friends.insert( account_b_name );
+               afo.add_friend( account_b_name );
             }
             else if( connection_tier == connection_tier_type::COMPANION )
             {
-               afo.companions.insert( account_b_name );
+               afo.add_companion( account_b_name );
             }
             afo.last_updated = now;
          });
@@ -2066,15 +2066,15 @@ void account_connection_evaluator::do_apply( const account_connection_operation&
          {
             if( connection_tier == connection_tier_type::CONNECTION )
             {
-               afo.connections.insert( account_a_name );
+               afo.add_connection( account_a_name );
             }
             else if( connection_tier == connection_tier_type::FRIEND )
             {
-               afo.friends.insert( account_a_name );
+               afo.add_friend( account_a_name );
             }
             else if( connection_tier == connection_tier_type::COMPANION )
             {
-               afo.companions.insert( account_a_name );
+               afo.add_companion( account_a_name );
             }
             afo.last_updated = now;
          });
@@ -2085,15 +2085,15 @@ void account_connection_evaluator::do_apply( const account_connection_operation&
          {
             if( connection_tier == connection_tier_type::CONNECTION )
             {
-               afo.connections.erase( account_b_name );
+               afo.remove_connection( account_b_name );
             }
             else if( connection_tier == connection_tier_type::FRIEND )
             {
-               afo.friends.erase( account_b_name );
+               afo.remove_friend( account_b_name );
             }
             else if( connection_tier == connection_tier_type::COMPANION )
             {
-               afo.companions.erase( account_b_name );
+               afo.remove_companion( account_b_name );
             }
             afo.last_updated = now;
          });
@@ -2102,15 +2102,15 @@ void account_connection_evaluator::do_apply( const account_connection_operation&
          {
             if( connection_tier == connection_tier_type::CONNECTION )
             {
-               afo.connections.erase( account_a_name );
+               afo.remove_connection( account_a_name );
             }
             else if( connection_tier == connection_tier_type::FRIEND )
             {
-               afo.friends.erase( account_a_name );
+               afo.remove_friend( account_a_name );
             }
             else if( connection_tier == connection_tier_type::COMPANION )
             {
-               afo.companions.erase( account_a_name );
+               afo.remove_companion( account_a_name );
             }
             afo.last_updated = now;
          });

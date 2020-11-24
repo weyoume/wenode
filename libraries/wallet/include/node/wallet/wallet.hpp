@@ -667,6 +667,7 @@ class wallet_api
       /** 
        * Returns a list of the network development officers with the highest voting power from stakeholders.
        *
+       * @param currency Symbol of the Currency to retrieve officers from.
        * @param from First officer to retrieve in the ranking order.
        * @param limit Amount of officers to retrieve.
        * @returns List of network officer objects pertaining to the top officers.
@@ -677,6 +678,7 @@ class wallet_api
       /** 
        * Returns a list of the network marketing officers with the highest voting power from stakeholders.
        *
+       * @param currency Symbol of the Currency to retrieve officers from.
        * @param from First officer to retrieve in the ranking order.
        * @param limit Amount of officers to retrieve.
        * @returns List of network officer objects pertaining to the top officers.
@@ -687,6 +689,7 @@ class wallet_api
       /** 
        * Returns a list of the network advocacy officers with the highest voting power from stakeholders.
        *
+       * @param currency Symbol of the Currency to retrieve officers from.
        * @param from First officer to retrieve in the ranking order.
        * @param limit Amount of officers to retrieve.
        * @returns List of network officer objects pertaining to the top officers.
@@ -2304,7 +2307,7 @@ class wallet_api
        * @param magnet Bittorrent magnet links to torrent file swarms: videos, files.
        * @param magnet_private Bittorrent magnet links to Private and Encrypted torrent file swarms: videos, files.
        * @param json JSON string of additional interface specific data relating to the post.
-       * @param json Private and Encrypted JSON string of additional interface specific data relating to the post.
+       * @param json_private Private and Encrypted JSON string of additional interface specific data relating to the post.
        * @param language String containing the two letter ISO language code of the native language of the author.
        * @param public_key The public key used to encrypt the post, holders of the private key may decrypt.
        * @param community The name of the community to which the post is uploaded to.
@@ -2495,7 +2498,7 @@ class wallet_api
          string public_key,
          string message,
          string ipfs,
-         string json
+         string json,
          string uuid,
          string interface,
          string parent_sender,
@@ -2688,12 +2691,34 @@ class wallet_api
        * @param json Public plaintext json information about the community, its topic and rules.
        * @param json_private Private ciphertext json information about the community.
        * @param tags Set of tags of the topics within the community to enable discovery.
-       * @param community_privacy Community privacy level: Open_Public, General_Public, Exclusive_Public, Closed_Public, Open_Private, General_Private, Exclusive_Private, Closed_Private.
+       * @param private_community True when the community is private, and all posts, events, directives, polls must be encrypted.
+       * @param author_permission Determines which accounts can create root posts.
+       * @param reply_permission Determines which accounts can create replies to root posts.
+       * @param vote_permission Determines which accounts can create comment votes on posts and comments.
+       * @param view_permission Determines which accounts can create comment views on posts and comments.
+       * @param share_permission Determines which accounts can create comment shares on posts and comments.
+       * @param message_permission Determines which accounts can create direct messages in the community.
+       * @param poll_permission Determines which accounts can create polls in the community.
+       * @param event_permission Determines which accounts can create events in the community.
+       * @param directive_permission Determines which accounts can create directives and directive votes in the community.
+       * @param add_permission Determines which accounts can add new members, and accept member requests.
+       * @param request_permission Determines which accounts can request to join the community.
+       * @param remove_permission Determines which accounts can remove and blacklist.
        * @param community_member_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted members.
        * @param community_moderator_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted moderators.
        * @param community_admin_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted admins.
+       * @param community_secure_key Key used for encrypting and decrypting posts and messages. Private key held only by the community founder.
+       * @param community_standard_premium_key Key used for encrypting and decrypting posts and messages. Private key shared with standard premium members.
+       * @param community_mid_premium_key Key used for encrypting and decrypting posts and messages. Private key shared with mid premium members.
+       * @param community_top_premium_key Key used for encrypting and decrypting posts and messages. Private key shared with top premium members.
+       * @param interface Account of the interface that broadcasted the transaction.
        * @param reward_currency The Currency asset used for content rewards in the community.
-       * @param membership_price Price paid per day by all community members to community founder.
+       * @param standard_membership_price Price paid per month by community standard members.
+       * @param mid_membership_price Price paid per month by all mid level community members.
+       * @param top_membership_price Price paid per month by all top level community members.
+       * @param verifiers Accounts that are considered ground truth sources of verification authority, wth degree 0.
+       * @param min_verification_count Minimum number of incoming verification transaction to be considered verified by this community.
+       * @param max_verification_distance Maximum number of degrees of seperation from a verfier to be considered verified by this community.
        * @param max_rating Highest severity rating that posts in the community can have.
        * @param flags The currently active flags on the community for content settings.
        * @param permissions The flag permissions that can be activated on the community for content settings.
@@ -2711,12 +2736,34 @@ class wallet_api
          string json,
          string json_private,
          vector< string > tags,
-         string community_privacy,
+         bool private_community,
+         string author_permission,
+         string reply_permission,
+         string vote_permission,
+         string view_permission,
+         string share_permission,
+         string message_permission,
+         string poll_permission,
+         string event_permission,
+         string directive_permission,
+         string add_permission,
+         string request_permission,
+         string remove_permission,
          string community_member_key,
          string community_moderator_key,
          string community_admin_key,
+         string community_secure_key,
+         string community_standard_premium_key,
+         string community_mid_premium_key,
+         string community_top_premium_key,
+         string interface,
          string reward_currency,
-         asset membership_price,
+         asset standard_membership_price,
+         asset mid_membership_price,
+         asset top_membership_price,
+         vector< string > verifiers,
+         uint64_t min_verification_count,
+         uint64_t max_verification_distance,
          uint16_t max_rating,
          uint32_t flags,
          uint32_t permissions,
@@ -2727,8 +2774,8 @@ class wallet_api
        * Updates the details of an existing community.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param founder The account that created the community, able to add and remove administrators.
-       * @param name Name of the community.
+       * @param account Account updating the community. Administrator of the community.
+       * @param community Name of the community. Should be randomized string if private community.
        * @param display_name The full name of the community (non-consensus), encrypted with the member key if private community.
        * @param details Details of the community, describing what it is for.
        * @param url External reference URL.
@@ -2739,10 +2786,32 @@ class wallet_api
        * @param pinned_author Author of Post pinned to the top of the community's page.
        * @param pinned_permlink Permlink of Post pinned to the top of the community's page, encrypted with the member key if private community.
        * @param tags Set of tags of the topics within the community to enable discovery.
-       * @param community_privacy Community privacy level: Open_Public, General_Public, Exclusive_Public, Closed_Public, Open_Private, General_Private, Exclusive_Private, Closed_Private.
+       * @param private_community True when the community is private, and all posts, events, directives, polls must be encrypted.
+       * @param author_permission Determines which accounts can create root posts.
+       * @param reply_permission Determines which accounts can create replies to root posts.
+       * @param vote_permission Determines which accounts can create comment votes on posts and comments.
+       * @param view_permission Determines which accounts can create comment views on posts and comments.
+       * @param share_permission Determines which accounts can create comment shares on posts and comments.
+       * @param message_permission Determines which accounts can create direct messages in the community.
+       * @param poll_permission Determines which accounts can create polls in the community.
+       * @param event_permission Determines which accounts can create events in the community.
+       * @param directive_permission Determines which accounts can create directives and directive votes in the community.
+       * @param add_permission Determines which accounts can add new members, and accept member requests.
+       * @param request_permission Determines which accounts can request to join the community.
+       * @param remove_permission Determines which accounts can remove and blacklist.
        * @param community_member_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted members.
        * @param community_moderator_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted moderators.
        * @param community_admin_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted admins.
+       * @param community_secure_key Key used for encrypting and decrypting posts and messages. Private key held only by the community founder.
+       * @param community_standard_premium_key Key used for encrypting and decrypting posts and messages. Private key shared with standard premium members.
+       * @param community_mid_premium_key Key used for encrypting and decrypting posts and messages. Private key shared with mid premium members.
+       * @param community_top_premium_key Key used for encrypting and decrypting posts and messages. Private key shared with top premium members.
+       * @param standard_membership_price Price paid per month by community standard members.
+       * @param mid_membership_price Price paid per month by all mid level community members.
+       * @param top_membership_price Price paid per month by all top level community members.
+       * @param verifiers Accounts that are considered ground truth sources of verification authority, wth degree 0.
+       * @param min_verification_count Minimum number of incoming verification transaction to be considered verified by this community.
+       * @param max_verification_distance Maximum number of degrees of seperation from a verfier to be considered verified by this community.
        * @param max_rating Highest severity rating that posts in the community can have.
        * @param flags The currently active flags on the community for content settings.
        * @param permissions The flag permissions that can be activated on the community for content settings.
@@ -2751,8 +2820,8 @@ class wallet_api
        */
       annotated_signed_transaction           community_update(
          string signatory,
-         string founder,
-         string name,
+         string account,
+         string community,
          string display_name,
          string details,
          string url,
@@ -2763,132 +2832,36 @@ class wallet_api
          string pinned_author,
          string pinned_permlink,
          vector< string > tags,
-         string community_privacy,
+         bool private_community,
+         string author_permission,
+         string reply_permission,
+         string vote_permission,
+         string view_permission,
+         string share_permission,
+         string message_permission,
+         string poll_permission,
+         string event_permission,
+         string directive_permission,
+         string add_permission,
+         string request_permission,
+         string remove_permission,
          string community_member_key,
          string community_moderator_key,
          string community_admin_key,
+         string community_secure_key,
+         string community_standard_premium_key,
+         string community_mid_premium_key,
+         string community_top_premium_key,
+         asset standard_membership_price,
+         asset mid_membership_price,
+         asset top_membership_price,
+         vector< string > verifiers,
+         uint64_t min_verification_count,
+         uint64_t max_verification_distance,
          uint16_t max_rating,
          uint32_t flags,
          uint32_t permissions,
          bool active,
-         bool broadcast );
-
-
-      /**
-       * Adds a new moderator to a community.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account Account of an administrator of the community.
-       * @param community Community that the moderator is being added to.
-       * @param moderator New moderator account.
-       * @param added True when adding a new moderator, false when removing.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           community_add_mod(
-         string signatory,
-         string account,
-         string community,
-         string moderator,
-         bool added,
-         bool broadcast );
-
-
-      /**
-       * Adds a new administrator to a community.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account Account of the founder of the community.
-       * @param community Community that the admin is being added to.
-       * @param admin New administrator account.
-       * @param added True when adding a new administrator, false when removing.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           community_add_admin(
-         string signatory,
-         string account,
-         string community,
-         string admin,
-         bool added,
-         bool broadcast );
-
-
-      /**
-       * Votes for a moderator to increase their mod weight.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account Account of a member of the community.
-       * @param community Community that the moderator is being voted into.
-       * @param moderator Moderator account.
-       * @param vote_rank Voting rank for the specified community moderator.
-       * @param approved True when voting for the moderator, false when removing.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           community_vote_mod(
-         string signatory,
-         string account,
-         string community,
-         string moderator,
-         uint16_t vote_rank,
-         bool approved,
-         bool broadcast );
-
-
-      /**
-       * Transfers a community to a new account as the founder.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account Account that created the community.
-       * @param community Community that is being transferred.
-       * @param new_founder Account of the new founder.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           community_transfer_ownership(
-         string signatory,
-         string account,
-         string community,
-         string new_founder,
-         bool broadcast );
-
-
-      /**
-       * Requests that an account be added as a new member of a community.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account Account that wants to join the community.
-       * @param community Community that is being requested to join.
-       * @param message Message attatched to the request, encrypted with the communities public key.
-       * @param requested Set true to request, false to cancel request.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           community_join_request(
-         string signatory,
-         string account,
-         string community,
-         string message,
-         bool requested,
-         bool broadcast );
-
-
-      /**
-       * Invite a new member to a community.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account Account sending the invitation.
-       * @param member New community member account being invited.
-       * @param community Community that is the member is being invited to.
-       * @param message Message attatched to the invite, encrypted with the member's secure public key.
-       * @param encrypted_community_key The Community Private Key, encrypted with the member's secure public key.
-       * @param invited Set true to invite, false to cancel invite.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           community_join_invite(
-         string signatory,
-         string account,
-         string member,
-         string community,
-         string message,
-         string encrypted_community_key,
-         bool invited,
          bool broadcast );
 
 
@@ -2899,70 +2872,67 @@ class wallet_api
        * @param account Account within the community accepting the request.
        * @param member Account to accept into the community.
        * @param community Community that is being joined.
+       * @param interface Name of the interface account that was used to broadcast the transaction.
+       * @param member_type Membership and Key encryption access and permission level.
        * @param encrypted_community_key The Community Private Key, encrypted with the member's secure public key.
        * @param accepted Set true to invite, false to cancel invite.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           community_join_accept(
+      annotated_signed_transaction           community_member(
          string signatory,
          string account,
          string member,
          string community,
+         string interface,
+         string member_type,
          string encrypted_community_key,
          bool accepted,
          bool broadcast );
 
 
       /**
-       * Accepts a community invitation.
+       * Requests that an account be added as a new member of a community.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param account A new member of the community.
-       * @param community Community that the account was invited to.
-       * @param accepted True to accept invite, false to reject invite.
+       * @param account Account that wants to join the community.
+       * @param community Community that is being requested to join.
+       * @param interface Name of the interface account that was used to broadcast the transaction.
+       * @param member_type Membership and Key encryption access and permission level.
+       * @param message Message attatched to the request, encrypted with the communities public key.
+       * @param requested Set true to request, false to cancel request.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           community_invite_accept(
+      annotated_signed_transaction           community_member_request(
          string signatory,
          string account,
          string community,
-         bool accepted,
+         string interface,
+         string member_type,
+         string message,
+         bool requested,
          bool broadcast );
 
 
       /**
-       * Removes a specifed member of a community.
+       * Votes for a moderator to increase their mod weight.
        *
        * @param signatory The name of the account signing the transaction.
-       * @param account Either the member of the community leaving OR a moderator of the community removing the member.
-       * @param member Account to be removed from the community membership.
-       * @param community Community that that member is being removed from.
+       * @param account Account of a member of the community.
+       * @param community Community that the moderator is being voted into.
+       * @param member Account of the member being voted for.
+       * @param interface Name of the interface account that was used to broadcast the transaction.
+       * @param vote_rank Voting rank for the specified community moderator.
+       * @param approved True when voting for the moderator, false when removing.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           community_remove_member(
+      annotated_signed_transaction           community_member_vote(
          string signatory,
          string account,
-         string member,
          string community,
-         bool broadcast );
-
-
-      /**
-       * Adds a specifed account to the community's blacklist.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account Moderator or admin of the community.
-       * @param member Account to be blacklisted from interacting with the community.
-       * @param community Community that member is being blacklisted from.
-       * @param blacklisted Set to true to add account to blacklist, set to false to remove from blacklist. 
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           community_blacklist(
-         string signatory,
-         string account,
          string member,
-         string community,
-         bool blacklisted,
+         string interface,
+         uint16_t vote_rank,
+         bool approved,
          bool broadcast );
 
 
@@ -2985,6 +2955,26 @@ class wallet_api
          bool added,
          bool subscribed,
          bool broadcast );
+
+
+      /**
+       * Adds a specifed account to the community's blacklist.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Moderator or admin of the community.
+       * @param member Account to be blacklisted from interacting with the community.
+       * @param community Community that member is being blacklisted from.
+       * @param blacklisted Set to true to add account to blacklist, set to false to remove from blacklist. 
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           community_blacklist(
+         string signatory,
+         string account,
+         string member,
+         string community,
+         bool blacklisted,
+         bool broadcast );
+
 
       /**
        * Used to create a federation connection between two communities.
@@ -3087,6 +3077,141 @@ class wallet_api
          string interface,
          bool interested,
          bool attending,
+         bool active,
+         bool broadcast );
+
+
+      /**
+       * A Community directive that contains action instructions and deliverables for community members.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account that created the directive.
+       * @param directive_id UUIDv4 referring to the directive. Unique on account/directive_id.
+       * @param parent_account Account that created the parent directive.
+       * @param parent_directive_id UUIDv4 referring to the parent directive. Unique on account/directive_id.
+       * @param community Community that the directive is given to.
+       * @param public_key Public key for encrypting the directive details. Null if public directive.
+       * @param interface Account of the interface that broadcasted the transaction.
+       * @param details Text details of the directive. Should explain the action items.
+       * @param cover_image IPFS image for display of this directive in the interface. 
+       * @param ipfs IPFS file reference for the directive. Images or other files can be attatched.
+       * @param json Additional Directive JSON metadata.
+       * @param directive_start_time Time that the Directive will begin.
+       * @param directive_end_time Time that the Directive must be completed by.
+       * @param completed True when the directive has been completed.
+       * @param active  True while the directive is active, false to remove.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           community_directive(
+         string signatory,
+         string account,
+         string directive_id,
+         string parent_account,
+         string parent_directive_id,
+         string community,
+         string public_key,
+         string interface,
+         string details, 
+         string cover_image,
+         string ipfs,
+         string json,
+         time_point directive_start_time,
+         time_point directive_end_time,
+         bool completed,
+         bool active,
+         bool broadcast )
+
+      /**
+       * Votes to approve or disapprove a directive made by a member of a community.
+       * 
+       * Used for Consensus directive selection, and for directive feedback.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param voter Account creating the directive vote.
+       * @param account Account that created the directive.
+       * @param directive_id UUIDv4 referring to the directive. Unique on account/directive_id.
+       * @param public_key Public key for encrypting the directive vote details. Null if public directive.
+       * @param interface Account of the interface that broadcasted the transaction.
+       * @param details Text details of the directive vote. Should contain directive feedback.
+       * @param json Additional Directive JSON metadata.
+       * @param approve True when the directive is approved, false when it is opposed.
+       * @param active True while the directive vote is active, false to remove.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           community_directive_vote(
+         string signatory,
+         string voter,
+         string account,
+         string directive_id,
+         string public_key,
+         string interface,
+         string details,
+         string json,
+         bool approve,
+         bool active,
+         bool broadcast )
+
+
+      /**
+       * Determines the State of an account's active 
+       * directive selection, and its outgoing directives.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param account Account recieving and creating directives within a community.
+       * @param community Community that the directive member is contained within.
+       * @param interface Account of the interface that broadcasted the transaction.
+       * @param public_key Public key for encrypting the directive member details. Null if public directive member.
+       * @param details Text details of the directive member. Should elaborate interests and priorities for voting selection
+       * @param json Additional Directive Member JSON metadata.
+       * @param command_directive_id The Current outgoing directive as community co-ordinator.
+       * @param delegate_directive_id The Current outgoing directive to all hierachy subordinate members.
+       * @param consensus_directive_id The Current outgoing directive for community consensus selection.
+       * @param emergent_directive_id The Current outgoing emergent directive for selection by other members.
+       * @param active True when the account is active for the directive distribution.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           community_directive_member(
+         string signatory,
+         string account,
+         string community,
+         string interface,
+         string public_key,
+         string details,
+         string json,
+         string command_directive_id,
+         string delegate_directive_id,
+         string consensus_directive_id,
+         string emergent_directive_id,
+         bool active,
+         bool broadcast )
+      
+      /**
+       * Votes to approve or disapprove a directive made by a member of a community.
+       * 
+       * Used for Consensus directive selection, and for directive feedback.
+       *
+       * @param signatory The name of the account signing the transaction.
+       * @param voter Account creating the directive member vote.
+       * @param member Account being voted on.
+       * @param community Community that the directive member vote is contained within.
+       * @param interface Account of the interface that broadcasted the transaction.
+       * @param public_key Public key for encrypting the directive member vote details. Null if public directive member vote.
+       * @param details Text details of the directive member vote. Should contain directive member feedback.
+       * @param json Additional Directive Member vote JSON metadata.
+       * @param approve True when the directive member is approved, false when they is opposed.
+       * @param active True while the directive member vote is active, false to remove.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           community_directive_member_vote(
+         string signatory,
+         string voter,
+         string member,
+         string community,
+         string public_key,
+         string interface,
+         string details,
+         string json, 
+         bool approve,
          bool active,
          bool broadcast );
 
@@ -4980,20 +5105,18 @@ FC_API( node::wallet::wallet_api,
          (premium_release)
          (community_create)
          (community_update)
-         (community_add_mod)
-         (community_add_admin)
-         (community_vote_mod)
-         (community_transfer_ownership)
-         (community_join_request)
-         (community_join_invite)
-         (community_join_accept)
-         (community_invite_accept)
-         (community_remove_member)
-         (community_blacklist)
+         (community_member)
+         (community_member_request)
+         (community_member_vote)
          (community_subscribe)
+         (community_blacklist)
          (community_federation)
          (community_event)
          (community_event_attend)
+         (community_directive)
+         (community_directive_vote)
+         (community_directive_member)
+         (community_directive_member_vote)
          (ad_creative)
          (ad_campaign)
          (ad_inventory)

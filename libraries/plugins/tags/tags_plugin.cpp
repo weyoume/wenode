@@ -1484,11 +1484,11 @@ struct operation_visitor
    }
 
 
-   void update_community_adjacency( const community_member_object& m )const
+   void update_community_adjacency( const community_permission_object& m )const
    {
       time_point now = _db.head_block_time();
       const auto& following_idx = _db.get_index< chain::account_following_index >().indices().get< chain::by_account >();
-      const auto& member_idx = _db.get_index< community_member_index >().indices().get< by_name >();
+      const auto& member_idx = _db.get_index< community_permission_index >().indices().get< by_name >();
       const auto& adjacency_idx = _db.get_index< community_adjacency_index >().indices().get< by_community_pair >();
 
       for( account_name_type name : m.subscribers )
@@ -1502,16 +1502,16 @@ struct operation_visitor
             community_name_type community_b;
             auto member_itr = member_idx.find( community_name );
 
-            const community_member_object& community_member = *member_itr;
+            const community_permission_object& community_permission = *member_itr;
 
-            if( community_member.id < m.id )
+            if( community_permission.id < m.id )
             {
-               community_a = community_member.name;
+               community_a = community_permission.name;
                community_b = m.name;
             }
             else
             {
-               community_b = community_member.name;
+               community_b = community_permission.name;
                community_a = m.name;
             }
             
@@ -1522,7 +1522,7 @@ struct operation_visitor
                {
                   _db.modify( *adjacency_itr, [&]( community_adjacency_object& o )
                   {
-                     o.adjacency = m.adjacency_value( community_member );
+                     o.adjacency = m.adjacency_value( community_permission );
                      o.last_updated = now;
                   });
                }
@@ -1533,7 +1533,7 @@ struct operation_visitor
                {
                   o.community_a = community_a;
                   o.community_b = community_b;
-                  o.adjacency = m.adjacency_value( community_member );
+                  o.adjacency = m.adjacency_value( community_permission );
                   o.last_updated = now;
                });
             }
@@ -2470,7 +2470,7 @@ struct operation_visitor
 
    void operator()( const community_subscribe_operation& op )const
    {
-      update_community_adjacency( _db.get_community_member( op.community ) );
+      update_community_adjacency( _db.get_community_permission( op.community ) );
    }
 
    void operator()( const account_follow_tag_operation& op )const

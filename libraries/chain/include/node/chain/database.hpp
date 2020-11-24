@@ -54,6 +54,9 @@ namespace node { namespace chain {
           * will be initialized with the default state.
           *
           * @param data_dir Path to open or create database in
+          * @param shared_mem_dir Path to open or create shared memory
+          * @param shared_file_size Size in bytes of the share memory file
+          * @param chainbase_flags Options to configure database
           */
          void                                   open( const fc::path& data_dir, const fc::path& shared_mem_dir, uint64_t shared_file_size, uint32_t chainbase_flags );
 
@@ -63,20 +66,27 @@ namespace node { namespace chain {
          void                                   init_genesis();
 
          /**
-          * @brief Rebuild object graph from block history and open detabase
-          *
+          * @brief Rebuild object graph from block history and open database
+          * 
           * This method may be called after or instead of @ref database::open, and will rebuild the object graph by
           * replaying blockchain history. When this method exits successfully, the database will be open.
+          * 
+          * @param data_dir Path to reindex database in
+          * @param shared_mem_dir Path to reindex shared memory
+          * @param shared_file_size Size in bytes of the share memory file
           */
          void                                   reindex( const fc::path& data_dir, const fc::path& shared_mem_dir, uint64_t shared_file_size = (1024l*1024l*1024l*8l) );
 
          /**
           * @brief wipe Delete database from disk, and potentially the raw chain as well.
+          * 
+          * @param data_dir Path to wipe database from
+          * @param shared_mem_dir Path to wipe shared memory from
           * @param include_blocks If true, delete the raw chain as well as the database.
           *
           * Will close the database before wiping. Database will be closed when this function returns.
           */
-         void                                   wipe( const fc::path& data_dir, const fc::path& shared_mem_dir, bool include_blocks);
+         void                                   wipe( const fc::path& data_dir, const fc::path& shared_mem_dir, bool include_blocks );
 
          void                                   close(bool rewind = true);
 
@@ -541,8 +551,8 @@ namespace node { namespace chain {
          const community_object&                        get_community( const community_name_type& community )const;
          const community_object*                        find_community( const community_name_type& community )const;
 
-         const community_member_object&                 get_community_member( const community_name_type& community )const;
-         const community_member_object*                 find_community_member( const community_name_type& community )const;
+         const community_permission_object&             get_community_permission( const community_name_type& community )const;
+         const community_permission_object*             find_community_permission( const community_name_type& community )const;
 
          const community_event_object&                  get_community_event( const community_name_type& community, const shared_string& event_id )const;
          const community_event_object*                  find_community_event( const community_name_type& community, const shared_string& event_id )const;
@@ -550,18 +560,29 @@ namespace node { namespace chain {
          const community_event_object&                  get_community_event( const community_name_type& community, const string& event_id )const;
          const community_event_object*                  find_community_event( const community_name_type& community, const string& event_id )const;
 
-         void update_community_moderator_votes( const account_object& account, const community_name_type& community );
-         void update_community_moderator_votes( const account_object& account, const community_name_type& community, const account_name_type& moderator, uint16_t vote_rank );
+         const community_directive_object&              get_community_directive( const account_name_type& account, const shared_string& directive_id )const;
+         const community_directive_object*              find_community_directive( const account_name_type& account, const shared_string& directive_id )const;
+
+         const community_directive_object&              get_community_directive( const account_name_type& account, const string& directive_id )const;
+         const community_directive_object*              find_community_directive( const account_name_type& account, const string& directive_id )const;
+
+         const community_directive_member_object&       get_community_directive_member( const account_name_type& member, const community_name_type& community )const;
+         const community_directive_member_object*       find_community_directive_member( const account_name_type& member, const community_name_type& community )const;
          
-         void update_community_moderators( const community_member_object& community );
+         void update_community_member_votes( const account_object& account, const community_name_type& community );
+         void update_community_member_votes( const account_object& account, const community_name_type& community, const account_name_type& moderator, uint16_t vote_rank );
+         
+         void update_community_moderators( const community_name_type& community );
 
          void update_community_moderator_set();
 
-         void process_community_membership_fees();
+         void process_community_premium_membership( const community_member_object& member );
 
          void process_community_federation( const community_federation_object& federation );
 
          void remove_community_federation( const community_federation_object& federation );
+
+         bool check_community_verification( const account_name_type& account, const community_permission_object& community, uint16_t depth = 0 );
 
 
 

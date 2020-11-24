@@ -992,13 +992,13 @@ void database::clear_account_votes( const account_name_type& a )
       remove(vote);
    }
 
-   const auto& community_moderator_vote_idx = get_index< community_moderator_vote_index >().indices().get< by_account >();
-   auto community_moderator_vote_itr = community_moderator_vote_idx.lower_bound( a );
-   while( community_moderator_vote_itr != community_moderator_vote_idx.end() && 
-      community_moderator_vote_itr->account == a )
+   const auto& community_member_vote_idx = get_index< community_member_vote_index >().indices().get< by_account_community_rank >();
+   auto community_member_vote_itr = community_member_vote_idx.lower_bound( a );
+   while( community_member_vote_itr != community_member_vote_idx.end() && 
+      community_member_vote_itr->account == a )
    {
-      const community_moderator_vote_object& vote = *community_moderator_vote_itr;
-      ++community_moderator_vote_itr;
+      const community_member_vote_object& vote = *community_member_vote_itr;
+      ++community_member_vote_itr;
       ilog( "Removed: ${v}",("v",vote));
       remove(vote);
    }

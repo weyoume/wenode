@@ -1345,21 +1345,21 @@ namespace node { namespace chain {
          ordered_unique< tag< by_id >, member< comment_vote_object, comment_vote_id_type, &comment_vote_object::id > >,
          ordered_unique< tag< by_comment_voter >,
             composite_key< comment_vote_object,
-               member< comment_vote_object, comment_id_type, &comment_vote_object::comment>,
-               member< comment_vote_object, account_name_type, &comment_vote_object::voter>
+               member< comment_vote_object, comment_id_type, &comment_vote_object::comment >,
+               member< comment_vote_object, account_name_type, &comment_vote_object::voter >
             >
          >,
          ordered_unique< tag< by_voter_comment >,
             composite_key< comment_vote_object,
-               member< comment_vote_object, account_name_type, &comment_vote_object::voter>,
-               member< comment_vote_object, comment_id_type, &comment_vote_object::comment>
+               member< comment_vote_object, account_name_type, &comment_vote_object::voter >,
+               member< comment_vote_object, comment_id_type, &comment_vote_object::comment >
             >
          >,
          ordered_unique< tag< by_voter_last_update >,
             composite_key< comment_vote_object,
-               member< comment_vote_object, account_name_type, &comment_vote_object::voter>,
-               member< comment_vote_object, time_point, &comment_vote_object::last_updated>,
-               member< comment_vote_object, comment_id_type, &comment_vote_object::comment>
+               member< comment_vote_object, account_name_type, &comment_vote_object::voter >,
+               member< comment_vote_object, time_point, &comment_vote_object::last_updated >,
+               member< comment_vote_object, comment_id_type, &comment_vote_object::comment >
             >,
             composite_key_compare< 
                std::less< account_name_type >,
@@ -1369,24 +1369,24 @@ namespace node { namespace chain {
          >,
          ordered_unique< tag< by_voter_recent >,
             composite_key< comment_vote_object,
-               member< comment_vote_object, account_name_type, &comment_vote_object::voter>,
-               member< comment_vote_object, comment_vote_id_type, &comment_vote_object::id>
+               member< comment_vote_object, account_name_type, &comment_vote_object::voter >,
+               member< comment_vote_object, comment_vote_id_type, &comment_vote_object::id >
             >,
             composite_key_compare< 
-               std::less< account_name_type >, 
-               std::greater< comment_vote_id_type > 
+               std::less< account_name_type >,
+               std::greater< comment_vote_id_type >
             >
          >,
          ordered_unique< tag< by_comment_weight_voter >,
             composite_key< comment_vote_object,
-               member< comment_vote_object, comment_id_type, &comment_vote_object::comment>,
-               member< comment_vote_object, uint128_t, &comment_vote_object::weight>,
-               member< comment_vote_object, account_name_type, &comment_vote_object::voter>
+               member< comment_vote_object, comment_id_type, &comment_vote_object::comment >,
+               member< comment_vote_object, uint128_t, &comment_vote_object::weight >,
+               member< comment_vote_object, account_name_type, &comment_vote_object::voter >
             >,
             composite_key_compare< 
-               std::less< comment_id_type >, 
-               std::greater< uint128_t >, 
-               std::less< account_name_type > 
+               std::less< comment_id_type >,
+               std::greater< uint128_t >,
+               std::less< account_name_type >
             >
          >
       >,
