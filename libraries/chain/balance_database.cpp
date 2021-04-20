@@ -911,23 +911,40 @@ share_type database::get_proxied_voting_power( const account_name_type& a, const
 } FC_CAPTURE_AND_RETHROW() }
 
 
-share_type database::get_equity_voting_power( const account_object& a, const account_business_object& b )const
+share_type database::get_equity_voting_power( const account_object& a, const business_object& b )const
 { try {
    return get_equity_voting_power( a.name, b );
 } FC_CAPTURE_AND_RETHROW() }
 
 
-share_type database::get_equity_voting_power( const account_name_type& a, const account_business_object& b )const
+share_type database::get_equity_voting_power( const account_name_type& a, const business_object& b )const
 { try {
    share_type voting_power = 0;
-   for( auto symbol : b.equity_assets )
+   const account_balance_object* abo_ptr = find_account_balance( a, b.equity_asset );
+   if( abo_ptr != nullptr )
    {
-      const account_balance_object* abo_ptr = find_account_balance( a, symbol );
-      if( abo_ptr != nullptr )
-      {
-         voting_power += abo_ptr->get_voting_power().amount;
-      }
+      voting_power = abo_ptr->get_voting_power().amount;
    }
+   
+   return voting_power;
+} FC_CAPTURE_AND_RETHROW() }
+
+
+share_type database::get_equity_voting_power( const account_object& a, const governance_object& b )const
+{ try {
+   return get_equity_voting_power( a.name, b );
+} FC_CAPTURE_AND_RETHROW() }
+
+
+share_type database::get_equity_voting_power( const account_name_type& a, const governance_object& b )const
+{ try {
+   share_type voting_power = 0;
+   const account_balance_object* abo_ptr = find_account_balance( a, b.equity_asset );
+   if( abo_ptr != nullptr )
+   {
+      voting_power = abo_ptr->get_voting_power().amount;
+   }
+   
    return voting_power;
 } FC_CAPTURE_AND_RETHROW() }
 

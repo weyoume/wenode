@@ -47,7 +47,6 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
 
       graph_node_property_operation node_property;
 
-      node_property.signatory = "alice";
       node_property.account = "alice";
       node_property.node_type = "person";
       node_property.graph_privacy = "connection";
@@ -86,7 +85,6 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
 
       graph_edge_property_operation edge_property;
 
-      edge_property.signatory = "alice";
       edge_property.account = "alice";
       edge_property.edge_type = "family";
       edge_property.graph_privacy = "connection";
@@ -126,7 +124,6 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
 
       graph_node_operation node;
 
-      node.signatory = "alice";
       node.account = "alice";
       node.node_types = { "person" };
       node.node_id = "939f0aa6-cd4f-4065-83e3-f54ce368bffc";
@@ -173,7 +170,6 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
       BOOST_REQUIRE( alice_person.created == now() );
       BOOST_REQUIRE( alice_person.last_updated == now() );
 
-      node.signatory = "bob";
       node.account = "bob";
       node.node_types = { "person" };
       node.node_id = "772a9705-091a-43f6-841c-720d0e0fb9f3";
@@ -226,7 +222,6 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
 
       graph_edge_operation edge;
 
-      edge.signatory = "alice";
       edge.account = "alice";
       edge.edge_types = { "family" };
       edge.edge_id = "6a9a6cd7-8fe2-4135-9758-92b0378b7dc6";
@@ -259,7 +254,6 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
 
       account_connection_operation connection;
 
-      connection.signatory = "bob";
       connection.account = "bob";
       connection.connecting_account = "alice";
       connection.connection_type = "connection";
@@ -274,7 +268,6 @@ BOOST_AUTO_TEST_CASE( graph_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      connection.signatory = "alice";
       connection.account = "alice";
       connection.connecting_account = "bob";
       connection.connection_type = "connection";

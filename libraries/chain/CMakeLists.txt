@@ -19,6 +19,8 @@ set_source_files_properties( "${CMAKE_CURRENT_BINARY_DIR}/include/node/chain/har
 add_library( node_chain
    node_database.cpp
    account_database.cpp
+   business_database.cpp
+   governance_database.cpp
    network_database.cpp
    comment_database.cpp
    community_database.cpp
@@ -36,6 +38,8 @@ add_library( node_chain
    producer_schedule.cpp
 
    account_evaluator.cpp
+   business_evaluator.cpp
+   governance_evaluator.cpp
    network_evaluator.cpp
    comment_evaluator.cpp
    community_evaluator.cpp

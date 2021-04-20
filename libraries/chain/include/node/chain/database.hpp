@@ -204,6 +204,8 @@ namespace node { namespace chain {
           */
          void                                   set_hardfork( uint32_t hardfork, bool process_now = true );
 
+         void                                   check_namespace( const account_name_type& name );
+
          void                                   validate_invariants()const;
 
          /**
@@ -295,33 +297,11 @@ namespace node { namespace chain {
          const account_verification_object&           get_account_verification( const account_name_type& verifier_account, const account_name_type& verified_account )const;
          const account_verification_object*           find_account_verification( const account_name_type& verifier_account, const account_name_type& verified_account )const;
 
-         const account_business_object&               get_account_business( const account_name_type& account )const;
-         const account_business_object*               find_account_business( const account_name_type& account )const;
-
-         const account_executive_vote_object&         get_account_executive_vote( const account_name_type& account, const account_name_type& business, const account_name_type& executive )const;
-         const account_executive_vote_object*         find_account_executive_vote( const account_name_type& account, const account_name_type& business, const account_name_type& executive )const;
-
-         const account_officer_vote_object&           get_account_officer_vote( const account_name_type& account, const account_name_type& business, const account_name_type& officer )const;
-         const account_officer_vote_object*           find_account_officer_vote( const account_name_type& account, const account_name_type& business, const account_name_type& officer )const;
-
-         const account_member_request_object&         get_account_member_request( const account_name_type& account, const account_name_type& business )const;
-         const account_member_request_object*         find_account_member_request( const account_name_type& account, const account_name_type& business )const;
-
-         const account_member_invite_object&          get_account_member_invite( const account_name_type& member, const account_name_type& business )const;
-         const account_member_invite_object*          find_account_member_invite( const account_name_type& member, const account_name_type& business )const;
-
-         const account_member_key_object&             get_account_member_key( const account_name_type& member, const account_name_type& business )const;
-         const account_member_key_object*             find_account_member_key( const account_name_type& member, const account_name_type& business )const;
-
          const account_following_object&              get_account_following( const account_name_type& account )const;
          const account_following_object*              find_account_following( const account_name_type& account )const;
 
          const account_tag_following_object&          get_account_tag_following( const tag_name_type& tag )const;
          const account_tag_following_object*          find_account_tag_following( const tag_name_type& tag )const;
-
-         void update_business_account( const account_business_object& business );
-
-         void update_business_account_set();
 
          void process_membership_updates();
 
@@ -330,17 +310,9 @@ namespace node { namespace chain {
 
          void update_account_reputations();
 
-         asset claim_activity_reward( const account_object& account, const producer_object& producer, 
-            asset_symbol_type currency_symbol );
+         asset claim_activity_reward( const account_object& account, const producer_object& producer, asset_symbol_type currency_symbol );
 
          void update_owner_authority( const account_object& account, const authority& owner_authority );
-
-         void update_account_executive_votes( const account_object& account, const account_name_type& business );
-         void update_account_executive_votes( const account_object& account, const account_name_type& business, const account_object& executive,
-            executive_role_type role, uint16_t input_vote_rank );
-
-         void update_account_officer_votes( const account_object& account, const account_name_type& business );
-         void update_account_officer_votes( const account_object& account, const account_name_type& business, const account_object& officer, uint16_t input_vote_rank );
 
          void account_recovery_processing();
 
@@ -348,6 +320,90 @@ namespace node { namespace chain {
 
          void clear_account_votes( const account_name_type& a );
 
+
+
+         //===========================//
+         // === BUSINESS DATABASE === //
+         //===========================//
+
+
+
+         const business_object&                       get_business( const account_name_type& account )const;
+         const business_object*                       find_business( const account_name_type& account )const;
+
+         const business_permission_object&            get_business_permission( const account_name_type& account )const;
+         const business_permission_object*            find_business_permission( const account_name_type& account )const;
+
+         const business_executive_object&             get_business_executive( const account_name_type& business, const account_name_type& executive )const;
+         const business_executive_object*             find_business_executive( const account_name_type& business, const account_name_type& executive )const;
+         
+         const business_executive_vote_object&        get_business_executive_vote( const account_name_type& director, const account_name_type& business )const;
+         const business_executive_vote_object*        find_business_executive_vote( const account_name_type& director, const account_name_type& business )const;
+         
+         const business_director_object&              get_business_director( const account_name_type& business, const account_name_type& director )const;
+         const business_director_object*              find_business_director( const account_name_type& business, const account_name_type& director )const;
+         
+         const business_director_vote_object&         get_business_director_vote( const account_name_type& account, const account_name_type& business, const account_name_type& director )const;
+         const business_director_vote_object*         find_business_director_vote( const account_name_type& account, const account_name_type& business, const account_name_type& director )const;
+
+         void update_business( const business_object& business );
+
+         void update_business_set();
+
+         void disolve_business( const business_object& business );
+
+         void update_business_director_votes( const account_object& account, const account_name_type& business );
+         void update_business_director_votes( const account_object& account, const account_name_type& business, const account_object& director, uint16_t input_vote_rank );
+
+
+
+         //=============================//
+         // === GOVERNANCE DATABASE === //
+         //=============================//
+
+
+
+         const governance_object&                       get_governance( const account_name_type& account )const;
+         const governance_object*                       find_governance( const account_name_type& account )const;
+
+         const governance_permission_object&            get_governance_permission( const account_name_type& account )const;
+         const governance_permission_object*            find_governance_permission( const account_name_type& account )const;
+
+         const governance_executive_object&             get_governance_executive( const account_name_type& governance, const account_name_type& executive )const;
+         const governance_executive_object*             find_governance_executive( const account_name_type& governance, const account_name_type& executive )const;
+         
+         const governance_executive_vote_object&        get_governance_executive_vote( const account_name_type& director, const account_name_type& governance )const;
+         const governance_executive_vote_object*        find_governance_executive_vote( const account_name_type& director, const account_name_type& governance )const;
+         
+         const governance_director_object&              get_governance_director( const account_name_type& governance, const account_name_type& director )const;
+         const governance_director_object*              find_governance_director( const account_name_type& governance, const account_name_type& director )const;
+         
+         const governance_director_vote_object&         get_governance_director_vote( const account_name_type& account, const account_name_type& governance )const;
+         const governance_director_vote_object*         find_governance_director_vote( const account_name_type& account, const account_name_type& governance )const;
+
+         const governance_member_object&                get_governance_member( const account_name_type& account )const;
+         const governance_member_object*                find_governance_member( const account_name_type& account )const;
+
+         const governance_member_request_object&        get_governance_member_request( const account_name_type& account )const;
+         const governance_member_request_object*        find_governance_member_request( const account_name_type& account )const;
+
+         const governance_resolution_object&            get_governance_resolution( const account_name_type& governance, const string& resolution_id, const string& ammendment_id )const;
+         const governance_resolution_object*            find_governance_resolution( const account_name_type& governance, const string& resolution_id, const string& ammendment_id )const;
+         
+         const governance_resolution_object&            get_governance_resolution( const account_name_type& governance, const shared_string& resolution_id, const shared_string& ammendment_id )const;
+         const governance_resolution_object*            find_governance_resolution( const account_name_type& governance, const shared_string& resolution_id, const shared_string& ammendment_id )const;
+
+         const governance_resolution_vote_object&       get_governance_resolution_vote( const account_name_type& account, const account_name_type& governance, const string& resolution_id, const string& ammendment_id )const;
+         const governance_resolution_vote_object*       find_governance_resolution_vote( const account_name_type& account, const account_name_type& governance, const string& resolution_id, const string& ammendment_id )const;
+
+         const governance_resolution_vote_object&       get_governance_resolution_vote( const account_name_type& account, const account_name_type& governance, const shared_string& resolution_id, const shared_string& ammendment_id )const;
+         const governance_resolution_vote_object*       find_governance_resolution_vote( const account_name_type& account, const account_name_type& governance, const shared_string& resolution_id, const shared_string& ammendment_id )const;
+
+         void update_governance( const governance_object& governance );
+
+         void update_governance_set();
+
+         void disolve_governance( const governance_object& governance );
 
 
          //==========================//
@@ -361,12 +417,6 @@ namespace node { namespace chain {
 
          const network_officer_vote_object&     get_network_officer_vote( const account_name_type& account, const account_name_type& officer )const;
          const network_officer_vote_object*     find_network_officer_vote( const account_name_type& account, const account_name_type& officer )const;
-         
-         const executive_board_object&          get_executive_board( const account_name_type& account )const;
-         const executive_board_object*          find_executive_board( const account_name_type& account )const;
-
-         const executive_board_vote_object&     get_executive_board_vote( const account_name_type& account, const account_name_type& executive )const;
-         const executive_board_vote_object*     find_executive_board_vote( const account_name_type& account, const account_name_type& executive )const;
 
          const supernode_object&                get_supernode( const account_name_type& account )const;
          const supernode_object*                find_supernode( const account_name_type& account )const;
@@ -376,9 +426,6 @@ namespace node { namespace chain {
 
          const mediator_object&                 get_mediator( const account_name_type& account )const;
          const mediator_object*                 find_mediator( const account_name_type& account )const;
-
-         const governance_account_object&       get_governance_account( const account_name_type& name )const;
-         const governance_account_object*       find_governance_account( const account_name_type& name )const;
 
          const enterprise_object&               get_enterprise( const account_name_type& account, const shared_string& enterprise_id )const;
          const enterprise_object*               find_enterprise( const account_name_type& account, const shared_string& enterprise_id )const;
@@ -395,9 +442,6 @@ namespace node { namespace chain {
          void network_officer_update_votes( const account_object& account );
          void network_officer_update_votes( const account_object& account, const account_name_type& officer, network_officer_role_type officer_type, uint16_t vote_rank );
 
-         void update_executive_board_votes( const account_object& account );
-         void update_executive_board_votes( const account_object& account, const account_name_type& executive, uint16_t vote_rank );
-
          void update_enterprise_votes( const account_object& account );
          void update_enterprise_votes( const account_object& account, const account_name_type& creator, 
             string enterprise_id, uint16_t vote_rank );
@@ -413,22 +457,12 @@ namespace node { namespace chain {
 
          void process_supernode_rewards();
 
-         void update_executive_board( const executive_board_object& executive_board, 
-            const producer_schedule_object& pso, const dynamic_global_property_object& props );
-
-         void process_executive_board_budgets();
-
-         void governance_update_account( const governance_account_object& network_officer, 
-            const producer_schedule_object& pso, const dynamic_global_property_object& props );
-            
-         void governance_update_account_set();
-
          void update_enterprise( const enterprise_object& enterprise, 
             const producer_schedule_object& pso, const dynamic_global_property_object& props );
 
          void process_enterprise_fund();
 
-          asset pay_fee_share( const account_object& payee, const asset& amount, bool recursive );
+         asset pay_fee_share( const account_object& payee, const asset& amount, bool recursive );
 
          asset pay_multi_fee_share( flat_set< const account_object* > payees, const asset& amount, bool recursive );
 
@@ -752,8 +786,10 @@ namespace node { namespace chain {
          share_type get_proxied_voting_power( const account_object& a, const price& equity_price )const;
          share_type get_proxied_voting_power( const account_name_type& a, const price& equity_price )const;
 
-         share_type get_equity_voting_power( const account_object& a, const account_business_object& b )const;
-         share_type get_equity_voting_power( const account_name_type& a, const account_business_object& b )const;
+         share_type get_equity_voting_power( const account_object& a, const business_object& b )const;
+         share_type get_equity_voting_power( const account_name_type& a, const business_object& b )const;
+         share_type get_equity_voting_power( const account_object& a, const governance_object& b )const;
+         share_type get_equity_voting_power( const account_name_type& a, const governance_object& b )const;
 
          void process_savings_withdraws();
 

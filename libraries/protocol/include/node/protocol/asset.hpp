@@ -17,7 +17,7 @@ namespace node { namespace protocol {
     * They must end with [A-Z0-9]
     * They can contain a maximum of ten '.'
     */
-   inline bool is_valid_symbol( const string& symbol )
+   inline bool validate_asset_symbol( const string& symbol )
    {
       static const std::locale& loc = std::locale::classic();
       if( symbol.size() < MIN_ASSET_SYMBOL_LENGTH )

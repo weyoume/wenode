@@ -16,15 +16,7 @@ namespace node { namespace protocol {
             account_create_operation,
             account_update_operation,
             account_verification_operation,
-            account_business_operation,
             account_membership_operation,
-            account_vote_executive_operation,
-            account_vote_officer_operation,
-            account_member_request_operation,
-            account_member_invite_operation,
-            account_accept_request_operation,
-            account_accept_invite_operation,
-            account_remove_member_operation,
             account_update_list_operation,
             account_producer_vote_operation,
             account_update_proxy_operation,
@@ -39,14 +31,32 @@ namespace node { namespace protocol {
             account_follow_tag_operation,
             account_activity_operation,
 
+            // Business Operations
+
+            business_create_operation,
+            business_update_operation,
+            business_executive_operation,
+            business_executive_vote_operation,
+            business_director_operation,
+            business_director_vote_operation,
+
+            // Governance Operations
+
+            governance_create_operation,
+            governance_update_operation,
+            governance_executive_operation,
+            governance_executive_vote_operation,
+            governance_director_operation,
+            governance_director_vote_operation,
+            governance_member_operation,
+            governance_member_request_operation,
+            governance_resolution_operation,
+            governance_resolution_vote_operation,
+
             // Network Operations
 
             network_officer_update_operation,
             network_officer_vote_operation,
-            executive_board_update_operation,
-            executive_board_vote_operation,
-            governance_update_operation,
-            governance_subscribe_operation,
             supernode_update_operation,
             interface_update_operation,
             mediator_update_operation,
@@ -54,7 +64,7 @@ namespace node { namespace protocol {
             enterprise_vote_operation,
             enterprise_fund_operation,
             
-            // Post and Comment operations
+            // Comment Operations
 
             comment_operation,
             comment_vote_operation,

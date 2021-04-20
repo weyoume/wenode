@@ -48,7 +48,6 @@ BOOST_AUTO_TEST_CASE( producer_update_operation_tests )
 
       private_key_type signing_key = generate_private_key( "alice_signing_key" );
 
-      producer_update.signatory = "alice";
       producer_update.owner = "alice";
       producer_update.details = "My Details";
       producer_update.url = "https://www.url.com";
@@ -624,7 +623,6 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
 
       verify_block_operation verify;
 
-      verify.signatory = "alice";
       verify.producer = "alice";
       verify.block_id = db.head_block_id();
       verify.validate();
@@ -648,7 +646,6 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
 
       account_create_operation create;
 
-      create.signatory = "alice";
       create.registrar = "alice";
       create.referrer = "alice";
       create.new_account_name = "newuser";
@@ -693,7 +690,6 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
       {
          string name = "newuser"+fc::to_string( i );
 
-         verify.signatory = name;
          verify.producer = name;
          
          tx.operations.push_back( verify );
@@ -706,7 +702,6 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
          tx.signatures.clear();
       }
 
-      verify.signatory = "alice";
       verify.producer = "alice";
       
       tx.operations.push_back( verify );
@@ -724,7 +719,6 @@ BOOST_AUTO_TEST_CASE( verify_block_operation_sequence_test )
       
       commit_block_operation commit;
 
-      commit.signatory = "alice";
       commit.producer = "alice";
       commit.block_id = verify.block_id;
       commit.verifications = verifications;

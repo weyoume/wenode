@@ -2,15 +2,21 @@
 
 ## To Do
 -----
-- Premium content purchasing
-- Community Federations and Connections
-- Community Messages
-- Quadratic fund matching for Enterprise Proposals
+
+- Governance Members
+- Governance Resolutions
+- Governance Executives
+- Governance Representatives
+- Governance Permission
+
 - Asset Supply Audit API method
 - The MegaTest
 - Genesis WYM Asset Distribution object
 - Genesis WYM Asset balances
-- Full Documentation for all Objects, Evaluators, Operations, API methods and Database Method
+- Full Documentation for all Objects, Evaluators, Operations, API methods and Database Methods
+- Interface signatures
+- Membership Updates
+- Unified Namespace
 
 ## Done
 -----
@@ -35,3 +41,8 @@
 - X11 Mining Algorithm
 - Anonymous Account
 - Account Verifications
+- Premium content purchasing
+- Community Federations and Connections
+- Community Messages
+- Quadratic fund matching for Enterprise Proposals
+- Business Object

@@ -389,12 +389,6 @@ void update_median_producer_props( database& db )
          return a->props.max_unstake_intervals < b->props.max_unstake_intervals;
       });
       mcpo.max_unstake_intervals = active[ offset ]->props.max_unstake_intervals;
-
-      std::nth_element( active.begin(), active.begin() + offset, active.end(), [&]( const producer_object* a, const producer_object* b )
-      {
-         return a->props.max_exec_budget < b->props.max_exec_budget;
-      });
-      mcpo.max_exec_budget = active[ offset ]->props.max_exec_budget;
    });
 }
 

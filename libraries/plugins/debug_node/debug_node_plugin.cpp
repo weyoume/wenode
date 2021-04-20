@@ -299,7 +299,7 @@ uint32_t debug_node_plugin::debug_generate_blocks(
       const chain::producer_object& scheduled_producer = db.get_producer( scheduled_producer_name );
       node::chain::public_key_type scheduled_key = scheduled_producer.signing_key;
 
-      producer_private_key = node::protocol::get_private_key( scheduled_producer_name, "producer", INIT_ACCOUNT_PASSWORD );
+      producer_private_key = node::protocol::get_private_key( scheduled_producer_name, "producer", INIT_PASSWORD );
    
       FC_ASSERT( producer_private_key.valid(), 
          "Producer private key invalid." );

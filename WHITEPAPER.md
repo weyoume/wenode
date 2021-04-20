@@ -929,7 +929,7 @@ Applications are able to utilize the WeYouMe FlashChain for the process of stagi
 
 - Proof of Authority block production: The blocks on the FlashChain are created and signed by the network’s application operating members, instead of elected witnesses. Any WeYouMe account that holds a top Level membership may create and sign blocks on the FlashChain. Block producers do not earn revenue for this procedure.
 
-- Malleability: Transactions broadcast into the FlashChain may be pruned by the transaction’s originating signatory, or by a 51% majority of network authorities after they are broadcast. Any transaction may be deleted by a deletion transaction broadcast with either the original account signature, or by a majority consensus among block producers.
+- Malleability: Transactions broadcast into the FlashChain may be pruned by the transaction’s originating account, or by a 51% majority of network authorities after they are broadcast. Any transaction may be deleted by a deletion transaction broadcast with either the original account signature, or by a majority consensus among block producers.
 
 - 24 Hour Transaction Pruning: Transactions included and stored in the FlashChain are pruned after 24 hours, rendering them inaccessible after this time. The Block producers of the FlashChain rebroadcast transactions contained in each outgoing block into the main network after it has reached its 24 hour lifespan, after which time it becomes immutable. 
 
@@ -1071,7 +1071,7 @@ Users of profile accounts provide their email address and phone number to their 
 
 Profile Accounts have security features that can be activated. These depend on the user’s governance address having access to their email address and phone number.
 
-Two-Factor authentication: The governance address is added as a signatory to the account’s wallet authority, and must verify payments, withdrawals from savings balances, and exchange trades. The governance address is able to request a two-factor authentication code before signing these transactions to protect user funds from theft.
+Two-Factor authentication: The governance address is added as a signing authority to the account’s wallet authority, and must verify payments, withdrawals from savings balances, and exchange trades. The governance address is able to request a two-factor authentication code before signing these transactions to protect user funds from theft.
 
 Password resetting: The user can publish a transaction requesting that the account authorities be updated to utilize a new password in the case that it is forgotten or hijacked. The user must confirm their identity using a series of recovery questions and confirming control of the email address and phone number used to create the account. The governance address is then able to confirm the transaction to update the account password.
 
@@ -2471,7 +2471,7 @@ To be eligible for election as a WeYouMe Executive Officer or deputy, applicants
 
 -	Be approved by at least 2 current Executive officers.
 
-Executive board roles are full time positions, and are compensated with a salary from the WeYouMe network, paid in MeCredit. All WeYouMe executive officers are designated as a signatory to the weyoume main account. This enables them to propose and accept transactions, which must be accepted by 3 of 10 officers or their deputies. 
+Executive board roles are full time positions, and are compensated with a salary from the WeYouMe network, paid in MeCredit. All WeYouMe executive officers are designated as a signing authority to the weyoume main account. This enables them to propose and accept transactions, which must be accepted by 3 of 10 officers or their deputies. 
 
 For a variety of functions, specific executive officers must concur:
 

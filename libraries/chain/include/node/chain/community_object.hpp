@@ -219,6 +219,8 @@ namespace node { namespace chain {
 
          bool                                           private_community = false;            ///< True when the community is private, and all posts must be encrypted.
 
+         bool                                           channel = false;                      ///< True when a community is a channel, and only accepts channel posts from admins.
+
          community_permission_type                      author_permission;                    ///< Determines which accounts can create root posts.
 
          community_permission_type                      reply_permission;                     ///< Determines which accounts can create replies to root posts.
@@ -1301,10 +1303,10 @@ namespace node { namespace chain {
 
 
    /**
-    * Community Member Requests  enables an account to seek permission to join a community.
+    * Community Member Requests enable an account to seek permission to join a community.
     * 
     * Contains a message from the account to the moderators of the community.
-    * Requests can be accepted by existing members of the community by 
+    * Requests can be accepted by existing members of the community with the creation of a community member object in response. 
     */
    class community_member_request_object : public object< community_member_request_object_type, community_member_request_object >
    {
@@ -2497,6 +2499,7 @@ FC_REFLECT( node::chain::community_permission_object,
          (name)
          (founder)
          (private_community)
+         (channel)
          (author_permission)
          (reply_permission)
          (vote_permission)

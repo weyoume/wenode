@@ -31,25 +31,15 @@ namespace node { namespace chain {
 
 void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
-   time_point now = _db.head_block_time();
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account) );
    const account_object& author = _db.get_account( o.author );
-
    FC_ASSERT( author.active, 
-      "Author: ${s} must be active for content to be used as ad creative.",("s", o.author) );
+      "Author: ${s} must be active for content to be used as ad creative.",
+      ("s", o.author) );
+   time_point now = _db.head_block_time();
 
    const auto& creative_idx = _db.get_index< ad_creative_index >().indices().get< by_creative_id >();
    auto creative_itr = creative_idx.find( boost::make_tuple( o.account, o.creative_id ) );
@@ -171,19 +161,9 @@ void ad_creative_evaluator::do_apply( const ad_creative_operation& o )
 
 void ad_campaign_evaluator::do_apply( const ad_campaign_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.account) );
 
    flat_set< account_name_type > agent_set;
    agent_set.insert( o.account );
@@ -269,28 +249,15 @@ void ad_campaign_evaluator::do_apply( const ad_campaign_operation& o )
 
 void ad_inventory_evaluator::do_apply( const ad_inventory_operation& o )
 { try {
-   const account_name_type& signed_for = o.provider;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   const interface_object& interface = _db.get_interface( o.provider );
-
-   FC_ASSERT( interface.active,
-      "Creating Ad Inventory requires an active interface." );
-
    const account_object& provider = _db.get_account( o.provider );
+   FC_ASSERT( provider.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.provider) );
    const ad_audience_object& audience = _db.get_ad_audience( provider.name, o.audience_id );
    FC_ASSERT( audience.active, 
       "Audience: ${s} must be active to broadcast transaction.",("s", o.audience_id) );
+   const interface_object& interface = _db.get_interface( o.provider );
+   FC_ASSERT( interface.active,
+      "Creating Ad Inventory requires an active interface." );
 
    time_point now = _db.head_block_time();
 
@@ -362,19 +329,9 @@ void ad_inventory_evaluator::do_apply( const ad_inventory_operation& o )
 
 void ad_audience_evaluator::do_apply( const ad_audience_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.account) );
 
    flat_set< account_name_type > audience_set;
 
@@ -431,23 +388,13 @@ void ad_audience_evaluator::do_apply( const ad_audience_operation& o )
 
 void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
 { try {
-   const account_name_type& signed_for = o.bidder;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
    const account_object& bidder = _db.get_account( o.bidder );
    const account_object& account = _db.get_account( o.account );
    const account_object& author = _db.get_account( o.author );
    const account_object& provider = _db.get_account( o.provider );
+
+   FC_ASSERT( bidder.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.bidder) );
 
    const ad_campaign_object& campaign = _db.get_ad_campaign( account.name, o.campaign_id );
    const ad_creative_object& creative = _db.get_ad_creative( author.name, o.creative_id );
@@ -529,7 +476,7 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
       _db.create< ad_audience_object >( [&]( ad_audience_object& aao )
       {
          aao.account = o.bidder;
-         from_string( aao.audience_id, o.audience_id );     // New audience ID is bid_id of the bid.
+         from_string( aao.audience_id, o.audience_id );
          from_string( aao.json, o.json );
          aao.audience = combined_audience;
          aao.created = now;
@@ -555,6 +502,12 @@ void ad_bid_evaluator::do_apply( const ad_bid_operation& o )
    {
       FC_ASSERT( o.active, 
          "Bid does not exist, set active to true." );
+      FC_ASSERT( account.active, 
+         "Account: ${s} must be active to create new bid.",("s", o.account) );
+      FC_ASSERT( author.active, 
+         "Author: ${s} must be active to create new bid.",("s", o.author) );
+      FC_ASSERT( provider.active, 
+         "Provider: ${s} must be active to create new bid.",("s", o.provider) );
 
       asset new_total_bids = campaign.total_bids + o.bid_price * o.requested;
 

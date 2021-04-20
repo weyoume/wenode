@@ -59,7 +59,6 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
 
       call_order_operation call;
 
-      call.signatory = "elon";
       call.owner = "elon";
       call.collateral = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       call.debt = asset( 2000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );     // 500% Collateralization
@@ -77,7 +76,6 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
 
       limit_order_operation limit;
 
-      limit.signatory = "alice";
       limit.owner = "alice";
       limit.order_id = "db35cabd-2aee-41b1-84ab-7372c4b6f8e5";
       limit.amount_to_sell = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -195,7 +193,6 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Filling existing limit order fully, but the new order partially" );
 
-      limit.signatory = "bob";
       limit.owner = "bob";
       limit.order_id = "10f11157-9460-4505-b346-28e5b9ed77ed";
       limit.amount_to_sell = asset( 2000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -230,7 +227,6 @@ BOOST_AUTO_TEST_CASE( limit_order_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Filling existing limit orders and the new order fully" );
 
-      limit.signatory = "candice";
       limit.owner = "candice";
       limit.order_id = "ad3cf087-bf74-41d8-9ff5-6e302fff2446";
       limit.amount_to_sell = asset( 3000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -298,7 +294,6 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
 
       call_order_operation call;
 
-      call.signatory = "elon";
       call.owner = "elon";
       call.collateral = asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       call.debt = asset( 20000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );     // 500% Collateralization
@@ -316,7 +311,6 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
 
       liquidity_pool_fund_operation fund;
 
-      fund.signatory = "elon";
       fund.account = "elon";
       fund.amount = asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       fund.pair_asset = SYMBOL_USD;
@@ -364,7 +358,6 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
 
       credit_pool_lend_operation lend;
 
-      lend.signatory = "elon";
       lend.account = "elon";
       lend.amount = asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       lend.validate();
@@ -376,7 +369,6 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      lend.signatory = "elon";
       lend.account = "elon";
       lend.amount = asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
 
@@ -391,7 +383,6 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
 
       credit_pool_collateral_operation collateral;
 
-      collateral.signatory = "alice";
       collateral.account = "alice";
       collateral.amount = asset( 8000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       collateral.validate();
@@ -405,7 +396,6 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
 
       generate_block();
 
-      collateral.signatory = "bob";
       collateral.account = "bob";
 
       tx.operations.push_back( collateral );
@@ -417,7 +407,6 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
 
       generate_block();
 
-      collateral.signatory = "candice";
       collateral.account = "candice";
 
       tx.operations.push_back( collateral );
@@ -429,7 +418,6 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
 
       generate_block();
 
-      collateral.signatory = "alice";
       collateral.account = "alice";
       collateral.amount = asset( 8000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       collateral.validate();
@@ -443,7 +431,6 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
 
       generate_block();
 
-      collateral.signatory = "bob";
       collateral.account = "bob";
 
       tx.operations.push_back( collateral );
@@ -455,7 +442,6 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
 
       generate_block();
 
-      collateral.signatory = "candice";
       collateral.account = "candice";
 
       tx.operations.push_back( collateral );
@@ -469,7 +455,6 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
 
       margin_order_operation margin;
 
-      margin.signatory = "alice";
       margin.owner = "alice";
       margin.order_id = "db35cabd-2aee-41b1-84ab-7372c4b6f8e5";
       margin.collateral = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -491,7 +476,6 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
 
       const margin_order_object& alice_order = db.get_margin_order( margin.owner, margin.order_id );
       
-
       BOOST_REQUIRE( alice_order.owner == margin.owner );
       BOOST_REQUIRE( alice_order.collateral == margin.collateral );
       BOOST_REQUIRE( alice_order.debt == margin.amount_to_borrow );
@@ -611,7 +595,6 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Filling existing margin order fully, but the new order partially" );
 
-      margin.signatory = "bob";
       margin.owner = "bob";
       margin.order_id = "10f11157-9460-4505-b346-28e5b9ed77ed";
       margin.collateral = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -651,7 +634,6 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Closing filled order at higher price" );
 
-      margin.signatory = "alice";
       margin.owner = "alice";
       margin.order_id = "db35cabd-2aee-41b1-84ab-7372c4b6f8e5";
       margin.amount_to_borrow = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -677,7 +659,6 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Filling existing margin orders" );
 
-      margin.signatory = "candice";
       margin.owner = "candice";
       margin.order_id = "60790f19-2046-4b7e-98ef-bab36153a945";
       margin.amount_to_borrow = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -713,7 +694,6 @@ BOOST_AUTO_TEST_CASE( margin_order_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Force closing filled remaining margin order" );
 
-      margin.signatory = "candice";
       margin.owner = "candice";
       margin.order_id = "60790f19-2046-4b7e-98ef-bab36153a945";
       margin.amount_to_borrow = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -781,7 +761,6 @@ BOOST_AUTO_TEST_CASE( auction_order_operation_test )
 
       call_order_operation call;
 
-      call.signatory = "elon";
       call.owner = "elon";
       call.collateral = asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       call.debt = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );     // 500% Collateralization
@@ -798,7 +777,6 @@ BOOST_AUTO_TEST_CASE( auction_order_operation_test )
 
       auction_order_operation auction;
 
-      auction.signatory = "alice";
       auction.owner = "alice";
       auction.order_id = "7390e715-56df-4d70-bd6b-13e3f6867b51";
       auction.amount_to_sell = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -823,7 +801,6 @@ BOOST_AUTO_TEST_CASE( auction_order_operation_test )
       BOOST_REQUIRE( alice_order.limit_close_price == auction.limit_close_price );
       BOOST_REQUIRE( alice_order.interface == auction.interface );
 
-      auction.signatory = "bob";
       auction.owner = "bob";
       auction.order_id = "9498ad7d-31bb-4b74-a49e-27f7e6b85620";
       auction.amount_to_sell = asset( 200 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -845,7 +822,6 @@ BOOST_AUTO_TEST_CASE( auction_order_operation_test )
       BOOST_REQUIRE( bob_order.limit_close_price == auction.limit_close_price );
       BOOST_REQUIRE( bob_order.interface == auction.interface );
 
-      auction.signatory = "candice";
       auction.owner = "candice";
       auction.order_id = "cb8d0249-7ebb-4574-8596-2cc2447ccbcc";
       auction.amount_to_sell = asset( 300 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -867,7 +843,6 @@ BOOST_AUTO_TEST_CASE( auction_order_operation_test )
       BOOST_REQUIRE( candice_order.limit_close_price == auction.limit_close_price );
       BOOST_REQUIRE( candice_order.interface == auction.interface );
 
-      auction.signatory = "dan";
       auction.owner = "dan";
       auction.order_id = "9743506a-0d99-47e5-9ca2-bad5a95c0055";
       auction.amount_to_sell = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -889,7 +864,6 @@ BOOST_AUTO_TEST_CASE( auction_order_operation_test )
       BOOST_REQUIRE( dan_order.limit_close_price == auction.limit_close_price );
       BOOST_REQUIRE( dan_order.interface == auction.interface );
 
-      auction.signatory = "elon";
       auction.owner = "elon";
       auction.order_id = "6be54f4a-6f02-498d-aa7f-ddc7d2fa035e";
       auction.amount_to_sell = asset( 200 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -911,7 +885,6 @@ BOOST_AUTO_TEST_CASE( auction_order_operation_test )
       BOOST_REQUIRE( elon_order.limit_close_price == auction.limit_close_price );
       BOOST_REQUIRE( elon_order.interface == auction.interface );
 
-      auction.signatory = "fred";
       auction.owner = "fred";
       auction.order_id = "c200c16c-b7cc-41aa-8c3b-bfb04b58b23e";
       auction.amount_to_sell = asset( 300 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -937,7 +910,6 @@ BOOST_AUTO_TEST_CASE( auction_order_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when account does not have required underlying funds" );
 
-      auction.signatory = "alice";
       auction.owner = "alice";
       auction.order_id = "7390e715-56df-4d70-bd6b-13e3f6867b51";
       auction.amount_to_sell = asset( 20000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -1050,7 +1022,6 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
 
       asset_publish_feed_operation feed;
 
-      feed.signatory = "alice";
       feed.publisher = "alice";
       feed.symbol = SYMBOL_USD;
       feed.feed.settlement_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -1066,7 +1037,6 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
 
       generate_block();
 
-      feed.signatory = "bob";
       feed.publisher = "bob";
 
       tx.operations.push_back( feed );
@@ -1076,7 +1046,6 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      feed.signatory = "candice";
       feed.publisher = "candice";
 
       generate_block();
@@ -1090,7 +1059,6 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
 
       generate_block();
 
-      feed.signatory = "dan";
       feed.publisher = "dan";
 
       tx.operations.push_back( feed );
@@ -1104,7 +1072,6 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
 
       call_order_operation call;
 
-      call.signatory = "alice";
       call.owner = "alice";
       call.collateral = asset( 1500 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       call.debt = asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_USD );     // 300% Collateralization
@@ -1136,7 +1103,6 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: updating call order to cover some of the debt position" );
 
-      call.signatory = "alice";
       call.owner = "alice";
       call.collateral = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       call.debt = asset( 400 * BLOCKCHAIN_PRECISION, SYMBOL_USD );    // 250% Collateralization
@@ -1206,7 +1172,6 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when creating new call with debt and collateral amount is 0" );
 
-      call.signatory = "bob";
       call.owner = "bob";
       call.collateral = asset( 0, SYMBOL_COIN );
       call.debt = asset( 0, SYMBOL_USD );
@@ -1238,7 +1203,6 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
 
       limit_order_operation limit;
 
-      limit.signatory = "bob";
       limit.owner = "bob";
       limit.order_id = "94b21fb9-5053-4a4d-ba96-b78d312dc054";
       limit.amount_to_sell = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -1289,7 +1253,6 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
 
       generate_block();
 
-      feed.signatory = "alice";
       feed.publisher = "alice";
       feed.symbol = SYMBOL_USD;
       feed.feed.settlement_price = price( asset( 50, SYMBOL_USD ),asset( 100, SYMBOL_COIN ) );   // Settlement price of $0.50
@@ -1303,7 +1266,6 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
 
       generate_block();
 
-      feed.signatory = "bob";
       feed.publisher = "bob";
 
       tx.operations.push_back( feed );
@@ -1315,7 +1277,6 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
 
       generate_block();
 
-      feed.signatory = "candice";
       feed.publisher = "candice";
 
       tx.operations.push_back( feed );
@@ -1327,7 +1288,6 @@ BOOST_AUTO_TEST_CASE( call_order_operation_test )
 
       generate_block();
 
-      feed.signatory = "dan";
       feed.publisher = "dan";
 
       tx.operations.push_back( feed );
@@ -1383,7 +1343,6 @@ BOOST_AUTO_TEST_CASE( option_order_operation_test )
 
       call_order_operation call;
 
-      call.signatory = "elon";
       call.owner = "elon";
       call.collateral = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       call.debt = asset( 3000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );     // 300% Collateralization
@@ -1400,11 +1359,10 @@ BOOST_AUTO_TEST_CASE( option_order_operation_test )
 
       option_order_operation option;
 
-      option.signatory = "alice";
       option.owner = "alice";
       option.order_id = "f0ed4510-b852-43ae-a383-3a9940a1f14b";
 
-      option_strike strike = option_strike( price( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ), asset( BLOCKCHAIN_PRECISION, SYMBOL_USD  ) ), true, 100, date_type( 1, 12, 2020 ) );
+      option_strike strike = option_strike( price( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ), asset( BLOCKCHAIN_PRECISION, SYMBOL_USD  ) ), true, 100, date_type( 1, 12, 2021 ) );
       
       option.options_issued = asset( 10 * BLOCKCHAIN_PRECISION, strike.option_symbol() );
       option.interface = INIT_ACCOUNT;
@@ -1452,7 +1410,6 @@ BOOST_AUTO_TEST_CASE( option_order_operation_test )
 
       transfer_operation transfer;
 
-      transfer.signatory = "alice";
       transfer.from = "alice";
       transfer.to = "bob";
       transfer.amount = asset( 5 * BLOCKCHAIN_PRECISION, strike.option_symbol() );
@@ -1468,7 +1425,6 @@ BOOST_AUTO_TEST_CASE( option_order_operation_test )
 
       asset_option_exercise_operation exercise;
 
-      exercise.signatory = "bob";
       exercise.account = "bob";
       exercise.amount = asset( 5 * BLOCKCHAIN_PRECISION, strike.option_symbol() );
       exercise.validate();

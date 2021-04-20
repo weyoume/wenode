@@ -77,12 +77,10 @@ BOOST_AUTO_TEST_CASE( standard_asset_operation_sequence_test )
       
       signed_transaction tx;
 
-      generate_blocks( GENESIS_TIME + fc::days(2), true );
-      generate_blocks( TOTAL_PRODUCERS );
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
       asset_create_operation asset_create;
 
-      asset_create.signatory = "alice";
       asset_create.issuer = "alice";
       asset_create.symbol = "ALICECOIN";
       asset_create.asset_type = "standard";
@@ -143,7 +141,6 @@ BOOST_AUTO_TEST_CASE( standard_asset_operation_sequence_test )
 
       asset_update_operation asset_update;
 
-      asset_update.signatory = "alice";
       asset_update.issuer = "alice";
       asset_update.asset_to_update = "ALICECOIN";
 
@@ -180,7 +177,6 @@ BOOST_AUTO_TEST_CASE( standard_asset_operation_sequence_test )
 
       asset_issue_operation asset_issue;
 
-      asset_issue.signatory = "alice";
       asset_issue.issuer = "alice";
       asset_issue.asset_to_issue = asset( 1000 * BLOCKCHAIN_PRECISION, asset_symbol_type( "ALICECOIN" ) );
       asset_issue.issue_to_account = "alice";
@@ -210,7 +206,6 @@ BOOST_AUTO_TEST_CASE( standard_asset_operation_sequence_test )
 
       asset_reserve_operation asset_reserve;
 
-      asset_reserve.signatory = "alice";
       asset_reserve.payer = "alice";
       asset_reserve.amount_to_reserve = asset( 500 * BLOCKCHAIN_PRECISION, asset_symbol_type( "ALICECOIN" ) );
       asset_reserve.validate();
@@ -236,7 +231,6 @@ BOOST_AUTO_TEST_CASE( standard_asset_operation_sequence_test )
 
       asset_distribution_operation distribution;
 
-      distribution.signatory = "alice";
       distribution.issuer = "alice";
       distribution.distribution_asset = "ALICECOIN";
       distribution.fund_asset = SYMBOL_USD;
@@ -300,7 +294,6 @@ BOOST_AUTO_TEST_CASE( standard_asset_operation_sequence_test )
 
       asset_distribution_fund_operation fund;
 
-      fund.signatory = "bob";
       fund.sender = "bob";
       fund.distribution_asset = "ALICECOIN";
       fund.amount = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -325,7 +318,6 @@ BOOST_AUTO_TEST_CASE( standard_asset_operation_sequence_test )
 
       generate_block();
 
-      fund.signatory = "candice";
       fund.sender = "candice";
       fund.amount = asset( 200 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
 
@@ -346,7 +338,6 @@ BOOST_AUTO_TEST_CASE( standard_asset_operation_sequence_test )
 
       generate_block();
 
-      fund.signatory = "dan";
       fund.sender = "dan";
       fund.amount = asset( 300 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
 
@@ -367,7 +358,6 @@ BOOST_AUTO_TEST_CASE( standard_asset_operation_sequence_test )
 
       generate_block();
 
-      fund.signatory = "elon";
       fund.sender = "elon";
       fund.amount = asset( 400 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
 
@@ -387,7 +377,7 @@ BOOST_AUTO_TEST_CASE( standard_asset_operation_sequence_test )
       BOOST_REQUIRE( elon_distribution_balance.created == now() );
 
       generate_blocks( db.get_asset_distribution( asset_symbol_type( "ALICECOIN" ) ).next_round_time, true );
-      generate_block();
+      generate_blocks( TOTAL_PRODUCERS );
 
       asset bob_alicecoin_balance = get_liquid_balance( "bob", "ALICECOIN" );
       asset candice_alicecoin_balance = get_liquid_balance( "candice", "ALICECOIN" );
@@ -405,7 +395,6 @@ BOOST_AUTO_TEST_CASE( standard_asset_operation_sequence_test )
 
       asset_update_issuer_operation asset_update_issuer;
 
-      asset_update_issuer.signatory = "alice";
       asset_update_issuer.issuer = "alice";
       asset_update_issuer.asset_to_update = "ALICECOIN";
       asset_update_issuer.new_issuer = "bob";
@@ -430,7 +419,6 @@ BOOST_AUTO_TEST_CASE( standard_asset_operation_sequence_test )
 
       asset init_bob_liquid = get_liquid_balance( "bob", "ALICECOIN" );
 
-      asset_issue.signatory = "bob";
       asset_issue.issuer = "bob";
       asset_issue.asset_to_issue = asset( 1000 * BLOCKCHAIN_PRECISION, asset_symbol_type( "ALICECOIN" ) );
       asset_issue.issue_to_account = "bob";
@@ -511,11 +499,10 @@ BOOST_AUTO_TEST_CASE( currency_asset_operation_sequence_test )
       
       signed_transaction tx;
 
-      generate_blocks( GENESIS_TIME + fc::days(2), true );
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
       asset_create_operation asset_create;
 
-      asset_create.signatory = "bob";
       asset_create.issuer = "bob";
       asset_create.symbol = "BOBCOIN";
       asset_create.asset_type = "currency";
@@ -572,7 +559,6 @@ BOOST_AUTO_TEST_CASE( currency_asset_operation_sequence_test )
 
       asset_update_operation asset_update;
 
-      asset_update.signatory = "bob";
       asset_update.issuer = "bob";
       asset_update.asset_to_update = "BOBCOIN";
 
@@ -662,34 +648,67 @@ BOOST_AUTO_TEST_CASE( equity_asset_operation_sequence_test )
       
       signed_transaction tx;
 
-      generate_blocks( GENESIS_TIME + fc::days(2), true );
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
-      account_create_operation account_create;
+      asset_options options;
 
-      account_create.signatory = "candice";
-      account_create.registrar = "candice";
-      account_create.new_account_name = "tropico";
-      account_create.referrer = INIT_ACCOUNT;
-      account_create.proxy = INIT_ACCOUNT;
-      account_create.recovery_account = INIT_ACCOUNT;
-      account_create.reset_account = INIT_ACCOUNT;
-      account_create.details = "My Details";
-      account_create.url = "https://www.url.com";
-      account_create.json = "{ \"valid\": true }";
-      account_create.json_private = "{ \"valid\": true }";
-      account_create.owner_auth = authority( 1, candice_public_owner_key, 1 );
-      account_create.active_auth = authority( 1, candice_public_active_key, 1 );
-      account_create.posting_auth = authority( 1, candice_public_posting_key, 1 );
-      account_create.secure_public_key = string( candice_public_secure_key );
-      account_create.connection_public_key = string( candice_public_connection_key );
-      account_create.friend_public_key = string( candice_public_friend_key );
-      account_create.companion_public_key = string( candice_public_friend_key );
-      account_create.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      account_create.validate();
+      options.display_symbol = "TRO";
+      options.details = "Details";
+      options.json = "{ \"valid\": true }";
+      options.url = "https://www.url.com";
+      options.buyback_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, "TROPICOCR") );
+      options.validate();
+
+      business_create_operation business_create;
+
+      business_create.founder = "candice";
+      business_create.new_business_name = "tropico";
+      business_create.new_business_trading_name = "TROPICO";
+      business_create.details = "My Details";
+      business_create.url = "https://www.url.com";
+      business_create.secure_public_key = string( candice_public_posting_key );
+      business_create.connection_public_key = string( candice_public_posting_key );
+      business_create.friend_public_key = string( candice_public_posting_key );
+      business_create.companion_public_key = string( candice_public_posting_key );
+      business_create.interface = INIT_ACCOUNT;
+      business_create.equity_asset = "TROPICOEQ";
+      business_create.equity_revenue_share = 5 * PERCENT_1;
+      business_create.equity_options = options;
+      business_create.credit_asset = "TROPICOCR";
+      business_create.credit_revenue_share = 5 * PERCENT_1;
+      business_create.credit_options = options;
+      business_create.public_community = "tropico.discussion";
+      business_create.public_display_name = "Business Discussion";
+      business_create.public_community_member_key = string( candice_public_posting_key );
+      business_create.public_community_moderator_key = string( candice_public_posting_key );
+      business_create.public_community_admin_key = string( candice_public_posting_key );
+      business_create.public_community_secure_key = string( candice_public_posting_key );
+      business_create.public_community_standard_premium_key = string( candice_public_posting_key );
+      business_create.public_community_mid_premium_key = string( candice_public_posting_key );
+      business_create.public_community_top_premium_key = string( candice_public_posting_key );
+      business_create.private_community = "tropico.private";
+      business_create.private_display_name = "Business Discussion";
+      business_create.private_community_member_key = string( candice_public_posting_key );
+      business_create.private_community_moderator_key = string( candice_public_posting_key );
+      business_create.private_community_admin_key = string( candice_public_posting_key );
+      business_create.private_community_secure_key = string( candice_public_posting_key );
+      business_create.private_community_standard_premium_key = string( candice_public_posting_key );
+      business_create.private_community_mid_premium_key = string( candice_public_posting_key );
+      business_create.private_community_top_premium_key = string( candice_public_posting_key );
+      business_create.reward_currency = SYMBOL_COIN;
+      business_create.standard_membership_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.mid_membership_price = asset( 10*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.top_membership_price = asset( 100*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.coin_liquidity = asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.usd_liquidity = asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      business_create.credit_liquidity = asset( 1000*BLOCKCHAIN_PRECISION, "TROPICOEQ" );
+      business_create.fee = asset( 50 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.delegation = asset( 50 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.validate();
 
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.set_reference_block( db.head_block_id() );
-      tx.operations.push_back( account_create );
+      tx.operations.push_back( business_create );
       tx.sign( candice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -702,86 +721,36 @@ BOOST_AUTO_TEST_CASE( equity_asset_operation_sequence_test )
 
       generate_block();
 
-      account_business_operation account_business;
-
-      account_business.signatory = "tropico";
-      account_business.account = "tropico";
-      account_business.init_ceo_account = "candice";
-      account_business.business_type = "open";
-      account_business.officer_vote_threshold = BLOCKCHAIN_PRECISION;
-      account_business.business_public_key = string( candice_public_connection_key );
-      account_business.active = true;
-      account_business.validate();
-
-      tx.operations.push_back( account_business );
-      tx.sign( candice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
       generate_blocks( now() + fc::days(2), true );
       generate_block();
 
-      const account_business_object& tropico_business = db.get_account_business( account_name_type( "tropico" ) );
+      const business_object& tropico_business = db.get_business( account_name_type( "tropico" ) );
+      BOOST_REQUIRE( tropico_business.account == business_create.new_business_name );
 
-      BOOST_REQUIRE( tropico_business.account == account_business.account );
-      BOOST_REQUIRE( tropico_business.executive_board.CHIEF_EXECUTIVE_OFFICER == account_business.init_ceo_account );
-      BOOST_REQUIRE( tropico_business.business_type == business_structure_type::OPEN_BUSINESS );
+      const account_authority_object& tropico_auth = db.get_account_authority( account_name_type( "tropico" ) );
+      BOOST_REQUIRE( tropico_auth.owner_auth.account_auths.begin()->first == business_create.founder );
 
-      asset_create_operation asset_create;
-      
-      asset_create.signatory = "tropico";
-      asset_create.issuer = "tropico";
-      asset_create.symbol = "TROPICO";
-      asset_create.asset_type = "equity";
-      asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
-      asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, asset_symbol_type( "TROPICO" ) );
+      const asset_object& candice_equity_asset = db.get_asset( asset_symbol_type( "TROPICOEQ" ) );
 
-      asset_options options;
+      BOOST_REQUIRE( candice_equity_asset.issuer == business_create.new_business_name );
+      BOOST_REQUIRE( candice_equity_asset.symbol == business_create.equity_asset );
+      BOOST_REQUIRE( candice_equity_asset.asset_type == asset_property_type::EQUITY_ASSET );
 
-      options.display_symbol = "TRO";
-      options.details = "Details";
-      options.json = "{ \"valid\": true }";
-      options.url = "https://www.url.com";
-      options.validate();
+      const asset_equity_data_object& candice_equity = db.get_equity_data( asset_symbol_type( "TROPICOEQ" ) );
 
-      asset_create.options = options;
-      asset_create.validate();
+      BOOST_REQUIRE( candice_equity.issuer == business_create.new_business_name );
 
-      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.set_reference_block( db.head_block_id() );
-      tx.operations.push_back( asset_create );
-      tx.sign( candice_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
+      const asset_credit_pool_object& candice_credit_pool = db.get_credit_pool( asset_symbol_type( "TROPICOEQ" ), false );
 
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      const asset_object& candice_asset = db.get_asset( asset_symbol_type( "TROPICO" ) );
-
-      BOOST_REQUIRE( candice_asset.issuer == asset_create.issuer );
-      BOOST_REQUIRE( candice_asset.symbol == asset_create.symbol );
-      BOOST_REQUIRE( candice_asset.asset_type == asset_property_type::EQUITY_ASSET );
-      BOOST_REQUIRE( candice_asset.created == now() );
-      BOOST_REQUIRE( candice_asset.last_updated == now() );
-
-      const asset_equity_data_object& candice_equity = db.get_equity_data( asset_symbol_type( "TROPICO" ) );
-
-      BOOST_REQUIRE( candice_equity.business_account == asset_create.issuer );
-
-      const asset_credit_pool_object& candice_credit_pool = db.get_credit_pool( asset_symbol_type( "TROPICO" ), false );
-
-      BOOST_REQUIRE( candice_credit_pool.base_balance == asset_create.credit_liquidity );
+      BOOST_REQUIRE( candice_credit_pool.base_balance == business_create.credit_liquidity );
       BOOST_REQUIRE( candice_credit_pool.borrowed_balance.amount == 0 );
 
-      const asset_liquidity_pool_object& candice_liquidity_pool = db.get_liquidity_pool( SYMBOL_COIN, asset_symbol_type( "TROPICO" ) );
+      const asset_liquidity_pool_object& candice_liquidity_pool = db.get_liquidity_pool( SYMBOL_COIN, asset_symbol_type( "TROPICOEQ" ) );
 
       BOOST_REQUIRE( candice_liquidity_pool.symbol_a == SYMBOL_COIN );
-      BOOST_REQUIRE( candice_liquidity_pool.symbol_b == asset_symbol_type( "TROPICO" ) );
-      BOOST_REQUIRE( candice_liquidity_pool.balance_a == asset_create.coin_liquidity );
-      BOOST_REQUIRE( candice_liquidity_pool.balance_b == asset( asset_create.coin_liquidity.amount, asset_symbol_type( "TROPICO" ) ) );
+      BOOST_REQUIRE( candice_liquidity_pool.symbol_b == asset_symbol_type( "TROPICOEQ" ) );
+      BOOST_REQUIRE( candice_liquidity_pool.balance_a == business_create.coin_liquidity );
+      BOOST_REQUIRE( candice_liquidity_pool.balance_b == asset( business_create.coin_liquidity.amount, asset_symbol_type( "TROPICOEQ" ) ) );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Create equity asset" );
 
@@ -792,9 +761,8 @@ BOOST_AUTO_TEST_CASE( equity_asset_operation_sequence_test )
 
       asset_update_operation asset_update;
 
-      asset_update.signatory = "tropico";
       asset_update.issuer = "tropico";
-      asset_update.asset_to_update = "TROPICO";
+      asset_update.asset_to_update = "TROPICOEQ";
 
       asset_options new_options;
 
@@ -817,18 +785,18 @@ BOOST_AUTO_TEST_CASE( equity_asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const asset_object& new_candice_asset = db.get_asset( asset_symbol_type( "TROPICO" ) );
+      const asset_object& new_candice_equity_asset = db.get_asset( asset_symbol_type( "TROPICOEQ" ) );
 
-      BOOST_REQUIRE( new_candice_asset.issuer == asset_create.issuer );
-      BOOST_REQUIRE( new_candice_asset.symbol == asset_create.symbol );
-      BOOST_REQUIRE( new_candice_asset.asset_type == asset_property_type::EQUITY_ASSET );
-      BOOST_REQUIRE( to_string( new_candice_asset.display_symbol ) == asset_update.new_options.display_symbol );
-      BOOST_REQUIRE( to_string( new_candice_asset.details ) == asset_update.new_options.details );
-      BOOST_REQUIRE( to_string( new_candice_asset.json ) == asset_update.new_options.json );
-      BOOST_REQUIRE( to_string( new_candice_asset.url ) == asset_update.new_options.url );
-      BOOST_REQUIRE( new_candice_asset.last_updated == now() );
+      BOOST_REQUIRE( new_candice_equity_asset.issuer == business_create.new_business_name );
+      BOOST_REQUIRE( new_candice_equity_asset.symbol == business_create.equity_asset );
+      BOOST_REQUIRE( new_candice_equity_asset.asset_type == asset_property_type::EQUITY_ASSET );
+      BOOST_REQUIRE( to_string( new_candice_equity_asset.display_symbol ) == asset_update.new_options.display_symbol );
+      BOOST_REQUIRE( to_string( new_candice_equity_asset.details ) == asset_update.new_options.details );
+      BOOST_REQUIRE( to_string( new_candice_equity_asset.json ) == asset_update.new_options.json );
+      BOOST_REQUIRE( to_string( new_candice_equity_asset.url ) == asset_update.new_options.url );
+      BOOST_REQUIRE( new_candice_equity_asset.last_updated == now() );
 
-      const asset_equity_data_object& new_candice_equity = db.get_equity_data( asset_symbol_type( "TROPICO" ) );
+      const asset_equity_data_object& new_candice_equity = db.get_equity_data( asset_symbol_type( "TROPICOEQ" ) );
 
       BOOST_REQUIRE( new_candice_equity.dividend_share_percent == asset_update.new_options.dividend_share_percent );
 
@@ -840,9 +808,8 @@ BOOST_AUTO_TEST_CASE( equity_asset_operation_sequence_test )
 
       asset_issue_operation asset_issue;
 
-      asset_issue.signatory = "tropico";
       asset_issue.issuer = "tropico";
-      asset_issue.asset_to_issue = asset( 1000 * BLOCKCHAIN_PRECISION, asset_symbol_type( "TROPICO" ) );
+      asset_issue.asset_to_issue = asset( 1000 * BLOCKCHAIN_PRECISION, asset_symbol_type( "TROPICOEQ" ) );
       asset_issue.issue_to_account = "candice";
       asset_issue.memo = "Hello";
       asset_issue.validate();
@@ -854,11 +821,11 @@ BOOST_AUTO_TEST_CASE( equity_asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      asset candice_liquid = get_liquid_balance( "candice", "TROPICO" );
+      asset candice_liquid = get_liquid_balance( "candice", "TROPICOEQ" );
 
       BOOST_REQUIRE( candice_liquid == asset_issue.asset_to_issue );
-      BOOST_REQUIRE( db.get_dynamic_data( asset_symbol_type( "TROPICO" ) ).get_total_supply() == asset_issue.asset_to_issue + asset_create.credit_liquidity * 3 );
-      BOOST_REQUIRE( db.get_dynamic_data( asset_symbol_type( "TROPICO" ) ).get_liquid_supply() == asset_issue.asset_to_issue );
+      BOOST_REQUIRE( db.get_dynamic_data( asset_symbol_type( "TROPICOEQ" ) ).get_total_supply() == asset_issue.asset_to_issue + business_create.credit_liquidity * 3 );
+      BOOST_REQUIRE( db.get_dynamic_data( asset_symbol_type( "TROPICOEQ" ) ).get_liquid_supply() == asset_issue.asset_to_issue );
 
       generate_block();
 
@@ -868,9 +835,8 @@ BOOST_AUTO_TEST_CASE( equity_asset_operation_sequence_test )
 
       asset_reserve_operation asset_reserve;
 
-      asset_reserve.signatory = "candice";
       asset_reserve.payer = "candice";
-      asset_reserve.amount_to_reserve = asset( 500 * BLOCKCHAIN_PRECISION, asset_symbol_type( "TROPICO" ) );
+      asset_reserve.amount_to_reserve = asset( 500 * BLOCKCHAIN_PRECISION, asset_symbol_type( "TROPICOEQ" ) );
 
       tx.operations.push_back( asset_reserve );
       tx.sign( candice_private_active_key, db.get_chain_id() );
@@ -879,11 +845,11 @@ BOOST_AUTO_TEST_CASE( equity_asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      candice_liquid = get_liquid_balance( "candice", "TROPICO" );
+      candice_liquid = get_liquid_balance( "candice", "TROPICOEQ" );
 
       BOOST_REQUIRE( candice_liquid == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
-      BOOST_REQUIRE( db.get_dynamic_data( asset_symbol_type( "TROPICO" ) ).get_total_supply() == asset_issue.asset_to_issue + asset_create.credit_liquidity * 3 - asset_reserve.amount_to_reserve );
-      BOOST_REQUIRE( db.get_dynamic_data( asset_symbol_type( "TROPICO" ) ).get_liquid_supply() == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
+      BOOST_REQUIRE( db.get_dynamic_data( asset_symbol_type( "TROPICOEQ" ) ).get_total_supply() == asset_issue.asset_to_issue + business_create.credit_liquidity * 3 - asset_reserve.amount_to_reserve );
+      BOOST_REQUIRE( db.get_dynamic_data( asset_symbol_type( "TROPICOEQ" ) ).get_liquid_supply() == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
 
       generate_block();
 
@@ -948,34 +914,67 @@ BOOST_AUTO_TEST_CASE( bond_asset_operation_sequence_test )
       
       signed_transaction tx;
 
-      generate_blocks( GENESIS_TIME + fc::days(2), true );
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
-      account_create_operation account_create;
+      asset_options options;
 
-      account_create.signatory = "dan";
-      account_create.registrar = "dan";
-      account_create.new_account_name = "blocktwo";
-      account_create.referrer = INIT_ACCOUNT;
-      account_create.proxy = INIT_ACCOUNT;
-      account_create.recovery_account = INIT_ACCOUNT;
-      account_create.reset_account = INIT_ACCOUNT;
-      account_create.details = "My Details";
-      account_create.url = "https://www.url.com";
-      account_create.json = "{ \"valid\": true }";
-      account_create.json_private = "{ \"valid\": true }";
-      account_create.owner_auth = authority( 1, dan_private_owner_key.get_public_key(), 1 );
-      account_create.active_auth = authority( 1, dan_private_active_key.get_public_key(), 1 );
-      account_create.posting_auth = authority( 1, dan_private_posting_key.get_public_key(), 1 );
-      account_create.secure_public_key = string( public_key_type( dan_private_posting_key.get_public_key() ) );
-      account_create.connection_public_key = string( public_key_type( dan_private_posting_key.get_public_key() ) );
-      account_create.friend_public_key = string( public_key_type( dan_private_posting_key.get_public_key() ) );
-      account_create.companion_public_key = string( public_key_type( dan_private_posting_key.get_public_key() ) );
-      account_create.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      account_create.validate();
+      options.display_symbol = "BLOCK TWO";
+      options.details = "Details";
+      options.json = "{ \"valid\": true }";
+      options.url = "https://www.url.com";
+      options.buyback_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, "BLOCKTWOCR") );
+      options.validate();
+
+      business_create_operation business_create;
+
+      business_create.founder = "dan";
+      business_create.new_business_name = "blocktwo";
+      business_create.new_business_trading_name = "BLOCK TWO";
+      business_create.details = "My Details";
+      business_create.url = "https://www.url.com";
+      business_create.secure_public_key = string( dan_public_posting_key );
+      business_create.connection_public_key = string( dan_public_posting_key );
+      business_create.friend_public_key = string( dan_public_posting_key );
+      business_create.companion_public_key = string( dan_public_posting_key );
+      business_create.interface = INIT_ACCOUNT;
+      business_create.equity_asset = "BLOCKTWOEQ";
+      business_create.equity_revenue_share = 5 * PERCENT_1;
+      business_create.equity_options = options;
+      business_create.credit_asset = "BLOCKTWOCR";
+      business_create.credit_revenue_share = 5 * PERCENT_1;
+      business_create.credit_options = options;
+      business_create.public_community = "blocktwo.discussion";
+      business_create.public_display_name = "Business Discussion";
+      business_create.public_community_member_key = string( dan_public_posting_key );
+      business_create.public_community_moderator_key = string( dan_public_posting_key );
+      business_create.public_community_admin_key = string( dan_public_posting_key );
+      business_create.public_community_secure_key = string( dan_public_posting_key );
+      business_create.public_community_standard_premium_key = string( dan_public_posting_key );
+      business_create.public_community_mid_premium_key = string( dan_public_posting_key );
+      business_create.public_community_top_premium_key = string( dan_public_posting_key );
+      business_create.private_community = "blocktwo.private";
+      business_create.private_display_name = "Business Discussion";
+      business_create.private_community_member_key = string( dan_public_posting_key );
+      business_create.private_community_moderator_key = string( dan_public_posting_key );
+      business_create.private_community_admin_key = string( dan_public_posting_key );
+      business_create.private_community_secure_key = string( dan_public_posting_key );
+      business_create.private_community_standard_premium_key = string( dan_public_posting_key );
+      business_create.private_community_mid_premium_key = string( dan_public_posting_key );
+      business_create.private_community_top_premium_key = string( dan_public_posting_key );
+      business_create.reward_currency = SYMBOL_COIN;
+      business_create.standard_membership_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.mid_membership_price = asset( 10*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.top_membership_price = asset( 100*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.coin_liquidity = asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.usd_liquidity = asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      business_create.credit_liquidity = asset( 1000*BLOCKCHAIN_PRECISION, "BLOCKTWOEQ" );
+      business_create.fee = asset( 50 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.delegation = asset( 50 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.validate();
 
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.set_reference_block( db.head_block_id() );
-      tx.operations.push_back( account_create );
+      tx.operations.push_back( business_create );
       tx.sign( dan_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -986,48 +985,24 @@ BOOST_AUTO_TEST_CASE( bond_asset_operation_sequence_test )
       fund_stake( "blocktwo", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "blocktwo", asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
 
-      generate_block();
+      const business_object& blocktwo_business = db.get_business( account_name_type( "blocktwo" ) );
+      BOOST_REQUIRE( blocktwo_business.account == business_create.new_business_name );
 
-      account_business_operation account_business;
+      const account_authority_object& blocktwo_auth = db.get_account_authority( account_name_type( "blocktwo" ) );
+      BOOST_REQUIRE( blocktwo_auth.owner_auth.account_auths.begin()->first == business_create.founder );
 
-      account_business.signatory = "blocktwo";
-      account_business.account = "blocktwo";
-      account_business.init_ceo_account = "dan";
-      account_business.business_type = "open";
-      account_business.officer_vote_threshold = BLOCKCHAIN_PRECISION;
-      account_business.business_public_key = string( dan_public_connection_key );
-      account_business.active = true;
-      account_business.validate();
-
-      tx.operations.push_back( account_business );
-      tx.sign( dan_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      const account_business_object& blocktwo_business = db.get_account_business( account_name_type( "blocktwo" ) );
-
-      BOOST_REQUIRE( blocktwo_business.account == account_business.account );
-      BOOST_REQUIRE( blocktwo_business.executive_board.CHIEF_EXECUTIVE_OFFICER == account_business.init_ceo_account );
-      BOOST_REQUIRE( blocktwo_business.business_type == business_structure_type::OPEN_BUSINESS );
-
-      generate_blocks( now() + fc::days(2), true );
-      generate_block();
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
       date_type maturity = date_type( now() + fc::days(180) );
 
       asset_create_operation asset_create;
 
-      asset_create.signatory = "blocktwo";
       asset_create.issuer = "blocktwo";
       asset_create.symbol = "BLOCKBOND";
       asset_create.asset_type = "bond";
       asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, asset_symbol_type( "BLOCKBOND" ) );
-
-      asset_options options;
 
       options.display_symbol = "Block Two Bonds";
       options.details = "Details";
@@ -1061,7 +1036,7 @@ BOOST_AUTO_TEST_CASE( bond_asset_operation_sequence_test )
 
       const asset_bond_data_object& bond_data = db.get_bond_data( asset_symbol_type( "BLOCKBOND" ) );
 
-      BOOST_REQUIRE( bond_data.business_account == asset_create.issuer );
+      BOOST_REQUIRE( bond_data.issuer == asset_create.issuer );
       BOOST_REQUIRE( bond_data.value == asset_create.options.value );
       BOOST_REQUIRE( bond_data.collateralization == asset_create.options.collateralization );
       BOOST_REQUIRE( bond_data.coupon_rate_percent == asset_create.options.coupon_rate_percent );
@@ -1076,7 +1051,6 @@ BOOST_AUTO_TEST_CASE( bond_asset_operation_sequence_test )
 
       asset_update_operation asset_update;
 
-      asset_update.signatory = "blocktwo";
       asset_update.issuer = "blocktwo";
       asset_update.asset_to_update = "BLOCKBOND";
 
@@ -1117,7 +1091,7 @@ BOOST_AUTO_TEST_CASE( bond_asset_operation_sequence_test )
 
       const asset_bond_data_object& new_bond_data = db.get_bond_data( asset_symbol_type( "BLOCKBOND" ) );
 
-      BOOST_REQUIRE( new_bond_data.business_account == asset_update.issuer );
+      BOOST_REQUIRE( new_bond_data.issuer == asset_update.issuer );
       BOOST_REQUIRE( new_bond_data.value == asset_update.new_options.value );
       BOOST_REQUIRE( new_bond_data.collateralization == asset_update.new_options.collateralization );
       BOOST_REQUIRE( new_bond_data.coupon_rate_percent == asset_update.new_options.coupon_rate_percent );
@@ -1132,7 +1106,6 @@ BOOST_AUTO_TEST_CASE( bond_asset_operation_sequence_test )
 
       asset_issue_operation asset_issue;
 
-      asset_issue.signatory = "blocktwo";
       asset_issue.issuer = "blocktwo";
       asset_issue.asset_to_issue = asset( 1000 * BLOCKCHAIN_PRECISION, asset_symbol_type( "BLOCKBOND" ) );
       asset_issue.issue_to_account = "dan";
@@ -1162,7 +1135,6 @@ BOOST_AUTO_TEST_CASE( bond_asset_operation_sequence_test )
 
       asset_reserve_operation asset_reserve;
 
-      asset_reserve.signatory = "dan";
       asset_reserve.payer = "dan";
       asset_reserve.amount_to_reserve = asset( 500 * BLOCKCHAIN_PRECISION, asset_symbol_type( "BLOCKBOND" ) );
 
@@ -1242,34 +1214,67 @@ BOOST_AUTO_TEST_CASE( credit_asset_operation_sequence_test )
       
       signed_transaction tx;
 
-      generate_blocks( GENESIS_TIME + fc::days(2), true );
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
-      account_create_operation account_create;
+      asset_options options;
 
-      account_create.signatory = "dan";
-      account_create.registrar = "dan";
-      account_create.new_account_name = "blocktwo";
-      account_create.referrer = INIT_ACCOUNT;
-      account_create.proxy = INIT_ACCOUNT;
-      account_create.recovery_account = INIT_ACCOUNT;
-      account_create.reset_account = INIT_ACCOUNT;
-      account_create.details = "My Details";
-      account_create.url = "https://www.url.com";
-      account_create.json = "{ \"valid\": true }";
-      account_create.json_private = "{ \"valid\": true }";
-      account_create.owner_auth = authority( 1, dan_private_owner_key.get_public_key(), 1 );
-      account_create.active_auth = authority( 1, dan_private_active_key.get_public_key(), 1 );
-      account_create.posting_auth = authority( 1, dan_private_posting_key.get_public_key(), 1 );
-      account_create.secure_public_key = string( public_key_type( dan_private_posting_key.get_public_key() ) );
-      account_create.connection_public_key = string( public_key_type( dan_private_posting_key.get_public_key() ) );
-      account_create.friend_public_key = string( public_key_type( dan_private_posting_key.get_public_key() ) );
-      account_create.companion_public_key = string( public_key_type( dan_private_posting_key.get_public_key() ) );
-      account_create.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      account_create.validate();
+      options.display_symbol = "BLOCK TWO";
+      options.details = "Details";
+      options.json = "{ \"valid\": true }";
+      options.url = "https://www.url.com";
+      options.buyback_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, "BLOCKTWOCR") );
+      options.validate();
+
+      business_create_operation business_create;
+
+      business_create.founder = "dan";
+      business_create.new_business_name = "blocktwo";
+      business_create.new_business_trading_name = "BLOCK TWO";
+      business_create.details = "My Details";
+      business_create.url = "https://www.url.com";
+      business_create.secure_public_key = string( dan_public_posting_key );
+      business_create.connection_public_key = string( dan_public_posting_key );
+      business_create.friend_public_key = string( dan_public_posting_key );
+      business_create.companion_public_key = string( dan_public_posting_key );
+      business_create.interface = INIT_ACCOUNT;
+      business_create.equity_asset = "BLOCKTWOEQ";
+      business_create.equity_revenue_share = 5 * PERCENT_1;
+      business_create.equity_options = options;
+      business_create.credit_asset = "BLOCKTWOCR";
+      business_create.credit_revenue_share = 5 * PERCENT_1;
+      business_create.credit_options = options;
+      business_create.public_community = "blocktwo.discussion";
+      business_create.public_display_name = "Business Discussion";
+      business_create.public_community_member_key = string( dan_public_posting_key );
+      business_create.public_community_moderator_key = string( dan_public_posting_key );
+      business_create.public_community_admin_key = string( dan_public_posting_key );
+      business_create.public_community_secure_key = string( dan_public_posting_key );
+      business_create.public_community_standard_premium_key = string( dan_public_posting_key );
+      business_create.public_community_mid_premium_key = string( dan_public_posting_key );
+      business_create.public_community_top_premium_key = string( dan_public_posting_key );
+      business_create.private_community = "blocktwo.private";
+      business_create.private_display_name = "Business Discussion";
+      business_create.private_community_member_key = string( dan_public_posting_key );
+      business_create.private_community_moderator_key = string( dan_public_posting_key );
+      business_create.private_community_admin_key = string( dan_public_posting_key );
+      business_create.private_community_secure_key = string( dan_public_posting_key );
+      business_create.private_community_standard_premium_key = string( dan_public_posting_key );
+      business_create.private_community_mid_premium_key = string( dan_public_posting_key );
+      business_create.private_community_top_premium_key = string( dan_public_posting_key );
+      business_create.reward_currency = SYMBOL_COIN;
+      business_create.standard_membership_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.mid_membership_price = asset( 10*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.top_membership_price = asset( 100*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.coin_liquidity = asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.usd_liquidity = asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      business_create.credit_liquidity = asset( 1000*BLOCKCHAIN_PRECISION, "BLOCKTWOEQ" );
+      business_create.fee = asset( 50 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.delegation = asset( 50 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.validate();
 
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.set_reference_block( db.head_block_id() );
-      tx.operations.push_back( account_create );
+      tx.operations.push_back( business_create );
       tx.sign( dan_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -1280,91 +1285,37 @@ BOOST_AUTO_TEST_CASE( credit_asset_operation_sequence_test )
       fund_stake( "blocktwo", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "blocktwo", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
 
-      generate_block();
+      const business_object& blocktwo_business = db.get_business( account_name_type( "blocktwo" ) );
+      BOOST_REQUIRE( blocktwo_business.account == business_create.new_business_name );
 
-      account_business_operation account_business;
+      const account_authority_object& blocktwo_auth = db.get_account_authority( account_name_type( "blocktwo" ) );
+      BOOST_REQUIRE( blocktwo_auth.owner_auth.account_auths.begin()->first == business_create.founder );
 
-      account_business.signatory = "blocktwo";
-      account_business.account = "blocktwo";
-      account_business.init_ceo_account = "dan";
-      account_business.business_type = "open";
-      account_business.officer_vote_threshold = BLOCKCHAIN_PRECISION;
-      account_business.business_public_key = string( dan_public_connection_key );
-      account_business.active = true;
-      account_business.validate();
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
-      tx.operations.push_back( account_business );
-      tx.sign( dan_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
+      const asset_object& dan_credit_asset = db.get_asset( asset_symbol_type( "BLOCKTWOCR" ) );
 
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      const account_business_object& blocktwo_business = db.get_account_business( account_name_type( "blocktwo" ) );
-
-      BOOST_REQUIRE( blocktwo_business.account == account_business.account );
-      BOOST_REQUIRE( blocktwo_business.executive_board.CHIEF_EXECUTIVE_OFFICER == account_business.init_ceo_account );
-      BOOST_REQUIRE( blocktwo_business.business_type == business_structure_type::OPEN_BUSINESS );
-
-      generate_blocks( now() + fc::days(2), true );
-      generate_block();
-
-      asset_create_operation asset_create;
-
-      asset_create.signatory = "blocktwo";
-      asset_create.issuer = "blocktwo";
-      asset_create.symbol = "BLOCKTWO";
-      asset_create.asset_type = "credit";
-      asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
-      asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, asset_symbol_type( "BLOCKTWO" ) );
-
-      asset_options options;
-
-      options.display_symbol = "Block Two";
-      options.details = "Details";
-      options.json = "{ \"valid\": true }";
-      options.url = "https://www.url.com";
-      options.buyback_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, "BLOCKTWO") );
-
-      asset_create.options = options;
-      options.validate();
-      asset_create.validate();
-
-      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      tx.set_reference_block( db.head_block_id() );
-      tx.operations.push_back( asset_create );
-      tx.sign( dan_private_active_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      const asset_object& dan_credit_asset = db.get_asset( asset_symbol_type( "BLOCKTWO" ) );
-
-      BOOST_REQUIRE( dan_credit_asset.issuer == asset_create.issuer );
-      BOOST_REQUIRE( dan_credit_asset.symbol == asset_create.symbol );
+      BOOST_REQUIRE( dan_credit_asset.issuer == business_create.new_business_name );
+      BOOST_REQUIRE( dan_credit_asset.symbol == business_create.credit_asset );
       BOOST_REQUIRE( dan_credit_asset.asset_type == asset_property_type::CREDIT_ASSET );
-      BOOST_REQUIRE( dan_credit_asset.created == now() );
-      BOOST_REQUIRE( dan_credit_asset.last_updated == now() );
 
-      const asset_credit_data_object& dan_credit = db.get_credit_data( asset_symbol_type( "BLOCKTWO" ) );
+      const asset_credit_data_object& dan_credit = db.get_credit_data( asset_symbol_type( "BLOCKTWOCR" ) );
 
-      BOOST_REQUIRE( dan_credit.business_account == asset_create.issuer );
+      BOOST_REQUIRE( dan_credit.issuer == business_create.new_business_name );
       BOOST_REQUIRE( dan_credit.buyback_asset == SYMBOL_USD );
       BOOST_REQUIRE( dan_credit.buyback_pool.amount == 0 );
 
-      const asset_credit_pool_object& dan_credit_pool = db.get_credit_pool( asset_symbol_type( "BLOCKTWO" ), false );
+      const asset_credit_pool_object& dan_credit_pool = db.get_credit_pool( asset_symbol_type( "BLOCKTWOCR" ), false );
 
-      BOOST_REQUIRE( dan_credit_pool.base_balance == asset_create.credit_liquidity );
+      BOOST_REQUIRE( dan_credit_pool.base_balance == asset( business_create.credit_liquidity.amount, asset_symbol_type( "BLOCKTWOCR" ) ) );
       BOOST_REQUIRE( dan_credit_pool.borrowed_balance.amount == 0 );
 
-      const asset_liquidity_pool_object& dan_liquidity_pool = db.get_liquidity_pool( SYMBOL_COIN, asset_symbol_type( "BLOCKTWO" ) );
+      const asset_liquidity_pool_object& dan_liquidity_pool = db.get_liquidity_pool( SYMBOL_COIN, asset_symbol_type( "BLOCKTWOCR" ) );
 
       BOOST_REQUIRE( dan_liquidity_pool.symbol_a == SYMBOL_COIN );
-      BOOST_REQUIRE( dan_liquidity_pool.symbol_b == asset_symbol_type( "BLOCKTWO" ) );
-      BOOST_REQUIRE( dan_liquidity_pool.balance_a == asset_create.coin_liquidity );
-      BOOST_REQUIRE( dan_liquidity_pool.balance_b == asset( asset_create.coin_liquidity.amount, asset_symbol_type( "BLOCKTWO" ) ) );
+      BOOST_REQUIRE( dan_liquidity_pool.symbol_b == asset_symbol_type( "BLOCKTWOCR" ) );
+      BOOST_REQUIRE( dan_liquidity_pool.balance_a == business_create.coin_liquidity );
+      BOOST_REQUIRE( dan_liquidity_pool.balance_b == asset( business_create.coin_liquidity.amount, asset_symbol_type( "BLOCKTWOCR" ) ) );
 
       BOOST_TEST_MESSAGE( "│   ├── Passed: Create credit asset" );
 
@@ -1375,9 +1326,8 @@ BOOST_AUTO_TEST_CASE( credit_asset_operation_sequence_test )
 
       asset_update_operation asset_update;
 
-      asset_update.signatory = "blocktwo";
       asset_update.issuer = "blocktwo";
-      asset_update.asset_to_update = "BLOCKTWO";
+      asset_update.asset_to_update = "BLOCKTWOCR";
 
       asset_options new_options;
 
@@ -1385,7 +1335,7 @@ BOOST_AUTO_TEST_CASE( credit_asset_operation_sequence_test )
       new_options.details = "New Details";
       new_options.json = "{\"json\":\"supervalid\"}";
       new_options.url = "https://www.newurl.com";
-      new_options.buyback_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, asset_symbol_type( "BLOCKTWO" ) ) );
+      new_options.buyback_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, asset_symbol_type( "BLOCKTWOCR" ) ) );
       new_options.buyback_share_percent = 10 * PERCENT_1;
       new_options.liquid_fixed_interest_rate = 2 * PERCENT_1;
       new_options.liquid_variable_interest_rate = 3 * PERCENT_1;
@@ -1408,10 +1358,10 @@ BOOST_AUTO_TEST_CASE( credit_asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      const asset_object& new_dan_credit_asset = db.get_asset( asset_symbol_type( "BLOCKTWO" ) );
+      const asset_object& new_dan_credit_asset = db.get_asset( asset_symbol_type( "BLOCKTWOCR" ) );
 
-      BOOST_REQUIRE( new_dan_credit_asset.issuer == asset_create.issuer );
-      BOOST_REQUIRE( new_dan_credit_asset.symbol == asset_create.symbol );
+      BOOST_REQUIRE( new_dan_credit_asset.issuer == business_create.new_business_name );
+      BOOST_REQUIRE( new_dan_credit_asset.symbol == business_create.credit_asset );
       BOOST_REQUIRE( new_dan_credit_asset.asset_type == asset_property_type::CREDIT_ASSET );
       BOOST_REQUIRE( to_string( new_dan_credit_asset.display_symbol ) == asset_update.new_options.display_symbol );
       BOOST_REQUIRE( to_string( new_dan_credit_asset.details ) == asset_update.new_options.details );
@@ -1419,7 +1369,7 @@ BOOST_AUTO_TEST_CASE( credit_asset_operation_sequence_test )
       BOOST_REQUIRE( to_string( new_dan_credit_asset.url ) == asset_update.new_options.url );
       BOOST_REQUIRE( new_dan_credit_asset.last_updated == now() );
 
-      const asset_credit_data_object& new_dan_credit = db.get_credit_data( asset_symbol_type( "BLOCKTWO" ) );
+      const asset_credit_data_object& new_dan_credit = db.get_credit_data( asset_symbol_type( "BLOCKTWOCR" ) );
 
       BOOST_REQUIRE( new_dan_credit.buyback_share_percent == asset_update.new_options.buyback_share_percent );
       BOOST_REQUIRE( new_dan_credit.liquid_fixed_interest_rate == asset_update.new_options.liquid_fixed_interest_rate );
@@ -1438,9 +1388,8 @@ BOOST_AUTO_TEST_CASE( credit_asset_operation_sequence_test )
 
       asset_issue_operation asset_issue;
 
-      asset_issue.signatory = "blocktwo";
       asset_issue.issuer = "blocktwo";
-      asset_issue.asset_to_issue = asset( 1000 * BLOCKCHAIN_PRECISION, asset_symbol_type( "BLOCKTWO" ) );
+      asset_issue.asset_to_issue = asset( 1000 * BLOCKCHAIN_PRECISION, asset_symbol_type( "BLOCKTWOCR" ) );
       asset_issue.issue_to_account = "dan";
       asset_issue.memo = "Hello";
       asset_issue.validate();
@@ -1452,11 +1401,11 @@ BOOST_AUTO_TEST_CASE( credit_asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      asset dan_liquid = get_liquid_balance( "dan", "BLOCKTWO" );
+      asset dan_liquid = get_liquid_balance( "dan", "BLOCKTWOCR" );
 
       BOOST_REQUIRE( dan_liquid == asset_issue.asset_to_issue );
-      BOOST_REQUIRE( db.get_dynamic_data( asset_symbol_type( "BLOCKTWO" ) ).get_total_supply() == asset_issue.asset_to_issue + asset_create.credit_liquidity * 3 );
-      BOOST_REQUIRE( db.get_dynamic_data( asset_symbol_type( "BLOCKTWO" ) ).get_liquid_supply() == asset_issue.asset_to_issue );
+      BOOST_REQUIRE( db.get_dynamic_data( asset_symbol_type( "BLOCKTWOCR" ) ).get_total_supply() == asset_issue.asset_to_issue + asset( business_create.credit_liquidity.amount * 3, asset_symbol_type( "BLOCKTWOCR" ) ) );
+      BOOST_REQUIRE( db.get_dynamic_data( asset_symbol_type( "BLOCKTWOCR" ) ).get_liquid_supply() == asset_issue.asset_to_issue );
 
       generate_block();
 
@@ -1466,9 +1415,8 @@ BOOST_AUTO_TEST_CASE( credit_asset_operation_sequence_test )
 
       asset_reserve_operation asset_reserve;
 
-      asset_reserve.signatory = "dan";
       asset_reserve.payer = "dan";
-      asset_reserve.amount_to_reserve = asset( 500 * BLOCKCHAIN_PRECISION, asset_symbol_type( "BLOCKTWO" ) );
+      asset_reserve.amount_to_reserve = asset( 500 * BLOCKCHAIN_PRECISION, asset_symbol_type( "BLOCKTWOCR" ) );
 
       tx.operations.push_back( asset_reserve );
       tx.sign( dan_private_active_key, db.get_chain_id() );
@@ -1477,11 +1425,11 @@ BOOST_AUTO_TEST_CASE( credit_asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      dan_liquid = get_liquid_balance( "dan", "BLOCKTWO" );
+      dan_liquid = get_liquid_balance( "dan", "BLOCKTWOCR" );
 
       BOOST_REQUIRE( dan_liquid == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
-      BOOST_REQUIRE( db.get_dynamic_data( asset_symbol_type( "BLOCKTWO" ) ).get_total_supply() == asset_issue.asset_to_issue + asset_create.credit_liquidity * 3 - asset_reserve.amount_to_reserve );
-      BOOST_REQUIRE( db.get_dynamic_data( asset_symbol_type( "BLOCKTWO" ) ).get_liquid_supply() == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
+      BOOST_REQUIRE( db.get_dynamic_data( asset_symbol_type( "BLOCKTWOCR" ) ).get_total_supply() == asset_issue.asset_to_issue + asset( business_create.credit_liquidity.amount * 3, asset_symbol_type( "BLOCKTWOCR" ) ) - asset_reserve.amount_to_reserve );
+      BOOST_REQUIRE( db.get_dynamic_data( asset_symbol_type( "BLOCKTWOCR" ) ).get_liquid_supply() == asset_issue.asset_to_issue - asset_reserve.amount_to_reserve );
 
       generate_block();
 
@@ -1650,18 +1598,17 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
       
       signed_transaction tx;
 
-      generate_blocks( GENESIS_TIME + fc::days(2), true );
-      generate_blocks( TOTAL_PRODUCERS );
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
       asset_publish_feed_operation feed;
 
-      feed.signatory = "alice";
       feed.publisher = "alice";
       feed.symbol = SYMBOL_USD;
       feed.feed.settlement_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );   // init settlement price of 1:1
       feed.validate();
 
       tx.operations.push_back( feed );
+      tx.set_reference_block( db.head_block_id() );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -1671,7 +1618,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      feed.signatory = "bob";
       feed.publisher = "bob";
 
       tx.operations.push_back( feed );
@@ -1683,7 +1629,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      feed.signatory = "candice";
       feed.publisher = "candice";
 
       tx.operations.push_back( feed );
@@ -1695,7 +1640,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      feed.signatory = "dan";
       feed.publisher = "dan";
 
       tx.operations.push_back( feed );
@@ -1709,7 +1653,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       asset_create_operation asset_create;
 
-      asset_create.signatory = "elon";
       asset_create.issuer = "elon";
       asset_create.symbol = "TSLA";
       asset_create.asset_type = "stablecoin";
@@ -1763,7 +1706,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       call_order_operation call;
 
-      call.signatory = "elon";
       call.owner = "elon";
       call.debt = asset( 30*BLOCKCHAIN_PRECISION, asset_symbol_type( "TSLA" ) );
       call.collateral = asset( 30000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -1777,7 +1719,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      feed.signatory = "elon";
       feed.publisher = "elon";
       feed.symbol = asset_symbol_type( "TSLA" );
       feed.feed.settlement_price = price( asset( BLOCKCHAIN_PRECISION, asset_symbol_type( "TSLA" ) ), asset( 420 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -1799,7 +1740,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       asset_update_operation asset_update;
 
-      asset_update.signatory = "elon";
       asset_update.issuer = "elon";
       asset_update.asset_to_update = "TSLA";
 
@@ -1855,7 +1795,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       asset_update_feed_producers_operation update_feed;
 
-      update_feed.signatory = "elon";
       update_feed.issuer = "elon";
       update_feed.asset_to_update = "TSLA";
       update_feed.new_feed_producers.insert( "alice" );
@@ -1883,7 +1822,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Publish stablecoin price feed" );
 
-      feed.signatory = "alice";
       feed.publisher = "alice";
 
       tx.operations.push_back( feed );
@@ -1895,7 +1833,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      feed.signatory = "bob";
       feed.publisher = "bob";
 
       tx.operations.push_back( feed );
@@ -1907,7 +1844,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      feed.signatory = "candice";
       feed.publisher = "candice";
 
       tx.operations.push_back( feed );
@@ -1919,7 +1855,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      feed.signatory = "dan";
       feed.publisher = "dan";
 
       tx.operations.push_back( feed );
@@ -1937,7 +1872,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Asset settlement" );
 
-      call.signatory = "alice";
       call.owner = "alice";
       call.debt = asset( BLOCKCHAIN_PRECISION, asset_symbol_type( "TSLA" ) );
       call.collateral = asset( 850 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -1953,7 +1887,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      call.signatory = "bob";
       call.owner = "bob";
       call.collateral = asset( 860 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
 
@@ -1966,7 +1899,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      call.signatory = "candice";
       call.owner = "candice";
       call.collateral = asset( 870 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
 
@@ -1979,7 +1911,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      call.signatory = "dan";
       call.owner = "dan";
       call.collateral = asset( 880 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
 
@@ -1994,7 +1925,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       transfer_operation transfer;
 
-      transfer.signatory = "dan";
       transfer.from = "dan";
       transfer.to = "fred";
       transfer.amount = asset( BLOCKCHAIN_PRECISION, asset_symbol_type( "TSLA" ) );
@@ -2012,7 +1942,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       asset_settle_operation settle;
 
-      settle.signatory = "fred";
       settle.account = "fred";
       settle.amount = asset( BLOCKCHAIN_PRECISION, asset_symbol_type( "TSLA" ) );
       settle.interface = INIT_ACCOUNT;
@@ -2045,7 +1974,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       asset_global_settle_operation global_settle;
 
-      global_settle.signatory = "elon";
       global_settle.issuer = "elon";
       global_settle.asset_to_settle = "TSLA";
       global_settle.settle_price = price( asset( BLOCKCHAIN_PRECISION, asset_symbol_type( "TSLA" ) ), asset( 420 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -2073,7 +2001,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Creation of collateral bid after black swan event" );
 
-      call.signatory = "alice";
       call.owner = "alice";
       call.collateral = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );  // 2x collateralization
       call.debt = asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -2089,7 +2016,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      call.signatory = "bob";
       call.owner = "bob";
       call.collateral = asset( 1500 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );   // 3x collateralization
       call.debt = asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -2103,7 +2029,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      call.signatory = "candice";
       call.owner = "candice";
       call.collateral = asset( 2000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );  // 4x collateralization
       call.debt = asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -2117,7 +2042,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      call.signatory = "dan";
       call.owner = "dan";
       call.collateral = asset( 2500 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );  // 5x collateralization
       call.debt = asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -2133,7 +2057,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       limit_order_operation limit;
 
-      limit.signatory = "alice";
       limit.owner = "alice";
       limit.order_id = "88d551cd-0dc2-46f1-a09c-7d0cd477b550";
       limit.amount_to_sell = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -2152,7 +2075,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      feed.signatory = "alice";
       feed.publisher = "alice";
       feed.symbol = SYMBOL_USD;
       feed.feed.settlement_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( 2 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );   // New settlement price of $0.50 MEC/MUSD
@@ -2167,7 +2089,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      feed.signatory = "bob";
       feed.publisher = "bob";
 
       tx.operations.push_back( feed );
@@ -2179,7 +2100,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      feed.signatory = "candice";
       feed.publisher = "candice";
 
       tx.operations.push_back( feed );
@@ -2191,7 +2111,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      feed.signatory = "dan";
       feed.publisher = "dan";
 
       tx.operations.push_back( feed );
@@ -2209,7 +2128,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       asset_collateral_bid_operation bid;
 
-      bid.signatory = "alice";
       bid.bidder = "alice";
       bid.collateral = asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       bid.debt = asset( 2500 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -2236,7 +2154,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when account does not have required funds" );
 
-      bid.signatory = "bob";
       bid.bidder = "bob";
       bid.collateral = asset( 20000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       bid.debt = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -2252,7 +2169,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when collateral is 0" );
 
-      bid.signatory = "bob";
       bid.bidder = "bob";
       bid.collateral = asset( 0, SYMBOL_COIN );
       bid.debt = asset( 2000, SYMBOL_USD );
@@ -2268,7 +2184,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when debt and collateral amount is 0" );
 
-      bid.signatory = "bob";
       bid.bidder = "bob";
       bid.collateral = asset( 0, SYMBOL_COIN );
       bid.debt = asset( 0, SYMBOL_USD );
@@ -2284,7 +2199,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Reviving asset with additional collateral bids" );
 
-      bid.signatory = "bob";
       bid.bidder = "bob";
       bid.collateral = asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       bid.debt = asset( 2500 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -2308,7 +2222,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      bid.signatory = "candice";
       bid.bidder = "candice";
       bid.collateral = asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       bid.debt = asset( 2500 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -2322,7 +2235,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      bid.signatory = "dan";
       bid.bidder = "dan";
       bid.collateral = asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       bid.debt = asset( 2500 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -2336,7 +2248,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      bid.signatory = INIT_ACCOUNT;
       bid.bidder = INIT_ACCOUNT;
       bid.collateral = asset( 500000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       bid.debt = asset( 250000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -2350,7 +2261,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       BOOST_REQUIRE( db.get_stablecoin_data( SYMBOL_USD ).has_settlement() );
 
-      feed.signatory = "alice";
       feed.publisher = "alice";
       feed.symbol = SYMBOL_USD;
       feed.feed.settlement_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -2365,7 +2275,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      feed.signatory = "bob";
       feed.publisher = "bob";
 
       tx.operations.push_back( feed );
@@ -2377,7 +2286,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      feed.signatory = "candice";
       feed.publisher = "candice";
 
       tx.operations.push_back( feed );
@@ -2389,7 +2297,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       generate_block();
 
-      feed.signatory = "dan";
       feed.publisher = "dan";
 
       tx.operations.push_back( feed );
@@ -2423,17 +2330,17 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
 
       vector< private_key_type > keys;
 
-      keys.push_back( get_private_key( "alice", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      keys.push_back( get_private_key( "bob", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      keys.push_back( get_private_key( "candice", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      keys.push_back( get_private_key( "dan", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      keys.push_back( get_private_key( "elon", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      keys.push_back( get_private_key( "fred", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      keys.push_back( get_private_key( "george", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      keys.push_back( get_private_key( "haz", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      keys.push_back( get_private_key( "isabelle", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      keys.push_back( get_private_key( "jayme", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
-      keys.push_back( get_private_key( "kathryn", ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      keys.push_back( get_private_key( "alice", ACTIVE_KEY_STR, INIT_PASSWORD ) );
+      keys.push_back( get_private_key( "bob", ACTIVE_KEY_STR, INIT_PASSWORD ) );
+      keys.push_back( get_private_key( "candice", ACTIVE_KEY_STR, INIT_PASSWORD ) );
+      keys.push_back( get_private_key( "dan", ACTIVE_KEY_STR, INIT_PASSWORD ) );
+      keys.push_back( get_private_key( "elon", ACTIVE_KEY_STR, INIT_PASSWORD ) );
+      keys.push_back( get_private_key( "fred", ACTIVE_KEY_STR, INIT_PASSWORD ) );
+      keys.push_back( get_private_key( "george", ACTIVE_KEY_STR, INIT_PASSWORD ) );
+      keys.push_back( get_private_key( "haz", ACTIVE_KEY_STR, INIT_PASSWORD ) );
+      keys.push_back( get_private_key( "isabelle", ACTIVE_KEY_STR, INIT_PASSWORD ) );
+      keys.push_back( get_private_key( "jayme", ACTIVE_KEY_STR, INIT_PASSWORD ) );
+      keys.push_back( get_private_key( "kathryn", ACTIVE_KEY_STR, INIT_PASSWORD ) );
 
       vector< asset_publish_feed_operation > publish_feeds;
       publish_feeds.reserve( 11 );
@@ -2446,7 +2353,6 @@ BOOST_AUTO_TEST_CASE( stablecoin_asset_operation_sequence_test )
       for( int i = 0; i < 11; i++ )
       {
          publish_feeds.push_back( asset_publish_feed_operation() );
-         publish_feeds[i].signatory = accounts[i];
          publish_feeds[i].publisher = accounts[i];
          publish_feeds[i].symbol = SYMBOL_USD;
          publish_feeds[i].feed.settlement_price = price( asset( 1000 + 100 * i, SYMBOL_USD ), asset( 1000, SYMBOL_COIN ) );
@@ -2558,34 +2464,67 @@ BOOST_AUTO_TEST_CASE( stimulus_asset_operation_sequence_test )
       
       signed_transaction tx;
 
-      generate_blocks( GENESIS_TIME + fc::days(2), true );
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
-      account_create_operation account_create;
+      asset_options options;
 
-      account_create.signatory = "dan";
-      account_create.registrar = "dan";
-      account_create.new_account_name = "blocktwo";
-      account_create.referrer = INIT_ACCOUNT;
-      account_create.proxy = INIT_ACCOUNT;
-      account_create.recovery_account = INIT_ACCOUNT;
-      account_create.reset_account = INIT_ACCOUNT;
-      account_create.details = "My Details";
-      account_create.url = "https://www.url.com";
-      account_create.json = "{ \"valid\": true }";
-      account_create.json_private = "{ \"valid\": true }";
-      account_create.owner_auth = authority( 1, dan_private_owner_key.get_public_key(), 1 );
-      account_create.active_auth = authority( 1, dan_private_active_key.get_public_key(), 1 );
-      account_create.posting_auth = authority( 1, dan_private_posting_key.get_public_key(), 1 );
-      account_create.secure_public_key = string( public_key_type( dan_private_posting_key.get_public_key() ) );
-      account_create.connection_public_key = string( public_key_type( dan_private_posting_key.get_public_key() ) );
-      account_create.friend_public_key = string( public_key_type( dan_private_posting_key.get_public_key() ) );
-      account_create.companion_public_key = string( public_key_type( dan_private_posting_key.get_public_key() ) );
-      account_create.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      account_create.validate();
+      options.display_symbol = "BLOCK TWO";
+      options.details = "Details";
+      options.json = "{ \"valid\": true }";
+      options.url = "https://www.url.com";
+      options.buyback_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, "BLOCKTWOCR") );
+      options.validate();
+
+      business_create_operation business_create;
+
+      business_create.founder = "dan";
+      business_create.new_business_name = "blocktwo";
+      business_create.new_business_trading_name = "BLOCK TWO";
+      business_create.details = "My Details";
+      business_create.url = "https://www.url.com";
+      business_create.secure_public_key = string( dan_public_posting_key );
+      business_create.connection_public_key = string( dan_public_posting_key );
+      business_create.friend_public_key = string( dan_public_posting_key );
+      business_create.companion_public_key = string( dan_public_posting_key );
+      business_create.interface = INIT_ACCOUNT;
+      business_create.equity_asset = "BLOCKTWOEQ";
+      business_create.equity_revenue_share = 5 * PERCENT_1;
+      business_create.equity_options = options;
+      business_create.credit_asset = "BLOCKTWOCR";
+      business_create.credit_revenue_share = 5 * PERCENT_1;
+      business_create.credit_options = options;
+      business_create.public_community = "blocktwo.discussion";
+      business_create.public_display_name = "Business Discussion";
+      business_create.public_community_member_key = string( dan_public_posting_key );
+      business_create.public_community_moderator_key = string( dan_public_posting_key );
+      business_create.public_community_admin_key = string( dan_public_posting_key );
+      business_create.public_community_secure_key = string( dan_public_posting_key );
+      business_create.public_community_standard_premium_key = string( dan_public_posting_key );
+      business_create.public_community_mid_premium_key = string( dan_public_posting_key );
+      business_create.public_community_top_premium_key = string( dan_public_posting_key );
+      business_create.private_community = "blocktwo.private";
+      business_create.private_display_name = "Business Discussion";
+      business_create.private_community_member_key = string( dan_public_posting_key );
+      business_create.private_community_moderator_key = string( dan_public_posting_key );
+      business_create.private_community_admin_key = string( dan_public_posting_key );
+      business_create.private_community_secure_key = string( dan_public_posting_key );
+      business_create.private_community_standard_premium_key = string( dan_public_posting_key );
+      business_create.private_community_mid_premium_key = string( dan_public_posting_key );
+      business_create.private_community_top_premium_key = string( dan_public_posting_key );
+      business_create.reward_currency = SYMBOL_COIN;
+      business_create.standard_membership_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.mid_membership_price = asset( 10*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.top_membership_price = asset( 100*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.coin_liquidity = asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.usd_liquidity = asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      business_create.credit_liquidity = asset( 1000*BLOCKCHAIN_PRECISION, "BLOCKTWOEQ" );
+      business_create.fee = asset( 50 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.delegation = asset( 50 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.validate();
 
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.set_reference_block( db.head_block_id() );
-      tx.operations.push_back( account_create );
+      tx.operations.push_back( business_create );
       tx.sign( dan_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2596,46 +2535,22 @@ BOOST_AUTO_TEST_CASE( stimulus_asset_operation_sequence_test )
       fund_stake( "blocktwo", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "blocktwo", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
 
-      generate_block();
+      const business_object& blocktwo_business = db.get_business( account_name_type( "blocktwo" ) );
+      BOOST_REQUIRE( blocktwo_business.account == business_create.new_business_name );
 
-      account_business_operation account_business;
+      const account_authority_object& blocktwo_auth = db.get_account_authority( account_name_type( "blocktwo" ) );
+      BOOST_REQUIRE( blocktwo_auth.owner_auth.account_auths.begin()->first == business_create.founder );
 
-      account_business.signatory = "blocktwo";
-      account_business.account = "blocktwo";
-      account_business.init_ceo_account = "dan";
-      account_business.business_type = "open";
-      account_business.officer_vote_threshold = BLOCKCHAIN_PRECISION;
-      account_business.business_public_key = string( dan_public_connection_key );
-      account_business.active = true;
-      account_business.validate();
-
-      tx.operations.push_back( account_business );
-      tx.sign( dan_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
-      tx.operations.clear();
-      tx.signatures.clear();
-
-      const account_business_object& blocktwo_business = db.get_account_business( account_name_type( "blocktwo" ) );
-
-      BOOST_REQUIRE( blocktwo_business.account == account_business.account );
-      BOOST_REQUIRE( blocktwo_business.executive_board.CHIEF_EXECUTIVE_OFFICER == account_business.init_ceo_account );
-      BOOST_REQUIRE( blocktwo_business.business_type == business_structure_type::OPEN_BUSINESS );
-
-      generate_blocks( now() + fc::days(2), true );
-      generate_block();
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
       asset_create_operation asset_create;
 
-      asset_create.signatory = "blocktwo";
       asset_create.issuer = "blocktwo";
       asset_create.symbol = "STIM";
       asset_create.asset_type = "stimulus";
       asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, asset_symbol_type( "STIM" ) );
-
-      asset_options options;
 
       options.display_symbol = "StimCoin";
       options.details = "Details";
@@ -2647,8 +2562,8 @@ BOOST_AUTO_TEST_CASE( stimulus_asset_operation_sequence_test )
       options.redemption_list = { "blocktwo" };
       options.distribution_amount = asset( 10 * BLOCKCHAIN_PRECISION, asset_symbol_type( "STIM" ) );
 
-      asset_create.options = options;
       options.validate();
+      asset_create.options = options;
       asset_create.validate();
 
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
@@ -2670,7 +2585,7 @@ BOOST_AUTO_TEST_CASE( stimulus_asset_operation_sequence_test )
 
       const asset_stimulus_data_object& dan_stimulus = db.get_stimulus_data( asset_symbol_type( "STIM" ) );
 
-      BOOST_REQUIRE( dan_stimulus.business_account == asset_create.issuer );
+      BOOST_REQUIRE( dan_stimulus.issuer == asset_create.issuer );
       BOOST_REQUIRE( dan_stimulus.redemption_asset == asset_create.options.redemption_asset );
       BOOST_REQUIRE( dan_stimulus.redemption_price == asset_create.options.redemption_price );
 
@@ -2695,7 +2610,6 @@ BOOST_AUTO_TEST_CASE( stimulus_asset_operation_sequence_test )
 
       asset_update_operation asset_update;
 
-      asset_update.signatory = "blocktwo";
       asset_update.issuer = "blocktwo";
       asset_update.asset_to_update = "STIM";
 
@@ -2737,7 +2651,7 @@ BOOST_AUTO_TEST_CASE( stimulus_asset_operation_sequence_test )
 
       const asset_stimulus_data_object& new_dan_stimulus = db.get_stimulus_data( asset_symbol_type( "STIM" ) );
 
-      BOOST_REQUIRE( new_dan_stimulus.business_account == asset_update.issuer );
+      BOOST_REQUIRE( new_dan_stimulus.issuer == asset_update.issuer );
       BOOST_REQUIRE( new_dan_stimulus.redemption_asset == asset_update.new_options.redemption_asset );
       BOOST_REQUIRE( new_dan_stimulus.redemption_price == asset_update.new_options.redemption_price );
 
@@ -2814,34 +2728,67 @@ BOOST_AUTO_TEST_CASE( unique_asset_operation_sequence_test )
       
       signed_transaction tx;
 
-      generate_blocks( GENESIS_TIME + fc::days(2), true );
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
-      account_create_operation account_create;
+      asset_options options;
 
-      account_create.signatory = "candice";
-      account_create.registrar = "candice";
-      account_create.new_account_name = "tropico";
-      account_create.referrer = INIT_ACCOUNT;
-      account_create.proxy = INIT_ACCOUNT;
-      account_create.recovery_account = INIT_ACCOUNT;
-      account_create.reset_account = INIT_ACCOUNT;
-      account_create.details = "My Details";
-      account_create.url = "https://www.url.com";
-      account_create.json = "{ \"valid\": true }";
-      account_create.json_private = "{ \"valid\": true }";
-      account_create.owner_auth = authority( 1, candice_public_owner_key, 1 );
-      account_create.active_auth = authority( 1, candice_public_active_key, 1 );
-      account_create.posting_auth = authority( 1, candice_public_posting_key, 1 );
-      account_create.secure_public_key = string( candice_public_secure_key );
-      account_create.connection_public_key = string( candice_public_connection_key );
-      account_create.friend_public_key = string( candice_public_friend_key );
-      account_create.companion_public_key = string( candice_public_friend_key );
-      account_create.fee = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      account_create.validate();
+      options.display_symbol = "TRO";
+      options.details = "Details";
+      options.json = "{ \"valid\": true }";
+      options.url = "https://www.url.com";
+      options.buyback_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, "TROPICOCR") );
+      options.validate();
+
+      business_create_operation business_create;
+
+      business_create.founder = "candice";
+      business_create.new_business_name = "tropico";
+      business_create.new_business_trading_name = "TROPICO";
+      business_create.details = "My Details";
+      business_create.url = "https://www.url.com";
+      business_create.secure_public_key = string( candice_public_posting_key );
+      business_create.connection_public_key = string( candice_public_posting_key );
+      business_create.friend_public_key = string( candice_public_posting_key );
+      business_create.companion_public_key = string( candice_public_posting_key );
+      business_create.interface = INIT_ACCOUNT;
+      business_create.equity_asset = "TROPICOEQ";
+      business_create.equity_revenue_share = 5 * PERCENT_1;
+      business_create.equity_options = options;
+      business_create.credit_asset = "TROPICOCR";
+      business_create.credit_revenue_share = 5 * PERCENT_1;
+      business_create.credit_options = options;
+      business_create.public_community = "tropico.discussion";
+      business_create.public_display_name = "Business Discussion";
+      business_create.public_community_member_key = string( candice_public_posting_key );
+      business_create.public_community_moderator_key = string( candice_public_posting_key );
+      business_create.public_community_admin_key = string( candice_public_posting_key );
+      business_create.public_community_secure_key = string( candice_public_posting_key );
+      business_create.public_community_standard_premium_key = string( candice_public_posting_key );
+      business_create.public_community_mid_premium_key = string( candice_public_posting_key );
+      business_create.public_community_top_premium_key = string( candice_public_posting_key );
+      business_create.private_community = "tropico.private";
+      business_create.private_display_name = "Business Discussion";
+      business_create.private_community_member_key = string( candice_public_posting_key );
+      business_create.private_community_moderator_key = string( candice_public_posting_key );
+      business_create.private_community_admin_key = string( candice_public_posting_key );
+      business_create.private_community_secure_key = string( candice_public_posting_key );
+      business_create.private_community_standard_premium_key = string( candice_public_posting_key );
+      business_create.private_community_mid_premium_key = string( candice_public_posting_key );
+      business_create.private_community_top_premium_key = string( candice_public_posting_key );
+      business_create.reward_currency = SYMBOL_COIN;
+      business_create.standard_membership_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.mid_membership_price = asset( 10*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.top_membership_price = asset( 100*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.coin_liquidity = asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.usd_liquidity = asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      business_create.credit_liquidity = asset( 1000*BLOCKCHAIN_PRECISION, "TROPICOEQ" );
+      business_create.fee = asset( 50 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.delegation = asset( 50 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      business_create.validate();
 
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.set_reference_block( db.head_block_id() );
-      tx.operations.push_back( account_create );
+      tx.operations.push_back( business_create );
       tx.sign( candice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
@@ -2852,46 +2799,25 @@ BOOST_AUTO_TEST_CASE( unique_asset_operation_sequence_test )
       fund_stake( "tropico", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "tropico", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
 
-      generate_block();
-
-      account_business_operation account_business;
-
-      account_business.signatory = "tropico";
-      account_business.account = "tropico";
-      account_business.init_ceo_account = "candice";
-      account_business.business_type = "open";
-      account_business.officer_vote_threshold = BLOCKCHAIN_PRECISION;
-      account_business.business_public_key = string( candice_public_connection_key );
-      account_business.active = true;
-      account_business.validate();
-
-      tx.operations.push_back( account_business );
-      tx.sign( candice_private_owner_key, db.get_chain_id() );
-      db.push_transaction( tx, 0 );
-
       tx.operations.clear();
       tx.signatures.clear();
 
-      generate_blocks( now() + fc::days(2), true );
-      generate_block();
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
-      const account_business_object& tropico_business = db.get_account_business( account_name_type( "tropico" ) );
+      const business_object& tropico_business = db.get_business( account_name_type( "tropico" ) );
+      BOOST_REQUIRE( tropico_business.account == business_create.new_business_name );
 
-      BOOST_REQUIRE( tropico_business.account == account_business.account );
-      BOOST_REQUIRE( tropico_business.executive_board.CHIEF_EXECUTIVE_OFFICER == account_business.init_ceo_account );
-      BOOST_REQUIRE( tropico_business.business_type == business_structure_type::OPEN_BUSINESS );
+      const account_authority_object& tropico_auth = db.get_account_authority( account_name_type( "tropico" ) );
+      BOOST_REQUIRE( tropico_auth.owner_auth.account_auths.begin()->first == business_create.founder );
 
       asset_create_operation asset_create;
       
-      asset_create.signatory = "tropico";
       asset_create.issuer = "tropico";
-      asset_create.symbol = "TROPICO";
-      asset_create.asset_type = "equity";
+      asset_create.symbol = "MANSIONSHARE";
+      asset_create.asset_type = "standard";
       asset_create.coin_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       asset_create.usd_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
-      asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, asset_symbol_type( "TROPICO" ) );
-
-      asset_options options;
+      asset_create.credit_liquidity = asset( 1000 * BLOCKCHAIN_PRECISION, asset_symbol_type( "MANSIONSHARE" ) );
 
       options.display_symbol = "TRO";
       options.details = "Details";
@@ -2911,10 +2837,8 @@ BOOST_AUTO_TEST_CASE( unique_asset_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      generate_blocks( now() + fc::days(2) );
-      generate_block();
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
-      asset_create.signatory = "tropico";
       asset_create.issuer = "tropico";
       asset_create.symbol = "MANSION";
       asset_create.asset_type = "unique";
@@ -2926,7 +2850,7 @@ BOOST_AUTO_TEST_CASE( unique_asset_operation_sequence_test )
       options.details = "Access list enables entry to Tropico Mansion Resort.";
       options.json = "{ \"valid\": true }";
       options.url = "https://www.url.com";
-      options.ownership_asset = "TROPICO";
+      options.ownership_asset = "MANSIONSHARE";
       options.control_list = { "candice", "tropico" };
       options.access_list = { "alice", "bob" };
       options.access_price = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -2950,8 +2874,6 @@ BOOST_AUTO_TEST_CASE( unique_asset_operation_sequence_test )
       BOOST_REQUIRE( candice_unique_asset.issuer == asset_create.issuer );
       BOOST_REQUIRE( candice_unique_asset.symbol == asset_create.symbol );
       BOOST_REQUIRE( candice_unique_asset.asset_type == asset_property_type::UNIQUE_ASSET );
-      BOOST_REQUIRE( candice_unique_asset.created == now() );
-      BOOST_REQUIRE( candice_unique_asset.last_updated == now() );
 
       const asset_unique_data_object& mansion_unique_data = db.get_unique_data( asset_symbol_type( "MANSION" ) );
 
@@ -2963,12 +2885,10 @@ BOOST_AUTO_TEST_CASE( unique_asset_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Update Unique asset" );
 
-      generate_blocks( now() + fc::minutes(11), true );
-      generate_block();
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
       asset_update_operation asset_update;
 
-      asset_update.signatory = "tropico";
       asset_update.issuer = "tropico";
       asset_update.asset_to_update = "MANSION";
 
@@ -2978,7 +2898,7 @@ BOOST_AUTO_TEST_CASE( unique_asset_operation_sequence_test )
       new_options.details = "Access list enables entry to Tropico Mansion Resort Complex";
       new_options.json = "{\"json\":\"supervalid\"}";
       new_options.url = "https://www.newurl.com";
-      new_options.ownership_asset = "TROPICO";
+      new_options.ownership_asset = "MANSIONSHARE";
       new_options.control_list = { "candice", "tropico" };
       new_options.access_list = { "alice", "bob", "dan", "elon" };
       new_options.access_price = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -3018,7 +2938,6 @@ BOOST_AUTO_TEST_CASE( unique_asset_operation_sequence_test )
 
       asset_issue_operation asset_issue;
 
-      asset_issue.signatory = "tropico";
       asset_issue.issuer = "tropico";
       asset_issue.asset_to_issue = asset( BLOCKCHAIN_PRECISION, asset_symbol_type( "MANSION" ) );
       asset_issue.issue_to_account = "candice";

@@ -30,25 +30,7 @@ namespace node { namespace chain {
 
 void account_create_evaluator::do_apply( const account_create_operation& o )
 { try {
-   const account_name_type& signed_for = o.registrar;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_general(o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   
-   const account_object* account_ptr = _db.find_account( o.new_account_name );  // Ensure account name is not already in use.
-
-   FC_ASSERT( account_ptr == nullptr,
-      "Account with the name: ${n} already exists.", ("n", o.new_account_name) );
-   
+   _db.check_namespace( o.new_account_name );
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
    time_point now = _db.head_block_time();
    size_t name_length = o.new_account_name.size();
@@ -150,7 +132,6 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       {
          a.reset_account = o.reset_account;
       }
-      
 
       from_string( a.details, o.details );
       from_string( a.url, o.url );
@@ -221,17 +202,18 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
    {
       _db.adjust_staked_balance( o.new_account_name, o.fee );
    }
+
    if( o.delegation.amount > 0 )
    {
       _db.adjust_receiving_balance( o.new_account_name, o.delegation );
+
+      _db.create< asset_delegation_object >( [&]( asset_delegation_object& vdo )
+      {
+         vdo.delegator = o.registrar;
+         vdo.delegatee = o.new_account_name;
+         vdo.amount = o.delegation;
+      });
    }
-   
-   _db.create< asset_delegation_object >( [&]( asset_delegation_object& vdo )
-   {
-      vdo.delegator = o.registrar;
-      vdo.delegatee = o.new_account_name;
-      vdo.amount = o.delegation;
-   });
    
    _db.create< account_authority_object >( [&]( account_authority_object& auth )
    {
@@ -287,46 +269,15 @@ void account_create_evaluator::do_apply( const account_create_operation& o )
       });
    }
 
-   if( _db.find_executive_board( o.registrar ) != nullptr )
-   {
-      _db.create< executive_board_vote_object >( [&]( executive_board_vote_object& ebvo )
-      {
-         ebvo.executive_board = o.registrar;
-         ebvo.account = o.new_account_name;
-         ebvo.vote_rank = 1;
-         ebvo.last_updated = now;
-         ebvo.created = now;
-      });
-
-      _db.modify( new_account, [&]( account_object& a )
-      {
-         a.executive_board_vote_count++;
-      });
-   }
-
    // ilog( "Registrar: ${r} created new account: ${a}",("r",o.registrar)("a",o.new_account_name));
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void account_update_evaluator::do_apply( const account_update_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_chief( o.signatory ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
-   time_point now = _db.head_block_time();
    const account_object& account = _db.get_account( o.account );
    const account_authority_object& account_auth = _db.get< account_authority_object, by_account >( o.account );
+   time_point now = _db.head_block_time();
    
    FC_ASSERT( ( now - account_auth.last_owner_update ) >= OWNER_UPDATE_LIMIT,
       "Owner authority can only be updated once an hour." );
@@ -335,7 +286,8 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
    {
       const account_object& account_auth = _db.get_account( a.first );
       FC_ASSERT( account_auth.active, 
-         "Account: ${s} must be active to add account authority.",("s", account_auth) );
+         "Account: ${s} must be active to add account authority.",
+         ("s", account_auth) );
    }
 
    if( o.owner_auth.num_auths() > 0 )
@@ -347,14 +299,16 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
    {
       const account_object& account_auth = _db.get_account( a.first );
       FC_ASSERT( account_auth.active, 
-         "Account: ${s} must be active to add account authority.",("s", account_auth) );
+         "Account: ${s} must be active to add account authority.",
+         ("s", account_auth) );
    }
 
    for( auto a : o.posting_auth.account_auths )
    {
       const account_object& account_auth = _db.get_account( a.first );
       FC_ASSERT( account_auth.active, 
-         "Account: ${s} must be active to add account authority.",("s", account_auth) );
+         "Account: ${s} must be active to add account authority.",
+         ("s", account_auth) );
    }
    
    const comment_object* pinned_post_ptr = nullptr;
@@ -480,26 +434,14 @@ void account_update_evaluator::do_apply( const account_update_operation& o )
 
 void account_verification_evaluator::do_apply( const account_verification_operation& o )
 { try {
-   const account_name_type& signed_for = o.verifier_account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_chief( o.signatory ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
    time_point now = _db.head_block_time();
    const account_object& verified_account = _db.get_account( o.verified_account );
    const account_object& verifier_account = _db.get_account( o.verifier_account );
    
    FC_ASSERT( verified_account.active, 
       "Account: ${s} must be active.",("s", o.verified_account) );
+   FC_ASSERT( verifier_account.active, 
+      "Account: ${s} must be active.",("s", o.verifier_account) );
 
    const auto& verification_idx = _db.get_index< account_verification_index >().indices().get< by_verifier_verified >();
    auto verification_itr = verification_idx.find( boost::make_tuple( o.verifier_account, o.verified_account ) );
@@ -560,116 +502,11 @@ void account_verification_evaluator::do_apply( const account_verification_operat
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void account_business_evaluator::do_apply( const account_business_operation& o )
-{ try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_chief( o.signatory ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
-   time_point now = _db.head_block_time();
-
-   const account_object& init_ceo_account = _db.get_account( o.init_ceo_account );
-   FC_ASSERT( init_ceo_account.active, 
-      "Initial CEO Account: ${s} must be active.",("s", o.init_ceo_account) );
-
-   business_structure_type business_structure = business_structure_type::PUBLIC_BUSINESS;
-
-   for( size_t i = 0; i < business_structure_values.size(); i++ )
-   {
-      if( o.business_type == business_structure_values[ i ] )
-      {
-         business_structure = business_structure_type( i );
-         break;
-      }
-   }
-
-   const auto& business_idx = _db.get_index< account_business_index >().indices().get< by_account >();
-   auto business_itr = business_idx.find( o.account );
-
-   if( business_itr == business_idx.end() )    // New business account
-   {
-      const account_business_object& business = _db.create< account_business_object >( [&]( account_business_object& abo )
-      {
-         abo.account = o.account;
-         abo.business_type = business_structure;
-         abo.business_public_key = public_key_type( o.business_public_key );
-         abo.executive_board.CHIEF_EXECUTIVE_OFFICER = o.init_ceo_account;
-         abo.members.insert( o.init_ceo_account );
-         abo.officers.insert( o.init_ceo_account );
-         abo.executives.insert( o.init_ceo_account );
-         abo.officer_vote_threshold = o.officer_vote_threshold;
-         abo.active = true;
-         abo.last_updated = now;
-         abo.created = now;
-      });
-
-      _db.create< account_officer_vote_object >( [&]( account_officer_vote_object& aovo )
-      {
-         aovo.account = o.init_ceo_account;
-         aovo.business_account = o.account;
-         aovo.officer_account = o.init_ceo_account;
-         aovo.vote_rank = 1;
-         aovo.last_updated = now;
-         aovo.created = now;
-      });
-
-      _db.create< account_executive_vote_object >( [&]( account_executive_vote_object& aevo )
-      {
-         aevo.account = o.init_ceo_account;
-         aevo.business_account = o.account;
-         aevo.executive_account = o.init_ceo_account;
-         aevo.role = executive_role_type::CHIEF_EXECUTIVE_OFFICER;
-         aevo.vote_rank = 1;
-         aevo.last_updated = now;
-         aevo.created = now;
-      });
-
-      _db.update_business_account( business );
-   }
-   else
-   {
-      const account_business_object& business = *business_itr;
-
-      _db.modify( business, [&]( account_business_object& abo )
-      {
-         abo.business_public_key = public_key_type( o.business_public_key );
-         abo.officer_vote_threshold = o.officer_vote_threshold;
-         abo.active = o.active;
-         abo.last_updated = now;
-      });
-
-      _db.update_business_account( business );
-   }
-
-} FC_CAPTURE_AND_RETHROW( ( o ) ) }
-
-
 void account_membership_evaluator::do_apply( const account_membership_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
    const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", o.account) );
    const account_object* int_account_ptr = nullptr;
 
    if( o.interface.size() )
@@ -775,7 +612,7 @@ void account_membership_evaluator::do_apply( const account_membership_operation&
    {
       if( int_account_ptr != nullptr )
       {
-         _db.pay_membership_fees( account, total_fees, *int_account_ptr );      // Pays splits to interface, premium partners, and network.
+         _db.pay_membership_fees( account, total_fees, *int_account_ptr );      // Pays splits to interface, and network.
       }
       else
       {
@@ -804,541 +641,11 @@ void account_membership_evaluator::do_apply( const account_membership_operation&
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
-void account_vote_executive_evaluator::do_apply( const account_vote_executive_operation& o )
-{ try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_vote_executive( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
-   const account_object& voter = _db.get_account( o.account );
-   const account_object& executive = _db.get_account( o.executive_account );
-   FC_ASSERT( executive.active, 
-      "Account: ${s} must be active to be voted for.",
-      ("s", o.executive_account));
-   const account_object& business = _db.get_account( o.business_account );
-   FC_ASSERT( business.active, 
-      "Account: ${s} must be active to accept executive votes.",
-      ("s",o.business_account));
-   const account_business_object& bus_acc = _db.get_account_business( o.business_account );
-   share_type voting_power = _db.get_equity_voting_power( o.account, bus_acc );
-   time_point now = _db.head_block_time();
-
-   FC_ASSERT( voting_power > 0,
-      "Account: ${a} must hold a balance of voting power in the equity assets of the business account: ${b} in order to vote for executives.",
-      ("a", o.account)("b", bus_acc) );
-
-   if( o.approved )
-   {
-      FC_ASSERT( voter.can_vote,
-         "Account has declined its voting rights." );
-      FC_ASSERT( bus_acc.is_authorized_vote_executive( voter.name, _db.get_account_permissions( o.business_account ) ),
-         "Account: ${a} is not authorized to vote for an Officer in Business: ${b}.",
-         ("a", o.account)("b", o.business_account));
-      FC_ASSERT( bus_acc.is_officer( executive.name ),
-         "Account: ${a} must be an officer of business: ${b} before being voted as Executive.",
-         ("a", o.executive_account)("b", o.business_account) );
-   }
-
-   executive_role_type exec_role = executive_role_type::CHIEF_EXECUTIVE_OFFICER;
-
-   for( size_t i = 0; i < executive_role_values.size(); i++ )
-   {
-      if( o.role == executive_role_values[ i ] )
-      {
-         exec_role = executive_role_type( i );
-         break;
-      }
-   }
-   
-   const auto& rank_idx = _db.get_index< account_executive_vote_index >().indices().get< by_account_business_role_rank >();
-   const auto& executive_idx = _db.get_index< account_executive_vote_index >().indices().get< by_account_business_role_executive >();
-   auto rank_itr = rank_idx.find( boost::make_tuple( voter.name, o.business_account, exec_role, o.vote_rank ) ); 
-   auto executive_itr = executive_idx.find( boost::make_tuple( voter.name, o.business_account, exec_role, o.executive_account ) );
-
-   if( o.approved ) // Adding or modifying vote
-   {
-      if( executive_itr == executive_idx.end() && rank_itr == rank_idx.end() ) // No vote for executive board or type rank, create new vote.
-      {
-         _db.create< account_executive_vote_object>( [&]( account_executive_vote_object& v )
-         {
-            v.account = voter.name;
-            v.vote_rank = o.vote_rank;
-            v.executive_account = o.executive_account;
-            v.business_account = o.business_account;
-            v.role = exec_role;
-            v.last_updated = now;
-            v.created = now;
-         });
-         
-         _db.update_account_executive_votes( voter, o.business_account );
-      }
-      else
-      {
-         if( executive_itr != executive_idx.end() && rank_itr != rank_idx.end() )
-         {
-            FC_ASSERT( executive_itr->executive_account != rank_itr->executive_account,
-               "Vote at for role at selected rank is already specified executive account." );
-         }
-         
-         if( executive_itr != executive_idx.end() )
-         {
-            ilog( "Removed: ${v}",("v",*executive_itr));
-            _db.remove( *executive_itr );
-         }
-
-         _db.update_account_executive_votes( voter, o.business_account, executive, exec_role, o.vote_rank );
-      }
-   }
-   else  // Removing existing vote
-   {
-      if( executive_itr != executive_idx.end() )
-      {
-         ilog( "Removed: ${v}",("v",*executive_itr));
-         _db.remove( *executive_itr );
-      }
-      else if( rank_itr != rank_idx.end() )
-      {
-         ilog( "Removed: ${v}",("v",*rank_itr));
-         _db.remove( *rank_itr );
-      }
-      _db.update_account_executive_votes( voter, o.business_account );
-   }
-
-   _db.update_business_account( bus_acc );   // updates the voting status of the business account to reflect all voting changes.
-
-} FC_CAPTURE_AND_RETHROW( ( o )) }
-
-
-void account_vote_officer_evaluator::do_apply( const account_vote_officer_operation& o )
-{ try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_vote_officer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
-   const account_object& voter = _db.get_account( o.account );
-   const account_object& officer = _db.get_account( o.officer_account );
-   FC_ASSERT( officer.active, 
-      "Account: ${s} must be active to be voted for.",("s", o.officer_account) );
-   const account_object& business = _db.get_account( o.business_account );
-   FC_ASSERT( business.active, 
-      "Account: ${s} must be active to accept officer votes.",
-      ("s", o.business_account));
-   const account_business_object& bus_acc = _db.get_account_business( o.business_account );
-   share_type voting_power = _db.get_equity_voting_power( o.account, bus_acc );
-   time_point now = _db.head_block_time();
-
-   FC_ASSERT( voting_power > 0,
-      "Account must hold a balance of voting power in the equity assets of the business account in order to vote for officers." );
-
-   if( o.approved )
-   {
-      FC_ASSERT( voter.can_vote,
-         "Account has declined its voting rights." );
-      FC_ASSERT( bus_acc.is_authorized_vote_officer( voter.name, _db.get_account_permissions( o.business_account ) ),
-         "Account: ${a} is not authorized to vote for an Officer in business: ${b} .",
-         ("a", o.account)("b", o.business_account));
-      FC_ASSERT( bus_acc.is_member( officer.name ),
-         "Account: ${a} must be a member of business: ${b} before being voted as an Officer.",
-         ("a", o.officer_account)("b", o.business_account));
-   }
-
-   const auto& rank_idx = _db.get_index< account_officer_vote_index >().indices().get< by_account_business_rank >();
-   const auto& officer_idx = _db.get_index< account_officer_vote_index >().indices().get< by_account_business_officer >();
-   auto rank_itr = rank_idx.find( boost::make_tuple( voter.name, o.business_account, o.vote_rank ) );
-   auto officer_itr = officer_idx.find( boost::make_tuple( voter.name, o.business_account, o.officer_account ) );
-
-   if( o.approved )       // Adding or modifying vote
-   {
-      if( officer_itr == officer_idx.end() && rank_itr == rank_idx.end() ) // No vote for officer or type rank, create new vote.
-      {
-         _db.create< account_officer_vote_object>( [&]( account_officer_vote_object& v )
-         {
-            v.account = voter.name;
-            v.officer_account = o.officer_account;
-            v.business_account = o.business_account;
-            v.vote_rank = o.vote_rank;
-            v.last_updated = now;
-            v.created = now;
-         });
-         
-         _db.update_account_officer_votes( voter, o.business_account );
-      }
-      else
-      {
-         if( officer_itr != officer_idx.end() && rank_itr != rank_idx.end() )
-         {
-            FC_ASSERT( officer_itr->officer_account != rank_itr->officer_account,
-               "Vote at for role at selected rank is already specified officer account." );
-         }
-         
-         if( officer_itr != officer_idx.end() )
-         {
-            ilog( "Removed: ${v}",("v",*officer_itr));
-            _db.remove( *officer_itr );
-         }
-
-         _db.update_account_officer_votes( voter, o.business_account, officer, o.vote_rank );
-      }
-   }
-   else  // Removing existing vote
-   {
-      if( officer_itr != officer_idx.end() )
-      {
-         ilog( "Removed: ${v}",("v",*officer_itr));
-         _db.remove( *officer_itr );
-      }
-      else if( rank_itr != rank_idx.end() )
-      {
-         ilog( "Removed: ${v}",("v",*rank_itr));
-         _db.remove( *rank_itr );
-      }
-      _db.update_account_officer_votes( voter, o.business_account );
-   }
-
-   _db.update_business_account( bus_acc );   // updates the voting status of the business account to reflect all voting changes.
-
-} FC_CAPTURE_AND_RETHROW( ( o )) }
-
-
-void account_member_request_evaluator::do_apply( const account_member_request_operation& o )
-{ try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_request( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   
-   const account_object& account = _db.get_account( o.account );
-   const account_object& business = _db.get_account( o.business_account );
-   FC_ASSERT( business.active, 
-      "Account: ${s} must be active to accept member requests.",("s", o.business_account) );
-   const account_business_object& bus_acc = _db.get_account_business( o.business_account );
-
-   FC_ASSERT( !bus_acc.is_member( account.name ), 
-      "Account: ${a} is already a member of the business: ${b}.",
-      ("a", o.account)("b", o.business_account)); 
-   FC_ASSERT( bus_acc.is_authorized_request( account.name, _db.get_account_permissions( o.business_account ) ), 
-      "Account: ${a} is not authorised to request to join the business account: ${b}.",
-      ("a", o.account)("b", o.business_account) );
-   
-   time_point now = _db.head_block_time();
-   const auto& req_idx = _db.get_index< account_member_request_index >().indices().get< by_account_business >();
-   auto itr = req_idx.find( boost::make_tuple( o.account, o.business_account ) );
-
-   if( itr == req_idx.end())    // Request does not exist yet
-   {
-      FC_ASSERT( o.requested,
-         "Account membership request does not exist, requested should be set to true." );
-
-      _db.create< account_member_request_object >( [&]( account_member_request_object& amro )
-      {
-         amro.account = account.name;
-         amro.business_account = o.business_account;
-         from_string( amro.message, o.message );
-         amro.expiration = now + CONNECTION_REQUEST_DURATION;
-      });
-   }
-   else     // Request exists and is being deleted
-   {
-      FC_ASSERT( !o.requested,
-         "Request already exists, Requested should be set to false to remove existing request." );
-      ilog( "Removed: ${v}",("v",*itr));
-      _db.remove( *itr );
-   }
-} FC_CAPTURE_AND_RETHROW( ( o )) }
-
-
-void account_member_invite_evaluator::do_apply( const account_member_invite_operation& o )
-{ try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_invite( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   
-   const account_object& account = _db.get_account( o.account );
-   const account_object& member = _db.get_account( o.member );
-   FC_ASSERT( member.active, 
-      "Account: ${s} must be active to accept member invites.",("s", o.member) );
-   const account_object& business = _db.get_account( o.business_account );
-   FC_ASSERT( business.active, 
-      "Account: ${s} must be active to accept member invites.",("s", o.business_account) );
-   const account_business_object& bus_acc = _db.get_account_business( o.business_account );
-
-   FC_ASSERT( !bus_acc.is_member( member.name ),
-      "Account: ${a} is already a member of the Business Account: ${b}.",
-      ("a", o.member)("b", o.business_account) );
-   FC_ASSERT( bus_acc.is_authorized_invite( account.name, _db.get_account_permissions( o.business_account ) ),
-      "Account: ${a} is not authorised to send Business account: ${b} membership invitations.",
-      ("a", o.account)("b", o.business_account) );
-   
-   time_point now = _db.head_block_time();
-   const auto& inv_idx = _db.get_index< account_member_invite_index >().indices().get< by_member_business >();
-   const auto& key_idx = _db.get_index< account_member_key_index >().indices().get< by_member_business >();
-   auto itr = inv_idx.find( boost::make_tuple( o.member, o.business_account ) );
-
-   if( itr == inv_idx.end() )    // Invite does not exist yet
-   {
-      FC_ASSERT( o.invited,
-         "Business Account invite request does not exist, invited should be set to true." );
-
-      _db.create< account_member_invite_object >( [&]( account_member_invite_object& amio )
-      {
-         amio.account = account.name;
-         amio.member = member.name;
-         amio.business_account = o.business_account;
-         from_string( amio.message, o.message );
-         amio.expiration = now + CONNECTION_REQUEST_DURATION;
-      });
-
-      _db.create< account_member_key_object >( [&]( account_member_key_object& amko )
-      {
-         amko.account = account.name;
-         amko.member = member.name;
-         amko.business_account = o.business_account;
-         amko.encrypted_business_key = encrypted_keypair_type( member.secure_public_key, bus_acc.business_public_key, o.encrypted_business_key );
-      });
-   }
-   else     // Invite exists and is being deleted.
-   {
-      FC_ASSERT( !o.invited,
-         "Invite already exists, Invited should be set to false to remove existing Invitation." );
-      auto key_itr = key_idx.find( std::make_tuple( o.member, o.business_account ) );
-      if( key_itr != key_idx.end() )
-      {
-         ilog( "Removed: ${v}",("v",*key_itr));
-         _db.remove( *key_itr );  // Remove the account key 
-      }
-      ilog( "Removed: ${v}",("v",*itr));
-      _db.remove( *itr );     // Remove the invitation
-   }
-} FC_CAPTURE_AND_RETHROW( ( o )) }
-
-
-void account_accept_request_evaluator::do_apply( const account_accept_request_operation& o )
-{ try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_invite( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   const account_object& account = _db.get_account( o.account ); 
-   const account_object& member = _db.get_account( o.member);
-   FC_ASSERT( member.active, 
-      "Account: ${s} must be active to accept member requests.",("s", o.member) );
-   const account_object& business = _db.get_account( o.business_account );
-   FC_ASSERT( business.active, 
-      "Account: ${s} must be active to accept member requests.",("s", o.business_account) );
-   const account_business_object& bus_acc = _db.get_account_business( o.business_account );
-
-   FC_ASSERT( !bus_acc.is_member( member.name ),
-      "Account: ${a} is already a member of the business account: ${b}.",
-      ("a", o.member)("b", o.business_account) );
-   FC_ASSERT( bus_acc.is_authorized_invite( account.name, _db.get_account_permissions( o.business_account ) ),
-      "Account: ${a} is not authorized to accept membership requests to the business account: ${b}.",
-      ("a", o.account)("b", o.business_account ) );
-
-   const auto& req_idx = _db.get_index< account_member_request_index >().indices().get< by_account_business >();
-   auto itr = req_idx.find( boost::make_tuple( o.member, o.business_account ) );
-
-   FC_ASSERT( itr != req_idx.end(),
-      "Business account membership request does not exist." );    // Ensure Request exists
-
-   if( o.accepted )   // Accepting the request, skipped if rejecting
-   {
-      _db.modify( bus_acc, [&]( account_business_object& abo )
-      {
-         abo.members.insert( member.name );
-      });
-
-      _db.create< account_member_key_object >( [&]( account_member_key_object& amko )
-      {
-         amko.account = account.name;
-         amko.member = member.name;
-         amko.business_account = o.business_account;
-         amko.encrypted_business_key = encrypted_keypair_type( member.secure_public_key, bus_acc.business_public_key, o.encrypted_business_key );
-      });
-   }
-
-   _db.remove( *itr );
-
-} FC_CAPTURE_AND_RETHROW( ( o )) }
-
-
-void account_accept_invite_evaluator::do_apply( const account_accept_invite_operation& o )
-{ try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   const account_object& account = _db.get_account( o.account );
-   const account_object& business = _db.get_account( o.business_account );
-   FC_ASSERT( business.active, 
-      "Account: ${s} must be active to accept member invites",("s", o.business_account) );
-   const account_business_object& bus_acc = _db.get_account_business( o.business_account );
-
-   FC_ASSERT( !bus_acc.is_member( account.name ),
-      "Account: ${a} is already a member of the business account: ${b}.",
-      ("a", o.account)("b", o.business_account));
-
-   const auto& inv_idx = _db.get_index< account_member_invite_index >().indices().get< by_member_business >();
-   auto itr = inv_idx.find( std::make_tuple( o.account, o.business_account ) );
-   
-   FC_ASSERT( itr != inv_idx.end(),
-      "Business account membership invitation does not exist." );     // Ensure Invitation exists
-
-   const account_member_invite_object& invite = *itr;
-
-   FC_ASSERT( bus_acc.is_authorized_invite( invite.account, _db.get_account_permissions( o.business_account ) ),
-      "Account: ${a} is no longer authorised to send business account: ${b} membership invitations.", 
-      ("a", invite.account)("b", o.business_account));     // Ensure inviting account is still authorised to send invitations
-   
-   const auto& key_idx = _db.get_index< account_member_key_index >().indices().get< by_member_business >();
-   auto key_itr = key_idx.find( std::make_tuple( invite.member, o.business_account ) );
-
-   FC_ASSERT( key_itr != key_idx.end(),
-      "Business account key for invited account does not exist." );
-
-   if( o.accepted )   // Accepting the request, skipped if rejecting
-   {
-      _db.modify( bus_acc , [&]( account_business_object& abo )
-      {
-         abo.members.insert( invite.member );
-      });
-   }
-
-   ilog( "Removed: ${v}",("v",invite));
-   _db.remove( invite );
-
-} FC_CAPTURE_AND_RETHROW( ( o )) }
-
-
-void account_remove_member_evaluator::do_apply( const account_remove_member_operation& o )
-{ try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_remove( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   const account_object& account = _db.get_account( o.account ); 
-   const account_object& member_acc = _db.get_account( o.member );
-   FC_ASSERT( member_acc.active, 
-      "Account: ${s} must be active to accept member requests.",
-      ("s", o.member) );
-   const account_object& business = _db.get_account( o.business_account );
-   FC_ASSERT( business.active, 
-      "Account: ${s} must be active to remove members.",
-      ("s", o.business_account) );
-   const account_business_object& bus_acc = _db.get_account_business( o.business_account );
-
-   FC_ASSERT( bus_acc.is_member( member_acc.name ), 
-      "Account: ${a} is not a member of business: ${b}.",
-      ("a", o.member)("b", o.business_account) );
-   FC_ASSERT( !bus_acc.is_executive( member_acc.name ), 
-      "Account: ${a} cannot be removed while an executive of Business: ${b}",
-      ("a", o.member)("b", o.business_account) );
-
-   if( account.name != member_acc.name )     // Account can remove itself from  membership.  
-   {
-      FC_ASSERT( bus_acc.is_authorized_remove( o.account, _db.get_account_permissions( o.business_account ) ), 
-         "Account: ${a} is not authorised to remove accounts from the Business: ${b}",
-         ("a", o.account)("b", o.business_account)); 
-   }
-
-   const auto& key_idx = _db.get_index< account_member_key_index >().indices().get< by_member_business >();
-   auto key_itr = key_idx.find( std::make_tuple( o.member, o.business_account ) );
-   
-   _db.modify( bus_acc, [&]( account_business_object& abo )
-   {
-      abo.members.erase( member_acc.name );
-      abo.officers.erase( member_acc.name );
-   });
-   if( key_itr != key_idx.end() )
-   {
-      const account_member_key_object& key = *key_itr;
-
-      ilog( "Removed: ${v}",("v",key));
-      _db.remove( key );
-   }
-} FC_CAPTURE_AND_RETHROW( ( o )) }
-
-
 void account_update_list_evaluator::do_apply( const account_update_list_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_remove( o.signatory, _db.get_account_permissions( signed_for ) ),
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", o.account) );
    
    account_name_type account_name;
    asset_symbol_type asset_sym;
@@ -1358,20 +665,6 @@ void account_update_list_evaluator::do_apply( const account_update_list_operatio
    }
 
    const account_permission_object& perm = _db.get_account_permissions( o.account );
-   const account_business_object* bus_acc_ptr = _db.find_account_business( o.account );
-
-   if( bus_acc_ptr != nullptr )
-   {
-      FC_ASSERT( !bus_acc_ptr->is_member( account_name ),
-         "Account: ${a} cannot be blacklisted while a member of business: ${b}. Remove them first.",
-         ("a", account_name)("b", o.account));
-      FC_ASSERT( !bus_acc_ptr->is_officer( account_name ),
-         "Account: ${a} cannot be blacklisted while a officer of business: ${b}. Remove them first.",
-         ("a", account_name)("b", o.account));
-      FC_ASSERT( !bus_acc_ptr->is_executive( account_name ),
-         "Account: ${a} cannot be blacklisted while an executive of business: ${b}. Remove them first.",
-         ("a", account_name)("b", o.account));
-   }
    
    _db.modify( perm, [&]( account_permission_object& apo )
    {
@@ -1420,20 +713,11 @@ void account_update_list_evaluator::do_apply( const account_update_list_operatio
 
 void account_producer_vote_evaluator::do_apply( const account_producer_vote_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
    const account_object& voter = _db.get_account( o.account );
+   FC_ASSERT( voter.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account) );
+      
    const producer_object& producer = _db.get_producer( o.producer );
    time_point now = _db.head_block_time();
 
@@ -1507,22 +791,11 @@ void account_producer_vote_evaluator::do_apply( const account_producer_vote_oper
 
 void account_update_proxy_evaluator::do_apply( const account_update_proxy_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
    const account_object& account = _db.get_account( o.account );
    time_point now = _db.head_block_time();
-   
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account) );
    FC_ASSERT( account.proxy != o.proxy,
       "Proxy must change." );
    FC_ASSERT( account.can_vote,
@@ -1585,21 +858,11 @@ void account_update_proxy_evaluator::do_apply( const account_update_proxy_operat
 
 void account_request_recovery_evaluator::do_apply( const account_request_recovery_operation& o )
 { try {
-   const account_name_type& signed_for = o.recovery_account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_executive( o.signatory ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
+   const account_object& recovery_account = _db.get_account( o.recovery_account );
+   FC_ASSERT( recovery_account.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.recovery_account) );
    const account_object& account_to_recover = _db.get_account( o.account_to_recover );
+
    time_point now = _db.head_block_time();
    const auto& producer_idx = _db.get_index< producer_index >().indices().get< by_voting_power >();
 
@@ -1662,21 +925,9 @@ void account_request_recovery_evaluator::do_apply( const account_request_recover
 
 void account_recover_evaluator::do_apply( const account_recover_operation& o )
 { try {
-   const account_name_type& signed_for = o.account_to_recover;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_executive( o.signatory ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
    const account_object& account = _db.get_account( o.account_to_recover );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.account_to_recover) );
    time_point now = _db.head_block_time();
 
    FC_ASSERT( now - account.last_account_recovery >= OWNER_UPDATE_LIMIT,
@@ -1715,20 +966,9 @@ void account_recover_evaluator::do_apply( const account_recover_operation& o )
 
 void account_reset_evaluator::do_apply( const account_reset_operation& o )
 { try {
-   const account_name_type& signed_for = o.reset_account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_executive( o.signatory ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
+   const account_object& reset_account = _db.get_account( o.reset_account );
+   FC_ASSERT( reset_account.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", o.reset_account) );
    const account_object& account = _db.get_account( o.account_to_reset );
    
    FC_ASSERT( account.reset_account == o.reset_account,
@@ -1772,29 +1012,16 @@ void account_reset_evaluator::do_apply( const account_reset_operation& o )
 
 void account_reset_update_evaluator::do_apply( const account_reset_update_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_executive( o.signatory ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
    const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.account) );
    const account_object& new_reset_account = _db.get_account( o.new_reset_account );
-   time_point now = _db.head_block_time();
-
    FC_ASSERT( new_reset_account.active,
       "Account: ${s} must be active to become new reset account.",
       ("s", o.new_reset_account) );
    FC_ASSERT( account.reset_account != o.new_reset_account,
       "Reset account must change." );
+   time_point now = _db.head_block_time();
    
    _db.modify( account, [&]( account_object& a )
    {
@@ -1810,24 +1037,12 @@ void account_reset_update_evaluator::do_apply( const account_reset_update_operat
 
 void account_recovery_update_evaluator::do_apply( const account_recovery_update_operation& o )
 { try {
-   const account_name_type& signed_for = o.account_to_recover;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_executive( o.signatory ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
+   const account_object& account_to_recover = _db.get_account( o.account_to_recover );
+   FC_ASSERT( account_to_recover.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.account_to_recover) );
    const account_object& new_recovery_account = _db.get_account( o.new_recovery_account );
    FC_ASSERT( new_recovery_account.active,
       "Account: ${s} must be active to be a new recovery account.",("s", o.new_recovery_account) );
-   const account_object& account_to_recover = _db.get_account( o.account_to_recover );
    time_point now = _db.head_block_time();
 
    const auto& change_recovery_idx = _db.get_index< account_recovery_update_request_index >().indices().get< by_account >();
@@ -1862,21 +1077,9 @@ void account_recovery_update_evaluator::do_apply( const account_recovery_update_
 
 void account_decline_voting_evaluator::do_apply( const account_decline_voting_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_chief( o.signatory ),
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
    const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.account) );
    time_point now = _db.head_block_time();
 
    const auto& req_idx = _db.get_index< account_decline_voting_request_index >().indices().get< by_account >();
@@ -1909,22 +1112,12 @@ void account_decline_voting_evaluator::do_apply( const account_decline_voting_op
 
 void account_connection_evaluator::do_apply( const account_connection_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
    const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.account) );
    const account_object& con_account = _db.get_account( o.connecting_account );
+   FC_ASSERT( con_account.active, 
+      "Account: ${s} must be active to create or update connection.",("s", o.connecting_account) );
    time_point now = _db.head_block_time();
    public_key_type public_key;
 
@@ -2135,21 +1328,13 @@ void account_connection_evaluator::do_apply( const account_connection_operation&
  */
 void account_follow_evaluator::do_apply( const account_follow_operation& o )
 { try {
-   const account_name_type& signed_for = o.follower;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
    const account_object& follower = _db.get_account( o.follower );
+   FC_ASSERT( follower.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.follower) );
    const account_object& following = _db.get_account( o.following );
+   FC_ASSERT( following.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.following) );
+
    const account_following_object& follower_set = _db.get_account_following( o.follower );
    const account_following_object& following_set = _db.get_account_following( o.following );
    time_point now = _db.head_block_time();
@@ -2176,12 +1361,12 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
          if( follower.membership == membership_tier_type::NONE )     // Check for the presence of an ad bid on this follow.
          {
             const auto& bid_idx = _db.get_index< ad_bid_index >().indices().get< by_provider_metric_author_objective_price >();
-            auto bid_itr = bid_idx.lower_bound( std::make_tuple( o.interface, ad_metric_type::FOLLOW_METRIC, o.following, o.following ) );
+            auto bid_itr = bid_idx.lower_bound( std::make_tuple( o.interface, ad_metric_type::FOLLOW_METRIC, account_name_type(), o.following ) );
 
             while( bid_itr != bid_idx.end() &&
                bid_itr->provider == o.interface &&
                bid_itr->metric == ad_metric_type::FOLLOW_METRIC &&
-               bid_itr->author == o.following &&
+               bid_itr->author == account_name_type() &&
                to_string( bid_itr->objective ) == string( o.following ) )    // Retrieves highest paying bids for this share by this interface.
             {
                const ad_bid_object& bid = *bid_itr;
@@ -2261,20 +1446,9 @@ void account_follow_evaluator::do_apply( const account_follow_operation& o )
 
 void account_follow_tag_evaluator::do_apply( const account_follow_tag_operation& o )
 { try {
-   const account_name_type& signed_for = o.follower;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
    const account_object& follower = _db.get_account( o.follower );
+   FC_ASSERT( follower.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.follower) );
    const account_following_object& follower_set = _db.get_account_following( o.follower );
    const account_tag_following_object* tag_ptr = _db.find_account_tag_following( o.tag );
    time_point now = _db.head_block_time();
@@ -2391,22 +1565,11 @@ void account_follow_tag_evaluator::do_apply( const account_follow_tag_operation&
 
 void account_activity_evaluator::do_apply( const account_activity_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_officer( o.signatory ),
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
-   time_point now = _db.head_block_time();
    const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+         "Account: ${s} must be active to broadcast transaction.",("s", o.account) );
+   time_point now = _db.head_block_time();
+
    FC_ASSERT( now >= ( account.last_activity_reward + fc::days(1) ),
       "Can only claim activity reward once per 24 hours." );
    FC_ASSERT( account.producer_vote_count >= MIN_ACTIVITY_PRODUCERS,

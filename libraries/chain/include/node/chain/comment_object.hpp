@@ -188,6 +188,8 @@ namespace node { namespace chain {
 
          comment_reward_curve              reward_curve = comment_reward_curve();  ///< The components of the reward curve determined at the time of creating the post.
 
+         bool                              channel = false;                     ///< True when a post is a channel post, and included in the channel feed of the community as the community name instead of author.
+
          bool                              allow_replies = true;                ///< allows a post to receive replies.
 
          bool                              allow_votes = true;                  ///< allows a post to receive votes.
@@ -536,7 +538,7 @@ namespace node { namespace chain {
 
          id_type                             id;
 
-         account_name_type                   moderator;                    ///< Name of the moderator or goverance account that created the comment tag.
+         account_name_type                   moderator;                    ///< Name of the moderator or governance account that created the comment tag.
 
          comment_id_type                     comment;                      ///< ID of the comment.
 
@@ -1876,6 +1878,7 @@ FC_REFLECT( node::chain::comment_object,
          (max_accepted_payout)
          (reward_currency)
          (reward_curve)
+         (channel)
          (allow_replies)
          (allow_votes)
          (allow_views)

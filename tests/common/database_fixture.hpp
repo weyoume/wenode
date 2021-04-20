@@ -110,13 +110,13 @@ extern fc::time_point TESTING_GENESIS_TIMESTAMP;
 #define INVOKE(test) ((struct test*)this)->test_method(); trx.clear()
 
 #define PREP_ACTOR(name) \
-   private_key_type name ## _private_owner_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + OWNER_KEY_STR + INIT_ACCOUNT_PASSWORD );             \
-   private_key_type name ## _private_active_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + ACTIVE_KEY_STR + INIT_ACCOUNT_PASSWORD );           \
-   private_key_type name ## _private_posting_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + POSTING_KEY_STR + INIT_ACCOUNT_PASSWORD );         \
-   private_key_type name ## _private_secure_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + SECURE_KEY_STR + INIT_ACCOUNT_PASSWORD );           \
-   private_key_type name ## _private_connection_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + CONNECTION_KEY_STR + INIT_ACCOUNT_PASSWORD );   \
-   private_key_type name ## _private_friend_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + FRIEND_KEY_STR + INIT_ACCOUNT_PASSWORD );           \
-   private_key_type name ## _private_companion_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + COMPANION_KEY_STR + INIT_ACCOUNT_PASSWORD );     \
+   private_key_type name ## _private_owner_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + OWNER_KEY_STR + INIT_PASSWORD );             \
+   private_key_type name ## _private_active_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + ACTIVE_KEY_STR + INIT_PASSWORD );           \
+   private_key_type name ## _private_posting_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + POSTING_KEY_STR + INIT_PASSWORD );         \
+   private_key_type name ## _private_secure_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + SECURE_KEY_STR + INIT_PASSWORD );           \
+   private_key_type name ## _private_connection_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + CONNECTION_KEY_STR + INIT_PASSWORD );   \
+   private_key_type name ## _private_friend_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + FRIEND_KEY_STR + INIT_PASSWORD );           \
+   private_key_type name ## _private_companion_key = protocol::generate_private_key(std::string( BOOST_PP_STRINGIZE(name) ) + COMPANION_KEY_STR + INIT_PASSWORD );     \
    public_key_type name ## _public_owner_key = name ## _private_owner_key.get_public_key();                                                                              \
    public_key_type name ## _public_active_key = name ## _private_active_key.get_public_key();                                                                            \
    public_key_type name ## _public_posting_key = name ## _private_posting_key.get_public_key();                                                                          \
@@ -180,26 +180,26 @@ namespace node { namespace chain {
       fc::ecc::private_key         private_key = fc::ecc::private_key::generate();
 
 
-      fc::ecc::public_key          init_account_public_owner_key = protocol::get_public_key( INIT_ACCOUNT, OWNER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      fc::ecc::public_key          init_account_public_owner_key = protocol::get_public_key( INIT_ACCOUNT, OWNER_KEY_STR, INIT_PASSWORD );
 
-      fc::ecc::public_key          init_account_public_active_key = protocol::get_public_key( INIT_ACCOUNT, ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      fc::ecc::public_key          init_account_public_active_key = protocol::get_public_key( INIT_ACCOUNT, ACTIVE_KEY_STR, INIT_PASSWORD );
 
-      fc::ecc::public_key          init_account_public_posting_key = protocol::get_public_key( INIT_ACCOUNT, POSTING_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      fc::ecc::public_key          init_account_public_posting_key = protocol::get_public_key( INIT_ACCOUNT, POSTING_KEY_STR, INIT_PASSWORD );
 
-      fc::ecc::public_key          init_account_public_secure_key = protocol::get_public_key( INIT_ACCOUNT, SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      fc::ecc::public_key          init_account_public_secure_key = protocol::get_public_key( INIT_ACCOUNT, SECURE_KEY_STR, INIT_PASSWORD );
 
-      fc::ecc::public_key          init_account_public_producer_key = protocol::get_public_key( INIT_ACCOUNT, PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      fc::ecc::public_key          init_account_public_producer_key = protocol::get_public_key( INIT_ACCOUNT, PRODUCER_KEY_STR, INIT_PASSWORD );
 
 
-      fc::ecc::private_key         init_account_private_owner_key = protocol::get_private_key( INIT_ACCOUNT, OWNER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      fc::ecc::private_key         init_account_private_owner_key = protocol::get_private_key( INIT_ACCOUNT, OWNER_KEY_STR, INIT_PASSWORD );
 
-      fc::ecc::private_key         init_account_private_active_key = protocol::get_private_key( INIT_ACCOUNT, ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      fc::ecc::private_key         init_account_private_active_key = protocol::get_private_key( INIT_ACCOUNT, ACTIVE_KEY_STR, INIT_PASSWORD );
 
-      fc::ecc::private_key         init_account_private_posting_key = protocol::get_private_key( INIT_ACCOUNT, POSTING_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      fc::ecc::private_key         init_account_private_posting_key = protocol::get_private_key( INIT_ACCOUNT, POSTING_KEY_STR, INIT_PASSWORD );
 
-      fc::ecc::private_key         init_account_private_secure_key = protocol::get_private_key( INIT_ACCOUNT, SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      fc::ecc::private_key         init_account_private_secure_key = protocol::get_private_key( INIT_ACCOUNT, SECURE_KEY_STR, INIT_PASSWORD );
 
-      fc::ecc::private_key         init_account_private_producer_key = protocol::get_private_key( INIT_ACCOUNT, PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      fc::ecc::private_key         init_account_private_producer_key = protocol::get_private_key( INIT_ACCOUNT, PRODUCER_KEY_STR, INIT_PASSWORD );
 
 
       string                       init_account_private_owner_wif = graphene::utilities::key_to_wif( init_account_private_owner_key );

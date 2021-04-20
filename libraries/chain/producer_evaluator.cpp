@@ -31,19 +31,10 @@ namespace node { namespace chain {
 
 void producer_update_evaluator::do_apply( const producer_update_operation& o )
 { try {
-   const account_name_type& signed_for = o.owner;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& owner = _db.get_account( o.owner );
+   FC_ASSERT( owner.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.owner) );
 
    time_point now = _db.head_block_time();
    const auto& by_producer_name_idx = _db.get_index< producer_index >().indices().get< by_name >();
@@ -204,25 +195,17 @@ void proof_of_work_evaluator::do_apply( const proof_of_work_operation& o )
 
 void verify_block_evaluator::do_apply( const verify_block_operation& o )
 { try {
-   const account_name_type& signed_for = o.producer;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& producer_account = _db.get_account( o.producer );
+   FC_ASSERT( producer_account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.producer) );
    
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    time_point now = _db.head_block_time();
    const producer_object& producer = _db.get_producer( o.producer );
    FC_ASSERT( producer.active, 
-      "Account: ${s} must be active to verify blocks.",("s", o.producer) );
+      "Account: ${s} must be active to verify blocks.",
+      ("s", o.producer) );
 
    fc::optional< signed_block > prev_block = _db.fetch_block_by_id( o.block_id );
    FC_ASSERT( prev_block.valid(),
@@ -285,19 +268,10 @@ void verify_block_evaluator::do_apply( const verify_block_operation& o )
 
 void commit_block_evaluator::do_apply( const commit_block_operation& o )
 { try {
-   const account_name_type& signed_for = o.producer;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& producer_account = _db.get_account( o.producer );
+   FC_ASSERT( producer_account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.producer) );
    const dynamic_global_property_object& props = _db.get_dynamic_global_properties();
    time_point now = _db.head_block_time();
    const producer_object& producer = _db.get_producer( o.producer );
@@ -385,20 +359,11 @@ void commit_block_evaluator::do_apply( const commit_block_operation& o )
  */
 void producer_violation_evaluator::do_apply( const producer_violation_operation& o )
 { try {
-   const account_name_type& signed_for = o.reporter;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_network( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
+   const account_object& reporter = _db.get_account( o.reporter );
+   FC_ASSERT( reporter.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.reporter) );
+   
    time_point now = _db.head_block_time();
    const producer_schedule_object& pso = _db.get_producer_schedule();
    const chain_id_type& chain_id = CHAIN_ID;

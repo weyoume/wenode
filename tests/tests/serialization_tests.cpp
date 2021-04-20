@@ -77,7 +77,6 @@ BOOST_AUTO_TEST_CASE( serialization_raw_test )
 
       transfer_operation transfer;
 
-      transfer.signatory = "alice";
       transfer.from = "alice";
       transfer.to = "bob";
       transfer.amount = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -119,7 +118,6 @@ BOOST_AUTO_TEST_CASE( serialization_json_test )
 
       transfer_operation transfer;
 
-      transfer.signatory = "alice";
       transfer.from = "alice";
       transfer.to = "bob";
       transfer.amount = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );

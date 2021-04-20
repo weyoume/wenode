@@ -31,28 +31,17 @@ namespace node { namespace chain {
 
 void community_create_evaluator::do_apply( const community_create_operation& o )
 { try {
-   const account_name_type& signed_for = o.founder;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
+   _db.check_namespace( o.name );
    const account_object& founder = _db.get_account( o.founder );
+   FC_ASSERT( founder.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.founder));
+
    time_point now = _db.head_block_time();
    FC_ASSERT( now >= founder.last_community_created + MIN_COMMUNITY_CREATE_INTERVAL,
       "Founder: ${f} can only create one community per day, try again after: ${t}.",
       ("f",o.founder)("t", founder.last_community_created + MIN_COMMUNITY_CREATE_INTERVAL) );
-   const community_object* community_ptr = _db.find_community( o.name );
-   FC_ASSERT( community_ptr == nullptr,
-      "Community with the name: ${n} already exists. Please select another name.", ("n", o.name) );
+   
    const asset_object& reward_currency = _db.get_asset( o.reward_currency );
     FC_ASSERT( reward_currency.asset_type == asset_property_type::CURRENCY_ASSET,
       "Reward currency asset must be either a currency type asset." );
@@ -245,6 +234,7 @@ void community_create_evaluator::do_apply( const community_create_operation& o )
       cmo.add_administrator( o.founder );
 
       cmo.private_community = o.private_community;
+      cmo.channel = o.channel;
       cmo.author_permission = author_permission;
       cmo.reply_permission = reply_permission;
       cmo.vote_permission = vote_permission;
@@ -293,20 +283,9 @@ void community_create_evaluator::do_apply( const community_create_operation& o )
 
 void community_update_evaluator::do_apply( const community_update_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.account) );
    const community_object& community = _db.get_community( o.community );
 
    // New permissions must be subset of old permissions.
@@ -553,6 +532,7 @@ void community_update_evaluator::do_apply( const community_update_operation& o )
    _db.modify( community_permission, [&]( community_permission_object& cmo )
    {
       cmo.private_community = o.private_community;
+      cmo.channel = o.channel;
       cmo.author_permission = author_permission;
       cmo.reply_permission = reply_permission;
       cmo.vote_permission = vote_permission;
@@ -584,19 +564,10 @@ void community_update_evaluator::do_apply( const community_update_operation& o )
 
 void community_member_evaluator::do_apply( const community_member_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_general( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account));
 
    const account_object& member = _db.get_account( o.member );
    const account_following_object& account_following = _db.get_account_following( o.member );
@@ -1581,19 +1552,10 @@ void community_member_evaluator::do_apply( const community_member_operation& o )
 
 void community_member_request_evaluator::do_apply( const community_member_request_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account));
    const community_object& community = _db.get_community( o.community );
    FC_ASSERT( community.active,
       "Community: ${s} must be active to create member requests.",
@@ -2016,21 +1978,11 @@ void community_member_request_evaluator::do_apply( const community_member_reques
 
 void community_member_vote_evaluator::do_apply( const community_member_vote_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account));
 
-   const account_object& voter = _db.get_account( o.account );
    const account_object& member = _db.get_account( o.member );
    time_point now = _db.head_block_time();
    
@@ -2045,7 +1997,7 @@ void community_member_vote_evaluator::do_apply( const community_member_vote_oper
 
    if( o.approved )
    {
-      FC_ASSERT( voter.can_vote, 
+      FC_ASSERT( account.can_vote, 
          "Account has declined its voting rights." );
       FC_ASSERT( community_permission.is_member( o.account ),
          "Account: ${a} must be a member before voting for a Member of Community: ${c}.",
@@ -2075,7 +2027,7 @@ void community_member_vote_evaluator::do_apply( const community_member_vote_oper
             cmvo.created = now;
          });
          
-         _db.update_community_member_votes( voter, o.community );
+         _db.update_community_member_votes( account, o.community );
 
          ilog( "Account: ${a} Added Community Member Vote: ${m} of rank: ${t} \n ${p} \n",
             ("a",o.account)("m",o.member)("t",o.vote_rank)("p",community_member_vote));
@@ -2098,7 +2050,7 @@ void community_member_vote_evaluator::do_apply( const community_member_vote_oper
             _db.remove( *account_community_member_itr );
          }
 
-         _db.update_community_member_votes( voter, o.community, o.member, o.vote_rank );   // Remove existing moderator vote, and add at new rank.
+         _db.update_community_member_votes( account, o.community, o.member, o.vote_rank );   // Remove existing moderator vote, and add at new rank.
       }
    }
    else       // Removing existing vote
@@ -2116,7 +2068,7 @@ void community_member_vote_evaluator::do_apply( const community_member_vote_oper
          ilog( "Removed: ${v}",("v",*account_community_rank_itr));
          _db.remove( *account_community_rank_itr );
       }
-      _db.update_community_member_votes( voter, o.community );
+      _db.update_community_member_votes( account, o.community );
    }
 
    ilog( "Account: ${a} Completed Operation Community Member Vote: ${m} of rank: ${t}",
@@ -2126,19 +2078,10 @@ void community_member_vote_evaluator::do_apply( const community_member_vote_oper
 
 void community_blacklist_evaluator::do_apply( const community_blacklist_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_governance( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account));
    
    const account_object& member = _db.get_account( o.member );
    const community_object& community = _db.get_community( o.community );
@@ -2185,19 +2128,10 @@ void community_blacklist_evaluator::do_apply( const community_blacklist_operatio
 
 void community_subscribe_evaluator::do_apply( const community_subscribe_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account));
 
    const account_following_object& account_following = _db.get_account_following( o.account );
    const community_object& community = _db.get_community( o.community );
@@ -2234,6 +2168,32 @@ void community_subscribe_evaluator::do_apply( const community_subscribe_operatio
             afo.add_followed_community( community.name );
             afo.last_updated = now;
          });
+
+         const account_object& subscriber = _db.get_account( o.account );
+
+         if( subscriber.membership == membership_tier_type::NONE )     // Check for the presence of an ad bid on this subscription.
+         {
+            const auto& bid_idx = _db.get_index< ad_bid_index >().indices().get< by_provider_metric_author_objective_price >();
+            auto bid_itr = bid_idx.lower_bound( std::make_tuple( o.interface, ad_metric_type::SUBSCRIBE_METRIC, account_name_type(), o.community ) );
+
+            while( bid_itr != bid_idx.end() &&
+               bid_itr->provider == o.interface &&
+               bid_itr->metric == ad_metric_type::SUBSCRIBE_METRIC &&
+               bid_itr->author == account_name_type() &&
+               to_string( bid_itr->objective ) == string( o.community ) )    // Retrieves highest paying bids for this subscription by this interface.
+            {
+               const ad_bid_object& bid = *bid_itr;
+               const ad_audience_object& audience = _db.get_ad_audience( bid.bidder, bid.audience_id );
+
+               if( !bid.is_delivered( o.account ) && audience.is_audience( o.account ) )
+               {
+                  _db.deliver_ad_bid( bid, subscriber );
+                  break;
+               }
+
+               ++bid_itr;
+            }
+         }
       }
       else        // Add filter
       {
@@ -2277,19 +2237,10 @@ void community_subscribe_evaluator::do_apply( const community_subscribe_operatio
 
 void community_federation_evaluator::do_apply( const community_federation_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account));
 
    const community_object& community = _db.get_community( o.community );
    FC_ASSERT( community.active,
@@ -2468,19 +2419,10 @@ void community_federation_evaluator::do_apply( const community_federation_operat
 
 void community_event_evaluator::do_apply( const community_event_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account));
 
    const community_object& community = _db.get_community( o.community );
 
@@ -2657,24 +2599,15 @@ void community_event_evaluator::do_apply( const community_event_operation& o )
 
 void community_event_attend_evaluator::do_apply( const community_event_attend_operation& o )
 { try {
-   const account_name_type& signed_for = o.attendee;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& attendee = _db.get_account( o.attendee );
+   FC_ASSERT( attendee.active,
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.attendee));
 
    const community_event_object& event = _db.get_community_event( o.community, o.event_id );
    const community_object& community = _db.get_community( o.community );
 
-   FC_ASSERT( community.active, 
+   FC_ASSERT( community.active,
       "Community: ${c} must be active to attend event: ${i}.",
       ("c", o.community)("i",o.event_id));
 
@@ -2882,28 +2815,15 @@ void community_event_attend_evaluator::do_apply( const community_event_attend_op
 
 void community_directive_evaluator::do_apply( const community_directive_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active,
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account));
    const community_object& community = _db.get_community( o.community );
-
    FC_ASSERT( community.active, 
       "Community: ${s} must be active to create directives.",
       ("s", o.community) );
-
    const community_permission_object& community_permission = _db.get_community_permission( o.community );
-
    FC_ASSERT( community_permission.is_authorized_directive( o.account ),
       "Account: ${a} is not authorized to create directives within community: ${c}.",
       ("a",o.account)("c",o.community));
@@ -3057,19 +2977,10 @@ void community_directive_evaluator::do_apply( const community_directive_operatio
 
 void community_directive_vote_evaluator::do_apply( const community_directive_vote_operation& o )
 { try {
-   const account_name_type& signed_for = o.voter;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& voter = _db.get_account( o.voter );
+   FC_ASSERT( voter.active,
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.voter));
 
    const community_directive_object& directive = _db.get_community_directive( o.account, o.directive_id );
    const community_object& community = _db.get_community( directive.community );
@@ -3220,28 +3131,17 @@ void community_directive_vote_evaluator::do_apply( const community_directive_vot
 
 void community_directive_member_evaluator::do_apply( const community_directive_member_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account));
 
    const community_object& community = _db.get_community( o.community );
-
    FC_ASSERT( community.active && community.enable_directives(), 
       "Community: ${s} must be active and have directives enabled to create directives.",
       ("s", o.community) );
 
    const community_permission_object& community_permission = _db.get_community_permission( o.community );
-
    FC_ASSERT( community_permission.is_authorized_directive( o.account ),
       "Account: ${a} is not authorized to create a directive member within community: ${c}.",
       ("a",o.account)("c",o.community));
@@ -3514,33 +3414,24 @@ void community_directive_member_evaluator::do_apply( const community_directive_m
 
 void community_directive_member_vote_evaluator::do_apply( const community_directive_member_vote_operation& o )
 { try {
-   const account_name_type& signed_for = o.voter;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
-   const community_directive_member_object& voter = _db.get_community_directive_member( o.voter, o.community );
-   const community_directive_member_object& member = _db.get_community_directive_member( o.member, o.community );
+   const account_object& voter = _db.get_account( o.voter );
+   FC_ASSERT( voter.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.voter) );
+   
+   const community_directive_member_object& voter_directive = _db.get_community_directive_member( o.voter, o.community );
+   const community_directive_member_object& member_directive = _db.get_community_directive_member( o.member, o.community );
    const community_object& community = _db.get_community( o.community );
 
    FC_ASSERT( community.active, 
       "Community: ${s} must be active to create directives.",
       ("s",o.community));
-   FC_ASSERT( voter.active, 
+   FC_ASSERT( voter_directive.active, 
       "Community Directive Member: ${m} must be active to create directive member votes.",
-      ("m",voter));
-   FC_ASSERT( member.active, 
+      ("m",voter_directive));
+   FC_ASSERT( member_directive.active, 
       "Community Directive Member: ${m} must be active to create directive member votes.",
-      ("m",member));
+      ("m",member_directive));
 
    const community_permission_object& community_permission = _db.get_community_permission( o.community );
 
@@ -3614,7 +3505,7 @@ void community_directive_member_vote_evaluator::do_apply( const community_direct
          cdmvo.created = now;
       });
 
-      _db.modify( member, [&]( community_directive_member_object& cdmo )
+      _db.modify( member_directive, [&]( community_directive_member_object& cdmo )
       {
          if( o.approve )
          {
@@ -3634,7 +3525,7 @@ void community_directive_member_vote_evaluator::do_apply( const community_direct
 
       if( o.active )
       {
-         _db.modify( member, [&]( community_directive_member_object& cdmo )
+         _db.modify( member_directive, [&]( community_directive_member_object& cdmo )
          {
             if( o.approve && !vote.approve )    // Changing from not approve to approve
             {
@@ -3672,7 +3563,7 @@ void community_directive_member_vote_evaluator::do_apply( const community_direct
       }
       else
       {
-         _db.modify( member, [&]( community_directive_member_object& cdmo )
+         _db.modify( member_directive, [&]( community_directive_member_object& cdmo )
          {
             if( vote.approve )    // Removing approval
             {

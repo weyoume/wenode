@@ -585,8 +585,6 @@ namespace node { namespace chain {
 
          asset                   activity_reward_balance = asset( 0, symbol );              ///< Balance distributed to content creators that are active each day. 
 
-         asset                   premium_partners_fund_balance = asset( 0, symbol );        ///< Receives income from memberships, distributed to premium creators. 
-
          uint128_t               recent_content_claims = 0;                                 ///< Recently claimed content reward balance shares.
 
          uint128_t               recent_activity_claims = 0;                                ///< Recently claimed activity reward balance shares.
@@ -605,7 +603,7 @@ namespace node { namespace chain {
             return content_reward_balance + validation_reward_balance + txn_stake_reward_balance + 
                work_reward_balance + activity_reward_balance + supernode_reward_balance + power_reward_balance + 
                enterprise_fund_balance + development_reward_balance + marketing_reward_balance + advocacy_reward_balance + 
-               activity_reward_balance + premium_partners_fund_balance;
+               activity_reward_balance;
          }        
 
          void                    adjust_content_reward_balance( const asset& delta )
@@ -713,15 +711,6 @@ namespace node { namespace chain {
                "Symbol: ${s} Delta: ${d}",
                ("s",symbol)("d",delta.symbol));
             activity_reward_balance += delta;
-            FC_ASSERT( content_reward_balance.amount >= 0 );
-         } FC_CAPTURE_AND_RETHROW() }
-
-         void                    adjust_premium_partners_fund_balance( const asset& delta )
-         { try {
-            FC_ASSERT( delta.symbol == symbol,
-               "Symbol: ${s} Delta: ${d}",
-               ("s",symbol)("d",delta.symbol));
-            premium_partners_fund_balance += delta;
             FC_ASSERT( content_reward_balance.amount >= 0 );
          } FC_CAPTURE_AND_RETHROW() }
    };
@@ -976,7 +965,7 @@ namespace node { namespace chain {
     * Equity assets enable a business account to raise equity capital.
     * 
     * Equity assets providing voting rights over the business account's 
-    * leadership structure as to which accounts can use the signatory authority
+    * leadership structure as to which accounts can use the authority
     * to conduct business management operations.
     * 
     * Equity asset holder also receive a weekly dividend from the incoming 
@@ -995,7 +984,7 @@ namespace node { namespace chain {
 
          id_type                    id;
 
-         account_name_type          business_account;            ///< The business account name of the issuer.
+         account_name_type          issuer;                      ///< The business account name of the issuer.
 
          asset_symbol_type          symbol;                      ///< The symbol of the equity asset of the business.
 
@@ -1073,7 +1062,7 @@ namespace node { namespace chain {
 
          id_type                          id;
 
-         account_name_type                business_account;          ///< The account name of the issuer. Locks collateral to issue new bond units.
+         account_name_type                issuer;                    ///< The account name of the issuer. Locks collateral to issue new bond units.
 
          asset_symbol_type                symbol;                    ///< The symbol of the bond asset.
 
@@ -1083,7 +1072,7 @@ namespace node { namespace chain {
 
          uint16_t                         coupon_rate_percent;       ///< Percentage rate of the value that is paid each month in interest to the holders.
 
-         date_type                        maturity_date;             ///< Date at which the bond will mature. Principle value will be automatically paid from business_account.
+         date_type                        maturity_date;             ///< Date at which the bond will mature. Principle value will be automatically paid from business.
 
          asset                            collateral_pool;           ///< Amount of collateral backing the bond assets. Distributed in case of default. 
 
@@ -1146,7 +1135,7 @@ namespace node { namespace chain {
 
          id_type                id;
 
-         account_name_type      business_account;                ///< The business account name of the issuer.
+         account_name_type      issuer;                          ///< The business account name of the issuer.
 
          asset_symbol_type      symbol;                          ///< The symbol of the credit asset of the business.
 
@@ -1212,7 +1201,7 @@ namespace node { namespace chain {
 
          id_type                              id;
 
-         account_name_type                    business_account;                   ///< The business account name of the issuer.
+         account_name_type                    issuer;                             ///< The business account name of the issuer.
 
          asset_symbol_type                    symbol;                             ///< The symbol of the stimulus asset.
 
@@ -1380,9 +1369,9 @@ namespace node { namespace chain {
 
          share_type                                 max_input_balance_units;               ///< Maximum fund units that each sender can contribute in an individual balance.
          
-         asset                                      total_distributed;                     ///< Amount of distribution asset generated and distributed to all fund balances.
+         asset                                      total_distributed = asset( 0, distribution_asset ); ///< Amount of distribution asset generated and distributed to all fund balances.
 
-         asset                                      total_funded;                          ///< Amount of fund asset funded by all incoming fund balances.
+         asset                                      total_funded = asset( 0, fund_asset ); ///< Amount of fund asset funded by all incoming fund balances.
          
          time_point                                 begin_time;                            ///< Time to begin the first distribution.
 
@@ -1856,10 +1845,10 @@ FC_REFLECT( node::chain::asset_reward_fund_object,
          (id)
          (symbol)
          (content_reward_balance)
-         (validation_reward_balance) 
-         (txn_stake_reward_balance) 
+         (validation_reward_balance)
+         (txn_stake_reward_balance)
          (work_reward_balance)
-         (producer_activity_reward_balance) 
+         (producer_activity_reward_balance)
          (supernode_reward_balance)
          (power_reward_balance)
          (enterprise_fund_balance)
@@ -1867,7 +1856,6 @@ FC_REFLECT( node::chain::asset_reward_fund_object,
          (marketing_reward_balance)
          (advocacy_reward_balance)
          (activity_reward_balance)
-         (premium_partners_fund_balance)
          (recent_content_claims)
          (recent_activity_claims)
          (last_updated)
@@ -1920,7 +1908,7 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::asset_collateral_bid_object, node::chain:
 
 FC_REFLECT( node::chain::asset_equity_data_object,
          (id)
-         (business_account)
+         (issuer)
          (symbol)
          (dividend_pool)
          (last_dividend)
@@ -1938,7 +1926,7 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::asset_equity_data_object, node::chain::as
 
 FC_REFLECT( node::chain::asset_bond_data_object,
          (id)
-         (business_account)
+         (issuer)
          (symbol)
          (value)
          (collateralization)
@@ -1951,7 +1939,7 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::asset_bond_data_object, node::chain::asse
 
 FC_REFLECT( node::chain::asset_credit_data_object,
          (id)
-         (business_account)
+         (issuer)
          (symbol)
          (buyback_asset)
          (buyback_pool)
@@ -1971,7 +1959,7 @@ CHAINBASE_SET_INDEX_TYPE( node::chain::asset_credit_data_object, node::chain::as
 
 FC_REFLECT( node::chain::asset_stimulus_data_object,
          (id)
-         (business_account)
+         (issuer)
          (symbol)
          (redemption_asset)
          (redemption_pool)

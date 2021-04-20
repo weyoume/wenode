@@ -61,35 +61,18 @@ namespace node { namespace chain {
  */
 void asset_create_evaluator::do_apply( const asset_create_operation& o )
 { try {
-   const account_name_type& signed_for = o.issuer;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
+   _db.check_namespace( o.symbol );
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
    time_point now = _db.head_block_time();
 
    const account_object& issuer = _db.get_account( o.issuer );
-
+   FC_ASSERT( issuer.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.issuer) );
    FC_ASSERT( ( issuer.last_asset_created + MIN_ASSET_CREATE_INTERVAL ) <= now, 
-      "Can only create one asset per day. Please try again tomorrow." );
+      "Can only create one asset per hour. Please try again later." );
 
    account_name_type issuer_account_name = o.issuer;
-   auto& asset_indx =_db.get_index< asset_index >().indices().get< by_symbol >();
-   auto asset_symbol_itr = asset_indx.find( o.symbol );
-
-   FC_ASSERT( asset_symbol_itr == asset_indx.end(),
-      "Asset with this symbol already exists, please choose a new symbol." );
-   
    asset liquid_coin = _db.get_liquid_balance( o.issuer, SYMBOL_COIN );
    asset liquid_usd = _db.get_liquid_balance( o.issuer, SYMBOL_USD );
 
@@ -125,12 +108,14 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
    string asset_string = o.symbol;
    auto dotpos = asset_string.find( '.' );
 
+   auto& asset_idx =_db.get_index< asset_index >().indices().get< by_symbol >();
+
    if( dotpos != std::string::npos )
    {
       auto prefix = asset_string.substr( 0, dotpos );
-      auto asset_symbol_itr = asset_indx.find( prefix );
+      auto asset_symbol_itr = asset_idx.find( prefix );
 
-      FC_ASSERT( asset_symbol_itr != asset_indx.end(),
+      FC_ASSERT( asset_symbol_itr != asset_idx.end(),
          "Asset: ${s} may only be created by issuer of ${p}, but ${p} has not been registered.",
          ("s",o.symbol)("p",prefix) );
 
@@ -164,7 +149,6 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          FC_ASSERT( o.options.block_reward.symbol == o.symbol,
             "Currency asset must have a block reward denominated in the asset symbol: ${s}",
             ("s",o.symbol));
-
          FC_ASSERT( o.coin_liquidity >= coin_liq, 
             "Asset has insufficient initial COIN liquidity." );
          FC_ASSERT( o.usd_liquidity >= usd_liq, 
@@ -189,7 +173,6 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             rfo.marketing_reward_balance = asset( 0, o.symbol );
             rfo.advocacy_reward_balance = asset( 0, o.symbol );
             rfo.activity_reward_balance = asset( 0, o.symbol );
-            rfo.premium_partners_fund_balance = asset( 0, o.symbol );
             rfo.recent_content_claims = 0;
             rfo.last_updated = now;
          });
@@ -225,8 +208,6 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
       break;
       case asset_property_type::STABLECOIN_ASSET:
       {
-         
-
          const asset_object& backing_asset = _db.get_asset( o.options.backing_asset );
          if( backing_asset.is_market_issued() )
          {
@@ -300,65 +281,9 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
             ("s",stablecoin)("c",call) );
       }
       break;
-      case asset_property_type::EQUITY_ASSET:
-      {
-         FC_ASSERT( o.coin_liquidity >= coin_liq, 
-            "Asset has insufficient initial COIN liquidity." );
-         FC_ASSERT( o.usd_liquidity >= usd_liq, 
-            "Asset has insufficient initial USD liquidity." );
-         FC_ASSERT( liquid_coin >= o.coin_liquidity, 
-            "Issuer has insufficient coin balance to provide specified initial liquidity." );
-         FC_ASSERT( liquid_usd >= o.usd_liquidity, 
-            "Issuer has insufficient USD balance to provide specified initial liquidity." );
-
-         const account_business_object& abo = _db.get_account_business( o.issuer );
-         FC_ASSERT( abo.account == o.issuer, 
-            "Account: ${s} must be a business account to create an equity asset.",
-            ("s", o.issuer) );
-         uint16_t revenue_share_sum = o.options.dividend_share_percent;
-         for( auto share : abo.equity_revenue_shares )
-         {
-            revenue_share_sum += share.second;
-         }
-         for( auto share : abo.credit_revenue_shares )
-         {
-            revenue_share_sum += share.second;
-         }
-         FC_ASSERT( revenue_share_sum <= 50 * PERCENT_1,
-            "Cannot share more than 50 percent of account revenue." );
-
-         const asset_equity_data_object& equity = _db.create< asset_equity_data_object >( [&]( asset_equity_data_object& a )
-         {
-            a.symbol = o.symbol;
-            a.business_account = o.issuer;
-            a.last_dividend = time_point::min();
-            a.dividend_share_percent = o.options.dividend_share_percent;
-            a.min_active_time = o.options.min_active_time;
-            a.min_balance = o.options.min_balance;
-            a.min_producers = o.options.min_producers;
-            a.boost_balance = o.options.boost_balance;
-            a.boost_activity = o.options.boost_activity;
-            a.boost_producers = o.options.boost_producers;
-            a.boost_top = o.options.boost_top;
-         });
-
-         ilog( "Equity Data: ${e}",("e",equity));
-
-         _db.modify( issuer, [&]( account_object& a )
-         {
-            a.revenue_share = true;
-         });
-
-         _db.modify( abo, [&]( account_business_object& a )
-         {
-            a.equity_revenue_shares[ o.symbol ] = o.options.dividend_share_percent;
-            a.equity_assets.insert( o.symbol );
-         });
-      }
-      break;
       case asset_property_type::BOND_ASSET:
       {
-         const account_business_object& abo = _db.get_account_business( o.issuer );
+         const business_object& abo = _db.get_business( o.issuer );
          FC_ASSERT( abo.account == o.issuer, 
             "Account: ${s} must be a business account to create a bond asset.",
             ("s", o.issuer) );
@@ -373,7 +298,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
 
          const asset_bond_data_object& bond = _db.create< asset_bond_data_object >( [&]( asset_bond_data_object& a )
          {
-            a.business_account = o.issuer;
+            a.issuer = o.issuer;
             a.symbol = o.symbol;
             a.value = o.options.value;
             a.collateralization = o.options.collateralization;
@@ -385,80 +310,9 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          ilog( "Bond Data: ${b}",("b",bond));
       }
       break;
-      case asset_property_type::CREDIT_ASSET:
-      {
-         FC_ASSERT( o.coin_liquidity >= coin_liq, 
-            "Asset has insufficient initial COIN liquidity." );
-         FC_ASSERT( o.usd_liquidity >= usd_liq, 
-            "Asset has insufficient initial USD liquidity." );
-         FC_ASSERT( liquid_coin >= o.coin_liquidity, 
-            "Issuer has insufficient coin balance to provide specified initial liquidity." );
-         FC_ASSERT( liquid_usd >= o.usd_liquidity, 
-            "Issuer has insufficient USD balance to provide specified initial liquidity." );
-
-         const account_business_object& abo = _db.get_account_business( o.issuer );
-         FC_ASSERT( abo.account == o.issuer, 
-            "Account: ${s} must be a business account to create a credit asset.",("s", o.issuer) );
-         FC_ASSERT( !o.options.buyback_price.is_null(),
-            "Buyback price cannot be null." );
-         FC_ASSERT( o.options.buyback_price.base.symbol == o.options.buyback_asset,
-            "Buyback price must have buyback asset as base." );
-         FC_ASSERT( o.options.buyback_price.quote.symbol == o.symbol,
-            "Buyback price must have credit asset as quote." );
-         
-         const asset_object& buyback_asset = _db.get_asset( o.options.buyback_asset );
-         FC_ASSERT( buyback_asset.asset_type == asset_property_type::CURRENCY_ASSET || 
-            buyback_asset.asset_type == asset_property_type::STABLECOIN_ASSET, 
-            "Buyback asset must be either a currency or stablecoin type asset." );
-
-         uint16_t revenue_share_sum = o.options.buyback_share_percent;
-
-         for( auto share : abo.equity_revenue_shares )
-         {
-            revenue_share_sum += share.second;
-         }
-         for( auto share : abo.credit_revenue_shares )
-         {
-            revenue_share_sum += share.second;
-         }
-         FC_ASSERT( revenue_share_sum <= 50 * PERCENT_1,
-            "Cannot share more than 50 percent of account revenue." );
-
-         const asset_credit_data_object& credit = _db.create< asset_credit_data_object >( [&]( asset_credit_data_object& a )
-         {
-            a.business_account = o.issuer;
-            a.symbol = o.symbol;
-            a.buyback_asset = o.options.buyback_asset;
-            a.buyback_pool = asset( 0, a.buyback_asset );
-            a.buyback_price = o.options.buyback_price;
-            a.last_buyback = time_point::min();
-            a.buyback_share_percent = o.options.buyback_share_percent;
-            a.liquid_fixed_interest_rate = o.options.liquid_fixed_interest_rate;
-            a.liquid_variable_interest_rate = o.options.liquid_variable_interest_rate;
-            a.staked_fixed_interest_rate = o.options.staked_fixed_interest_rate;
-            a.staked_variable_interest_rate = o.options.staked_variable_interest_rate;
-            a.savings_fixed_interest_rate = o.options.savings_fixed_interest_rate;
-            a.savings_variable_interest_rate = o.options.savings_variable_interest_rate;
-            a.var_interest_range = o.options.var_interest_range;
-         });
-
-         ilog( "Credit Data: ${c}",("c",credit));
-
-         _db.modify( issuer, [&]( account_object& a )
-         {
-            a.revenue_share = true;
-         });
-
-         _db.modify( abo, [&]( account_business_object& a )
-         {
-            a.credit_revenue_shares[ o.symbol ] = o.options.buyback_share_percent;
-            a.credit_assets.insert( o.symbol );
-         });
-      }
-      break;
       case asset_property_type::STIMULUS_ASSET:
       {
-         const account_business_object& abo = _db.get_account_business( o.issuer );
+         const business_object& abo = _db.get_business( o.issuer );
          FC_ASSERT( abo.account == o.issuer, 
             "Account: ${s} must be a business account to create a stimulus asset.",("s", o.issuer) );
          FC_ASSERT( !o.options.redemption_price.is_null(),
@@ -503,7 +357,7 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
 
          const asset_stimulus_data_object& stimulus = _db.create< asset_stimulus_data_object >( [&]( asset_stimulus_data_object& asdo )
          {
-            asdo.business_account = o.issuer;
+            asdo.issuer = o.issuer;
             asdo.symbol = o.symbol;
             asdo.redemption_asset = o.options.redemption_asset;
             asdo.redemption_pool = asset( 0, asdo.redemption_asset );
@@ -546,6 +400,18 @@ void asset_create_evaluator::do_apply( const asset_create_operation& o )
          });
 
          ilog( "Unique Data: ${u}",("u",unique));
+      }
+      break;
+      case asset_property_type::EQUITY_ASSET:
+      {
+         FC_ASSERT( false,
+            "Cannot directly create a new equity asset. Please create a new business account." );
+      }
+      break;
+      case asset_property_type::CREDIT_ASSET:
+      {
+         FC_ASSERT( false,
+            "Cannot directly create a new credit asset. Please create a new business account." );
       }
       break;
       case asset_property_type::LIQUIDITY_POOL_ASSET:
@@ -932,23 +798,11 @@ bool update_stablecoin_object_options( const asset_update_operation& o, database
 
 void asset_update_evaluator::do_apply( const asset_update_operation& o )
 { try {
-   const account_name_type& signed_for = o.issuer;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
+   const account_object& issuer = _db.get_account( o.issuer );
+   FC_ASSERT( issuer.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.issuer) );
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
    time_point now = _db.head_block_time();
-
    const asset_object& asset_obj = _db.get_asset( o.asset_to_update );
 
    FC_ASSERT( !asset_obj.immutable_properties(),
@@ -1080,21 +934,8 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
          FC_ASSERT( o.issuer == asset_obj.issuer,
             "Only Issuer can update asset. (${o.issuer} != ${a.issuer})",
             ("o.issuer", o.issuer)("asset.issuer", asset_obj.issuer) );
-         const account_business_object& bus_acc = _db.get_account_business( o.issuer );
+         const business_object& bus_acc = _db.get_business( o.issuer );
          const asset_equity_data_object& equity_obj = _db.get_equity_data( o.asset_to_update );
-         uint16_t revenue_share_sum = o.new_options.dividend_share_percent;
-
-         for( auto share : bus_acc.equity_revenue_shares )
-         {
-            revenue_share_sum += share.second;
-         }
-         for( auto share : bus_acc.credit_revenue_shares )
-         {
-            revenue_share_sum += share.second;
-         }
-
-         FC_ASSERT( revenue_share_sum <= 50 * PERCENT_1,
-            "Cannot share more than 50 percent of account revenue." );
 
          _db.modify( equity_obj, [&]( asset_equity_data_object& a )
          {
@@ -1108,9 +949,9 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
             a.boost_top = o.new_options.boost_top;
          });
 
-         _db.modify( bus_acc, [&]( account_business_object& a )
+         _db.modify( bus_acc, [&]( business_object& a )
          {
-            a.equity_revenue_shares[ o.asset_to_update ] = o.new_options.dividend_share_percent;
+            a.equity_revenue_share = o.new_options.dividend_share_percent;
          });
       }
       break;
@@ -1120,7 +961,7 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
             "Only Issuer can update asset. (${o.issuer} != ${a.issuer})",
             ("o.issuer", o.issuer)("asset.issuer", asset_obj.issuer) );
 
-         const account_business_object& abo = _db.get_account_business( o.issuer );
+         const business_object& abo = _db.get_business( o.issuer );
          FC_ASSERT( abo.account == o.issuer, 
             "Account: ${s} must be a business account to create a credit asset.",("s", o.issuer) );
          FC_ASSERT( o.new_options.maturity_date > date_type( now + fc::days(30) ),
@@ -1151,20 +992,9 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
          FC_ASSERT( o.issuer == asset_obj.issuer,
             "Only Issuer can update asset. (${o.issuer} != ${a.issuer})",
             ("o.issuer", o.issuer)("asset.issuer", asset_obj.issuer) );
-         const account_business_object& bus_acc = _db.get_account_business( o.issuer );
+         const business_object& bus_acc = _db.get_business( o.issuer );
          const asset_credit_data_object& credit_obj = _db.get_credit_data( o.asset_to_update );
-         uint16_t revenue_share_sum = o.new_options.buyback_share_percent;
 
-         for( auto share : bus_acc.equity_revenue_shares )
-         {
-            revenue_share_sum += share.second;
-         }
-         for( auto share : bus_acc.credit_revenue_shares )
-         {
-            revenue_share_sum += share.second;
-         }
-         FC_ASSERT( revenue_share_sum <= 50 * PERCENT_1,
-            "Cannot share more than 50 percent of account revenue." );
          FC_ASSERT( o.new_options.buyback_asset == credit_obj.buyback_asset,
             "Credit buyback asset cannot be altered." );
          FC_ASSERT( !o.new_options.buyback_price.is_null(),
@@ -1187,9 +1017,9 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
             a.var_interest_range = o.new_options.var_interest_range;
          });
 
-         _db.modify( bus_acc, [&]( account_business_object& a )
+         _db.modify( bus_acc, [&]( business_object& a )
          {
-            a.credit_revenue_shares[ o.asset_to_update ] = o.new_options.buyback_share_percent;
+            a.credit_revenue_share = o.new_options.buyback_share_percent;
          });
       }
       break;
@@ -1341,20 +1171,10 @@ void asset_update_evaluator::do_apply( const asset_update_operation& o )
 
 void asset_issue_evaluator::do_apply( const asset_issue_operation& o )
 { try {
-   const account_name_type& signed_for = o.issuer;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
+   const account_object& issuer = _db.get_account( o.issuer );
+   FC_ASSERT( issuer.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.issuer) );
+   
    const asset_object& asset_obj = _db.get_asset( o.asset_to_issue.symbol );
    const account_object& to_account = _db.get_account( o.issue_to_account );
    FC_ASSERT( to_account.active,
@@ -1409,20 +1229,10 @@ void asset_issue_evaluator::do_apply( const asset_issue_operation& o )
 
 void asset_reserve_evaluator::do_apply( const asset_reserve_operation& o )
 { try {
-   const account_name_type& signed_for = o.payer;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
+   const account_object& payer = _db.get_account( o.payer );
+   FC_ASSERT( payer.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.payer) );
+   
    const asset_object& asset_obj = _db.get_asset( o.amount_to_reserve.symbol );
    const account_permission_object& from_account_permissions = _db.get_account_permissions( o.payer );
    const asset_dynamic_data_object& asset_dyn_data = _db.get_dynamic_data( asset_obj.symbol );
@@ -1466,30 +1276,17 @@ void asset_reserve_evaluator::do_apply( const asset_reserve_operation& o )
 
 void asset_update_issuer_evaluator::do_apply( const asset_update_issuer_operation& o )
 { try {
-   const account_name_type& signed_for = o.issuer;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_chief( o.signatory ),
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
-   const asset_object& asset_obj = _db.get_asset( o.asset_to_update );
+   const account_object& issuer = _db.get_account( o.issuer );
+   FC_ASSERT( issuer.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.issuer) );
    const account_object& new_issuer_account = _db.get_account( o.new_issuer );
-
    FC_ASSERT( new_issuer_account.active, 
       "Account: ${s} must be active to become new issuer.",
       ("s",o.new_issuer));
-
    const account_permission_object& new_issuer_permissions = _db.get_account_permissions( o.new_issuer );
    const account_permission_object& issuer_permissions = _db.get_account_permissions( o.issuer );
-
+   const asset_object& asset_obj = _db.get_asset( o.asset_to_update );
    FC_ASSERT( !asset_obj.immutable_properties(),
       "Asset Has Immutable Properties and cannot be altered after creation." );
    FC_ASSERT( new_issuer_permissions.is_authorized_transfer( o.issuer, asset_obj ),
@@ -1497,18 +1294,20 @@ void asset_update_issuer_evaluator::do_apply( const asset_update_issuer_operatio
    FC_ASSERT( issuer_permissions.is_authorized_transfer( o.new_issuer, asset_obj ),
       "Asset Issuer Transfer is not authorized, due to sender account's asset permisssions." );
 
-
    switch( asset_obj.asset_type )  // Asset specific requirements
    {
       case asset_property_type::CURRENCY_ASSET:
       {
-         FC_ASSERT( false, "Cannot Edit Currency asset." );
+         FC_ASSERT( false, "Cannot update Currency asset issuer." );
       }
       break;
       case asset_property_type::STANDARD_ASSET:
       {
          FC_ASSERT( o.issuer == asset_obj.issuer,
             "Only Current Asset Issuer: ${i} can update asset to new issuer.",
+            ("i", asset_obj.issuer));
+         FC_ASSERT( o.issuer != o.new_issuer,
+            "New Issuer is already the asset issuer: ${i}",
             ("i", asset_obj.issuer));
       }
       break;
@@ -1517,40 +1316,27 @@ void asset_update_issuer_evaluator::do_apply( const asset_update_issuer_operatio
          FC_ASSERT( o.issuer == asset_obj.issuer,
             "Only Current Asset Issuer: ${i} can update asset to new issuer.",
             ("i", asset_obj.issuer));
+         FC_ASSERT( o.issuer != o.new_issuer,
+            "New Issuer is already the asset issuer: ${i}",
+            ("i", asset_obj.issuer));
       }
       break;
       case asset_property_type::EQUITY_ASSET:
       {
-         FC_ASSERT( o.issuer == asset_obj.issuer,
-            "Only Current Asset Issuer: ${i} can update asset to new issuer.",
-            ("i", asset_obj.issuer));
-
-         const account_business_object& new_issuer_bus_acc = _db.get_account_business( o.new_issuer );
-
-         FC_ASSERT( new_issuer_bus_acc.active,
-            "Issuer: ${i} must have active business account.",
-            ("i", o.new_issuer));
-
-         const asset_equity_data_object& equity_obj = _db.get_equity_data( o.asset_to_update );
-
-         _db.modify( equity_obj, [&]( asset_equity_data_object& a )
-         {
-            a.business_account = o.new_issuer;
-         });
+         FC_ASSERT( false, "Cannot update Equity Asset issuer." );
       }
       break;
       case asset_property_type::BOND_ASSET:
       {
+         const business_object& new_issuer_business = _db.get_business( o.new_issuer );
+
          FC_ASSERT( o.issuer == asset_obj.issuer,
             "Only Current Asset Issuer: ${i} can update asset to new issuer.",
             ("i", asset_obj.issuer));
+         FC_ASSERT( o.issuer != new_issuer_business.account,
+            "New Issuer is already the asset issuer: ${i}",
+            ("i", asset_obj.issuer));
             
-         const account_business_object& new_issuer_bus_acc = _db.get_account_business( o.new_issuer );
-
-         FC_ASSERT( new_issuer_bus_acc.active,
-            "Issuer: ${i} must have active business account.",
-            ("i", o.new_issuer));
-
          const asset_bond_data_object& bond_obj = _db.get_bond_data( o.asset_to_update );
          const asset_dynamic_data_object& bond_dyn_data = _db.get_dynamic_data( o.asset_to_update );
 
@@ -1559,51 +1345,29 @@ void asset_update_issuer_evaluator::do_apply( const asset_update_issuer_operatio
          
          _db.modify( bond_obj, [&]( asset_bond_data_object& a )
          {
-            a.business_account = o.new_issuer;
+            a.issuer = o.new_issuer;
          });
       }
       break;
       case asset_property_type::CREDIT_ASSET:
       {
-         FC_ASSERT( o.issuer == asset_obj.issuer,
-            "Only Current Asset Issuer: ${i} can update asset to new issuer.",
-            ("i", asset_obj.issuer));
-
-         const account_business_object& new_issuer_bus_acc = _db.get_account_business( o.new_issuer );
-
-         FC_ASSERT( new_issuer_bus_acc.active,
-            "Issuer: ${i} must have active business account.",
-            ("i", o.new_issuer));
-
-         const asset_credit_data_object& credit_obj = _db.get_credit_data( o.asset_to_update );
-         const asset_dynamic_data_object& credit_dyn_data = _db.get_dynamic_data( o.asset_to_update );
-
-         FC_ASSERT( credit_dyn_data.get_total_supply().amount == 0, 
-            "Cannot update Credit issuer while outstanding Supply exists. All Credits must be repurchased before transfer." );
-
-         _db.modify( credit_obj, [&]( asset_credit_data_object& a )
-         {
-            a.business_account = o.new_issuer;
-         });
+         FC_ASSERT( false, "Cannot update Credit Asset issuer." );
       }
       break;
       case asset_property_type::STIMULUS_ASSET:
       {
+         const business_object& new_issuer_business = _db.get_business( o.new_issuer );
          FC_ASSERT( o.issuer == asset_obj.issuer,
             "Only Current Asset Issuer: ${i} can update asset to new issuer.",
             ("i", asset_obj.issuer));
-
-         const account_business_object& new_issuer_bus_acc = _db.get_account_business( o.new_issuer );
-
-         FC_ASSERT( new_issuer_bus_acc.active,
-            "Issuer: ${i} must have active business account.",
-            ("i", o.new_issuer));
-
+         FC_ASSERT( o.issuer != new_issuer_business.account,
+            "New Issuer is already the asset issuer: ${i}",
+            ("i", asset_obj.issuer));
          const asset_stimulus_data_object& stimulus_obj = _db.get_stimulus_data( o.asset_to_update );
          
          _db.modify( stimulus_obj, [&]( asset_stimulus_data_object& a )
          {
-            a.business_account = o.new_issuer;
+            a.issuer = o.new_issuer;
          });
       }
       break;
@@ -1627,6 +1391,9 @@ void asset_update_issuer_evaluator::do_apply( const asset_update_issuer_operatio
          FC_ASSERT( o.issuer == asset_obj.issuer,
             "Only Current Asset Issuer: ${i} can update asset to new issuer.",
             ("i", asset_obj.issuer));
+         FC_ASSERT( o.issuer != o.new_issuer,
+            "New Issuer is already the asset issuer: ${i}",
+            ("i", asset_obj.issuer));
       }
       break;
       default:
@@ -1649,20 +1416,9 @@ void asset_update_issuer_evaluator::do_apply( const asset_update_issuer_operatio
 
 void asset_distribution_evaluator::do_apply( const asset_distribution_operation& o )
 { try {
-   const account_name_type& signed_for = o.issuer;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
+   const account_object& issuer = _db.get_account( o.issuer );
+   FC_ASSERT( issuer.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.issuer) );
    const asset_object& distribution_asset = _db.get_asset( o.distribution_asset );
    const asset_object& fund_asset = _db.get_asset( o.fund_asset );
    time_point now = _db.head_block_time();
@@ -1765,20 +1521,10 @@ void asset_distribution_evaluator::do_apply( const asset_distribution_operation&
 
 void asset_distribution_fund_evaluator::do_apply( const asset_distribution_fund_operation& o )
 { try {
-   const account_name_type& signed_for = o.sender;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
+   const account_object& sender = _db.get_account( o.sender );
+   FC_ASSERT( sender.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.sender) );
    const asset_distribution_object& distribution = _db.get_asset_distribution( o.distribution_asset );
    time_point now = _db.head_block_time();
    share_type input_units = o.amount.amount / distribution.input_unit_amount();
@@ -1855,28 +1601,13 @@ void asset_distribution_fund_evaluator::do_apply( const asset_distribution_fund_
 
 void asset_option_exercise_evaluator::do_apply( const asset_option_exercise_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.account) );
    const asset_object& option_asset = _db.get_asset( o.amount.symbol );
-   
    FC_ASSERT( option_asset.asset_type == asset_property_type::OPTION_ASSET, 
       "Can only exercise option type assets: ${s} is not an option.",("s", o.amount.symbol ) );
-
-   const account_object& account = _db.get_account( o.account );
    asset liquid = _db.get_liquid_balance( o.account, option_asset.symbol );
-
    FC_ASSERT( liquid >= o.amount,
       "Account has insufficient liquid balance of option asset to exercise specified amount." );
 
@@ -1887,19 +1618,9 @@ void asset_option_exercise_evaluator::do_apply( const asset_option_exercise_oper
 
 void asset_stimulus_fund_evaluator::do_apply( const asset_stimulus_fund_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.account) );
 
    const asset_object& stimulus_asset = _db.get_asset( o.stimulus_asset );
    const asset_object& redemption_asset = _db.get_asset( o.amount.symbol );
@@ -1929,19 +1650,9 @@ void asset_stimulus_fund_evaluator::do_apply( const asset_stimulus_fund_operatio
 
 void asset_update_feed_producers_evaluator::do_apply( const asset_update_feed_producers_operation& o )
 { try {
-   const account_name_type& signed_for = o.issuer;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& issuer = _db.get_account( o.issuer );
+   FC_ASSERT( issuer.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.issuer) );
 
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
    time_point now = _db.head_block_time();
@@ -1993,20 +1704,9 @@ void asset_update_feed_producers_evaluator::do_apply( const asset_update_feed_pr
 
 void asset_publish_feed_evaluator::do_apply( const asset_publish_feed_operation& o )
 { try {
-   const account_name_type& signed_for = o.publisher;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   
+   const account_object& publisher = _db.get_account( o.publisher );
+   FC_ASSERT( publisher.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.publisher) );
    const asset_object& base = _db.get_asset( o.symbol );     // Verify that this feed is for a market-issued asset and that asset is backed by the base.
    time_point now = _db.head_block_time();
 
@@ -2077,20 +1777,9 @@ void asset_publish_feed_evaluator::do_apply( const asset_publish_feed_operation&
 
 void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.account) );
    const asset_object& asset_to_settle = _db.get_asset( o.amount.symbol );
    const asset_dynamic_data_object& mia_dyn = _db.get_dynamic_data( o.amount.symbol );
    time_point now = _db.head_block_time();
@@ -2206,19 +1895,9 @@ void asset_settle_evaluator::do_apply( const asset_settle_operation& o )
 
 void asset_global_settle_evaluator::do_apply( const asset_global_settle_operation& o )
 { try {
-   const account_name_type& signed_for = o.issuer;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& issuer = _db.get_account( o.issuer );
+   FC_ASSERT( issuer.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.issuer) );
 
    const asset_object& asset_to_settle = _db.get_asset( o.asset_to_settle );
 
@@ -2259,20 +1938,9 @@ void asset_global_settle_evaluator::do_apply( const asset_global_settle_operatio
 
 void asset_collateral_bid_evaluator::do_apply( const asset_collateral_bid_operation& o )
 { try {
-   const account_name_type& signed_for = o.bidder;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
+   const account_object& bidder = _db.get_account( o.bidder );
+   FC_ASSERT( bidder.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.bidder) );
    const asset_object& debt_asset = _db.get_asset( o.debt.symbol );
    const asset_stablecoin_data_object& stablecoin_data = _db.get_stablecoin_data( debt_asset.symbol );
    const asset& liquid = _db.get_liquid_balance( o.bidder, stablecoin_data.backing_asset );

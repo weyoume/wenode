@@ -61,26 +61,6 @@ const network_officer_vote_object* database::find_network_officer_vote( const ac
    return find< network_officer_vote_object, by_account_officer >( boost::make_tuple( account, officer ) );
 }
 
-const executive_board_object& database::get_executive_board( const account_name_type& account )const
-{ try {
-	return get< executive_board_object, by_account >( account );
-} FC_CAPTURE_AND_RETHROW( (account) ) }
-
-const executive_board_object* database::find_executive_board( const account_name_type& account )const
-{
-   return find< executive_board_object, by_account >( account );
-}
-
-const executive_board_vote_object& database::get_executive_board_vote( const account_name_type& account, const account_name_type& executive )const
-{ try {
-   return get< executive_board_vote_object, by_account_executive >( boost::make_tuple( account, executive ) );
-} FC_CAPTURE_AND_RETHROW( (account)(executive) ) }
-
-const executive_board_vote_object* database::find_executive_board_vote( const account_name_type& account, const account_name_type& executive )const
-{
-   return find< executive_board_vote_object, by_account_executive >( boost::make_tuple( account, executive ) );
-}
-
 const supernode_object& database::get_supernode( const account_name_type& account )const
 { try {
 	return get< supernode_object, by_account >( account );
@@ -109,16 +89,6 @@ const mediator_object& database::get_mediator( const account_name_type& account 
 const mediator_object* database::find_mediator( const account_name_type& account )const
 {
    return find< mediator_object, by_account >( account );
-}
-
-const governance_account_object& database::get_governance_account( const account_name_type& account )const
-{ try {
-	return get< governance_account_object, by_account >( account );
-} FC_CAPTURE_AND_RETHROW( (account) ) }
-
-const governance_account_object* database::find_governance_account( const account_name_type& account )const
-{
-   return find< governance_account_object, by_account >( account );
 }
 
 const enterprise_object& database::get_enterprise( const account_name_type& account, const shared_string& enterprise_id )const
@@ -249,89 +219,6 @@ void database::network_officer_update_votes( const account_object& account, cons
       a.officer_vote_count = ( vote_rank[ network_officer_role_type::DEVELOPMENT ] + vote_rank[ network_officer_role_type::MARKETING ] + vote_rank[ network_officer_role_type::ADVOCACY ] - 3 );
    });
 }
-
-
-/**
- * Aligns executive board votes in order of highest to lowest,
- * with continual ordering.
- */
-void database::update_executive_board_votes( const account_object& account )
-{
-   const auto& vote_idx = get_index< executive_board_vote_index >().indices().get< by_account_rank >();
-   auto vote_itr = vote_idx.lower_bound( account.name );
-   time_point now = head_block_time();
-
-   uint16_t new_vote_rank = 1;
-
-   while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
-   {
-      const executive_board_vote_object& vote = *vote_itr;
-      if( vote.vote_rank != new_vote_rank )
-      {
-         modify( vote, [&]( executive_board_vote_object& v )
-         {
-            v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
-            v.last_updated = now;
-         });
-      }
-      ++vote_itr;
-      new_vote_rank++;
-   }
-
-   modify( account, [&]( account_object& a )
-   {
-      a.executive_board_vote_count = ( new_vote_rank - 1 );
-   });
-}
-
-/**
- * Aligns executive board votes in a continuous order, and inputs a new vote
- * at a specified vote number.
- */
-void database::update_executive_board_votes( const account_object& account, const account_name_type& executive, uint16_t input_vote_rank )
-{
-   const auto& vote_idx = get_index< executive_board_vote_index >().indices().get< by_account_rank >();
-   auto vote_itr = vote_idx.lower_bound( account.name );
-   time_point now = head_block_time();
-
-   uint16_t new_vote_rank = 1;
-
-   while( vote_itr != vote_idx.end() && vote_itr->account == account.name )
-   {
-      const executive_board_vote_object& vote = *vote_itr;
-      if( vote.vote_rank == input_vote_rank )
-      {
-         new_vote_rank++;
-      }
-      
-      if( vote.vote_rank != new_vote_rank )
-      {
-         modify( vote, [&]( executive_board_vote_object& v )
-         {
-            v.vote_rank = new_vote_rank;   // Updates vote rank to linear order of index retrieval.
-            v.last_updated = now;
-         });
-      }
-
-      new_vote_rank++;
-      ++vote_itr;
-   }
-
-   create< executive_board_vote_object >([&]( executive_board_vote_object& v )
-   {
-      v.account = account.name;
-      v.executive_board = executive;
-      v.vote_rank = input_vote_rank;
-      v.last_updated = now;
-      v.created = now;
-   });
-
-   modify( account, [&]( account_object& a )
-   {
-      a.executive_board_vote_count = ( new_vote_rank - 1 );
-   });
-}
-
 
 
 /**
@@ -550,7 +437,7 @@ void database::process_network_officer_rewards()
       while( development_itr != development_end && 
          development_map.size() < NETWORK_OFFICER_ACTIVE_SET ) 
       {
-         share_type development_shares = development_itr->voting_power;  // Get the development officer voting power
+         share_type development_shares = development_itr->voting_power / BLOCKCHAIN_PRECISION;  // Get the development officer voting power
 
          if( development_shares > 0 && 
             development_itr->active && 
@@ -572,7 +459,7 @@ void database::process_network_officer_rewards()
       while( marketing_itr != marketing_end && 
          marketing_map.size() < NETWORK_OFFICER_ACTIVE_SET ) 
       {
-         share_type marketing_shares = marketing_itr->voting_power;  // Get the marketing officer voting power
+         share_type marketing_shares = marketing_itr->voting_power / BLOCKCHAIN_PRECISION;  // Get the marketing officer voting power
 
          if( marketing_shares > 0 && 
             marketing_itr->active && 
@@ -594,7 +481,7 @@ void database::process_network_officer_rewards()
       while( advocacy_itr != advocacy_end && 
          advocacy_map.size() < NETWORK_OFFICER_ACTIVE_SET ) 
       {
-         share_type advocacy_shares = advocacy_itr->voting_power;  // Get the advocacy officer voting power
+         share_type advocacy_shares = advocacy_itr->voting_power / BLOCKCHAIN_PRECISION;  // Get the advocacy officer voting power
 
          if( advocacy_shares > 0 && 
             advocacy_itr->active && 
@@ -612,6 +499,9 @@ void database::process_network_officer_rewards()
       asset marketing_distributed = asset( 0, reward_fund.symbol );
       asset advocacy_reward = reward_fund.advocacy_reward_balance;
       asset advocacy_distributed = asset( 0, reward_fund.symbol );
+
+      ilog( "Network officer reward maps: \n Development: \n ${d} \n Marketing: \n ${m} \n Advocacy: \n ${a} \n", 
+      ("d",development_map)("m",marketing_map)("a",advocacy_map));
 
       for( auto b : development_map )
       {
@@ -668,7 +558,7 @@ void database::process_supernode_rewards()
    
    while( supernode_itr != supernode_idx.end() ) 
    {
-      share_type supernode_shares = supernode_itr->recent_view_weight;  // Get the supernode view weight for rewards
+      share_type supernode_shares = supernode_itr->recent_view_weight / BLOCKCHAIN_PRECISION;  // Get the supernode view weight for rewards
 
       if( supernode_shares > 0 && 
          supernode_itr->active && 
@@ -683,7 +573,8 @@ void database::process_supernode_rewards()
    const auto& fund_idx = get_index< asset_reward_fund_index >().indices().get< by_symbol >();
    auto fund_itr = fund_idx.begin();
 
-   while( fund_itr != fund_idx.end() && total_supernode_shares > 0 )
+   while( fund_itr != fund_idx.end() && 
+      total_supernode_shares > 0 )
    {
       const asset_reward_fund_object& reward_fund = *fund_itr;
       asset supernode_reward = reward_fund.supernode_reward_balance;     // Record the opening balance of the supernode reward fund
@@ -713,205 +604,6 @@ void database::process_supernode_rewards()
 
       ++fund_itr;
    }
-} FC_CAPTURE_AND_RETHROW() }
-
-
-/**
- * Update an executive board's voting approval statisitics
- * and update its approval if there are
- * sufficient votes from producers and other accounts.
- */
-void database::update_executive_board( const executive_board_object& executive_board, 
-   const producer_schedule_object& pso, const dynamic_global_property_object& props )
-{ try {
-   uint32_t vote_count = 0;
-   share_type voting_power = 0;
-   uint32_t producer_vote_count = 0;
-   share_type producer_voting_power = 0;
-   price equity_price = get_liquidity_pool(SYMBOL_COIN, SYMBOL_EQUITY).hour_median_price;
-
-   const auto& vote_idx = get_index< executive_board_vote_index >().indices().get< by_executive_account >();
-   auto vote_itr = vote_idx.lower_bound( executive_board.account );
-
-   while( vote_itr != vote_idx.end() && 
-      vote_itr->executive_board == executive_board.account )
-   {
-      const executive_board_vote_object& vote = *vote_itr;
-      const account_object& voter = get_account( vote.account );
-      bool is_producer = pso.is_top_voting_producer( voter.name );
-      vote_count++;
-      share_type weight = 0;
-      weight += get_voting_power( vote.account, equity_price );
-      if( voter.proxied.size() )
-      {
-         weight += get_proxied_voting_power( voter, equity_price );
-      }
-      voting_power += share_type( weight.value >> vote.vote_rank );
-
-      if( is_producer )
-      {
-         producer_vote_count++;
-         const producer_object& producer = get_producer( voter.name );
-         producer_voting_power += share_type( producer.voting_power.value >> vote.vote_rank );
-      }
-      ++vote_itr;
-   }
-
-   // Approve the executive board when a threshold of accounts vote to support its budget.
-   bool approve_board = ( vote_count >= EXECUTIVE_VOTE_THRESHOLD_AMOUNT ) &&
-      ( producer_vote_count >= EXECUTIVE_VOTE_THRESHOLD_PRODUCERS ) &&
-      ( voting_power.value >= ( props.total_voting_power * EXECUTIVE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
-      ( producer_voting_power.value >= ( pso.total_producer_voting_power * EXECUTIVE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
-   
-   modify( executive_board, [&]( executive_board_object& e )
-   {
-      e.vote_count = vote_count;
-      e.voting_power = voting_power;
-      e.producer_vote_count = producer_vote_count;
-      e.producer_voting_power = producer_voting_power;
-      e.board_approved = approve_board;
-   });
-
-   ilog( "Updated Executive Board: ${b} Vote count: ${v} Approved: ${a}", 
-      ("b",executive_board.account)("v",vote_count)("a",approve_board));
-
-} FC_CAPTURE_AND_RETHROW() }
-
-
-/**
- * Pays the requested budgets of the approved executive boards on the network.
- * 
- * Boards that have sufficient approval from accounts and producers paid once per day.
- * Price of network credit asset must be greater than $0.90 USD to issue new units, or 
- * executive budgets are suspended. 
- * Network credit is a credit currency that is issued to executive boards
- * for expenses of managing a network development team. Its value is derived from
- * buybacks from network revenue, up to a face value of $1.00 USD
- * per credit, and interest payments for balance holders.
- * Holding Credit assets are economically equivalent to holding bonds
- * for debt lent to the network. 
- */
-void database::process_executive_board_budgets()
-{ try {
-   if( (head_block_num() % EXECUTIVE_BOARD_BLOCK_INTERVAL ) != 0 )    // Runs once per day.
-      return;
-
-   ilog( "Process Executive Board Budgets" );
-
-   const producer_schedule_object& pso = get_producer_schedule();
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
-   price credit_usd_price = get_liquidity_pool( SYMBOL_USD, SYMBOL_CREDIT ).hour_median_price;
-
-   const auto& exec_idx = get_index< executive_board_index >().indices().get< by_voting_power >();
-   auto exec_itr = exec_idx.begin();
-
-   while( exec_itr != exec_idx.end() )   // update all executive board approvals and vote statistics. 
-   {
-      const executive_board_object& exec = *exec_itr;
-      update_executive_board( exec, pso, props );
-      ++exec_itr;
-   }
-
-   if( credit_usd_price > MIN_EXEC_CREDIT_PRICE )
-   {
-      auto exec_itr = exec_idx.begin(); // reset iterator;
-
-      while( exec_itr != exec_idx.end() )   // Pay the budget requests of the approved executive boards.
-      {
-         const executive_board_object& exec = *exec_itr;
-
-         if( exec.board_approved )
-         {
-            ilog( "Processed Executive Board Budget: ${a} \n ${b} \n", 
-               ("b",exec) );
-            adjust_liquid_balance( exec.account, exec.budget );     // Issues new supply of credit asset to pay executive board.
-         }
-         ++exec_itr;
-      }
-   }
-} FC_CAPTURE_AND_RETHROW() }
-
-
-/**
- * Update a governance account's voting approval statisitics
- * and update its approval if there are
- * sufficient votes from producers and other accounts.
- */
-void database::governance_update_account( const governance_account_object& governance_account, 
-   const producer_schedule_object& pso, const dynamic_global_property_object& props )
-{ try {
-   uint32_t vote_count = 0;
-   share_type voting_power = 0;
-   uint32_t producer_vote_count = 0;
-   share_type producer_voting_power = 0;
-   price equity_price = get_liquidity_pool( SYMBOL_COIN, SYMBOL_EQUITY ).hour_median_price;
-
-   const auto& vote_idx = get_index< governance_subscription_index >().indices().get< by_governance_account >();
-   auto vote_itr = vote_idx.lower_bound( governance_account.account );
-
-   while( vote_itr != vote_idx.end() && 
-      vote_itr->governance_account == governance_account.account )
-   {
-      const governance_subscription_object& vote = *vote_itr;
-      const account_object& voter = get_account( vote.account );
-      bool is_producer = pso.is_top_voting_producer( voter.name );
-      vote_count++;
-      share_type weight = 0;
-      weight += get_voting_power( vote.account, equity_price );
-      if( voter.proxied.size() )
-      {
-         weight += get_proxied_voting_power( voter, equity_price );
-      }
-      voting_power += share_type( weight.value >> vote.vote_rank );
-
-      if( is_producer )
-      {
-         producer_vote_count++;
-         const producer_object& producer = get_producer( voter.name );
-         producer_voting_power += share_type( producer.voting_power.value >> vote.vote_rank );
-      }
-      ++vote_itr;
-   }
-
-   // Approve the governance account when a threshold of votes to support its budget.
-   bool approve_account = ( vote_count >= GOVERNANCE_VOTE_THRESHOLD_AMOUNT ) &&
-      ( producer_vote_count >= GOVERNANCE_VOTE_THRESHOLD_PRODUCERS ) &&
-      ( voting_power.value >= ( props.total_voting_power * GOVERNANCE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 ) &&
-      ( producer_voting_power.value >= ( pso.total_producer_voting_power * GOVERNANCE_VOTE_THRESHOLD_PERCENT ) / PERCENT_100 );
-   
-   modify( governance_account, [&]( governance_account_object& g )
-   {
-      g.subscriber_count = vote_count;
-      g.subscriber_power = voting_power;
-      g.producer_subscriber_count = producer_vote_count;
-      g.producer_subscriber_power = producer_voting_power;
-      g.account_approved = approve_account;
-   });
-
-   ilog( "Update Governance Account: ${g} Subscribers: ${s} Approved: ${a}",
-      ("g",governance_account.account)("s",vote_count)("a",approve_account));
-
-} FC_CAPTURE_AND_RETHROW() }
-
-
-void database::governance_update_account_set()
-{ try { 
-   if( (head_block_num() % SET_UPDATE_BLOCK_INTERVAL ) != 0 )    // Runs once per day
-      return;
-
-   // ilog( "Update Governance Account Set" );
-   
-   const producer_schedule_object& pso = get_producer_schedule();
-   const dynamic_global_property_object& props = get_dynamic_global_properties();
-   const auto& g_idx = get_index< governance_account_index >().indices().get< by_subscriber_power >();
-   auto g_itr = g_idx.begin();
-   
-   while( g_itr != g_idx.end() )
-   {
-      governance_update_account( *g_itr, pso, props );
-      ++g_itr;
-   }
-
 } FC_CAPTURE_AND_RETHROW() }
 
 
@@ -1128,7 +820,7 @@ void database::process_enterprise_fund()
 
 /**
  * Pays the fees to a network contibutor, and splits fees to the account's governance 
- * account subscriptions, and registrar and referrer.
+ * account, and registrar and referrer.
  */
 asset database::pay_fee_share( const account_object& payee, const asset& amount, bool recursive )
 { try {
@@ -1136,31 +828,27 @@ asset database::pay_fee_share( const account_object& payee, const asset& amount,
 
    if( recursive )
    {
-      flat_set<const account_object*> governance_subscriptions;
-
-      const auto& g_idx = get_index< governance_subscription_index >().indices().get< by_account_governance >();
-      auto g_itr = g_idx.lower_bound( payee.name );
-
-      while( g_itr != g_idx.end() && g_itr->account == payee.name )
-      {
-         const governance_subscription_object& sub = *g_itr;
-         const account_object* account_ptr = find_account( sub.governance_account );
-         governance_subscriptions.insert( account_ptr );
-         ++g_itr;
-      }
       const account_object& registrar = get_account( payee.registrar );
       const account_object& referrer = get_account( payee.referrer );
 
-      asset g_share = ( amount * GOVERNANCE_SHARE_PERCENT ) / PERCENT_100;
+      asset governance_share = ( amount * GOVERNANCE_SHARE_PERCENT ) / PERCENT_100;
       asset registrar_share = ( amount * REFERRAL_SHARE_PERCENT ) / PERCENT_100;
       asset referrer_share = ( registrar_share * payee.referrer_rewards_percentage ) / PERCENT_100;
       registrar_share -= referrer_share;
 
-      asset g_paid = pay_multi_fee_share( governance_subscriptions, g_share, false );
+      asset governance_paid = asset( 0, total_fees.symbol );
+      const governance_member_object* governance_member_ptr = find_governance_member( payee.name );
+
+      if( governance_member_ptr != nullptr )
+      {
+         const account_object& governance_account = get_account( governance_member_ptr->governance );
+         governance_paid = pay_fee_share( governance_account, governance_share, false );
+      }
+
       asset registrar_paid = pay_fee_share( registrar, registrar_share, false );
       asset referrer_paid = pay_fee_share( referrer, referrer_share, false );
 
-      asset distribution = total_fees - ( g_paid + registrar_paid + referrer_paid );
+      asset distribution = total_fees - ( governance_paid + registrar_paid + referrer_paid );
       adjust_reward_balance( payee.name, distribution );
    }
    else
@@ -1175,7 +863,7 @@ asset database::pay_fee_share( const account_object& payee, const asset& amount,
 
 /**
  * Pays fees to a set of network contibutors, and splits fees to the account's governance 
- * account subscriptions, and registrar and referrer.
+ * account, and registrar and referrer.
  */
 asset database::pay_multi_fee_share( flat_set< const account_object* > payees, const asset& amount, bool recursive )
 { try {
@@ -1262,31 +950,27 @@ asset database::pay_network_fees( const account_object& payer, const asset& amou
    const dynamic_global_property_object& props = get_dynamic_global_properties();
    time_point now = head_block_time();
 
-   flat_set<const account_object*> governance_subscriptions;
-
-   const auto& g_idx = get_index< governance_subscription_index >().indices().get< by_account_governance >();
-   auto g_itr = g_idx.lower_bound( payer.name );
-
-   while( g_itr != g_idx.end() && g_itr->account == payer.name )
-   {
-      const governance_subscription_object& sub = *g_itr;
-      const account_object* account_ptr = find_account( sub.governance_account );
-      governance_subscriptions.insert( account_ptr );
-      ++g_itr;
-   }
    const account_object& registrar = get_account( payer.registrar );
    const account_object& referrer = get_account( payer.referrer );
 
-   asset g_share = ( total_fees * GOVERNANCE_SHARE_PERCENT ) / PERCENT_100;
+   asset governance_share = ( total_fees * GOVERNANCE_SHARE_PERCENT ) / PERCENT_100;
    asset registrar_share = ( total_fees * REFERRAL_SHARE_PERCENT ) / PERCENT_100;
    asset referrer_share = ( registrar_share * payer.referrer_rewards_percentage ) / PERCENT_100;
    registrar_share -= referrer_share;
 
-   asset g_paid = pay_multi_fee_share( governance_subscriptions, g_share, true );
+   asset governance_paid = asset( 0, total_fees.symbol );
+   const governance_member_object* governance_member_ptr = find_governance_member( payer.name );
+
+   if( governance_member_ptr != nullptr )
+   {
+      const account_object& governance_account = get_account( governance_member_ptr->governance );
+      governance_paid = pay_fee_share( governance_account, governance_share, true );
+   }
+
    asset registrar_paid = pay_fee_share( registrar, registrar_share, true );
    asset referrer_paid = pay_fee_share( referrer, referrer_share, true );
 
-   total_fees -= ( g_paid + registrar_paid + referrer_paid );
+   total_fees -= ( governance_paid + registrar_paid + referrer_paid );
 
    price credit_usd_price = get_liquidity_pool( SYMBOL_USD, SYMBOL_CREDIT ).hour_median_price;
    price usd_settlement_price = get_stablecoin_data( SYMBOL_USD ).settlement_price;
@@ -1296,27 +980,27 @@ asset database::pay_network_fees( const account_object& payer, const asset& amou
    {
       asset usd_purchased = liquid_exchange( total_fees, SYMBOL_USD, true, false );      // Liquid Exchange into USD, without paying fees to avoid recursive fees. 
 
-      create< asset_settlement_object >([&]( asset_settlement_object& fso ) 
+      create< asset_settlement_object >([&]( asset_settlement_object& aso ) 
       {
-         fso.owner = NULL_ACCOUNT;
-         fso.balance = usd_purchased;        // Settle USD purchased at below settlement price, to increase total Coin burned.
-         fso.settlement_date = now + fc::minutes( 10 );
+         aso.owner = NULL_ACCOUNT;
+         aso.balance = usd_purchased;        // Settle USD purchased at below settlement price, to increase total Coin burned.
+         aso.settlement_date = now + fc::minutes( 10 );
       });
    }
    else if( credit_usd_price < price(asset(1,SYMBOL_USD)/asset(1,SYMBOL_CREDIT)) )       // If price of credit is below $1.00 USD
    {
       liquid_exchange( total_fees, SYMBOL_CREDIT, true, false );       // Liquid Exchange into Credit asset, without paying fees to avoid recursive fees. 
 
-      modify( props, [&]( dynamic_global_property_object& gpo )
+      modify( props, [&]( dynamic_global_property_object& dgpo )
       {
-         gpo.accumulated_network_revenue += total_fees;
+         dgpo.accumulated_network_revenue += total_fees;
       });
    }
    else   // Remove Coin from Supply and increment network revenue. 
    {
-      modify( props, [&]( dynamic_global_property_object& gpo )
+      modify( props, [&]( dynamic_global_property_object& dgpo )
       {
-         gpo.accumulated_network_revenue += total_fees;
+         dgpo.accumulated_network_revenue += total_fees;
       });
    }
 
@@ -1359,9 +1043,6 @@ asset database::network_credit_acquisition( const asset& amount, bool execute )
    
    return credit_acquired;
 } FC_CAPTURE_AND_RETHROW() }
-
-
-
 
 
 

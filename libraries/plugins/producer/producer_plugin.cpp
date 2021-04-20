@@ -1323,11 +1323,9 @@ block_validation_condition::block_validation_condition_enum producer_plugin::may
             trx.set_expiration( db.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
 
             verify_block_operation verify;
-            verify.signatory = producer_itr->owner;
             verify.producer = producer_itr->owner;
 
             commit_block_operation commit;
-            commit.signatory = producer_itr->owner;
             commit.producer = producer_itr->owner;
 
             for( block_id_type block_id : recent_block_ids )

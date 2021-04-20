@@ -252,16 +252,17 @@ void database::update_community_moderators( const community_name_type& community
       cpo.last_updated = now;
    });
 
+   /**
    vote_itr = vote_idx.begin();
    while( vote_itr != vote_idx.end() )
    {
       const community_member_vote_object& vote = *vote_itr;
 
-      ilog( "Active Community Member Vote: \n ${v} \n",
-         ("v",vote));
+      ilog( "Active Community Member Vote: \n ${v} \n", ("v",vote));
 
       ++vote_itr;
    }
+   **/
 
    ilog( "Updated Community moderators: \n ${c} \n",
       ("c",community_permission) );

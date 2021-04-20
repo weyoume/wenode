@@ -12,15 +12,7 @@ using namespace node::protocol;
 DEFINE_EVALUATOR( account_create )
 DEFINE_EVALUATOR( account_update )
 DEFINE_EVALUATOR( account_verification )
-DEFINE_EVALUATOR( account_business )
 DEFINE_EVALUATOR( account_membership )
-DEFINE_EVALUATOR( account_vote_executive )
-DEFINE_EVALUATOR( account_vote_officer )
-DEFINE_EVALUATOR( account_member_request )
-DEFINE_EVALUATOR( account_member_invite )
-DEFINE_EVALUATOR( account_accept_request )
-DEFINE_EVALUATOR( account_accept_invite )
-DEFINE_EVALUATOR( account_remove_member )
 DEFINE_EVALUATOR( account_update_list )
 DEFINE_EVALUATOR( account_producer_vote )
 DEFINE_EVALUATOR( account_update_proxy )
@@ -35,14 +27,32 @@ DEFINE_EVALUATOR( account_follow )
 DEFINE_EVALUATOR( account_follow_tag )
 DEFINE_EVALUATOR( account_activity )
 
+// Business Evaluators
+
+DEFINE_EVALUATOR( business_create )
+DEFINE_EVALUATOR( business_update )
+DEFINE_EVALUATOR( business_executive )
+DEFINE_EVALUATOR( business_executive_vote )
+DEFINE_EVALUATOR( business_director )
+DEFINE_EVALUATOR( business_director_vote )
+
+// Governance Evaluators
+
+DEFINE_EVALUATOR( governance_create )
+DEFINE_EVALUATOR( governance_update )
+DEFINE_EVALUATOR( governance_executive )
+DEFINE_EVALUATOR( governance_executive_vote )
+DEFINE_EVALUATOR( governance_director )
+DEFINE_EVALUATOR( governance_director_vote )
+DEFINE_EVALUATOR( governance_member )
+DEFINE_EVALUATOR( governance_member_request )
+DEFINE_EVALUATOR( governance_resolution )
+DEFINE_EVALUATOR( governance_resolution_vote )
+
 // Network Evaluators
 
 DEFINE_EVALUATOR( network_officer_update )
 DEFINE_EVALUATOR( network_officer_vote )
-DEFINE_EVALUATOR( executive_board_update )
-DEFINE_EVALUATOR( executive_board_vote )
-DEFINE_EVALUATOR( governance_update )
-DEFINE_EVALUATOR( governance_subscribe )
 DEFINE_EVALUATOR( supernode_update )
 DEFINE_EVALUATOR( interface_update )
 DEFINE_EVALUATOR( mediator_update )

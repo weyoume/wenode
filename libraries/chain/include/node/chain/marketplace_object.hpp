@@ -59,7 +59,7 @@ namespace node { namespace chain {
 
          shared_string                         product_details;        ///< The Description details of each variant of the product.
 
-         shared_string                         product_image;         ///< IPFS references to images of each product variant.
+         shared_string                         product_image;          ///< IPFS references to images of each product variant.
 
          shared_vector< asset >                product_prices;         ///< The price for each variant of the product.
 

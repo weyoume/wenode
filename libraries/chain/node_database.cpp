@@ -192,40 +192,17 @@ void database::init_genesis()
       hpo.processed_hardforks.push_back( now );
    });
 
-   // Create the initial Reward fund object to contain the balances of the network reward funds and parameters
-
-   create< asset_reward_fund_object >( [&]( asset_reward_fund_object& rfo )
-   {
-      rfo.symbol = SYMBOL_COIN;
-      rfo.content_reward_balance = asset( 0, SYMBOL_COIN );
-      rfo.validation_reward_balance = asset( 0, SYMBOL_COIN );
-      rfo.txn_stake_reward_balance = asset( 0, SYMBOL_COIN );
-      rfo.work_reward_balance = asset( 0, SYMBOL_COIN );
-      rfo.producer_activity_reward_balance = asset( 0, SYMBOL_COIN );
-      rfo.supernode_reward_balance = asset( 0, SYMBOL_COIN );
-      rfo.power_reward_balance = asset( 0, SYMBOL_COIN );
-      rfo.enterprise_fund_balance = asset( 0, SYMBOL_COIN );
-      rfo.development_reward_balance = asset( 0, SYMBOL_COIN );
-      rfo.marketing_reward_balance = asset( 0, SYMBOL_COIN );
-      rfo.advocacy_reward_balance = asset( 0, SYMBOL_COIN );
-      rfo.activity_reward_balance = asset( 0, SYMBOL_COIN );
-      rfo.premium_partners_fund_balance = asset( 0, SYMBOL_COIN );
-      rfo.recent_content_claims = 0;
-      rfo.recent_activity_claims = 0;
-      rfo.last_updated = now;
-   });
-
-   // Create initial blockchain accounts
+   // Init Account
 
    create< account_object >( [&]( account_object& a )
    {
       a.name = INIT_ACCOUNT;
       a.registrar = INIT_ACCOUNT;
       a.referrer = INIT_ACCOUNT;
-      a.secure_public_key = get_public_key( a.name, SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      a.connection_public_key = get_public_key( a.name, CONNECTION_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      a.friend_public_key = get_public_key( a.name, FRIEND_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      a.companion_public_key = get_public_key( a.name, COMPANION_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      a.secure_public_key = get_public_key( a.name, SECURE_KEY_STR, INIT_PASSWORD );
+      a.connection_public_key = get_public_key( a.name, CONNECTION_KEY_STR, INIT_PASSWORD );
+      a.friend_public_key = get_public_key( a.name, FRIEND_KEY_STR, INIT_PASSWORD );
+      a.companion_public_key = get_public_key( a.name, COMPANION_KEY_STR, INIT_PASSWORD );
       a.created = now;
       a.last_updated = now;
       a.last_vote_time = now;
@@ -251,15 +228,16 @@ void database::init_genesis()
       a.revenue_share = true;
    });
 
-   create< account_authority_object >( [&]( account_authority_object& auth )
+   create< account_authority_object >( [&]( account_authority_object& aao )
    {
-      auth.account = INIT_ACCOUNT;
-      auth.owner_auth.add_authority( get_public_key( INIT_ACCOUNT, OWNER_KEY_STR, INIT_ACCOUNT_PASSWORD ), 1 );
-      auth.owner_auth.weight_threshold = 1;
-      auth.active_auth.add_authority( get_public_key( INIT_ACCOUNT, ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ), 1 );
-      auth.active_auth.weight_threshold = 1;
-      auth.posting_auth.add_authority( get_public_key( INIT_ACCOUNT, POSTING_KEY_STR, INIT_ACCOUNT_PASSWORD ), 1 );
-      auth.posting_auth.weight_threshold = 1;
+      aao.account = INIT_ACCOUNT;
+      aao.owner_auth.add_authority( get_public_key( aao.account, OWNER_KEY_STR, INIT_PASSWORD ), 1 );
+      aao.owner_auth.weight_threshold = 1;
+      aao.active_auth.add_authority( get_public_key( aao.account, ACTIVE_KEY_STR, INIT_PASSWORD ), 1 );
+      aao.active_auth.weight_threshold = 1;
+      aao.posting_auth.add_authority( get_public_key( aao.account, POSTING_KEY_STR, INIT_PASSWORD ), 1 );
+      aao.posting_auth.weight_threshold = 1;
+      aao.last_owner_update = now;
    });
 
    create< account_permission_object >( [&]( account_permission_object& aao )
@@ -273,15 +251,65 @@ void database::init_genesis()
       afo.last_updated = now;
    });
 
+   create< supernode_object >( [&]( supernode_object& s )
+   {
+      s.account = INIT_ACCOUNT;
+      from_string( s.url, INIT_URL );
+      from_string( s.details, INIT_DETAILS );
+      from_string( s.node_api_endpoint, INIT_NODE_ENDPOINT );
+      from_string( s.auth_api_endpoint, INIT_AUTH_ENDPOINT );
+      from_string( s.notification_api_endpoint, INIT_NOTIFICATION_ENDPOINT );
+      from_string( s.ipfs_endpoint, INIT_IPFS_ENDPOINT );
+      from_string( s.bittorrent_endpoint, INIT_BITTORRENT_ENDPOINT );
+      s.active = true;
+      s.created = now;
+      s.last_updated = now;
+      s.last_activation_time = now;
+   });
+
+   create< network_officer_object >( [&]( network_officer_object& noo )
+   {
+      noo.account = INIT_ACCOUNT;
+      noo.officer_type = network_officer_role_type::DEVELOPMENT;
+      from_string( noo.url, INIT_URL );
+      from_string( noo.details, INIT_DETAILS );
+      noo.officer_approved = true;
+      noo.reward_currency = SYMBOL_COIN;
+      noo.created = now;
+      noo.active = true;
+   });
+
+   create< interface_object >( [&]( interface_object& i )
+   {
+      i.account = INIT_ACCOUNT;
+      from_string( i.url, INIT_URL );
+      from_string( i.details, INIT_DETAILS );
+      i.active = true;
+      i.created = now;
+      i.last_updated = now;
+   });
+
+   create< mediator_object >( [&]( mediator_object& i )
+   {
+      i.account = INIT_ACCOUNT;
+      from_string( i.url, INIT_URL );
+      from_string( i.details, INIT_DETAILS );
+      i.active = true;
+      i.created = now;
+      i.last_updated = now;
+   });
+
+   // Init CEO account
+
    create< account_object >( [&]( account_object& a )
    {
       a.name = INIT_CEO;
       a.registrar = INIT_ACCOUNT;
       a.referrer = INIT_ACCOUNT;
-      a.secure_public_key = get_public_key( a.name, SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      a.connection_public_key = get_public_key( a.name, CONNECTION_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      a.friend_public_key = get_public_key( a.name, FRIEND_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      a.companion_public_key = get_public_key( a.name, COMPANION_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      a.secure_public_key = get_public_key( a.name, SECURE_KEY_STR, INIT_PASSWORD );
+      a.connection_public_key = get_public_key( a.name, CONNECTION_KEY_STR, INIT_PASSWORD );
+      a.friend_public_key = get_public_key( a.name, FRIEND_KEY_STR, INIT_PASSWORD );
+      a.companion_public_key = get_public_key( a.name, COMPANION_KEY_STR, INIT_PASSWORD );
       a.created = now;
       a.last_updated = now;
       a.last_vote_time = now;
@@ -307,15 +335,16 @@ void database::init_genesis()
       a.revenue_share = false;
    });
 
-   create< account_authority_object >( [&]( account_authority_object& auth )
+   create< account_authority_object >( [&]( account_authority_object& aao )
    {
-      auth.account = INIT_CEO;
-      auth.owner_auth.add_authority( get_public_key( INIT_CEO, OWNER_KEY_STR, INIT_ACCOUNT_PASSWORD ), 1 );
-      auth.owner_auth.weight_threshold = 1;
-      auth.active_auth.add_authority( get_public_key( INIT_CEO, ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ), 1 );
-      auth.active_auth.weight_threshold = 1;
-      auth.posting_auth.add_authority( get_public_key( INIT_CEO, POSTING_KEY_STR, INIT_ACCOUNT_PASSWORD ), 1 );
-      auth.posting_auth.weight_threshold = 1;
+      aao.account = INIT_CEO;
+      aao.owner_auth.add_authority( get_public_key( aao.account, OWNER_KEY_STR, INIT_PASSWORD ), 1 );
+      aao.owner_auth.weight_threshold = 1;
+      aao.active_auth.add_authority( get_public_key( aao.account, ACTIVE_KEY_STR, INIT_PASSWORD ), 1 );
+      aao.active_auth.weight_threshold = 1;
+      aao.posting_auth.add_authority( get_public_key( aao.account, POSTING_KEY_STR, INIT_PASSWORD ), 1 );
+      aao.posting_auth.weight_threshold = 1;
+      aao.last_owner_update = now;
    });
 
    create< account_permission_object >( [&]( account_permission_object& aao )
@@ -323,60 +352,15 @@ void database::init_genesis()
       aao.account = INIT_CEO;
    });
 
-   create< account_following_object >( [&]( account_following_object& afo ) 
+   create< account_following_object >( [&]( account_following_object& afo )
    {
       afo.account = INIT_CEO;
       afo.last_updated = now;
    });
 
-   create< account_business_object >( [&]( account_business_object& abo )
-   {
-      abo.account = INIT_ACCOUNT;
-      abo.business_type = business_structure_type::PUBLIC_BUSINESS;
-      abo.executive_board.CHIEF_EXECUTIVE_OFFICER = INIT_CEO;
-      abo.officer_vote_threshold = 1000 * BLOCKCHAIN_PRECISION;
-      abo.business_public_key = get_public_key( abo.account, "business", INIT_ACCOUNT_PASSWORD );
-      abo.members.insert( INIT_CEO );
-      abo.officers.insert( INIT_CEO );
-      abo.executives.insert( INIT_CEO );
-      abo.equity_assets.insert( SYMBOL_EQUITY );
-      abo.equity_revenue_shares[ SYMBOL_EQUITY ] = DIVIDEND_SHARE_PERCENT;
-      abo.credit_assets.insert( SYMBOL_CREDIT );
-      abo.credit_revenue_shares[ SYMBOL_CREDIT ] = BUYBACK_SHARE_PERCENT;
-      abo.active = true;
-      abo.created = now;
-      abo.last_updated = now;
-   });
-
-   create< account_officer_vote_object >( [&]( account_officer_vote_object& aovo )
-   {
-      aovo.account = INIT_CEO;
-      aovo.business_account = INIT_ACCOUNT;
-      aovo.officer_account = INIT_CEO;
-      aovo.vote_rank = 1;
-   });
-
-   create< account_executive_vote_object >( [&]( account_executive_vote_object& aevo )
-   {
-      aevo.account = INIT_CEO;
-      aevo.business_account = INIT_ACCOUNT;
-      aevo.executive_account = INIT_CEO;
-      aevo.role = executive_role_type::CHIEF_EXECUTIVE_OFFICER;
-      aevo.vote_rank = 1;
-   });
-
-   create< governance_account_object >( [&]( governance_account_object& gao )
-   {
-      gao.account = INIT_ACCOUNT;
-      from_string( gao.url, INIT_URL );
-      from_string( gao.details, INIT_DETAILS );
-      gao.created = now;
-      gao.active = true;
-   });
-
    create< supernode_object >( [&]( supernode_object& s )
    {
-      s.account = INIT_ACCOUNT;
+      s.account = INIT_CEO;
       from_string( s.url, INIT_URL );
       from_string( s.details, INIT_DETAILS );
       from_string( s.node_api_endpoint, INIT_NODE_ENDPOINT );
@@ -402,20 +386,9 @@ void database::init_genesis()
       noo.active = true;
    });
 
-   create< executive_board_object >( [&]( executive_board_object& ebo )
-   {
-      ebo.account = INIT_ACCOUNT;
-      ebo.budget = asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT );
-      from_string( ebo.url, INIT_URL );
-      from_string( ebo.details, INIT_DETAILS );
-      ebo.active = true;
-      ebo.created = now;
-      ebo.board_approved = true;
-   });
-
    create< interface_object >( [&]( interface_object& i )
    {
-      i.account = INIT_ACCOUNT;
+      i.account = INIT_CEO;
       from_string( i.url, INIT_URL );
       from_string( i.details, INIT_DETAILS );
       i.active = true;
@@ -425,7 +398,356 @@ void database::init_genesis()
 
    create< mediator_object >( [&]( mediator_object& i )
    {
-      i.account = INIT_ACCOUNT;
+      i.account = INIT_CEO;
+      from_string( i.url, INIT_URL );
+      from_string( i.details, INIT_DETAILS );
+      i.active = true;
+      i.created = now;
+      i.last_updated = now;
+   });
+
+   // Init Business account
+
+   create< account_object >( [&]( account_object& a )
+   {
+      a.name = INIT_BUSINESS;
+      a.registrar = INIT_ACCOUNT;
+      a.referrer = INIT_ACCOUNT;
+      a.secure_public_key = get_public_key( a.name, SECURE_KEY_STR, INIT_PASSWORD );
+      a.connection_public_key = get_public_key( a.name, CONNECTION_KEY_STR, INIT_PASSWORD );
+      a.friend_public_key = get_public_key( a.name, FRIEND_KEY_STR, INIT_PASSWORD );
+      a.companion_public_key = get_public_key( a.name, COMPANION_KEY_STR, INIT_PASSWORD );
+      a.created = now;
+      a.last_updated = now;
+      a.last_vote_time = now;
+      a.last_view_time = now;
+      a.last_share_time = now;
+      a.last_post = now;
+      a.last_root_post = now;
+      a.last_transfer_time = now;
+      a.last_activity_reward = now;
+      a.last_account_recovery = now;
+      a.last_community_created = now;
+      a.last_asset_created = now;
+      from_string( a.json, "" );
+      from_string( a.json_private, "" );
+      from_string( a.details, INIT_DETAILS );
+      from_string( a.url, INIT_URL );
+      from_string( a.profile_image, INIT_IMAGE );
+      a.membership = membership_tier_type::TOP_MEMBERSHIP;
+      a.membership_expiration = time_point::maximum();
+      a.mined = true;
+      a.active = true;
+      a.can_vote = true;
+      a.revenue_share = false;
+   });
+
+   create< account_authority_object >( [&]( account_authority_object& aao )
+   {
+      aao.account = INIT_BUSINESS;
+      aao.owner_auth.add_authority( get_public_key( aao.account, OWNER_KEY_STR, INIT_PASSWORD ), 1 );
+      aao.owner_auth.weight_threshold = 1;
+      aao.active_auth.add_authority( get_public_key( aao.account, ACTIVE_KEY_STR, INIT_PASSWORD ), 1 );
+      aao.active_auth.weight_threshold = 1;
+      aao.posting_auth.add_authority( get_public_key( aao.account, POSTING_KEY_STR, INIT_PASSWORD ), 1 );
+      aao.posting_auth.weight_threshold = 1;
+      aao.last_owner_update = now;
+   });
+
+   create< account_permission_object >( [&]( account_permission_object& aao )
+   {
+      aao.account = INIT_BUSINESS;
+   });
+
+   create< account_following_object >( [&]( account_following_object& afo ) 
+   {
+      afo.account = INIT_BUSINESS;
+      afo.last_updated = now;
+   });
+
+   create< business_object >( [&]( business_object& bo )
+   {
+      bo.account = INIT_BUSINESS;
+      from_string( bo.business_trading_name, INIT_BUSINESS );
+      bo.equity_asset = SYMBOL_EQUITY;
+      bo.equity_revenue_share = 5 * PERCENT_1;
+      bo.credit_asset = SYMBOL_CREDIT;
+      bo.credit_revenue_share = 5 * PERCENT_1;
+      bo.public_community = INIT_PUBLIC_COMMUNITY;
+      bo.private_community = INIT_PRIVATE_COMMUNITY;
+      bo.created = now;
+      bo.last_updated = now;
+   });
+
+   create< business_director_object >( [&]( business_director_object& bdo )
+   {
+      bdo.director = INIT_CEO;
+      bdo.business = INIT_BUSINESS;
+      bdo.active = true;
+      bdo.appointed = false;
+      bdo.last_updated = now;
+      bdo.created = now;
+   });
+
+   create< business_executive_object >( [&]( business_executive_object& beo )
+   {
+      beo.executive = INIT_CEO;
+      beo.business = INIT_BUSINESS;
+      beo.active = true;
+      beo.appointed = false;
+      beo.last_updated = now;
+      beo.created = now;
+   });
+
+   create< business_director_vote_object >( [&]( business_director_vote_object& bdvo )
+   {
+      bdvo.account = INIT_CEO;
+      bdvo.business = INIT_BUSINESS;
+      bdvo.director = INIT_CEO;
+      bdvo.vote_rank = 1;
+      bdvo.created = now;
+      bdvo.last_updated = now;
+   });
+
+   create< business_executive_vote_object >( [&]( business_executive_vote_object& bevo )
+   {
+      bevo.director = INIT_CEO;
+      bevo.executive = INIT_CEO;
+      bevo.business = INIT_BUSINESS;
+      bevo.created = now;
+      bevo.last_updated = now;
+   });
+
+   create< business_permission_object >( [&]( business_permission_object& bpo )
+   {
+      bpo.account = INIT_BUSINESS;
+      bpo.directors.insert( INIT_CEO );
+      bpo.executives.insert( INIT_CEO );
+      bpo.chief_executive = INIT_CEO;
+      bpo.created = now;
+      bpo.last_updated = now;
+   });
+
+   create< supernode_object >( [&]( supernode_object& s )
+   {
+      s.account = INIT_BUSINESS;
+      from_string( s.url, INIT_URL );
+      from_string( s.details, INIT_DETAILS );
+      from_string( s.node_api_endpoint, INIT_NODE_ENDPOINT );
+      from_string( s.auth_api_endpoint, INIT_AUTH_ENDPOINT );
+      from_string( s.notification_api_endpoint, INIT_NOTIFICATION_ENDPOINT );
+      from_string( s.ipfs_endpoint, INIT_IPFS_ENDPOINT );
+      from_string( s.bittorrent_endpoint, INIT_BITTORRENT_ENDPOINT );
+      s.active = true;
+      s.created = now;
+      s.last_updated = now;
+      s.last_activation_time = now;
+   });
+
+   create< network_officer_object >( [&]( network_officer_object& noo )
+   {
+      noo.account = INIT_BUSINESS;
+      noo.officer_type = network_officer_role_type::DEVELOPMENT;
+      from_string( noo.url, INIT_URL );
+      from_string( noo.details, INIT_DETAILS );
+      noo.officer_approved = true;
+      noo.reward_currency = SYMBOL_COIN;
+      noo.created = now;
+      noo.active = true;
+   });
+
+   create< interface_object >( [&]( interface_object& i )
+   {
+      i.account = INIT_BUSINESS;
+      from_string( i.url, INIT_URL );
+      from_string( i.details, INIT_DETAILS );
+      i.active = true;
+      i.created = now;
+      i.last_updated = now;
+   });
+
+   create< mediator_object >( [&]( mediator_object& i )
+   {
+      i.account = INIT_BUSINESS;
+      from_string( i.url, INIT_URL );
+      from_string( i.details, INIT_DETAILS );
+      i.active = true;
+      i.created = now;
+      i.last_updated = now;
+   });
+
+   // Init Governance Account
+
+   create< account_object >( [&]( account_object& a )
+   {
+      a.name = INIT_GOVERNANCE;
+      a.registrar = INIT_ACCOUNT;
+      a.referrer = INIT_ACCOUNT;
+      a.secure_public_key = get_public_key( a.name, SECURE_KEY_STR, INIT_PASSWORD );
+      a.connection_public_key = get_public_key( a.name, CONNECTION_KEY_STR, INIT_PASSWORD );
+      a.friend_public_key = get_public_key( a.name, FRIEND_KEY_STR, INIT_PASSWORD );
+      a.companion_public_key = get_public_key( a.name, COMPANION_KEY_STR, INIT_PASSWORD );
+      a.created = now;
+      a.last_updated = now;
+      a.last_vote_time = now;
+      a.last_view_time = now;
+      a.last_share_time = now;
+      a.last_post = now;
+      a.last_root_post = now;
+      a.last_transfer_time = now;
+      a.last_activity_reward = now;
+      a.last_account_recovery = now;
+      a.last_community_created = now;
+      a.last_asset_created = now;
+      from_string( a.json, "" );
+      from_string( a.json_private, "" );
+      from_string( a.details, INIT_DETAILS );
+      from_string( a.url, INIT_URL );
+      from_string( a.profile_image, INIT_IMAGE );
+      a.membership = membership_tier_type::TOP_MEMBERSHIP;
+      a.membership_expiration = time_point::maximum();
+      a.mined = true;
+      a.active = true;
+      a.can_vote = true;
+      a.revenue_share = false;
+   });
+
+   create< account_authority_object >( [&]( account_authority_object& aao )
+   {
+      aao.account = INIT_GOVERNANCE;
+      aao.owner_auth.add_authority( get_public_key( aao.account, OWNER_KEY_STR, INIT_PASSWORD ), 1 );
+      aao.owner_auth.weight_threshold = 1;
+      aao.active_auth.add_authority( get_public_key( aao.account, ACTIVE_KEY_STR, INIT_PASSWORD ), 1 );
+      aao.active_auth.weight_threshold = 1;
+      aao.posting_auth.add_authority( get_public_key( aao.account, POSTING_KEY_STR, INIT_PASSWORD ), 1 );
+      aao.posting_auth.weight_threshold = 1;
+      aao.last_owner_update = now;
+   });
+
+   create< account_permission_object >( [&]( account_permission_object& aao )
+   {
+      aao.account = INIT_GOVERNANCE;
+   });
+
+   create< account_following_object >( [&]( account_following_object& afo )
+   {
+      afo.account = INIT_GOVERNANCE;
+      afo.last_updated = now;
+   });
+
+   create< governance_object >( [&]( governance_object& go )
+   {
+      go.account = INIT_GOVERNANCE;
+      from_string( go.governance_name, INIT_GOVERNANCE );
+      go.equity_asset = SYMBOL_EQUITY;
+      go.equity_revenue_share = 5 * PERCENT_1;
+      go.credit_asset = SYMBOL_CREDIT;
+      go.credit_revenue_share = 5 * PERCENT_1;
+      go.public_community = GOVERNANCE_PUBLIC_COMMUNITY;
+      go.private_community = GOVERNANCE_PRIVATE_COMMUNITY;
+      go.member_count = 1;
+      go.created = now;
+      go.last_updated = now;
+   });
+
+   create< governance_member_object >( [&]( governance_member_object& gmo )
+   {
+      gmo.governance = INIT_GOVERNANCE;
+      gmo.account = INIT_CEO;
+      gmo.interface = INIT_BUSINESS;
+      gmo.last_updated = now;
+      gmo.created = now;
+   });
+
+   create< governance_director_object >( [&]( governance_director_object& bdo )
+   {
+      bdo.director = INIT_CEO;
+      bdo.governance = INIT_GOVERNANCE;
+      bdo.active = true;
+      bdo.appointed = false;
+      bdo.last_updated = now;
+      bdo.created = now;
+   });
+
+   create< governance_executive_object >( [&]( governance_executive_object& beo )
+   {
+      beo.executive = INIT_CEO;
+      beo.governance = INIT_GOVERNANCE;
+      beo.active = true;
+      beo.appointed = false;
+      beo.last_updated = now;
+      beo.created = now;
+   });
+
+   create< governance_director_vote_object >( [&]( governance_director_vote_object& bdvo )
+   {
+      bdvo.account = INIT_CEO;
+      bdvo.governance = INIT_GOVERNANCE;
+      bdvo.director = INIT_CEO;
+      bdvo.created = now;
+      bdvo.last_updated = now;
+   });
+
+   create< governance_executive_vote_object >( [&]( governance_executive_vote_object& bevo )
+   {
+      bevo.director = INIT_CEO;
+      bevo.executive = INIT_CEO;
+      bevo.governance = INIT_GOVERNANCE;
+      bevo.created = now;
+      bevo.last_updated = now;
+   });
+
+   create< governance_permission_object >( [&]( governance_permission_object& bpo )
+   {
+      bpo.account = INIT_GOVERNANCE;
+      bpo.directors.insert( INIT_CEO );
+      bpo.executives.insert( INIT_CEO );
+      bpo.chief_executive = INIT_CEO;
+      bpo.created = now;
+      bpo.last_updated = now;
+   });
+
+   create< supernode_object >( [&]( supernode_object& s )
+   {
+      s.account = INIT_GOVERNANCE;
+      from_string( s.url, INIT_URL );
+      from_string( s.details, INIT_DETAILS );
+      from_string( s.node_api_endpoint, INIT_NODE_ENDPOINT );
+      from_string( s.auth_api_endpoint, INIT_AUTH_ENDPOINT );
+      from_string( s.notification_api_endpoint, INIT_NOTIFICATION_ENDPOINT );
+      from_string( s.ipfs_endpoint, INIT_IPFS_ENDPOINT );
+      from_string( s.bittorrent_endpoint, INIT_BITTORRENT_ENDPOINT );
+      s.active = true;
+      s.created = now;
+      s.last_updated = now;
+      s.last_activation_time = now;
+   });
+
+   create< network_officer_object >( [&]( network_officer_object& noo )
+   {
+      noo.account = INIT_GOVERNANCE;
+      noo.officer_type = network_officer_role_type::DEVELOPMENT;
+      from_string( noo.url, INIT_URL );
+      from_string( noo.details, INIT_DETAILS );
+      noo.officer_approved = true;
+      noo.reward_currency = SYMBOL_COIN;
+      noo.created = now;
+      noo.active = true;
+   });
+
+   create< interface_object >( [&]( interface_object& i )
+   {
+      i.account = INIT_GOVERNANCE;
+      from_string( i.url, INIT_URL );
+      from_string( i.details, INIT_DETAILS );
+      i.active = true;
+      i.created = now;
+      i.last_updated = now;
+   });
+
+   create< mediator_object >( [&]( mediator_object& i )
+   {
+      i.account = INIT_GOVERNANCE;
       from_string( i.url, INIT_URL );
       from_string( i.details, INIT_DETAILS );
       i.active = true;
@@ -469,15 +791,16 @@ void database::init_genesis()
       a.revenue_share = false;
    });
 
-   create< account_authority_object >( [&]( account_authority_object& auth )
+   create< account_authority_object >( [&]( account_authority_object& aao )
    {
-      auth.account = ANON_ACCOUNT;
-      auth.owner_auth.add_authority( get_public_key( ANON_ACCOUNT, OWNER_KEY_STR, ANON_ACCOUNT_PASSWORD ), 1 );
-      auth.owner_auth.weight_threshold = 1;
-      auth.active_auth.add_authority( get_public_key( ANON_ACCOUNT, ACTIVE_KEY_STR, ANON_ACCOUNT_PASSWORD ), 1 );
-      auth.active_auth.weight_threshold = 1;
-      auth.posting_auth.add_authority( get_public_key( ANON_ACCOUNT, POSTING_KEY_STR, ANON_ACCOUNT_PASSWORD ), 1 );
-      auth.posting_auth.weight_threshold = 1;
+      aao.account = ANON_ACCOUNT;
+      aao.owner_auth.add_authority( get_public_key( aao.account, OWNER_KEY_STR, ANON_ACCOUNT_PASSWORD ), 1 );
+      aao.owner_auth.weight_threshold = 1;
+      aao.active_auth.add_authority( get_public_key( aao.account, ACTIVE_KEY_STR, ANON_ACCOUNT_PASSWORD ), 1 );
+      aao.active_auth.weight_threshold = 1;
+      aao.posting_auth.add_authority( get_public_key( aao.account, POSTING_KEY_STR, ANON_ACCOUNT_PASSWORD ), 1 );
+      aao.posting_auth.weight_threshold = 1;
+      aao.last_owner_update = now;
    });
 
    create< account_permission_object >( [&]( account_permission_object& aao )
@@ -491,15 +814,17 @@ void database::init_genesis()
       afo.last_updated = now;
    });
 
+   // Init Producer
+
    create< account_object >( [&]( account_object& a )
    {
       a.name = PRODUCER_ACCOUNT;
       a.registrar = INIT_ACCOUNT;
       a.referrer = INIT_ACCOUNT;
-      a.secure_public_key = get_public_key( a.name, SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      a.connection_public_key = get_public_key( a.name, CONNECTION_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      a.friend_public_key = get_public_key( a.name, FRIEND_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      a.companion_public_key = get_public_key( a.name, COMPANION_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      a.secure_public_key = get_public_key( a.name, SECURE_KEY_STR, INIT_PASSWORD );
+      a.connection_public_key = get_public_key( a.name, CONNECTION_KEY_STR, INIT_PASSWORD );
+      a.friend_public_key = get_public_key( a.name, FRIEND_KEY_STR, INIT_PASSWORD );
+      a.companion_public_key = get_public_key( a.name, COMPANION_KEY_STR, INIT_PASSWORD );
       a.created = now;
       a.last_updated = now;
       a.last_vote_time = now;
@@ -525,12 +850,13 @@ void database::init_genesis()
       a.revenue_share = false;
    });
 
-   const account_authority_object& producer_auth = create< account_authority_object >( [&]( account_authority_object& auth )
+   const account_authority_object& producer_auth = create< account_authority_object >( [&]( account_authority_object& aao )
    {
-      auth.account = PRODUCER_ACCOUNT;
-      auth.owner_auth.weight_threshold = 1;
-      auth.active_auth.weight_threshold = 1;
-      auth.posting_auth.weight_threshold = 1;
+      aao.account = PRODUCER_ACCOUNT;
+      aao.owner_auth.weight_threshold = 1;
+      aao.active_auth.weight_threshold = 1;
+      aao.posting_auth.weight_threshold = 1;
+      aao.last_owner_update = now;
    });
 
    create< account_permission_object >( [&]( account_permission_object& aao )
@@ -551,10 +877,10 @@ void database::init_genesis()
       a.name = NULL_ACCOUNT;
       a.registrar = INIT_ACCOUNT;
       a.referrer = INIT_ACCOUNT;
-      a.secure_public_key = get_public_key( a.name, SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      a.connection_public_key = get_public_key( a.name, CONNECTION_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      a.friend_public_key = get_public_key( a.name, FRIEND_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      a.companion_public_key = get_public_key( a.name, COMPANION_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      a.secure_public_key = get_public_key( a.name, SECURE_KEY_STR, INIT_PASSWORD );
+      a.connection_public_key = get_public_key( a.name, CONNECTION_KEY_STR, INIT_PASSWORD );
+      a.friend_public_key = get_public_key( a.name, FRIEND_KEY_STR, INIT_PASSWORD );
+      a.companion_public_key = get_public_key( a.name, COMPANION_KEY_STR, INIT_PASSWORD );
       a.created = now;
       a.last_updated = now;
       a.last_vote_time = now;
@@ -580,17 +906,18 @@ void database::init_genesis()
       a.revenue_share = false;
    });
 
-   create< account_authority_object >( [&]( account_authority_object& auth )
-   {
-      auth.account = NULL_ACCOUNT;
-      auth.owner_auth.weight_threshold = 1;
-      auth.active_auth.weight_threshold = 1;
-      auth.posting_auth.weight_threshold = 1;
-   });
-
-   create< account_permission_object >( [&]( account_permission_object& aao )
+   create< account_authority_object >( [&]( account_authority_object& aao )
    {
       aao.account = NULL_ACCOUNT;
+      aao.owner_auth.weight_threshold = 1;
+      aao.active_auth.weight_threshold = 1;
+      aao.posting_auth.weight_threshold = 1;
+      aao.last_owner_update = now;
+   });
+
+   create< account_permission_object >( [&]( account_permission_object& apo )
+   {
+      apo.account = NULL_ACCOUNT;
    });
 
    create< account_following_object >( [&]( account_following_object& afo )
@@ -599,15 +926,17 @@ void database::init_genesis()
       afo.last_updated = now;
    });
 
+   // Create Temp Account
+
    create< account_object >( [&]( account_object& a )
    {
       a.name = TEMP_ACCOUNT;
       a.registrar = INIT_ACCOUNT;
       a.referrer = INIT_ACCOUNT;
-      a.secure_public_key = get_public_key( a.name, SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      a.connection_public_key = get_public_key( a.name, CONNECTION_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      a.friend_public_key = get_public_key( a.name, FRIEND_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      a.companion_public_key = get_public_key( a.name, COMPANION_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      a.secure_public_key = get_public_key( a.name, SECURE_KEY_STR, INIT_PASSWORD );
+      a.connection_public_key = get_public_key( a.name, CONNECTION_KEY_STR, INIT_PASSWORD );
+      a.friend_public_key = get_public_key( a.name, FRIEND_KEY_STR, INIT_PASSWORD );
+      a.companion_public_key = get_public_key( a.name, COMPANION_KEY_STR, INIT_PASSWORD );
       a.created = now;
       a.last_updated = now;
       a.last_vote_time = now;
@@ -633,11 +962,12 @@ void database::init_genesis()
       a.revenue_share = false;
    });
 
-   create< account_authority_object >( [&]( account_authority_object& auth )
+   create< account_authority_object >( [&]( account_authority_object& aao )
    {
-      auth.account = TEMP_ACCOUNT;
-      auth.owner_auth.weight_threshold = 0;
-      auth.active_auth.weight_threshold = 0;
+      aao.account = TEMP_ACCOUNT;
+      aao.owner_auth.weight_threshold = 0;
+      aao.active_auth.weight_threshold = 0;
+      aao.last_owner_update = now;
    });
 
    create< account_permission_object >( [&]( account_permission_object& aao )
@@ -699,7 +1029,27 @@ void database::init_genesis()
       a.producer_activity_reward_percent = PRODUCER_ACTIVITY_PERCENT;
    });
 
-   // Create Equity asset
+   create< asset_reward_fund_object >( [&]( asset_reward_fund_object& rfo )
+   {
+      rfo.symbol = SYMBOL_COIN;
+      rfo.content_reward_balance = asset( 0, SYMBOL_COIN );
+      rfo.validation_reward_balance = asset( 0, SYMBOL_COIN );
+      rfo.txn_stake_reward_balance = asset( 0, SYMBOL_COIN );
+      rfo.work_reward_balance = asset( 0, SYMBOL_COIN );
+      rfo.producer_activity_reward_balance = asset( 0, SYMBOL_COIN );
+      rfo.supernode_reward_balance = asset( 0, SYMBOL_COIN );
+      rfo.power_reward_balance = asset( 0, SYMBOL_COIN );
+      rfo.enterprise_fund_balance = asset( 0, SYMBOL_COIN );
+      rfo.development_reward_balance = asset( 0, SYMBOL_COIN );
+      rfo.marketing_reward_balance = asset( 0, SYMBOL_COIN );
+      rfo.advocacy_reward_balance = asset( 0, SYMBOL_COIN );
+      rfo.activity_reward_balance = asset( 0, SYMBOL_COIN );
+      rfo.recent_content_claims = 0;
+      rfo.recent_activity_claims = 0;
+      rfo.last_updated = now;
+   });
+
+   // Create Business Equity Asset
 
    create< asset_object >( [&]( asset_object& a )
    {
@@ -708,7 +1058,7 @@ void database::init_genesis()
       a.asset_type = asset_property_type::EQUITY_ASSET;
       a.flags = 0;
       a.issuer_permissions = 0;
-      a.issuer = INIT_ACCOUNT;
+      a.issuer = INIT_BUSINESS;
       a.unstake_intervals = 0;
       a.stake_intervals = 4;
       from_string( a.json, "" );
@@ -725,7 +1075,7 @@ void database::init_genesis()
 
    create< asset_equity_data_object >( [&]( asset_equity_data_object& a )
    {
-      a.business_account = INIT_ACCOUNT;
+      a.issuer = INIT_ACCOUNT;
       a.symbol = SYMBOL_EQUITY;
       a.dividend_share_percent = DIVIDEND_SHARE_PERCENT;
       a.min_active_time = EQUITY_ACTIVITY_TIME;
@@ -736,8 +1086,6 @@ void database::init_genesis()
       a.boost_producers = EQUITY_BOOST_PRODUCERS;
       a.boost_top = EQUITY_BOOST_TOP_PERCENT;
    });
-
-   // Create Equity distribution
 
    asset_unit init_input = asset_unit( INIT_ACCOUNT, BLOCKCHAIN_PRECISION, account_balance_values[ 0 ], GENESIS_TIME );
    asset_unit sender_output = asset_unit( ASSET_UNIT_SENDER, 1, account_balance_values[ 0 ], GENESIS_TIME );
@@ -761,6 +1109,73 @@ void database::init_genesis()
       a.min_input_balance_units = 1;
       a.max_input_balance_units = 1000000;
       a.total_distributed = asset( 0, SYMBOL_EQUITY );
+      a.total_funded = asset( 0, SYMBOL_COIN );
+      a.begin_time = now + fc::days(7);
+      a.next_round_time = now + fc::days(7);
+      a.created = now;
+      a.last_updated = now;
+   });
+
+   // Create Governance Equity Asset
+
+   create< asset_object >( [&]( asset_object& a )
+   {
+      a.symbol = GOVERNANCE_EQUITY_SYMBOL;
+      a.max_supply = INIT_EQUITY_SUPPLY;
+      a.asset_type = asset_property_type::EQUITY_ASSET;
+      a.flags = 0;
+      a.issuer_permissions = 0;
+      a.issuer = INIT_GOVERNANCE;
+      a.unstake_intervals = 0;
+      a.stake_intervals = 4;
+      from_string( a.json, "" );
+      from_string( a.details, EQUITY_DETAILS );
+      from_string( a.url, INIT_URL );
+      a.created = now;
+      a.last_updated = now;
+   });
+
+   create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+   {
+      a.symbol = GOVERNANCE_EQUITY_SYMBOL;
+   });
+
+   create< asset_equity_data_object >( [&]( asset_equity_data_object& a )
+   {
+      a.issuer = INIT_GOVERNANCE;
+      a.symbol = GOVERNANCE_EQUITY_SYMBOL;
+      a.dividend_share_percent = DIVIDEND_SHARE_PERCENT;
+      a.min_active_time = EQUITY_ACTIVITY_TIME;
+      a.min_balance = BLOCKCHAIN_PRECISION;
+      a.min_producers = EQUITY_MIN_PRODUCERS;
+      a.boost_balance = EQUITY_BOOST_BALANCE;
+      a.boost_activity = EQUITY_BOOST_ACTIVITY;
+      a.boost_producers = EQUITY_BOOST_PRODUCERS;
+      a.boost_top = EQUITY_BOOST_TOP_PERCENT;
+   });
+
+   init_input = asset_unit( INIT_GOVERNANCE, BLOCKCHAIN_PRECISION, account_balance_values[ 0 ], GENESIS_TIME );
+   sender_output = asset_unit( ASSET_UNIT_SENDER, 1, account_balance_values[ 0 ], GENESIS_TIME );
+
+   create< asset_distribution_object >( [&]( asset_distribution_object& a )
+   {
+      a.distribution_asset = GOVERNANCE_EQUITY_SYMBOL;
+      a.fund_asset = SYMBOL_COIN;
+      from_string( a.details, EQUITY_DETAILS );
+      from_string( a.url, INIT_URL );
+      from_string( a.json, "" );
+      a.distribution_rounds = 250;
+      a.distribution_interval_days = 7;
+      a.max_intervals_missed = 250;
+      a.input_fund_unit.insert( init_input );
+      a.output_distribution_unit.insert( sender_output );
+      a.min_input_fund_units = 1;
+      a.max_input_fund_units = 1000000;
+      a.min_unit_ratio = 200000;
+      a.max_unit_ratio = 200000000000;
+      a.min_input_balance_units = 1;
+      a.max_input_balance_units = 1000000;
+      a.total_distributed = asset( 0, GOVERNANCE_EQUITY_SYMBOL );
       a.total_funded = asset( 0, SYMBOL_COIN );
       a.begin_time = now + fc::days(7);
       a.next_round_time = now + fc::days(7);
@@ -810,7 +1225,7 @@ void database::init_genesis()
       a.update_median_feeds( now );
    });
 
-   // Create Credit asset
+   // Create Business Credit Asset
    
    create< asset_object >( [&]( asset_object& a )
    {
@@ -835,10 +1250,49 @@ void database::init_genesis()
 
    create< asset_credit_data_object >( [&]( asset_credit_data_object& a )
    {
-      a.business_account = INIT_ACCOUNT;
+      a.issuer = INIT_ACCOUNT;
       a.symbol = SYMBOL_CREDIT;
       a.buyback_asset = SYMBOL_USD;
       a.buyback_price = price( asset( 1, SYMBOL_USD ), asset( 1, SYMBOL_CREDIT ) );
+      a.buyback_share_percent = BUYBACK_SHARE_PERCENT;
+      a.liquid_fixed_interest_rate = LIQUID_FIXED_INTEREST_RATE;
+      a.liquid_variable_interest_rate = LIQUID_VARIABLE_INTEREST_RATE;
+      a.staked_fixed_interest_rate = STAKED_FIXED_INTEREST_RATE;
+      a.staked_variable_interest_rate = STAKED_VARIABLE_INTEREST_RATE;
+      a.savings_fixed_interest_rate = SAVINGS_FIXED_INTEREST_RATE;
+      a.savings_variable_interest_rate = SAVINGS_VARIABLE_INTEREST_RATE;
+      a.var_interest_range = VAR_INTEREST_RANGE;
+   });
+
+   // Create Governance Credit Asset
+   
+   create< asset_object >( [&]( asset_object& a )
+   {
+      a.symbol = GOVERNANCE_CREDIT_SYMBOL;
+      a.asset_type = asset_property_type::CREDIT_ASSET;
+      a.flags = 0;
+      a.issuer_permissions = 0;
+      a.issuer = INIT_ACCOUNT;
+      a.unstake_intervals = 4;
+      a.stake_intervals = 0;
+      from_string( a.json, "" );
+      from_string( a.details, CREDIT_DETAILS );
+      from_string( a.url, INIT_URL );
+      a.created = now;
+      a.last_updated = now;
+   });
+
+   create< asset_dynamic_data_object >([&](asset_dynamic_data_object& a) 
+   {
+      a.symbol = GOVERNANCE_CREDIT_SYMBOL;
+   });
+
+   create< asset_credit_data_object >( [&]( asset_credit_data_object& a )
+   {
+      a.issuer = INIT_GOVERNANCE;
+      a.symbol = GOVERNANCE_CREDIT_SYMBOL;
+      a.buyback_asset = SYMBOL_USD;
+      a.buyback_price = price( asset( 1, SYMBOL_USD ), asset( 1, GOVERNANCE_CREDIT_SYMBOL ) );
       a.buyback_share_percent = BUYBACK_SHARE_PERCENT;
       a.liquid_fixed_interest_rate = LIQUID_FIXED_INTEREST_RATE;
       a.liquid_variable_interest_rate = LIQUID_VARIABLE_INTEREST_RATE;
@@ -869,10 +1323,10 @@ void database::init_genesis()
          a.name = producer_name;
          a.registrar = INIT_ACCOUNT;
          a.referrer = INIT_ACCOUNT;
-         a.secure_public_key = get_public_key( a.name, SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
-         a.connection_public_key = get_public_key( a.name, CONNECTION_KEY_STR, INIT_ACCOUNT_PASSWORD );
-         a.friend_public_key = get_public_key( a.name, FRIEND_KEY_STR, INIT_ACCOUNT_PASSWORD );
-         a.companion_public_key = get_public_key( a.name, COMPANION_KEY_STR, INIT_ACCOUNT_PASSWORD );
+         a.secure_public_key = get_public_key( a.name, SECURE_KEY_STR, INIT_PASSWORD );
+         a.connection_public_key = get_public_key( a.name, CONNECTION_KEY_STR, INIT_PASSWORD );
+         a.friend_public_key = get_public_key( a.name, FRIEND_KEY_STR, INIT_PASSWORD );
+         a.companion_public_key = get_public_key( a.name, COMPANION_KEY_STR, INIT_PASSWORD );
          a.created = now;
          a.last_updated = now;
          a.last_vote_time = now;
@@ -898,15 +1352,16 @@ void database::init_genesis()
          a.revenue_share = false;
       });
 
-      create< account_authority_object >( [&]( account_authority_object& auth )
+      create< account_authority_object >( [&]( account_authority_object& aao )
       {
-         auth.account = producer_name;
-         auth.owner_auth.add_authority( get_public_key( auth.account, OWNER_KEY_STR, INIT_ACCOUNT_PASSWORD ), 1 );
-         auth.owner_auth.weight_threshold = 1;
-         auth.active_auth.add_authority( get_public_key( auth.account, ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD ), 1 );
-         auth.active_auth.weight_threshold = 1;
-         auth.posting_auth.add_authority( get_public_key( auth.account, POSTING_KEY_STR, INIT_ACCOUNT_PASSWORD ), 1 );
-         auth.posting_auth.weight_threshold = 1;
+         aao.account = producer_name;
+         aao.owner_auth.add_authority( get_public_key( aao.account, OWNER_KEY_STR, INIT_PASSWORD ), 1 );
+         aao.owner_auth.weight_threshold = 1;
+         aao.active_auth.add_authority( get_public_key( aao.account, ACTIVE_KEY_STR, INIT_PASSWORD ), 1 );
+         aao.active_auth.weight_threshold = 1;
+         aao.posting_auth.add_authority( get_public_key( aao.account, POSTING_KEY_STR, INIT_PASSWORD ), 1 );
+         aao.posting_auth.weight_threshold = 1;
+         aao.last_owner_update = now;
       });
 
       create< account_permission_object >( [&]( account_permission_object& aao )
@@ -924,7 +1379,7 @@ void database::init_genesis()
       {
          p.owner = producer_name;
          p.props = chain_props;
-         p.signing_key = get_public_key( p.owner, PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD );
+         p.signing_key = get_public_key( p.owner, PRODUCER_KEY_STR, INIT_PASSWORD );
          p.schedule = producer_object::top_voting_producer;
          p.active = true;
          p.running_version = BLOCKCHAIN_VERSION;
@@ -949,10 +1404,12 @@ void database::init_genesis()
       }
    }
 
+   // Public Business Community
+
    create< community_object >( [&]( community_object& bo )
    {
-      bo.name = INIT_COMMUNITY;
-      bo.founder = INIT_ACCOUNT;
+      bo.name = INIT_PUBLIC_COMMUNITY;
+      bo.founder = INIT_BUSINESS;
       
       from_string( bo.display_name, "General" );
       from_string( bo.details, INIT_DETAILS );
@@ -962,13 +1419,13 @@ void database::init_genesis()
       from_string( bo.json, "" );
       from_string( bo.json_private, "" );
 
-      bo.community_member_key = get_public_key( INIT_COMMUNITY, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      bo.community_moderator_key = get_public_key( INIT_COMMUNITY, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      bo.community_admin_key = get_public_key( INIT_COMMUNITY, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      bo.community_secure_key = get_public_key( INIT_COMMUNITY, SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      bo.community_standard_premium_key = get_public_key( INIT_COMMUNITY, STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      bo.community_mid_premium_key = get_public_key( INIT_COMMUNITY, MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      bo.community_top_premium_key = get_public_key( INIT_COMMUNITY, TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      bo.community_member_key = get_public_key( INIT_PUBLIC_COMMUNITY, MEMBER_KEY_STR, INIT_PASSWORD );
+      bo.community_moderator_key = get_public_key( INIT_PUBLIC_COMMUNITY, MODERATOR_KEY_STR, INIT_PASSWORD );
+      bo.community_admin_key = get_public_key( INIT_PUBLIC_COMMUNITY, ADMIN_KEY_STR, INIT_PASSWORD );
+      bo.community_secure_key = get_public_key( INIT_PUBLIC_COMMUNITY, SECURE_KEY_STR, INIT_PASSWORD );
+      bo.community_standard_premium_key = get_public_key( INIT_PUBLIC_COMMUNITY, STANDARD_PREMIUM_KEY_STR, INIT_PASSWORD );
+      bo.community_mid_premium_key = get_public_key( INIT_PUBLIC_COMMUNITY, MID_PREMIUM_KEY_STR, INIT_PASSWORD );
+      bo.community_top_premium_key = get_public_key( INIT_PUBLIC_COMMUNITY, TOP_PREMIUM_KEY_STR, INIT_PASSWORD );
 
       bo.max_rating = 9;
       
@@ -983,12 +1440,14 @@ void database::init_genesis()
 
    create< community_permission_object >( [&]( community_permission_object& cpo )
    {
-      cpo.name = INIT_COMMUNITY;
-      cpo.founder = INIT_ACCOUNT;
-      cpo.subscribers.insert( INIT_ACCOUNT );
-      cpo.members.insert( INIT_ACCOUNT );
-      cpo.moderators.insert( INIT_ACCOUNT );
-      cpo.administrators.insert( INIT_ACCOUNT );
+      cpo.name = INIT_PUBLIC_COMMUNITY;
+      cpo.founder = INIT_BUSINESS;
+      cpo.subscribers.insert( INIT_BUSINESS );
+      cpo.members.insert( INIT_BUSINESS );
+      cpo.moderators.insert( INIT_BUSINESS );
+      cpo.administrators.insert( INIT_BUSINESS );
+      cpo.private_community = false;
+      cpo.channel = false;
       cpo.author_permission = community_permission_type::ALL_PERMISSION;
       cpo.reply_permission = community_permission_type::ALL_PERMISSION;
       cpo.vote_permission = community_permission_type::ALL_PERMISSION;
@@ -1006,9 +1465,216 @@ void database::init_genesis()
 
    create< community_member_vote_object >( [&]( community_member_vote_object& cmvo )
    {
-      cmvo.member = INIT_ACCOUNT;
-      cmvo.account = INIT_ACCOUNT;
-      cmvo.community = INIT_COMMUNITY;
+      cmvo.member = INIT_BUSINESS;
+      cmvo.account = INIT_BUSINESS;
+      cmvo.community = INIT_PUBLIC_COMMUNITY;
+      cmvo.vote_rank = 1;
+      cmvo.last_updated = now;
+      cmvo.created = now;
+   });
+
+   // Private Business Community
+
+   create< community_object >( [&]( community_object& bo )
+   {
+      bo.name = INIT_PRIVATE_COMMUNITY;
+      bo.founder = INIT_BUSINESS;
+      
+      from_string( bo.display_name, "General" );
+      from_string( bo.details, INIT_DETAILS );
+      from_string( bo.url, INIT_URL );
+      from_string( bo.profile_image, INIT_IMAGE );
+      from_string( bo.cover_image, INIT_IMAGE );
+      from_string( bo.json, "" );
+      from_string( bo.json_private, "" );
+
+      bo.community_member_key = get_public_key( INIT_PRIVATE_COMMUNITY, MEMBER_KEY_STR, INIT_PASSWORD );
+      bo.community_moderator_key = get_public_key( INIT_PRIVATE_COMMUNITY, MODERATOR_KEY_STR, INIT_PASSWORD );
+      bo.community_admin_key = get_public_key( INIT_PRIVATE_COMMUNITY, ADMIN_KEY_STR, INIT_PASSWORD );
+      bo.community_secure_key = get_public_key( INIT_PRIVATE_COMMUNITY, SECURE_KEY_STR, INIT_PASSWORD );
+      bo.community_standard_premium_key = get_public_key( INIT_PRIVATE_COMMUNITY, STANDARD_PREMIUM_KEY_STR, INIT_PASSWORD );
+      bo.community_mid_premium_key = get_public_key( INIT_PRIVATE_COMMUNITY, MID_PREMIUM_KEY_STR, INIT_PASSWORD );
+      bo.community_top_premium_key = get_public_key( INIT_PRIVATE_COMMUNITY, TOP_PREMIUM_KEY_STR, INIT_PASSWORD );
+
+      bo.max_rating = 9;
+      
+      bo.flags = 0;
+      bo.permissions = COMMUNITY_PERMISSION_MASK;
+      bo.created = now;
+      bo.last_updated = now;
+      bo.last_post = now;
+      bo.last_root_post = now;
+      bo.active = true;
+   });
+
+   create< community_permission_object >( [&]( community_permission_object& cpo )
+   {
+      cpo.name = INIT_PRIVATE_COMMUNITY;
+      cpo.founder = INIT_BUSINESS;
+      cpo.subscribers.insert( INIT_BUSINESS );
+      cpo.members.insert( INIT_BUSINESS );
+      cpo.moderators.insert( INIT_BUSINESS );
+      cpo.administrators.insert( INIT_BUSINESS );
+      cpo.private_community = true;
+      cpo.channel = false;
+      cpo.author_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.reply_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.vote_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.view_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.share_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.message_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.poll_permission = community_permission_type::ADMIN_PERMISSION;
+      cpo.event_permission = community_permission_type::ADMIN_PERMISSION;
+      cpo.directive_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.add_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.request_permission = community_permission_type::ALL_PERMISSION;
+      cpo.remove_permission = community_permission_type::ADMIN_PERMISSION;
+      cpo.last_updated = now;
+   });
+
+   create< community_member_vote_object >( [&]( community_member_vote_object& cmvo )
+   {
+      cmvo.member = INIT_BUSINESS;
+      cmvo.account = INIT_BUSINESS;
+      cmvo.community = INIT_PRIVATE_COMMUNITY;
+      cmvo.vote_rank = 1;
+      cmvo.last_updated = now;
+      cmvo.created = now;
+   });
+
+   // Public Governance Community
+
+   create< community_object >( [&]( community_object& bo )
+   {
+      bo.name = GOVERNANCE_PUBLIC_COMMUNITY;
+      bo.founder = INIT_GOVERNANCE;
+      
+      from_string( bo.display_name, "General" );
+      from_string( bo.details, INIT_DETAILS );
+      from_string( bo.url, INIT_URL );
+      from_string( bo.profile_image, INIT_IMAGE );
+      from_string( bo.cover_image, INIT_IMAGE );
+      from_string( bo.json, "" );
+      from_string( bo.json_private, "" );
+
+      bo.community_member_key = get_public_key( GOVERNANCE_PUBLIC_COMMUNITY, MEMBER_KEY_STR, INIT_PASSWORD );
+      bo.community_moderator_key = get_public_key( GOVERNANCE_PUBLIC_COMMUNITY, MODERATOR_KEY_STR, INIT_PASSWORD );
+      bo.community_admin_key = get_public_key( GOVERNANCE_PUBLIC_COMMUNITY, ADMIN_KEY_STR, INIT_PASSWORD );
+      bo.community_secure_key = get_public_key( GOVERNANCE_PUBLIC_COMMUNITY, SECURE_KEY_STR, INIT_PASSWORD );
+      bo.community_standard_premium_key = get_public_key( GOVERNANCE_PUBLIC_COMMUNITY, STANDARD_PREMIUM_KEY_STR, INIT_PASSWORD );
+      bo.community_mid_premium_key = get_public_key( GOVERNANCE_PUBLIC_COMMUNITY, MID_PREMIUM_KEY_STR, INIT_PASSWORD );
+      bo.community_top_premium_key = get_public_key( GOVERNANCE_PUBLIC_COMMUNITY, TOP_PREMIUM_KEY_STR, INIT_PASSWORD );
+
+      bo.max_rating = 9;
+      
+      bo.flags = 0;
+      bo.permissions = COMMUNITY_PERMISSION_MASK;
+      bo.created = now;
+      bo.last_updated = now;
+      bo.last_post = now;
+      bo.last_root_post = now;
+      bo.active = true;
+   });
+
+   create< community_permission_object >( [&]( community_permission_object& cpo )
+   {
+      cpo.name = GOVERNANCE_PUBLIC_COMMUNITY;
+      cpo.founder = INIT_GOVERNANCE;
+      cpo.subscribers.insert( INIT_GOVERNANCE );
+      cpo.members.insert( INIT_GOVERNANCE );
+      cpo.moderators.insert( INIT_GOVERNANCE );
+      cpo.administrators.insert( INIT_GOVERNANCE );
+      cpo.private_community = false;
+      cpo.channel = false;
+      cpo.author_permission = community_permission_type::ALL_PERMISSION;
+      cpo.reply_permission = community_permission_type::ALL_PERMISSION;
+      cpo.vote_permission = community_permission_type::ALL_PERMISSION;
+      cpo.view_permission = community_permission_type::ALL_PERMISSION;
+      cpo.share_permission = community_permission_type::ALL_PERMISSION;
+      cpo.message_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.poll_permission = community_permission_type::ADMIN_PERMISSION;
+      cpo.event_permission = community_permission_type::ADMIN_PERMISSION;
+      cpo.directive_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.add_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.request_permission = community_permission_type::ALL_PERMISSION;
+      cpo.remove_permission = community_permission_type::ADMIN_PERMISSION;
+      cpo.last_updated = now;
+   });
+
+   create< community_member_vote_object >( [&]( community_member_vote_object& cmvo )
+   {
+      cmvo.member = INIT_GOVERNANCE;
+      cmvo.account = INIT_GOVERNANCE;
+      cmvo.community = GOVERNANCE_PUBLIC_COMMUNITY;
+      cmvo.vote_rank = 1;
+      cmvo.last_updated = now;
+      cmvo.created = now;
+   });
+
+   // Private Governance Community
+
+   create< community_object >( [&]( community_object& bo )
+   {
+      bo.name = GOVERNANCE_PRIVATE_COMMUNITY;
+      bo.founder = INIT_GOVERNANCE;
+      
+      from_string( bo.display_name, "General" );
+      from_string( bo.details, INIT_DETAILS );
+      from_string( bo.url, INIT_URL );
+      from_string( bo.profile_image, INIT_IMAGE );
+      from_string( bo.cover_image, INIT_IMAGE );
+      from_string( bo.json, "" );
+      from_string( bo.json_private, "" );
+
+      bo.community_member_key = get_public_key( GOVERNANCE_PRIVATE_COMMUNITY, MEMBER_KEY_STR, INIT_PASSWORD );
+      bo.community_moderator_key = get_public_key( GOVERNANCE_PRIVATE_COMMUNITY, MODERATOR_KEY_STR, INIT_PASSWORD );
+      bo.community_admin_key = get_public_key( GOVERNANCE_PRIVATE_COMMUNITY, ADMIN_KEY_STR, INIT_PASSWORD );
+      bo.community_secure_key = get_public_key( GOVERNANCE_PRIVATE_COMMUNITY, SECURE_KEY_STR, INIT_PASSWORD );
+      bo.community_standard_premium_key = get_public_key( GOVERNANCE_PRIVATE_COMMUNITY, STANDARD_PREMIUM_KEY_STR, INIT_PASSWORD );
+      bo.community_mid_premium_key = get_public_key( GOVERNANCE_PRIVATE_COMMUNITY, MID_PREMIUM_KEY_STR, INIT_PASSWORD );
+      bo.community_top_premium_key = get_public_key( GOVERNANCE_PRIVATE_COMMUNITY, TOP_PREMIUM_KEY_STR, INIT_PASSWORD );
+
+      bo.max_rating = 9;
+      
+      bo.flags = 0;
+      bo.permissions = COMMUNITY_PERMISSION_MASK;
+      bo.created = now;
+      bo.last_updated = now;
+      bo.last_post = now;
+      bo.last_root_post = now;
+      bo.active = true;
+   });
+
+   create< community_permission_object >( [&]( community_permission_object& cpo )
+   {
+      cpo.name = GOVERNANCE_PRIVATE_COMMUNITY;
+      cpo.founder = INIT_GOVERNANCE;
+      cpo.subscribers.insert( INIT_GOVERNANCE );
+      cpo.members.insert( INIT_GOVERNANCE );
+      cpo.moderators.insert( INIT_GOVERNANCE );
+      cpo.administrators.insert( INIT_GOVERNANCE );
+      cpo.private_community = true;
+      cpo.channel = false;
+      cpo.author_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.reply_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.vote_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.view_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.share_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.message_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.poll_permission = community_permission_type::ADMIN_PERMISSION;
+      cpo.event_permission = community_permission_type::ADMIN_PERMISSION;
+      cpo.directive_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.add_permission = community_permission_type::MEMBER_PERMISSION;
+      cpo.request_permission = community_permission_type::ALL_PERMISSION;
+      cpo.remove_permission = community_permission_type::ADMIN_PERMISSION;
+      cpo.last_updated = now;
+   });
+
+   create< community_member_vote_object >( [&]( community_member_vote_object& cmvo )
+   {
+      cmvo.member = INIT_GOVERNANCE;
+      cmvo.account = INIT_GOVERNANCE;
+      cmvo.community = GOVERNANCE_PRIVATE_COMMUNITY;
       cmvo.vote_rank = 1;
       cmvo.last_updated = now;
       cmvo.created = now;
@@ -1017,9 +1683,9 @@ void database::init_genesis()
    // Allocate Genesis block reward to Init Account and create primary asset liquidity and credit pools.
 
    /**
-    * Create Primary Liquidity Pools in Block 0.
+    * Create Primary Liquidity Pools.
     * 
-    * [ coin/equity, coin/usd, coin/credit, equity/usd, equity/credit, usd/credit ]
+    * [ coin/equity, coin/usd, coin/credit, coin/goveq, coin/govcr, equity/usd, equity/credit, usd/credit, usd/goveq, usd/govcr ]
     * Creates initial collateral positions of USD Asset, 
     * and rewards init account with small amount of Equity 
     * and Credit assets in liquidity and credit pools.
@@ -1051,8 +1717,10 @@ void database::init_genesis()
    }
 
    adjust_liquid_balance( INIT_ACCOUNT, block_reward );
-   adjust_liquid_balance( INIT_ACCOUNT, asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
-   adjust_liquid_balance( INIT_ACCOUNT, asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( 100 * BLOCKCHAIN_PRECISION, GOVERNANCE_EQUITY_SYMBOL ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( 100 * BLOCKCHAIN_PRECISION, GOVERNANCE_CREDIT_SYMBOL ) );
 
    asset liquid_coin = get_liquid_balance( INIT_ACCOUNT, SYMBOL_COIN );
 
@@ -1065,14 +1733,16 @@ void database::init_genesis()
    {
       coo.borrower = INIT_ACCOUNT;
       coo.collateral = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
-      coo.debt = asset( 5 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      coo.debt = asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       coo.created = now;
       coo.last_updated = now;
    });
 
    adjust_liquid_balance( INIT_ACCOUNT, -asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
    adjust_pending_supply( asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-   adjust_liquid_balance( INIT_ACCOUNT, asset( 5 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( 10 * BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+
+   // coin/equity pool
 
    asset_symbol_type coin_equity_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_COIN )+"."+string( SYMBOL_EQUITY );
 
@@ -1121,6 +1791,8 @@ void database::init_genesis()
    adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
    adjust_liquid_balance( INIT_ACCOUNT, asset( BLOCKCHAIN_PRECISION, coin_equity_symbol ) );
 
+   // coin/usd
+
    asset_symbol_type coin_usd_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_COIN )+"."+string( SYMBOL_USD );
 
    create< asset_object >( [&]( asset_object& a )
@@ -1167,6 +1839,8 @@ void database::init_genesis()
    adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
    adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
    adjust_liquid_balance( INIT_ACCOUNT, asset( BLOCKCHAIN_PRECISION, coin_usd_symbol ) );
+
+   // coin / credit
 
    asset_symbol_type coin_credit_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_COIN )+"."+string( SYMBOL_CREDIT );
 
@@ -1215,6 +1889,106 @@ void database::init_genesis()
    adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
    adjust_liquid_balance( INIT_ACCOUNT, asset( BLOCKCHAIN_PRECISION, coin_credit_symbol ) );
 
+   // coin/goveq pool
+
+   asset_symbol_type coin_goveq_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_COIN )+"."+string( GOVERNANCE_EQUITY_SYMBOL );
+
+   create< asset_object >( [&]( asset_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = coin_goveq_symbol;
+      a.asset_type = asset_property_type::LIQUIDITY_POOL_ASSET;
+   });
+
+   create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+   {
+      a.symbol = coin_goveq_symbol;
+   });
+
+   create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
+   {   
+      a.symbol_a = SYMBOL_COIN;
+      a.symbol_b = GOVERNANCE_EQUITY_SYMBOL;
+      a.symbol_liquid = coin_goveq_symbol;
+      a.balance_a = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      a.balance_b = asset( BLOCKCHAIN_PRECISION, GOVERNANCE_EQUITY_SYMBOL );
+      a.balance_liquid = asset( BLOCKCHAIN_PRECISION, coin_goveq_symbol );
+      a.hour_median_price = price( a.balance_a, a.balance_b );
+      a.day_median_price = price( a.balance_a, a.balance_b );
+      a.price_history.push_back( price( a.balance_a, a.balance_b ) );
+   });
+
+   const asset_option_pool_object& coin_goveq_option = create< asset_option_pool_object >( [&]( asset_option_pool_object& aopo )
+   {   
+      aopo.base_symbol = SYMBOL_COIN;
+      aopo.quote_symbol = GOVERNANCE_EQUITY_SYMBOL;
+      aopo.add_strike_prices( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) / asset( BLOCKCHAIN_PRECISION, GOVERNANCE_EQUITY_SYMBOL ), new_dates );
+   });
+
+   new_strikes = coin_goveq_option.get_strike_prices( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) / asset( BLOCKCHAIN_PRECISION, GOVERNANCE_EQUITY_SYMBOL ), new_dates );
+
+   for( asset_symbol_type s : new_strikes )
+   {
+      option_strikes.insert( s );
+   }
+   
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, GOVERNANCE_EQUITY_SYMBOL ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, GOVERNANCE_EQUITY_SYMBOL ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( BLOCKCHAIN_PRECISION, coin_goveq_symbol ) );
+
+   // coin / govcr
+
+   asset_symbol_type coin_govcr_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_COIN )+"."+string( GOVERNANCE_CREDIT_SYMBOL );
+
+   create< asset_object >( [&]( asset_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = coin_govcr_symbol;
+      a.asset_type = asset_property_type::LIQUIDITY_POOL_ASSET;
+   });
+
+   create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+   {
+      a.symbol = coin_govcr_symbol;
+   });
+
+   create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
+   {   
+      a.symbol_a = SYMBOL_COIN;
+      a.symbol_b = GOVERNANCE_CREDIT_SYMBOL;
+      a.symbol_liquid = coin_govcr_symbol;
+      a.balance_a = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      a.balance_b = asset( BLOCKCHAIN_PRECISION, GOVERNANCE_CREDIT_SYMBOL );
+      a.balance_liquid = asset( BLOCKCHAIN_PRECISION, coin_govcr_symbol );
+      a.hour_median_price = price( a.balance_a, a.balance_b );
+      a.day_median_price = price( a.balance_a, a.balance_b );
+      a.price_history.push_back( price( a.balance_a, a.balance_b ) );
+   });
+
+   const asset_option_pool_object& coin_govcr_option = create< asset_option_pool_object >( [&]( asset_option_pool_object& aopo )
+   {   
+      aopo.base_symbol = SYMBOL_COIN;
+      aopo.quote_symbol = GOVERNANCE_CREDIT_SYMBOL;
+      aopo.add_strike_prices( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) / asset( BLOCKCHAIN_PRECISION, GOVERNANCE_CREDIT_SYMBOL ), new_dates );
+   });
+
+   new_strikes = coin_govcr_option.get_strike_prices( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) / asset( BLOCKCHAIN_PRECISION, GOVERNANCE_CREDIT_SYMBOL ), new_dates );
+
+   for( asset_symbol_type s : new_strikes )
+   {
+      option_strikes.insert( s );
+   }
+
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, GOVERNANCE_CREDIT_SYMBOL ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, GOVERNANCE_CREDIT_SYMBOL ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( BLOCKCHAIN_PRECISION, coin_govcr_symbol ) );
+
+   // equity/usd
+
    asset_symbol_type equity_usd_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_EQUITY )+"."+string( SYMBOL_USD );
 
    create< asset_object >( [&]( asset_object& a )
@@ -1261,6 +2035,8 @@ void database::init_genesis()
    adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
    adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
    adjust_liquid_balance( INIT_ACCOUNT, asset( BLOCKCHAIN_PRECISION, equity_usd_symbol ) );
+
+   // equity/credit
 
    asset_symbol_type equity_credit_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_EQUITY )+"."+string( SYMBOL_CREDIT );
    
@@ -1309,6 +2085,8 @@ void database::init_genesis()
    adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
    adjust_liquid_balance( INIT_ACCOUNT, asset( BLOCKCHAIN_PRECISION, equity_credit_symbol ) );
 
+   // usd/credit
+
    asset_symbol_type usd_credit_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_USD )+"."+string( SYMBOL_CREDIT );
 
    create< asset_object >( [&]( asset_object& a )
@@ -1356,7 +2134,107 @@ void database::init_genesis()
    adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
    adjust_liquid_balance( INIT_ACCOUNT, asset( BLOCKCHAIN_PRECISION, usd_credit_symbol ) );
 
-   for( asset_symbol_type s : option_strikes )     // Create the new asset objects for the options.
+   // usd/goveq
+
+   asset_symbol_type usd_goveq_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_USD )+"."+string( GOVERNANCE_EQUITY_SYMBOL );
+
+   create< asset_object >( [&]( asset_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = usd_goveq_symbol;
+      a.asset_type = asset_property_type::LIQUIDITY_POOL_ASSET;
+   });
+
+   create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+   {
+      a.symbol = usd_goveq_symbol;
+   });
+
+   create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
+   {   
+      a.symbol_a = SYMBOL_USD;
+      a.symbol_b = GOVERNANCE_EQUITY_SYMBOL;
+      a.symbol_liquid = usd_goveq_symbol;
+      a.balance_a = asset( BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      a.balance_b = asset( BLOCKCHAIN_PRECISION, GOVERNANCE_EQUITY_SYMBOL );
+      a.balance_liquid = asset( BLOCKCHAIN_PRECISION, usd_goveq_symbol );
+      a.hour_median_price = price( a.balance_a, a.balance_b );
+      a.day_median_price = price( a.balance_a, a.balance_b );
+      a.price_history.push_back( price( a.balance_a, a.balance_b ) );
+   });
+
+   const asset_option_pool_object& usd_goveq_option = create< asset_option_pool_object >( [&]( asset_option_pool_object& aopo )
+   {   
+      aopo.base_symbol = SYMBOL_USD;
+      aopo.quote_symbol = GOVERNANCE_EQUITY_SYMBOL;
+      aopo.add_strike_prices( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) / asset( BLOCKCHAIN_PRECISION, GOVERNANCE_EQUITY_SYMBOL ), new_dates );
+   });
+
+   new_strikes = usd_goveq_option.get_strike_prices( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) / asset( BLOCKCHAIN_PRECISION, GOVERNANCE_EQUITY_SYMBOL ), new_dates );
+
+   for( asset_symbol_type s : new_strikes )
+   {
+      option_strikes.insert( s );
+   }
+
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, GOVERNANCE_EQUITY_SYMBOL ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, GOVERNANCE_EQUITY_SYMBOL ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( BLOCKCHAIN_PRECISION, usd_goveq_symbol ) );
+
+   // usd/govcr
+
+   asset_symbol_type usd_govcr_symbol = string( LIQUIDITY_ASSET_PREFIX )+string( SYMBOL_USD )+"."+string( GOVERNANCE_CREDIT_SYMBOL );
+
+   create< asset_object >( [&]( asset_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = usd_govcr_symbol;
+      a.asset_type = asset_property_type::LIQUIDITY_POOL_ASSET;
+   });
+
+   create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+   {
+      a.symbol = usd_govcr_symbol;
+   });
+
+   create< asset_liquidity_pool_object >( [&]( asset_liquidity_pool_object& a )
+   {   
+      a.symbol_a = SYMBOL_USD;
+      a.symbol_b = GOVERNANCE_CREDIT_SYMBOL;
+      a.symbol_liquid = usd_govcr_symbol;
+      a.balance_a = asset( BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      a.balance_b = asset( BLOCKCHAIN_PRECISION, GOVERNANCE_CREDIT_SYMBOL );
+      a.balance_liquid = asset( BLOCKCHAIN_PRECISION, usd_govcr_symbol );
+      a.hour_median_price = price( a.balance_a, a.balance_b );
+      a.day_median_price = price( a.balance_a, a.balance_b );
+      a.price_history.push_back( price( a.balance_a, a.balance_b ) );
+   });
+
+   const asset_option_pool_object& usd_govcr_option = create< asset_option_pool_object >( [&]( asset_option_pool_object& aopo )
+   {   
+      aopo.base_symbol = SYMBOL_USD;
+      aopo.quote_symbol = GOVERNANCE_CREDIT_SYMBOL;
+      aopo.add_strike_prices( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) / asset( BLOCKCHAIN_PRECISION, GOVERNANCE_CREDIT_SYMBOL ), new_dates );
+   });
+
+   new_strikes = usd_govcr_option.get_strike_prices( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) / asset( BLOCKCHAIN_PRECISION, GOVERNANCE_CREDIT_SYMBOL ), new_dates );
+
+   for( asset_symbol_type s : new_strikes )
+   {
+      option_strikes.insert( s );
+   }
+
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, GOVERNANCE_CREDIT_SYMBOL ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, GOVERNANCE_CREDIT_SYMBOL ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( BLOCKCHAIN_PRECISION, usd_govcr_symbol ) );
+
+   // Create Option assets
+
+   for( asset_symbol_type s : option_strikes )
    {
       option_strike strike = option_strike::from_string( s );
       const asset_object& base_asset = get_asset( strike.strike_price.base.symbol );
@@ -1395,7 +2273,9 @@ void database::init_genesis()
       });
    }
 
-   // Create Primary asset credit pools [ coin, equity, usd, credit ]
+   // Create Primary asset credit pools [ coin, equity, usd, credit, goveq, govcr ]
+
+   // Coin credit pool
 
    asset_symbol_type credit_asset_coin_symbol = string( CREDIT_ASSET_PREFIX )+string( SYMBOL_COIN );
    
@@ -1425,6 +2305,8 @@ void database::init_genesis()
    adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
    adjust_liquid_balance( INIT_ACCOUNT, asset( 100 * BLOCKCHAIN_PRECISION, credit_asset_coin_symbol ) );
 
+   // Equity Credit Pool
+
    asset_symbol_type credit_asset_equity_symbol = string( CREDIT_ASSET_PREFIX )+string( SYMBOL_EQUITY );
    
    create< asset_object >( [&]( asset_object& a )
@@ -1452,6 +2334,8 @@ void database::init_genesis()
    adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
    adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
    adjust_liquid_balance( INIT_ACCOUNT, asset( 100 * BLOCKCHAIN_PRECISION, credit_asset_equity_symbol ) );
+
+   // USD credit pool
 
    asset_symbol_type credit_asset_usd_symbol = string( CREDIT_ASSET_PREFIX )+string( SYMBOL_USD );
    
@@ -1481,6 +2365,8 @@ void database::init_genesis()
    adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
    adjust_liquid_balance( INIT_ACCOUNT, asset( 100 * BLOCKCHAIN_PRECISION, credit_asset_usd_symbol ) );
 
+   // Credit asset credit pool
+
    asset_symbol_type credit_asset_credit_symbol = string( CREDIT_ASSET_PREFIX )+string( SYMBOL_CREDIT );
    
    create< asset_object >( [&]( asset_object& a )
@@ -1508,6 +2394,66 @@ void database::init_genesis()
    adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
    adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
    adjust_liquid_balance( INIT_ACCOUNT, asset( 100 * BLOCKCHAIN_PRECISION, credit_asset_credit_symbol ) );
+
+   // Governance Equity Credit Pool
+
+   asset_symbol_type credit_asset_goveq_symbol = string( CREDIT_ASSET_PREFIX )+string( GOVERNANCE_EQUITY_SYMBOL );
+   
+   create< asset_object >( [&]( asset_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = credit_asset_goveq_symbol;
+      a.asset_type = asset_property_type::CREDIT_POOL_ASSET; 
+   });
+
+   create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+   {
+      a.symbol = credit_asset_goveq_symbol;
+   });
+
+   create< asset_credit_pool_object >( [&]( asset_credit_pool_object& a )
+   {
+      a.base_symbol = GOVERNANCE_EQUITY_SYMBOL;
+      a.credit_symbol = credit_asset_goveq_symbol;
+      a.base_balance = asset( BLOCKCHAIN_PRECISION, GOVERNANCE_EQUITY_SYMBOL );
+      a.borrowed_balance = asset( 0, GOVERNANCE_EQUITY_SYMBOL );
+      a.credit_balance = asset( 100 * BLOCKCHAIN_PRECISION, credit_asset_goveq_symbol );
+      a.last_price = price( a.base_balance, a.credit_balance );
+   });
+
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, GOVERNANCE_EQUITY_SYMBOL ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, GOVERNANCE_EQUITY_SYMBOL ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( 100 * BLOCKCHAIN_PRECISION, credit_asset_goveq_symbol ) );
+
+   // Governance Credit asset credit pool
+
+   asset_symbol_type credit_asset_govcr_symbol = string( CREDIT_ASSET_PREFIX )+string( GOVERNANCE_CREDIT_SYMBOL );
+   
+   create< asset_object >( [&]( asset_object& a )
+   {
+      a.issuer = NULL_ACCOUNT;
+      a.symbol = credit_asset_govcr_symbol;
+      a.asset_type = asset_property_type::CREDIT_POOL_ASSET;
+   });
+
+   create< asset_dynamic_data_object >( [&]( asset_dynamic_data_object& a )
+   {
+      a.symbol = credit_asset_govcr_symbol;
+   });
+
+   create< asset_credit_pool_object >( [&]( asset_credit_pool_object& a )
+   {
+      a.base_symbol = GOVERNANCE_CREDIT_SYMBOL;
+      a.credit_symbol = credit_asset_govcr_symbol;
+      a.base_balance = asset( BLOCKCHAIN_PRECISION, GOVERNANCE_CREDIT_SYMBOL );
+      a.borrowed_balance = asset( 0, GOVERNANCE_CREDIT_SYMBOL );
+      a.credit_balance = asset( 100 * BLOCKCHAIN_PRECISION, credit_asset_govcr_symbol );
+      a.last_price = price( a.base_balance, a.credit_balance );
+   });
+
+   adjust_liquid_balance( INIT_ACCOUNT, -asset( BLOCKCHAIN_PRECISION, GOVERNANCE_CREDIT_SYMBOL ) );
+   adjust_pending_supply( asset( BLOCKCHAIN_PRECISION, GOVERNANCE_CREDIT_SYMBOL ) );
+   adjust_liquid_balance( INIT_ACCOUNT, asset( 100 * BLOCKCHAIN_PRECISION, credit_asset_govcr_symbol ) );
 
 } FC_CAPTURE_AND_RETHROW() }
 
@@ -2304,15 +3250,7 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< account_create_evaluator                      >();
    _my->_evaluator_registry.register_evaluator< account_update_evaluator                      >();
    _my->_evaluator_registry.register_evaluator< account_verification_evaluator                >();
-   _my->_evaluator_registry.register_evaluator< account_business_evaluator                    >();
    _my->_evaluator_registry.register_evaluator< account_membership_evaluator                  >();
-   _my->_evaluator_registry.register_evaluator< account_vote_executive_evaluator              >();
-   _my->_evaluator_registry.register_evaluator< account_vote_officer_evaluator                >();
-   _my->_evaluator_registry.register_evaluator< account_member_request_evaluator              >();
-   _my->_evaluator_registry.register_evaluator< account_member_invite_evaluator               >();
-   _my->_evaluator_registry.register_evaluator< account_accept_request_evaluator              >();
-   _my->_evaluator_registry.register_evaluator< account_accept_invite_evaluator               >();
-   _my->_evaluator_registry.register_evaluator< account_remove_member_evaluator               >();
    _my->_evaluator_registry.register_evaluator< account_update_list_evaluator                 >();
    _my->_evaluator_registry.register_evaluator< account_producer_vote_evaluator               >();
    _my->_evaluator_registry.register_evaluator< account_update_proxy_evaluator                >();
@@ -2327,14 +3265,32 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< account_follow_tag_evaluator                  >();
    _my->_evaluator_registry.register_evaluator< account_activity_evaluator                    >();
 
+   // Business Evaluators
+
+   _my->_evaluator_registry.register_evaluator< business_create_evaluator                     >();
+   _my->_evaluator_registry.register_evaluator< business_update_evaluator                     >();
+   _my->_evaluator_registry.register_evaluator< business_executive_evaluator                  >();
+   _my->_evaluator_registry.register_evaluator< business_executive_vote_evaluator             >();
+   _my->_evaluator_registry.register_evaluator< business_director_evaluator                   >();
+   _my->_evaluator_registry.register_evaluator< business_director_vote_evaluator              >();
+
+   // Governance Evaluators
+
+   _my->_evaluator_registry.register_evaluator< governance_create_evaluator                   >();
+   _my->_evaluator_registry.register_evaluator< governance_update_evaluator                   >();
+   _my->_evaluator_registry.register_evaluator< governance_executive_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< governance_executive_vote_evaluator           >();
+   _my->_evaluator_registry.register_evaluator< governance_director_evaluator                 >();
+   _my->_evaluator_registry.register_evaluator< governance_director_vote_evaluator            >();
+   _my->_evaluator_registry.register_evaluator< governance_member_evaluator                   >();
+   _my->_evaluator_registry.register_evaluator< governance_member_request_evaluator           >();
+   _my->_evaluator_registry.register_evaluator< governance_resolution_evaluator               >();
+   _my->_evaluator_registry.register_evaluator< governance_resolution_vote_evaluator          >();
+
    // Network Evaluators
 
    _my->_evaluator_registry.register_evaluator< network_officer_update_evaluator              >();
    _my->_evaluator_registry.register_evaluator< network_officer_vote_evaluator                >();
-   _my->_evaluator_registry.register_evaluator< executive_board_update_evaluator              >();
-   _my->_evaluator_registry.register_evaluator< executive_board_vote_evaluator                >();
-   _my->_evaluator_registry.register_evaluator< governance_update_evaluator                   >();
-   _my->_evaluator_registry.register_evaluator< governance_subscribe_evaluator                >();
    _my->_evaluator_registry.register_evaluator< supernode_update_evaluator                    >();
    _my->_evaluator_registry.register_evaluator< interface_update_evaluator                    >();
    _my->_evaluator_registry.register_evaluator< mediator_update_evaluator                     >();
@@ -2509,12 +3465,6 @@ void database::initialize_indexes()
    add_core_index< account_authority_index                 >(*this);
    add_core_index< account_permission_index                >(*this);
    add_core_index< account_verification_index              >(*this);
-   add_core_index< account_business_index                  >(*this);
-   add_core_index< account_executive_vote_index            >(*this);
-   add_core_index< account_officer_vote_index              >(*this);
-   add_core_index< account_member_request_index            >(*this);
-   add_core_index< account_member_invite_index             >(*this);
-   add_core_index< account_member_key_index                >(*this);
    add_core_index< account_following_index                 >(*this);
    add_core_index< account_tag_following_index             >(*this);
    add_core_index< account_connection_index                >(*this);
@@ -2523,14 +3473,32 @@ void database::initialize_indexes()
    add_core_index< account_recovery_update_request_index   >(*this);
    add_core_index< account_decline_voting_request_index    >(*this);
 
+   // Business Indexes
+
+   add_core_index< business_index                          >(*this);
+   add_core_index< business_permission_index               >(*this);
+   add_core_index< business_executive_vote_index           >(*this);
+   add_core_index< business_executive_index                >(*this);
+   add_core_index< business_director_vote_index            >(*this);
+   add_core_index< business_director_index                 >(*this);
+
+   // Governance Indexes
+
+   add_core_index< governance_index                        >(*this);
+   add_core_index< governance_permission_index             >(*this);
+   add_core_index< governance_executive_index              >(*this);
+   add_core_index< governance_executive_vote_index         >(*this);
+   add_core_index< governance_director_index               >(*this);
+   add_core_index< governance_director_vote_index          >(*this);
+   add_core_index< governance_member_index                 >(*this);
+   add_core_index< governance_member_request_index         >(*this);
+   add_core_index< governance_resolution_index             >(*this);
+   add_core_index< governance_resolution_vote_index        >(*this);
+
    // Network Indexes
 
    add_core_index< network_officer_index                   >(*this);
    add_core_index< network_officer_vote_index              >(*this);
-   add_core_index< executive_board_index                   >(*this);
-   add_core_index< executive_board_vote_index              >(*this);
-   add_core_index< governance_account_index                >(*this);
-   add_core_index< governance_subscription_index           >(*this);
    add_core_index< supernode_index                         >(*this);
    add_core_index< interface_index                         >(*this);
    add_core_index< mediator_index                          >(*this);
@@ -2872,9 +3840,9 @@ void database::_apply_block( const signed_block& next_block )
    clear_expired_delegations();
    
    update_producer_set();
-   governance_update_account_set();
+   update_governance_set();
    update_community_moderator_set();
-   update_business_account_set();
+   update_business_set();
    update_comment_metrics();
    update_message_counter();
    update_median_liquidity();
@@ -2909,7 +3877,6 @@ void database::_apply_block( const signed_block& next_block )
    process_validation_rewards();
    process_producer_activity_rewards();
    process_network_officer_rewards();
-   process_executive_board_budgets();
    process_supernode_rewards();
    process_enterprise_fund();
 
@@ -3376,10 +4343,10 @@ void database::clear_expired_operations()
       remove( rec );
    }
 
-   const auto& account_member_request_idx = get_index< account_member_request_index >().indices().get< by_expiration >();
-   while( !account_member_request_idx.empty() && account_member_request_idx.begin()->expiration <= now )
+   const auto& governance_member_request_idx = get_index< governance_member_request_index >().indices().get< by_expiration >();
+   while( !governance_member_request_idx.empty() && governance_member_request_idx.begin()->expiration <= now )
    {
-      const account_member_request_object& req = *account_member_request_idx.begin();
+      const governance_member_request_object& req = *governance_member_request_idx.begin();
       ilog( "Removed: ${v}",("v",req));
       remove( req );
    }
@@ -3658,6 +4625,28 @@ void database::clear_expired_transactions()
       remove( txn );
    }
 }
+
+
+/**
+ * Assert that no Accounts, Communities, or assets exist with a specified name.
+ */
+void database::check_namespace( const account_name_type& name )
+{ try {
+   const account_object* account_ptr = find_account( name );
+   const community_object* community_ptr = find_community( name );
+   const asset_object* asset_ptr = find_asset( name );
+
+   FC_ASSERT( account_ptr == nullptr,
+      "Account with the name: ${n} already exists.",
+      ("n", name) );
+   FC_ASSERT( community_ptr == nullptr,
+      "Community with the name: ${n} already exists.",
+      ("n", name) );
+   FC_ASSERT( asset_ptr == nullptr,
+      "Asset with the name: ${n} already exists.",
+      ("n", name) );
+
+} FC_CAPTURE_AND_RETHROW() }
 
 
 /**

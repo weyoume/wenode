@@ -70,10 +70,10 @@
 #define PERCENT_1                       (PERCENT_100/100)               // 1% as percentage integer
 #define PERCENT_10_OF_PERCENT_1         (PERCENT_100/1000)              // 0.1% as percentage integer
 
-#define GENESIS_TIME                    fc::time_point(fc::microseconds(1588839092000000))           // 7th May 2020 network launch time 1588839092000000
-#define MINING_TIME                     fc::time_point(fc::microseconds(1588839092000000))           // 7th May 2020 network launch time
+#define GENESIS_TIME                    fc::time_point(fc::microseconds(1630454400000000))           // 1st Sept 2021 network launch time 1630454400000000
+#define MINING_TIME                     fc::time_point(fc::microseconds(1630454400000000))           // 1st Sept 2021 network launch time 1630454400000000
 
-#define INIT_COIN_SUPPLY                (0)                                                          // Zero MeCoin preissuance
+#define INIT_COIN_SUPPLY                (0)                                                          // Zero MeCoin preissuance.
 #define INIT_EQUITY_SUPPLY              share_type( 10000000 * BLOCKCHAIN_PRECISION )                // 10 Million Supply of WYM.
 #define MAX_ASSET_SUPPLY                share_type( 50000000000 * BLOCKCHAIN_PRECISION )             // 50 Billion max asset supply.
 
@@ -100,8 +100,6 @@
 #define TXN_STAKE_DECAY_TIME                  fc::days(7)                 // Transaction stake is averaged over a rolling 7 day window. 
 #define NETWORK_OFFICER_BLOCK_INTERVAL        (BLOCKS_PER_DAY)            // Distributes network officer rewards once every day.
 #define NETWORK_OFFICER_ACTIVE_SET            (50)
-#define EXECUTIVE_BOARD_BLOCK_INTERVAL        (BLOCKS_PER_DAY)            // Distributes network officer rewards once every day.
-#define MIN_EXEC_CREDIT_PRICE                 price( asset( 9, SYMBOL_USD), asset( 10, SYMBOL_CREDIT))     // $0.90 minimum credit price to pay executive budgets
 #define SUPERNODE_BLOCK_INTERVAL              (BLOCKS_PER_DAY)            // Distributes supernode rewards once every day.
 #define SUPERNODE_DECAY_TIME                  fc::days(7)                 // Averages supernode file weight over 7 days.
 
@@ -243,7 +241,6 @@
 #define MEMBERSHIP_FEE_TOP                 asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_USD) // Monthly Price of Top Level membership: $100.00 USD
 #define NETWORK_MEMBERSHIP_FEE_PERCENT     (50 * PERCENT_1) // Percentage of membership spend that is consumed as network revenue: 50%
 #define INTERFACE_MEMBERSHIP_FEE_PERCENT   (25 * PERCENT_1) // Percentage of membership spend that is shared with the purchaser's interface: 25%
-#define PARTNERS_MEMBERSHIP_FEE_PERCENT    (25 * PERCENT_1) // Percentage of membership spend that is distributed to premium content partners: 25%
 
 #define PREMIUM_FEE_PERCENT                (2 * PERCENT_1) // Percentage fee charged on premium content purchases: 2%
 #define NETWORK_PREMIUM_FEE_PERCENT        (50 * PERCENT_1) // Percentage of premium content fee consumed as network revenue: 50%
@@ -286,7 +283,6 @@
 #define MAX_GOV_ACCOUNTS                       (5)
 #define MAX_EXEC_VOTES                         (10)
 #define MAX_OFFICER_VOTES                      (150)
-#define MAX_EXEC_BUDGET                        asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT )       // Maximum daily executive board budget of 1,000,000 MCR
 #define COLLATERAL_RATIO_DENOM                 (1000)
 #define MIN_COLLATERAL_RATIO                   (1001)                        // Lower than this could result in divide by 0.
 #define MAX_COLLATERAL_RATIO                   (32000)                       // Higher than this is unnecessary and may exceed int16 storage.
@@ -330,6 +326,7 @@
 #define SAVINGS_FIXED_INTEREST_RATE            (1 * PERCENT_1)               // Fixed component of Interest rate of the asset for savings balances.
 #define SAVINGS_VARIABLE_INTEREST_RATE         (5 * PERCENT_1)               // Variable component of Interest rate of the asset for savings balances.
 #define VAR_INTEREST_RANGE                     (50 * PERCENT_1)              // Range of buyback price deviation for max and min variable interest rate.
+#define MAX_REVENUE_SHARE                      (50 * PERCENT_1)              // Maximum percentage of revenue share that can be applied to a business or governance account
 
 #define AUCTION_INTERVAL                       fc::days(1)                   // Time period between auction order clearance.
 #define AUCTION_INTERVAL_BLOCKS                uint64_t( AUCTION_INTERVAL.count() / BLOCK_INTERVAL.count() )  // Clears auction orders once per day.
@@ -403,11 +400,22 @@
 
 
 /**
- * Implementation Specific Config settings for launching entity.
+ * Implementation Specific Config settings for launching.
  */
 
-#define INIT_ACCOUNT                    account_name_type("weyoume")                // The initial Executive board account, issuer of equity asset.
-#define INIT_ACCOUNT_PASSWORD           "yourpasswordgoeshere"
+#define INIT_ACCOUNT                    account_name_type("init.account")            // The initial Business account, issuer of equity asset.
+#define INIT_CEO                        account_name_type("harrison.mclean")         // The initial Firstname.Lastname of the Chief Executive.
+#define INIT_BUSINESS                   account_name_type("weyoume")                 // The initial Business account, issuer of equity asset.
+#define INIT_GOVERNANCE                 account_name_type("governance")              // The initial Governance account.
+
+#define INIT_PUBLIC_COMMUNITY           community_name_type("weyoume.community")     // The initial public community linked to the initial business account.
+#define INIT_PRIVATE_COMMUNITY          community_name_type("weyoume.private")       // The initial private community linked to the initial business account.
+#define GOVERNANCE_PUBLIC_COMMUNITY     community_name_type("governance.community")  // The initial public community linked to the initial governance account.
+#define GOVERNANCE_PRIVATE_COMMUNITY    community_name_type("governance.private")    // The initial private community linked to the initial governance account.
+#define GOVERNANCE_EQUITY_SYMBOL        asset_symbol_type("GOVEQ")                     // The initial Equity asset of the initial governance account.
+#define GOVERNANCE_CREDIT_SYMBOL        asset_symbol_type("GOVCR")                     // The initial Credit asset of the initial governance account.
+
+#define INIT_PASSWORD                   "yourpasswordgoeshere"
 #define INIT_DETAILS                    "WeYouMe is a social media protocol to enable everyone to share information and value freely."   // Details string of init account.
 #define INIT_URL                        "https://www.weyoume.io"
 #define INIT_NODE_ENDPOINT              "https://node.weyoume.io"
@@ -416,8 +424,6 @@
 #define INIT_IPFS_ENDPOINT              "https://ipfs.weyoume.io"
 #define INIT_BITTORRENT_ENDPOINT        "https://bittorrent.weyoume.io"
 #define INIT_IMAGE                      "QmfMeLP6uhjEsSitFENcvJwRx6SpNr41ir4XMYGi3hiW1S"
-#define INIT_CEO                         account_name_type("harrison.mclean")               // firstname.lastname of launching Chief Executive Officer
-#define INIT_COMMUNITY                   community_name_type("general")
 
 #define SECURE_KEY_STR                  "secure"                                      // String included in the key generation formula
 #define POSTING_KEY_STR                 "posting"                                     // String included in the key generation formula

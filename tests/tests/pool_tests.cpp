@@ -57,7 +57,6 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
 
       asset_create_operation asset_create;
 
-      asset_create.signatory = "alice";
       asset_create.issuer = "alice";
       asset_create.symbol = "ALICECOIN";
       asset_create.asset_type = "standard";
@@ -78,7 +77,6 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      asset_create.signatory = "bob";
       asset_create.issuer = "bob";
       asset_create.symbol = "BOBCOIN";
       asset_create.asset_type = "standard";
@@ -100,7 +98,6 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
 
       asset_issue_operation issue;
 
-      issue.signatory = "alice";
       issue.issuer = "alice";
       issue.asset_to_issue = asset( 10000 * BLOCKCHAIN_PRECISION, "ALICECOIN" );
       issue.issue_to_account = "alice";
@@ -114,7 +111,6 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      issue.signatory = "bob";
       issue.issuer = "bob";
       issue.asset_to_issue = asset( 10000 * BLOCKCHAIN_PRECISION, "BOBCOIN" );
       issue.issue_to_account = "alice";
@@ -129,7 +125,6 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
 
       liquidity_pool_create_operation pool_create;
 
-      pool_create.signatory = "alice";
       pool_create.account = "alice";
       pool_create.first_amount = asset( 1000 * BLOCKCHAIN_PRECISION, "ALICECOIN" );
       pool_create.second_amount = asset( 1000 * BLOCKCHAIN_PRECISION, "BOBCOIN" );
@@ -159,7 +154,6 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when making a liquidity pool using a liquidity pool asset" );
 
-      pool_create.signatory = "alice";
       pool_create.account = "alice";
       pool_create.first_amount = asset( 500 * BLOCKCHAIN_PRECISION, liquidity_asset_symbol );
       pool_create.second_amount = asset( 500 * BLOCKCHAIN_PRECISION, "BOBCOIN" );
@@ -177,7 +171,6 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
 
       liquidity_pool_exchange_operation exchange;
 
-      exchange.signatory = "alice";
       exchange.account = "alice";
       exchange.amount = asset( 10 * BLOCKCHAIN_PRECISION, "ALICECOIN" );
       exchange.receive_asset = "BOBCOIN";
@@ -253,7 +246,6 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
 
       liquidity_pool_fund_operation fund;
 
-      fund.signatory = "alice";
       fund.account = "alice";
       fund.amount = asset( 1000 * BLOCKCHAIN_PRECISION, "ALICECOIN" );
       fund.pair_asset = "BOBCOIN";
@@ -298,7 +290,6 @@ BOOST_AUTO_TEST_CASE( liquidity_pool_operation_sequence_test )
 
       liquidity_pool_withdraw_operation withdraw;
 
-      withdraw.signatory = "alice";
       withdraw.account = "alice";
       withdraw.amount = asset( 500 * BLOCKCHAIN_PRECISION, liquidity_asset_symbol );
       withdraw.receive_asset = "ALICECOIN";
@@ -396,7 +387,6 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       liquidity_pool_fund_operation fund;
 
-      fund.signatory = "elon";
       fund.account = "elon";
       fund.amount = asset( 100000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       fund.pair_asset = SYMBOL_USD;
@@ -451,7 +441,6 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       asset_publish_feed_operation feed;
 
-      feed.signatory = "alice";
       feed.publisher = "alice";
       feed.symbol = SYMBOL_USD;
       feed.feed.settlement_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -467,7 +456,6 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       generate_block();
 
-      feed.signatory = "bob";
       feed.publisher = "bob";
 
       tx.operations.push_back( feed );
@@ -479,7 +467,6 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       generate_block();
 
-      feed.signatory = "candice";
       feed.publisher = "candice";
 
       tx.operations.push_back( feed );
@@ -491,7 +478,6 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       generate_block();
 
-      feed.signatory = "dan";
       feed.publisher = "dan";
 
       tx.operations.push_back( feed );
@@ -505,7 +491,6 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       credit_pool_collateral_operation collateral;
 
-      collateral.signatory = "alice";
       collateral.account = "alice";
       collateral.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       collateral.validate();
@@ -585,7 +570,6 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       credit_pool_lend_operation lend;
 
-      lend.signatory = "bob";
       lend.account = "bob";
       lend.amount = asset( 5000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
 
@@ -651,7 +635,6 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Creation of Borrowing order from credit pool" );
 
-      collateral.signatory = "alice";
       collateral.account = "alice";
       collateral.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
 
@@ -670,7 +653,6 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       credit_pool_borrow_operation borrow;
 
-      borrow.signatory = "alice";
       borrow.account = "alice";
       borrow.amount = asset( 500 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       borrow.collateral = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -750,7 +732,6 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       credit_pool_withdraw_operation withdraw;
 
-      withdraw.signatory = "bob";
       withdraw.account = "bob";
       withdraw.amount = asset( 50000 * BLOCKCHAIN_PRECISION, usd_credit_symbol );
       withdraw.validate();
@@ -862,7 +843,6 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       liquidity_pool_exchange_operation exchange;
 
-      exchange.signatory = "elon";
       exchange.account = "elon";
       exchange.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       exchange.receive_asset = SYMBOL_USD;
@@ -896,7 +876,6 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when borrowing with loan default balance outstanding" );
 
-      exchange.signatory = "elon";
       exchange.account = "elon";
       exchange.amount = asset( 50000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
       exchange.receive_asset = SYMBOL_COIN;
@@ -932,7 +911,6 @@ BOOST_AUTO_TEST_CASE( credit_pool_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Success when loan default is repaid" );
 
-      collateral.signatory = "alice";
       collateral.account = "alice";
       collateral.amount = alice_loan_default_balance;
 
@@ -1000,7 +978,6 @@ BOOST_AUTO_TEST_CASE( prediction_pool_operation_sequence_test )
 
       prediction_pool_create_operation create;
 
-      create.signatory = "alice";
       create.account = "alice";
       create.prediction_symbol = "PREDICTION";
       create.collateral_symbol = SYMBOL_COIN;
@@ -1039,7 +1016,6 @@ BOOST_AUTO_TEST_CASE( prediction_pool_operation_sequence_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when making a prediction pool bond without sufficient balance" );
 
-      create.signatory = "alice";
       create.account = "alice";
       create.prediction_symbol = "PREDICTIONB";
       create.collateral_symbol = SYMBOL_COIN;
@@ -1066,7 +1042,6 @@ BOOST_AUTO_TEST_CASE( prediction_pool_operation_sequence_test )
 
       prediction_pool_exchange_operation exchange;
 
-      exchange.signatory = "bob";
       exchange.account = "bob";
       exchange.amount = asset( 200 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       exchange.prediction_asset = "PREDICTION";
@@ -1081,7 +1056,6 @@ BOOST_AUTO_TEST_CASE( prediction_pool_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      exchange.signatory = "bob";
       exchange.account = "bob";
       exchange.amount = asset( 100 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       exchange.prediction_asset = "PREDICTION";
@@ -1098,7 +1072,6 @@ BOOST_AUTO_TEST_CASE( prediction_pool_operation_sequence_test )
 
       transfer_operation transfer;
 
-      transfer.signatory = "bob";
       transfer.from = "bob";
       transfer.to = "candice";
       transfer.amount = asset( 100 * BLOCKCHAIN_PRECISION, asset_symbol_type( "PREDICTION.NO" ) );
@@ -1120,7 +1093,6 @@ BOOST_AUTO_TEST_CASE( prediction_pool_operation_sequence_test )
 
       prediction_pool_resolve_operation resolve;
 
-      resolve.signatory = "alice";
       resolve.account = "alice";
       resolve.amount = init_alice_liquid_prediction;
       resolve.resolution_outcome = asset_symbol_type( "PREDICTION.YES" );

@@ -33,7 +33,7 @@ BOOST_AUTO_TEST_CASE( claim_reward_balance_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: successful reward claim" );
 
-      private_key_type producer_private_active_key = get_private_key( GENESIS_ACCOUNT_BASE_NAME, ACTIVE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type producer_private_active_key = get_private_key( GENESIS_ACCOUNT_BASE_NAME, ACTIVE_KEY_STR, INIT_PASSWORD );
 
       generate_blocks( TOTAL_PRODUCERS );
 
@@ -45,7 +45,6 @@ BOOST_AUTO_TEST_CASE( claim_reward_balance_operation_test )
 
       claim_reward_balance_operation claim;
 
-      claim.signatory = GENESIS_ACCOUNT_BASE_NAME;
       claim.account = GENESIS_ACCOUNT_BASE_NAME;
       claim.reward = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
       claim.validate();
@@ -134,7 +133,6 @@ BOOST_AUTO_TEST_CASE( stake_asset_operation_test )
 
       stake_asset_operation stake;
 
-      stake.signatory = "alice";
       stake.from = "alice";
       stake.to = "bob";
       stake.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -155,7 +153,6 @@ BOOST_AUTO_TEST_CASE( stake_asset_operation_test )
       BOOST_REQUIRE( bob_staked_balance - bob_init_staked_balance == stake.amount );
       BOOST_REQUIRE( alice_init_liquid_balance - alice_liquid_balance == stake.amount );
 
-      stake.signatory = "alice";
       stake.from = "alice";
       stake.to = "alice";
       stake.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY );
@@ -272,7 +269,6 @@ BOOST_AUTO_TEST_CASE( unstake_asset_operation_test )
 
       unstake_asset_operation unstake;
 
-      unstake.signatory = "alice";
       unstake.from = "alice";
       unstake.to = "alice";
       unstake.amount = asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );     // Unstake entire balance
@@ -362,7 +358,6 @@ BOOST_AUTO_TEST_CASE( unstake_asset_operation_test )
 
       unstake_asset_route_operation route;
 
-      route.signatory = "bob";
       route.from = "bob";
       route.to = "candice";
       route.percent = 50 * PERCENT_1;
@@ -385,7 +380,6 @@ BOOST_AUTO_TEST_CASE( unstake_asset_operation_test )
       BOOST_REQUIRE( asset_route.to == route.to );
       BOOST_REQUIRE( asset_route.percent == route.percent );
 
-      unstake.signatory = "bob";
       unstake.from = "bob";
       unstake.to = "bob";
       unstake.amount = bob_init_staked_balance;
@@ -470,7 +464,6 @@ BOOST_AUTO_TEST_CASE( transfer_to_savings_test )
 
       transfer_to_savings_operation transfer;
 
-      transfer.signatory = "alice";
       transfer.from = "alice";
       transfer.to = "alice";
       transfer.amount = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -564,7 +557,6 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_test )
 
       transfer_from_savings_operation transfer;
 
-      transfer.signatory = "alice";
       transfer.from = "alice";
       transfer.to = "alice";
       transfer.request_id = "e02a03a8-0843-44cb-9700-b2d6d11e24c1";
@@ -701,7 +693,6 @@ BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
 
       delegate_asset_operation delegate;
 
-      delegate.signatory = "alice";
       delegate.delegator = "alice";
       delegate.delegatee = "bob";
       delegate.amount = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -760,7 +751,6 @@ BOOST_AUTO_TEST_CASE( delegate_asset_operations_test )
 
       unstake_asset_operation withdraw;
 
-      withdraw.signatory = "alice";
       withdraw.from = "alice";
       withdraw.to = "alice";
       withdraw.amount = asset( 9000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );

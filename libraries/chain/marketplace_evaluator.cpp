@@ -30,19 +30,10 @@ namespace node { namespace chain {
 
 void product_sale_evaluator::do_apply( const product_sale_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account));
 
    time_point now = _db.head_block_time();
 
@@ -175,19 +166,10 @@ void product_sale_evaluator::do_apply( const product_sale_operation& o )
 
 void product_purchase_evaluator::do_apply( const product_purchase_operation& o )
 { try {
-   const account_name_type& signed_for = o.buyer;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& buyer = _db.get_account( o.buyer );
+   FC_ASSERT( buyer.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.buyer));
 
    time_point now = _db.head_block_time();
 
@@ -330,19 +312,10 @@ void product_purchase_evaluator::do_apply( const product_purchase_operation& o )
 
 void product_auction_sale_evaluator::do_apply( const product_auction_sale_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account) );
 
    time_point now = _db.head_block_time();
 
@@ -513,19 +486,10 @@ void product_auction_sale_evaluator::do_apply( const product_auction_sale_operat
 
 void product_auction_bid_evaluator::do_apply( const product_auction_bid_operation& o )
 { try {
-   const account_name_type& signed_for = o.buyer;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& buyer = _db.get_account( o.buyer );
+   FC_ASSERT( buyer.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.buyer));
 
    time_point now = _db.head_block_time();
 
@@ -715,19 +679,10 @@ void product_auction_bid_evaluator::do_apply( const product_auction_bid_operatio
 
 void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account) );
 
    time_point now = _db.head_block_time();
 
@@ -801,19 +756,10 @@ void escrow_transfer_evaluator::do_apply( const escrow_transfer_operation& o )
 
 void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account) );
 
    const escrow_object& escrow = _db.get_escrow( o.escrow_from, o.escrow_id );
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
@@ -910,19 +856,10 @@ void escrow_approve_evaluator::do_apply( const escrow_approve_operation& o )
 
 void escrow_dispute_evaluator::do_apply( const escrow_dispute_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account) );
 
    const escrow_object& escrow = _db.get_escrow( o.escrow_from, o.escrow_id );
    time_point now = _db.head_block_time();
@@ -938,26 +875,18 @@ void escrow_dispute_evaluator::do_apply( const escrow_dispute_operation& o )
 
    _db.dispute_escrow( escrow );
 
-   ilog( "Account: ${a} disputed escrow id: ${id}",("a",o.account)("id",o.escrow_id));
+   ilog( "Account: ${a} disputed escrow id: ${id}",
+      ("a",o.account)("id",o.escrow_id));
 
 } FC_CAPTURE_AND_RETHROW( ( o ) ) }
 
 
 void escrow_release_evaluator::do_apply( const escrow_release_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account) );
 
    const escrow_object& escrow = _db.get_escrow( o.escrow_from, o.escrow_id );
    time_point now = _db.head_block_time();

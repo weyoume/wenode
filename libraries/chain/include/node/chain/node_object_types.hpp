@@ -46,10 +46,8 @@ using node::protocol::date_type;
 
 using node::protocol::community_permission_type;
 using node::protocol::community_federation_type;
-using node::protocol::business_structure_type;
 using node::protocol::membership_tier_type;
 using node::protocol::network_officer_role_type;
-using node::protocol::executive_role_type;
 using node::protocol::product_auction_type;
 using node::protocol::asset_property_type;
 using node::protocol::ad_format_type;
@@ -92,12 +90,6 @@ enum object_type
    account_authority_object_type,
    account_permission_object_type,
    account_verification_object_type,
-   account_business_object_type,
-   account_executive_vote_object_type,
-   account_officer_vote_object_type,
-   account_member_request_object_type,
-   account_member_invite_object_type,
-   account_member_key_object_type,
    account_following_object_type,
    account_tag_following_object_type,
    account_connection_object_type,
@@ -106,14 +98,32 @@ enum object_type
    account_recovery_update_request_object_type,
    account_decline_voting_request_object_type,
 
+   // Business Objects
+
+   business_object_type,
+   business_permission_object_type,
+   business_executive_object_type,
+   business_executive_vote_object_type,
+   business_director_object_type,
+   business_director_vote_object_type,
+
+   // Governance Objects
+
+   governance_object_type,
+   governance_permission_object_type,
+   governance_executive_object_type,
+   governance_executive_vote_object_type,
+   governance_director_object_type,
+   governance_director_vote_object_type,
+   governance_member_object_type,
+   governance_member_request_object_type,
+   governance_resolution_object_type,
+   governance_resolution_vote_object_type,
+
    // Network Objects
    
    network_officer_object_type,
    network_officer_vote_object_type,
-   executive_board_object_type,
-   executive_board_vote_object_type,
-   governance_account_object_type,
-   governance_subscription_object_type,
    supernode_object_type,
    interface_object_type,
    mediator_object_type,
@@ -256,12 +266,6 @@ class account_object;
 class account_authority_object;
 class account_permission_object;
 class account_verification_object;
-class account_business_object;
-class account_executive_vote_object;
-class account_officer_vote_object;
-class account_member_request_object;
-class account_member_invite_object;
-class account_member_key_object;
 class account_following_object;
 class account_tag_following_object;
 class account_connection_object;
@@ -270,14 +274,32 @@ class account_recovery_request_object;
 class account_recovery_update_request_object;
 class account_decline_voting_request_object;
 
+// Business Objects
+
+class business_object;
+class business_permission_object;
+class business_executive_object;
+class business_executive_vote_object;
+class business_director_object;
+class business_director_vote_object;
+
+// Governance Objects
+
+class governance_object;
+class governance_permission_object;
+class governance_executive_object;
+class governance_executive_vote_object;
+class governance_director_object;
+class governance_director_vote_object;
+class governance_member_object;
+class governance_member_request_object;
+class governance_resolution_object;
+class governance_resolution_vote_object;
+
 // Network objects
 
 class network_officer_object;
 class network_officer_vote_object;
-class executive_board_object;
-class executive_board_vote_object;
-class governance_account_object;
-class governance_subscription_object;
 class supernode_object;
 class interface_object;
 class mediator_object;
@@ -419,12 +441,6 @@ typedef oid< account_object                             > account_id_type;
 typedef oid< account_authority_object                   > account_authority_id_type;
 typedef oid< account_permission_object                  > account_permission_id_type;
 typedef oid< account_verification_object                > account_verification_id_type;
-typedef oid< account_business_object                    > account_business_id_type;
-typedef oid< account_executive_vote_object              > account_executive_vote_id_type;
-typedef oid< account_officer_vote_object                > account_officer_vote_id_type;
-typedef oid< account_member_request_object              > account_member_request_id_type;
-typedef oid< account_member_invite_object               > account_member_invite_id_type;
-typedef oid< account_member_key_object                  > account_member_key_id_type;
 typedef oid< account_following_object                   > account_following_id_type;
 typedef oid< account_tag_following_object               > account_tag_following_id_type;
 typedef oid< account_connection_object                  > account_connection_id_type;
@@ -433,14 +449,32 @@ typedef oid< account_recovery_request_object            > account_recovery_reque
 typedef oid< account_recovery_update_request_object     > account_recovery_update_request_id_type;
 typedef oid< account_decline_voting_request_object      > account_decline_voting_request_id_type;
 
+// Business Objects
+
+typedef oid< business_object                            > business_id_type;
+typedef oid< business_permission_object                 > business_permission_id_type;
+typedef oid< business_executive_object                  > business_executive_id_type;
+typedef oid< business_executive_vote_object             > business_executive_vote_id_type;
+typedef oid< business_director_object                   > business_director_id_type;
+typedef oid< business_director_vote_object              > business_director_vote_id_type;
+
+// Governance Objects
+
+typedef oid< governance_object                          > governance_id_type;
+typedef oid< governance_permission_object               > governance_permission_id_type;
+typedef oid< governance_executive_object                > governance_executive_id_type;
+typedef oid< governance_executive_vote_object           > governance_executive_vote_id_type;
+typedef oid< governance_director_object                 > governance_director_id_type;
+typedef oid< governance_director_vote_object            > governance_director_vote_id_type;
+typedef oid< governance_member_object                   > governance_member_id_type;
+typedef oid< governance_member_request_object           > governance_member_request_id_type;
+typedef oid< governance_resolution_object               > governance_resolution_id_type;
+typedef oid< governance_resolution_vote_object          > governance_resolution_vote_id_type;
+
 // Network objects
 
 typedef oid< network_officer_object                     > network_officer_id_type;
 typedef oid< network_officer_vote_object                > network_officer_vote_id_type;
-typedef oid< executive_board_object                     > executive_board_id_type;
-typedef oid< executive_board_vote_object                > executive_board_vote_id_type;
-typedef oid< governance_account_object                  > governance_account_id_type;
-typedef oid< governance_subscription_object             > governance_subscription_id_type;
 typedef oid< supernode_object                           > supernode_id_type;
 typedef oid< interface_object                           > interface_id_type;
 typedef oid< mediator_object                            > mediator_id_type;
@@ -674,12 +708,6 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (account_authority_object_type)
          (account_permission_object_type)
          (account_verification_object_type)
-         (account_business_object_type)
-         (account_executive_vote_object_type)
-         (account_officer_vote_object_type)
-         (account_member_request_object_type)
-         (account_member_invite_object_type)
-         (account_member_key_object_type)
          (account_following_object_type)
          (account_tag_following_object_type)
          (account_connection_object_type)
@@ -688,14 +716,32 @@ FC_REFLECT_ENUM( node::chain::object_type,
          (account_recovery_update_request_object_type)
          (account_decline_voting_request_object_type)
 
-         // Network objects
+         // Business Objects
+
+         (business_object_type)
+         (business_permission_object_type)
+         (business_executive_object_type)
+         (business_executive_vote_object_type)
+         (business_director_object_type)
+         (business_director_vote_object_type)
+
+         // Governance Objects
+
+         (governance_object_type)
+         (governance_permission_object_type)
+         (governance_executive_object_type)
+         (governance_executive_vote_object_type)
+         (governance_director_object_type)
+         (governance_director_vote_object_type)
+         (governance_member_object_type)
+         (governance_member_request_object_type)
+         (governance_resolution_object_type)
+         (governance_resolution_vote_object_type)
+
+         // Network Objects
 
          (network_officer_object_type)
          (network_officer_vote_object_type)
-         (executive_board_object_type)
-         (executive_board_vote_object_type)
-         (governance_account_object_type)
-         (governance_subscription_object_type)
          (supernode_object_type)
          (interface_object_type)
          (mediator_object_type)

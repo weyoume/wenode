@@ -140,23 +140,6 @@ namespace node {
          "admin"
       };
 
-      /**
-       * Business account types, used for determining access controls for signatories of business account transactions and equity assets.
-       */
-      enum class business_structure_type : int
-      {
-         OPEN_BUSINESS,        ///< All equity holders can become members and vote for officers and executives, all officers can sign transactions.
-         PUBLIC_BUSINESS,      ///< Executives select officers, officers can invite and accept members. All Equity holders can request membership. Members vote for executives.
-         PRIVATE_BUSINESS      ///< CEO selects Executives, Executives can sign transactions, and invite members. Only members may hold equity assets.
-      };
-
-      const static vector< string > business_structure_values = 
-      {
-         "open",
-         "public",
-         "private"
-      };
-
       /** 
        * Types of membership available, each offers additional features, and improves the user experience for more advanced users.
        */
@@ -190,37 +173,6 @@ namespace node {
       {
          "development",
          "marketing",
-         "advocacy"
-      };
-
-      /** 
-       * Types of network officers, each receive reward distributions from the network upon voter approval.
-       */
-      enum class executive_role_type : int
-      {
-         CHIEF_EXECUTIVE_OFFICER,    ///< Overall leader of Executive team.
-         CHIEF_OPERATING_OFFICER,    ///< Manages communications and coordination of team.
-         CHIEF_FINANCIAL_OFFICER,    ///< Oversees Credit issuance and salaries.
-         CHIEF_DEVELOPMENT_OFFICER,  ///< Oversees protocol development and upgrades.
-         CHIEF_TECHNOLOGY_OFFICER,   ///< Manages front end interface stability and network infrastructure.
-         CHIEF_SECURITY_OFFICER,     ///< Manages security of servers, funds, wallets, keys, and cold storage.
-         CHIEF_GOVERNANCE_OFFICER,   ///< Manages Governance account moderation teams.
-         CHIEF_MARKETING_OFFICER,    ///< Manages public facing communication and campaigns.
-         CHIEF_DESIGN_OFFICER,       ///< Oversees graphical design and User interface design.
-         CHIEF_ADVOCACY_OFFICER      ///< Coordinates advocacy efforts and teams.
-      };
-
-      const static vector< string > executive_role_values =
-      {
-         "executive",
-         "operating",
-         "financial",
-         "development",
-         "technology",
-         "security",
-         "governance",
-         "marketing",
-         "design",
          "advocacy"
       };
 
@@ -283,13 +235,13 @@ namespace node {
        */
       enum class ad_format_type : int
       {
-         STANDARD_FORMAT,      ///< A regular post, objective is permlink.
-         PREMIUM_FORMAT,       ///< A premium post, objective is permlink.
-         PRODUCT_FORMAT,       ///< A product post, objective is permlink.
-         LINK_FORMAT,          ///< A link to an external webpage, objective is URL.
-         ACCOUNT_FORMAT,       ///< An account, objective is account name.
-         COMMUNITY_FORMAT,     ///< A community, objective is community name.
-         ASSET_FORMAT          ///< An asset, objective is asset symbol.
+         STANDARD_FORMAT,      ///< A regular post, author is the author of post, objective is permlink.
+         PREMIUM_FORMAT,       ///< A premium post, author is the author of post, objective is permlink.
+         PRODUCT_FORMAT,       ///< A product post, author is the seller of product, objective is product ID.
+         LINK_FORMAT,          ///< A link to an external webpage, author is empty, objective is URL.
+         ACCOUNT_FORMAT,       ///< An Account, author is empty, objective is target account username.
+         COMMUNITY_FORMAT,     ///< A Community, author is empty, objective is target community name.
+         ASSET_FORMAT          ///< An Asset, author is empty, objective is target asset symbol.
       };
 
       const static vector< string > ad_format_values =
@@ -337,12 +289,13 @@ namespace node {
        */
       enum class ad_metric_type : int 
       {
-         VIEW_METRIC,      ///< View transaction required for delivery.
-         VOTE_METRIC,      ///< vote transaction required for delivery.
-         SHARE_METRIC,     ///< share transaction required for delivery.
-         FOLLOW_METRIC,    ///< follow or community join transaction required for delivery.
-         PURCHASE_METRIC,  ///< product marketplace purchase orders required for delivery. 
-         PREMIUM_METRIC    ///< premium content purchases transaction ids required for delivery.
+         VIEW_METRIC,         ///< Comment View transaction required for delivery.
+         VOTE_METRIC,         ///< Comment Vote transaction required for delivery.
+         SHARE_METRIC,        ///< Comment Share transaction required for delivery.
+         FOLLOW_METRIC,       ///< Account Follow transaction required for delivery.
+         SUBSCRIBE_METRIC,    ///< Community Subscribe transaction required for delivery.
+         PURCHASE_METRIC,     ///< Product marketplace purchase transaction required for delivery. 
+         PREMIUM_METRIC       ///< Premium content purchase transaction required for delivery.
       };
 
       const static vector< string > ad_metric_values =
@@ -351,6 +304,7 @@ namespace node {
          "vote",
          "share",
          "follow",
+         "subscribe",
          "purchase",
          "premium"
       };
@@ -769,12 +723,6 @@ FC_REFLECT_ENUM( node::protocol::community_federation_type,
          (ADMIN_FEDERATION)
          );
 
-FC_REFLECT_ENUM( node::protocol::business_structure_type,
-         (OPEN_BUSINESS)
-         (PUBLIC_BUSINESS)
-         (PRIVATE_BUSINESS)
-         );
-
 FC_REFLECT_ENUM( node::protocol::membership_tier_type,
          (NONE)
          (STANDARD_MEMBERSHIP)
@@ -786,19 +734,6 @@ FC_REFLECT_ENUM( node::protocol::network_officer_role_type,
          (DEVELOPMENT)
          (MARKETING)
          (ADVOCACY)
-         );
-
-FC_REFLECT_ENUM( node::protocol::executive_role_type,
-         (CHIEF_EXECUTIVE_OFFICER)
-         (CHIEF_OPERATING_OFFICER)
-         (CHIEF_FINANCIAL_OFFICER)
-         (CHIEF_DEVELOPMENT_OFFICER)
-         (CHIEF_TECHNOLOGY_OFFICER)
-         (CHIEF_SECURITY_OFFICER)
-         (CHIEF_GOVERNANCE_OFFICER)
-         (CHIEF_MARKETING_OFFICER)
-         (CHIEF_DESIGN_OFFICER)
-         (CHIEF_ADVOCACY_OFFICER)
          );
 
 FC_REFLECT_ENUM( node::protocol::product_auction_type,
@@ -850,6 +785,7 @@ FC_REFLECT_ENUM( node::protocol::ad_metric_type,
          (VOTE_METRIC)
          (SHARE_METRIC)
          (FOLLOW_METRIC)
+         (SUBSCRIBE_METRIC)
          (PURCHASE_METRIC)
          (PREMIUM_METRIC)
          );

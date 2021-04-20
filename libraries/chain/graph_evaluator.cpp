@@ -31,20 +31,11 @@ namespace node { namespace chain {
 
 void graph_node_evaluator::do_apply( const graph_node_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account));
+   
    flat_set< string > attribute_set;
 
    connection_tier_type connection_tier = connection_tier_type::PUBLIC;
@@ -82,7 +73,6 @@ void graph_node_evaluator::do_apply( const graph_node_operation& o )
          "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
    }
 
-   const account_object& account = _db.get_account( o.account );
    public_key_type public_key = public_key_type();
 
    switch( connection_tier )
@@ -207,19 +197,10 @@ void graph_node_evaluator::do_apply( const graph_node_operation& o )
 
 void graph_edge_evaluator::do_apply( const graph_edge_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account));
 
    const graph_node_object& from_node = _db.get_graph_node( o.from_node_account, o.from_node_id );
    const graph_node_object& to_node = _db.get_graph_node( o.to_node_account, o.to_node_id );
@@ -272,7 +253,6 @@ void graph_edge_evaluator::do_apply( const graph_edge_operation& o )
       }
    }
    
-   const account_object& account = _db.get_account( o.account );
    public_key_type public_key = public_key_type();
 
    switch( graph_privacy )
@@ -447,19 +427,10 @@ void graph_edge_evaluator::do_apply( const graph_edge_operation& o )
 
 void graph_node_property_evaluator::do_apply( const graph_node_property_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account));
 
    if( o.interface.size() )
    {
@@ -546,19 +517,10 @@ void graph_node_property_evaluator::do_apply( const graph_node_property_operatio
 
 void graph_edge_property_evaluator::do_apply( const graph_edge_property_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.account));
 
    if( o.interface.size() )
    {

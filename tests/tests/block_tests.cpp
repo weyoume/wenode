@@ -33,14 +33,14 @@ BOOST_AUTO_TEST_CASE( generate_empty_blocks )
          database db;
          db._log_hardforks = false;
          db.open( data_dir.path(), data_dir.path(), TEST_SHARED_MEM_SIZE, chainbase::database::read_write );
-         b = db.generate_block( db.get_slot_time( 1 ), db.get_scheduled_producer(1), get_private_key( db.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ), database::skip_nothing);
+         b = db.generate_block( db.get_slot_time( 1 ), db.get_scheduled_producer(1), get_private_key( db.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_PASSWORD ), database::skip_nothing);
 
          // n.b. we generate MIN_UNDO_HISTORY+1 extra blocks which will be discarded on sav
          for( uint32_t i = 1; i<200; ++i )
          {
             BOOST_CHECK( db.head_block_id() == b.id() );
             string cur_producer = db.get_scheduled_producer( 1 );
-            b = db.generate_block( db.get_slot_time( 1 ), cur_producer, get_private_key( cur_producer, PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ), database::skip_nothing);
+            b = db.generate_block( db.get_slot_time( 1 ), cur_producer, get_private_key( cur_producer, PRODUCER_KEY_STR, INIT_PASSWORD ), database::skip_nothing);
             BOOST_CHECK( b.producer == cur_producer );
             uint32_t cutoff_height = db.get_dynamic_global_properties().last_irreversible_block_num;
             if( cutoff_height >= 200 )
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE( generate_empty_blocks )
          {
             BOOST_CHECK( db.head_block_id() == b.id() );
             string cur_producer = db.get_scheduled_producer( 1 );
-            b = db.generate_block(db.get_slot_time( 1 ), cur_producer, get_private_key( cur_producer, PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ), database::skip_nothing);
+            b = db.generate_block(db.get_slot_time( 1 ), cur_producer, get_private_key( cur_producer, PRODUCER_KEY_STR, INIT_PASSWORD ), database::skip_nothing);
          }
          BOOST_CHECK_EQUAL( db.head_block_num(), cutoff_block.block_num()+200 );
       }
@@ -91,7 +91,7 @@ BOOST_AUTO_TEST_CASE( undo_block )
          {
             now = db.get_slot_time(1);
             time_stack.push_back( now );
-            auto b = db.generate_block( now, db.get_scheduled_producer( 1 ), get_private_key( db.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ), database::skip_nothing );
+            auto b = db.generate_block( now, db.get_scheduled_producer( 1 ), get_private_key( db.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_PASSWORD ), database::skip_nothing );
          }
          BOOST_CHECK( db.head_block_num() == 5 );
          BOOST_CHECK( db.head_block_time() == now );
@@ -114,7 +114,7 @@ BOOST_AUTO_TEST_CASE( undo_block )
          {
             now = db.get_slot_time(1);
             time_stack.push_back( now );
-            auto b = db.generate_block( now, db.get_scheduled_producer( 1 ), get_private_key( db.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ), database::skip_nothing );
+            auto b = db.generate_block( now, db.get_scheduled_producer( 1 ), get_private_key( db.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_PASSWORD ), database::skip_nothing );
          }
          BOOST_CHECK( db.head_block_num() == 7 );
       }
@@ -141,20 +141,20 @@ BOOST_AUTO_TEST_CASE( fork_blocks )
 
       for( uint32_t i = 0; i < 10; ++i )
       {
-         auto b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_producer(1), get_private_key( db1.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ), database::skip_nothing);
+         auto b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_producer(1), get_private_key( db1.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_PASSWORD ), database::skip_nothing);
          try {
             PUSH_BLOCK( db2, b );
          } FC_CAPTURE_AND_RETHROW( ("db2") );
       }
       for( uint32_t i = 10; i < 13; ++i )
       {
-         auto b =  db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_producer(1), get_private_key( db1.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ), database::skip_nothing);
+         auto b =  db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_producer(1), get_private_key( db1.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_PASSWORD ), database::skip_nothing);
       }
       string db1_tip = db1.head_block_id().str();
       uint32_t next_slot = 3;
       for( uint32_t i = 13; i < 16; ++i )
       {
-         auto b =  db2.generate_block(db2.get_slot_time(next_slot), db2.get_scheduled_producer(next_slot), get_private_key( db2.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ), database::skip_nothing);
+         auto b =  db2.generate_block(db2.get_slot_time(next_slot), db2.get_scheduled_producer(next_slot), get_private_key( db2.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_PASSWORD ), database::skip_nothing);
          next_slot = 1;
          // notify both databases of the new block.
          // only db2 should switch to the new fork, db1 should not
@@ -169,11 +169,11 @@ BOOST_AUTO_TEST_CASE( fork_blocks )
       BOOST_CHECK_EQUAL(db1.head_block_num(), 13);
       BOOST_CHECK_EQUAL(db2.head_block_num(), 13);
       {
-         auto b = db2.generate_block(db2.get_slot_time(1), db2.get_scheduled_producer(1), get_private_key( db2.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ), database::skip_nothing);
+         auto b = db2.generate_block(db2.get_slot_time(1), db2.get_scheduled_producer(1), get_private_key( db2.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_PASSWORD ), database::skip_nothing);
          good_block = b;
          b.transactions.emplace_back(signed_transaction());
          b.transactions.back().operations.emplace_back(transfer_operation());
-         b.sign( get_private_key( db2.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+         b.sign( get_private_key( db2.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_PASSWORD ) );
          BOOST_CHECK_EQUAL(b.block_num(), 14);
          CHECK_THROW(PUSH_BLOCK( db1, b ), fc::exception);
       }
@@ -211,7 +211,6 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
       
       account_create_operation create;
 
-      create.signatory = GENESIS_ACCOUNT_BASE_NAME;
       create.new_account_name = "alice";
       create.registrar = GENESIS_ACCOUNT_BASE_NAME;
       create.referrer = GENESIS_ACCOUNT_BASE_NAME;
@@ -226,7 +225,7 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
 
       trx.operations.push_back( create );
       trx.set_expiration( db1.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      trx.sign( get_private_key( GENESIS_ACCOUNT_BASE_NAME, OWNER_KEY_STR, INIT_ACCOUNT_PASSWORD ), db1.get_chain_id() );
+      trx.sign( get_private_key( GENESIS_ACCOUNT_BASE_NAME, OWNER_KEY_STR, INIT_PASSWORD ), db1.get_chain_id() );
 
       PUSH_TX( db1, trx );
 
@@ -234,14 +233,14 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
       // db1 : A
       // db2 : B C D
 
-      auto b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_producer(1), get_private_key( db1.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ), database::skip_nothing);
+      auto b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_producer(1), get_private_key( db1.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_PASSWORD ), database::skip_nothing);
 
       auto alice_id = db1.get_account( create.new_account_name ).id;
       BOOST_CHECK( db1.get(alice_id).name == "alice" );
 
-      b = db2.generate_block(db2.get_slot_time(1), db2.get_scheduled_producer(1), get_private_key( db2.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ), database::skip_nothing);
+      b = db2.generate_block(db2.get_slot_time(1), db2.get_scheduled_producer(1), get_private_key( db2.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_PASSWORD ), database::skip_nothing);
       db1.push_block(b);
-      b = db2.generate_block(db2.get_slot_time(1), db2.get_scheduled_producer(1), get_private_key( db2.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ), database::skip_nothing);
+      b = db2.generate_block(db2.get_slot_time(1), db2.get_scheduled_producer(1), get_private_key( db2.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_PASSWORD ), database::skip_nothing);
       db1.push_block(b);
       REQUIRE_THROW(db2.get(alice_id), std::exception);
       db1.get(alice_id); /// it should be included in the pending state
@@ -250,7 +249,7 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
 
       PUSH_TX( db2, trx );
 
-      b = db2.generate_block(db2.get_slot_time(1), db2.get_scheduled_producer(1), get_private_key( db2.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ), database::skip_nothing);
+      b = db2.generate_block(db2.get_slot_time(1), db2.get_scheduled_producer(1), get_private_key( db2.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_PASSWORD ), database::skip_nothing);
       db1.push_block(b);
 
       BOOST_CHECK( db1.get(alice_id).name == "alice");
@@ -284,7 +283,6 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
 
       account_create_operation create;
 
-      create.signatory = GENESIS_ACCOUNT_BASE_NAME;
       create.new_account_name = "alice";
       create.registrar = GENESIS_ACCOUNT_BASE_NAME;
       create.referrer = GENESIS_ACCOUNT_BASE_NAME;
@@ -300,7 +298,7 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
 
       trx.operations.push_back(create);
       trx.set_expiration( db1.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      trx.sign( get_private_key( GENESIS_ACCOUNT_BASE_NAME, OWNER_KEY_STR, INIT_ACCOUNT_PASSWORD ), db1.get_chain_id() );
+      trx.sign( get_private_key( GENESIS_ACCOUNT_BASE_NAME, OWNER_KEY_STR, INIT_PASSWORD ), db1.get_chain_id() );
 
       PUSH_TX( db1, trx, skip_sigs );
 
@@ -308,7 +306,6 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
 
       transfer_operation t;
 
-      t.signatory = GENESIS_ACCOUNT_BASE_NAME;
       t.from = GENESIS_ACCOUNT_BASE_NAME;
       t.to = "alice";
       t.amount = asset( 500, SYMBOL_COIN );
@@ -322,7 +319,7 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
 
       CHECK_THROW(PUSH_TX( db1, trx, skip_sigs ), fc::exception);
 
-      auto b = db1.generate_block( db1.get_slot_time(1), db1.get_scheduled_producer( 1 ), get_private_key( db1.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ), skip_sigs );
+      auto b = db1.generate_block( db1.get_slot_time(1), db1.get_scheduled_producer( 1 ), get_private_key( db1.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_PASSWORD ), skip_sigs );
       PUSH_BLOCK( db2, b, skip_sigs );
 
       CHECK_THROW(PUSH_TX( db1, trx, skip_sigs ), fc::exception);
@@ -346,7 +343,7 @@ BOOST_AUTO_TEST_CASE( tapos )
       db1.open(dir1.path(), dir1.path(), TEST_SHARED_MEM_SIZE, chainbase::database::read_write );
       db1.adjust_liquid_balance( GENESIS_ACCOUNT_BASE_NAME, asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      auto b = db1.generate_block( db1.get_slot_time(1), db1.get_scheduled_producer( 1 ), get_private_key( db1.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ), database::skip_nothing);
+      auto b = db1.generate_block( db1.get_slot_time(1), db1.get_scheduled_producer( 1 ), get_private_key( db1.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_PASSWORD ), database::skip_nothing);
 
       BOOST_TEST_MESSAGE( "Creating a transaction with reference block" );
       idump((db1.head_block_id()));
@@ -356,7 +353,6 @@ BOOST_AUTO_TEST_CASE( tapos )
 
       account_create_operation create;
 
-      create.signatory = GENESIS_ACCOUNT_BASE_NAME;
       create.new_account_name = "alice";
       create.registrar = GENESIS_ACCOUNT_BASE_NAME;
       create.referrer = GENESIS_ACCOUNT_BASE_NAME;
@@ -372,18 +368,17 @@ BOOST_AUTO_TEST_CASE( tapos )
 
       trx.operations.push_back(create);
       trx.set_expiration( db1.head_block_time() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
-      trx.sign( get_private_key( GENESIS_ACCOUNT_BASE_NAME, OWNER_KEY_STR, INIT_ACCOUNT_PASSWORD ), db1.get_chain_id() );
+      trx.sign( get_private_key( GENESIS_ACCOUNT_BASE_NAME, OWNER_KEY_STR, INIT_PASSWORD ), db1.get_chain_id() );
 
       BOOST_TEST_MESSAGE( "Pushing Pending Transaction" );
       idump((trx));
       db1.push_transaction(trx);
       BOOST_TEST_MESSAGE( "Generating a block" );
-      b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_producer(1), get_private_key( db1.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ), database::skip_nothing);
+      b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_producer(1), get_private_key( db1.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_PASSWORD ), database::skip_nothing);
       trx.clear();
 
       transfer_operation t;
 
-      t.signatory = GENESIS_ACCOUNT_BASE_NAME;
       t.from = GENESIS_ACCOUNT_BASE_NAME;
       t.to = "alice";
       t.amount = asset(50,SYMBOL_COIN);
@@ -393,9 +388,9 @@ BOOST_AUTO_TEST_CASE( tapos )
       trx.set_expiration( db1.head_block_time() + fc::seconds(2) );
       trx.sign( init_account_private_active_key, db1.get_chain_id() );
       idump((trx)(db1.head_block_time()));
-      b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_producer(1), get_private_key( db1.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ), database::skip_nothing);
+      b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_producer(1), get_private_key( db1.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_PASSWORD ), database::skip_nothing);
       idump((b));
-      b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_producer(1), get_private_key( db1.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ), database::skip_nothing);
+      b = db1.generate_block(db1.get_slot_time(1), db1.get_scheduled_producer(1), get_private_key( db1.get_scheduled_producer(1), PRODUCER_KEY_STR, INIT_PASSWORD ), database::skip_nothing);
       trx.signatures.clear();
       trx.sign( init_account_private_active_key, db1.get_chain_id() );
       BOOST_REQUIRE_THROW( db1.push_transaction(trx, database::skip_transaction_signatures | database::skip_authority_check), fc::exception );
@@ -421,7 +416,6 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, clean_database_fixture )
 
       transfer_operation op;
 
-      op.signatory = "alice";
       op.from = "alice";
       op.to = "bob";
       op.amount = asset( 1000, SYMBOL_COIN );
@@ -492,7 +486,6 @@ BOOST_FIXTURE_TEST_CASE( double_sign_check, clean_database_fixture )
 
    transfer_operation t;
 
-   t.signatory = GENESIS_ACCOUNT_BASE_NAME;
    t.from = GENESIS_ACCOUNT_BASE_NAME;
    t.to = "bob";
    t.amount = asset(amount,SYMBOL_COIN);
@@ -506,7 +499,6 @@ BOOST_FIXTURE_TEST_CASE( double_sign_check, clean_database_fixture )
 
    trx.operations.clear();
 
-   t.signatory = "bob";
    t.from = "bob";
    t.to = GENESIS_ACCOUNT_BASE_NAME;
    t.amount = asset(amount,SYMBOL_COIN);
@@ -556,7 +548,6 @@ BOOST_FIXTURE_TEST_CASE( pop_block_twice, clean_database_fixture )
 
       transfer_operation transfer;
 
-      transfer.signatory = "alice";
       transfer.from = "alice";
       transfer.to = "bob";
       transfer.amount = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -734,7 +725,7 @@ BOOST_FIXTURE_TEST_CASE( skip_block, clean_database_fixture )
 
       account_name_type producer = db.get_scheduled_producer( miss_blocks );
       auto block_time = db.get_slot_time( miss_blocks );
-      db.generate_block( block_time , producer, get_private_key( producer, PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ), 0 );
+      db.generate_block( block_time , producer, get_private_key( producer, PRODUCER_KEY_STR, INIT_PASSWORD ), 0 );
 
       BOOST_CHECK_EQUAL( db.head_block_num(), init_block_num + 1 );
       BOOST_CHECK( db.head_block_time() == block_time );
@@ -768,7 +759,6 @@ BOOST_FIXTURE_TEST_CASE( generate_block_size, clean_database_fixture )
 
       transfer_operation op;
 
-      op.signatory = GENESIS_ACCOUNT_BASE_NAME;
       op.from = GENESIS_ACCOUNT_BASE_NAME;
       op.to = TEMP_ACCOUNT;
       op.amount = asset( 1000, SYMBOL_COIN );

@@ -34,23 +34,14 @@ namespace node { namespace chain {
  */
 void transfer_evaluator::do_apply( const transfer_operation& o )
 { try {
-   const account_name_type& signed_for = o.from;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
    const account_object& from_account = _db.get_account( o.from );
+   FC_ASSERT( from_account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.from) );
    const account_object& to_account = _db.get_account( o.to );
    FC_ASSERT( to_account.active, 
-      "Account: ${s} must be active to receive transfer.",("s", o.to) );
+      "Account: ${s} must be active to receive transfer.",
+      ("s", o.to) );
    asset liquid = _db.get_liquid_balance( from_account.name, o.amount.symbol );
 
    FC_ASSERT( liquid >= o.amount, 
@@ -132,22 +123,15 @@ void transfer_evaluator::do_apply( const transfer_operation& o )
 
 void transfer_request_evaluator::do_apply( const transfer_request_operation& o )
 { try {
-   const account_name_type& signed_for = o.to;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
    const account_object& from_account = _db.get_account( o.from );
    FC_ASSERT( from_account.active, 
-      "Account: ${s} must be active to receive transfer request.",("s", o.from) );
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.from) );
+   const account_object& to_account = _db.get_account( o.to );
+   FC_ASSERT( to_account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.to) );
+   
    time_point now = _db.head_block_time();
    const asset_object& asset_obj = _db.get_asset( o.amount.symbol );
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
@@ -215,37 +199,20 @@ void transfer_request_evaluator::do_apply( const transfer_request_operation& o )
 
 void transfer_accept_evaluator::do_apply( const transfer_accept_operation& o )
 { try {
-   const account_name_type& signed_for = o.from;
-   const account_object& signatory = _db.get_account( o.signatory );
    const account_object& from_account = _db.get_account( o.from );
+   FC_ASSERT( from_account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("a",o.from));
    const account_object& to_account = _db.get_account( o.to );
    FC_ASSERT( to_account.active, 
-      "Account: ${a} must be active to receive transfer.",
+      "Account: ${s} must be active to broadcast transaction.",
       ("a",o.to));
+
    const transfer_request_object& request = _db.get_transfer_request( o.to, o.request_id );
    const asset_object& asset_obj = _db.get_asset( request.amount.symbol );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      bool accept = asset_obj.issuer_accept_requests() && o.signatory == asset_obj.issuer;
-      bool business = false;
-      if( !accept )
-      {
-         const account_business_object& b = _db.get_account_business( signed_for );
-         business = b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) );
-      }
-      FC_ASSERT( accept || business,
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",
-         ("s", o.signatory)("a", signed_for) );
-   }
-   
-   time_point now = _db.head_block_time();
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
    const account_permission_object& from_account_permissions = _db.get_account_permissions( o.from );
+   time_point now = _db.head_block_time();
 
    if( asset_obj.asset_type == asset_property_type::UNIQUE_ASSET )
    {
@@ -292,24 +259,14 @@ void transfer_accept_evaluator::do_apply( const transfer_accept_operation& o )
 
 void transfer_recurring_evaluator::do_apply( const transfer_recurring_operation& o )
 { try {
-   const account_name_type& signed_for = o.from;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
    const account_object& from_account = _db.get_account( o.from );
+   FC_ASSERT( from_account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.from) );
    const account_object& to_account = _db.get_account( o.to );
    FC_ASSERT( to_account.active, 
-      "Account: ${s} must be active to receive transfer.",("s", o.to) );
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.to) );
    const asset_object& asset_obj = _db.get_asset( o.amount.symbol );
    time_point now = _db.head_block_time();
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
@@ -403,23 +360,15 @@ void transfer_recurring_evaluator::do_apply( const transfer_recurring_operation&
 
 void transfer_recurring_request_evaluator::do_apply( const transfer_recurring_request_operation& o )
 { try {
-   const account_name_type& signed_for = o.to;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
    const account_object& from_account = _db.get_account( o.from );
    FC_ASSERT( from_account.active, 
-      "Account: ${s} must be active to receive transfer request.",("s", o.from) );
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.from) );
+   const account_object& to_account = _db.get_account( o.to );
+   FC_ASSERT( to_account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.to) );
+
    const asset_object& asset_obj = _db.get_asset( o.amount.symbol );
    time_point now = _db.head_block_time();
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
@@ -500,33 +449,17 @@ void transfer_recurring_request_evaluator::do_apply( const transfer_recurring_re
 
 void transfer_recurring_accept_evaluator::do_apply( const transfer_recurring_accept_operation& o )
 { try {
-   const account_name_type& signed_for = o.from;
-   const account_object& signatory = _db.get_account( o.signatory );
    const account_object& to_account = _db.get_account( o.to );
    FC_ASSERT( to_account.active, 
-      "Account: ${s} must be active to receive transfer.",("s", o.to) );
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.to) );
    const account_object& from_account = _db.get_account( o.from );
+   FC_ASSERT( from_account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.from) );
+
    const transfer_recurring_request_object& request = _db.get_transfer_recurring_request( to_account.name, o.request_id );
    const asset_object& asset_obj = _db.get_asset( request.amount.symbol );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      bool accept = asset_obj.issuer_accept_requests() && o.signatory == asset_obj.issuer;
-      bool business = false;
-      if( !accept )
-      {
-         const account_business_object& b = _db.get_account_business( signed_for );
-         business = b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) );
-      }
-      FC_ASSERT( accept || business,
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",
-         ("s", o.signatory)("a", signed_for) );
-   }
-   
    const account_permission_object& to_account_permissions = _db.get_account_permissions( o.to );
    const account_permission_object& from_account_permissions = _db.get_account_permissions( o.from );
    asset from_liquid = _db.get_liquid_balance( request.from, request.amount.symbol );
@@ -648,21 +581,12 @@ void transfer_confidential_evaluator::do_apply( const transfer_confidential_oper
 } FC_CAPTURE_AND_RETHROW( (o) ) }
 
 
-void transfer_to_confidential_evaluator::do_apply( const transfer_to_confidential_operation& o ) 
+void transfer_to_confidential_evaluator::do_apply( const transfer_to_confidential_operation& o )
 { try {
-   const account_name_type& signed_for = o.from;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& from_account = _db.get_account( o.from );
+   FC_ASSERT( from_account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.from) );
 
    const asset_object& asset_obj = _db.get_asset( o.amount.symbol );
    transaction_id_type txid = _db.get_current_transaction_id();

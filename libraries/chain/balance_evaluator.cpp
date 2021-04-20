@@ -31,21 +31,9 @@ namespace node { namespace chain {
 
 void claim_reward_balance_evaluator::do_apply( const claim_reward_balance_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_officer( o.signatory ),
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   
    const account_object& account = _db.get_account( o.account );
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.account) );
    asset reward = _db.get_reward_balance( o.account, o.reward.symbol );
    
    FC_ASSERT( o.reward.amount <= reward.amount,
@@ -56,30 +44,25 @@ void claim_reward_balance_evaluator::do_apply( const claim_reward_balance_operat
 
    if( account.revenue_share )     // Distributes revenue from rewards to listed equity and credit assets for business accounts.
    {
-      const account_business_object& bus_acc = _db.get_account_business( signed_for );
+      const business_object& bus_acc = _db.get_business( o.account );
+      const asset_equity_data_object& equity = _db.get_equity_data( bus_acc.equity_asset );
+      asset equity_share = ( o.reward * bus_acc.equity_revenue_share ) / PERCENT_100;
+      shared_reward += equity_share;
 
-      for( auto eq : bus_acc.equity_revenue_shares )
+      _db.modify( equity, [&]( asset_equity_data_object& aedo )
       {
-         const asset_equity_data_object& equity = _db.get_equity_data( eq.first );
-         asset share = ( o.reward * eq.second ) / PERCENT_100;
-         shared_reward += share;
-         _db.modify( equity, [&]( asset_equity_data_object& aedo )
-         {
-            aedo.adjust_pool( share );
-         }); 
-      }
-      for( auto cr : bus_acc.credit_revenue_shares )
+         aedo.adjust_pool( equity_share );
+      }); 
+   
+      const asset_credit_data_object& credit = _db.get_credit_data( bus_acc.credit_asset );
+      asset credit_share = ( o.reward * bus_acc.credit_revenue_share ) / PERCENT_100;
+      shared_reward += credit_share;
+      _db.modify( credit, [&]( asset_credit_data_object& acdo )
       {
-         const asset_credit_data_object& credit = _db.get_credit_data( cr.first );
-         asset share = ( o.reward * cr.second ) / PERCENT_100;
-         shared_reward += share;
-         _db.modify( credit, [&]( asset_credit_data_object& acdo )
-         {
-            acdo.adjust_pool( share );
-         }); 
-      }
+         acdo.adjust_pool( credit_share );
+      }); 
    }
-
+   
    asset claimed_reward = o.reward - shared_reward;
    asset staked_reward = ( claimed_reward * REWARD_STAKED_PERCENT ) / PERCENT_100;
    asset liquid_reward = claimed_reward - staked_reward;
@@ -97,22 +80,12 @@ void claim_reward_balance_evaluator::do_apply( const claim_reward_balance_operat
 
 void stake_asset_evaluator::do_apply( const stake_asset_operation& o )
 { try {
-   const account_name_type& signed_for = o.from;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
    const account_object& from_account = _db.get_account( o.from );
+   FC_ASSERT( from_account.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.from) );
    const account_object& to_account = o.to.size() ? _db.get_account( o.to ) : from_account;
+   FC_ASSERT( to_account.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", to_account.name) );
    const asset_object& asset_object = _db.get_asset( o.amount.symbol );
    const account_balance_object* account_balance_ptr = _db.find_account_balance( to_account.name, o.amount.symbol );
    time_point now = _db.head_block_time();
@@ -198,22 +171,12 @@ void stake_asset_evaluator::do_apply( const stake_asset_operation& o )
 
 void unstake_asset_evaluator::do_apply( const unstake_asset_operation& o )
 { try {
-   const account_name_type& signed_for = o.from;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
    const account_object& from_account = _db.get_account( o.from );
+   FC_ASSERT( from_account.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.from) );
    const account_object& to_account = o.to.size() ? _db.get_account( o.to ) : from_account;
+   FC_ASSERT( to_account.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", to_account.name) );
    const asset_object& asset_object = _db.get_asset( o.amount.symbol );
    const account_balance_object* account_balance_ptr = _db.find_account_balance( to_account.name, o.amount.symbol );
    time_point now = _db.head_block_time();
@@ -304,22 +267,12 @@ void unstake_asset_evaluator::do_apply( const unstake_asset_operation& o )
 
 void unstake_asset_route_evaluator::do_apply( const unstake_asset_route_operation& o )
 { try {
-   const account_name_type& signed_for = o.from;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
    const account_object& from = _db.get_account( o.from );
+   FC_ASSERT( from.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.from) );
    const account_object& to = _db.get_account( o.to );
+   FC_ASSERT( to.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.to) );
    const auto& wd_idx = _db.get_index< unstake_asset_route_index >().indices().get< by_withdraw_route >();
    auto itr = wd_idx.find( boost::make_tuple( from.name, to.name ) );
 
@@ -378,22 +331,12 @@ void unstake_asset_route_evaluator::do_apply( const unstake_asset_route_operatio
 
 void transfer_to_savings_evaluator::do_apply( const transfer_to_savings_operation& o )
 { try {
-   const account_name_type& signed_for = o.from;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
    const account_object& to = _db.get_account( o.to );
+   FC_ASSERT( to.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.to) );
    const account_object& from = _db.get_account( o.from );
+   FC_ASSERT( from.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.from) );
    const asset& liquid = _db.get_liquid_balance( from, o.amount.symbol );
 
    FC_ASSERT( liquid >= o.amount,
@@ -408,26 +351,15 @@ void transfer_to_savings_evaluator::do_apply( const transfer_to_savings_operatio
 
 void transfer_from_savings_evaluator::do_apply( const transfer_from_savings_operation& o )
 { try {
-   const account_name_type& signed_for = o.from;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
+   const account_object& from_account = _db.get_account( o.from );
+   FC_ASSERT( from_account.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.from) );
    const account_object& to_account = _db.get_account( o.to );
    FC_ASSERT( to_account.active,
       "Account: ${s} must be active to withdraw savings balance to.",
       ("s", o.to) );
    
-   const account_object& from_account = _db.get_account( o.from );
    time_point now = _db.head_block_time();
 
    FC_ASSERT( from_account.savings_withdraw_requests < SAVINGS_WITHDRAW_REQUEST_LIMIT,
@@ -498,24 +430,13 @@ void transfer_from_savings_evaluator::do_apply( const transfer_from_savings_oper
 
 void delegate_asset_evaluator::do_apply( const delegate_asset_operation& o )
 { try {
-   const account_name_type& signed_for = o.delegator;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
    const account_object& delegator_account = _db.get_account( o.delegator );
+   FC_ASSERT( delegator_account.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.delegator) );
    const account_object& delegatee_account = _db.get_account( o.delegatee );
    FC_ASSERT( delegatee_account.active, 
-      "Account: ${s} must be active to receive delegated balance.",("s", o.delegatee) );
+      "Account: ${s} must be active to receive delegated balance.",
+      ("s", o.delegatee) );
    const account_balance_object& delegator_balance = _db.get_account_balance( o.delegator, o.amount.symbol );
    time_point now = _db.head_block_time();
    const asset_delegation_object* delegation_ptr = _db.find_asset_delegation( o.delegator, o.delegatee, o.amount.symbol );

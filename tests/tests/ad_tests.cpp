@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE( ad_operation_sequence_test )
 
       comment_operation comment;
 
-      comment.signatory = "alice";
+      comment.editor = "alice";
       comment.author = "alice";
       comment.permlink = "adcreativepermlink";
       comment.title = "My Creative post";
@@ -63,7 +63,7 @@ BOOST_AUTO_TEST_CASE( ad_operation_sequence_test )
       comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
       comment.url = "https://www.url.com";
-      comment.community = INIT_COMMUNITY;
+      comment.community = INIT_PUBLIC_COMMUNITY;
       comment.tags.push_back( tag_name_type( "test" ) );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
@@ -93,7 +93,6 @@ BOOST_AUTO_TEST_CASE( ad_operation_sequence_test )
 
       ad_creative_operation creative;
 
-      creative.signatory = "alice";
       creative.account = "alice";
       creative.author = "alice";
       creative.format_type = "standard";
@@ -123,7 +122,6 @@ BOOST_AUTO_TEST_CASE( ad_operation_sequence_test )
 
       ad_campaign_operation campaign;
 
-      campaign.signatory = "alice";
       campaign.account = "alice";
       campaign.campaign_id = "da89d680-e9c4-4ae0-95e5-1f47bd1526a0";
       campaign.budget = asset( 100*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -153,7 +151,6 @@ BOOST_AUTO_TEST_CASE( ad_operation_sequence_test )
 
       ad_audience_operation audience;
 
-      audience.signatory = "bob";
       audience.account = "bob";
       audience.audience_id = "0ffe6be9-dcf8-436e-9296-49c83e3d0786";
       audience.json = "{ \"valid\": true }";
@@ -183,7 +180,6 @@ BOOST_AUTO_TEST_CASE( ad_operation_sequence_test )
 
       ad_inventory_operation inventory;
 
-      inventory.signatory = "bob";
       inventory.provider = "bob";
       inventory.inventory_id = "19ebee83-fc57-404b-a85e-aa8e7f6bbb66";
       inventory.audience_id = "0ffe6be9-dcf8-436e-9296-49c83e3d0786";
@@ -207,7 +203,6 @@ BOOST_AUTO_TEST_CASE( ad_operation_sequence_test )
 
       account_membership_operation membership;
       
-      membership.signatory = "bob";
       membership.account = "bob";
       membership.membership_type = "standard";
       membership.months = 1;
@@ -223,7 +218,6 @@ BOOST_AUTO_TEST_CASE( ad_operation_sequence_test )
 
       interface_update_operation interface;
       
-      interface.signatory = "bob";
       interface.account = "bob";
       interface.details = "details";
       interface.url = "https://www.url.com";
@@ -237,7 +231,6 @@ BOOST_AUTO_TEST_CASE( ad_operation_sequence_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      inventory.signatory = "bob";
       inventory.provider = "bob";
       inventory.inventory_id = "19ebee83-fc57-404b-a85e-aa8e7f6bbb66";
       inventory.audience_id = "0ffe6be9-dcf8-436e-9296-49c83e3d0786";
@@ -270,7 +263,6 @@ BOOST_AUTO_TEST_CASE( ad_operation_sequence_test )
 
       ad_bid_operation bid;
 
-      bid.signatory = "alice";
       bid.bidder = "alice";
       bid.bid_id = "28bdc74a-097a-40d4-bf49-cc95af3eeec0";
       bid.account = "alice";
@@ -312,7 +304,6 @@ BOOST_AUTO_TEST_CASE( ad_operation_sequence_test )
 
       account_create_operation create;
 
-      create.signatory = "alice";
       create.registrar = "alice";
       create.referrer = "alice";
       create.new_account_name = "newuser";
@@ -359,7 +350,6 @@ BOOST_AUTO_TEST_CASE( ad_operation_sequence_test )
    
       comment_view_operation view;
 
-      view.signatory = "newuser";
       view.viewer = "newuser";
       view.author = "alice";
       view.permlink = "adcreativepermlink";
@@ -369,7 +359,6 @@ BOOST_AUTO_TEST_CASE( ad_operation_sequence_test )
       
       for( auto i = 0; i < 50; i++ )
       {
-         view.signatory = "newuser"+fc::to_string( i );
          view.viewer = "newuser"+fc::to_string( i );
 
          tx.operations.push_back( view );
@@ -400,7 +389,6 @@ BOOST_AUTO_TEST_CASE( ad_operation_sequence_test )
       
       for( auto i = 50; i < 100; i++ )
       {
-         view.signatory = "newuser"+fc::to_string( i );
          view.viewer = "newuser"+fc::to_string( i );
 
          tx.operations.push_back( view );

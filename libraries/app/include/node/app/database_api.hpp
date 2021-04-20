@@ -9,7 +9,6 @@
 #include <node/producer/producer_plugin.hpp>
 #include <node/tags/tags_plugin.hpp>
 
-
 #include <fc/api.hpp>
 #include <fc/optional.hpp>
 #include <fc/variant_object.hpp>
@@ -37,8 +36,6 @@ struct scheduled_hardfork
    fc::time_point       live_time;
 };
 
-
-class database_api_impl;
 
 /**
  * Defines the arguments to a discussion query.
@@ -252,6 +249,8 @@ struct confidential_query
    uint32_t                       limit = 0;
 };
 
+class database_api_impl;
+
 
 /**
  * The database_api class implements the RPC API for the chain database.
@@ -312,7 +311,7 @@ class database_api
 
       vector< account_poll_state >                    get_account_polls( vector< string > names )const;
 
-      vector< balance_state >                         get_balances( vector< string > names )const;
+      vector< account_balance_state >                 get_account_balances( vector< string > names )const;
 
       vector< confidential_balance_api_obj >          get_confidential_balances( const confidential_query& query )const;
 
@@ -362,13 +361,11 @@ class database_api
 
       vector< network_officer_api_obj >               get_advocacy_officers_by_voting_power( string currency, string from, uint32_t limit )const;
 
-      vector< executive_board_api_obj >               get_executive_boards_by_voting_power( string from, uint32_t limit )const;
-
       vector< supernode_api_obj >                     get_supernodes_by_view_weight( string from, uint32_t limit )const;
 
       vector< interface_api_obj >                     get_interfaces_by_users( string from, uint32_t limit )const;
 
-      vector< governance_account_api_obj >            get_governance_accounts_by_subscriber_power( string from, uint32_t limit )const;
+      vector< governance_api_obj >                    get_governances_by_members( string from, uint32_t limit )const;
 
       vector< enterprise_api_obj >                    get_enterprise_by_voting_power( string from, string from_id, uint32_t limit )const;
 
@@ -592,6 +589,339 @@ class database_api
       std::shared_ptr< database_api_impl >   my;
 };
 
+
+class database_api_impl : public std::enable_shared_from_this< database_api_impl >
+{
+   public:
+      database_api_impl( const node::app::api_context& ctx );
+      ~database_api_impl();
+
+
+      //=================//
+      // === Globals === //
+      //=================//
+
+
+      fc::variant_object                              get_config()const;
+
+      dynamic_global_property_api_obj                 get_dynamic_global_properties()const;
+
+      median_chain_property_api_obj                   get_median_chain_properties()const;
+
+      producer_schedule_api_obj                       get_producer_schedule()const;
+
+      hardfork_version                                get_hardfork_version()const;
+
+      scheduled_hardfork                              get_next_scheduled_hardfork()const;
+
+
+      //===================//
+      // === Accounts ==== //
+      //===================//
+
+
+      vector< account_api_obj >                       get_accounts( vector< string > names )const;
+
+      vector< account_api_obj >                       get_accounts_by_followers( string from, uint32_t limit )const;
+      
+      vector< account_concise_api_obj >               get_concise_accounts( vector< string > names )const;
+
+      vector< extended_account >                      get_full_accounts( vector< string > names )const;
+
+      map< uint32_t, applied_operation >              get_account_history( string account, uint64_t from, uint32_t limit )const;
+
+      vector< account_message_state >                 get_account_messages( vector< string > names )const;
+
+      list_state                                      get_list( string name, string list_id )const;
+
+      vector< account_list_state >                    get_account_lists( vector< string > names )const;
+
+      poll_state                                      get_poll( string name, string poll_id )const;
+
+      vector< account_poll_state >                    get_account_polls( vector< string > names )const;
+
+      vector< account_balance_state >                 get_account_balances( vector< string > names )const;
+
+      vector< confidential_balance_api_obj >          get_confidential_balances( const confidential_query& query )const;
+
+      vector< key_state >                             get_keychains( vector< string > names )const;
+
+      set< string >                                   lookup_accounts( string lower_bound_name, uint32_t limit )const;
+
+      uint64_t                                        get_account_count()const;
+
+
+      //================//
+      // === Assets === //
+      //================//
+
+
+      vector< extended_asset >                        get_assets( vector< string > assets )const;
+
+      optional< escrow_api_obj >                      get_escrow( string from, string escrow_id )const;
+
+
+      //=====================//
+      // === Communities === //
+      //=====================//
+
+
+      vector< extended_community >                    get_communities( vector< string > communities )const;
+
+      vector< extended_community >                    get_communities_by_subscribers( string from, uint32_t limit )const;
+      
+
+      //=================//
+      // === Network === //
+      //=================//
+
+
+      vector< account_network_state >                 get_account_network_state( vector< string > names )const;
+
+      vector< account_name_type >                     get_active_producers()const;
+
+      vector< producer_api_obj >                      get_producers_by_voting_power( string from, uint32_t limit )const;
+
+      vector< producer_api_obj >                      get_producers_by_mining_power( string from, uint32_t limit )const;
+
+      vector< network_officer_api_obj >               get_development_officers_by_voting_power( string currency, string from, uint32_t limit )const;
+
+      vector< network_officer_api_obj >               get_marketing_officers_by_voting_power( string currency, string from, uint32_t limit )const;
+
+      vector< network_officer_api_obj >               get_advocacy_officers_by_voting_power( string currency, string from, uint32_t limit )const;
+
+      vector< supernode_api_obj >                     get_supernodes_by_view_weight( string from, uint32_t limit )const;
+
+      vector< interface_api_obj >                     get_interfaces_by_users( string from, uint32_t limit )const;
+
+      vector< governance_api_obj >                    get_governances_by_members( string from, uint32_t limit )const;
+
+      vector< enterprise_api_obj >                    get_enterprise_by_voting_power( string from, string from_id, uint32_t limit )const;
+
+
+      //================//
+      // === Market === //
+      //================//
+
+
+      vector< order_state >                           get_open_orders( vector< string > names )const;
+
+      market_limit_orders                             get_limit_orders( string buy_symbol, string sell_symbol, uint32_t limit )const;
+
+      market_margin_orders                            get_margin_orders( string buy_symbol, string sell_symbol, uint32_t limit )const;
+
+      market_option_orders                            get_option_orders( string buy_symbol, string sell_symbol, uint32_t limit )const;
+      
+      market_call_orders                              get_call_orders( string buy_symbol, string sell_symbol, uint32_t limit )const;
+
+      market_auction_orders                           get_auction_orders( string buy_symbol, string sell_symbol, uint32_t limit )const;
+      
+      market_credit_loans                             get_credit_loans( string buy_symbol, string sell_symbol, uint32_t limit )const;
+
+      vector< credit_pool_api_obj >                   get_credit_pools( vector< string > assets )const;
+
+      vector< liquidity_pool_api_obj >                get_liquidity_pools( string buy_symbol, string sell_symbol )const;
+
+      vector< option_pool_api_obj >                   get_option_pools( string buy_symbol, string sell_symbol )const;
+
+      market_state                                    get_market_state( string buy_symbol, string sell_symbol )const;
+
+
+      //=============//
+      // === Ads === //
+      //=============//
+
+
+      vector< account_ad_state >                      get_account_ads( vector< string > names )const;
+
+      vector< ad_bid_state >                          get_interface_audience_bids( const ad_query& query )const;
+
+
+      //==================//
+      // === Products === //
+      //==================//
+
+
+      product_sale_api_obj                            get_product_sale( string seller, string product_id )const;
+
+      product_auction_sale_api_obj                    get_product_auction_sale( string seller, string auction_id )const;
+
+      vector< account_product_state >                 get_account_products( vector< string > names )const;
+
+
+      //=====================//
+      // === Graph Data  === //
+      //=====================//
+
+
+      graph_data_state                                get_graph_query( const graph_query& query )const;
+
+      vector< graph_node_property_api_obj >           get_graph_node_properties( vector< string > names )const;
+
+      vector< graph_edge_property_api_obj >           get_graph_edge_properties( vector< string > names )const;
+
+
+      //================//
+      // === Search === //
+      //================//
+
+
+      search_result_state                             get_search_query( const search_query& query )const;
+
+
+      //=================================//
+      // === Blocks and transactions === //
+      //=================================//
+
+
+      optional< block_header >                        get_block_header( uint64_t block_num )const;
+
+      optional< signed_block_api_obj >                get_block( uint64_t block_num )const;
+
+      vector< applied_operation >                     get_ops_in_block( uint64_t block_num, bool only_virtual )const;
+
+      std::string                                     get_transaction_hex( const signed_transaction& trx)const;
+
+      annotated_signed_transaction                    get_transaction( transaction_id_type trx_id )const;
+
+      set< public_key_type >                          get_required_signatures( const signed_transaction& trx, const flat_set< public_key_type >& available_keys )const;
+
+      set< public_key_type >                          get_potential_signatures( const signed_transaction& trx )const;
+
+      bool                                            verify_authority( const signed_transaction& trx )const;
+
+      bool                                            verify_account_authority( const string& name_or_id, const flat_set< public_key_type >& signers )const;
+
+
+      //======================//
+      // === Posts + Tags === //
+      //======================//
+
+
+      comment_interaction_state                       get_comment_interactions( string author, string permlink )const;
+
+      vector< account_vote >                          get_account_votes( string account, string from_author, string from_permlink, uint32_t limit )const;
+
+      vector< account_view >                          get_account_views( string account, string from_author, string from_permlink, uint32_t limit )const;
+
+      vector< account_share >                         get_account_shares( string account, string from_author, string from_permlink, uint32_t limit )const;
+
+      vector< account_moderation >                    get_account_moderation( string account, string from_author, string from_permlink, uint32_t limit )const;
+
+      vector< account_tag_following_api_obj >         get_account_tag_followings( vector< string > tags )const;
+
+      vector< tag_api_obj >                           get_top_tags( string after_tag, uint32_t limit )const;
+
+      vector< pair< tag_name_type, uint32_t > >       get_tags_used_by_author( string author )const;
+
+
+      //=====================//
+      // === Discussions === //
+      //=====================//
+
+
+      discussion                                      get_content( string author, string permlink )const;
+      
+      vector< discussion >                            get_content_replies( string parent, string parent_permlink )const;
+
+      vector< discussion >                            get_replies_by_last_update( account_name_type start_author, string start_permlink, uint32_t limit )const;
+
+      vector< discussion >                            get_discussions_by_sort_rank( const discussion_query& query )const;
+
+      vector< discussion >                            get_discussions_by_feed( const discussion_query& query )const;
+
+      vector< discussion >                            get_discussions_by_blog( const discussion_query& query )const;
+
+      vector< discussion >                            get_discussions_by_featured( const discussion_query& query )const;
+
+      vector< discussion >                            get_discussions_by_recommended( const discussion_query& query )const;
+
+      vector< discussion >                            get_discussions_by_comments( const discussion_query& query )const;
+
+      vector< discussion >                            get_discussions_by_payout(const discussion_query& query )const;
+
+      vector< discussion >                            get_post_discussions_by_payout( const discussion_query& query )const;
+
+      vector< discussion >                            get_comment_discussions_by_payout( const discussion_query& query )const;
+
+      vector< discussion >                            get_discussions_by_created( const discussion_query& query )const;
+
+      vector< discussion >                            get_discussions_by_active( const discussion_query& query )const;
+
+      vector< discussion >                            get_discussions_by_votes( const discussion_query& query )const;
+
+      vector< discussion >                            get_discussions_by_views( const discussion_query& query )const;
+
+      vector< discussion >                            get_discussions_by_shares( const discussion_query& query )const;
+
+      vector< discussion >                            get_discussions_by_children( const discussion_query& query )const;
+
+      vector< discussion >                            get_discussions_by_vote_power( const discussion_query& query )const;
+
+      vector< discussion >                            get_discussions_by_view_power( const discussion_query& query )const;
+
+      vector< discussion >                            get_discussions_by_share_power( const discussion_query& query )const;
+
+      vector< discussion >                            get_discussions_by_comment_power( const discussion_query& query )const;
+
+
+      //===============//
+      // === State === //
+      //===============//
+
+
+      state                                           get_state( string path )const;
+
+
+      //=======================//
+      // === Subscriptions === //
+      //=======================//
+
+
+      void                                            set_block_applied_callback( std::function<void( const variant& block_id )> cb );
+
+
+      //=========================//
+      // === Signal Handlers === //
+      //=========================//
+
+
+      void                                             on_applied_block( const chain::signed_block& b );
+
+      std::function<void( const variant&)>             _block_applied_callback;
+
+      node::chain::database&                          _db;
+
+      boost::signals2::scoped_connection              _block_applied_connection;
+
+      bool                                            _disable_get_block = false;
+
+      discussion                                      get_discussion( comment_id_type id, uint32_t truncate_body )const;
+
+      static bool filter_default( const comment_api_obj& c ) { return false; }
+      static bool exit_default( const comment_api_obj& c )   { return false; }
+      static bool tag_exit_default( const tags::tag_object& c ) { return false; }
+
+      template< typename Index, typename StartItr >
+      vector< discussion > get_discussions( 
+         const discussion_query& q,
+         const string& community,
+         const string& tag,
+         comment_id_type parent,
+         const Index& idx,
+         StartItr itr,
+         uint32_t truncate_body,
+         const std::function< bool( const comment_api_obj& ) >& filter,
+         const std::function< bool( const comment_api_obj& ) >& exit,
+         const std::function< bool( const tags::tag_object& ) >& tag_exit,
+         bool ignore_parent
+         )const;
+         
+      comment_id_type get_parent( const discussion_query& q )const;
+
+      void recursively_fetch_content( state& _state, discussion& root, set<string>& referenced_accounts )const;
+};
+
 } }
 
 
@@ -708,7 +1038,7 @@ FC_API( node::app::database_api,
          (get_account_lists)
          (get_poll)
          (get_account_polls)
-         (get_balances)
+         (get_account_balances)
          (get_confidential_balances)
          (get_keychains)
          (lookup_accounts)
@@ -733,10 +1063,9 @@ FC_API( node::app::database_api,
          (get_development_officers_by_voting_power)
          (get_marketing_officers_by_voting_power)
          (get_advocacy_officers_by_voting_power)
-         (get_executive_boards_by_voting_power)
          (get_supernodes_by_view_weight)
          (get_interfaces_by_users)
-         (get_governance_accounts_by_subscriber_power)
+         (get_governances_by_members)
          (get_enterprise_by_voting_power)
          
          // === Market === //

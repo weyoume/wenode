@@ -62,7 +62,6 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
 
       transfer_operation transfer;
 
-      transfer.signatory = "alice";
       transfer.from = "alice";
       transfer.to = "bob";
       transfer.amount = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -128,7 +127,6 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
 
       account_update_operation update_op;
 
-      update_op.signatory = "corp";
       update_op.account = "corp";
       update_op.active_auth = authority( 2, "alice", 1, "bob", 1, "candice", 1 );
       update_op.validate();
@@ -140,7 +138,6 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      transfer.signatory = "corp";
       transfer.from = "corp";
       transfer.to = "candice";
 
@@ -159,7 +156,6 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
       alice_init_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
       asset candice_init_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
 
-      transfer.signatory = "alice";
       transfer.from = "alice";
       transfer.to = "candice";
       transfer.amount = asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -186,7 +182,6 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
       alice_init_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
       candice_init_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
 
-      transfer.signatory = "alice";
       transfer.from = "alice";
       transfer.to = "candice";
       transfer.amount = asset( 20000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -207,7 +202,6 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
       alice_init_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
       candice_init_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
 
-      transfer.signatory = "alice";
       transfer.from = "alice";
       transfer.to = "candice";
       transfer.amount = alice_init_liquid_balance;
@@ -235,7 +229,6 @@ BOOST_AUTO_TEST_CASE( transfer_operation_test )
       alice_init_liquid_balance = get_liquid_balance( "alice", SYMBOL_COIN );
       candice_init_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
 
-      transfer.signatory = "alice";
       transfer.from = "alice";
       transfer.to = "candice";
       transfer.amount = asset( 1 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -290,7 +283,6 @@ BOOST_AUTO_TEST_CASE( transfer_request_operation_test )
 
       transfer_request_operation request;
 
-      request.signatory = "alice";
       request.to = "alice";
       request.from = "bob";
       request.amount = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -324,7 +316,6 @@ BOOST_AUTO_TEST_CASE( transfer_request_operation_test )
 
       transfer_accept_operation accept;
 
-      accept.signatory = "bob";
       accept.from = "bob";
       accept.to = "alice";
       accept.request_id = "4d7248b3-c89d-4bce-8e5f-547c75b5628e";
@@ -455,7 +446,6 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
 
       transfer_recurring_operation transfer;
 
-      transfer.signatory = "alice";
       transfer.from = "alice";
       transfer.to = "bob";
       transfer.amount = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -657,7 +647,6 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when sending greater than liquid balance" );
 
-      transfer.signatory = "candice";
       transfer.from = "candice";
       transfer.to = "bob";
       transfer.transfer_id = "c5a13b05-6b5b-4870-9184-41d96fd99e85";
@@ -750,7 +739,6 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_operation_test )
       asset dan_init_liquid_balance = get_liquid_balance( "dan", SYMBOL_COIN );
       bob_init_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
-      transfer.signatory = "dan";
       transfer.from = "dan";
       transfer.to = "bob";
       transfer.transfer_id = "7927b7a7-e2b1-42c5-9a15-cfc232c8d56e";
@@ -844,7 +832,6 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
 
       transfer_recurring_request_operation request;
 
-      request.signatory = "bob";
       request.to = "bob";
       request.from = "alice";
       request.amount = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -884,7 +871,6 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
 
       transfer_recurring_accept_operation accept;
 
-      accept.signatory = "alice";
       accept.from = "alice";
       accept.to = "bob";
       accept.request_id = "db631874-fc87-4cff-a0da-3a87b069b4c6";
@@ -1018,7 +1004,6 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when requesting greater than liquid balance" );
 
-      request.signatory = "bob";
       request.to = "bob";
       request.from = "candice";
       request.request_id = "c6d1839b-d504-42c5-b9de-92092abbe836";
@@ -1053,7 +1038,6 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      accept.signatory = "candice";
       accept.from = "candice";
       accept.to = "bob";
       accept.request_id = "c6d1839b-d504-42c5-b9de-92092abbe836";
@@ -1127,7 +1111,6 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
       asset dan_init_liquid_balance = get_liquid_balance( "dan", SYMBOL_COIN );
       bob_init_liquid_balance = get_liquid_balance( "bob", SYMBOL_COIN );
 
-      request.signatory = "bob";
       request.to = "bob";
       request.from = "dan";
       request.request_id = "639d3cdd-7620-4cce-a1b2-6ae359d47a17";
@@ -1143,7 +1126,6 @@ BOOST_AUTO_TEST_CASE( transfer_recurring_request_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      accept.signatory = "dan";
       accept.from = "dan";
       accept.to = "bob";
       accept.request_id = "639d3cdd-7620-4cce-a1b2-6ae359d47a17";

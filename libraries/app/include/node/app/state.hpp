@@ -11,38 +11,57 @@ namespace node { namespace app {
    struct discussion_index
    {
       string                category;
+
       vector< string >      payout;
+
       vector< string >      payout_comments;
+
       vector< string >      created;
+
       vector< string >      responses;
+
       vector< string >      updated;
+
       vector< string >      active;
+
       vector< string >      cashout;
+
       vector< string >      best;
 
       vector< string >      net_votes;
+
       vector< string >      view_count;
+
       vector< string >      share_count;
+
       vector< string >      comment_count;
+
       vector< string >      vote_power;
+
       vector< string >      view_power;
+
       vector< string >      share_power;
+
       vector< string >      comment_power;
    };
 
 
    struct tag_index
    {
-      vector< string > trending; // pending payouts
+      vector< string > trending;
    };
 
 
    struct vote_state
    {
       string         voter;
+
       uint128_t      weight = 0;
+
       int64_t        reward = 0;
+
       int16_t        percent = 0;
+
       time_point     time;
    };
 
@@ -50,8 +69,11 @@ namespace node { namespace app {
    struct view_state
    {
       string         viewer;
+
       uint128_t      weight = 0;
+
       int64_t        reward = 0;
+
       time_point     time;
    };
 
@@ -59,8 +81,11 @@ namespace node { namespace app {
    struct share_state
    {
       string         sharer;
+
       uint128_t      weight = 0;
+
       int64_t        reward = 0;
+
       time_point     time;
    };
 
@@ -68,12 +93,19 @@ namespace node { namespace app {
    struct moderation_state
    {
       string                            moderator;
+
       vector< tag_name_type >           tags;                        ///< Set of additional string tags for sorting the post by
+
       uint16_t                          rating;                      ///< Moderator updated rating as to the maturity of the content, and display sensitivity. 
+      
       string                            details;                     ///< Explanation as to what rule the post is in contravention of and why it was tagged.
+      
       bool                              filter;                      ///< True if the post should be filtered by the community or governance address subscribers.
+      
       bool                              removal_requested;           ///< True if the moderator formally requests that the post be removed by the author.
+      
       vector< beneficiary_route_type >  beneficiaries_requested;     ///< Vector of beneficiary routes that receive a content reward distribution.
+      
       time_point                        time;                        ///< Time that the comment tag was created.
    };
 
@@ -81,8 +113,11 @@ namespace node { namespace app {
    struct purchase_state
    {
       string         sharer;
+      
       uint128_t      weight = 0;
+      
       int64_t        reward = 0;
+      
       time_point     time;
    };
 
@@ -90,8 +125,11 @@ namespace node { namespace app {
    struct comment_interaction_state
    {
       vector< vote_state >            votes;
+      
       vector< view_state >            views;
+      
       vector< share_state >           shares;
+      
       vector< moderation_state >      moderation;
    };
 
@@ -99,10 +137,15 @@ namespace node { namespace app {
    struct account_vote
    {
       string         author;
+      
       string         permlink;
+      
       uint128_t      weight = 0;
+      
       int64_t        reward = 0;
+      
       int16_t        percent = 0;
+      
       time_point     time;
    };
 
@@ -110,9 +153,13 @@ namespace node { namespace app {
    struct account_view
    {
       string         author;
+      
       string         permlink;
+      
       uint128_t      weight = 0;
+      
       int64_t        reward = 0;
+      
       time_point     time;
    };
 
@@ -120,9 +167,13 @@ namespace node { namespace app {
    struct account_share
    {
       string         author;
+      
       string         permlink;
+      
       uint128_t      weight = 0;
+      
       int64_t        reward = 0;
+      
       time_point     time;
    };
 
@@ -130,13 +181,21 @@ namespace node { namespace app {
    struct account_moderation
    {
       string                            author;
+      
       string                            permlink;
+      
       vector< tag_name_type >           tags;                        ///< Set of additional string tags for sorting the post by.
+      
       string                            rating;                      ///< Moderator updated rating as to the maturity of the content, and display sensitivity.
+      
       string                            details;                     ///< Explanation as to what rule the post is in contravention of and why it was tagged.
+      
       bool                              filter;                      ///< True if the post should be filtered by the community or governance address subscribers.
+      
       bool                              removal_requested;           ///< True if the moderator formally requests that the post be removed by the author.
+      
       vector< beneficiary_route_type >  beneficiaries_requested;     ///< Vector of beneficiary routes that receive a content reward distribution.
+      
       time_point                        time;
    };
 
@@ -144,10 +203,15 @@ namespace node { namespace app {
    struct order_state
    {
       vector< limit_order_api_obj >             limit_orders;
+      
       vector< margin_order_api_obj >            margin_orders;
+      
       vector< call_order_api_obj >              call_orders;
+      
       vector< option_order_api_obj >            option_orders;
+      
       vector< credit_loan_api_obj >             loan_orders;
+      
       vector< credit_collateral_api_obj >       collateral;
    };
 
@@ -155,8 +219,11 @@ namespace node { namespace app {
    struct withdraw_route
    {
       string               from;
+      
       string               to;
+      
       uint16_t             percent;
+      
       bool                 auto_stake;
    };
 
@@ -169,19 +236,28 @@ namespace node { namespace app {
    };
 
 
-   struct balance_state
+   struct account_balance_state
    {
       map< asset_symbol_type, account_balance_api_obj >                     balances;
+      
       vector< confidential_balance_api_obj >                                confidential_balances;
+      
       map< asset_symbol_type, distribution_balance_api_obj >                distribution_balances;
+      
       map< asset_symbol_type, prediction_pool_resolution_api_obj >          prediction_resolutions;
 
       vector< withdraw_route >                                              withdraw_routes;
+      
       vector< savings_withdraw_api_obj >                                    savings_withdrawals_from;
+      
       vector< savings_withdraw_api_obj >                                    savings_withdrawals_to;
+      
       vector< asset_delegation_api_obj >                                    delegations_from;
+      
       vector< asset_delegation_api_obj >                                    delegations_to;
+      
       vector< asset_delegation_expiration_api_obj >                         expirations_from;
+      
       vector< asset_delegation_expiration_api_obj >                         expirations_to;
    };
 
@@ -189,45 +265,85 @@ namespace node { namespace app {
    struct key_state
    {
       map< account_name_type, encrypted_keypair_type >       connection_keys;
+      
       map< account_name_type, encrypted_keypair_type >       friend_keys;
+      
       map< account_name_type, encrypted_keypair_type >       companion_keys;
+      
       map< community_name_type, encrypted_keypair_type >     community_member_keys;
+      
       map< community_name_type, encrypted_keypair_type >     community_moderator_keys;
+      
       map< community_name_type, encrypted_keypair_type >     community_admin_keys;
+      
       map< community_name_type, encrypted_keypair_type >     community_secure_keys;
+      
       map< community_name_type, encrypted_keypair_type >     community_standard_premium_keys;
+      
       map< community_name_type, encrypted_keypair_type >     community_mid_premium_keys;
+      
       map< community_name_type, encrypted_keypair_type >     community_top_premium_keys;
-      map< account_name_type, encrypted_keypair_type >       business_keys;
    };
 
 
    struct operation_state
    {
       map< uint64_t, applied_operation >    account_history;
+
       map< uint64_t, applied_operation >    connection_history;
+
       map< uint64_t, applied_operation >    follow_history;
+      
       map< uint64_t, applied_operation >    activity_history;
-      map< uint64_t, applied_operation >    post_history;
-      map< uint64_t, applied_operation >    message_history;
-      map< uint64_t, applied_operation >    vote_history;
-      map< uint64_t, applied_operation >    view_history;
-      map< uint64_t, applied_operation >    share_history;
-      map< uint64_t, applied_operation >    moderation_history;
-      map< uint64_t, applied_operation >    community_history;
-      map< uint64_t, applied_operation >    ad_history;
-      map< uint64_t, applied_operation >    graph_history;
-      map< uint64_t, applied_operation >    transfer_history;
-      map< uint64_t, applied_operation >    balance_history;
-      map< uint64_t, applied_operation >    product_history;
-      map< uint64_t, applied_operation >    escrow_history;
-      map< uint64_t, applied_operation >    trading_history;
-      map< uint64_t, applied_operation >    liquidity_history;
-      map< uint64_t, applied_operation >    credit_history;
-      map< uint64_t, applied_operation >    option_history;
-      map< uint64_t, applied_operation >    prediction_history;
-      map< uint64_t, applied_operation >    asset_history;
+      
+      map< uint64_t, applied_operation >    business_history;
+      
+      map< uint64_t, applied_operation >    governance_history;
+
       map< uint64_t, applied_operation >    network_history;
+      
+      map< uint64_t, applied_operation >    comment_history;
+
+      map< uint64_t, applied_operation >    premium_history;
+      
+      map< uint64_t, applied_operation >    vote_history;
+      
+      map< uint64_t, applied_operation >    view_history;
+      
+      map< uint64_t, applied_operation >    share_history;
+      
+      map< uint64_t, applied_operation >    moderation_history;
+
+      map< uint64_t, applied_operation >    message_history;
+      
+      map< uint64_t, applied_operation >    community_history;
+      
+      map< uint64_t, applied_operation >    ad_history;
+      
+      map< uint64_t, applied_operation >    graph_history;
+      
+      map< uint64_t, applied_operation >    transfer_history;
+      
+      map< uint64_t, applied_operation >    balance_history;
+      
+      map< uint64_t, applied_operation >    product_history;
+      
+      map< uint64_t, applied_operation >    escrow_history;
+      
+      map< uint64_t, applied_operation >    trading_history;
+      
+      map< uint64_t, applied_operation >    liquidity_history;
+      
+      map< uint64_t, applied_operation >    credit_history;
+      
+      map< uint64_t, applied_operation >    option_history;
+      
+      map< uint64_t, applied_operation >    prediction_history;
+      
+      map< uint64_t, applied_operation >    asset_history;
+
+      map< uint64_t, applied_operation >    producer_history;
+      
       map< uint64_t, applied_operation >    other_history;
    };
 
@@ -235,10 +351,15 @@ namespace node { namespace app {
    struct account_transfer_state
    {
       map< account_name_type, transfer_request_api_obj >                       incoming_requests;
+      
       map< account_name_type, transfer_request_api_obj >                       outgoing_requests;
+      
       map< account_name_type, transfer_recurring_api_obj >                     incoming_recurring_transfers;
+      
       map< account_name_type, transfer_recurring_api_obj >                     outgoing_recurring_transfers;
+      
       map< account_name_type, transfer_recurring_request_api_obj >             incoming_recurring_transfer_requests;
+      
       map< account_name_type, transfer_recurring_request_api_obj >             outgoing_recurring_transfer_requests;
    };
 
@@ -263,73 +384,147 @@ namespace node { namespace app {
    struct account_community_state
    {
       map< community_name_type, community_member_request_api_obj >                     pending_requests;
+      
       map< community_name_type, vector< community_member_vote_api_obj > >              incoming_member_votes;
+      
       map< community_name_type, vector< community_member_vote_api_obj > >              outgoing_member_votes;
+      
       map< community_name_type, community_directive_member_api_obj >                   directive_members;
+      
       map< community_name_type, vector< community_directive_member_vote_api_obj > >    incoming_directive_member_votes;
+      
       map< community_name_type, vector< community_directive_member_vote_api_obj > >    outgoing_directive_member_votes;
+      
       map< community_name_type, vector< community_directive_vote_api_obj > >           incoming_directive_votes;
+      
       map< community_name_type, vector< community_directive_vote_api_obj > >           outgoing_directive_votes;
+      
       map< community_name_type, vector< community_directive_state > >                  incoming_directives;
+      
       map< community_name_type, vector< community_directive_state > >                  outgoing_directives;
+      
       map< community_name_type, vector< community_event_state > >                      interested_attending;
+      
       map< community_name_type, vector< community_event_state > >                      interested_not_attending;
+      
       map< community_name_type, vector< community_event_state > >                      not_interested_attending;
+      
       map< community_name_type, vector< community_event_state > >                      not_interested_not_attending;
    };
 
 
    struct account_connection_state
    {
-      map< account_name_type, account_connection_api_obj >                     connections;
-      map< account_name_type, account_connection_api_obj >                     friends;
-      map< account_name_type, account_connection_api_obj >                     companions;
-      map< account_name_type, account_verification_api_obj >                   incoming_verifications;
-      map< account_name_type, account_verification_api_obj >                   outgoing_verifications;
+      map< account_name_type, account_connection_api_obj >                             connections;
+      
+      map< account_name_type, account_connection_api_obj >                             friends;
+      
+      map< account_name_type, account_connection_api_obj >                             companions;
+      
+      map< account_name_type, account_verification_api_obj >                           incoming_verifications;
+      
+      map< account_name_type, account_verification_api_obj >                           outgoing_verifications;
    };
 
 
-   struct business_account_state : public account_business_api_obj
+   struct account_business_state
    {
-      business_account_state(){}
-      business_account_state( const account_business_object& a ):account_business_api_obj( a ){}
+      business_api_obj                                                                            business;
+      
+      business_permission_api_obj                                                                 permissions;
+      
+      map< account_name_type, business_executive_api_obj >                                        executives;
+      
+      map< account_name_type, business_director_api_obj >                                         directors;
 
-      map< account_name_type, account_request_api_obj >                                          incoming_requests;
-      map< account_name_type, account_invite_api_obj >                                           incoming_invites;
-      map< account_name_type, map< account_name_type, account_executive_vote_api_obj > >         incoming_executive_votes;
-      map< account_name_type, map< account_name_type, account_officer_vote_api_obj > >           incoming_officer_votes;
-      map< account_name_type, account_request_api_obj >                                          outgoing_requests;
-      map< account_name_type, account_invite_api_obj >                                           outgoing_invites;
-      map< account_name_type, map< account_name_type, account_executive_vote_api_obj > >         outgoing_executive_votes;
-      map< account_name_type, map< account_name_type, account_officer_vote_api_obj > >           outgoing_officer_votes;
+      map< account_name_type, map< account_name_type, business_executive_vote_api_obj > >         incoming_executive_votes;
+      
+      map< account_name_type, map< account_name_type, business_executive_vote_api_obj > >         outgoing_executive_votes;
+
+      map< account_name_type, map< account_name_type, business_director_vote_api_obj > >          incoming_director_votes;
+      
+      map< account_name_type, map< account_name_type, business_director_vote_api_obj > >          outgoing_director_votes;
+   };
+
+
+   struct governance_resolution_state
+   {
+      governance_resolution_api_obj                                                                 resolution;
+      
+      uint64_t                                                                                      approval_vote_count;
+
+      uint64_t                                                                                      disapproval_vote_count;
+      
+      map< account_name_type, governance_resolution_vote_api_obj >                                  approval_votes;
+      
+      map< account_name_type, governance_resolution_vote_api_obj >                                  disapproval_votes;
+   };
+
+
+   struct account_governance_state
+   {
+      governance_api_obj                                                                            governance;
+      
+      governance_permission_api_obj                                                                 permissions;
+      
+      map< account_name_type, governance_executive_api_obj >                                        executives;
+      
+      map< account_name_type, governance_director_api_obj >                                         directors;
+
+      map< account_name_type, governance_member_api_obj >                                           incoming_members;
+
+      governance_member_api_obj                                                                     outgoing_member;
+      
+      map< account_name_type, governance_member_request_api_obj >                                   incoming_requests;
+
+      governance_member_request_api_obj                                                             outgoing_request;
+      
+      map< account_name_type, map< account_name_type, governance_executive_vote_api_obj > >         incoming_executive_votes;
+      
+      map< account_name_type, map< account_name_type, governance_executive_vote_api_obj > >         outgoing_executive_votes;
+
+      map< account_name_type, map< account_name_type, governance_director_vote_api_obj > >          incoming_director_votes;
+      
+      map< account_name_type, map< account_name_type, governance_director_vote_api_obj > >          outgoing_director_votes;
+
+      vector< governance_resolution_state >                                                         incoming_resolutions;
+      
+      vector< governance_resolution_state >                                                         outgoing_resolutions;
    };
 
 
    struct account_network_state
    {
       producer_api_obj                                                     producer;
+      
       network_officer_api_obj                                              network_officer;
-      executive_board_api_obj                                              executive_board;
+      
       interface_api_obj                                                    interface;
+      
       supernode_api_obj                                                    supernode;
-      governance_account_api_obj                                           governance_account;
+      
       vector< enterprise_api_obj >                                         enterprise_proposals;
+      
       vector< block_validation_api_obj >                                   block_validations;
 
       map< account_name_type, producer_vote_api_obj >                      incoming_producer_votes;
+      
       map< account_name_type, network_officer_vote_api_obj >               incoming_network_officer_votes;
-      map< account_name_type, executive_board_vote_api_obj >               incoming_executive_board_votes;
-      map< account_name_type, governance_subscription_api_obj >            incoming_governance_subscriptions;
+      
       map< account_name_type, map< string, enterprise_vote_api_obj > >     incoming_enterprise_votes;
+      
       map< account_name_type, map< string, enterprise_fund_api_obj > >     incoming_enterprise_funds;
+      
       map< account_name_type, commit_violation_api_obj >                   incoming_commit_violations;
 
       map< account_name_type, producer_vote_api_obj >                      outgoing_producer_votes;
+      
       map< account_name_type, network_officer_vote_api_obj >               outgoing_network_officer_votes;
-      map< account_name_type, executive_board_vote_api_obj >               outgoing_executive_board_votes;
-      map< account_name_type, governance_subscription_api_obj >            outgoing_governance_subscriptions;
+      
       map< account_name_type, map< string, enterprise_vote_api_obj > >     outgoing_enterprise_votes;
+      
       map< account_name_type, map< string, enterprise_fund_api_obj > >     outgoing_enterprise_funds;
+      
       map< account_name_type, commit_violation_api_obj >                   outgoing_commit_violations;
    };
 
@@ -340,15 +535,25 @@ namespace node { namespace app {
       discussion(){}
 
       string                                    url;                       ///< /category/@rootauthor/root_permlink#author/permlink
+      
       string                                    root_title;                ///< Title of the root post
+      
       vector< vote_state >                      active_votes;              ///< Current collection of votes on the post
+      
       vector< view_state >                      active_views;              ///< Current collection of views on the post
+      
       vector< share_state >                     active_shares;             ///< Current collection of shares on the post
+      
       vector< moderation_state >                active_mod_tags;           ///< Current collection of moderation tags on the post
+      
       vector< string >                          replies;                   ///< Author/slug mapping.
+      
       uint32_t                                  body_length = 0;           ///< Number of characters in the body of the post.
+      
       uint16_t                                  median_rating = 1;         ///< The median of all moderation tag ratings.
+      
       comment_blog_api_obj                      blog;                      ///< Details Injected if using get_discussions_by_blog.
+      
       comment_feed_api_obj                      feed;                      ///< Details injected if using get_discussions_by_feed.
    };
 
@@ -359,14 +564,23 @@ namespace node { namespace app {
       list_state(){}
 
       vector< account_api_obj >                 account_objs;            ///< Account within the list.
+      
       vector< comment_api_obj >                 comment_objs;            ///< Comments within the list.
+      
       vector< community_api_obj >               community_objs;          ///< Community within the list.
+      
       vector< asset_api_obj >                   asset_objs;              ///< Asset within the list.
+      
       vector< product_sale_api_obj >            product_objs;            ///< Product within the list.
+      
       vector< product_auction_sale_api_obj >    auction_objs;            ///< Auction within the list.
+      
       vector< graph_node_api_obj >              node_objs;               ///< Graph node within the list.
+      
       vector< graph_edge_api_obj >              edge_objs;               ///< Graph edge within the list.
+      
       vector< graph_node_property_api_obj >     node_type_objs;          ///< Graph node property within the list.
+      
       vector< graph_edge_property_api_obj >     edge_type_objs;          ///< Graph edge property within the list.
    };
 
@@ -382,14 +596,15 @@ namespace node { namespace app {
       poll_state( const poll_object& a ):poll_api_obj( a ){}
       poll_state(){}
 
-      vector< uint64_t >                        vote_count;
-      vector< poll_vote_api_obj >               votes;
+      vector< uint64_t >                                        vote_count;
+      
+      map< account_name_type, poll_vote_api_obj >               votes;
    };
 
 
    struct account_poll_state
    {
-      vector< poll_state >                      polls;
+      map< community_name_type, vector< poll_state > >          polls;
    };
 
 
@@ -399,8 +614,11 @@ namespace node { namespace app {
       ad_bid_state(){}
 
       ad_creative_api_obj                     creative;
+      
       ad_campaign_api_obj                     campaign;
+      
       ad_inventory_api_obj                    inventory;
+      
       ad_audience_api_obj                     audience;
    };
 
@@ -408,12 +626,19 @@ namespace node { namespace app {
    struct account_ad_state
    {
       vector< ad_creative_api_obj >           creatives;
+      
       vector< ad_campaign_api_obj >           campaigns;
+      
       vector< ad_audience_api_obj >           audiences;
+      
       vector< ad_inventory_api_obj >          inventories;
+      
       vector< ad_bid_api_obj >                created_bids;
+      
       vector< ad_bid_api_obj >                account_bids;
+      
       vector< ad_bid_api_obj >                creative_bids;
+      
       vector< ad_bid_state >                  incoming_bids;
    };
 
@@ -421,12 +646,19 @@ namespace node { namespace app {
    struct account_product_state
    {
       vector< product_sale_api_obj >            seller_products;
+      
       vector< product_purchase_api_obj >        seller_orders;
+      
       vector< product_auction_sale_api_obj >    seller_auctions;
+      
       vector< product_auction_bid_api_obj >     seller_bids;
+      
       vector< product_sale_api_obj >            buyer_products;
+      
       vector< product_purchase_api_obj >        buyer_orders;
+      
       vector< product_auction_sale_api_obj >    buyer_auctions;
+      
       vector< product_auction_bid_api_obj >     buyer_bids;
    };
 
@@ -434,8 +666,11 @@ namespace node { namespace app {
    struct account_premium_state
    {
       vector< premium_purchase_api_obj >        incoming_premium_purchases;
+      
       vector< premium_purchase_api_obj >        outgoing_premium_purchases;
+      
       vector< premium_purchase_key_api_obj >    incoming_premium_purchase_keys;
+      
       vector< premium_purchase_key_api_obj >    outgoing_premium_purchase_keys;
    };
 
@@ -443,6 +678,7 @@ namespace node { namespace app {
    struct graph_data_state
    {
       vector< graph_node_api_obj >              nodes;
+      
       vector< graph_edge_api_obj >              edges;
    };
 
@@ -450,6 +686,7 @@ namespace node { namespace app {
    struct account_message_state
    {
       map< account_name_type, vector< message_api_obj > >        account_conversations;
+
       map< community_name_type, vector< message_api_obj > >      community_conversations;
    };
 
@@ -460,24 +697,45 @@ namespace node { namespace app {
       extended_account(){}
 
       account_following_api_obj                         following;         ///< Account following relations to other accounts and communities
+      
       account_connection_state                          connections;       ///< Connections shared by the account
+      
       account_permission_api_obj                        permissions;       ///< Permission lists that the account selects to interact with others
-      business_account_state                            business;          ///< Business account details
-      balance_state                                     balances;          ///< Asset account balances of the account
+      
+      account_business_state                            business;          ///< Business account details
+      
+      account_governance_state                          governance;        ///< Governance account details
+      
+      account_balance_state                             balances;          ///< Asset account balances of the account
+      
       order_state                                       orders;            ///< Open trading orders held by the account
+      
       key_state                                         keychain;          ///< Encrypted private keys shared with the account
+      
       account_message_state                             messages;          ///< Private messages sent to and from the account and its member communities
+      
       account_transfer_state                            transfers;         ///< Transfers to and from the account
+      
       account_community_state                           communities;       ///< Communities that the account is a member within
+      
       account_network_state                             network;           ///< Network objects that the account controls
+      
       account_ad_state                                  ads;               ///< Advertising objects that the account owns and operates
+      
       account_product_state                             products;          ///< Products that the account has created and purchased
+      
       account_premium_state                             premium;           ///< Premium purchases that the account has mad and received
+      
       account_curation_metrics_api_obj                  curation_metrics;  ///< Account's top interacted authors, communities and tags
+      
       discussion                                        pinned_post;       ///< The Account's pinned post
+      
       discussion                                        latest_post;       ///< The Accounts's most recent post
+      
       account_recovery_request_api_obj                  recovery;          ///< Recovery request of the account
+      
       vector< owner_authority_history_api_obj >         owner_history;     ///< Owner key history of the account
+      
       operation_state                                   operations;        ///< Sequence of operations that the account has broadcasted
    };
 
@@ -488,23 +746,41 @@ namespace node { namespace app {
       extended_community(){}
 
       vector< account_name_type >                                 subscribers;                          ///< List of accounts that subscribe to the posts made in the community.
+      
       vector< account_name_type >                                 members;                              ///< List of accounts that are permitted to post in the community. Can invite and accept on public communities
+      
       vector< account_name_type >                                 moderators;                           ///< Accounts able to filter posts. Can invite and accept on private communities.
+      
       vector< account_name_type >                                 administrators;                       ///< Accounts able to add and remove moderators and update community details. Can invite and accept on Exclusive communities. 
+      
       vector< account_name_type >                                 blacklist;                            ///< Accounts that are not able to post in this community, or request to join.
+      
       vector< message_api_obj >                                   messages;                             ///< Private messages sent within the community.
+      
       map< community_name_type, community_federation_api_obj >    upstream_member_federations;          ///< Communities that have an upstream Member Federation with this community.
+      
       map< community_name_type, community_federation_api_obj >    upstream_moderator_federations;       ///< Communities that have an upstream Moderator Federation with this community.
+      
       map< community_name_type, community_federation_api_obj >    upstream_admin_federations;           ///< Communities that have an upstream Admin Federation with this community.
+      
       map< community_name_type, community_federation_api_obj >    downstream_member_federations;        ///< Communities that have a downstream Member Federation with this community.
+      
       map< community_name_type, community_federation_api_obj >    downstream_moderator_federations;     ///< Communities that have a downstream Moderator Federation with this community.
+      
       map< community_name_type, community_federation_api_obj >    downstream_admin_federations;         ///< Communities that have a downstream Admin Federation with this community.
+      
       vector< community_event_state >                             events;                               ///< Events for the community.
+      
       vector< community_directive_state >                         directives;                           ///< Directives created within the community.
+      
       map< account_name_type, int64_t >                           vote_weight;                          ///< Map of all moderator voting weights for distributing rewards. 
+      
       int64_t                                                     total_vote_weight;                    ///< Total of all moderator weights.
+      
       map< account_name_type, community_member_request_api_obj >  requests;                             ///< Active Requests to join the community.
+      
       discussion                                                  pinned_post;                          ///< The Communities's pinned post
+      
       discussion                                                  latest_post;                          ///< The Communities's most recent post
    };
 
@@ -515,29 +791,53 @@ namespace node { namespace app {
       extended_asset(){}
 
       int64_t                                                        total_supply;              ///< The total outstanding supply of the asset
+      
       int64_t                                                        liquid_supply;             ///< The current liquid supply of the asset
+      
       int64_t                                                        staked_supply;             ///< The current staked supply of the asset
+      
       int64_t                                                        reward_supply;             ///< The current reward supply of the asset
+      
       int64_t                                                        savings_supply;            ///< The current savings supply of the asset
+      
       int64_t                                                        vesting_supply;            ///< The Current vesting supply of the asset
+      
       int64_t                                                        delegated_supply;          ///< The current delegated supply of the asset
+      
       int64_t                                                        receiving_supply;          ///< The current receiving supply supply of the asset, should equal delegated
+      
       int64_t                                                        pending_supply;            ///< The current supply contained in reward funds and active order objects
+      
       int64_t                                                        confidential_supply;       ///< Total confidential asset supply
+      
       currency_data_api_obj                                          currency;                  ///< Currency Details for currency type assets
+      
       stablecoin_data_api_obj                                        stablecoin;                ///< Stablecoin Details for stablecoin type assets
+      
       equity_data_api_obj                                            equity;                    ///< Equity Details for cryptoequity type assets
+      
       bond_data_api_obj                                              bond;                      ///< Bond Details for cryptobond type assets
+      
       credit_data_api_obj                                            credit;                    ///< Credit Details for cryptocredit type assets
+      
       stimulus_data_api_obj                                          stimulus;                  ///< Stimulus Details for stimulus type assets
+      
       unique_data_api_obj                                            unique;                    ///< Unique Details for unique type assets
+      
       credit_pool_api_obj                                            credit_pool;               ///< Credit Pool Details for cred type assets
+      
       reward_fund_api_obj                                            reward_fund;               ///< Balances in the reward fund of currency assets
+      
       map< asset_symbol_type, liquidity_pool_api_obj >               liquidity_pools;           ///< Available liquidity pools for the asset
+      
       map< asset_symbol_type, option_pool_api_obj >                  option_pools;              ///< Available Option pools for the asset
+      
       prediction_pool_api_obj                                        prediction;                ///< Prediction pool data for prediction market assets
+      
       map< asset_symbol_type, prediction_pool_resolution_api_obj >   resolutions;               ///< Current resolutions of the prediction market
+      
       distribution_api_obj                                           distribution;              ///< Distribution pool of the asset
+      
       map< account_name_type, distribution_balance_api_obj >         distribution_balances;     ///< Current balances contributed to the distribution pool
    };
 
@@ -545,6 +845,7 @@ namespace node { namespace app {
    struct market_limit_orders
    {
       vector< limit_order_api_obj >           limit_bids;
+      
       vector< limit_order_api_obj >           limit_asks;
    };
 
@@ -552,6 +853,7 @@ namespace node { namespace app {
    struct market_margin_orders
    {
       vector< margin_order_api_obj >          margin_bids;
+      
       vector< margin_order_api_obj >          margin_asks;
    };
 
@@ -559,6 +861,7 @@ namespace node { namespace app {
    struct market_auction_orders
    {
       vector< auction_order_api_obj >         product_auction_bids;
+      
       vector< auction_order_api_obj >         auction_asks;
    };
 
@@ -566,6 +869,7 @@ namespace node { namespace app {
    struct market_call_orders
    {
       vector< call_order_api_obj >            calls;
+      
       price                                   settlement_price;
    };
 
@@ -573,6 +877,7 @@ namespace node { namespace app {
    struct market_option_orders
    {
       vector< option_order_api_obj >          option_calls;
+      
       vector< option_order_api_obj >          option_puts;
    };
 
@@ -580,6 +885,7 @@ namespace node { namespace app {
    struct market_credit_loans
    {
       vector< credit_loan_api_obj >           loan_bids;
+      
       vector< credit_loan_api_obj >           loan_asks;
    };
 
@@ -587,46 +893,75 @@ namespace node { namespace app {
    struct market_state
    {
       market_limit_orders                     limit_orders;
+      
       market_margin_orders                    margin_orders;
+      
       market_auction_orders                   auction_orders;
+      
       market_call_orders                      call_orders;
+      
       market_option_orders                    option_orders;
+      
       vector< liquidity_pool_api_obj >        liquidity_pools;
+      
       vector< credit_pool_api_obj >           credit_pools;
+      
       vector< option_pool_api_obj >           option_pools;
+      
       market_credit_loans                     credit_loans;
    };
+
 
 
    struct search_result_state
    {
       vector< account_api_obj >                       accounts;
+      
       vector< community_api_obj >                     communities;
+      
       vector< account_tag_following_api_obj >         tags;
+      
       vector< asset_api_obj >                         assets;
+      
       vector< discussion >                            posts;
    };
 
 
    struct state 
    {
-      string                                  current_route;
-      dynamic_global_property_api_obj         props;
-      app::tag_index                          tag_idx;
-      map< string, extended_account >         accounts;
-      map< string, extended_community >       communities;
+      string                                          current_route;
+      
+      dynamic_global_property_api_obj                 props;
+      
+      app::tag_index                                  tag_idx;
+      
+      map< string, extended_account >                 accounts;
+      
+      map< string, extended_community >               communities;
+      
       map< string, account_tag_following_api_obj >    tags;
-      map< string, discussion_index >         discussion_idx;
-      map< string, tag_api_obj >              tag_stats;
-      map< string, discussion >               content;
-      map< string, producer_api_obj >         voting_producers;
-      map< string, producer_api_obj >         mining_producers;
-      map< string, vector< string > >         blogs;
-      map< string, vector< string > >         feeds;
-      map< string, vector< string > >         comments;
-      map< string, vector< string > >         recent_replies;
-      producer_schedule_api_obj               producer_schedule;
-      string                                  error;
+      
+      map< string, discussion_index >                 discussion_idx;
+      
+      map< string, tag_api_obj >                      tag_stats;
+      
+      map< string, discussion >                       content;
+      
+      map< string, producer_api_obj >                 voting_producers;
+      
+      map< string, producer_api_obj >                 mining_producers;
+      
+      map< string, vector< string > >                 blogs;
+      
+      map< string, vector< string > >                 feeds;
+      
+      map< string, vector< string > >                 comments;
+      
+      map< string, vector< string > >                 recent_replies;
+      
+      producer_schedule_api_obj                       producer_schedule;
+      
+      string                                          error;
    };
 
 } }
@@ -754,7 +1089,7 @@ FC_REFLECT_ENUM( node::app::withdraw_route_type,
          (all)
          );
 
-FC_REFLECT( node::app::balance_state,
+FC_REFLECT( node::app::account_balance_state,
          (balances)
          (confidential_balances)
          (distribution_balances)
@@ -773,12 +1108,16 @@ FC_REFLECT( node::app::operation_state,
          (connection_history)
          (follow_history)
          (activity_history)
-         (post_history)
-         (message_history)
+         (business_history)
+         (governance_history)
+         (network_history)
+         (comment_history)
+         (premium_history)
          (vote_history)
          (view_history)
          (share_history)
          (moderation_history)
+         (message_history)
          (community_history)
          (ad_history)
          (graph_history)
@@ -792,7 +1131,7 @@ FC_REFLECT( node::app::operation_state,
          (option_history)
          (prediction_history)
          (asset_history)
-         (network_history)
+         (producer_history)
          (other_history)
          );
 
@@ -838,37 +1177,57 @@ FC_REFLECT( node::app::account_connection_state,
          (outgoing_verifications)
          );
 
-FC_REFLECT( node::app::business_account_state,
-         (incoming_requests)
-         (incoming_invites)
+FC_REFLECT( node::app::account_business_state,
+         (business)
+         (permissions)
+         (executives)
+         (directors)
          (incoming_executive_votes)
-         (incoming_officer_votes)
-         (outgoing_requests)
-         (outgoing_invites)
          (outgoing_executive_votes)
-         (outgoing_officer_votes)
+         (incoming_director_votes)
+         (outgoing_director_votes)
+         );
+
+
+FC_REFLECT( node::app::governance_resolution_state,
+         (resolution)
+         (approval_vote_count)
+         (disapproval_vote_count)
+         (approval_votes)
+         (disapproval_votes)
+         );
+
+FC_REFLECT( node::app::account_governance_state,
+         (governance)
+         (permissions)
+         (executives)
+         (directors)
+         (incoming_members)
+         (outgoing_member)
+         (incoming_requests)
+         (outgoing_request)
+         (incoming_executive_votes)
+         (outgoing_executive_votes)
+         (incoming_director_votes)
+         (outgoing_director_votes)
+         (incoming_resolutions)
+         (outgoing_resolutions)
          );
 
 FC_REFLECT( node::app::account_network_state,
          (producer)
          (network_officer)
-         (executive_board)
          (interface)
          (supernode)
-         (governance_account)
          (enterprise_proposals)
          (block_validations)
          (incoming_producer_votes)
          (incoming_network_officer_votes)
-         (incoming_executive_board_votes)
-         (incoming_governance_subscriptions)
          (incoming_enterprise_votes)
          (incoming_enterprise_funds)
          (incoming_commit_violations)
          (outgoing_producer_votes)
          (outgoing_network_officer_votes)
-         (outgoing_executive_board_votes)
-         (outgoing_governance_subscriptions)
          (outgoing_enterprise_votes)
          (outgoing_enterprise_funds)
          (outgoing_commit_violations)
@@ -893,6 +1252,7 @@ FC_REFLECT_DERIVED( node::app::extended_account, ( node::app::account_api_obj ),
          (connections)
          (permissions)
          (business)
+         (governance)
          (balances)
          (orders)
          (keychain)
@@ -966,8 +1326,6 @@ FC_REFLECT( node::app::account_message_state,
          (community_conversations)
          );
 
-
-
 FC_REFLECT( node::app::key_state,
          (connection_keys)
          (friend_keys)
@@ -979,7 +1337,6 @@ FC_REFLECT( node::app::key_state,
          (community_standard_premium_keys)
          (community_mid_premium_keys)
          (community_top_premium_keys)
-         (business_keys)
          );
 
 FC_REFLECT( node::app::market_limit_orders,

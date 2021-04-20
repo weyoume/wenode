@@ -83,7 +83,8 @@ void transaction::get_required_authorities( flat_set< account_name_type >& activ
       operation_get_required_authorities( op, active, owner, posting, other );
 }
 
-void verify_authority( const vector<operation>& ops, const flat_set<public_key_type>& sigs,
+void verify_authority( const vector< operation >& ops, 
+                       const flat_set< public_key_type >& sigs,
                        const authority_getter& get_active,
                        const authority_getter& get_owner,
                        const authority_getter& get_posting,
@@ -121,13 +122,13 @@ void verify_authority( const vector<operation>& ops, const flat_set<public_key_t
       for( auto id : required_posting )
       {
          ASSERT( s.check_authority(id) ||
-                          s.check_authority(get_active(id)) ||
-                          s.check_authority(get_owner(id)),
-                          tx_missing_posting_auth, "Missing Posting Authority ${id}",
-                          ("id",id)
-                          ("posting",get_posting(id))
-                          ("active",get_active(id))
-                          ("owner",get_owner(id)) );
+               s.check_authority(get_active(id)) ||
+               s.check_authority(get_owner(id)),
+               tx_missing_posting_auth, "Missing Posting Authority ${id}",
+               ("id",id)
+               ("posting",get_posting(id))
+               ("active",get_active(id))
+               ("owner",get_owner(id)) );
       }
       ASSERT(
          !s.remove_unused_signatures(),
@@ -154,15 +155,15 @@ void verify_authority( const vector<operation>& ops, const flat_set<public_key_t
    for( auto id : required_active )
    {
       ASSERT( s.check_authority(id) ||
-                       s.check_authority(get_owner(id)),
-                       tx_missing_active_auth, "Missing Active Authority ${id}", ("id",id)("auth",get_active(id))("owner",get_owner(id)) );
+            s.check_authority(get_owner(id)),
+            tx_missing_active_auth, "Missing Active Authority ${id}", ("id",id)("auth",get_active(id))("owner",get_owner(id)) );
    }
 
    for( auto id : required_owner )
    {
       ASSERT( owner_approvals.find(id) != owner_approvals.end() ||
-                       s.check_authority(get_owner(id)),
-                       tx_missing_owner_auth, "Missing Owner Authority ${id}", ("id",id)("auth",get_owner(id)) );
+            s.check_authority(get_owner(id)),
+            tx_missing_owner_auth, "Missing Owner Authority ${id}", ("id",id)("auth",get_owner(id)) );
    }
 
    ASSERT(
@@ -170,19 +171,19 @@ void verify_authority( const vector<operation>& ops, const flat_set<public_key_t
       tx_irrelevant_sig,
       "Unnecessary signature(s) detected"
       );
-} FC_CAPTURE_AND_RETHROW( (ops)(sigs) ) }
+} FC_CAPTURE_AND_RETHROW( (ops)(sigs)(active_aprovals)(owner_approvals)(posting_approvals) ) }
 
 
 flat_set<public_key_type> signed_transaction::get_signature_keys( const chain_id_type& chain_id )const
 { try {
    auto d = sig_digest( chain_id );
-   flat_set<public_key_type> result;
-   for( const auto&  sig : signatures )
+   flat_set< public_key_type > result;
+   for( const auto& sig : signatures )
    {
       ASSERT(
          result.insert( fc::ecc::public_key(sig,d) ).second,
          tx_duplicate_sig,
-         "Duplicate Signature detected" );
+         "Duplicate Signature detected: ${s}", ("s",sig) );
    }
    return result;
 } FC_CAPTURE_AND_RETHROW() }

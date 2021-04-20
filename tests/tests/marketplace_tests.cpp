@@ -48,12 +48,13 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       fund_liquid( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_stake( "dan", asset( 10000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+
+      generate_blocks( BLOCKS_PER_HOUR );
       
       signed_transaction tx;
 
       escrow_transfer_operation transfer;
 
-      transfer.signatory = "alice";
       transfer.account = "alice";
       transfer.from = "alice";
       transfer.to = "bob";
@@ -90,7 +91,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       account_membership_operation member;
 
-      member.signatory = "candice";
       member.account = "candice";
       member.membership_type = "top";
       member.months = 1;
@@ -105,7 +105,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       mediator_update_operation mediator;
       
-      mediator.signatory = "candice";
       mediator.account = "candice";
       mediator.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
       mediator.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
@@ -120,7 +119,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      member.signatory = "dan";
       member.account = "dan";
 
       tx.operations.push_back( member );
@@ -130,7 +128,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
       
-      mediator.signatory = "dan";
       mediator.account = "dan";
 
       tx.operations.push_back( mediator );
@@ -145,9 +142,10 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       asset candice_init_liquid_balance = get_liquid_balance( "candice", SYMBOL_COIN );
       asset dan_init_liquid_balance = get_liquid_balance( "dan", SYMBOL_COIN );
 
+      generate_blocks( TOTAL_PRODUCERS );
+
       escrow_approve_operation approve;
 
-      approve.signatory = "alice";
       approve.account = "alice";
       approve.mediator = "candice";
       approve.escrow_from = "alice";
@@ -156,13 +154,14 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       approve.validate();
 
       tx.operations.push_back( approve );
+      tx.set_reference_block( db.head_block_id() );
+      tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      approve.signatory = "bob";
       approve.account = "bob";
       approve.mediator = "dan";
 
@@ -173,7 +172,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      approve.signatory = "candice";
       approve.account = "candice";
       approve.mediator = "candice";
 
@@ -184,7 +182,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      approve.signatory = "dan";
       approve.account = "dan";
       approve.mediator = "dan";
 
@@ -227,7 +224,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       escrow_release_operation release;
 
-      release.signatory = "alice";
       release.account = "alice";
       release.escrow_from = "alice";
       release.escrow_id = "6b3b3da0-660a-41a1-b6a2-221a71c0cc17";
@@ -260,7 +256,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when from account has insufficient balance" );
 
-      transfer.signatory = "elon";
       transfer.account = "elon";
       transfer.from = "elon";
       transfer.to = "fred";
@@ -277,7 +272,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when to and from are the same account" );
 
-      transfer.signatory = "elon";
       transfer.account = "elon";
       transfer.from = "elon";
       transfer.to = "elon";
@@ -293,7 +287,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when account is not To or From" );
 
-      transfer.signatory = "elon";
       transfer.account = "elon";
       transfer.from = "alice";
       transfer.to = "bob";
@@ -309,7 +302,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure trying to repeal after approval" );
 
-      transfer.signatory = "alice";
       transfer.account = "alice";
       transfer.from = "alice";
       transfer.to = "bob";
@@ -321,7 +313,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      approve.signatory = "alice";
       approve.account = "alice";
       approve.mediator = "candice";
       approve.escrow_from = "alice";
@@ -357,7 +348,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Success refunding repealed escrow" );
 
-      approve.signatory = "bob";
       approve.account = "bob";
       approve.mediator = "dan";
       approve.escrow_from = "alice";
@@ -379,7 +369,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
    
       BOOST_TEST_MESSAGE( "│   ├── Testing: Automatic refund when escrow is not approved before deadline" );
 
-      transfer.signatory = "alice";
       transfer.account = "alice";
       transfer.from = "alice";
       transfer.to = "bob";
@@ -411,7 +400,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when releasing unapproved escrow" );
 
-      transfer.signatory = "alice";
       transfer.account = "alice";
       transfer.from = "alice";
       transfer.to = "bob";
@@ -428,7 +416,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      release.signatory = "alice";
       release.account = "alice";
       release.escrow_from = "alice";
       release.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
@@ -445,7 +432,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Success editing unapproved escrow" );
 
-      transfer.signatory = "alice";
       transfer.account = "alice";
       transfer.from = "alice";
       transfer.to = "bob";
@@ -473,7 +459,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when non-particpant account attempts to approve" );
 
-      approve.signatory = "elon";
       approve.account = "elon";
       approve.mediator = "candice";
       approve.escrow_from = "alice";
@@ -491,7 +476,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when approving with an invalid mediator" );
 
-      approve.signatory = "alice";
       approve.account = "alice";
       approve.mediator = "elon";   // Elon is not a mediator
       approve.escrow_from = "alice";
@@ -509,7 +493,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when releasing approved escrow back to self without dispute" );
 
-      approve.signatory = "alice";
       approve.account = "alice";
       approve.mediator = "candice";
       approve.escrow_from = "alice";
@@ -523,7 +506,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      approve.signatory = "bob";
       approve.account = "bob";
       approve.mediator = "dan";
 
@@ -534,7 +516,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      approve.signatory = "candice";
       approve.account = "candice";
       approve.mediator = "candice";
 
@@ -545,7 +526,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      approve.signatory = "dan";
       approve.account = "dan";
       approve.mediator = "dan";
 
@@ -556,7 +536,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      release.signatory = "alice";
       release.account = "alice";
       release.escrow_from = "alice";
       release.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
@@ -569,7 +548,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      release.signatory = "bob";
       release.account = "bob";
       release.escrow_from = "alice";
       release.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
@@ -586,7 +564,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when editing approved escrow" );
 
-      transfer.signatory = "alice";
       transfer.account = "alice";
       transfer.from = "alice";
       transfer.to = "bob";
@@ -606,7 +583,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       account_create_operation create;
 
-      create.signatory = "alice";
       create.registrar = "alice";
       create.referrer = "alice";
       create.new_account_name = "newuser";
@@ -634,7 +610,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
          fund_liquid( "newuser"+fc::to_string( i ), asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
          fund_stake( "newuser"+fc::to_string( i ), asset( 1000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-         member.signatory = "newuser"+fc::to_string( i );
          member.account = "newuser"+fc::to_string( i );
 
          tx.operations.push_back( member );
@@ -644,7 +619,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
          tx.operations.clear();
          tx.signatures.clear();
 
-         mediator.signatory = "newuser"+fc::to_string( i );
          mediator.account = "newuser"+fc::to_string( i );
 
          tx.operations.push_back( mediator );
@@ -657,7 +631,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       escrow_dispute_operation dispute;
 
-      dispute.signatory = "alice";
       dispute.account = "alice";
       dispute.escrow_from = "alice";
       dispute.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
@@ -693,7 +666,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when escrow is already disputed" );
 
-      dispute.signatory = "bob";
       dispute.account = "bob";
       dispute.escrow_from = "alice";
       dispute.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
@@ -711,7 +683,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       for( account_name_type m : escrow4.mediators )
       {
-         approve.signatory = m;
          approve.account = m;
          approve.mediator = m;
 
@@ -731,7 +702,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Sucessful fund release from dispute" );
 
-      release.signatory = "alice";
       release.account = "alice";
       release.escrow_from = "alice";
       release.escrow_id = "98351a27-d0d7-456a-b732-4fb414a0e639";
@@ -744,7 +714,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      release.signatory = "bob";
       release.account = "bob";
       release.release_percent = PERCENT_100;
 
@@ -755,7 +724,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      release.signatory = "candice";
       release.account = "candice";
       release.release_percent = 25 * PERCENT_1;
 
@@ -766,7 +734,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      release.signatory = "dan";
       release.account = "dan";
       release.release_percent = 75 * PERCENT_1;
 
@@ -779,7 +746,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       for( auto m : db.get_escrow( transfer.from, transfer.escrow_id ).mediators )
       {
-         release.signatory = m;
          release.account = m;
          release.release_percent = 10 * PERCENT_1;
 
@@ -806,7 +772,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Failure when disputing after escrow expiration" );
 
-      transfer.signatory = "alice";
       transfer.account = "alice";
       transfer.from = "alice";
       transfer.to = "bob";
@@ -823,7 +788,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      approve.signatory = "alice";
       approve.account = "alice";
       approve.mediator = "candice";
       approve.escrow_from = "alice";
@@ -837,7 +801,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      approve.signatory = "bob";
       approve.account = "bob";
       approve.mediator = "dan";
 
@@ -848,7 +811,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      approve.signatory = "candice";
       approve.account = "candice";
       approve.mediator = "candice";
 
@@ -859,7 +821,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      approve.signatory = "dan";
       approve.account = "dan";
       approve.mediator = "dan";
 
@@ -892,7 +853,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
       BOOST_REQUIRE( escrow5.to_mediator_approved() == true );
       BOOST_REQUIRE( escrow5.is_approved() == true );
 
-      dispute.signatory = "bob";
       dispute.account = "bob";
       dispute.escrow_from = "alice";
       dispute.escrow_id = "efab7764-63af-4e6a-95e4-b4dd7c23e40b";
@@ -910,7 +870,6 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_operation_sequence_tests )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Release to self after escrow expiration" );
 
-      release.signatory = "alice";
       release.account = "alice";
       release.escrow_from = "alice";
       release.escrow_id = "efab7764-63af-4e6a-95e4-b4dd7c23e40b";
@@ -969,7 +928,6 @@ BOOST_AUTO_TEST_CASE( product_sale_operation_sequence_tests )
 
       product_sale_operation product;
 
-      product.signatory = "alice";
       product.account = "alice";
       product.product_id = "98a65f5a-85e7-4c53-8d64-1ce393a5ae8c";
       product.name = "Artisanal Widget";
@@ -1024,7 +982,6 @@ BOOST_AUTO_TEST_CASE( product_sale_operation_sequence_tests )
 
       product_purchase_operation purchase;
 
-      purchase.signatory = "bob";
       purchase.buyer = "bob";
       purchase.order_id = "cfebe3a5-4b06-4dcb-916c-d8737f600701";
       purchase.seller = "alice";
@@ -1061,7 +1018,6 @@ BOOST_AUTO_TEST_CASE( product_sale_operation_sequence_tests )
 
       account_membership_operation member;
 
-      member.signatory = "candice";
       member.account = "candice";
       member.membership_type = "top";
       member.months = 1;
@@ -1076,7 +1032,6 @@ BOOST_AUTO_TEST_CASE( product_sale_operation_sequence_tests )
 
       mediator_update_operation mediator;
       
-      mediator.signatory = "candice";
       mediator.account = "candice";
       mediator.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
       mediator.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
@@ -1091,7 +1046,6 @@ BOOST_AUTO_TEST_CASE( product_sale_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      member.signatory = "dan";
       member.account = "dan";
 
       tx.operations.push_back( member );
@@ -1101,7 +1055,6 @@ BOOST_AUTO_TEST_CASE( product_sale_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
       
-      mediator.signatory = "dan";
       mediator.account = "dan";
 
       tx.operations.push_back( mediator );
@@ -1118,7 +1071,6 @@ BOOST_AUTO_TEST_CASE( product_sale_operation_sequence_tests )
 
       escrow_approve_operation approve;
 
-      approve.signatory = "alice";
       approve.account = "alice";
       approve.mediator = "candice";
       approve.escrow_from = "bob";
@@ -1133,7 +1085,6 @@ BOOST_AUTO_TEST_CASE( product_sale_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      approve.signatory = "bob";
       approve.account = "bob";
       approve.mediator = "dan";
 
@@ -1144,7 +1095,6 @@ BOOST_AUTO_TEST_CASE( product_sale_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      approve.signatory = "candice";
       approve.account = "candice";
       approve.mediator = "candice";
 
@@ -1155,7 +1105,6 @@ BOOST_AUTO_TEST_CASE( product_sale_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      approve.signatory = "dan";
       approve.account = "dan";
       approve.mediator = "dan";
 
@@ -1200,7 +1149,6 @@ BOOST_AUTO_TEST_CASE( product_sale_operation_sequence_tests )
 
       escrow_release_operation release;
 
-      release.signatory = "bob";
       release.account = "bob";
       release.escrow_from = "bob";
       release.escrow_id = "cfebe3a5-4b06-4dcb-916c-d8737f600701";
@@ -1271,7 +1219,6 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
 
       product_auction_sale_operation auction;
 
-      auction.signatory = "alice";
       auction.account = "alice";
       auction.auction_id = "b65388d9-a99a-49a8-9f2e-761246a1d777";
       auction.auction_type = "open";
@@ -1325,7 +1272,6 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
 
       product_auction_bid_operation bid;
 
-      bid.signatory = "bob";
       bid.buyer = "bob";
       bid.bid_id = "4cf6928b-32be-4a77-a900-bbb8e97d1cb8";
       bid.seller = "alice";
@@ -1364,7 +1310,6 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
 
       account_membership_operation member;
 
-      member.signatory = "candice";
       member.account = "candice";
       member.membership_type = "top";
       member.months = 1;
@@ -1379,7 +1324,6 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
 
       mediator_update_operation mediator;
       
-      mediator.signatory = "candice";
       mediator.account = "candice";
       mediator.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
       mediator.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
@@ -1394,7 +1338,6 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      member.signatory = "dan";
       member.account = "dan";
 
       tx.operations.push_back( member );
@@ -1404,7 +1347,6 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
       
-      mediator.signatory = "dan";
       mediator.account = "dan";
 
       tx.operations.push_back( mediator );
@@ -1431,7 +1373,6 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
 
       escrow_approve_operation approve;
 
-      approve.signatory = "alice";
       approve.account = "alice";
       approve.mediator = "candice";
       approve.escrow_from = "bob";
@@ -1447,7 +1388,6 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      approve.signatory = "bob";
       approve.account = "bob";
       approve.mediator = "dan";
 
@@ -1458,7 +1398,6 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      approve.signatory = "candice";
       approve.account = "candice";
       approve.mediator = "candice";
 
@@ -1469,7 +1408,6 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
       tx.operations.clear();
       tx.signatures.clear();
 
-      approve.signatory = "dan";
       approve.account = "dan";
       approve.mediator = "dan";
 
@@ -1515,7 +1453,6 @@ BOOST_AUTO_TEST_CASE( product_auction_operation_sequence_tests )
 
       escrow_release_operation release;
 
-      release.signatory = "bob";
       release.account = "bob";
       release.escrow_from = "bob";
       release.escrow_id = "4cf6928b-32be-4a77-a900-bbb8e97d1cb8";

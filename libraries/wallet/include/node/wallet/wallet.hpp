@@ -521,7 +521,7 @@ class wallet_api
        * @param names The names of the accounts to provide balance information.
        * @returns Balance state information pertaining to the specified accounts.
        */
-      vector< balance_state >                         get_balances( vector< string > names ) const;
+      vector< account_balance_state >                 get_account_balances( vector< string > names ) const;
 
 
       /** 
@@ -698,16 +698,6 @@ class wallet_api
 
 
       /** 
-       * Returns a list of the highest voted executive boards.
-       *
-       * @param from The first account in the rankings to retrieve.
-       * @param limit The amount of executive boards to return.
-       * @returns List of Executive boards with the highest stakeholder voting power.
-       */
-      vector< executive_board_api_obj >               get_executive_boards_by_voting_power( string from, uint32_t limit )const;
-
-
-      /** 
        * Returns a list of the supernodes with the highest view weight from stakeholders.
        *
        * @param from The first account in the rankings to retrieve.
@@ -734,7 +724,7 @@ class wallet_api
        * @param limit The amount of governance accounts to return.
        * @returns List of governance accounts with the highest subscriber voting power.
        */
-      vector< governance_account_api_obj >            get_governance_accounts_by_subscriber_power( string from, uint32_t limit )const;
+      vector< governance_api_obj >            get_governances_by_members( string from, uint32_t limit )const;
 
 
       /** 
@@ -1407,11 +1397,9 @@ class wallet_api
       //==============================//
 
 
-
       /**
        * Generates a new Account with specified authorities.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param registrar The account creating the new account.
        * @param new_account_name The name of the new account.
        * @param referrer The name of the account that lead to the creation of the account.
@@ -1446,7 +1434,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           account_create(
-         string signatory,
          string registrar,
          string new_account_name,
          string referrer,
@@ -1484,7 +1471,6 @@ class wallet_api
       /**
        * Update the details and authorities of an existing account.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account The name of the new account.
        * @param details The account's details string.
        * @param url The account's selected personal URL.
@@ -1512,7 +1498,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           account_update( 
-         string signatory,
          string account,
          string details,
          string url,
@@ -1543,7 +1528,6 @@ class wallet_api
       /**
        * Create or Update an account verification between two accounts.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param verifier_account The name of the account creating the verification.
        * @param verified_account The account being verified.
        * @param shared_image IPFS reference to the image of both account owners.
@@ -1551,7 +1535,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           account_verification( 
-         string signatory,
          string verifier_account,
          string verified_account,
          string shared_image,
@@ -1560,32 +1543,8 @@ class wallet_api
 
 
       /**
-       * Create or Update the business account details of an existing account.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account The Account to be made into a business account
-       * @param init_ceo_account Name of the account that should become the initial Chief Executive Officer.
-       * @param business_type The type of business account being created.
-       * @param officer_vote_threshold The voting power required to be an active officer.
-       * @param business_public_key The public key used for encrypted business content.
-       * @param active True when the business account is active, false to deactivate business account.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           account_business( 
-         string signatory,
-         string account,
-         string init_ceo_account,
-         string business_type,
-         int64_t officer_vote_threshold,
-         string business_public_key,
-         bool active,
-         bool broadcast );
-
-
-      /**
        * Activates membership on an account.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account The name of the account to activate membership on.
        * @param membership_type The level of membership to activate on the account.
        * @param months Number of months to purchase membership for.
@@ -1594,7 +1553,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           account_membership(
-         string signatory,
          string account,
          string membership_type,
          uint16_t months,
@@ -1604,150 +1562,8 @@ class wallet_api
 
 
       /**
-       * Votes for an account to become an executive of a business account.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account The name of the Account creating the executive vote.
-       * @param business_account Business account that the executive is being voted for.
-       * @param executive_account The Name of executive being voted for.
-       * @param role The Role of the executive.
-       * @param vote_rank Rank of voting preference.
-       * @param approved True to add, false to remove.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           account_vote_executive(
-         string signatory,
-         string account,
-         string business_account,
-         string executive_account,
-         string role,
-         uint16_t vote_rank,
-         bool approved,
-         bool broadcast );
-
-
-      /**
-       * Votes for an account to become an officer of a business account.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account The name of the Account creating the officer vote.
-       * @param business_account Business account that the officer is being voted for.
-       * @param officer_account The Name of officer being voted for.
-       * @param vote_rank Rank of voting preference.
-       * @param approved True to add, false to remove.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           account_vote_officer(
-         string signatory,
-         string account,
-         string business_account,
-         string officer_account,
-         uint16_t vote_rank,
-         bool approved,
-         bool broadcast );
-
-
-      /**
-       * Requests that an account be added to the membership of a business account.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account Account requesting to be a member of the business.
-       * @param business_account Business account that the member is being added to.
-       * @param message Encrypted Message to the business members requesting membership.
-       * @param requested True to add, false to remove.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           account_member_request(
-         string signatory,
-         string account,
-         string business_account,
-         string message,
-         bool requested,
-         bool broadcast );
-
-
-      /**
-       * Invites an account to be a member of a business account.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account Account requesting to be a member of the business.
-       * @param business_account Business account that the member is being added to.
-       * @param member Name of member being added.
-       * @param message Encrypted Message to the business members requesting membership.
-       * @param encrypted_business_key Encrypted Copy of the private key of the business.
-       * @param invited True to add, false to remove.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           account_member_invite(
-         string signatory,
-         string account,
-         string business_account,
-         string member,
-         string message,
-         string encrypted_business_key,
-         bool invited,
-         bool broadcast );
-
-
-      /**
-       * Accepts an account's request to be added as a business account member.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account Account that is accepting the request to add a new member.
-       * @param business_account Business account that the member is being added to.
-       * @param member Name of member being added.
-       * @param encrypted_business_key Encrypted Copy of the private key of the business.
-       * @param accepted True to accept, false to reject.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           account_accept_request(
-         string signatory,
-         string account,
-         string business_account,
-         string member,
-         string encrypted_business_key,
-         bool accepted,
-         bool broadcast );
-
-
-      /**
-       * Accepts an invitation to be added as a business account member.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account Account accepting the invitation.
-       * @param business_account Business account that the account was invited to.
-       * @param accepted True to accept, false to reject.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           account_accept_invite(
-         string signatory,
-         string account,
-         string business_account,
-         bool accepted,
-         bool broadcast );
-
-
-      /**
-       * Removes a member from the membership of a business account.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account Business account or an executive of the business account.
-       * @param business_account Business account that the member is being removed from.
-       * @param member Name of member being accepted.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           account_remove_member(
-         string signatory,
-         string account,
-         string business_account,
-         string member,
-         bool broadcast );
-
-
-      /**
        * Blacklists an account or asset.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Name of account.
        * @param listed_account Name of account being added to a black or white list.
        * @param listed_asset Name of asset being added to a black or white list.
@@ -1756,7 +1572,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           account_update_list(
-         string signatory,
          string account,
          string listed_account,
          string listed_asset,
@@ -1768,7 +1583,6 @@ class wallet_api
       /**
        * Vote for a Producer for selection to producer blocks. 
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account The account voting for a producer.
        * @param vote_rank Rank ordering of the vote.
        * @param producer The producer that is being voted for.
@@ -1776,7 +1590,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           account_producer_vote(
-         string signatory,
          string account,
          uint16_t vote_rank,
          string producer,
@@ -1787,13 +1600,11 @@ class wallet_api
       /** 
        * Set the voting proxy for an account.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account The name of the account to update.
        * @param proxy The name of account that should proxy to, or empty string to have no proxy.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           account_update_proxy(
-         string signatory,
          string account,
          string proxy,
          bool broadcast );
@@ -1805,14 +1616,12 @@ class wallet_api
        * Authority object Structure:
        * {"weight_threshold": 1,"account_auths": [], "key_auths": [["new_public_key",1]]}
        *
-       * @param signatory The name of the account signing the transaction.
        * @param recovery_account The recovery account is listed as the recovery account on the account to recover.
        * @param account_to_recover The account to recover. This is likely due to a compromised owner authority.
        * @param new_owner_authority The new owner authority the account to recover wishes to have.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           account_request_recovery(
-         string signatory,
          string recovery_account,
          string account_to_recover,
          authority new_owner_authority,
@@ -1825,14 +1634,12 @@ class wallet_api
        * Authority object Structure:
        * {"weight_threshold": 1,"account_auths": [], "key_auths": [["old_public_key",1]]} {"weight_threshold": 1,"account_auths": [], "key_auths": [["new_public_key",1]]} true
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account_to_recover The account to be recovered.
        * @param new_owner_authority The new authority that your recovery account used in the account recover request.
        * @param recent_owner_authority A recent owner authority on your account.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           account_recover(
-         string signatory,
          string account_to_recover,
          authority new_owner_authority,
          authority recent_owner_authority,
@@ -1842,14 +1649,12 @@ class wallet_api
       /**
        * Allows a nominated reset account to change an account's owner authority.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param reset_account The account that is initiating the reset process.
        * @param account_to_reset The Account to be reset.
        * @param new_owner_authority A recent owner authority on your account.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           reset_account(
-         string signatory,
+      annotated_signed_transaction           account_reset(
          string reset_account,
          string account_to_reset,
          authority new_owner_authority,
@@ -1859,14 +1664,12 @@ class wallet_api
       /**
        * Updates an accounts specified reset account.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account to update.
        * @param new_reset_account Account that has the new authority to reset the account.
        * @param days Days of inactivity required to reset the account. 
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           account_reset_update(
-         string signatory,
          string account,
          string new_reset_account,
          uint16_t days,
@@ -1876,13 +1679,11 @@ class wallet_api
       /**
        * Change your recovery account after a 30 day delay.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account_to_recover The account being updated.
        * @param new_recovery_account The account that is authorized to create recovery requests.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           account_recovery_update(
-         string signatory,
          string account_to_recover, 
          string new_recovery_account, 
          bool broadcast );
@@ -1891,13 +1692,11 @@ class wallet_api
       /**
        * Removes an account's ability to vote in perpetuity.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account The account being updated.
        * @param declined True to decine voting rights, false to cancel pending request.
        * @param broadcast Set True to broadcast transaction.
        */ 
       annotated_signed_transaction           account_decline_voting(
-         string signatory,
          string account, 
          bool declined, 
          bool broadcast );
@@ -1906,7 +1705,6 @@ class wallet_api
       /**
        * Accepts an incoming connection request by providing an encrypted posting key.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account accepting the request.
        * @param connecting_account Account that originally requested to connect.
        * @param connection_id uuidv4 for the connection, for local storage of decryption key.
@@ -1916,7 +1714,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */ 
       annotated_signed_transaction           account_connection(
-         string signatory,
          string account,
          string connecting_account,
          string connection_id,
@@ -1929,7 +1726,6 @@ class wallet_api
       /**
        * Enables an account to follow another account.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param follower Account that is creating the new follow relationship.
        * @param following Account that is being followed by follower.
        * @param interface Account of the interface facilitating the transaction broadcast.
@@ -1938,7 +1734,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           account_follow(
-         string signatory,
          string follower,
          string following,
          string interface,
@@ -1950,7 +1745,6 @@ class wallet_api
       /**
        * Enables an account to follow a tag.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param follower Name of the account following the tag.
        * @param tag Tag being followed.
        * @param interface Account of the interface facilitating the transaction broadcast.
@@ -1958,8 +1752,7 @@ class wallet_api
        * @param followed Set true to follow, false to filter.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           tag_follow(
-         string signatory,
+      annotated_signed_transaction           account_follow_tag(
          string follower,
          string tag,
          string interface,
@@ -1971,17 +1764,488 @@ class wallet_api
       /**
        * Claims an account's daily activity reward.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Name of the account claiming the reward.
        * @param permlink Permlink of the users recent post in the last 24h.
        * @param interface Account of the interface facilitating the transaction broadcast.
        * @param broadcast Set True to broadcast transaction.
        */
-      annotated_signed_transaction           activity_reward(
-         string signatory,
+      annotated_signed_transaction           account_activity(
          string account,
          string permlink,
          string interface,
+         bool broadcast );
+
+
+      //===============================//
+      // === Business Transactions === //
+      //===============================//
+
+
+      /**
+       * Creates a Business Entity Integrated Structure.
+       *
+       * @param account The name of the Account creating the executive vote.
+       * @param founder Account registering the new business.
+       * @param new_business_name The name of the new business underlying account.
+       * @param new_business_trading_name Trading business name, UPPERCASE letters only.
+       * @param details The account's Public details string. Profile Biography.
+       * @param url The account's Public URL.
+       * @param profile_image IPFS Reference of the Public profile image of the account.
+       * @param cover_image IPFS Reference of the Public cover image of the account.
+       * @param secure_public_key The secure encryption key for content only visible to this account.
+       * @param connection_public_key The connection public key used for encrypting Connection level content.
+       * @param friend_public_key The connection public key used for encrypting Friend level content.
+       * @param companion_public_key The connection public key used for encrypting Companion level content.
+       * @param interface Account of the interface that broadcasted the transaction.
+       * @param equity_asset Equity assets that offer dividends and voting power over the Business Account's structure.
+       * @param equity_revenue_share Equity asset that the account distributes a percentage of incoming revenue to as dividend payments.
+       * @param equity_options Series of options parameters that apply to the Equity Asset.
+       * @param credit_asset Credit asset that offer interest and buybacks from the business account.
+       * @param credit_revenue_share Credit asset that the account uses a percentage of incoming revenue to repurchase at face value.
+       * @param credit_options Series of options parameters that apply to the Credit Asset.
+       * @param public_community Name of the business public community.
+       * @param public_display_name Display name of the business public community.
+       * @param public_community_member_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted members.
+       * @param public_community_moderator_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted moderators.
+       * @param public_community_admin_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted admins.
+       * @param public_community_secure_key Key used for encrypting and decrypting posts and messages. Private key held only by the community founder.
+       * @param public_community_standard_premium_key Key used for encrypting and decrypting posts and messages. Private key shared with standard premium members.
+       * @param public_community_mid_premium_key; Key used for encrypting and decrypting posts and messages. Private key shared with mid premium members.
+       * @param public_community_top_premium_key Key used for encrypting and decrypting posts and messages. Private key shared with top premium members.
+       * @param private_community Name of the business private community. Should be randomized string.
+       * @param private_display_name Display name of the business private community.
+       * @param private_community_member_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted members.
+       * @param private_community_moderator_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted moderators.
+       * @param private_community_admin_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted admins.
+       * @param private_community_secure_key Key used for encrypting and decrypting posts and messages. Private key held only by the community founder.
+       * @param private_community_standard_premium_key Key used for encrypting and decrypting posts and messages. Private key shared with standard premium members.
+       * @param private_community_mid_premium_key Key used for encrypting and decrypting posts and messages. Private key shared with mid premium members.
+       * @param private_community_top_premium_key Key used for encrypting and decrypting posts and messages. Private key shared with top premium members.
+       * @param reward_currency The Currency asset used for content rewards in the community.
+       * @param standard_membership_price Price paid per month by community standard members.
+       * @param mid_membership_price Price paid per month by all mid level community members.
+       * @param top_membership_price Price paid per month by all top level community members.
+       * @param coin_liquidity Amount of COIN asset to inject into the Coin liquidity pool.
+       * @param usd_liquidity Amount of USD asset to inject into the USD liquidity pool.
+       * @param credit_liquidity Amount of the new asset to issue and inject into the credit pool.
+       * @param fee Account creation fee for stake on the new account.
+       * @param delegation Initial amount delegated to the new account.
+       */
+      annotated_signed_transaction           business_create(
+         string founder,
+         string new_business_name,
+         string new_business_trading_name,
+         string details,
+         string url,
+         string profile_image,
+         string cover_image,
+         string secure_public_key,
+         string connection_public_key,
+         string friend_public_key,
+         string companion_public_key,
+         string interface,
+         string equity_asset,
+         uint16_t equity_revenue_share,
+         asset_options equity_options,
+         string credit_asset,
+         uint16_t credit_revenue_share,
+         asset_options credit_options,
+         string public_community,
+         string public_display_name,
+         string public_community_member_key,
+         string public_community_moderator_key,
+         string public_community_admin_key,
+         string public_community_secure_key,
+         string public_community_standard_premium_key,
+         string public_community_mid_premium_key,
+         string public_community_top_premium_key,
+         string private_community,
+         string private_display_name,
+         string private_community_member_key,
+         string private_community_moderator_key,
+         string private_community_admin_key,
+         string private_community_secure_key,
+         string private_community_standard_premium_key,
+         string private_community_mid_premium_key,
+         string private_community_top_premium_key,
+         string reward_currency,
+         asset standard_membership_price,
+         asset mid_membership_price,
+         asset top_membership_price,
+         asset coin_liquidity,
+         asset usd_liquidity,
+         asset credit_liquidity,
+         asset fee,
+         asset delegation,
+         bool broadcast );
+
+
+      /**
+       * Creates a Business Entity Integrated Structure.
+       *
+       * @param chief_executive Name of the Chief Executive Officer of the Business.
+       * @param business Name of the Business Account to update.
+       * @param business_trading_name Trading business name, UPPERCASE letters only.
+       * @param equity_revenue_share Equity asset that the account distributes a percentage of incoming revenue to as dividend payments.
+       * @param credit_revenue_share Credit asset that the account uses a percentage of incoming revenue to repurchase at face value.
+       * @param executives Set of all Executive accounts appointed by the Chief Executive Officer.
+       * @param active  True when the business account is active, false to dissolve Business Account.
+       */
+      annotated_signed_transaction           business_update(
+         string chief_executive,
+         string business,
+         string business_trading_name,
+         uint16_t equity_revenue_share,
+         uint16_t credit_revenue_share,
+         vector< string > executives,
+         bool active,
+         bool broadcast );
+
+
+      /**
+       * Create an executive of a business account.
+       *
+       * @param executive Name of Executive Account.
+       * @param business Business account that the executive is being created for.
+       * @param active True to activate Executive, false to deactivate.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           business_executive(
+         string executive,
+         string business,
+         bool active,
+         bool broadcast );
+
+
+      /**
+       * Votes for an account to become an executive of a business account.
+       *
+       * @param director Director Account voting for the Executive.
+       * @param executive The Name of executive being voted for.
+       * @param business Business account that the executive is being voted for.
+       * @param approved True to add, false to remove.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           business_executive_vote(
+         string director,
+         string executive,
+         string business,
+         bool approved,
+         bool broadcast );
+
+      
+      /**
+       * Create a director of a business account.
+       *
+       * @param director Name of the director being created.
+       * @param business Business account that the director is being created for
+       * @param active True to activate Executive, false to deactivate.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           business_director(
+         string director,
+         string business,
+         bool active,
+         bool broadcast );
+
+
+      /**
+       * Votes for an account to become a director of a business account.
+       *
+       * @param account Name of the voting account.
+       * @param director The Name of the director being voted for.
+       * @param business Business account that the director is being voted for.
+       * @param vote_rank Rank of voting preference.
+       * @param approved True to add, false to remove.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           business_director_vote(
+         string account,
+         string director,
+         string business,
+         uint16_t vote_rank,
+         bool approved,
+         bool broadcast );
+
+
+
+      //=================================//
+      // === Governance Transactions === //
+      //=================================//
+
+
+      /**
+       * Creates a governance Entity Integrated Structure.
+       *
+       * @param account The name of the Account creating the executive vote.
+       * @param founder Account registering the new governance.
+       * @param new_governance_name The name of the new governance underlying account.
+       * @param new_governance_display_name Trading governance name, UPPERCASE letters only.
+       * @param details The account's Public details string. Profile Biography.
+       * @param url The account's Public URL.
+       * @param profile_image IPFS Reference of the Public profile image of the account.
+       * @param cover_image IPFS Reference of the Public cover image of the account.
+       * @param secure_public_key The secure encryption key for content only visible to this account.
+       * @param connection_public_key The connection public key used for encrypting Connection level content.
+       * @param friend_public_key The connection public key used for encrypting Friend level content.
+       * @param companion_public_key The connection public key used for encrypting Companion level content.
+       * @param interface Account of the interface that broadcasted the transaction.
+       * @param equity_asset Equity assets that offer dividends and voting power over the governance Account's structure.
+       * @param equity_revenue_share Equity asset that the account distributes a percentage of incoming revenue to as dividend payments.
+       * @param equity_options Series of options parameters that apply to the Equity Asset.
+       * @param credit_asset Credit asset that offer interest and buybacks from the governance account.
+       * @param credit_revenue_share Credit asset that the account uses a percentage of incoming revenue to repurchase at face value.
+       * @param credit_options Series of options parameters that apply to the Credit Asset.
+       * @param public_community Name of the governance public community.
+       * @param public_display_name Display name of the governance public community.
+       * @param public_community_member_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted members.
+       * @param public_community_moderator_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted moderators.
+       * @param public_community_admin_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted admins.
+       * @param public_community_secure_key Key used for encrypting and decrypting posts and messages. Private key held only by the community founder.
+       * @param public_community_standard_premium_key Key used for encrypting and decrypting posts and messages. Private key shared with standard premium members.
+       * @param public_community_mid_premium_key; Key used for encrypting and decrypting posts and messages. Private key shared with mid premium members.
+       * @param public_community_top_premium_key Key used for encrypting and decrypting posts and messages. Private key shared with top premium members.
+       * @param private_community Name of the governance private community. Should be randomized string.
+       * @param private_display_name Display name of the governance private community.
+       * @param private_community_member_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted members.
+       * @param private_community_moderator_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted moderators.
+       * @param private_community_admin_key Key used for encrypting and decrypting posts and messages. Private key shared with accepted admins.
+       * @param private_community_secure_key Key used for encrypting and decrypting posts and messages. Private key held only by the community founder.
+       * @param private_community_standard_premium_key Key used for encrypting and decrypting posts and messages. Private key shared with standard premium members.
+       * @param private_community_mid_premium_key Key used for encrypting and decrypting posts and messages. Private key shared with mid premium members.
+       * @param private_community_top_premium_key Key used for encrypting and decrypting posts and messages. Private key shared with top premium members.
+       * @param reward_currency The Currency asset used for content rewards in the community.
+       * @param standard_membership_price Price paid per month by community standard members.
+       * @param mid_membership_price Price paid per month by all mid level community members.
+       * @param top_membership_price Price paid per month by all top level community members.
+       * @param coin_liquidity Amount of COIN asset to inject into the Coin liquidity pool.
+       * @param usd_liquidity Amount of USD asset to inject into the USD liquidity pool.
+       * @param credit_liquidity Amount of the new asset to issue and inject into the credit pool.
+       * @param fee Account creation fee for stake on the new account.
+       * @param delegation Initial amount delegated to the new account.
+       */
+      annotated_signed_transaction           governance_create(
+         string founder,
+         string new_governance_name,
+         string new_governance_display_name,
+         string details,
+         string url,
+         string profile_image,
+         string cover_image,
+         string secure_public_key,
+         string connection_public_key,
+         string friend_public_key,
+         string companion_public_key,
+         string interface,
+         string equity_asset,
+         uint16_t equity_revenue_share,
+         asset_options equity_options,
+         string credit_asset,
+         uint16_t credit_revenue_share,
+         asset_options credit_options,
+         string public_community,
+         string public_display_name,
+         string public_community_member_key,
+         string public_community_moderator_key,
+         string public_community_admin_key,
+         string public_community_secure_key,
+         string public_community_standard_premium_key,
+         string public_community_mid_premium_key,
+         string public_community_top_premium_key,
+         string private_community,
+         string private_display_name,
+         string private_community_member_key,
+         string private_community_moderator_key,
+         string private_community_admin_key,
+         string private_community_secure_key,
+         string private_community_standard_premium_key,
+         string private_community_mid_premium_key,
+         string private_community_top_premium_key,
+         string reward_currency,
+         asset standard_membership_price,
+         asset mid_membership_price,
+         asset top_membership_price,
+         asset coin_liquidity,
+         asset usd_liquidity,
+         asset credit_liquidity,
+         asset fee,
+         asset delegation,
+         bool broadcast );
+
+
+      /**
+       * Creates a governance Entity Integrated Structure.
+       *
+       * @param chief_executive Name of the Chief Executive Officer of the governance account.
+       * @param governance Name of the governance Account to update.
+       * @param governance_display_name Non-consensus Governance Account display name, UPPERCASE letters only.
+       * @param equity_revenue_share Equity asset that the account distributes a percentage of incoming revenue to as dividend payments.
+       * @param credit_revenue_share Credit asset that the account uses a percentage of incoming revenue to repurchase at face value.
+       * @param executives Set of all Executive accounts appointed by the Chief Executive Officer.
+       * @param active  True when the governance account is active, false to dissolve governance Account.
+       */
+      annotated_signed_transaction           governance_update(
+         string chief_executive,
+         string governance,
+         string governance_display_name,
+         uint16_t equity_revenue_share,
+         uint16_t credit_revenue_share,
+         vector< string > executives,
+         bool active,
+         bool broadcast );
+
+
+      /**
+       * Create an executive of a governance account.
+       *
+       * @param executive Name of Executive Account.
+       * @param governance governance account that the executive is being created for.
+       * @param active True to activate Executive, false to deactivate.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           governance_executive(
+         string executive,
+         string governance,
+         bool active,
+         bool broadcast );
+
+
+      /**
+       * Votes for an account to become an executive of a governance account.
+       *
+       * @param director Director Account voting for the Executive.
+       * @param executive The Name of executive being voted for.
+       * @param governance governance account that the executive is being voted for.
+       * @param approved True to add, false to remove.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           governance_executive_vote(
+         string director,
+         string executive,
+         string governance,
+         bool approved,
+         bool broadcast );
+
+      
+      /**
+       * Create a director of a governance account.
+       *
+       * @param director Name of the director being created.
+       * @param governance governance account that the director is being created for
+       * @param active True to activate Executive, false to deactivate.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           governance_director(
+         string director,
+         string governance,
+         bool active,
+         bool broadcast );
+
+
+      /**
+       * Votes for an account to become a director of a governance account.
+       *
+       * @param account Name of the voting account.
+       * @param director The Name of the director being voted for.
+       * @param governance governance account that the director is being voted for.
+       * @param vote_rank Rank of voting preference.
+       * @param approved True to add, false to remove.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           governance_director_vote(
+         string account,
+         string director,
+         string governance,
+         uint16_t vote_rank,
+         bool approved,
+         bool broadcast );
+
+      /**
+       * Adds an account to the membership set of a Governance account. 
+       *
+       * @param governance The name of the governance account creating the membership.
+       * @param account The account being added as a participating member of to the governance address.
+       * @param interface Account of the interface signing the transaction.
+       * @param approved True to approve the membership, false to remove.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           governance_member(
+         string governance,
+         string account,
+         string interface,
+         bool approved,
+         bool broadcast );
+
+      /**
+       * Creates a request to join a Governance account as a new member.
+       *
+       * @param account The account creating the request.
+       * @param governance The name of the governance account that membership is requested for.
+       * @param interface Account of the interface signing the transaction.
+       * @param message Encrypted message to the Governance Account team, encrypted with Governance connection key.
+       * @param active True to create request, false to cancel request.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           governance_member_request(
+         string account,
+         string governance,
+         string interface,
+         string message,
+         bool active,
+         bool broadcast );
+
+
+      /**
+       * Creates a Resolution for a Governance Account.
+       *
+       * @param governance The name of the governance account creating the Resolution.
+       * @param resolution_id uuidv4 referring to the resolution.
+       * @param ammendment_id uuidv4 referring to the resolution ammendment.
+       * @param title Title of the resolution to be voted on.
+       * @param details Short description text of purpose and summary of the resolution to be voted on.
+       * @param body Full Text of the body of the resolution to be voted on.
+       * @param url The Resolution description URL explaining more details.
+       * @param json JSON metadata of the resolution.
+       * @param interface Account of the interface that most recently updated the resolution.
+       * @param completion_time Time the resolution completes.
+       * @param active True to create request, false to cancel request.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           governance_resolution(
+         string governance,
+         string resolution_id,
+         string ammendment_id,
+         string title,
+         string details,
+         string body,
+         string url,
+         string json,
+         string interface,
+         time_point completion_time,
+         bool active,
+         bool broadcast );
+
+
+      /**
+       * Creates a Vote for a Governance Account Resolution.
+       *
+       * @param account The name of the account voting on the resolution.
+       * @param governance The name of the governance account that created the Resolution.
+       * @param resolution_id uuidv4 referring to the resolution.
+       * @param ammendment_id uuidv4 referring to the resolution ammendment.
+       * @param interface Account of the interface that most recently updated the resolution vote.
+       * @param approved True to approve the resolution, false to disapprove resolution.
+       * @param active True to activate a vote or update existing vote, false to retract existing vote.
+       * @param broadcast Set True to broadcast transaction.
+       */
+      annotated_signed_transaction           governance_resolution_vote(
+         string account,
+         string governance,
+         string resolution_id,
+         string ammendment_id,
+         string interface,
+         bool approved,
+         bool active,
          bool broadcast );
 
 
@@ -1993,7 +2257,6 @@ class wallet_api
       /**
        * Creates or updates a network officer object for a member.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Name of the member's account.
        * @param officer_type The type of network officer that the account serves as. 
        * @param details Information about the network officer and their work
@@ -2004,7 +2267,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           network_officer_update(
-         string signatory,
          string account,
          string officer_type,
          string details,
@@ -2018,7 +2280,6 @@ class wallet_api
       /**
        * Votes to support a network officer.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account The name of the account voting for the officer.
        * @param network_officer The name of the network officer being voted for.
        * @param vote_rank Number of vote rank ordering.
@@ -2026,100 +2287,16 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           network_officer_vote(
-         string signatory,
          string account,
          string network_officer,
          uint16_t vote_rank,
          bool approved,
          bool broadcast );
 
-      
-      /**
-       * Creates or updates a executive board object for a member.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account Name of the account updating the executive board.
-       * @param executive Name of the Executive board account being updated.
-       * @param budget The type of executive board that the account serves as. 
-       * @param details Information about the executive board and their work
-       * @param url The teams's description URL explaining their details. 
-       * @param json Additional information about the executive board.
-       * @param active Set true to activate the board, false to deactivate. 
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           update_executive_board(
-         string signatory,
-         string account,
-         string executive,
-         asset budget,
-         string details,
-         string url,
-         string json,
-         bool active,
-         bool broadcast );
-
-
-      /**
-       * Votes to support a executive board.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account The name of the account voting for the board.
-       * @param executive_board The name of the executive board being voted for.
-       * @param vote_rank Number of vote rank ordering.
-       * @param approved True if approving, false if removing vote.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           executive_board_vote(
-         string signatory,
-         string account,
-         string executive_board,
-         uint16_t vote_rank,
-         bool approved,
-         bool broadcast );
-
-
-      /**
-       * Creates or updates a governance account for a member.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account Name of the governance account.
-       * @param details Information about the governance account's filtering and tagging policies
-       * @param url The governance account's description URL explaining their details. 
-       * @param json Additional information about the governance account policies.
-       * @param active Set true to activate governance account, false to deactivate. 
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           governance_update(
-         string signatory,
-         string account,
-         string details,
-         string url,
-         string json,
-         bool active,
-         bool broadcast );
-
-
-      /**
-       * Adds a governance account to the subscription set of the account.
-       *
-       * @param signatory The name of the account signing the transaction.
-       * @param account The account subscribing to the governance account.
-       * @param governance_account The name of the governance account.
-       * @param subscribe True if subscribing, false if unsubscribing.
-       * @param broadcast Set True to broadcast transaction.
-       */
-      annotated_signed_transaction           governance_subscribe(
-         string signatory,
-         string account,
-         string governance_account,
-         bool subscribe,
-         bool broadcast );
-
 
       /**
        * Creates or updates a supernode object for an infrastructure provider.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Name of the member's account.
        * @param details Information about the supernode, and the range of storage and node services they operate.
        * @param url The supernode's reference URL.
@@ -2133,7 +2310,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           supernode_update(
-         string signatory,
          string account,
          string details,
          string url,
@@ -2150,7 +2326,6 @@ class wallet_api
       /**
        * Creates or updates an interface object for an application developer.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Name of the member's account.
        * @param details Information about the interface, and what they are offering to users.
        * @param url The interface's reference URL.
@@ -2159,7 +2334,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           interface_update(
-         string signatory,
          string account,
          string details,
          string url,
@@ -2171,7 +2345,6 @@ class wallet_api
       /**
        * Creates or updates a mediator object for marketplace escrow facilitator.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Name of the member's account.
        * @param details Information about the mediator, and what they are offering to users
        * @param url The mediator's reference URL.
@@ -2181,7 +2354,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           mediator_update(
-         string signatory,
          string account,
          string details,
          string url,
@@ -2194,7 +2366,6 @@ class wallet_api
       /**
        * Creates a new community enterprise proposal.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param creator The name of the account that created the community enterprise proposal.
        * @param enterprise_id uuidv4 referring to the proposal.
        * @param beneficiaries Set of account names and percentages of budget value. Should not include the null account.
@@ -2210,7 +2381,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           enterprise_update(
-         string signatory,
          string creator,
          string enterprise_id,
          map< string, uint16_t > beneficiaries,
@@ -2229,7 +2399,6 @@ class wallet_api
       /**
        * Approves a milestone claim from a community enterprise proposal.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account approving the milestone.
        * @param creator The name of the account that created the community enterprise proposal.
        * @param enterprise_id uuidv4 referring to the proposal.
@@ -2239,7 +2408,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           enterprise_vote(
-         string signatory,
          string account,
          string creator,
          string enterprise_id,
@@ -2252,7 +2420,6 @@ class wallet_api
       /**
        * Claims a milestone from a community enterprise proposal.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param creator The name of the account that created the community enterprise proposal.
        * @param enterprise_id uuidv4 referring to the proposal.
        * @param milestone Number of the milestone that is being claimed as completed. Number 0 for initial acceptance. 
@@ -2260,7 +2427,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           enterprise_fund(
-         string signatory,
          string creator,
          string enterprise_id,
          uint16_t milestone,
@@ -2285,6 +2451,7 @@ class wallet_api
        *    "max_accepted_payout": "\"1000000000.00000000 MUSD\"",
        *    "percent_liquid": 10000,
        *    "allow_replies": true,
+       *    "channel": false,
        *    "allow_votes": true,
        *    "allow_views": true,
        *    "allow_shares": true,
@@ -2292,7 +2459,7 @@ class wallet_api
        *    "beneficiaries": []
        * }
        *
-       * @param signatory The name of the account signing the transaction.
+       * @param editor Name of the account creating or editing the post. Original author, or a nominated collaborator.
        * @param author Name of the account that created the post.
        * @param permlink Unique identifing string for the post.
        * @param parent_author Account that created the post this post is replying to, empty if root post.
@@ -2324,7 +2491,7 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           comment(
-         string signatory,
+         string editor,
          string author,
          string permlink,
          string parent_author, 
@@ -2359,7 +2526,6 @@ class wallet_api
       /**
        * Votes for a comment to allocate content rewards and increase the posts ranked ordering.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param voter Name of the voting account.
        * @param author Name of the account that created the post being voted on.
        * @param permlink Permlink of the post being voted on.
@@ -2370,7 +2536,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           comment_vote(
-         string signatory,
          string voter, 
          string author, 
          string permlink, 
@@ -2384,7 +2549,6 @@ class wallet_api
       /**
        * Views a post, which increases the post's content reward earnings.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param viewer Name of the viewing account.
        * @param author Name of the account that created the post being viewed.
        * @param permlink Permlink of the post being viewed.
@@ -2395,7 +2559,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           comment_view(
-         string signatory,
          string viewer,
          string author,
          string permlink,
@@ -2409,27 +2572,25 @@ class wallet_api
       /**
        * Shares a post to the account's feed.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param sharer Name of the viewing account.
        * @param author Name of the account that created the post being shared.
        * @param permlink Permlink of the post being shared.
        * @param reach Audience reach selection for share.
        * @param interface Name of the interface account that was used to broadcast the transaction and share the post.
-       * @param community Optionally share the post with a new community.
-       * @param tag Optionally share the post with a new tag.
+       * @param communities Optionally share the post with a new community.
+       * @param tags Optionally share the post with a new tag.
        * @param json JSON Metadata of the share.
        * @param shared True if sharing the post, false if removing share.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           comment_share(
-         string signatory,
          string sharer,
          string author,
          string permlink,
          string reach,
          string interface,
-         string community,
-         string tag,
+         vector< string > communities,
+         vector< string > tags,
          string json,
          bool shared,
          bool broadcast );
@@ -2438,7 +2599,6 @@ class wallet_api
       /**
        * Applies a set of tags to a post for filtering from interfaces.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param moderator Account creating the tag: can be a governance address or a community moderator. 
        * @param author Author of the post being tagged.
        * @param permlink Permlink of the post being tagged.
@@ -2454,7 +2614,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           comment_moderation(
-         string signatory,
          string moderator,
          string author,
          string permlink,
@@ -2473,7 +2632,6 @@ class wallet_api
       /**
        * Creates a private encrypted message between two accounts.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param sender The account sending the message.
        * @param recipient The receiving account of the message.
        * @param community The name of the community that the message should be sent to.
@@ -2491,7 +2649,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           message(
-         string signatory,
          string sender,
          string recipient,
          string community,
@@ -2512,7 +2669,6 @@ class wallet_api
       /**
        * Lists contain a curated group of accounts, comments, communities and other objects.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param creator Name of the account that created the list.
        * @param list_id uuidv4 referring to the list.
        * @param name Name of the list, unique for each account.
@@ -2533,7 +2689,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           list(
-         string signatory,
          string creator,
          string list_id,
          string name,
@@ -2557,7 +2712,6 @@ class wallet_api
       /**
        * Polls enable accounts to vote on a series of options.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param creator Name of the account that created the poll.
        * @param poll_id uuidv4 referring to the poll.
        * @param community Community that the poll is shown within. Null for no community.
@@ -2580,7 +2734,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           poll(
-         string signatory,
          string creator,
          string poll_id,
          string community,
@@ -2606,7 +2759,6 @@ class wallet_api
       /**
        * Poll Vote for a specified poll option.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param voter Name of the account that created the vote.
        * @param creator Name of the account that created the poll.
        * @param poll_id uuidv4 referring to the poll.
@@ -2616,7 +2768,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           poll_vote(
-         string signatory,
          string voter,
          string creator,
          string poll_id,
@@ -2629,7 +2780,6 @@ class wallet_api
       /**
        * Premium purchase requests that a Premium Post to be made available for decryption to a purchaser.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Name of the account purchasing the premium content.
        * @param author Name of the author of the premium post.
        * @param permlink Permlink of the premium post.
@@ -2638,7 +2788,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           premium_purchase(
-         string signatory,
          string account,
          string author,
          string permlink,
@@ -2650,7 +2799,6 @@ class wallet_api
       /**
        * Premium Release enables a Premium Post to be decrypted by a purchaser.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param provider Name of the account releasing the premium content.
        * @param account Name of the account purchasing the premium content.
        * @param author Name of the author of the premium post.
@@ -2660,7 +2808,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           premium_release(
-         string signatory,
          string provider,
          string account,
          string author,
@@ -2680,7 +2827,6 @@ class wallet_api
       /**
        * Creates a new community for collecting posts about a specific topic.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param founder The account that created the community, able to add and remove administrators.
        * @param name Name of the community.
        * @param display_name The full name of the community (non-consensus), encrypted with the member key if private community.
@@ -2692,6 +2838,7 @@ class wallet_api
        * @param json_private Private ciphertext json information about the community.
        * @param tags Set of tags of the topics within the community to enable discovery.
        * @param private_community True when the community is private, and all posts, events, directives, polls must be encrypted.
+       * @param channel True when all posts must be channel posts from admins.
        * @param author_permission Determines which accounts can create root posts.
        * @param reply_permission Determines which accounts can create replies to root posts.
        * @param vote_permission Determines which accounts can create comment votes on posts and comments.
@@ -2725,7 +2872,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           community_create(
-         string signatory,
          string founder,
          string name,
          string display_name,
@@ -2737,6 +2883,7 @@ class wallet_api
          string json_private,
          vector< string > tags,
          bool private_community,
+         bool channel,
          string author_permission,
          string reply_permission,
          string vote_permission,
@@ -2773,7 +2920,6 @@ class wallet_api
       /**
        * Updates the details of an existing community.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account updating the community. Administrator of the community.
        * @param community Name of the community. Should be randomized string if private community.
        * @param display_name The full name of the community (non-consensus), encrypted with the member key if private community.
@@ -2787,6 +2933,7 @@ class wallet_api
        * @param pinned_permlink Permlink of Post pinned to the top of the community's page, encrypted with the member key if private community.
        * @param tags Set of tags of the topics within the community to enable discovery.
        * @param private_community True when the community is private, and all posts, events, directives, polls must be encrypted.
+       * @param channel True when all posts must be channel posts from admins.
        * @param author_permission Determines which accounts can create root posts.
        * @param reply_permission Determines which accounts can create replies to root posts.
        * @param vote_permission Determines which accounts can create comment votes on posts and comments.
@@ -2819,7 +2966,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           community_update(
-         string signatory,
          string account,
          string community,
          string display_name,
@@ -2833,6 +2979,7 @@ class wallet_api
          string pinned_permlink,
          vector< string > tags,
          bool private_community,
+         bool channel,
          string author_permission,
          string reply_permission,
          string vote_permission,
@@ -2868,7 +3015,6 @@ class wallet_api
       /**
        * Used to accept to a request and admit a new member.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account within the community accepting the request.
        * @param member Account to accept into the community.
        * @param community Community that is being joined.
@@ -2879,7 +3025,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           community_member(
-         string signatory,
          string account,
          string member,
          string community,
@@ -2893,7 +3038,6 @@ class wallet_api
       /**
        * Requests that an account be added as a new member of a community.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account that wants to join the community.
        * @param community Community that is being requested to join.
        * @param interface Name of the interface account that was used to broadcast the transaction.
@@ -2903,7 +3047,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           community_member_request(
-         string signatory,
          string account,
          string community,
          string interface,
@@ -2916,7 +3059,6 @@ class wallet_api
       /**
        * Votes for a moderator to increase their mod weight.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account of a member of the community.
        * @param community Community that the moderator is being voted into.
        * @param member Account of the member being voted for.
@@ -2926,7 +3068,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           community_member_vote(
-         string signatory,
          string account,
          string community,
          string member,
@@ -2939,7 +3080,6 @@ class wallet_api
       /**
        * Adds a community to an account's subscriptions.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account that wants to subscribe to the community.
        * @param community Community to suscribe to.
        * @param interface Name of the interface account that was used to broadcast the transaction and subscribe to the community.
@@ -2948,7 +3088,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           community_subscribe(
-         string signatory,
          string account,
          string community,
          string interface,
@@ -2960,7 +3099,6 @@ class wallet_api
       /**
        * Adds a specifed account to the community's blacklist.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Moderator or admin of the community.
        * @param member Account to be blacklisted from interacting with the community.
        * @param community Community that member is being blacklisted from.
@@ -2968,7 +3106,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           community_blacklist(
-         string signatory,
          string account,
          string member,
          string community,
@@ -2979,7 +3116,6 @@ class wallet_api
       /**
        * Used to create a federation connection between two communities.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Admin within the community creating the federation.
        * @param federation_id uuidv4 for the federation, for local storage of decryption key.
        * @param community Community that the account is an admin within.
@@ -2993,7 +3129,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           community_federation(
-         string signatory,
          string account,
          string federation_id,
          string community,
@@ -3010,7 +3145,6 @@ class wallet_api
       /**
        * Creates or updates a community event.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account that created the event.
        * @param community Community being invited to join.
        * @param event_id UUIDv4 referring to the event within the Community. Unique on community/event_id.
@@ -3030,7 +3164,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           community_event(
-         string signatory,
          string account,
          string community,
          string event_id,
@@ -3053,7 +3186,6 @@ class wallet_api
       /**
        * Denotes the status of an account attending an event.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param attendee Account that is attending the event.
        * @param community Community that the event is within.
        * @param event_id UUIDv4 referring to the event within the Community. Unique on community/event_id.
@@ -3067,7 +3199,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           community_event_attend(
-         string signatory,
          string attendee,
          string community,
          string event_id,
@@ -3084,7 +3215,6 @@ class wallet_api
       /**
        * A Community directive that contains action instructions and deliverables for community members.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account that created the directive.
        * @param directive_id UUIDv4 referring to the directive. Unique on account/directive_id.
        * @param parent_account Account that created the parent directive.
@@ -3103,7 +3233,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           community_directive(
-         string signatory,
          string account,
          string directive_id,
          string parent_account,
@@ -3126,7 +3255,6 @@ class wallet_api
        * 
        * Used for Consensus directive selection, and for directive feedback.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param voter Account creating the directive vote.
        * @param account Account that created the directive.
        * @param directive_id UUIDv4 referring to the directive. Unique on account/directive_id.
@@ -3139,7 +3267,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           community_directive_vote(
-         string signatory,
          string voter,
          string account,
          string directive_id,
@@ -3156,7 +3283,6 @@ class wallet_api
        * Determines the State of an account's active 
        * directive selection, and its outgoing directives.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account recieving and creating directives within a community.
        * @param community Community that the directive member is contained within.
        * @param interface Account of the interface that broadcasted the transaction.
@@ -3171,7 +3297,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           community_directive_member(
-         string signatory,
          string account,
          string community,
          string interface,
@@ -3190,7 +3315,6 @@ class wallet_api
        * 
        * Used for Consensus directive selection, and for directive feedback.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param voter Account creating the directive member vote.
        * @param member Account being voted on.
        * @param community Community that the directive member vote is contained within.
@@ -3203,7 +3327,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           community_directive_member_vote(
-         string signatory,
          string voter,
          string member,
          string community,
@@ -3226,7 +3349,6 @@ class wallet_api
       /**
        * Creates a new ad creative to be used in a campaign for display in interfaces.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account publishing the ad creative.
        * @param author Author of the objective item referenced.
        * @param objective The reference of the object being advertised, the link and CTA destination of the creative.
@@ -3238,7 +3360,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           ad_creative(
-         string signatory,
          string account,
          string author,
          string objective,
@@ -3253,7 +3374,6 @@ class wallet_api
       /**
        * Creates a new ad campaign to enable ad bidding.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account creating the ad campaign.
        * @param campaign_id uuidv4 referring to the campaign.
        * @param budget Total expenditure of the campaign.
@@ -3266,7 +3386,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           ad_campaign(
-         string signatory,
          string account,
          string campaign_id,
          asset budget,
@@ -3282,7 +3401,6 @@ class wallet_api
       /**
        * Declares the availability of a supply of ad inventory.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param provider Account of an interface offering ad supply.
        * @param inventory_id uuidv4 referring to the inventory offering.
        * @param audience_id uuidv4 referring to audience object containing usernames of desired accounts in interface's audience.
@@ -3294,7 +3412,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           ad_inventory(
-         string signatory,
          string provider,
          string inventory_id,
          string audience_id,
@@ -3309,7 +3426,6 @@ class wallet_api
       /**
        * Contains a set of accounts that are valid for advertising display.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account creating the audience set.
        * @param audience_id uuidv4 referring to the audience for inclusion in inventory and campaigns.
        * @param json JSON metadata for the audience.
@@ -3318,7 +3434,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           ad_audience(
-         string signatory,
          string account,
          string audience_id,
          string json,
@@ -3330,7 +3445,6 @@ class wallet_api
       /**
        * Creates a new advertising bid offer.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param bidder Account that created the ad budget, or an agent of the campaign.
        * @param bid_id Bid uuidv4 for referring to the bid.
        * @param account Account that created the campaign that the bid is directed towards.
@@ -3350,7 +3464,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           ad_bid(
-         string signatory,
          string bidder,
          string bid_id,
          string account,
@@ -3379,7 +3492,6 @@ class wallet_api
       /**
        * Creates a new node in the Network's Graph Database.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Name of the account that created the node.
        * @param node_types Types of node being created, determines the required attributes.
        * @param node_id uuidv4 identifying the node. Unique for each account.
@@ -3394,7 +3506,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           graph_node(
-         string signatory,
          string account,
          vector< string > node_types,
          string node_id,
@@ -3412,7 +3523,6 @@ class wallet_api
       /**
        * Creates a new edge in the Network's Graph Database.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Name of the account that created the edge.
        * @param edge_types Types of edge being created, determines the required attributes.
        * @param edge_id uuidv4 identifying the edge. Unique for each account.
@@ -3431,7 +3541,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           graph_edge(
-         string signatory,
          string account,
          vector< string > edge_types,
          string edge_id,
@@ -3453,7 +3562,6 @@ class wallet_api
       /**
        * Creates a new type of node for instantiation in the Network's Graph Database.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Name of the account that created the node.
        * @param node_type Name of the type of node being specified.
        * @param graph_privacy Encryption level of the node attribute data.
@@ -3466,7 +3574,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           graph_node_property(
-         string signatory,
          string account,
          string node_type,
          string graph_privacy,
@@ -3482,7 +3589,6 @@ class wallet_api
       /**
        * Creates a new type of edge for instantiation in the Network's Graph Database.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Name of the account that created the edge type.
        * @param edge_type Name of the type of edge being specified.
        * @param graph_privacy Encryption level of the edge attribute data.
@@ -3496,7 +3602,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction           graph_edge_property(
-         string signatory,
          string account,
          string edge_type,
          string graph_privacy,
@@ -3520,7 +3625,6 @@ class wallet_api
       /**
        * Transfer funds from one account to another.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param from The account the funds are coming from.
        * @param to The account the funds are going to.
        * @param amount The funds being transferred.
@@ -3528,7 +3632,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            transfer(
-         string signatory,
          string from,
          string to,
          asset amount,
@@ -3539,7 +3642,6 @@ class wallet_api
       /**
        * Requests a Transfer from an account to another account.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param to Account requesting the transfer.
        * @param from Account that is being requested to accept the transfer.
        * @param amount The funds being transferred.
@@ -3550,7 +3652,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            transfer_request(
-         string signatory,
          string to,
          string from,
          asset amount,
@@ -3564,7 +3665,6 @@ class wallet_api
       /**
        * Accepts a transfer request from an account to another account.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param from Account that is accepting the transfer.
        * @param to Account requesting the transfer.
        * @param request_id uuidv4 of the request transaction.
@@ -3572,7 +3672,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            transfer_accept(
-         string signatory,
          string from,
          string to,
          string request_id,
@@ -3583,7 +3682,6 @@ class wallet_api
       /**
        * Transfers an asset periodically from one account to another.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param from Sending account to transfer asset from.
        * @param to Recieving account to transfer asset to.
        * @param amount The amount of asset to transfer for each payment interval.
@@ -3598,7 +3696,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            transfer_recurring(
-         string signatory,
          string from,
          string to,
          asset amount,
@@ -3616,7 +3713,6 @@ class wallet_api
       /**
        * Requests a periodic transfer from an account to another account.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param to Account requesting the transfer.
        * @param from Account that is being requested to accept the transfer.
        * @param amount The amount of asset to transfer for each payment interval.
@@ -3632,7 +3728,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            transfer_recurring_request(
-         string signatory,
          string from,
          string to,
          asset amount,
@@ -3651,7 +3746,6 @@ class wallet_api
       /**
        * Accepts a periodic transfer request from an account to another account.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param from Account that is accepting the recurring transfer.
        * @param to Account requesting the recurring transfer.
        * @param request_id uuidv4 of the request transaction.
@@ -3659,7 +3753,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            transfer_recurring_accept(
-         string signatory,
          string from,
          string to,
          string request_id,
@@ -3685,7 +3778,6 @@ class wallet_api
       /**
        * Converts public account balance to a confidential balance.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param from Account to transfer funds from and create new confidential balances.
        * @param amount Amount of funds to transfer.
        * @param blinding_factor Factor to blind the output values.
@@ -3694,7 +3786,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            transfer_to_confidential(
-         string signatory,
          string from,
          asset amount,
          blind_factor_type blinding_factor,
@@ -3731,13 +3822,11 @@ class wallet_api
       /**
        * Claims an account's reward balance into it's liquid balance from newly issued assets.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account claiming its reward balance from the network.
        * @param reward Amount of Reward balance to claim.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            claim_reward_balance(
-         string signatory,
          string account,
          asset reward,
          bool broadcast );
@@ -3746,14 +3835,12 @@ class wallet_api
       /**
        * Stakes a liquid balance of an account into it's staked balance.
        * 
-       * @param signatory The name of the account signing the transaction.
        * @param from Account staking the asset.
        * @param to Account to stake the asset to, Same as from if null.
        * @param amount Amount of Funds to transfer to staked balance from liquid balance.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            stake_asset(
-         string signatory,
          string from,
          string to,
          asset amount,
@@ -3763,14 +3850,12 @@ class wallet_api
       /**
        * Divests an amount of the staked balance of an account to it's liquid balance.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param from Account unstaking the asset.
        * @param to Account to unstake the asset to, Same as from if null.
        * @param amount Amount of Funds to transfer from staked balance to liquid balance.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            unstake_asset(
-         string signatory,
          string from,
          string to,
          asset amount,
@@ -3780,7 +3865,6 @@ class wallet_api
       /**
        * Set up an asset withdraw route.
        * 
-       * @param signatory The name of the account signing the transaction.
        * @param from The account the assets are withdrawn from.
        * @param to The account receiving either assets or new stake.
        * @param percent The percent of the withdraw to go to the 'to' account.
@@ -3788,7 +3872,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            unstake_asset_route(
-         string signatory,
          string from, 
          string to, 
          uint16_t percent, 
@@ -3798,7 +3881,6 @@ class wallet_api
       /**
        * Transfer liquid funds balance into savings for security.
        * 
-       * @param signatory The name of the account signing the transaction.
        * @param from The account the assets are transferred from.
        * @param to The account that is recieving the savings balance, same as from if null.
        * @param amount Funds to be transferred from liquid to savings balance.
@@ -3806,7 +3888,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            transfer_to_savings(
-         string signatory,
          string from,
          string to,
          asset amount,
@@ -3816,7 +3897,6 @@ class wallet_api
       /**
        * Withdraws a specified balance from savings after a time duration.
        * 
-       * @param signatory The name of the account signing the transaction.
        * @param from Account to transfer savings balance from.
        * @param to Account to receive the savings withdrawal.
        * @param amount Amount of asset to transfer from savings.
@@ -3826,7 +3906,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            transfer_from_savings(
-         string signatory,
          string from,
          string to,
          asset amount,
@@ -3839,14 +3918,12 @@ class wallet_api
       /**
        * Delegate a staked asset balance from one account to the other.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param delegator The account delegating the asset.
        * @param delegatee The account receiving the asset.
        * @param amount The amount of the asset delegated.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            delegate_asset(
-         string signatory,
          string delegator, 
          string delegatee, 
          asset amount, 
@@ -3862,7 +3939,6 @@ class wallet_api
       /**
        * Creates or updates a product item for marketplace purchasing with escrow transfers.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account The Seller of the product.
        * @param product_id uuidv4 referring to the product.
        * @param name The descriptive name of the product.
@@ -3881,7 +3957,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            product_sale(
-         string signatory,
          string account,
          string product_id,
          string name,
@@ -3903,7 +3978,6 @@ class wallet_api
       /**
        * Requests a purchase of a specifed quantity of a product.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param buyer The Buyer of the product.
        * @param order_id uuidv4 referring to the purchase order.
        * @param seller The Seller of the product.
@@ -3920,7 +3994,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            product_purchase(
-         string signatory,
          string buyer,
          string order_id,
          string seller,
@@ -3940,7 +4013,6 @@ class wallet_api
       /**
        * Creates or updates a product auction sale. 
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account The Seller of the auction product.
        * @param auction_id uuidv4 referring to the auction product.
        * @param auction_type The Auction price selection mechanism.
@@ -3959,7 +4031,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            product_auction_sale(
-         string signatory,
          string account,
          string auction_id,
          string auction_type,
@@ -3981,7 +4052,6 @@ class wallet_api
       /**
        * Requests a purchase of a specifed quantity of a product.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param buyer The Buyer of the product.
        * @param bid_id uuidv4 referring to the auction bid.
        * @param seller The Seller of the product.
@@ -3997,7 +4067,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            product_auction_bid(
-         string signatory,
          string buyer,
          string bid_id,
          string seller,
@@ -4016,7 +4085,6 @@ class wallet_api
       /**
        * Creates a proposed escrow transfer between two accounts.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account creating the transaction to initate the escrow.
        * @param from Account sending funds for a purchase.
        * @param to Account receiving funds from a purchase.
@@ -4029,7 +4097,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            escrow_transfer(
-         string signatory,
          string account,
          string from,
          string to,
@@ -4044,7 +4111,6 @@ class wallet_api
       /**
        * Approves an escrow transfer, causing it to be locked in.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account creating the transaction to approve the escrow.
        * @param mediator Nominated mediator to join the escrow for potential dispute resolution.
        * @param escrow_from The account sending funds into the escrow.
@@ -4053,7 +4119,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            escrow_approve(
-         string signatory,
          string account,
          string mediator,
          string escrow_from,
@@ -4065,14 +4130,12 @@ class wallet_api
       /**
        * Raise a dispute on the escrow transfer before it expires
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account creating the transaction to dispute the escrow and raise it for resolution
        * @param escrow_from The account sending funds into the escrow.
        * @param escrow_id  uuidv4 referring to the escrow being disputed.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            escrow_dispute(
-         string signatory,
          string account,
          string escrow_from,
          string escrow_id,
@@ -4081,7 +4144,6 @@ class wallet_api
       /**
        * Raise a dispute on the escrow transfer before it expires
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account The account creating the operation to release the funds.
        * @param escrow_from The escrow FROM account.
        * @param escrow_id uuidv4 referring to the escrow.
@@ -4089,7 +4151,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction            escrow_release(
-         string signatory,
          string account,
          string escrow_from,
          string escrow_id,
@@ -4106,7 +4167,6 @@ class wallet_api
       /**
        * Creates a new limit order for exchanging assets at a specifed price.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param owner Account that owns the asset being sold.
        * @param order_id uuidv4 of the order for reference.
        * @param amount_to_sell Asset being sold on exchange.
@@ -4118,7 +4178,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             limit_order(
-         string signatory,
          string owner,
          string order_id,
          asset amount_to_sell,
@@ -4133,7 +4192,6 @@ class wallet_api
       /**
        * Creates a new margin order for trading assets.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param owner Account that is the owner of the new margin position.
        * @param order_id uuidv4 of the order for reference.
        * @param exchange_rate The asset pair price to sell the borrowed amount at on the exchange.
@@ -4151,7 +4209,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             margin_order(
-         string signatory,
          string owner,
          string order_id,
          price exchange_rate,
@@ -4172,7 +4229,6 @@ class wallet_api
       /**
        * Creates a new auction order that sells at the daily auction clearing price.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param owner Owner of the Auction order.
        * @param order_id uuidv4 of the order for reference.
        * @param amount_to_sell Amount of asset to sell at auction clearing price.
@@ -4183,7 +4239,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             auction_order(
-         string signatory,
          string owner,
          string order_id,
          asset amount_to_sell,
@@ -4197,7 +4252,6 @@ class wallet_api
       /**
        * Creates a new collateralized debt position in a market issued asset.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param owner Owner of the debt position and collateral.
        * @param collateral Amount of collateral to add to the margin position.
        * @param debt Amount of the debt to be issued.
@@ -4206,7 +4260,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             call_order(
-         string signatory,
          string owner,
          asset collateral,
          asset debt,
@@ -4218,7 +4271,6 @@ class wallet_api
       /**
        * Creates a new auction order that sells at the daily auction clearing price.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param owner Owner of the Option order.
        * @param order_id uuidv4 of the order for reference.
        * @param options_issued Amount of assets to issue covered options contract assets against. Must be a whole number.
@@ -4227,7 +4279,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             option_order(
-         string signatory,
          string owner,
          string order_id,
          asset options_issued,
@@ -4245,14 +4296,12 @@ class wallet_api
       /**
        * Creates a new liquidity pool between two assets.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Creator of the new liquidity pool.
        * @param first_amount Initial balance of one asset.
        * @param second_amount Initial balance of second asset, initial price is the ratio of these two amounts.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             liquidity_pool_create(
-         string signatory,
          string account,
          asset first_amount,
          asset second_amount,
@@ -4262,7 +4311,6 @@ class wallet_api
       /**
        * Exchanges an asset directly from liquidity pools.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account executing the exchange with the pool.
        * @param amount Amount of asset to be exchanged.
        * @param receive_asset The asset to receive from the liquidity pool.
@@ -4272,7 +4320,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             liquidity_pool_exchange(
-         string signatory,
          string account,
          asset amount,
          string receive_asset,
@@ -4285,14 +4332,12 @@ class wallet_api
       /**
        * Adds capital to a liquidity pool.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account funding the liquidity pool to receive the liquidity pool asset.
        * @param amount Amount of an asset to contribute to the liquidity pool.
        * @param pair_asset Pair asset to the liquidity pool to receive liquidity pool assets of. 
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             liquidity_pool_fund(
-         string signatory,
          string account,
          asset amount,
          string pair_asset,
@@ -4302,14 +4347,12 @@ class wallet_api
       /**
        * Removes capital from a liquidity pool.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account withdrawing liquidity pool assets from the pool.
        * @param amount Amount of the liquidity pool asset to redeem for underlying deposited assets. 
        * @param receive_asset The asset to receive from the liquidity pool.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             liquidity_pool_withdraw(
-         string signatory,
          string account,
          asset amount,
          string receive_asset,
@@ -4319,13 +4362,11 @@ class wallet_api
       /**
        * Adds an asset to an account's credit collateral position of that asset.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account locking an asset as collateral. 
        * @param amount Amount of collateral balance to lock, 0 to unlock existing collateral.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             credit_pool_collateral(
-         string signatory,
          string account,
          asset amount,
          bool broadcast );
@@ -4334,7 +4375,6 @@ class wallet_api
       /**
        * Borrows an asset from the credit pool of the asset.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account borrowing funds from the pool, must have sufficient collateral.
        * @param amount Amount of an asset to borrow. Limit of 75% of collateral value. Set to 0 to repay loan.
        * @param collateral Amount of an asset to use as collateral for the loan. Set to 0 to reclaim collateral to collateral balance.
@@ -4342,7 +4382,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             credit_pool_borrow(
-         string signatory,
          string account,
          asset amount,
          asset collateral,
@@ -4353,13 +4392,11 @@ class wallet_api
       /**
        * Lends an asset to a credit pool.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account lending an asset to the credit pool.
        * @param amount Amount of asset being lent.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             credit_pool_lend(
-         string signatory,
          string account,
          asset amount,
          bool broadcast );
@@ -4368,13 +4405,11 @@ class wallet_api
       /**
        * Withdraws an asset from the specified credit pool.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account withdrawing its lent asset from the credit pool by redeeming credit-assets. 
        * @param amount Amount of interest bearing credit assets being redeemed for their underlying assets. 
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             credit_pool_withdraw(
-         string signatory,
          string account,
          asset amount,
          bool broadcast );
@@ -4383,14 +4418,12 @@ class wallet_api
       /**
        * Creates a new Option pool between two assets.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Creator of the new option pool.
        * @param first_asset First asset in the option trading pair.
        * @param second_asset Second asset in the option trading pair.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             option_pool_create(
-         string signatory,
          string account,
          string first_asset,
          string second_asset,
@@ -4400,7 +4433,6 @@ class wallet_api
       /**
        * Creates a new prediction pool for a prediction market.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Creator of the new prediction pool.
        * @param prediction_symbol Ticker symbol of the prediction pool primary asset.
        * @param collateral_symbol Symbol of the collateral asset backing the prediction market.
@@ -4415,7 +4447,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             prediction_pool_create(
-         string signatory,
          string account,
          string prediction_symbol,
          string collateral_symbol,
@@ -4433,7 +4464,6 @@ class wallet_api
       /**
        * Adds or removes capital collateral funds from a prediction pool.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account executing the exchange with the pool.
        * @param amount Amount of collateral asset to be exchanged.
        * @param prediction_asset Base Asset to the prediction pool to exchange with.
@@ -4442,7 +4472,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             prediction_pool_exchange(
-         string signatory,
          string account,
          asset amount,
          string prediction_asset,
@@ -4454,14 +4483,12 @@ class wallet_api
       /**
        * Votes for a specified prediction market outcome resolution.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account executing the exchange with the pool.
        * @param amount Amount of prediction asset to vote with.
        * @param resolution_outcome Base Asset to the prediction pool to exchange with.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             prediction_pool_resolve(
-         string signatory,
          string account,
          asset amount,
          string resolution_outcome,
@@ -4478,7 +4505,6 @@ class wallet_api
       /**
        * Creates a new asset object of the asset type provided.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param issuer Name of the issuing account, can create units and administrate the asset.
        * @param symbol The ticker symbol of this asset.
        * @param asset_type The type of the asset. Determines asset characteristics and features.
@@ -4489,7 +4515,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             asset_create(
-         string signatory,
          string issuer,
          string symbol,
          string asset_type,
@@ -4503,14 +4528,12 @@ class wallet_api
       /**
        * Updates an Asset to use a new set of options.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param issuer Name of the issuing account, can create units and administrate the asset.
        * @param asset_to_update The ticker symbol of this asset.
        * @param new_options Series of options paramters that apply to all asset types.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             asset_update(
-         string signatory,
          string issuer,
          string asset_to_update,
          asset_options new_options,
@@ -4520,7 +4543,6 @@ class wallet_api
       /**
        * Issues an amount of an asset to a specified account.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param issuer The issuer of the asset.
        * @param asset_to_issue Amount of asset being issued to the account.
        * @param issue_to_account Account receiving the newly issued asset.
@@ -4528,7 +4550,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             asset_issue(
-         string signatory,
          string issuer,
          asset asset_to_issue,
          string issue_to_account,
@@ -4539,13 +4560,11 @@ class wallet_api
       /**
        * Takes a specified amount of an asset out of circulation.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param payer Account that is reserving the asset back to the unissued supply.
        * @param amount_to_reserve Amount of the asset being reserved.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             asset_reserve(
-         string signatory,
          string payer,
          asset amount_to_reserve,
          bool broadcast );
@@ -4554,14 +4573,12 @@ class wallet_api
       /**
        * Updates the issuer account of an asset.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param issuer The current issuer of the asset.
        * @param asset_to_update The asset symbol being updated.
        * @param new_issuer Name of the account specified to become the new issuer of the asset.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             asset_update_issuer(
-         string signatory,
          string issuer,
          string asset_to_update,
          string new_issuer,
@@ -4571,7 +4588,6 @@ class wallet_api
       /**
        * Creates a new asset distribution.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param issuer The account which created the asset.
        * @param distribution_asset Asset that is generated by the distribution.
        * @param fund_asset Asset being accepted for distribution assets.
@@ -4593,7 +4609,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             asset_distribution(
-         string signatory,
          string issuer,
          string distribution_asset,
          string fund_asset,
@@ -4618,14 +4633,12 @@ class wallet_api
       /**
        * Funds a new asset distribution balance.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param sender The account which sent the amount into the distribution.
        * @param distribution_asset Distribution asset for the fund to be sent to.
        * @param amount Asset amount being sent for distribution.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             asset_distribution_fund(
-         string signatory,
          string sender,
          string distribution_asset,
          asset amount,
@@ -4635,13 +4648,11 @@ class wallet_api
       /**
        * Uses an option asset to obtain the underlying asset at the strike price.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account The account exercising the option asset.
        * @param amount Option assets being exercised by exchanging the quoted asset for the underlying. 
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             asset_option_exercise(
-         string signatory,
          string account,
          asset amount,
          bool broadcast );
@@ -4650,14 +4661,12 @@ class wallet_api
       /**
        * Adds funds to the redemption pool of a stimulus asset.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account The account funding the stimulus asset.
        * @param stimulus_asset Asset symbol of the asset to add stimulus funds to.
        * @param amount Redemption asset being injected into the redemption pool.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             asset_stimulus_fund(
-         string signatory,
          string account,
          string stimulus_asset,
          asset amount,
@@ -4667,14 +4676,12 @@ class wallet_api
       /**
        * Update the set of feed-producing accounts for a BitAsset.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param issuer The issuer of the BitAsset.
        * @param asset_to_update The BitAsset being updated.
        * @param new_feed_producers Set of accounts that can determine the price feed of the asset.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             asset_update_feed_producers(
-         string signatory,
          string issuer,
          string asset_to_update,
          flat_set< account_name_type > new_feed_producers,
@@ -4684,14 +4691,12 @@ class wallet_api
       /**
        * Publish price feeds for BitAssets.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param publisher Account publishing the price feed.
        * @param symbol Asset for which the feed is published.
        * @param feed Exchange rate between stablecoin and backing asset.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             asset_publish_feed(
-         string signatory,
          string publisher,
          string symbol,
          price_feed feed,
@@ -4701,14 +4706,12 @@ class wallet_api
       /**
        * Schedules a BitAsset balance for automatic settlement.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param account Account requesting the force settlement.
        * @param amount Amount of asset to force settle. Set to 0 to cancel order.
        * @param interface  Account of the interface used to broadcast the operation.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             asset_settle(
-         string signatory,
          string account,
          asset amount,
          string interface,
@@ -4718,14 +4721,12 @@ class wallet_api
       /**
        * Globally Settles a BitAsset, collecting all remaining collateral and debt and setting a global settlement price.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param issuer Issuer of the asset being settled. 
        * @param asset_to_settle Symbol of the asset being settled. 
        * @param settle_price Global settlement price, must be in asset / backing asset. 
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             asset_global_settle(
-         string signatory,
          string issuer,
          string asset_to_settle,
          price settle_price,
@@ -4735,14 +4736,12 @@ class wallet_api
       /**
        * Used to create a bid for outstanding debt of a globally settled market issued asset.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param bidder Adds additional collateral to the market issued asset.
        * @param collateral The amount of collateral to bid for the debt.
        * @param debt The amount of debt to take over.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             asset_collateral_bid(
-         string signatory,
          string bidder,
          asset collateral,
          asset debt,
@@ -4758,7 +4757,6 @@ class wallet_api
       /**
        * Creates or updates a producer for a specified account, enabling block production.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param owner The account that owns the producer.
        * @param details The producer's details for stakeholder voting reference.
        * @param url Producer's reference URL for more information.
@@ -4771,7 +4769,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             producer_update(
-         string signatory,
          string owner,
          string details,
          string url,
@@ -4802,13 +4799,11 @@ class wallet_api
       /**
        * Enables block producers to verify that a valid block exists at a given height.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param producer The name of the block producing account.
        * @param block_id The block id of the block being verifed as valid and received.
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             verify_block(
-         string signatory,
          string producer,
          string block_id,
          bool broadcast );
@@ -4817,7 +4812,6 @@ class wallet_api
       /**
        * Stakes COIN on the validity and acceptance of a block.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param producer The name of the block producing account.
        * @param block_id The block id of the block being committed as irreversible to that producer.
        * @param verifications The set of attesting transaction ids of verification transactions from currently active producers.
@@ -4825,7 +4819,6 @@ class wallet_api
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             commit_block(
-         string signatory,
          string producer,
          string block_id,
          flat_set< transaction_id_type > verifications,
@@ -4836,14 +4829,12 @@ class wallet_api
       /**
        * Declares a violation of a block commitment.
        *
-       * @param signatory The name of the account signing the transaction.
        * @param reporter The account detecting and reporting the violation.
        * @param first_trx The first transaction signed by the producer.
        * @param second_trx The second transaction that is in contravention of the first commitment transaction. 
        * @param broadcast Set True to broadcast transaction.
        */
       annotated_signed_transaction             producer_violation(
-         string signatory,
          string reporter,
          vector< char > first_trx,
          vector< char > second_trx,
@@ -4976,7 +4967,7 @@ FC_API( node::wallet::wallet_api,
          (get_full_accounts)
          (get_account_history)
          (get_account_messages)
-         (get_balances)
+         (get_account_balances)
          (get_confidential_balances)
          (get_keychains)
          (lookup_accounts)
@@ -4992,10 +4983,9 @@ FC_API( node::wallet::wallet_api,
          (get_development_officers_by_voting_power)
          (get_marketing_officers_by_voting_power)
          (get_advocacy_officers_by_voting_power)
-         (get_executive_boards_by_voting_power)
          (get_supernodes_by_view_weight)
          (get_interfaces_by_users)
-         (get_governance_accounts_by_subscriber_power)
+         (get_governances_by_members)
          (get_enterprise_by_voting_power)
          (get_open_orders)
          (get_limit_orders)
@@ -5060,32 +5050,37 @@ FC_API( node::wallet::wallet_api,
          (account_update)
          (account_verification)
          (account_membership)
-         (account_vote_executive)
-         (account_vote_officer)
-         (account_member_request)
-         (account_member_invite)
-         (account_accept_request)
-         (account_accept_invite)
-         (account_remove_member)
          (account_update_list)
          (account_producer_vote)
          (account_update_proxy)
          (account_request_recovery)
          (account_recover)
-         (reset_account)
+         (account_reset)
          (account_reset_update)
          (account_recovery_update)
          (account_decline_voting)
          (account_connection)
          (account_follow)
-         (tag_follow)
-         (activity_reward)
+         (account_tag_follow)
+         (account_activity)
+         (business_create)
+         (business_update)
+         (business_executive)
+         (business_executive_vote)
+         (business_director)
+         (business_director_vote)
+         (governance_create)
+         (governance_update)
+         (governance_executive)
+         (governance_executive_vote)
+         (governance_director)
+         (governance_director_vote)
+         (governance_member)
+         (governance_member_request)
+         (governance_resolution)
+         (governance_resolution_vote)
          (network_officer_update)
          (network_officer_vote)
-         (update_executive_board)
-         (executive_board_vote)
-         (governance_update)
-         (governance_subscribe)
          (supernode_update)
          (interface_update)
          (mediator_update)

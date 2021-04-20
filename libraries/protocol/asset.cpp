@@ -55,7 +55,7 @@ namespace node { namespace protocol {
          FC_ASSERT( space_pos > dot_pos );
          
          string symbol = s.substr( space_pos + 1 );
-         FC_ASSERT( is_valid_symbol( symbol ) );
+         FC_ASSERT( validate_asset_symbol( symbol ) );
          size_t symbol_size = symbol.size();
          FC_ASSERT( symbol_size <= MAX_ASSET_SYMBOL_LENGTH );
          result.symbol = symbol;
@@ -74,7 +74,7 @@ namespace node { namespace protocol {
          uint128_t result = ( uint128_t( a.amount.value ) * uint128_t( b.quote.amount.value ) + uint128_t( b.base.amount.value ) - 1 ) / uint128_t( b.base.amount.value );
          FC_ASSERT( result <= share_type::max().value );
          asset r = asset( share_type( result.to_uint64() ), b.quote.symbol );
-         FC_ASSERT( is_valid_symbol( b.quote.symbol ) );
+         FC_ASSERT( validate_asset_symbol( b.quote.symbol ) );
          ilog( "Multiply and Round up: Asset: ${a} Price: ${p} Result: ${r}",
             ("a",a.to_string())("p",b.to_string())("r",r.to_string()) );
          return r;
@@ -85,7 +85,7 @@ namespace node { namespace protocol {
          uint128_t result = ( uint128_t( a.amount.value ) * uint128_t( b.base.amount.value ) + uint128_t( b.quote.amount.value ) - 1 ) / uint128_t( b.quote.amount.value );
          FC_ASSERT( result <= share_type::max().value );
          asset r = asset( share_type( result.to_uint64() ), b.base.symbol );
-         FC_ASSERT( is_valid_symbol( b.base.symbol ) );
+         FC_ASSERT( validate_asset_symbol( b.base.symbol ) );
          ilog( "Multiply and Round up: Asset: ${a} Price: ${p} Result: ${r}",
             ("a",a.to_string())("p",b.to_string())("r",r.to_string()) );
          return r;
@@ -157,7 +157,7 @@ namespace node { namespace protocol {
          satoshis *= -1;
       }
 
-      FC_ASSERT( is_valid_symbol( symbol ) );
+      FC_ASSERT( validate_asset_symbol( symbol ) );
 
       ilog( "Amount from string: ${s} -> ${a}",
          ("s",amount_string)("a",asset(satoshis, symbol)));
@@ -167,13 +167,13 @@ namespace node { namespace protocol {
 
    bool operator == ( const price& a, const price& b )
    {
-      FC_ASSERT( is_valid_symbol( a.base.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
+      FC_ASSERT( validate_asset_symbol( a.base.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
          ("s",a.base.symbol)("a",a)("b",b));
-      FC_ASSERT( is_valid_symbol( b.base.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
+      FC_ASSERT( validate_asset_symbol( b.base.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
          ("s",b.base.symbol)("a",a)("b",b));
-      FC_ASSERT( is_valid_symbol( a.quote.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
+      FC_ASSERT( validate_asset_symbol( a.quote.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
          ("s",a.quote.symbol)("a",a)("b",b));
-      FC_ASSERT( is_valid_symbol( b.quote.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
+      FC_ASSERT( validate_asset_symbol( b.quote.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
          ("s",b.quote.symbol)("a",a)("b",b));
 
       if( std::tie( a.base.symbol, a.quote.symbol ) != std::tie( b.base.symbol, b.quote.symbol ) )
@@ -189,13 +189,13 @@ namespace node { namespace protocol {
 
    bool operator < ( const price& a, const price& b )
    {
-      FC_ASSERT( is_valid_symbol( a.base.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
+      FC_ASSERT( validate_asset_symbol( a.base.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
          ("s",a.base.symbol)("a",a)("b",b));
-      FC_ASSERT( is_valid_symbol( b.base.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
+      FC_ASSERT( validate_asset_symbol( b.base.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
          ("s",b.base.symbol)("a",a)("b",b));
-      FC_ASSERT( is_valid_symbol( a.quote.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
+      FC_ASSERT( validate_asset_symbol( a.quote.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
          ("s",a.quote.symbol)("a",a)("b",b));
-      FC_ASSERT( is_valid_symbol( b.quote.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
+      FC_ASSERT( validate_asset_symbol( b.quote.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
          ("s",b.quote.symbol)("a",a)("b",b));
 
       if( a.base.symbol < b.base.symbol ) return true;
@@ -221,13 +221,13 @@ namespace node { namespace protocol {
 
    bool operator > ( const price& a, const price& b )
    {
-      FC_ASSERT( is_valid_symbol( a.base.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
+      FC_ASSERT( validate_asset_symbol( a.base.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
          ("s",a.base.symbol)("a",a)("b",b));
-      FC_ASSERT( is_valid_symbol( b.base.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
+      FC_ASSERT( validate_asset_symbol( b.base.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
          ("s",b.base.symbol)("a",a)("b",b));
-      FC_ASSERT( is_valid_symbol( a.quote.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
+      FC_ASSERT( validate_asset_symbol( a.quote.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
          ("s",a.quote.symbol)("a",a)("b",b));
-      FC_ASSERT( is_valid_symbol( b.quote.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
+      FC_ASSERT( validate_asset_symbol( b.quote.symbol ), "Symbol: ${s} of price pair: \n ${a} \n ${b} \n is not a valid symbol",
          ("s",b.quote.symbol)("a",a)("b",b));
 
       if( a.base.symbol > b.base.symbol ) return true;
@@ -248,9 +248,9 @@ namespace node { namespace protocol {
 
    asset operator * ( const asset& a, const price& b )
    {
-      FC_ASSERT( is_valid_symbol( a.symbol ), "Symbol: ${s} is not a valid symbol",("s",a.symbol) );
-      FC_ASSERT( is_valid_symbol( b.base.symbol ), "Symbol: ${s} is not a valid symbol",("s",b.base.symbol) );
-      FC_ASSERT( is_valid_symbol( b.quote.symbol ), "Symbol: ${s} is not a valid symbol",("s",b.quote.symbol));
+      FC_ASSERT( validate_asset_symbol( a.symbol ), "Symbol: ${s} is not a valid symbol",("s",a.symbol) );
+      FC_ASSERT( validate_asset_symbol( b.base.symbol ), "Symbol: ${s} is not a valid symbol",("s",b.base.symbol) );
+      FC_ASSERT( validate_asset_symbol( b.quote.symbol ), "Symbol: ${s} is not a valid symbol",("s",b.quote.symbol));
       
       uint128_t numerator = 0;
       uint128_t denominator = 0;
@@ -288,8 +288,8 @@ namespace node { namespace protocol {
 
    price operator / ( const asset& base, const asset& quote )
    { try {
-      FC_ASSERT( is_valid_symbol( base.symbol ), "Symbol: ${s} is not a valid symbol",("s",base.symbol));
-      FC_ASSERT( is_valid_symbol( quote.symbol ), "Symbol: ${s} is not a valid symbol",("s",quote.symbol));
+      FC_ASSERT( validate_asset_symbol( base.symbol ), "Symbol: ${s} is not a valid symbol",("s",base.symbol));
+      FC_ASSERT( validate_asset_symbol( quote.symbol ), "Symbol: ${s} is not a valid symbol",("s",quote.symbol));
       FC_ASSERT( base.symbol != quote.symbol );
       return price{ base, quote };
    } FC_CAPTURE_AND_RETHROW( (base)(quote) ) }
@@ -301,8 +301,8 @@ namespace node { namespace protocol {
 
    void price::validate() const
    { try {
-      FC_ASSERT( is_valid_symbol( base.symbol ), "Symbol: ${s} is not a valid symbol",("s",base.symbol));
-      FC_ASSERT( is_valid_symbol( quote.symbol ), "Symbol: ${s} is not a valid symbol",("s",quote.symbol));
+      FC_ASSERT( validate_asset_symbol( base.symbol ), "Symbol: ${s} is not a valid symbol",("s",base.symbol));
+      FC_ASSERT( validate_asset_symbol( quote.symbol ), "Symbol: ${s} is not a valid symbol",("s",quote.symbol));
       FC_ASSERT( base.amount.value > 0,
          "Price is invalid, base is less than 0.");
       FC_ASSERT( quote.amount.value > 0,

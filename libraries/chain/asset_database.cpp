@@ -768,7 +768,7 @@ void database::process_bond_interest()
          });
       }
 
-      adjust_liquid_balance( bond.business_account, -total_interest );
+      adjust_liquid_balance( bond.issuer, -total_interest );
       pay_network_fees( total_interest_fees );
    }
 } FC_CAPTURE_AND_RETHROW() }
@@ -795,7 +795,7 @@ void database::process_bond_assets()
 
       const asset_dynamic_data_object& bond_dyn_data = get_dynamic_data( bond.symbol );
       asset total_principle = ( bond.value * bond_dyn_data.get_total_supply().amount ) / BLOCKCHAIN_PRECISION;
-      asset issuer_liquid = get_liquid_balance( bond.business_account, bond.value.symbol );
+      asset issuer_liquid = get_liquid_balance( bond.issuer, bond.value.symbol );
       asset principle_remaining = total_principle;
 
       if( issuer_liquid >= total_principle )
@@ -812,7 +812,7 @@ void database::process_bond_assets()
          }
 
          asset paid = total_principle - principle_remaining - bond.collateral_pool;
-         adjust_liquid_balance( bond.business_account, -paid );
+         adjust_liquid_balance( bond.issuer, -paid );
       }
       else
       {
@@ -837,7 +837,7 @@ void database::process_bond_assets()
          }
 
          asset paid = issuer_liquid - principle_remaining;
-         adjust_liquid_balance( bond.business_account, -paid );
+         adjust_liquid_balance( bond.issuer, -paid );
       }
 
       clear_asset_balances( bond.symbol );      // Clear all balances and order positions of the bond.

@@ -52,38 +52,17 @@ namespace node { namespace chain {
 */
 void comment_evaluator::do_apply( const comment_operation& o )
 { try {
-   const account_name_type& signed_for = o.author;
-   const account_object& signatory = _db.get_account( o.signatory );
-   const auto& comment_idx = _db.get_index< comment_index >().indices().get< by_permlink >();
-   auto comment_itr = comment_idx.find( boost::make_tuple( o.author, o.permlink ) );
+   const account_object& author = _db.get_account( o.author );
+   FC_ASSERT( author.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.author) );
+   const account_object& editor = _db.get_account( o.editor );
+   FC_ASSERT( editor.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.editor) );
    
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-
-      bool collaborator = false;
-      bool business = false;
-      if( comment_itr != comment_idx.end() )
-      {
-         collaborator = comment_itr->is_collaborating_author( o.signatory );
-      }
-      else
-      {
-         const account_business_object& b = _db.get_account_business( signed_for );
-         business = b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) );
-      }
-      FC_ASSERT( collaborator || business, 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
    time_point now = _db.head_block_time();
-   
-   const account_object& auth = _db.get_account( o.author );
    comment_options options = o.options;
 
    if( o.interface.size() )
@@ -137,14 +116,14 @@ void comment_evaluator::do_apply( const comment_operation& o )
       if( o.parent_author == ROOT_POST_PARENT )
       {
          FC_ASSERT( community_permission.is_authorized_author( o.author ),
-            "User ${u} is not authorized to post in the community ${b}.",
-            ("b",o.community)("u",auth.name));
+            "User ${u} is not authorized to post in the community ${c}.",
+            ("b",o.community)("u",author.name));
       }
       else
       {
          FC_ASSERT( community_permission.is_authorized_reply( o.author ),
-            "User ${u} is not authorized to reply to posts in the community ${b}.",
-            ("b",o.community)("u",auth.name));
+            "User ${u} is not authorized to reply to posts in the community ${c}.",
+            ("c",o.community)("u",author.name));
       }
       
       if( community_permission.private_community )
@@ -169,6 +148,20 @@ void comment_evaluator::do_apply( const comment_operation& o )
          o.options.reward_currency == SYMBOL_COIN, 
          "Community does not accept specified reward currency: ${c}.",
          ("c", o.options.reward_currency ));
+
+      if( o.options.channel )
+      {
+         FC_ASSERT( community_permission.is_administrator( o.author ),
+            "User ${u} is not authorized to channel post in the community ${c}.",
+            ("c",o.community)("u",author.name));
+      }
+
+      if( community_permission.channel )
+      {
+         FC_ASSERT( o.options.channel,
+            "Community: ${c} requires that all posts be channel posts.",
+            ("c",o.community));
+      }
    }
 
    switch( reach_type )
@@ -182,19 +175,19 @@ void comment_evaluator::do_apply( const comment_operation& o )
       break;
       case feed_reach_type::CONNECTION_FEED:
       {
-         FC_ASSERT( public_key_type( o.public_key ) == auth.connection_public_key, 
+         FC_ASSERT( public_key_type( o.public_key ) == author.connection_public_key, 
             "Connection level posts must be encrypted with the account's Connection public key." );
       }
       break;
       case feed_reach_type::FRIEND_FEED:
       {
-         FC_ASSERT( public_key_type( o.public_key ) == auth.friend_public_key, 
+         FC_ASSERT( public_key_type( o.public_key ) == author.friend_public_key, 
             "Connection level posts must be encrypted with the account's Friend public key.");
       }
       break;
       case feed_reach_type::COMPANION_FEED:
       {
-         FC_ASSERT( public_key_type( o.public_key ) == auth.companion_public_key, 
+         FC_ASSERT( public_key_type( o.public_key ) == author.companion_public_key, 
             "Connection level posts must be encrypted with the account's Companion public key.");
       }
       break;
@@ -347,7 +340,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
    share_type reward = 0;
    uint128_t weight = 0;
    uint128_t max_weight = 0;
-   uint16_t new_commenting_power = auth.commenting_power;
+   uint16_t new_commenting_power = author.commenting_power;
 
    comment_id_type id;
 
@@ -359,25 +352,32 @@ void comment_evaluator::do_apply( const comment_operation& o )
          "Comment is nested ${x} posts deep, maximum depth is ${y}.", 
          ("x",parent->depth)("y",MAX_COMMENT_DEPTH) );
    }
+
+   const auto& comment_idx = _db.get_index< comment_index >().indices().get< by_permlink >();
+   auto comment_itr = comment_idx.find( boost::make_tuple( o.author, o.permlink ) );
       
    if( comment_itr == comment_idx.end() )         // Post does not yet exist, creating new post
    {
+      FC_ASSERT( o.author == o.editor, 
+         "Editor: ${e} must be the same account as the author of a new comment.",
+         ("e",o.editor));
+
       if( o.parent_author == ROOT_POST_PARENT )       // Post is a new root post
       {
-         FC_ASSERT( ( now - auth.last_root_post ) >= MIN_ROOT_COMMENT_INTERVAL,
+         FC_ASSERT( ( now - author.last_root_post ) >= MIN_ROOT_COMMENT_INTERVAL,
             "You may only post once every 60 seconds. Last post was: ${t}. Try again in ${s} seconds.",
-            ("t",auth.last_root_post)("s",(MIN_ROOT_COMMENT_INTERVAL-(now-auth.last_root_post )).to_seconds() ) );
+            ("t",author.last_root_post)("s",(MIN_ROOT_COMMENT_INTERVAL-(now-author.last_root_post )).to_seconds() ) );
       }    
       else         // Post is a new comment
       {
          const comment_object& root = _db.get( parent->root_comment );       // If root post, gets the posts own object.
-         const account_object& root_auth = _db.get_account( root.author );
+         const account_object& root_author = _db.get_account( root.author );
 
          FC_ASSERT( root.allow_replies,
             "The parent comment has disabled replies." );
-         FC_ASSERT( ( now - auth.last_post ) >= MIN_REPLY_INTERVAL,
+         FC_ASSERT( ( now - author.last_post ) >= MIN_REPLY_INTERVAL,
             "You may only comment once every 15 seconds. Last post was: ${t}. Try again in ${s} seconds.",
-            ("t",auth.last_root_post)("s",(MIN_REPLY_INTERVAL-(now-auth.last_root_post )).to_seconds() ) );
+            ("t",author.last_root_post)("s",(MIN_REPLY_INTERVAL-(now-author.last_root_post )).to_seconds() ) );
          FC_ASSERT( o.options.reward_currency == root.reward_currency,
             "Comment must have the same reward currency: ${c} as the root post: ${r}",
             ("c",o.options.reward_currency)("r",root.reward_currency));
@@ -412,15 +412,15 @@ void comment_evaluator::do_apply( const comment_operation& o )
          account_name_type account_a_name;
          account_name_type account_b_name;
 
-         if( auth.id < root_auth.id )        // Connection objects are sorted with lowest ID is account A. 
+         if( author.id < root_author.id )        // Connection objects are sorted with lowest ID is account A. 
          {
-            account_a_name = auth.name;
-            account_b_name = root_auth.name;
+            account_a_name = author.name;
+            account_b_name = root_author.name;
          }
          else
          {
-            account_b_name = auth.name;
-            account_a_name = root_auth.name;
+            account_b_name = author.name;
+            account_a_name = root_author.name;
          }
 
          const auto& account_connection_idx = _db.get_index< account_connection_index >().indices().get< by_accounts >();
@@ -472,9 +472,9 @@ void comment_evaluator::do_apply( const comment_operation& o )
          // Gets the user's voting power from their Equity and Staked coin balances.
 
          share_type voting_power = _db.get_voting_power( o.author, o.options.reward_currency );
-         int64_t elapsed_seconds = ( now - auth.last_post ).to_seconds();
+         int64_t elapsed_seconds = ( now - author.last_post ).to_seconds();
          int16_t regenerated_power = (PERCENT_100 * elapsed_seconds) / median_props.comment_recharge_time.to_seconds();
-         int16_t current_power = std::min( int64_t( auth.commenting_power + regenerated_power), int64_t(PERCENT_100) );
+         int16_t current_power = std::min( int64_t( author.commenting_power + regenerated_power), int64_t(PERCENT_100) );
          FC_ASSERT( current_power > 0, 
             "Account currently does not have any commenting power." );
          int16_t max_comment_denom = median_props.comment_reserve_rate * ( median_props.comment_recharge_time.count() / fc::days(1).count() );  // Weights the viewing power with the network reserve ratio and recharge time
@@ -527,7 +527,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          } 
       }
 
-      _db.modify( auth, [&]( account_object& a )
+      _db.modify( author, [&]( account_object& a )
       {
          if( o.parent_author == ROOT_POST_PARENT )
          {
@@ -550,7 +550,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          com.reach = reach_type;
          com.reply_connection = reply_connection;
          com.post_type = format_type;
-         com.author_reputation = auth.author_reputation;
+         com.author_reputation = author.author_reputation;
          com.comment_price = o.comment_price;
          com.premium_price = o.premium_price;
          com.latitude = o.latitude;
@@ -620,6 +620,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
          {
             com.collaborating_authors.insert( name );
          }
+         com.collaborating_authors.insert( o.author );
          for( auto name : o.supernodes )
          {
             com.supernodes.insert( name );
@@ -716,6 +717,14 @@ void comment_evaluator::do_apply( const comment_operation& o )
    else           // Post found, editing or deleting existing post.
    {
       const comment_object& comment = *comment_itr;
+
+      if( comment_itr != comment_idx.end() )
+      {
+         FC_ASSERT( comment.is_collaborating_author( o.editor ), 
+         "Account: ${a} is not authorized to edit the post: ${p}.",
+         ("a",o.author)("p",o.permlink));
+      }
+
       id = comment.id;
       ilog( "Initial Beneficiaries: ");
       for( auto b : comment.beneficiaries )
@@ -763,7 +772,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
             com.rating = options.rating;
             com.community = o.community;
             com.reach = reach_type;
-            com.author_reputation = auth.author_reputation;
+            com.author_reputation = author.author_reputation;
             com.latitude = o.latitude;
             com.longitude = o.longitude;
             com.comment_price = o.comment_price;
@@ -771,6 +780,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
             com.reply_connection = reply_connection;
             com.max_accepted_payout = options.max_accepted_payout;
             com.percent_liquid = options.percent_liquid;
+            com.channel = options.channel;
             com.allow_replies = options.allow_replies;
             com.allow_votes = options.allow_votes;
             com.allow_views = options.allow_views;
@@ -917,21 +927,13 @@ void comment_evaluator::do_apply( const comment_operation& o )
 
 void comment_vote_evaluator::do_apply( const comment_vote_operation& o )
 { try {
-   const account_name_type& signed_for = o.voter;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
    const comment_object& comment = _db.get_comment( o.author, o.permlink );
    const account_object& voter = _db.get_account( o.voter );
+
+   FC_ASSERT( voter.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.voter));
+
    time_point now = _db.head_block_time();
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
 
@@ -1213,21 +1215,13 @@ void comment_vote_evaluator::do_apply( const comment_vote_operation& o )
 
 void comment_view_evaluator::do_apply( const comment_view_operation& o )
 { try {
-   const account_name_type& signed_for = o.viewer;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
    const comment_object& comment = _db.get_comment( o.author, o.permlink );
    const account_object& viewer = _db.get_account( o.viewer );
+
+   FC_ASSERT( viewer.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.viewer) );
+
    const asset_reward_fund_object& rfo = _db.get_reward_fund( comment.reward_currency );
    share_type voting_power = _db.get_voting_power( o.viewer, rfo.symbol );    // Gets the user's voting power from their Equity and Staked coin balances
    FC_ASSERT( comment.allow_views,
@@ -1474,25 +1468,14 @@ void comment_view_evaluator::do_apply( const comment_view_operation& o )
 
 void comment_share_evaluator::do_apply( const comment_share_operation& o )
 { try {
-   const account_name_type& signed_for = o.sharer;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
    const comment_object& comment = _db.get_comment( o.author, o.permlink );
    FC_ASSERT( comment.parent_author.size() == 0, 
       "Only top level posts can be shared." );
    FC_ASSERT( comment.allow_shares, 
       "shares are not allowed on the comment." );
    const account_object& sharer = _db.get_account( o.sharer );
+   FC_ASSERT( sharer.active, 
+      "Account: ${s} must be active to broadcast transaction.",("s", o.sharer) );
    FC_ASSERT( sharer.can_vote,  
       "sharer has declined their voting rights." );
    const community_object* community_ptr = nullptr;
@@ -1638,19 +1621,19 @@ void comment_share_evaluator::do_apply( const comment_share_operation& o )
 
       _db.share_comment_to_feeds( sharer.name, reach_type, comment );
 
-      if( o.community.valid() )
+      for( auto community : o.communities )
       {
-         const community_permission_object& community_permission = _db.get_community_permission( *o.community );
+         const community_permission_object& community_permission = _db.get_community_permission( community );
          FC_ASSERT( community_permission.is_authorized_share( o.sharer ),
-            "User ${u} is not authorized to interact with posts in the community ${b}.",
-            ("b", *o.community)("u", sharer.name));
+            "User ${u} is not authorized to interact with posts in the community ${c}.",
+            ("c",community)("u",sharer.name));
 
-         _db.share_comment_to_community( sharer.name, *o.community, comment );
+         _db.share_comment_to_community( sharer.name, community, comment );
       }
 
-      if( o.tag.valid() )
+      for( auto tag : o.tags )
       {
-         _db.share_comment_to_tag( sharer.name, *o.tag, comment );
+         _db.share_comment_to_tag( sharer.name, tag, comment );
       }
 
       if( sharer.membership == membership_tier_type::NONE )     // Check for the presence of an ad bid on this share.
@@ -1712,37 +1695,28 @@ void comment_share_evaluator::do_apply( const comment_share_operation& o )
 
 void comment_moderation_evaluator::do_apply( const comment_moderation_operation& o )
 { try {
-   const account_name_type& signed_for = o.moderator;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_governance( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   
    const account_object& moderator = _db.get_account( o.moderator );
+   FC_ASSERT( moderator.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.moderator) );
    const account_object& author = _db.get_account( o.author );
    FC_ASSERT( author.active, 
-      "Author: ${s} must be active to broadcast transaction.",("s", o.author) );
-
+      "Author: ${s} must be active to broadcast transaction.",
+      ("s", o.author) );
    if( o.interface.size() )
    {
       const account_object& interface_acc = _db.get_account( o.interface );
       FC_ASSERT( interface_acc.active, 
-         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+         "Interface: ${s} must be active to broadcast transaction.",
+         ("s", o.interface) );
       const interface_object& interface = _db.get_interface( o.interface );
       FC_ASSERT( interface.active, 
-         "Interface: ${s} must be active to broadcast transaction.",("s", o.interface) );
+         "Interface: ${s} must be active to broadcast transaction.",
+         ("s", o.interface) );
    }
    
    const comment_object& comment = _db.get_comment( o.author, o.permlink );
-   const governance_account_object* gov_ptr = _db.find_governance_account( o.moderator );
+   const governance_object* gov_ptr = _db.find_governance( o.moderator );
 
    const community_object* community_ptr = nullptr;
    if( comment.community.size() )
@@ -1872,21 +1846,11 @@ void comment_moderation_evaluator::do_apply( const comment_moderation_operation&
 
 void message_evaluator::do_apply( const message_operation& o )
 { try {
-   const account_name_type& signed_for = o.sender;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
    const account_object& sender = _db.get_account( o.sender );
+   FC_ASSERT( sender.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.sender) );
+
    const auto& message_idx = _db.get_index< message_index >().indices().get< by_sender_uuid >();
    auto message_itr = message_idx.find( boost::make_tuple( sender.name, o.uuid ) );
    const message_object* parent_ptr = nullptr;
@@ -2091,21 +2055,10 @@ void message_evaluator::do_apply( const message_operation& o )
 
 void list_evaluator::do_apply( const list_operation& o )
 { try {
-   const account_name_type& signed_for = o.creator;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   
    const account_object& creator = _db.get_account( o.creator );
+   FC_ASSERT( creator.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.creator) );
    time_point now = _db.head_block_time();
 
    FC_ASSERT( creator.active, 
@@ -2276,21 +2229,11 @@ void list_evaluator::do_apply( const list_operation& o )
 
 void poll_evaluator::do_apply( const poll_operation& o )
 { try {
-   const account_name_type& signed_for = o.creator;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   
    const account_object& creator = _db.get_account( o.creator );
+   FC_ASSERT( creator.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.creator));
+
    time_point now = _db.head_block_time();
 
    FC_ASSERT( creator.active, 
@@ -2519,21 +2462,10 @@ void poll_evaluator::do_apply( const poll_operation& o )
 
 void poll_vote_evaluator::do_apply( const poll_vote_operation& o )
 { try {
-   const account_name_type& signed_for = o.voter;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   
    const account_object& creator = _db.get_account( o.creator );
+   FC_ASSERT( creator.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.creator) );
    time_point now = _db.head_block_time();
 
    FC_ASSERT( creator.active, 
@@ -2618,29 +2550,19 @@ void poll_vote_evaluator::do_apply( const poll_vote_operation& o )
 
 void premium_purchase_evaluator::do_apply( const premium_purchase_operation& o )
 { try {
-   const account_name_type& signed_for = o.account;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   
    const account_object& account = _db.get_account( o.account );
    const account_object& author = _db.get_account( o.author );
    const comment_object& comment = _db.get_comment( o.author, o.permlink );
    asset liquid = _db.get_liquid_balance( o.account, comment.premium_price.symbol );
    time_point now = _db.head_block_time();
 
+   FC_ASSERT( account.active, 
+      "Account: ${s} must be active to purchase premium post.",
+      ("s",account.name) );
    FC_ASSERT( author.active, 
       "Account: ${s} must be active to purchase premium post.",
       ("s",author.name) );
+
    FC_ASSERT( !comment.deleted, 
       "Comment: ${a} ${c} has been deleted and cannot be purchased.",
       ("a",comment.author)("c",comment.permlink));
@@ -2710,20 +2632,7 @@ void premium_purchase_evaluator::do_apply( const premium_purchase_operation& o )
 
 void premium_release_evaluator::do_apply( const premium_release_operation& o )
 { try {
-   const account_name_type& signed_for = o.provider;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_content( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-   
+   const account_object& provider = _db.get_account( o.provider );
    const account_object& account = _db.get_account( o.account );
    const account_object& author = _db.get_account( o.author );
    const comment_object& comment = _db.get_comment( o.author, o.permlink );
@@ -2732,6 +2641,9 @@ void premium_release_evaluator::do_apply( const premium_release_operation& o )
    FC_ASSERT( !comment.deleted, 
       "Comment: ${a} ${c} has been deleted and cannot be release.",
       ("a",comment.author)("c",comment.permlink));
+   FC_ASSERT( provider.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s",o.provider));
    FC_ASSERT( account.active, 
       "Account: ${s} must be active to broadcast transaction.",
       ("s",o.account));

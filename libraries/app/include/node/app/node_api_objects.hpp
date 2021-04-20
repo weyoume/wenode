@@ -102,8 +102,7 @@ struct median_chain_property_api_obj
       enterprise_vote_percent_required( o.enterprise_vote_percent_required ),
       maximum_asset_whitelist_authorities( o.maximum_asset_whitelist_authorities ),
       max_stake_intervals( o.max_stake_intervals ),
-      max_unstake_intervals( o.max_unstake_intervals ),
-      max_exec_budget( o.max_exec_budget ){}
+      max_unstake_intervals( o.max_unstake_intervals ){}
 
    median_chain_property_api_obj(){}
 
@@ -147,7 +146,6 @@ struct median_chain_property_api_obj
    uint64_t                              maximum_asset_whitelist_authorities;  ///< The maximum amount of whitelisted or blacklisted authorities for user issued assets 
    uint8_t                               max_stake_intervals;                  ///< Maximum weeks that an asset can stake over.
    uint8_t                               max_unstake_intervals;                ///< Maximum weeks that an asset can unstake over.
-   asset                                 max_exec_budget;                      ///< Maximum budget that an executive board can claim.
 };
 
 
@@ -170,7 +168,6 @@ struct reward_fund_api_obj
       marketing_reward_balance( o.marketing_reward_balance ),
       advocacy_reward_balance( o.advocacy_reward_balance ),
       activity_reward_balance( o.activity_reward_balance ),
-      premium_partners_fund_balance( o.premium_partners_fund_balance ),
       recent_content_claims( o.recent_content_claims ),
       recent_activity_claims( o.recent_activity_claims ),
       last_updated( o.last_updated ){}
@@ -192,7 +189,6 @@ struct reward_fund_api_obj
    asset                   marketing_reward_balance;                                  ///< Balance distributed to elected marketers. 
    asset                   advocacy_reward_balance;                                   ///< Balance distributed to elected advocates. 
    asset                   activity_reward_balance;                                   ///< Balance distributed to content creators that are active each day. 
-   asset                   premium_partners_fund_balance;                             ///< Receives income from memberships, distributed to premium creators. 
    uint128_t               recent_content_claims;                                     ///< Recently claimed content reward balance shares.
    uint128_t               recent_activity_claims;                                    ///< Recently claimed activity reward balance shares.
    time_point              last_updated;                                              ///< Time that the reward fund was last updated. 
@@ -208,79 +204,78 @@ struct reward_fund_api_obj
 
 struct account_api_obj
 {
-   account_api_obj( const chain::account_object& a, const database& db ) :
-      id( a.id ),
-      name( a.name ),
-      details( to_string( a.details ) ),
-      url( to_string( a.url ) ),
-      profile_image( to_string( a.profile_image ) ),
-      cover_image( to_string( a.cover_image ) ),
-      json( to_string( a.json ) ),
-      json_private( to_string( a.json_private ) ),
-      first_name( to_string( a.first_name ) ),
-      last_name( to_string( a.last_name ) ),
-      gender( to_string( a.json_private ) ),
-      date_of_birth( to_string( a.date_of_birth ) ),
-      email( to_string( a.email ) ),
-      phone( to_string( a.phone ) ),
-      nationality( to_string( a.nationality ) ),
-      relationship( to_string( a.relationship ) ),
-      political_alignment( to_string( a.political_alignment ) ),
-      pinned_permlink( to_string( a.pinned_permlink ) ),
-      membership( membership_tier_values[ int( a.membership ) ] ),
-      secure_public_key( a.secure_public_key ),
-      connection_public_key( a.connection_public_key ),
-      friend_public_key( a.friend_public_key ),
-      companion_public_key( a.companion_public_key ),
-      proxy( a.proxy ),
-      registrar( a.registrar ),
-      referrer( a.referrer ),
-      recovery_account( a.recovery_account ),
-      reset_account( a.reset_account ),
-      membership_interface( a.membership_interface ),
-      reset_delay_days( a.reset_delay_days ),
-      referrer_rewards_percentage( a.referrer_rewards_percentage ),
-      comment_count( a.comment_count ),
-      follower_count( a.follower_count ),
-      following_count( a.following_count ),
-      post_vote_count( a.post_vote_count ),
-      post_count( a.post_count ),
-      voting_power( a.voting_power ),
-      viewing_power( a.viewing_power ),
-      sharing_power( a.sharing_power ),
-      commenting_power( a.commenting_power ),
-      savings_withdraw_requests( a.savings_withdraw_requests ),
-      withdraw_routes( a.withdraw_routes ),
-      posting_rewards( a.posting_rewards.value ),
-      curation_rewards( a.curation_rewards.value ),
-      moderation_rewards( a.moderation_rewards.value ),
-      total_rewards( a.total_rewards.value ),
-      author_reputation( a.author_reputation.value ),
-      loan_default_balance( a.loan_default_balance ),
-      recent_activity_claims( a.recent_activity_claims.value ),
-      producer_vote_count( a.producer_vote_count ),
-      officer_vote_count( a.officer_vote_count ),
-      executive_board_vote_count( a.executive_board_vote_count ),
-      governance_subscriptions( a.governance_subscriptions ),
-      enterprise_vote_count( a.enterprise_vote_count ),
-      recurring_membership( a.recurring_membership ),
-      created( a.created ),
-      membership_expiration( a.membership_expiration ),
-      last_updated( a.last_updated ),
-      last_vote_time( a.last_vote_time ),
-      last_view_time( a.last_view_time ),
-      last_share_time( a.last_share_time ),
-      last_post( a.last_post ),
-      last_root_post( a.last_root_post ),
-      last_transfer_time( a.last_transfer_time ),
-      last_activity_reward( a.last_activity_reward ),
-      last_account_recovery( a.last_account_recovery ),
-      last_community_created( a.last_community_created ),
-      last_asset_created( a.last_asset_created ),
-      mined( a.mined ),
-      revenue_share( a.revenue_share ),
-      can_vote( a.can_vote ),
-      active( a.active )
+   account_api_obj( const chain::account_object& o, const database& db ) :
+      id( o.id ),
+      name( o.name ),
+      details( to_string( o.details ) ),
+      url( to_string( o.url ) ),
+      profile_image( to_string( o.profile_image ) ),
+      cover_image( to_string( o.cover_image ) ),
+      json( to_string( o.json ) ),
+      json_private( to_string( o.json_private ) ),
+      first_name( to_string( o.first_name ) ),
+      last_name( to_string( o.last_name ) ),
+      gender( to_string( o.json_private ) ),
+      date_of_birth( to_string( o.date_of_birth ) ),
+      email( to_string( o.email ) ),
+      phone( to_string( o.phone ) ),
+      nationality( to_string( o.nationality ) ),
+      relationship( to_string( o.relationship ) ),
+      political_alignment( to_string( o.political_alignment ) ),
+      pinned_permlink( to_string( o.pinned_permlink ) ),
+      membership( membership_tier_values[ int( o.membership ) ] ),
+      secure_public_key( o.secure_public_key ),
+      connection_public_key( o.connection_public_key ),
+      friend_public_key( o.friend_public_key ),
+      companion_public_key( o.companion_public_key ),
+      proxy( o.proxy ),
+      registrar( o.registrar ),
+      referrer( o.referrer ),
+      recovery_account( o.recovery_account ),
+      reset_account( o.reset_account ),
+      membership_interface( o.membership_interface ),
+      reset_delay_days( o.reset_delay_days ),
+      referrer_rewards_percentage( o.referrer_rewards_percentage ),
+      comment_count( o.comment_count ),
+      follower_count( o.follower_count ),
+      following_count( o.following_count ),
+      post_vote_count( o.post_vote_count ),
+      post_count( o.post_count ),
+      voting_power( o.voting_power ),
+      viewing_power( o.viewing_power ),
+      sharing_power( o.sharing_power ),
+      commenting_power( o.commenting_power ),
+      savings_withdraw_requests( o.savings_withdraw_requests ),
+      withdraw_routes( o.withdraw_routes ),
+      posting_rewards( o.posting_rewards.value ),
+      curation_rewards( o.curation_rewards.value ),
+      moderation_rewards( o.moderation_rewards.value ),
+      total_rewards( o.total_rewards.value ),
+      author_reputation( o.author_reputation.value ),
+      loan_default_balance( o.loan_default_balance ),
+      recent_activity_claims( o.recent_activity_claims.value ),
+      producer_vote_count( o.producer_vote_count ),
+      officer_vote_count( o.officer_vote_count ),
+      governance_members( o.governance_members ),
+      enterprise_vote_count( o.enterprise_vote_count ),
+      recurring_membership( o.recurring_membership ),
+      created( o.created ),
+      membership_expiration( o.membership_expiration ),
+      last_updated( o.last_updated ),
+      last_vote_time( o.last_vote_time ),
+      last_view_time( o.last_view_time ),
+      last_share_time( o.last_share_time ),
+      last_post( o.last_post ),
+      last_root_post( o.last_root_post ),
+      last_transfer_time( o.last_transfer_time ),
+      last_activity_reward( o.last_activity_reward ),
+      last_account_recovery( o.last_account_recovery ),
+      last_community_created( o.last_community_created ),
+      last_asset_created( o.last_asset_created ),
+      mined( o.mined ),
+      revenue_share( o.revenue_share ),
+      can_vote( o.can_vote ),
+      active( o.active )
       {
          const auto& auth = db.get< account_authority_object, by_account >( name );
          owner_auth = authority( auth.owner_auth );
@@ -300,11 +295,11 @@ struct account_api_obj
             }
 
          }
-         for( auto t : a.interests )
+         for( auto t : o.interests )
          {
             interests.push_back( t );
          }
-         for( auto name : a.proxied )
+         for( auto name : o.proxied )
          {
             proxied.push_back( name );
          }
@@ -368,8 +363,7 @@ struct account_api_obj
    int64_t                          recent_activity_claims;
    uint16_t                         producer_vote_count;
    uint16_t                         officer_vote_count;                    ///< Number of network officers that the account has voted for.
-   uint16_t                         executive_board_vote_count;            ///< Number of Executive boards that the account has voted for.
-   uint16_t                         governance_subscriptions;              ///< Number of governance accounts that the account subscribes to.   
+   uint16_t                         governance_members;              ///< Number of governance accounts that the account subscribes to.   
    uint16_t                         enterprise_vote_count;                 ///< Number of Enterprise proposals that the account votes for. 
    uint16_t                         recurring_membership;                  ///< Amount of months membership should be automatically renewed for on expiration
    time_point                       created;                               ///< Time that the account was created.
@@ -399,19 +393,19 @@ struct account_api_obj
 
 struct account_concise_api_obj
 {
-   account_concise_api_obj( const chain::account_object& a ):
-      id( a.id ),
-      name( a.name ),
-      details( to_string( a.details ) ),
-      profile_image( to_string( a.profile_image ) ),
-      cover_image( to_string( a.cover_image ) ),
-      membership( membership_tier_values[ int( a.membership ) ] ),
-      follower_count( a.follower_count ),
-      following_count( a.following_count ),
-      total_rewards( a.total_rewards.value ),
-      author_reputation( a.author_reputation.value ),
-      created( a.created ),
-      active( a.active ){}
+   account_concise_api_obj( const chain::account_object& o ):
+      id( o.id ),
+      name( o.name ),
+      details( to_string( o.details ) ),
+      profile_image( to_string( o.profile_image ) ),
+      cover_image( to_string( o.cover_image ) ),
+      membership( membership_tier_values[ int( o.membership ) ] ),
+      follower_count( o.follower_count ),
+      following_count( o.following_count ),
+      total_rewards( o.total_rewards.value ),
+      author_reputation( o.author_reputation.value ),
+      created( o.created ),
+      active( o.active ){}
       
    account_concise_api_obj(){}
 
@@ -432,13 +426,13 @@ struct account_concise_api_obj
 
 struct account_verification_api_obj
 {
-   account_verification_api_obj( const chain::account_verification_object& a ):
-      id( a.id ),
-      verifier_account( a.verifier_account ),
-      verified_account( a.verified_account ),
-      shared_image( to_string( a.shared_image ) ),
-      created( a.created ),
-      last_updated( a.last_updated ){}
+   account_verification_api_obj( const chain::account_verification_object& o ):
+      id( o.id ),
+      verifier_account( o.verifier_account ),
+      verified_account( o.verified_account ),
+      shared_image( to_string( o.shared_image ) ),
+      created( o.created ),
+      last_updated( o.last_updated ){}
       
    account_verification_api_obj(){}
 
@@ -451,163 +445,41 @@ struct account_verification_api_obj
 };
 
 
-struct account_business_api_obj
-{
-   account_business_api_obj( const chain::account_business_object& a ):
-      id( a.id ),
-      account( a.account ),
-      business_type( business_structure_values[ int( a.business_type ) ] ),
-      business_public_key( a.business_public_key ),
-      executive_board( a.executive_board ),
-      officer_vote_threshold( a.officer_vote_threshold.value ),
-      active( a.active ),
-      created( a.created ),
-      last_updated( a.last_updated )
-      {
-         for( auto name : a.executive_votes )
-         {
-            executive_votes.push_back( std::make_pair( name.first, std::make_pair( executive_role_values[ int( name.second.first ) ] , name.second.second.value ) ) );
-         }
-         for( auto name : a.executives )
-         {
-            executives.push_back( name );
-         }
-         for( auto name : a.officer_votes )
-         {
-            officer_votes.push_back( std::make_pair( name.first, name.second.value ) );
-         }
-         for( auto name : a.officers )
-         {
-            officers.push_back( name );
-         }
-         for( auto name : a.members )
-         {
-            members.push_back( name );
-         }
-         for( auto symbol : a.equity_assets )
-         {
-            equity_assets.push_back( symbol );
-         }
-         for( auto symbol : a.credit_assets )
-         {
-            credit_assets.push_back( symbol );
-         }
-         for( auto symbol : a.equity_revenue_shares )
-         {
-            equity_revenue_shares.push_back( std::make_pair( symbol.first, symbol.second ) );
-         }
-         for( auto symbol : a.credit_revenue_shares )
-         {
-            credit_revenue_shares.push_back( std::make_pair( symbol.first, symbol.second ) );
-         }
-      }
-
-   account_business_api_obj(){}
-
-   account_business_id_type                                        id;
-   account_name_type                                               account;                    ///< Username of the business account, lowercase letters only.
-   string                                                          business_type;              ///< Type of business account, controls authorizations for transactions of different types.
-   public_key_type                                                 business_public_key;        ///< Type of business account, controls authorizations for transactions of different types.
-   executive_officer_set                                           executive_board;            ///< Set of highest voted executive accounts for each role.
-   vector< pair< account_name_type, pair< string, int64_t > > >    executive_votes;            ///< Set of all executive names.
-   vector< account_name_type >                                     executives;                 ///< Set of accounts voted as executives.
-   vector< pair< account_name_type, int64_t > >                    officer_votes;              ///< Set of all officers in the business, and their supporting voting power.
-   vector< account_name_type >                                     officers;                   ///< Set of accounts voted as officers.
-   vector< account_name_type >                                     members;                    ///< Set of all members of the business.
-   int64_t                                                         officer_vote_threshold;     ///< Amount of voting power required for an officer to be active. 
-   vector<asset_symbol_type >                                      equity_assets;              ///< Set of equity assets that offer dividends and voting power over the business account's structure
-   vector<asset_symbol_type >                                      credit_assets;              ///< Set of credit assets that offer interest and buybacks from the business account
-   vector< pair < asset_symbol_type,uint16_t > >                   equity_revenue_shares;      ///< Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
-   vector< pair < asset_symbol_type,uint16_t > >                   credit_revenue_shares;      ///< Holds a map of all equity assets that the account shares incoming revenue with, and percentages.
-   bool                                                            active;                     ///< True when the business account is active, false to deactivate business account.
-   time_point                                                      created;                    ///< Time that business account object was created.
-   time_point                                                      last_updated;               ///< Time that the business account object was last updated.
-};
-
-
-struct account_executive_vote_api_obj
-{
-   account_executive_vote_api_obj( const chain::account_executive_vote_object& a ):
-      id( a.id ),
-      account( a.account ),
-      business_account( a.business_account ),
-      executive_account( a.executive_account ),
-      role( executive_role_values[ int( a.role ) ] ),
-      vote_rank( a.vote_rank ),
-      last_updated( a.last_updated ),
-      created( a.created ){}
-      
-   account_executive_vote_api_obj(){}
-
-   account_executive_vote_id_type        id;
-   account_name_type                     account;               ///< Username of the account, voting for the executive.
-   account_name_type                     business_account;      ///< Name of the referred business account.
-   account_name_type                     executive_account;     ///< Name of the executive account.
-   string                                role;                  ///< Role voted in favor of.
-   uint16_t                              vote_rank;             ///< The rank of the executive vote.
-   time_point                            last_updated;          ///< Time that the vote was last updated.
-   time_point                            created;               ///< Time that the vote was created.
-};
-
-
-struct account_officer_vote_api_obj
-{
-   account_officer_vote_api_obj( const chain::account_officer_vote_object& a ):
-      id( a.id ),
-      account( a.account ),
-      business_account( a.business_account ),
-      officer_account( a.officer_account ),
-      vote_rank( a.vote_rank ),
-      last_updated( a.last_updated ),
-      created( a.created ){}
-      
-   account_officer_vote_api_obj(){}
-
-   account_officer_vote_id_type          id;
-   account_name_type                     account;               ///< Username of the account, voting for the officer.
-   account_name_type                     business_account;      ///< Name of the referred business account.
-   account_name_type                     officer_account;       ///< Name of the officer account.
-   uint16_t                              vote_rank;             ///< The rank of the officer vote.
-   time_point                            last_updated;          ///< Time that the vote was last updated.
-   time_point                            created;               ///< Time that the vote was created.
-};
-
-
 struct account_permission_api_obj
 {
-   account_permission_api_obj( const chain::account_permission_object& a ):
-      id( a.id ),
-      account( a.account )
+   account_permission_api_obj( const chain::account_permission_object& o ):
+      id( o.id ),
+      account( o.account )
       {
-         whitelisted_accounts.reserve( a.whitelisted_accounts.size() );
-         for( auto name : a.whitelisted_accounts )
+         whitelisted_accounts.reserve( o.whitelisted_accounts.size() );
+         for( auto name : o.whitelisted_accounts )
          {
             whitelisted_accounts.push_back( name );
          }
-         blacklisted_accounts.reserve( a.blacklisted_accounts.size() );
-         for( auto name : a.blacklisted_accounts )
+         blacklisted_accounts.reserve( o.blacklisted_accounts.size() );
+         for( auto name : o.blacklisted_accounts )
          {
             blacklisted_accounts.push_back( name );
          }
          
-         whitelisted_assets.reserve( a.whitelisted_assets.size() );
-         for( auto name : a.whitelisted_assets )
+         whitelisted_assets.reserve( o.whitelisted_assets.size() );
+         for( auto name : o.whitelisted_assets )
          {
             whitelisted_assets.push_back( name );
          }
-         blacklisted_assets.reserve( a.blacklisted_assets.size() );
-         for( auto name : a.blacklisted_assets )
+         blacklisted_assets.reserve( o.blacklisted_assets.size() );
+         for( auto name : o.blacklisted_assets )
          {
             blacklisted_assets.push_back( name );
          }
 
-         whitelisted_communities.reserve( a.whitelisted_communities.size() );
-         for( auto name : a.whitelisted_communities )
+         whitelisted_communities.reserve( o.whitelisted_communities.size() );
+         for( auto name : o.whitelisted_communities )
          {
             whitelisted_communities.push_back( name );
          }
-         blacklisted_communities.reserve( a.blacklisted_communities.size() );
-         for( auto name : a.blacklisted_communities )
+         blacklisted_communities.reserve( o.blacklisted_communities.size() );
+         for( auto name : o.blacklisted_communities )
          {
             blacklisted_communities.push_back( name );
          }
@@ -623,47 +495,6 @@ struct account_permission_api_obj
    vector< asset_symbol_type >              blacklisted_assets;            ///< List of assets that the account has blacklisted against incoming transfers.
    vector< community_name_type >            whitelisted_communities;       ///< List of communities that the account has whitelisted to interact with. 
    vector< community_name_type >            blacklisted_communities;       ///< List of communities that the account has blacklisted against interactions.
-};
-
-
-struct account_request_api_obj
-{
-   account_request_api_obj( const chain::account_member_request_object& o ):
-      id( o.id ),
-      account( o.account ),
-      business_account( o.business_account ),
-      message( to_string( o.message ) ),
-      expiration( o.expiration ){}
-
-   account_request_api_obj(){}
-
-   account_member_request_id_type          id;
-   account_name_type                       account;
-   account_name_type                       business_account;
-   string                                  message;
-   time_point                              expiration;
-};
-
-
-
-struct account_invite_api_obj
-{
-   account_invite_api_obj( const chain::account_member_invite_object& o ):
-      id( o.id ),
-      account( o.account ),
-      business_account( o.business_account ),
-      member( o.member ),
-      message( to_string( o.message ) ),
-      expiration( o.expiration ){}
-
-   account_invite_api_obj(){}
-
-   account_member_invite_id_type           id;
-   account_name_type                       account;
-   account_name_type                       business_account;
-   account_name_type                       member;
-   string                                  message;
-   time_point                              expiration;
 };
 
 
@@ -738,68 +569,68 @@ struct account_balance_api_obj
 
 struct account_following_api_obj
 {
-   account_following_api_obj( const chain::account_following_object& a ):
-      id( a.id ),
-      account( a.account ),
-      last_updated( a.last_updated )
+   account_following_api_obj( const chain::account_following_object& o ):
+      id( o.id ),
+      account( o.account ),
+      last_updated( o.last_updated )
       { 
-         for( auto name : a.followers )
+         for( auto name : o.followers )
          {
             followers.push_back( name );
          }
-         for( auto name : a.following )
+         for( auto name : o.following )
          {
             following.push_back( name );
          }
-         for( auto name : a.mutual_followers )
+         for( auto name : o.mutual_followers )
          {
             mutual_followers.push_back( name );
          }
-         for( auto name : a.connections )
+         for( auto name : o.connections )
          {
             connections.push_back( name );
          }
-         for( auto name : a.friends )
+         for( auto name : o.friends )
          {
             friends.push_back( name );
          }
-         for( auto name : a.companions )
+         for( auto name : o.companions )
          {
             companions.push_back( name );
          }
-         for( auto community : a.followed_communities )
+         for( auto community : o.followed_communities )
          {
             followed_communities.push_back( community );
          }
-         for( auto community : a.member_communities )
+         for( auto community : o.member_communities )
          {
             member_communities.push_back( community );
          }
-         for( auto community : a.moderator_communities )
+         for( auto community : o.moderator_communities )
          {
             moderator_communities.push_back( community );
          }
-         for( auto community : a.admin_communities )
+         for( auto community : o.admin_communities )
          {
             admin_communities.push_back( community );
          }
-         for( auto community : a.founder_communities )
+         for( auto community : o.founder_communities )
          {
             founder_communities.push_back( community );
          }
-         for( auto tag : a.followed_tags )
+         for( auto tag : o.followed_tags )
          {
             followed_tags.push_back( tag );
          }
-         for( auto name : a.filtered )
+         for( auto name : o.filtered )
          {
             filtered.push_back( name );
          }
-         for( auto name : a.filtered_communities )
+         for( auto name : o.filtered_communities )
          {
             filtered_communities.push_back( name );
          }
-         for( auto name : a.filtered_tags )
+         for( auto name : o.filtered_tags )
          {
             filtered_tags.push_back( name );
          }
@@ -828,7 +659,6 @@ struct account_following_api_obj
 };
 
 
-
 struct account_tag_following_api_obj
 {
    account_tag_following_api_obj( const chain::account_tag_following_object& t ):
@@ -845,7 +675,7 @@ struct account_tag_following_api_obj
 
    account_tag_following_api_obj(){}
 
-   account_tag_following_id_type             id;
+   account_tag_following_id_type     id;
    tag_name_type                     tag;                  ///< Name of the account.
    vector< account_name_type >       followers;            ///< Accounts that follow this account. 
    time_point                        last_updated;          ///< Last time that the tag changed its following sets.
@@ -854,24 +684,24 @@ struct account_tag_following_api_obj
 
 struct account_connection_api_obj
 {
-   account_connection_api_obj( const chain::account_connection_object& c ):
-      id( c.id ),
-      account_a( c.account_a ),
-      encrypted_key_a( c.encrypted_key_a ),
-      message_a( to_string( c.message_a ) ),
-      json_a( to_string( c.json_a ) ),
-      account_b( c.account_b ),
-      encrypted_key_b( c.encrypted_key_b ),
-      message_b( to_string( c.message_b ) ),
-      json_b( to_string( c.json_b ) ),
-      connection_type( connection_tier_values[ int( c.connection_type ) ] ),
-      connection_id( to_string( c.connection_id ) ),
-      message_count( c.message_count ),
-      consecutive_days( c.consecutive_days ),
-      last_message_time_a( c.last_message_time_a ),
-      last_message_time_b( c.last_message_time_b ),
-      last_updated( c.last_updated ),
-      created( c.created ){}
+   account_connection_api_obj( const chain::account_connection_object& o ):
+      id( o.id ),
+      account_a( o.account_a ),
+      encrypted_key_a( o.encrypted_key_a ),
+      message_a( to_string( o.message_a ) ),
+      json_a( to_string( o.json_a ) ),
+      account_b( o.account_b ),
+      encrypted_key_b( o.encrypted_key_b ),
+      message_b( to_string( o.message_b ) ),
+      json_b( to_string( o.json_b ) ),
+      connection_type( connection_tier_values[ int( o.connection_type ) ] ),
+      connection_id( to_string( o.connection_id ) ),
+      message_count( o.message_count ),
+      consecutive_days( o.consecutive_days ),
+      last_message_time_a( o.last_message_time_a ),
+      last_message_time_b( o.last_message_time_b ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
 
    account_connection_api_obj(){}
 
@@ -912,7 +742,6 @@ struct owner_authority_history_api_obj
 };
 
 
-
 struct account_recovery_request_api_obj
 {
    account_recovery_request_api_obj( const chain::account_recovery_request_object& o ) :
@@ -927,6 +756,428 @@ struct account_recovery_request_api_obj
    account_name_type                    account_to_recover;
    authority                            new_owner_authority;
    time_point                           expiration;
+};
+
+
+//==================================//
+// ===== Business API Objects ===== //
+//==================================//
+
+
+struct business_api_obj
+{
+   business_api_obj( const chain::business_object& o ):
+      id( o.id ),
+      account( o.account ),
+      business_trading_name( to_string( o.business_trading_name ) ),
+      equity_asset( o.equity_asset ),
+      equity_revenue_share( o.equity_revenue_share ),
+      credit_asset( o.credit_asset ),
+      credit_revenue_share( o.credit_revenue_share ),
+      public_community( o.public_community ),
+      private_community( o.private_community ),
+      created( o.created ),
+      last_updated( o.last_updated ){}
+
+   business_api_obj(){}
+
+   business_id_type                                id;
+   account_name_type                               account;                    ///< Username of the business account, lowercase letters only.
+   string                                          business_trading_name;      ///< Trading business name, UPPERCASE letters only.
+   asset_symbol_type                               equity_asset;               ///< Equity assets that offer dividends and voting power over the business account's structure.
+   uint16_t                                        equity_revenue_share;       ///< Equity asset that the account distributes a percentage of incoming revenue to as dividend payments.
+   asset_symbol_type                               credit_asset;               ///< Credit assets that offer interest and buybacks from the business account.
+   uint16_t                                        credit_revenue_share;       ///< Credit asset that the account uses a percentage of incoming revenue to repurchase at face value.
+   community_name_type                             public_community;           ///< Name of the business public community.
+   community_name_type                             private_community;          ///< Name of the business private community. Should be randomized string.
+   time_point                                      created;                    ///< Time that business account object was created.
+   time_point                                      last_updated;               ///< Time that the business account object was last updated.
+};
+
+
+struct business_permission_api_obj
+{
+   business_permission_api_obj( const chain::business_permission_object& o ):
+      id( o.id ),
+      account( o.account ),
+      chief_executive( o.chief_executive ),
+      created( o.created ),
+      last_updated( o.last_updated )
+      {
+         for( auto name : o.directors )
+         {
+            directors.push_back( name );
+         }
+         for( auto name : o.executives )
+         {
+            executives.push_back( name );
+         }
+      }
+
+   business_permission_api_obj(){}
+
+   business_permission_id_type                   id;
+   account_name_type                             account;                    ///< Username of the business account, lowercase letters only.
+   vector< account_name_type >                   directors;                  ///< Set of all accounts currently elected to vote on behalf of the equity holders.
+   vector< account_name_type >                   executives;                 ///< Set of all Executive accounts appointed by the Chief Executive Officer.
+   account_name_type                             chief_executive;            ///< Account name of the current Chief Executive Officer.
+   time_point                                    created;                    ///< Time that business premission object was created.
+   time_point                                    last_updated;               ///< Time that the business permission object was last updated.
+};
+
+
+struct business_executive_api_obj
+{
+   business_executive_api_obj( const chain::business_executive_object& o ):
+      id( o.id ),
+      executive( o.executive ),
+      business( o.business ),
+      active( o.active ),
+      appointed( o.appointed ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
+      
+   business_executive_api_obj(){}
+
+   business_executive_id_type            id;
+   account_name_type                     executive;               ///< Username of the executive account.
+   account_name_type                     business;                ///< Name of the business account.
+   bool                                  active;                  ///< True when the executive is active and can be voted for and appointed.
+   bool                                  appointed;               ///< True when the executive has been appointed by the Chief Executive for active duty.
+   time_point                            last_updated;            ///< Time that the business executive last updated.
+   time_point                            created;                 ///< The time the business executive was created.
+};
+
+
+struct business_executive_vote_api_obj
+{
+   business_executive_vote_api_obj( const chain::business_executive_vote_object& o ):
+      id( o.id ),
+      director( o.director ),
+      executive( o.executive ),
+      business( o.business ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
+      
+   business_executive_vote_api_obj(){}
+
+   business_executive_vote_id_type       id;
+   account_name_type                     director;                ///< Username of the account, voting for the executive.
+   account_name_type                     executive;               ///< Name of the executive account.
+   account_name_type                     business;                ///< Name of the referred business account.
+   time_point                            last_updated;            ///< Time that the vote was last updated.
+   time_point                            created;                 ///< The time the vote was created.
+};
+
+
+struct business_director_api_obj
+{
+   business_director_api_obj( const chain::business_director_object& o ):
+      id( o.id ),
+      director( o.director ),
+      business( o.business ),
+      active( o.active ),
+      appointed( o.appointed ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
+      
+   business_director_api_obj(){}
+
+   business_director_id_type             id;
+   account_name_type                     director;                ///< Username of the director account.
+   account_name_type                     business;                ///< Name of the business account.
+   bool                                  active;                  ///< True when the director is active and can be voted for and appointed.
+   bool                                  appointed;               ///< True when the director has been appointed by equity holders for active duty.
+   time_point                            last_updated;            ///< Time that the business director last updated.
+   time_point                            created;                 ///< The time the business director was created.
+};
+
+
+struct business_director_vote_api_obj
+{
+   business_director_vote_api_obj( const chain::business_director_vote_object& o ):
+      id( o.id ),
+      account( o.account ),
+      director( o.director ),
+      business( o.business ),
+      vote_rank( o.vote_rank ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
+      
+   business_director_vote_api_obj(){}
+
+   business_director_vote_id_type        id;
+   account_name_type                     account;             ///< Username of the account, voting for the director.
+   account_name_type                     director;            ///< Username of the director account.
+   account_name_type                     business;            ///< Name of the business account.
+   uint16_t                              vote_rank;           ///< The rank of the officer vote.
+   time_point                            last_updated;        ///< Time that the vote was last updated.
+   time_point                            created;             ///< The time the vote was created.
+};
+
+
+//====================================//
+// ===== Governance API Objects ===== //
+//====================================//
+
+
+
+struct governance_api_obj
+{
+   governance_api_obj( const chain::governance_object& o ):
+      id( o.id ),
+      account( o.account ),
+      governance_name( to_string( o.governance_name ) ),
+      equity_asset( o.equity_asset ),
+      equity_revenue_share( o.equity_revenue_share ),
+      credit_asset( o.credit_asset ),
+      credit_revenue_share( o.credit_revenue_share ),
+      public_community( o.public_community ),
+      private_community( o.private_community ),
+      member_count( o.member_count ),
+      created( o.created ),
+      last_updated( o.last_updated ){}
+
+   governance_api_obj(){}
+
+   governance_id_type                              id;
+   account_name_type                               account;                    ///< Username of the governance account, lowercase letters only.
+   string                                          governance_name;            ///< Trading governance name, UPPERCASE letters only.
+   asset_symbol_type                               equity_asset;               ///< Equity assets that offer dividends and voting power over the governance account's structure.
+   uint16_t                                        equity_revenue_share;       ///< Equity asset that the account distributes a percentage of incoming revenue to as dividend payments.
+   asset_symbol_type                               credit_asset;               ///< Credit assets that offer interest and buybacks from the governance account.
+   uint16_t                                        credit_revenue_share;       ///< Credit asset that the account uses a percentage of incoming revenue to repurchase at face value.
+   community_name_type                             public_community;           ///< Name of the governance public community.
+   community_name_type                             private_community;          ///< Name of the governance private community. Should be randomized string.
+   uint32_t                                        member_count;               ///< Number of members of the governance Account.
+   time_point                                      created;                    ///< Time that governance account object was created.
+   time_point                                      last_updated;               ///< Time that the governance account object was last updated.
+};
+
+
+struct governance_permission_api_obj
+{
+   governance_permission_api_obj( const chain::governance_permission_object& o ):
+      id( o.id ),
+      account( o.account ),
+      chief_executive( o.chief_executive ),
+      created( o.created ),
+      last_updated( o.last_updated )
+      {
+         for( auto name : o.directors )
+         {
+            directors.push_back( name );
+         }
+         for( auto name : o.executives )
+         {
+            executives.push_back( name );
+         }
+      }
+
+   governance_permission_api_obj(){}
+
+   governance_permission_id_type                   id;
+   account_name_type                               account;                    ///< Username of the governance account, lowercase letters only.
+   vector< account_name_type >                     directors;                  ///< Set of all accounts currently elected to vote on behalf of the equity holders.
+   vector< account_name_type >                     executives;                 ///< Set of all Executive accounts appointed by the Chief Executive Officer.
+   account_name_type                               chief_executive;            ///< Account name of the current Chief Executive Officer.
+   time_point                                      created;                    ///< Time that governance premission object was created.
+   time_point                                      last_updated;               ///< Time that the governance permission object was last updated.
+};
+
+
+struct governance_executive_api_obj
+{
+   governance_executive_api_obj( const chain::governance_executive_object& o ):
+      id( o.id ),
+      executive( o.executive ),
+      governance( o.governance ),
+      active( o.active ),
+      appointed( o.appointed ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
+      
+   governance_executive_api_obj(){}
+
+   governance_executive_id_type          id;
+   account_name_type                     executive;               ///< Username of the executive account.
+   account_name_type                     governance;              ///< Name of the governance account.
+   bool                                  active;                  ///< True when the executive is active and can be voted for and appointed.
+   bool                                  appointed;               ///< True when the executive has been appointed by the Chief Executive for active duty.
+   time_point                            last_updated;            ///< Time that the governance executive last updated.
+   time_point                            created;                 ///< The time the governance executive was created.
+};
+
+
+struct governance_executive_vote_api_obj
+{
+   governance_executive_vote_api_obj( const chain::governance_executive_vote_object& o ):
+      id( o.id ),
+      director( o.director ),
+      executive( o.executive ),
+      governance( o.governance ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
+      
+   governance_executive_vote_api_obj(){}
+
+   governance_executive_vote_id_type     id;
+   account_name_type                     director;                ///< Username of the account, voting for the executive.
+   account_name_type                     executive;               ///< Name of the executive account.
+   account_name_type                     governance;              ///< Name of the referred governance account.
+   time_point                            last_updated;            ///< Time that the vote was last updated.
+   time_point                            created;                 ///< The time the vote was created.
+};
+
+
+struct governance_director_api_obj
+{
+   governance_director_api_obj( const chain::governance_director_object& o ):
+      id( o.id ),
+      director( o.director ),
+      governance( o.governance ),
+      active( o.active ),
+      appointed( o.appointed ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
+      
+   governance_director_api_obj(){}
+
+   governance_director_id_type           id;
+   account_name_type                     director;                ///< Username of the director account.
+   account_name_type                     governance;              ///< Name of the governance account.
+   bool                                  active;                  ///< True when the director is active and can be voted for and appointed.
+   bool                                  appointed;               ///< True when the director has been appointed by equity holders for active duty.
+   time_point                            last_updated;            ///< Time that the governance director last updated.
+   time_point                            created;                 ///< The time the governance director was created.
+};
+
+
+struct governance_director_vote_api_obj
+{
+   governance_director_vote_api_obj( const chain::governance_director_vote_object& o ):
+      id( o.id ),
+      account( o.account ),
+      director( o.director ),
+      governance( o.governance ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
+      
+   governance_director_vote_api_obj(){}
+
+   governance_director_vote_id_type      id;
+   account_name_type                     account;             ///< Username of the account, voting for the director.
+   account_name_type                     director;            ///< Username of the director account.
+   account_name_type                     governance;          ///< Name of the governance account.
+   time_point                            last_updated;        ///< Time that the vote was last updated.
+   time_point                            created;             ///< The time the vote was created.
+};
+
+
+struct governance_member_api_obj
+{
+   governance_member_api_obj( const chain::governance_member_object& o ):
+      id( o.id ),
+      governance( o.governance ),
+      account( o.account ),
+      interface( o.interface ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
+
+   governance_member_api_obj(){}
+
+   governance_member_id_type      id;
+   account_name_type              governance;        ///< The name of the governance account creating the membership.
+   account_name_type              account;           ///< The name of the member of the governance account.
+   account_name_type              interface;         ///< Account of the interface that most recently updated the membership.
+   time_point                     last_updated;      ///< Time the member was last updated.
+   time_point                     created;           ///< Time the member was created.
+};
+
+
+struct governance_member_request_api_obj
+{
+   governance_member_request_api_obj( const chain::governance_member_request_object& o ):
+      id( o.id ),
+      account( o.account ),
+      governance( o.governance ),
+      interface( o.interface ),
+      message( to_string( o.message ) ),
+      expiration( o.expiration ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
+
+   governance_member_request_api_obj(){}
+
+   governance_member_request_id_type      id;
+   account_name_type                      account;           ///< The name of the account creating the request.
+   account_name_type                      governance;        ///< The name of the governance account to become a member of.
+   account_name_type                      interface;         ///< Account of the interface that most recently updated the membership.
+   string                                 message;           ///< Encrypted message to the Governance Account team, encrypted with Governance connection key.
+   time_point                             expiration;        ///< Request expiry time.
+   time_point                             last_updated;      ///< Time the member request was last updated.
+   time_point                             created;           ///< Time the member request was created.
+};
+
+
+struct governance_resolution_api_obj
+{
+   governance_resolution_api_obj( const chain::governance_resolution_object& o ):
+      id( o.id ),
+      governance( o.governance ),
+      resolution_id( to_string( o.resolution_id ) ),
+      ammendment_id( to_string( o.ammendment_id ) ),
+      title( to_string( o.title ) ),
+      details( to_string( o.details ) ),
+      body( to_string( o.body ) ),
+      json( to_string( o.json ) ),
+      interface( o.interface ),
+      completion_time( o.completion_time ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
+
+   governance_resolution_api_obj(){}
+
+   governance_resolution_id_type      id;
+   account_name_type                  governance;             ///< The name of the governance account creating the Resolution.
+   string                             resolution_id;          ///< uuidv4 referring to the resolution.
+   string                             ammendment_id;          ///< uuidv4 referring to the ammendment version of the resolution.
+   string                             title;                  ///< Title of the resolution to be voted on.
+   string                             details;                ///< Short description text of purpose and summary of the resolution to be voted on.
+   string                             body;                   ///< Text of the body of the resolution to be voted on.
+   string                             json;                   ///< JSON metadata of the resolution.
+   account_name_type                  interface;              ///< Account of the interface that most recently updated the resolution.
+   time_point                         completion_time;        ///< Time the governance_resolution voting completes. Fails if not approved before this time.
+   time_point                         last_updated;           ///< Time the resolution was last updated.
+   time_point                         created;                ///< Time the resolution was created.
+   bool                               approved = false;       ///< True when the Resolution has been approved by voters.
+};
+
+
+struct governance_resolution_vote_api_obj
+{
+   governance_resolution_vote_api_obj( const chain::governance_resolution_vote_object& o ):
+      id( o.id ),
+      account( o.account ),
+      governance( o.governance ),
+      resolution_id( to_string( o.resolution_id ) ),
+      ammendment_id( to_string( o.ammendment_id ) ),
+      interface( o.interface ),
+      approved( o.approved ),
+      last_updated( o.last_updated ),
+      created( o.created ){}
+
+   governance_resolution_vote_api_obj(){}
+
+   governance_resolution_vote_id_type      id;
+   account_name_type                       account;                ///< The name of the account voting on the resolution.
+   account_name_type                       governance;             ///< The name of the governance account that created the Resolution.
+   string                                  resolution_id;          ///< uuidv4 referring to the resolution.
+   string                                  ammendment_id;          ///< uuidv4 referring to the resolution ammendment, null for the initial resolution.
+   account_name_type                       interface;              ///< Account of the interface that most recently updated the resolution vote.
+   bool                                    approved;               ///< True to Approve the resolution.
+   time_point                              last_updated;           ///< Time the vote was last updated.
+   time_point                              created;                ///< Time the vote was created.
 };
 
 
@@ -996,120 +1247,6 @@ struct network_officer_vote_api_obj
    uint16_t                            vote_rank;                  ///< the ranking of the vote for the officer.
    time_point                          last_updated;               ///< Time that the vote was last updated.
    time_point                          created;                    ///< Time that the vote was created.
-};
-
-
-struct executive_board_api_obj
-{
-   executive_board_api_obj( const chain::executive_board_object& o ):
-      id( o.id ),
-      account( o.account ),
-      details( to_string( o.details ) ),
-      url( to_string( o.url ) ),
-      json( to_string( o.json ) ),
-      budget( o.budget ),
-      vote_count( o.vote_count ),
-      voting_power( o.voting_power.value ),
-      producer_vote_count( o.producer_vote_count ),
-      producer_voting_power( o.producer_voting_power.value ),
-      last_updated( o.last_updated ),
-      created( o.created ),
-      active( o.active ),
-      board_approved( o.board_approved ){}
-
-   executive_board_api_obj(){}
-
-   executive_board_id_type        id;
-   account_name_type              account;                    ///< The name of the governance account that created the executive team.
-   string                         details;                    ///< The executive team's details description.
-   string                         url;                        ///< The executive team's reference URL.
-   string                         json;                       ///< JSON metadata of the executive team.
-   asset                          budget;                     ///< Total amount of Credit asset requested for team compensation and funding.
-   uint32_t                       vote_count;                 ///< The number of accounts that support the executive team.
-   int64_t                        voting_power;               ///< The amount of voting power that votes for the executive team.
-   uint32_t                       producer_vote_count;        ///< The number of accounts that support the executive team.
-   int64_t                        producer_voting_power;      ///< The amount of voting power that votes for the executive team.
-   time_point                     last_updated;               ///< Time that the vote was last updated.
-   time_point                     created;                    ///< Time that the vote was created.
-   bool                           active;                     ///< True if the executive team is active, set false to deactivate.
-   bool                           board_approved;             ///< True when the board has reach sufficient voting support to receive budget.
-};
-
-
-struct executive_board_vote_api_obj
-{
-   executive_board_vote_api_obj( const chain::executive_board_vote_object& o ):
-      id( o.id ),
-      account( o.account ),
-      executive_board( o.executive_board ),
-      vote_rank( o.vote_rank ),
-      last_updated( o.last_updated ),
-      created( o.created ){}
-
-   executive_board_vote_api_obj(){}
-
-   executive_board_vote_id_type        id;
-   account_name_type                   account;               ///< The name of the account that voting for the executive board.
-   account_name_type                   executive_board;       ///< The name of the executive board being voted for.
-   uint16_t                            vote_rank;             ///< The rank the rank of the vote for the executive board.
-   time_point                          last_updated;          ///< Time that the vote was last updated.
-   time_point                          created;               ///< Time that the vote was created.
-};
-
-
-struct governance_account_api_obj
-{
-   governance_account_api_obj( const chain::governance_account_object& o ):
-      id( o.id ),
-      account( o.account ),
-      details( to_string( o.details ) ),
-      url( to_string( o.url ) ),
-      json( to_string( o.json ) ),
-      subscriber_count( o.subscriber_count ),
-      subscriber_power( o.subscriber_power.value ),
-      producer_subscriber_count( o.producer_subscriber_count ),
-      producer_subscriber_power( o.producer_subscriber_power.value ),
-      last_updated( o.last_updated ),
-      created( o.created ),
-      active( o.active ),
-      account_approved( o.account_approved ){}
-
-   governance_account_api_obj(){}
-
-   governance_account_id_type     id;
-   account_name_type              account;                     ///< The name of the governance account that created the governance account.
-   string                         details;                     ///< The governance account's details description. 
-   string                         url;                         ///< The governance account's reference URL. 
-   string                         json;                        ///< Json metadata of the governance account. 
-   uint32_t                       subscriber_count;            ///< The number of accounts that support the governance account.
-   int64_t                        subscriber_power;            ///< The amount of voting power that votes for the governance account. 
-   uint32_t                       producer_subscriber_count;   ///< The number of accounts that support the governance account.
-   int64_t                        producer_subscriber_power;   ///< The amount of voting power that votes for the governance account.
-   time_point                     last_updated;                ///< The time the governance account was last updated.
-   time_point                     created;                     ///< The time the governance account was created.
-   bool                           active;                      ///< True if the governance account is active, set false to deactivate.
-   bool                           account_approved;            ///< True when the governance account has reach sufficient voting support to receive budget.
-};
-
-
-struct governance_subscription_api_obj
-{
-   governance_subscription_api_obj( const chain::governance_subscription_object& o ):
-      id( o.id ),
-      account( o.account ),
-      governance_account( o.governance_account ),
-      vote_rank( o.vote_rank ),
-      last_updated( o.last_updated ),
-      created( o.created ){}
-
-   governance_subscription_api_obj(){}
-
-   governance_subscription_id_type     id;
-   account_name_type                   account;                    ///< The name of the account that subscribes to the governance account.
-   account_name_type                   governance_account;         ///< The name of the governance account being subscribed to.
-   uint16_t                            vote_rank;                  ///< The preference rank of subscription for fee splitting.
-   time_point                          last_updated;               ///< Time that the subscription was last updated.
-   time_point                          created;                    ///< Time that the subscription was created.
 };
 
 
@@ -1381,6 +1518,7 @@ struct comment_api_obj
       max_accepted_payout( o.max_accepted_payout ),
       reward_currency( o.reward_currency ),
       reward_curve( o.reward_curve ),
+      channel( o.channel ),
       allow_replies( o.allow_replies ),
       allow_votes( o.allow_votes ),
       allow_views( o.allow_views ),
@@ -1484,6 +1622,7 @@ struct comment_api_obj
    asset                             max_accepted_payout;                 ///< USD value of the maximum payout this post will receive.
    asset_symbol_type                 reward_currency;                     ///< The currency asset that the post can earn content rewards in.
    comment_reward_curve              reward_curve;                        ///< The components of the reward curve determined at the time of creating the post.
+   bool                              channel;                             ///< True when a post is a channel post, and included in the channel feed of the community as the community name instead of author.
    bool                              allow_replies;                       ///< allows a post to receive replies.
    bool                              allow_votes;                         ///< allows a post to receive votes.
    bool                              allow_views;                         ///< allows a post to receive views.
@@ -1703,7 +1842,7 @@ struct comment_moderation_api_obj
    comment_moderation_api_obj(){}
 
    comment_moderation_id_type        id;
-   account_name_type                 moderator;                   ///< Name of the moderator or goverance account that created the comment tag.
+   account_name_type                 moderator;                   ///< Name of the moderator or governance account that created the comment tag.
    comment_id_type                   comment;                     ///< ID of the comment.
    community_name_type               community;                   ///< The name of the community to which the post is uploaded to.
    vector< tag_name_type >           tags;                        ///< Set of string tags for sorting the post by.
@@ -2086,6 +2225,7 @@ struct community_permission_api_obj
       name( o.name ),
       founder( o.founder ),
       private_community( o.private_community ),
+      channel( o.channel ),
       author_permission( community_permission_values[ int( o.author_permission ) ] ),
       reply_permission( community_permission_values[ int( o.reply_permission ) ] ),
       vote_permission( community_permission_values[ int( o.vote_permission ) ] ),
@@ -2175,6 +2315,7 @@ struct community_permission_api_obj
    community_name_type                            name;                                 ///< Name of the community with permissions set.
    account_name_type                              founder;                              ///< Name of the founding account of the community. Has full permissions.
    bool                                           private_community;                    ///< True when the community is private, and all posts must be encrypted.
+   bool                                           channel;                              ///< True when a community is a channel, and only accepts channel posts from admins.
    string                                         author_permission;                    ///< Determines which accounts can create root posts.
    string                                         reply_permission;                     ///< Determines which accounts can create replies to root posts.
    string                                         vote_permission;                      ///< Determines which accounts can create comment votes on posts and comments.
@@ -3808,7 +3949,7 @@ struct equity_data_api_obj
 {
    equity_data_api_obj( const chain::asset_equity_data_object& o ):
       id( o.id ),
-      business_account( o.business_account ),
+      issuer( o.issuer ),
       symbol( o.symbol ),
       last_dividend( o.last_dividend ),
       dividend_share_percent( o.dividend_share_percent ),
@@ -3829,7 +3970,7 @@ struct equity_data_api_obj
    equity_data_api_obj(){}
 
    asset_equity_data_id_type            id;
-   account_name_type                    business_account;            ///< The business account name of the issuer.
+   account_name_type                    issuer;                      ///< The business account name of the issuer.
    asset_symbol_type                    symbol;                      ///< The symbol of the equity asset of the business.
    map< asset_symbol_type, asset >      dividend_pool;               ///< Assets pooled for distribution at the next interval.
    time_point                           last_dividend;               ///< Time that the asset last distributed a dividend.
@@ -3846,50 +3987,52 @@ struct equity_data_api_obj
 
 struct bond_data_api_obj
 {
-   bond_data_api_obj( const chain::asset_bond_data_object& c ):
-      id( c.id ),
-      business_account( c.business_account ),
-      symbol( c.symbol ),
-      value( c.value ),
-      collateralization( c.collateralization ),
-      coupon_rate_percent( c.coupon_rate_percent ),
-      maturity_date( c.maturity_date ),
-      collateral_pool( c.collateral_pool ){}
+   bond_data_api_obj( const chain::asset_bond_data_object& o ):
+      id( o.id ),
+      issuer( o.issuer ),
+      symbol( o.symbol ),
+      value( o.value ),
+      collateralization( o.collateralization ),
+      coupon_rate_percent( o.coupon_rate_percent ),
+      maturity_date( o.maturity_date ),
+      collateral_pool( o.collateral_pool ){}
 
    bond_data_api_obj(){}
 
    asset_bond_data_id_type          id;
-   account_name_type                business_account;          ///< The account name of the issuer. Locks collateral to issue new bond units.
+   account_name_type                issuer;                    ///< The account name of the issuer. Locks collateral to issue new bond units.
    asset_symbol_type                symbol;                    ///< The symbol of the bond asset.
    asset                            value;                     ///< Face value amount of each unit of the bond. Interest is paid as a percentage of value.
    uint16_t                         collateralization;         ///< Percentage of value that is locked in collateral to back the bonds. Should be at least 10%.
    uint16_t                         coupon_rate_percent;       ///< Percentage rate of the value that is paid each month in interest to the holders.
-   date_type                        maturity_date;             ///< Date at which the bond will mature. Principle value will be automatically paid from business_account.
+   date_type                        maturity_date;             ///< Date at which the bond will mature. Principle value will be automatically paid from business.
    asset                            collateral_pool;           ///< Amount of collateral backing the bond assets. Distributed in case of default. 
 };
 
 
 struct credit_data_api_obj
 {
-   credit_data_api_obj( const chain::asset_credit_data_object& c ):
-      id( c.id ),
-      buyback_asset( c.buyback_asset ),
-      buyback_pool( c.buyback_pool ),
-      buyback_price( c.buyback_price ),
-      last_buyback( c.last_buyback ),
-      buyback_share_percent( c.buyback_share_percent ),
-      liquid_fixed_interest_rate( c.liquid_fixed_interest_rate ),
-      liquid_variable_interest_rate( c.liquid_variable_interest_rate ),
-      staked_fixed_interest_rate( c.staked_fixed_interest_rate ),
-      staked_variable_interest_rate( c.staked_variable_interest_rate ),
-      savings_fixed_interest_rate( c.savings_fixed_interest_rate ),
-      savings_variable_interest_rate( c.savings_variable_interest_rate ),
-      var_interest_range( c.var_interest_range ){}
+   credit_data_api_obj( const chain::asset_credit_data_object& o ):
+      id( o.id ),
+      issuer( o.issuer ),
+      symbol( o.symbol ),
+      buyback_asset( o.buyback_asset ),
+      buyback_pool( o.buyback_pool ),
+      buyback_price( o.buyback_price ),
+      last_buyback( o.last_buyback ),
+      buyback_share_percent( o.buyback_share_percent ),
+      liquid_fixed_interest_rate( o.liquid_fixed_interest_rate ),
+      liquid_variable_interest_rate( o.liquid_variable_interest_rate ),
+      staked_fixed_interest_rate( o.staked_fixed_interest_rate ),
+      staked_variable_interest_rate( o.staked_variable_interest_rate ),
+      savings_fixed_interest_rate( o.savings_fixed_interest_rate ),
+      savings_variable_interest_rate( o.savings_variable_interest_rate ),
+      var_interest_range( o.var_interest_range ){}
 
    credit_data_api_obj(){}
 
    asset_credit_data_id_type  id;
-   account_name_type          business_account;                          ///< The business account name of the issuer.
+   account_name_type          issuer;                                    ///< The business account name of the issuer.
    asset_symbol_type          symbol;                                    ///< The symbol of the credit asset of the business.
    asset_symbol_type          buyback_asset;                             ///< Symbol used to buyback credit assets
    asset                      buyback_pool;                              ///< Amount of assets pooled to buyback the asset at next interval
@@ -3910,7 +4053,7 @@ struct stimulus_data_api_obj
 {
    stimulus_data_api_obj( const chain::asset_stimulus_data_object& o ):
       id( o.id ),
-      business_account( o.business_account ),
+      issuer( o.issuer ),
       symbol( o.symbol ),
       redemption_asset( o.redemption_asset ),
       redemption_pool( o.redemption_pool ),
@@ -3931,7 +4074,7 @@ struct stimulus_data_api_obj
    stimulus_data_api_obj(){}
 
    asset_stimulus_data_id_type          id;
-   account_name_type                    business_account;                   ///< The business account name of the issuer.
+   account_name_type                    issuer;                             ///< The business account name of the issuer.
    asset_symbol_type                    symbol;                             ///< The symbol of the stimulus asset.
    asset_symbol_type                    redemption_asset;                   ///< Symbol of the asset that can be redeemed in exchange the stimulus asset.
    asset                                redemption_pool;                    ///< Amount of assets pooled to redeem in exchange for the stimulus asset.
@@ -3945,18 +4088,18 @@ struct stimulus_data_api_obj
 
 struct unique_data_api_obj
 {
-   unique_data_api_obj( const chain::asset_unique_data_object& c ):
-      id( c.id ),
-      symbol( c.symbol ),
-      controlling_owner( c.controlling_owner ),
-      ownership_asset( c.ownership_asset ),
-      access_price( c.access_price )
+   unique_data_api_obj( const chain::asset_unique_data_object& o ):
+      id( o.id ),
+      symbol( o.symbol ),
+      controlling_owner( o.controlling_owner ),
+      ownership_asset( o.ownership_asset ),
+      access_price( o.access_price )
       {
-         for( auto acc : c.control_list )
+         for( auto acc : o.control_list )
          {
             control_list.push_back( acc );
          }
-         for( auto acc : c.access_list )
+         for( auto acc : o.access_list )
          {
             access_list.push_back( acc );
          }
@@ -4615,7 +4758,6 @@ FC_REFLECT( node::app::median_chain_property_api_obj,
          (maximum_asset_whitelist_authorities)
          (max_stake_intervals)
          (max_unstake_intervals)
-         (max_exec_budget)
          );
 
 FC_REFLECT( node::app::reward_fund_api_obj,
@@ -4634,7 +4776,6 @@ FC_REFLECT( node::app::reward_fund_api_obj,
          (marketing_reward_balance)
          (advocacy_reward_balance)
          (activity_reward_balance)
-         (premium_partners_fund_balance)
          (recent_content_claims)
          (recent_activity_claims)
          (last_updated)
@@ -4644,7 +4785,6 @@ FC_REFLECT( node::app::reward_fund_api_obj,
 //=================================//
 // ===== Account API Objects ===== //
 //=================================//
-
 
 
 FC_REFLECT( node::app::account_api_obj,
@@ -4704,8 +4844,7 @@ FC_REFLECT( node::app::account_api_obj,
          (recent_activity_claims)
          (producer_vote_count)
          (officer_vote_count)
-         (executive_board_vote_count)
-         (governance_subscriptions)
+         (governance_members)
          (enterprise_vote_count)
          (recurring_membership)
          (created)
@@ -4755,48 +4894,6 @@ FC_REFLECT( node::app::account_verification_api_obj,
          (last_updated)
          );
 
-FC_REFLECT( node::app::account_business_api_obj,
-         (id)
-         (account)
-         (business_type)
-         (business_public_key)
-         (executive_board)
-         (executive_votes)
-         (executives)
-         (officer_votes)
-         (officers)
-         (members)
-         (officer_vote_threshold)
-         (equity_assets)
-         (credit_assets)
-         (equity_revenue_shares)
-         (credit_revenue_shares)
-         (active)
-         (created)
-         (last_updated)
-         );
-
-FC_REFLECT( node::app::account_executive_vote_api_obj,
-         (id)
-         (account)
-         (business_account)
-         (executive_account)
-         (role)
-         (vote_rank)
-         (last_updated)
-         (created)
-         );
-
-FC_REFLECT( node::app::account_officer_vote_api_obj,
-         (id)
-         (account)
-         (business_account)
-         (officer_account)
-         (vote_rank)
-         (last_updated)
-         (created)
-         );
-
 FC_REFLECT( node::app::account_permission_api_obj,
          (id)
          (account)
@@ -4806,23 +4903,6 @@ FC_REFLECT( node::app::account_permission_api_obj,
          (blacklisted_assets)
          (whitelisted_communities)
          (blacklisted_communities)
-         );
-
-FC_REFLECT( node::app::account_request_api_obj,
-         (id)
-         (account)
-         (business_account)
-         (message)
-         (expiration)
-         );
-
-FC_REFLECT( node::app::account_invite_api_obj,
-         (id)
-         (account)
-         (business_account)
-         (member)
-         (message)
-         (expiration)
          );
 
 FC_REFLECT( node::app::account_vesting_balance_api_obj,
@@ -4918,6 +4998,192 @@ FC_REFLECT( node::app::account_recovery_request_api_obj,
          );
 
 
+//==================================//
+// ===== Business API Objects ===== //
+//==================================//
+
+
+FC_REFLECT( node::app::business_api_obj,
+         (id)
+         (account)
+         (business_trading_name)
+         (equity_asset)
+         (equity_revenue_share)
+         (credit_asset)
+         (credit_revenue_share)
+         (public_community)
+         (private_community)
+         (created)
+         (last_updated)
+         );
+
+FC_REFLECT( node::app::business_permission_api_obj,
+         (id)
+         (account)
+         (directors)
+         (executives)
+         (chief_executive)
+         (created)
+         (last_updated)
+         );
+
+FC_REFLECT( node::app::business_executive_api_obj,
+         (id)
+         (executive)
+         (business)
+         (active)
+         (appointed)
+         (last_updated)
+         (created)
+         );
+
+FC_REFLECT( node::app::business_executive_vote_api_obj,
+         (id)
+         (director)
+         (executive)
+         (business)
+         (last_updated)
+         (created)
+         );
+
+FC_REFLECT( node::app::business_director_api_obj,
+         (id)
+         (director)
+         (business)
+         (active)
+         (appointed)
+         (last_updated)
+         (created)
+         );
+
+FC_REFLECT( node::app::business_director_vote_api_obj,
+         (id)
+         (account)
+         (director)
+         (business)
+         (vote_rank)
+         (last_updated)
+         (created)
+         );
+
+
+//====================================//
+// ===== Governance API Objects ===== //
+//====================================//
+
+
+FC_REFLECT( node::app::governance_api_obj,
+         (id)
+         (account)
+         (governance_name)
+         (equity_asset)
+         (equity_revenue_share)
+         (credit_asset)
+         (credit_revenue_share)
+         (public_community)
+         (private_community)
+         (member_count)
+         (created)
+         (last_updated)
+         );
+
+FC_REFLECT( node::app::governance_permission_api_obj,
+         (id)
+         (account)
+         (directors)
+         (executives)
+         (chief_executive)
+         (created)
+         (last_updated)
+         );
+
+FC_REFLECT( node::app::governance_executive_api_obj,
+         (id)
+         (executive)
+         (governance)
+         (active)
+         (appointed)
+         (last_updated)
+         (created)
+         );
+
+FC_REFLECT( node::app::governance_executive_vote_api_obj,
+         (id)
+         (director)
+         (executive)
+         (governance)
+         (last_updated)
+         (created)
+         );
+
+FC_REFLECT( node::app::governance_director_api_obj,
+         (id)
+         (director)
+         (governance)
+         (active)
+         (appointed)
+         (last_updated)
+         (created)
+         );
+
+FC_REFLECT( node::app::governance_director_vote_api_obj,
+         (id)
+         (account)
+         (director)
+         (governance)
+         (last_updated)
+         (created)
+         );
+
+FC_REFLECT( node::app::governance_member_api_obj,
+         (id)
+         (governance)
+         (account)
+         (interface)
+         (last_updated)
+         (created)
+         );
+
+FC_REFLECT( node::app::governance_member_request_api_obj,
+         (id)
+         (account)
+         (governance)
+         (interface)
+         (message)
+         (expiration)
+         (last_updated)
+         (created)
+         );
+
+FC_REFLECT( node::app::governance_resolution_api_obj,
+         (id)
+         (governance)
+         (resolution_id)
+         (ammendment_id)
+         (title)
+         (details)
+         (body)
+         (json)
+         (interface)
+         (completion_time)
+         (last_updated)
+         (created)
+         (approved)
+         );
+
+FC_REFLECT( node::app::governance_resolution_vote_api_obj,
+         (id)
+         (account)
+         (governance)
+         (resolution_id)
+         (ammendment_id)
+         (interface)
+         (approved)
+         (last_updated)
+         (created)
+         );
+
+
 //=================================//
 // ===== Network API Objects ===== //
 //=================================//
@@ -4946,57 +5212,6 @@ FC_REFLECT( node::app::network_officer_vote_api_obj,
          (account)
          (network_officer)
          (officer_type)
-         (vote_rank)
-         (last_updated)
-         (created)
-         );
-
-FC_REFLECT( node::app::executive_board_api_obj,
-         (id)
-         (account)
-         (details)
-         (url)
-         (json)
-         (budget)
-         (vote_count)
-         (voting_power)
-         (producer_vote_count)
-         (producer_voting_power)
-         (last_updated)
-         (created)
-         (active)
-         (board_approved)
-         );
-
-FC_REFLECT( node::app::executive_board_vote_api_obj,
-         (id)
-         (account)
-         (executive_board)
-         (vote_rank)
-         (last_updated)
-         (created)
-         );
-
-FC_REFLECT( node::app::governance_account_api_obj,
-         (id)
-         (account)
-         (details)
-         (url)
-         (json)
-         (subscriber_count)
-         (subscriber_power)
-         (producer_subscriber_count)
-         (producer_subscriber_power)
-         (last_updated)
-         (created)
-         (active)
-         (account_approved)
-         );
-
-FC_REFLECT( node::app::governance_subscription_api_obj,
-         (id)
-         (account)
-         (governance_account)
          (vote_rank)
          (last_updated)
          (created)
@@ -5166,6 +5381,7 @@ FC_REFLECT( node::app::comment_api_obj,
          (max_accepted_payout)
          (reward_currency)
          (reward_curve)
+         (channel)
          (allow_replies)
          (allow_votes)
          (allow_views)
@@ -5416,6 +5632,7 @@ FC_REFLECT( node::app::community_permission_api_obj,
          (name)
          (founder)
          (private_community)
+         (channel)
          (author_permission)
          (reply_permission)
          (vote_permission)
@@ -6128,7 +6345,7 @@ FC_REFLECT( node::app::asset_collateral_bid_api_obj,
 
 FC_REFLECT( node::app::equity_data_api_obj,
          (id)
-         (business_account)
+         (issuer)
          (symbol)
          (dividend_pool)
          (last_dividend)
@@ -6144,7 +6361,7 @@ FC_REFLECT( node::app::equity_data_api_obj,
 
 FC_REFLECT( node::app::bond_data_api_obj,
          (id)
-         (business_account)
+         (issuer)
          (symbol)
          (value)
          (collateralization)
@@ -6155,7 +6372,7 @@ FC_REFLECT( node::app::bond_data_api_obj,
 
 FC_REFLECT( node::app::credit_data_api_obj,
          (id)
-         (business_account)
+         (issuer)
          (symbol)
          (buyback_asset)
          (buyback_pool)
@@ -6173,7 +6390,7 @@ FC_REFLECT( node::app::credit_data_api_obj,
 
 FC_REFLECT( node::app::stimulus_data_api_obj,
          (id)
-         (business_account)
+         (issuer)
          (symbol)
          (redemption_asset)
          (redemption_pool)

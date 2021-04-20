@@ -17,10 +17,8 @@ namespace node { namespace protocol {
    //============================//
 
 
-
-   void account_create_operation::validate() const
+   void account_create_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( registrar );
       validate_account_name( referrer );
       validate_account_name( new_account_name );
@@ -207,9 +205,8 @@ namespace node { namespace protocol {
       validate_public_key( companion_public_key );
    }
 
-   void account_update_operation::validate() const
+   void account_update_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       FC_ASSERT( account != TEMP_ACCOUNT, 
@@ -385,10 +382,8 @@ namespace node { namespace protocol {
       }
    }
 
-
-   void account_verification_operation::validate() const
+   void account_verification_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( verifier_account );
       validate_account_name( verified_account );
       
@@ -400,26 +395,8 @@ namespace node { namespace protocol {
          "Image rejected: IPFS string should be 46 characters long and begin with 'Qm'." );
    }
 
-   void account_business_operation::validate() const
+   void account_membership_operation::validate()const
    {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      validate_account_name( init_ceo_account );
-
-      FC_ASSERT( business_type.size() < MAX_URL_SIZE,
-         "Business Type is invalid." );
-      FC_ASSERT( fc::is_utf8( business_type ),
-         "Business Type is invalid." );
-      FC_ASSERT( officer_vote_threshold > 0, 
-         "Officer vote threshold must be greater than 0.");
-      FC_ASSERT( business_public_key.size() < MAX_URL_SIZE,
-         "Business Public key is too long." );
-      validate_public_key( business_public_key );
-   }
-
-   void account_membership_operation::validate() const
-   {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       if( interface.size() )
@@ -437,83 +414,8 @@ namespace node { namespace protocol {
          "Months of membership purchased must be between 1, and 120.", ("m", months ) );
    }
 
-   void account_vote_executive_operation::validate() const
+   void account_update_list_operation::validate()const
    {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      validate_account_name( business_account );
-      validate_account_name( executive_account );
-
-      FC_ASSERT( role.size() < MAX_URL_SIZE,
-         "Role Type is invalid." );
-      FC_ASSERT( fc::is_utf8( role ),
-         "Role Type is invalid." );
-   }
-
-   void account_vote_officer_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      validate_account_name( business_account );
-      validate_account_name( officer_account );
-   }
-
-   void account_member_request_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      validate_account_name( business_account );
-
-      FC_ASSERT( message.size() < MAX_STRING_SIZE, 
-         "Message is too long" );
-   }
-
-   void account_member_invite_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      validate_account_name( business_account );
-      validate_account_name( member );
-
-      FC_ASSERT( account != member, 
-         "Account: ${a} cannot invite itself to become a member of a Business account: ${b}.", 
-      ("a", member)("b", business_account));
-      FC_ASSERT( message.size() < MAX_STRING_SIZE,
-         "Message is too long." );
-      FC_ASSERT( encrypted_business_key.size() < MAX_STRING_SIZE,
-         "Encrypted key is too long." );
-   }
-
-   void account_accept_request_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      validate_account_name( business_account );
-      validate_account_name( member );
-
-      FC_ASSERT( account != member, 
-         "Account: ${a} cannot accept its own join request to a business account: ${b}.", 
-         ("a", member)("b", business_account));
-   }
-
-   void account_accept_invite_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      validate_account_name( business_account );
-   }
-
-   void account_remove_member_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      validate_account_name( business_account );
-      validate_account_name( member );
-   }
-
-   void account_update_list_operation::validate() const
-   {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       FC_ASSERT( listed_account.valid() || listed_asset.valid(),
@@ -529,22 +431,20 @@ namespace node { namespace protocol {
       }
       if( listed_asset.valid() )
       {
-         FC_ASSERT( is_valid_symbol( *listed_asset ) );
+         FC_ASSERT( validate_asset_symbol( *listed_asset ) );
       }
    }
 
-   void account_producer_vote_operation::validate() const
+   void account_producer_vote_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( producer );
       FC_ASSERT( vote_rank >= 1 && vote_rank <= 100, 
          "Vote rank must be between zero and one hundred." );
    }
 
-   void account_update_proxy_operation::validate() const
+   void account_update_proxy_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       if( proxy.size() )
       {
@@ -556,7 +456,6 @@ namespace node { namespace protocol {
 
    void account_request_recovery_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( recovery_account );
       validate_account_name( account_to_recover );
       new_owner_authority.validate();
@@ -564,7 +463,6 @@ namespace node { namespace protocol {
 
    void account_recover_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account_to_recover );
       FC_ASSERT( !( new_owner_authority == recent_owner_authority ), 
          "Cannot set new owner authority to the recent owner authority" );
@@ -580,7 +478,6 @@ namespace node { namespace protocol {
 
    void account_reset_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( reset_account );
       validate_account_name( account_to_reset );
       FC_ASSERT( !new_owner_authority.is_impossible(), 
@@ -592,7 +489,6 @@ namespace node { namespace protocol {
 
    void account_reset_update_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( new_reset_account );
       FC_ASSERT( days >= 3 && days <= 365, 
@@ -601,20 +497,17 @@ namespace node { namespace protocol {
 
    void account_recovery_update_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account_to_recover );
       validate_account_name( new_recovery_account );
    }
 
    void account_decline_voting_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
    }
 
-   void account_connection_operation::validate() const
+   void account_connection_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( connecting_account );
       FC_ASSERT( account != connecting_account, 
@@ -646,9 +539,8 @@ namespace node { namespace protocol {
          "Encrypted Key is too long." );
    }
 
-   void account_follow_operation::validate() const
+   void account_follow_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( follower );
       validate_account_name( following );
       if( interface.size() )
@@ -659,9 +551,8 @@ namespace node { namespace protocol {
       "Account cannot follow itself." );
    }
 
-   void account_follow_tag_operation::validate() const
+   void account_follow_tag_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( follower );
       validate_tag_name( tag );
       if( interface.size() )
@@ -670,9 +561,8 @@ namespace node { namespace protocol {
       }
    }
 
-   void account_activity_operation::validate() const
+   void account_activity_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       if( interface.size() )
       {
@@ -682,14 +572,641 @@ namespace node { namespace protocol {
    }
 
 
+   //============================//
+   // === Business Operations ===//
+   //============================//
+
+
+   void business_create_operation::validate()const
+   {
+      validate_account_name( founder );
+      validate_account_name( new_business_name );
+      
+
+      if( new_business_trading_name.size() > 0 )
+      {
+         FC_ASSERT( new_business_trading_name.size() < MAX_STRING_SIZE,
+            "Business Trading Name is too long." );
+         FC_ASSERT( fc::is_utf8( new_business_trading_name ), 
+            "Business Trading Name is not formatted in UTF8." );
+      }
+
+      if( details.size() > 0 )
+      {
+         FC_ASSERT( details.size() < MAX_STRING_SIZE,
+            "Details are too long." );
+         FC_ASSERT( fc::is_utf8( details ), 
+            "Details are not formatted in UTF8." );
+      }
+
+      if( url.size() > 0 )
+      {
+         FC_ASSERT( url.size() < MAX_URL_SIZE,
+            "URL is too long." );
+         FC_ASSERT( fc::is_utf8( url ),
+            "URL is not formatted in UTF8." );
+         validate_url( url );
+      }
+      
+      if( profile_image.size() > 0 )
+      {
+         FC_ASSERT( profile_image.size() < MAX_STRING_SIZE,
+            "Image is too long." );
+         FC_ASSERT( fc::is_utf8( profile_image ), 
+            "Image is not formatted in UTF8." );
+         FC_ASSERT( profile_image.size() == 46 && profile_image[0] == 'Q' && profile_image[1] == 'm',
+            "Image rejected: IPFS string should be 46 characters long and begin with 'Qm'." );
+      }
+
+      if( cover_image.size() > 0 )
+      {
+         FC_ASSERT( cover_image.size() < MAX_STRING_SIZE,
+            "Image is too long." );
+         FC_ASSERT( fc::is_utf8( cover_image ), 
+            "Image is not formatted in UTF8." );
+         FC_ASSERT( cover_image.size() == 46 && cover_image[0] == 'Q' && cover_image[1] == 'm',
+            "Image rejected: IPFS string should be 46 characters long and begin with 'Qm'." );
+      }
+
+      FC_ASSERT( secure_public_key.size() < MAX_URL_SIZE,
+         "Secure Public key is too long." );
+      validate_public_key( secure_public_key );
+
+      FC_ASSERT( connection_public_key.size() < MAX_URL_SIZE,
+         "Connection Public key is too long." );
+      validate_public_key( connection_public_key );
+
+      FC_ASSERT( friend_public_key.size() < MAX_URL_SIZE,
+         "Friend Public key is too long." );
+      validate_public_key( friend_public_key );
+
+      FC_ASSERT( companion_public_key.size() < MAX_URL_SIZE,
+         "Companion Public key is too long." );
+      validate_public_key( companion_public_key );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
+      validate_asset_symbol( equity_asset );
+      validate_asset_symbol( credit_asset );
+
+      equity_options.validate();
+      credit_options.validate();
+
+      FC_ASSERT( equity_revenue_share >= 0 && equity_revenue_share <= MAX_REVENUE_SHARE,
+         "Equity Revenue share must be between 0 and 50%." );
+
+      FC_ASSERT( credit_revenue_share >= 0 && credit_revenue_share <= MAX_REVENUE_SHARE,
+         "Credit Revenue share must be between 0 and 50%." );
+
+      FC_ASSERT( equity_revenue_share + credit_revenue_share >= 0 && 
+         equity_revenue_share + credit_revenue_share <= MAX_REVENUE_SHARE,
+         "Equity Plus Credit Revenue share must be between 0 and 50%." );
+      
+      validate_community_name( public_community );
+
+      FC_ASSERT( public_community_member_key.size() < MAX_URL_SIZE,
+         "Community Member key is too long." );
+      validate_public_key( public_community_member_key );
+
+      FC_ASSERT( public_community_moderator_key.size() < MAX_URL_SIZE,
+         "Community Moderation key is too long." );
+      validate_public_key( public_community_moderator_key );
+
+      FC_ASSERT( public_community_admin_key.size() < MAX_URL_SIZE,
+         "Community Admin key is too long." );
+      validate_public_key( public_community_admin_key );
+
+      FC_ASSERT( public_community_secure_key.size() < MAX_URL_SIZE,
+         "Community Secure key is too long." );
+      validate_public_key( public_community_secure_key );
+
+      FC_ASSERT( public_community_standard_premium_key.size() < MAX_URL_SIZE,
+         "Community Standard Premium key is too long." );
+      validate_public_key( public_community_standard_premium_key );
+
+      FC_ASSERT( public_community_mid_premium_key.size() < MAX_URL_SIZE,
+         "Community Mid Premium key is too long." );
+      validate_public_key( public_community_mid_premium_key );
+
+      FC_ASSERT( public_community_top_premium_key.size() < MAX_URL_SIZE,
+         "Community Top Premium key is too long." );
+      validate_public_key( public_community_top_premium_key );
+
+      validate_community_name( private_community );
+
+      FC_ASSERT( private_community_member_key.size() < MAX_URL_SIZE,
+         "Community Member key is too long." );
+      validate_public_key( private_community_member_key );
+
+      FC_ASSERT( private_community_moderator_key.size() < MAX_URL_SIZE,
+         "Community Moderation key is too long." );
+      validate_public_key( private_community_moderator_key );
+
+      FC_ASSERT( private_community_admin_key.size() < MAX_URL_SIZE,
+         "Community Admin key is too long." );
+      validate_public_key( private_community_admin_key );
+
+      FC_ASSERT( private_community_secure_key.size() < MAX_URL_SIZE,
+         "Community Secure key is too long." );
+      validate_public_key( private_community_secure_key );
+
+      FC_ASSERT( private_community_standard_premium_key.size() < MAX_URL_SIZE,
+         "Community Standard Premium key is too long." );
+      validate_public_key( private_community_standard_premium_key );
+
+      FC_ASSERT( private_community_mid_premium_key.size() < MAX_URL_SIZE,
+         "Community Mid Premium key is too long." );
+      validate_public_key( private_community_mid_premium_key );
+
+      FC_ASSERT( private_community_top_premium_key.size() < MAX_URL_SIZE,
+         "Community Top Premium key is too long." );
+      validate_public_key( private_community_top_premium_key );
+
+      FC_ASSERT( validate_asset_symbol( reward_currency ),
+         "Reward Currency asset symbol invalid." );
+
+      FC_ASSERT( validate_asset_symbol( standard_membership_price.symbol ),
+         "Standard Membership price asset symbol invalid." );
+      FC_ASSERT( standard_membership_price.amount >= 0,
+         "Standard Membership price must be greater than or equal to 0" );
+
+      FC_ASSERT( validate_asset_symbol( mid_membership_price.symbol ),
+         "Mid Membership price asset symbol invalid." );
+      FC_ASSERT( mid_membership_price.amount >= 0,
+         "Mid Membership price must be greater than or equal to 0" );
+
+      FC_ASSERT( validate_asset_symbol( top_membership_price.symbol ),
+         "Top Membership price asset symbol invalid." );
+      FC_ASSERT( top_membership_price.amount >= 0,
+         "Top Membership price must be greater than or equal to 0" );
+
+      FC_ASSERT( validate_asset_symbol( coin_liquidity.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", coin_liquidity.symbol) );
+      FC_ASSERT( validate_asset_symbol( usd_liquidity.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", usd_liquidity.symbol) );
+      FC_ASSERT( validate_asset_symbol( credit_liquidity.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", credit_liquidity.symbol) );
+      
+      FC_ASSERT( coin_liquidity.symbol == SYMBOL_COIN, 
+         "Asset must have initial liquidity in the COIN asset." );
+      FC_ASSERT( usd_liquidity.symbol == SYMBOL_USD, 
+         "Asset must have initial liquidity in the USD asset." );
+      FC_ASSERT( credit_liquidity.symbol == equity_asset,
+         "Credit Liquidity must be at least zero." );
+
+      FC_ASSERT( coin_liquidity.amount >= 0,
+         "Coin Liquidity must be at least zero." );
+      FC_ASSERT( usd_liquidity.amount >= 0,
+         "USD Liquidity must be at least zero." );
+      FC_ASSERT( credit_liquidity.amount >= 0,
+         "Credit Liquidity must be at least zero." );
+
+      FC_ASSERT( fee.symbol == SYMBOL_COIN, 
+         "Account creation fee must be in core asset." );
+      FC_ASSERT( delegation.symbol == SYMBOL_COIN, 
+         "Delegation must be in core asset." );
+      FC_ASSERT( fee.amount >= 0,
+         "Account creation fee cannot be negative" );
+      FC_ASSERT( delegation.amount >= 0,
+         "Delegation cannot be negative" );
+   }
+
+   void business_update_operation::validate()const
+   {
+      validate_account_name( chief_executive );
+      validate_account_name( business );
+
+      if( business_trading_name.size() > 0 )
+      {
+         FC_ASSERT( business_trading_name.size() < MAX_STRING_SIZE,
+            "Business Trading Name is too long." );
+         FC_ASSERT( fc::is_utf8( business_trading_name ), 
+            "Business Trading Name is not formatted in UTF8." );
+      }
+
+      FC_ASSERT( equity_revenue_share >= 0 && equity_revenue_share <= MAX_REVENUE_SHARE,
+         "Equity Revenue share must be between 0 and 50%." );
+
+      FC_ASSERT( credit_revenue_share >= 0 && credit_revenue_share <= MAX_REVENUE_SHARE,
+         "Credit Revenue share must be between 0 and 50%." );
+
+      FC_ASSERT( equity_revenue_share + credit_revenue_share >= 0 && 
+         equity_revenue_share + credit_revenue_share <= MAX_REVENUE_SHARE,
+         "Equity Plus Credit Revenue share must be between 0 and 50%." );
+
+      for( auto exec : executives )
+      {
+         validate_account_name( exec );
+      }
+   }
+
+   void business_executive_operation::validate()const
+   {
+      validate_account_name( executive );
+      validate_account_name( business );
+   }
+
+   void business_executive_vote_operation::validate()const
+   {
+      validate_account_name( director );
+      validate_account_name( executive );
+      validate_account_name( business );
+   }
+
+   void business_director_operation::validate()const
+   {
+      validate_account_name( director );
+      validate_account_name( business );
+   }
+
+   void business_director_vote_operation::validate()const
+   {
+      validate_account_name( account );
+      validate_account_name( director );
+      validate_account_name( business );
+
+      FC_ASSERT( vote_rank >= 1 && vote_rank <= 100, 
+         "Vote rank must be between zero and one hundred." );
+   }
+
+
+   //==============================//
+   // === Governance Operations ===//
+   //==============================//
+
+
+   void governance_create_operation::validate()const
+   {
+      validate_account_name( founder );
+      validate_account_name( new_governance_name );
+      
+
+      if( new_governance_display_name.size() > 0 )
+      {
+         FC_ASSERT( new_governance_display_name.size() < MAX_STRING_SIZE,
+            "Governance Display Name is too long." );
+         FC_ASSERT( fc::is_utf8( new_governance_display_name ), 
+            "Governance Display Name is not formatted in UTF8." );
+      }
+
+      if( details.size() > 0 )
+      {
+         FC_ASSERT( details.size() < MAX_STRING_SIZE,
+            "Details are too long." );
+         FC_ASSERT( fc::is_utf8( details ), 
+            "Details are not formatted in UTF8." );
+      }
+
+      if( url.size() > 0 )
+      {
+         FC_ASSERT( url.size() < MAX_URL_SIZE,
+            "URL is too long." );
+         FC_ASSERT( fc::is_utf8( url ),
+            "URL is not formatted in UTF8." );
+         validate_url( url );
+      }
+      
+      if( profile_image.size() > 0 )
+      {
+         FC_ASSERT( profile_image.size() < MAX_STRING_SIZE,
+            "Image is too long." );
+         FC_ASSERT( fc::is_utf8( profile_image ), 
+            "Image is not formatted in UTF8." );
+         FC_ASSERT( profile_image.size() == 46 && profile_image[0] == 'Q' && profile_image[1] == 'm',
+            "Image rejected: IPFS string should be 46 characters long and begin with 'Qm'." );
+      }
+
+      if( cover_image.size() > 0 )
+      {
+         FC_ASSERT( cover_image.size() < MAX_STRING_SIZE,
+            "Image is too long." );
+         FC_ASSERT( fc::is_utf8( cover_image ), 
+            "Image is not formatted in UTF8." );
+         FC_ASSERT( cover_image.size() == 46 && cover_image[0] == 'Q' && cover_image[1] == 'm',
+            "Image rejected: IPFS string should be 46 characters long and begin with 'Qm'." );
+      }
+
+      FC_ASSERT( secure_public_key.size() < MAX_URL_SIZE,
+         "Secure Public key is too long." );
+      validate_public_key( secure_public_key );
+
+      FC_ASSERT( connection_public_key.size() < MAX_URL_SIZE,
+         "Connection Public key is too long." );
+      validate_public_key( connection_public_key );
+
+      FC_ASSERT( friend_public_key.size() < MAX_URL_SIZE,
+         "Friend Public key is too long." );
+      validate_public_key( friend_public_key );
+
+      FC_ASSERT( companion_public_key.size() < MAX_URL_SIZE,
+         "Companion Public key is too long." );
+      validate_public_key( companion_public_key );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
+      validate_asset_symbol( equity_asset );
+      validate_asset_symbol( credit_asset );
+
+      equity_options.validate();
+      credit_options.validate();
+
+      FC_ASSERT( equity_revenue_share >= 0 && equity_revenue_share <= MAX_REVENUE_SHARE,
+         "Equity Revenue share must be between 0 and 50%." );
+
+      FC_ASSERT( credit_revenue_share >= 0 && credit_revenue_share <= MAX_REVENUE_SHARE,
+         "Credit Revenue share must be between 0 and 50%." );
+
+      FC_ASSERT( equity_revenue_share + credit_revenue_share >= 0 && 
+         equity_revenue_share + credit_revenue_share <= MAX_REVENUE_SHARE,
+         "Equity Plus Credit Revenue share must be between 0 and 50%." );
+      
+      validate_community_name( public_community );
+
+      FC_ASSERT( public_community_member_key.size() < MAX_URL_SIZE,
+         "Community Member key is too long." );
+      validate_public_key( public_community_member_key );
+
+      FC_ASSERT( public_community_moderator_key.size() < MAX_URL_SIZE,
+         "Community Moderation key is too long." );
+      validate_public_key( public_community_moderator_key );
+
+      FC_ASSERT( public_community_admin_key.size() < MAX_URL_SIZE,
+         "Community Admin key is too long." );
+      validate_public_key( public_community_admin_key );
+
+      FC_ASSERT( public_community_secure_key.size() < MAX_URL_SIZE,
+         "Community Secure key is too long." );
+      validate_public_key( public_community_secure_key );
+
+      FC_ASSERT( public_community_standard_premium_key.size() < MAX_URL_SIZE,
+         "Community Standard Premium key is too long." );
+      validate_public_key( public_community_standard_premium_key );
+
+      FC_ASSERT( public_community_mid_premium_key.size() < MAX_URL_SIZE,
+         "Community Mid Premium key is too long." );
+      validate_public_key( public_community_mid_premium_key );
+
+      FC_ASSERT( public_community_top_premium_key.size() < MAX_URL_SIZE,
+         "Community Top Premium key is too long." );
+      validate_public_key( public_community_top_premium_key );
+
+      validate_community_name( private_community );
+
+      FC_ASSERT( private_community_member_key.size() < MAX_URL_SIZE,
+         "Community Member key is too long." );
+      validate_public_key( private_community_member_key );
+
+      FC_ASSERT( private_community_moderator_key.size() < MAX_URL_SIZE,
+         "Community Moderation key is too long." );
+      validate_public_key( private_community_moderator_key );
+
+      FC_ASSERT( private_community_admin_key.size() < MAX_URL_SIZE,
+         "Community Admin key is too long." );
+      validate_public_key( private_community_admin_key );
+
+      FC_ASSERT( private_community_secure_key.size() < MAX_URL_SIZE,
+         "Community Secure key is too long." );
+      validate_public_key( private_community_secure_key );
+
+      FC_ASSERT( private_community_standard_premium_key.size() < MAX_URL_SIZE,
+         "Community Standard Premium key is too long." );
+      validate_public_key( private_community_standard_premium_key );
+
+      FC_ASSERT( private_community_mid_premium_key.size() < MAX_URL_SIZE,
+         "Community Mid Premium key is too long." );
+      validate_public_key( private_community_mid_premium_key );
+
+      FC_ASSERT( private_community_top_premium_key.size() < MAX_URL_SIZE,
+         "Community Top Premium key is too long." );
+      validate_public_key( private_community_top_premium_key );
+
+      FC_ASSERT( validate_asset_symbol( reward_currency ),
+         "Reward Currency asset symbol invalid." );
+
+      FC_ASSERT( validate_asset_symbol( standard_membership_price.symbol ),
+         "Standard Membership price asset symbol invalid." );
+      FC_ASSERT( standard_membership_price.amount >= 0,
+         "Standard Membership price must be greater than or equal to 0" );
+
+      FC_ASSERT( validate_asset_symbol( mid_membership_price.symbol ),
+         "Mid Membership price asset symbol invalid." );
+      FC_ASSERT( mid_membership_price.amount >= 0,
+         "Mid Membership price must be greater than or equal to 0" );
+
+      FC_ASSERT( validate_asset_symbol( top_membership_price.symbol ),
+         "Top Membership price asset symbol invalid." );
+      FC_ASSERT( top_membership_price.amount >= 0,
+         "Top Membership price must be greater than or equal to 0" );
+
+      FC_ASSERT( validate_asset_symbol( coin_liquidity.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", coin_liquidity.symbol) );
+      FC_ASSERT( validate_asset_symbol( usd_liquidity.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", usd_liquidity.symbol) );
+      FC_ASSERT( validate_asset_symbol( credit_liquidity.symbol ),
+         "Symbol ${symbol} is not a valid symbol", ("symbol", credit_liquidity.symbol) );
+      
+      FC_ASSERT( coin_liquidity.symbol == SYMBOL_COIN, 
+         "Asset must have initial liquidity in the COIN asset." );
+      FC_ASSERT( usd_liquidity.symbol == SYMBOL_USD, 
+         "Asset must have initial liquidity in the USD asset." );
+      FC_ASSERT( credit_liquidity.symbol == equity_asset,
+         "Credit Liquidity must be denominated in the Equity Asset." );
+
+      FC_ASSERT( coin_liquidity.amount >= 0,
+         "Coin Liquidity must be at least zero." );
+      FC_ASSERT( usd_liquidity.amount >= 0,
+         "USD Liquidity must be at least zero." );
+      FC_ASSERT( credit_liquidity.amount >= 0,
+         "Credit Liquidity must be at least zero." );
+
+      FC_ASSERT( fee.symbol == SYMBOL_COIN, 
+         "Account creation fee must be in core asset." );
+      FC_ASSERT( delegation.symbol == SYMBOL_COIN, 
+         "Delegation must be in core asset." );
+      FC_ASSERT( fee.amount >= 0,
+         "Account creation fee cannot be negative" );
+      FC_ASSERT( delegation.amount >= 0,
+         "Delegation cannot be negative" );
+   }
+
+   void governance_update_operation::validate()const
+   {
+      validate_account_name( chief_executive );
+      validate_account_name( governance );
+
+      if( governance_display_name.size() > 0 )
+      {
+         FC_ASSERT( governance_display_name.size() < MAX_STRING_SIZE,
+            "Governance Display Name is too long." );
+         FC_ASSERT( fc::is_utf8( governance_display_name ), 
+            "Governance Display Name is not formatted in UTF8." );
+      }
+
+      FC_ASSERT( equity_revenue_share >= 0 && equity_revenue_share <= MAX_REVENUE_SHARE,
+         "Equity Revenue share must be between 0 and 50%." );
+
+      FC_ASSERT( credit_revenue_share >= 0 && credit_revenue_share <= MAX_REVENUE_SHARE,
+         "Credit Revenue share must be between 0 and 50%." );
+
+      FC_ASSERT( equity_revenue_share + credit_revenue_share >= 0 && 
+         equity_revenue_share + credit_revenue_share <= MAX_REVENUE_SHARE,
+         "Equity Plus Credit Revenue share must be between 0 and 50%." );
+
+      for( auto exec : executives )
+      {
+         validate_account_name( exec );
+      }
+   }
+
+   void governance_executive_operation::validate()const
+   {
+      validate_account_name( executive );
+      validate_account_name( governance );
+   }
+
+   void governance_executive_vote_operation::validate()const
+   {
+      validate_account_name( director );
+      validate_account_name( executive );
+      validate_account_name( governance );
+   }
+
+   void governance_director_operation::validate()const
+   {
+      validate_account_name( director );
+      validate_account_name( governance );
+   }
+
+   void governance_director_vote_operation::validate()const
+   {
+      validate_account_name( account );
+      validate_account_name( director );
+      validate_account_name( governance );
+
+      FC_ASSERT( vote_rank >= 1 && vote_rank <= 100, 
+         "Vote rank must be between zero and one hundred." );
+   }
+
+   void governance_member_operation::validate()const
+   {
+      validate_account_name( governance );
+      validate_account_name( account );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+   }
+
+   void governance_member_request_operation::validate()const
+   {
+      validate_account_name( account );
+      validate_account_name( governance );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
+      if( message.size() > 0 )
+      {
+         FC_ASSERT( message.size() < MAX_STRING_SIZE,
+            "Message is too long." );
+         FC_ASSERT( fc::is_utf8( message ), 
+            "Message is not formatted in UTF8." );
+      }
+   }
+
+
+   void governance_resolution_operation::validate()const
+   {
+      validate_account_name( governance );
+
+      FC_ASSERT( resolution_id.size() < MAX_STRING_SIZE,
+         "Resolution ID is too long." );
+      validate_uuidv4( resolution_id );
+
+      FC_ASSERT( ammendment_id.size() < MAX_STRING_SIZE,
+         "Ammendment ID is too long." );
+      validate_uuidv4( ammendment_id );
+
+      if( title.size() )
+      {
+         FC_ASSERT( title.size() < MAX_URL_SIZE,
+         "Title is too long." );
+         FC_ASSERT( fc::is_utf8( title ),
+         "Title is not formatted in UTF8." );
+      }
+
+      if( body.size() )
+      {
+         FC_ASSERT( body.size() < MAX_BODY_SIZE,
+            "Body size is too large." );
+         FC_ASSERT( fc::is_utf8( body ),
+            "Body not formatted in UTF8" );
+      }
+
+      if( url.size() )
+      {
+         FC_ASSERT( url.size() < MAX_URL_SIZE,
+         "URL is too long." );
+         FC_ASSERT( fc::is_utf8( url ),
+         "URL is not formatted in UTF8." );
+         validate_url( url );
+      }
+
+      if( json.size() )
+      {
+         FC_ASSERT( json.size() < MAX_BODY_SIZE, 
+            "JSON size is too large." );
+         FC_ASSERT( fc::is_utf8( json ), 
+            "JSON is not valid UTF8" );
+         FC_ASSERT( fc::json::is_valid(json), 
+            "JSON Metadata not valid JSON" );
+      }
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+
+      FC_ASSERT( completion_time > GENESIS_TIME,
+         "Completion Time must be after genesis time." );
+   }
+
+   void governance_resolution_vote_operation::validate()const
+   {
+      validate_account_name( account );
+      validate_account_name( governance );
+
+      FC_ASSERT( resolution_id.size() < MAX_STRING_SIZE,
+         "Resolution ID is too long." );
+      validate_uuidv4( resolution_id );
+
+      FC_ASSERT( ammendment_id.size() < MAX_STRING_SIZE,
+         "Ammendment ID is too long." );
+      validate_uuidv4( ammendment_id );
+
+      if( interface.size() )
+      {
+         validate_account_name( interface );
+      }
+   }
+
+
    //===========================//
    // === Network Operations ===//
    //===========================//
 
 
-   void network_officer_update_operation::validate() const
+   void network_officer_update_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       FC_ASSERT( officer_type.size() < MAX_URL_SIZE,
@@ -717,12 +1234,11 @@ namespace node { namespace protocol {
             "JSON Metadata not valid JSON." );
       }
 
-      FC_ASSERT( is_valid_symbol( reward_currency ) );
+      FC_ASSERT( validate_asset_symbol( reward_currency ) );
    }
 
-   void network_officer_vote_operation::validate() const
+   void network_officer_vote_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( network_officer );
 
@@ -730,90 +1246,8 @@ namespace node { namespace protocol {
          "Vote rank must be between zero and one hundred." );
    }
 
-   void executive_board_update_operation::validate() const
+   void supernode_update_operation::validate()const
    {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      validate_account_name( executive );
-
-      FC_ASSERT( url.size() + details.size() + json.size(),
-         "Cannot update Executive board because it does not contain content." );
-      FC_ASSERT( details.size() < MAX_STRING_SIZE,
-         "Details are too long." );
-      FC_ASSERT( fc::is_utf8( details ), 
-         "Details are not formatted in UTF8." );
-      FC_ASSERT( url.size() < MAX_URL_SIZE,
-         "URL is too long." );
-      FC_ASSERT( fc::is_utf8( url ),
-         "URL is not formatted in UTF8." );
-      if( url.size() > 0 )
-      {
-         validate_url( url );
-      }
-      
-      if( json.size() > 0 )
-      {
-         FC_ASSERT( fc::is_utf8( json ), 
-            "JSON Metadata not formatted in UTF8." );
-         FC_ASSERT( fc::json::is_valid( json ), 
-            "JSON Metadata not valid JSON." );
-      }
-
-      FC_ASSERT( budget.amount > 0,
-         "Budget required." );
-      FC_ASSERT( is_valid_symbol( budget.symbol ),
-         "Symbol ${symbol} is not a valid symbol", ("symbol", budget.symbol) );
-      FC_ASSERT( budget.symbol == SYMBOL_CREDIT, 
-         "Executive Budget must be in the network credit asset." );
-   }
-
-   void executive_board_vote_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      validate_account_name( executive_board );
-      FC_ASSERT( vote_rank >= 1 && vote_rank <= 100,
-         "Vote rank must be between zero and one hundred." );
-   }
-
-   void governance_update_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      FC_ASSERT( url.size() + details.size() + json.size(), 
-         "Cannot update governance account because it does not contain content." );
-      FC_ASSERT( details.size() < MAX_STRING_SIZE,
-         "Details are too long." );
-      FC_ASSERT( fc::is_utf8( details ), 
-         "Details are not formatted in UTF8." );
-      FC_ASSERT( url.size() < MAX_URL_SIZE,
-         "URL is too long." );
-      FC_ASSERT( fc::is_utf8( url ),
-         "URL is not formatted in UTF8." );
-      if( url.size() > 0 )
-      {
-         validate_url( url );
-      }
-
-      if( json.size() > 0 )
-      {
-         FC_ASSERT( fc::is_utf8( json ), 
-            "JSON Metadata not formatted in UTF8." );
-         FC_ASSERT( fc::json::is_valid( json ), 
-            "JSON Metadata not valid JSON." );
-      }
-   }
-
-   void governance_subscribe_operation::validate() const
-   {
-      validate_account_name( signatory );
-      validate_account_name( account );
-      validate_account_name( governance_account );
-   }
-
-   void supernode_update_operation::validate() const
-   {
-      validate_account_name( signatory );
       validate_account_name( account );
       FC_ASSERT( url.size() + details.size() + json.size() + node_api_endpoint.size(), 
          "Cannot update supernode because it does not contain sufficient content." );
@@ -868,9 +1302,8 @@ namespace node { namespace protocol {
       }
    }
 
-   void interface_update_operation::validate() const
+   void interface_update_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       FC_ASSERT( url.size() + details.size() + json.size(),
          "Cannot update Interface because it does not contain content." );
@@ -896,9 +1329,8 @@ namespace node { namespace protocol {
       }
    }
 
-   void mediator_update_operation::validate() const
+   void mediator_update_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       FC_ASSERT( url.size() + details.size() + json.size(),
          "Cannot update Interface because it does not contain content." );
@@ -927,9 +1359,8 @@ namespace node { namespace protocol {
          "Mediation bond must be at least 1 unit of core asset." );
    }
 
-   void enterprise_update_operation::validate() const
+   void enterprise_update_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       FC_ASSERT( enterprise_id.size() < MAX_STRING_SIZE,
          "Enterprise ID is too long." );
@@ -955,13 +1386,12 @@ namespace node { namespace protocol {
       }
       FC_ASSERT( budget.amount > 0,
          "Budget amount must be greater than zero." );
-      FC_ASSERT( is_valid_symbol( budget.symbol ),
+      FC_ASSERT( validate_asset_symbol( budget.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", budget.symbol) );
    }
 
-   void enterprise_vote_operation::validate() const
+   void enterprise_vote_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( voter );
       validate_account_name( account );
       FC_ASSERT( enterprise_id.size() < MAX_STRING_SIZE,
@@ -971,9 +1401,8 @@ namespace node { namespace protocol {
          "Vote rank must be between one and one hundred." );
    }
 
-   void enterprise_fund_operation::validate() const
+   void enterprise_fund_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( funder );
       validate_account_name( account );
       FC_ASSERT( enterprise_id.size() < MAX_STRING_SIZE,
@@ -981,7 +1410,7 @@ namespace node { namespace protocol {
       validate_uuidv4( enterprise_id );
       FC_ASSERT( amount.amount > 0,
          "Amount must be greater than zero." );
-      FC_ASSERT( is_valid_symbol( amount.symbol ),
+      FC_ASSERT( validate_asset_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
    }
    
@@ -993,7 +1422,7 @@ namespace node { namespace protocol {
 
    void comment_reward_curve::validate()const
    {
-      FC_ASSERT( constant_factor >= 0 && vote_reward_percent <= CONTENT_CONSTANT * uint128_t(1000),
+      FC_ASSERT(constant_factor >= 0 && vote_reward_percent <= CONTENT_CONSTANT * uint128_t(1000),
          "Constant factor must be between 0 and CONTENT_CONSTANT * 1000." );
 
       FC_ASSERT( sqrt_percent <= PERCENT_100,
@@ -1070,9 +1499,10 @@ namespace node { namespace protocol {
       }
    }
 
-   void comment_operation::validate() const
+   void comment_operation::validate()const
    {
-      validate_account_name( signatory );
+      validate_account_name( editor );
+
       validate_account_name( author );
 
       validate_permlink( permlink );
@@ -1229,13 +1659,13 @@ namespace node { namespace protocol {
 
       if( comment_price.amount > 0 )
       {
-         FC_ASSERT( is_valid_symbol( comment_price.symbol ),
+         FC_ASSERT( validate_asset_symbol( comment_price.symbol ),
             "Symbol ${symbol} is not a valid symbol",
             ("symbol", comment_price.symbol) );
       }
       if( premium_price.amount > 0 )
       {
-         FC_ASSERT( is_valid_symbol( premium_price.symbol ),
+         FC_ASSERT( validate_asset_symbol( premium_price.symbol ),
             "Symbol ${symbol} is not a valid symbol",
             ("symbol", premium_price.symbol) );
       }
@@ -1243,9 +1673,8 @@ namespace node { namespace protocol {
       options.validate();
    }
 
-   void comment_vote_operation::validate() const
-   {  
-      validate_account_name( signatory );
+   void comment_vote_operation::validate()const
+   {
       validate_account_name( voter );
       validate_account_name( author );
 
@@ -1277,9 +1706,8 @@ namespace node { namespace protocol {
       }
    }
 
-   void comment_view_operation::validate() const
+   void comment_view_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( viewer );
       validate_account_name( author );
       validate_permlink( permlink );
@@ -1302,9 +1730,8 @@ namespace node { namespace protocol {
       }
    }
 
-   void comment_share_operation::validate() const
+   void comment_share_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( sharer );
       validate_account_name( author );
       validate_permlink( permlink );
@@ -1313,13 +1740,13 @@ namespace node { namespace protocol {
       {
          validate_account_name( interface );
       }
-      if( community.valid() )
+      for( auto c : communities )
       {
-         validate_community_name( *community );
+         validate_community_name( c );
       }
-      if( tag.valid() )
+      for( auto t : tags )
       {
-         validate_tag_name( *tag );
+         validate_tag_name( t );
       }
       if( json.size() )
       {
@@ -1332,9 +1759,8 @@ namespace node { namespace protocol {
       }
    }
 
-   void comment_moderation_operation::validate() const
+   void comment_moderation_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( moderator );
       validate_account_name( author );
       validate_permlink( permlink );
@@ -1390,9 +1816,8 @@ namespace node { namespace protocol {
       }
    }
 
-   void message_operation::validate() const
+   void message_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( sender );
 
       if( recipient.size() )
@@ -1460,9 +1885,8 @@ namespace node { namespace protocol {
          "Expiration must be after genesis time." );
    }
 
-   void list_operation::validate() const
+   void list_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( creator );
 
       FC_ASSERT( list_id.size(),
@@ -1555,9 +1979,8 @@ namespace node { namespace protocol {
       }
    }
 
-   void poll_operation::validate() const
+   void poll_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( creator );
 
       FC_ASSERT( poll_id.size(),
@@ -1678,9 +2101,8 @@ namespace node { namespace protocol {
          "Completion time must be after Genesis time." );
    }
 
-   void poll_vote_operation::validate() const
+   void poll_vote_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( voter );
       validate_account_name( creator );
 
@@ -1702,9 +2124,8 @@ namespace node { namespace protocol {
    }
 
 
-   void premium_purchase_operation::validate() const
+   void premium_purchase_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( author );
 
@@ -1722,9 +2143,8 @@ namespace node { namespace protocol {
    }
 
 
-   void premium_release_operation::validate() const
+   void premium_release_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( provider );
       validate_account_name( account );
       validate_account_name( author );
@@ -1755,9 +2175,8 @@ namespace node { namespace protocol {
    //==============================//
 
 
-   void community_create_operation::validate() const
+   void community_create_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( founder );
       validate_community_name( name );
 
@@ -1913,20 +2332,20 @@ namespace node { namespace protocol {
          "Community Top Premium key is too long." );
       validate_public_key( community_top_premium_key );
 
-      FC_ASSERT( is_valid_symbol( reward_currency ),
+      FC_ASSERT( validate_asset_symbol( reward_currency ),
          "Reward Currency asset symbol invalid." );
 
-      FC_ASSERT( is_valid_symbol( standard_membership_price.symbol ),
+      FC_ASSERT( validate_asset_symbol( standard_membership_price.symbol ),
          "Standard Membership price asset symbol invalid." );
       FC_ASSERT( standard_membership_price.amount >= 0,
          "Standard Membership price must be greater than or equal to 0" );
 
-      FC_ASSERT( is_valid_symbol( mid_membership_price.symbol ),
+      FC_ASSERT( validate_asset_symbol( mid_membership_price.symbol ),
          "Mid Membership price asset symbol invalid." );
       FC_ASSERT( mid_membership_price.amount >= 0,
          "Mid Membership price must be greater than or equal to 0" );
 
-      FC_ASSERT( is_valid_symbol( top_membership_price.symbol ),
+      FC_ASSERT( validate_asset_symbol( top_membership_price.symbol ),
          "Top Membership price asset symbol invalid." );
       FC_ASSERT( top_membership_price.amount >= 0,
          "Top Membership price must be greater than or equal to 0" );
@@ -1940,9 +2359,8 @@ namespace node { namespace protocol {
          "Post Max Rating level should be between 1 and 9" );
    }
 
-   void community_update_operation::validate() const
+   void community_update_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       validate_community_name( community );
 
@@ -2105,9 +2523,8 @@ namespace node { namespace protocol {
          "Post Max Rating level should be between 1 and 9" );
    }
 
-   void community_member_operation::validate() const
+   void community_member_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( member );
       validate_community_name( community );
@@ -2127,9 +2544,8 @@ namespace node { namespace protocol {
          "Encrypted community key is invalid." );
    }
 
-   void community_member_request_operation::validate() const
+   void community_member_request_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       validate_community_name( community );
 
@@ -2149,9 +2565,8 @@ namespace node { namespace protocol {
          "Message is invalid." );
    }
 
-   void community_member_vote_operation::validate() const
+   void community_member_vote_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       validate_community_name( community );
       validate_account_name( member );
@@ -2165,9 +2580,8 @@ namespace node { namespace protocol {
          "Vote rank must be between zero and one hundred." );
    }
 
-   void community_subscribe_operation::validate() const
+   void community_subscribe_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       if( interface.size() )
@@ -2178,9 +2592,8 @@ namespace node { namespace protocol {
       validate_community_name( community );
    }
 
-   void community_blacklist_operation::validate() const
+   void community_blacklist_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( member );
       validate_community_name( community );
@@ -2189,9 +2602,8 @@ namespace node { namespace protocol {
          ("a", member)("b", community));
    }
    
-   void community_federation_operation::validate() const
+   void community_federation_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       FC_ASSERT( federation_id.size(),
@@ -2230,9 +2642,8 @@ namespace node { namespace protocol {
          "Encrypted Community key is invalid." );
    }
 
-   void community_event_operation::validate() const
+   void community_event_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       validate_community_name( community );
 
@@ -2298,7 +2709,7 @@ namespace node { namespace protocol {
 
       FC_ASSERT( event_price.amount >= 0,
          "Event price must be at least 0." );
-      FC_ASSERT( is_valid_symbol( event_price.symbol ),
+      FC_ASSERT( validate_asset_symbol( event_price.symbol ),
          "Event price must have a valid symbol." );
 
       FC_ASSERT( event_start_time > GENESIS_TIME,
@@ -2309,9 +2720,8 @@ namespace node { namespace protocol {
          "Begin time must be after genesis time." );
    }
 
-   void community_event_attend_operation::validate() const
+   void community_event_attend_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( attendee );
       validate_community_name( community );
 
@@ -2350,9 +2760,8 @@ namespace node { namespace protocol {
       }
    }
 
-   void community_directive_operation::validate() const
+   void community_directive_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       FC_ASSERT( directive_id.size(),
@@ -2424,9 +2833,8 @@ namespace node { namespace protocol {
          "Directive End time must be after Directive start time." );
    }
 
-   void community_directive_vote_operation::validate() const
+   void community_directive_vote_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( voter );
       validate_account_name( account );
 
@@ -2465,9 +2873,8 @@ namespace node { namespace protocol {
       }
    }
 
-   void community_directive_member_operation::validate() const
+   void community_directive_member_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       validate_community_name( community );
 
@@ -2536,9 +2943,8 @@ namespace node { namespace protocol {
       }
    }
 
-   void community_directive_member_vote_operation::validate() const
+   void community_directive_member_vote_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( voter );
       validate_account_name( member );
       validate_community_name( community );
@@ -2580,9 +2986,8 @@ namespace node { namespace protocol {
 
 
 
-   void ad_creative_operation::validate() const
+   void ad_creative_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( author );
 
@@ -2623,9 +3028,8 @@ namespace node { namespace protocol {
    }
 
 
-   void ad_campaign_operation::validate() const
+   void ad_campaign_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       FC_ASSERT( campaign_id.size() < MAX_STRING_SIZE,
@@ -2636,7 +3040,7 @@ namespace node { namespace protocol {
 
       FC_ASSERT( budget.amount >= 0,
          "Campaign requires a budget greater than or equal to 0." );
-      FC_ASSERT( is_valid_symbol( budget.symbol ),
+      FC_ASSERT( validate_asset_symbol( budget.symbol ),
          "Symbol ${s} is not a valid symbol",
          ("s", budget.symbol) );
 
@@ -2667,9 +3071,8 @@ namespace node { namespace protocol {
    }
 
 
-   void ad_inventory_operation::validate() const
+   void ad_inventory_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( provider );
 
       FC_ASSERT( inventory_id.size(),
@@ -2695,7 +3098,7 @@ namespace node { namespace protocol {
 
       FC_ASSERT( min_price.amount > 0,
          "Minimum inventory price must be greater than 0");
-      FC_ASSERT( is_valid_symbol( min_price.symbol ),
+      FC_ASSERT( validate_asset_symbol( min_price.symbol ),
          "Symbol ${s} is not a valid symbol",
          ("s", min_price.symbol));
 
@@ -2712,9 +3115,8 @@ namespace node { namespace protocol {
    }
 
 
-   void ad_audience_operation::validate() const
+   void ad_audience_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       FC_ASSERT( audience_id.size(),
@@ -2742,9 +3144,8 @@ namespace node { namespace protocol {
    }
 
 
-   void ad_bid_operation::validate() const
+   void ad_bid_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( bidder );
       validate_account_name( account );
       validate_account_name( author );
@@ -2836,9 +3237,8 @@ namespace node { namespace protocol {
 
 
 
-   void graph_node_operation::validate() const
+   void graph_node_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       if( interface.size() )
@@ -2889,9 +3289,8 @@ namespace node { namespace protocol {
    }
 
 
-   void graph_edge_operation::validate() const
+   void graph_edge_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( from_node_account );
       validate_account_name( to_node_account );
@@ -2954,9 +3353,8 @@ namespace node { namespace protocol {
       }
    }
 
-   void graph_node_property_operation::validate() const
+   void graph_node_property_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       if( interface.size() )
@@ -2993,9 +3391,8 @@ namespace node { namespace protocol {
       }
    }
 
-   void graph_edge_property_operation::validate() const
+   void graph_edge_property_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       if( interface.size() )
@@ -3015,7 +3412,7 @@ namespace node { namespace protocol {
 
       for( auto a : from_node_types )
       {
-         is_valid_symbol( a );
+         validate_asset_symbol( a );
       }
 
       FC_ASSERT( to_node_types.size() > 0,
@@ -3023,7 +3420,7 @@ namespace node { namespace protocol {
 
       for( auto a : to_node_types )
       {
-         is_valid_symbol( a );
+         validate_asset_symbol( a );
       }
 
       FC_ASSERT( details.size() < MAX_STRING_SIZE,
@@ -3050,14 +3447,13 @@ namespace node { namespace protocol {
 
 
 
-   void transfer_operation::validate() const
+   void transfer_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( from );
       validate_account_name( to );
       FC_ASSERT( amount.amount > 0,
          "INVALID TRANSFER: NEGATIVE AMOUNT - THEFT NOT PERMITTED." );
-      FC_ASSERT( is_valid_symbol( amount.symbol ),
+      FC_ASSERT( validate_asset_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
       FC_ASSERT( memo.size() < MAX_MEMO_SIZE,
          "Memo is too large" );
@@ -3066,14 +3462,13 @@ namespace node { namespace protocol {
    }
 
 
-   void transfer_request_operation::validate() const
+   void transfer_request_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( from );
       validate_account_name( to );
       FC_ASSERT( amount.amount > 0, 
          "INVALID TRANSFER: NEGATIVE AMOUNT - THEFT NOT PERMITTED." );
-      FC_ASSERT( is_valid_symbol(amount.symbol), 
+      FC_ASSERT( validate_asset_symbol(amount.symbol), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
       FC_ASSERT( memo.size() < MAX_MEMO_SIZE,
          "Memo is too large" );
@@ -3089,9 +3484,8 @@ namespace node { namespace protocol {
    }
 
 
-   void transfer_accept_operation::validate() const
+   void transfer_accept_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( from );
       validate_account_name( to );
       FC_ASSERT( request_id.size() < MAX_STRING_SIZE,
@@ -3102,9 +3496,8 @@ namespace node { namespace protocol {
    }
 
 
-   void transfer_recurring_operation::validate() const
+   void transfer_recurring_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( from );
       validate_account_name( to );
       FC_ASSERT( transfer_id.size() < MAX_STRING_SIZE,
@@ -3114,7 +3507,7 @@ namespace node { namespace protocol {
       validate_uuidv4( transfer_id );
       FC_ASSERT( amount.amount > 0,
          "INVALID TRANSFER: NEGATIVE AMOUNT - THEFT NOT PERMITTED." );
-      FC_ASSERT( is_valid_symbol( amount.symbol ),
+      FC_ASSERT( validate_asset_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol ) );
       FC_ASSERT( memo.size() < MAX_MEMO_SIZE,
          "Memo is too large" );
@@ -3129,9 +3522,8 @@ namespace node { namespace protocol {
    }
 
 
-   void transfer_recurring_request_operation::validate() const
+   void transfer_recurring_request_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( from );
       validate_account_name( to );
       FC_ASSERT( request_id.size() < MAX_STRING_SIZE,
@@ -3143,7 +3535,7 @@ namespace node { namespace protocol {
       validate_uuidv4( request_id );
       FC_ASSERT( amount.amount > 0,
          "INVALID TRANSFER: NEGATIVE AMOUNT - THEFT NOT PERMITTED." );
-      FC_ASSERT( is_valid_symbol(amount.symbol),
+      FC_ASSERT( validate_asset_symbol(amount.symbol),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
       FC_ASSERT( memo.size() < MAX_MEMO_SIZE,
          "Memo is too large" );
@@ -3157,9 +3549,8 @@ namespace node { namespace protocol {
          "Expiration time must be after genesis time." );
    }
 
-   void transfer_recurring_accept_operation::validate() const
+   void transfer_recurring_accept_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( from );
       validate_account_name( to );
       FC_ASSERT( request_id.size() < MAX_STRING_SIZE,
@@ -3182,7 +3573,7 @@ namespace node { namespace protocol {
    /**
     * Unpacks from a base58 string
     */
-   stealth_confirmation::stealth_confirmation( const std::string& base58 )
+   stealth_confirmation::stealth_confirmation(const std::string& base58 )
    {
       *this = fc::raw::unpack<stealth_confirmation>( fc::from_base58( base58 ) );
    }
@@ -3201,7 +3592,7 @@ namespace node { namespace protocol {
     */
    void transfer_confidential_operation::validate()const
    {
-      FC_ASSERT( is_valid_symbol( fee.symbol ),
+      FC_ASSERT( validate_asset_symbol( fee.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", fee.symbol) );
 
       vector< commitment_type > in(inputs.size());
@@ -3250,15 +3641,14 @@ namespace node { namespace protocol {
     */
    void transfer_to_confidential_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( from );
 
       FC_ASSERT( fee.amount >= 0 );
       FC_ASSERT( amount.amount > 0 );
 
-      FC_ASSERT( is_valid_symbol( fee.symbol ),
+      FC_ASSERT( validate_asset_symbol( fee.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", fee.symbol) );
-      FC_ASSERT( is_valid_symbol( amount.symbol ),
+      FC_ASSERT( validate_asset_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
 
       vector< commitment_type > in;
@@ -3300,9 +3690,9 @@ namespace node { namespace protocol {
    {
       validate_account_name( to );
 
-      FC_ASSERT( is_valid_symbol( fee.symbol ),
+      FC_ASSERT( validate_asset_symbol( fee.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", fee.symbol) );
-      FC_ASSERT( is_valid_symbol( amount.symbol ),
+      FC_ASSERT( validate_asset_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
 
       FC_ASSERT( amount.amount > 0 );
@@ -3339,17 +3729,16 @@ namespace node { namespace protocol {
 
 
 
-   void claim_reward_balance_operation::validate() const
+   void claim_reward_balance_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       FC_ASSERT( reward.amount > 0,
          "Amount must be greater than zero." );
-      FC_ASSERT( is_valid_symbol( reward.symbol ),
+      FC_ASSERT( validate_asset_symbol( reward.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", reward.symbol) );
    }
 
-   void stake_asset_operation::validate() const
+   void stake_asset_operation::validate()const
    {
       validate_account_name( from );
       if( to != account_name_type() )
@@ -3358,27 +3747,25 @@ namespace node { namespace protocol {
       } 
       FC_ASSERT( amount.amount > 0,
          "Must transfer a nonzero amount" );
-      FC_ASSERT( is_valid_symbol( amount.symbol ),
+      FC_ASSERT( validate_asset_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
    }
 
-   void unstake_asset_operation::validate() const
+   void unstake_asset_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( from );
       if ( to != account_name_type() )
       {
          validate_account_name( to );
       }
-      FC_ASSERT( is_valid_symbol(amount.symbol),
+      FC_ASSERT( validate_asset_symbol(amount.symbol),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
       FC_ASSERT( amount.amount >= 0,
          "Cannot withdraw negative stake. Account: ${account}, From:${amount}", ("from", from)("amount", amount) );
    }
 
-   void unstake_asset_route_operation::validate() const
+   void unstake_asset_route_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( from );
       validate_account_name( to );
       FC_ASSERT( 0 < percent && percent <= PERCENT_100,
@@ -3387,12 +3774,11 @@ namespace node { namespace protocol {
 
    void transfer_to_savings_operation::validate()const 
    {
-      validate_account_name( signatory );
       validate_account_name( from );
       validate_account_name( to );
       FC_ASSERT( amount.amount > 0,
          "Amount must be greater than zero." );
-      FC_ASSERT( is_valid_symbol(amount.symbol),
+      FC_ASSERT( validate_asset_symbol(amount.symbol),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
       FC_ASSERT( memo.size() < MAX_MEMO_SIZE,
          "Memo is too large" );
@@ -3402,7 +3788,6 @@ namespace node { namespace protocol {
 
    void transfer_from_savings_operation::validate()const 
    {
-      validate_account_name( signatory );
       validate_account_name( from );
       validate_account_name( to );
       FC_ASSERT( request_id.size() < MAX_STRING_SIZE,
@@ -3414,7 +3799,7 @@ namespace node { namespace protocol {
       validate_uuidv4( request_id );
       FC_ASSERT( amount.amount > 0, 
          "Amount must be greater than zero." );
-      FC_ASSERT( is_valid_symbol( amount.symbol ), 
+      FC_ASSERT( validate_asset_symbol( amount.symbol ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
       FC_ASSERT( memo.size() < MAX_MEMO_SIZE,
          "Memo is too large" );
@@ -3424,14 +3809,13 @@ namespace node { namespace protocol {
 
    void delegate_asset_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( delegator );
       validate_account_name( delegatee );
       FC_ASSERT( delegator != delegatee,
          "You cannot delegate to yourself" );
       FC_ASSERT( amount.amount >= 0,
          "Delegation must be greater than zero." );
-      FC_ASSERT( is_valid_symbol(amount.symbol),
+      FC_ASSERT( validate_asset_symbol(amount.symbol),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
    }
 
@@ -3444,7 +3828,6 @@ namespace node { namespace protocol {
 
    void product_sale_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       FC_ASSERT( product_id.size() < MAX_STRING_SIZE,
@@ -3493,7 +3876,7 @@ namespace node { namespace protocol {
       
       for( auto a : product_prices )
       {
-         FC_ASSERT( is_valid_symbol( a.symbol ),
+         FC_ASSERT( validate_asset_symbol( a.symbol ),
             "Product Price symbol is not valid symbol" );
          FC_ASSERT( a.amount >= 0,
             "Product Price must be positive amount" );
@@ -3543,7 +3926,7 @@ namespace node { namespace protocol {
       
       for( auto a : delivery_prices )
       {
-         FC_ASSERT( is_valid_symbol( a.symbol ),
+         FC_ASSERT( validate_asset_symbol( a.symbol ),
             "Delivery Price symbol is not valid symbol." );
          FC_ASSERT( a.amount >= 0,
             "Delivery Price must be greater than or equal to 0" );
@@ -3553,7 +3936,6 @@ namespace node { namespace protocol {
 
    void product_purchase_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( seller );
       validate_account_name( buyer );
 
@@ -3610,7 +3992,6 @@ namespace node { namespace protocol {
 
    void product_auction_sale_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       FC_ASSERT( auction_id.size() < MAX_STRING_SIZE,
@@ -3671,11 +4052,11 @@ namespace node { namespace protocol {
             "Image IPFS string should be 46 characters long and begin with 'Qm'." );
       } 
       
-      FC_ASSERT( is_valid_symbol( reserve_bid.symbol ),
+      FC_ASSERT( validate_asset_symbol( reserve_bid.symbol ),
          "Reserve Bid symbol is not valid symbol" );
       FC_ASSERT( reserve_bid.amount >= 0,
          "Reserve Bid must be positive amount." );
-      FC_ASSERT( is_valid_symbol( maximum_bid.symbol ),
+      FC_ASSERT( validate_asset_symbol( maximum_bid.symbol ),
          "Maximum Bid symbol is not valid symbol" );
       FC_ASSERT( maximum_bid.amount >= 0,
          "Maximum Bid must be positive amount." );
@@ -3695,7 +4076,7 @@ namespace node { namespace protocol {
       
       for( auto a : delivery_prices )
       {
-         FC_ASSERT( is_valid_symbol( a.symbol ),
+         FC_ASSERT( validate_asset_symbol( a.symbol ),
             "Delivery Price symbol is not valid symbol." );
          FC_ASSERT( a.amount >= 0,
             "Delivery Price must be greater than or equal to 0" );
@@ -3710,7 +4091,6 @@ namespace node { namespace protocol {
 
    void product_auction_bid_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( buyer );
       validate_account_name( seller );
 
@@ -3765,12 +4145,11 @@ namespace node { namespace protocol {
 
    void escrow_transfer_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( from );
       validate_account_name( to );
       
-      FC_ASSERT( is_valid_symbol(amount.symbol),
+      FC_ASSERT( validate_asset_symbol(amount.symbol),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
       FC_ASSERT( amount.amount > 0,
          "Amount must be greater than zero." );
@@ -3807,7 +4186,6 @@ namespace node { namespace protocol {
 
    void escrow_approve_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( mediator );
       validate_account_name( escrow_from );
@@ -3826,7 +4204,6 @@ namespace node { namespace protocol {
 
    void escrow_dispute_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( escrow_from );
       
@@ -3841,7 +4218,6 @@ namespace node { namespace protocol {
 
    void escrow_release_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       validate_account_name( escrow_from );
       
@@ -3865,8 +4241,6 @@ namespace node { namespace protocol {
 
    void limit_order_operation::validate()const
    {
-      validate_account_name( signatory );
-
       if( interface.size() )
       {
          validate_account_name( interface );
@@ -3892,8 +4266,6 @@ namespace node { namespace protocol {
 
    void margin_order_operation::validate()const
    {
-      validate_account_name( signatory );
-
       if( interface.size() )
       {
          validate_account_name( interface );
@@ -3905,13 +4277,13 @@ namespace node { namespace protocol {
          "Please set a greater than zero amount to borrow and collateral.");
       FC_ASSERT( ( amount_to_borrow * exchange_rate ).amount > 0,
          "Amount to sell cannot round to 0 when traded" );
-      FC_ASSERT( is_valid_symbol( amount_to_borrow.symbol ),
+      FC_ASSERT( validate_asset_symbol( amount_to_borrow.symbol ),
          "Symbol ${symbol} is not a valid symbol", ( "symbol", amount_to_borrow.symbol ) );
       FC_ASSERT( amount_to_borrow.symbol == exchange_rate.base.symbol,
          "Amount to borrow asset must be the base of the price." );
       FC_ASSERT( collateral.amount > 0,
          "Collateral must be greater than zero." );
-      FC_ASSERT( is_valid_symbol( collateral.symbol ),
+      FC_ASSERT( validate_asset_symbol( collateral.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", collateral.symbol) );
       FC_ASSERT( order_id.size() < MAX_STRING_SIZE,
          "Order ID is too long." );
@@ -3954,7 +4326,6 @@ namespace node { namespace protocol {
 
    void auction_order_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( owner );
 
       if( interface.size() )
@@ -3981,8 +4352,6 @@ namespace node { namespace protocol {
 
    void call_order_operation::validate()const
    {
-      validate_account_name( signatory );
-
       if( interface.size() )
       {
          validate_account_name( interface );
@@ -3990,9 +4359,9 @@ namespace node { namespace protocol {
 
       validate_account_name( owner );
 
-      FC_ASSERT( is_valid_symbol( collateral.symbol ),
+      FC_ASSERT( validate_asset_symbol( collateral.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", collateral.symbol) );
-      FC_ASSERT( is_valid_symbol( debt.symbol ),
+      FC_ASSERT( validate_asset_symbol( debt.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", debt.symbol) );
 
       FC_ASSERT( collateral.amount >= 0,
@@ -4004,7 +4373,6 @@ namespace node { namespace protocol {
 
    void option_order_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( owner );
 
       if( interface.size() )
@@ -4020,7 +4388,7 @@ namespace node { namespace protocol {
          "Order ID is not UTF8" );
       validate_uuidv4( order_id );
 
-      FC_ASSERT( is_valid_symbol( options_issued.symbol ),
+      FC_ASSERT( validate_asset_symbol( options_issued.symbol ),
          "Symbol ${symbol} is not a valid symbol.", ("symbol", options_issued.symbol) );
       FC_ASSERT( options_issued.amount >= 0,
          "Amount to issue cannot be negative." );
@@ -4035,22 +4403,20 @@ namespace node { namespace protocol {
 
    void liquidity_pool_create_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       FC_ASSERT( first_amount.amount >= BLOCKCHAIN_PRECISION,
          "First Amount must be greater than or equal to 1 unit." );
-      FC_ASSERT( is_valid_symbol( first_amount.symbol ),
+      FC_ASSERT( validate_asset_symbol( first_amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", first_amount.symbol) );
       FC_ASSERT( second_amount.amount >= BLOCKCHAIN_PRECISION,
          "Second Amount must be greater than or equal to 1 unit." );
-      FC_ASSERT( is_valid_symbol( second_amount.symbol ),
+      FC_ASSERT( validate_asset_symbol( second_amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", second_amount.symbol) );
    }
 
    void liquidity_pool_exchange_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       if( interface.size() )
@@ -4060,9 +4426,9 @@ namespace node { namespace protocol {
 
       FC_ASSERT( amount.amount > 0,
          "Amount must be greater than or equal to zero." );
-      FC_ASSERT( is_valid_symbol( amount.symbol ),
+      FC_ASSERT( validate_asset_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
-      FC_ASSERT( is_valid_symbol( receive_asset ),
+      FC_ASSERT( validate_asset_symbol( receive_asset ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", receive_asset) );
 
       if( limit_price.valid() )
@@ -4073,53 +4439,49 @@ namespace node { namespace protocol {
 
    void liquidity_pool_fund_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       FC_ASSERT( amount.amount > 0,
          "Amount must be greater than or equal to zero." );
-      FC_ASSERT( is_valid_symbol( amount.symbol ),
+      FC_ASSERT( validate_asset_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
-      FC_ASSERT( is_valid_symbol( pair_asset ),
+      FC_ASSERT( validate_asset_symbol( pair_asset ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", pair_asset) );
    }
 
    void liquidity_pool_withdraw_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       FC_ASSERT( amount.amount > 0,
          "Amount must be greater than or equal to zero." );
-      FC_ASSERT( is_valid_symbol( amount.symbol ),
+      FC_ASSERT( validate_asset_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
-      FC_ASSERT( is_valid_symbol( receive_asset ),
+      FC_ASSERT( validate_asset_symbol( receive_asset ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", receive_asset) );
    }
 
    void credit_pool_collateral_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       FC_ASSERT( amount.amount >= 0,
          "Amount must be greater than or equal to zero." );
-      FC_ASSERT( is_valid_symbol( amount.symbol ),
+      FC_ASSERT( validate_asset_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
    }
 
    void credit_pool_borrow_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       FC_ASSERT( amount.amount >= 0,
          "Amount must be greater than or equal to zero." );
-      FC_ASSERT( is_valid_symbol( amount.symbol ),
+      FC_ASSERT( validate_asset_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
       FC_ASSERT( collateral.amount >= 0,
          "Amount must be greater than or equal to zero." );
-      FC_ASSERT( is_valid_symbol( collateral.symbol ),
+      FC_ASSERT( validate_asset_symbol( collateral.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
       FC_ASSERT( collateral.symbol != amount.symbol,
          "Debt and Collateral must be different assets." );
@@ -4127,45 +4489,41 @@ namespace node { namespace protocol {
 
    void credit_pool_lend_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       FC_ASSERT( amount.amount > 0,
          "Amount must be greater than zero." );
-      FC_ASSERT( is_valid_symbol( amount.symbol ),
+      FC_ASSERT( validate_asset_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
    }
 
    void credit_pool_withdraw_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       FC_ASSERT( amount.amount > 0,
          "Amount must be greater than zero." );
-      FC_ASSERT( is_valid_symbol( amount.symbol ),
+      FC_ASSERT( validate_asset_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
    }
 
    void option_pool_create_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
-      FC_ASSERT( is_valid_symbol( first_asset ),
+      FC_ASSERT( validate_asset_symbol( first_asset ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", first_asset) );
-      FC_ASSERT( is_valid_symbol( second_asset ),
+      FC_ASSERT( validate_asset_symbol( second_asset ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", second_asset) );
    }
 
    void prediction_pool_create_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
-      FC_ASSERT( is_valid_symbol( prediction_symbol ),
+      FC_ASSERT( validate_asset_symbol( prediction_symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", prediction_symbol) );
-      FC_ASSERT( is_valid_symbol( collateral_symbol ),
+      FC_ASSERT( validate_asset_symbol( collateral_symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", collateral_symbol) );
 
       flat_set< asset_symbol_type > asset_set;
@@ -4174,7 +4532,7 @@ namespace node { namespace protocol {
       {
          FC_ASSERT( a != INVALID_OUTCOME_SYMBOL,
             "Symbol ${symbol} is not a valid symbol", ("symbol", prediction_symbol+"."+a) );
-         FC_ASSERT( is_valid_symbol( prediction_symbol+"."+a ),
+         FC_ASSERT( validate_asset_symbol( prediction_symbol+"."+a ),
             "Symbol ${symbol} is not a valid symbol", ("symbol", prediction_symbol+"."+a) );
          asset_set.insert( prediction_symbol+"."+a );
       }
@@ -4221,33 +4579,31 @@ namespace node { namespace protocol {
          "Outcome time must be after Genesis time." );
       FC_ASSERT( prediction_bond.amount > 0,
          "Amount must be greater than zero." );
-      FC_ASSERT( is_valid_symbol( prediction_bond.symbol ),
+      FC_ASSERT( validate_asset_symbol( prediction_bond.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", prediction_bond.symbol) );
    }
 
    void prediction_pool_exchange_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       FC_ASSERT( amount.amount > 0,
          "Amount must be greater than zero." );
-      FC_ASSERT( is_valid_symbol( amount.symbol ),
+      FC_ASSERT( validate_asset_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
-      FC_ASSERT( is_valid_symbol( prediction_asset ),
+      FC_ASSERT( validate_asset_symbol( prediction_asset ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", prediction_asset) );
    }
 
    void prediction_pool_resolve_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
 
       FC_ASSERT( amount.amount > 0,
          "Amount must be greater than zero." );
-      FC_ASSERT( is_valid_symbol( amount.symbol ),
+      FC_ASSERT( validate_asset_symbol( amount.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
-      FC_ASSERT( is_valid_symbol( resolution_outcome ),
+      FC_ASSERT( validate_asset_symbol( resolution_outcome ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", resolution_outcome) );
    }
 
@@ -4262,7 +4618,7 @@ namespace node { namespace protocol {
    void asset_options::validate()const
    {
       FC_ASSERT( display_symbol.size(),
-         "Display Symbol are required." );
+         "Display Symbol is required." );
       FC_ASSERT( display_symbol.size() < MAX_URL_SIZE,
          "Display Symbol is too long." );
       FC_ASSERT( fc::is_utf8( display_symbol ), 
@@ -4331,7 +4687,7 @@ namespace node { namespace protocol {
 
       // === Currency Asset Options === //
 
-      FC_ASSERT( is_valid_symbol( block_reward.symbol ), 
+      FC_ASSERT( validate_asset_symbol( block_reward.symbol ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", block_reward.symbol) );
       FC_ASSERT( block_reward.amount >= 0,
          "Block reward must be greater than or equal to zero." );
@@ -4342,7 +4698,7 @@ namespace node { namespace protocol {
          "Block Reward reduction days must be greater than 0." );
       FC_ASSERT( content_reward_percent <= PERCENT_100,
          "Content reward percent must be between 0 and 100%." );
-      FC_ASSERT( is_valid_symbol( equity_asset ), 
+      FC_ASSERT( validate_asset_symbol( equity_asset ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", equity_asset) );
       FC_ASSERT( equity_reward_percent <= PERCENT_100,
          "Equity reward percent must be between 0 and 100%." );
@@ -4385,7 +4741,7 @@ namespace node { namespace protocol {
          "Asset Settlement offset percent must be between 0 and 100%." );
       FC_ASSERT( maximum_asset_settlement_volume <= PERCENT_100,
          "Maximum Asset Settlement volume percent must be between 0 and 100%." );
-      FC_ASSERT( is_valid_symbol( backing_asset ), 
+      FC_ASSERT( validate_asset_symbol( backing_asset ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", backing_asset) );
 
       // === Equity Asset Options === //
@@ -4414,7 +4770,7 @@ namespace node { namespace protocol {
 
       // === Credit Asset options === //
 
-      FC_ASSERT( is_valid_symbol( buyback_asset ), 
+      FC_ASSERT( validate_asset_symbol( buyback_asset ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", buyback_asset) );
       buyback_price.validate();
       FC_ASSERT( liquid_fixed_interest_rate <= PERCENT_100,
@@ -4434,7 +4790,7 @@ namespace node { namespace protocol {
 
       // === Unique Asset Options === //
 
-      FC_ASSERT( is_valid_symbol( ownership_asset ), 
+      FC_ASSERT( validate_asset_symbol( ownership_asset ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", ownership_asset) );
 
       for( account_name_type item : control_list )
@@ -4446,14 +4802,14 @@ namespace node { namespace protocol {
          FC_ASSERT( std::find( access_list.begin(), access_list.end(), item ) != access_list.end() );
       }
 
-      FC_ASSERT( is_valid_symbol( access_price.symbol ), 
+      FC_ASSERT( validate_asset_symbol( access_price.symbol ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", access_price.symbol) );
       FC_ASSERT( access_price.amount >= 0,
          "Access Price must be greater than or equal to 0." );
 
       // === Bond Asset Options === //
 
-      FC_ASSERT( is_valid_symbol( value.symbol ), 
+      FC_ASSERT( validate_asset_symbol( value.symbol ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", value.symbol) );
       FC_ASSERT( value.amount >= 0,
          "Value must be greater than or equal to 0." );
@@ -4468,16 +4824,15 @@ namespace node { namespace protocol {
 
    void asset_create_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( issuer );
 
-      FC_ASSERT( is_valid_symbol( symbol ), 
+      FC_ASSERT( validate_asset_symbol( symbol ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", symbol) );
-      FC_ASSERT( is_valid_symbol( coin_liquidity.symbol ),
+      FC_ASSERT( validate_asset_symbol( coin_liquidity.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", coin_liquidity.symbol) );
-      FC_ASSERT( is_valid_symbol( usd_liquidity.symbol ),
+      FC_ASSERT( validate_asset_symbol( usd_liquidity.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", usd_liquidity.symbol) );
-      FC_ASSERT( is_valid_symbol( credit_liquidity.symbol ),
+      FC_ASSERT( validate_asset_symbol( credit_liquidity.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", credit_liquidity.symbol) );
       
       FC_ASSERT( coin_liquidity.symbol == SYMBOL_COIN, 
@@ -4504,10 +4859,9 @@ namespace node { namespace protocol {
 
    void asset_update_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( issuer );
 
-      FC_ASSERT( is_valid_symbol( asset_to_update ),
+      FC_ASSERT( validate_asset_symbol( asset_to_update ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", asset_to_update ) );
 
       new_options.validate();
@@ -4515,7 +4869,6 @@ namespace node { namespace protocol {
 
    void asset_issue_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( issuer );
       validate_account_name( issue_to_account );
       FC_ASSERT( asset_to_issue.amount.value <= MAX_ASSET_SUPPLY, 
@@ -4530,7 +4883,6 @@ namespace node { namespace protocol {
 
    void asset_reserve_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( payer );
       FC_ASSERT( amount_to_reserve.amount.value <= MAX_ASSET_SUPPLY,
          "Amount to issue must be less than max asset supply." );
@@ -4540,10 +4892,9 @@ namespace node { namespace protocol {
 
    void asset_update_issuer_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( issuer );
       validate_account_name( new_issuer );
-      FC_ASSERT( is_valid_symbol( asset_to_update ), 
+      FC_ASSERT( validate_asset_symbol( asset_to_update ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", asset_to_update ) );
       FC_ASSERT( issuer != new_issuer, 
          "New issuer must be different from issuer." );
@@ -4551,12 +4902,11 @@ namespace node { namespace protocol {
 
    void asset_distribution_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( issuer );
       
-      FC_ASSERT( is_valid_symbol( distribution_asset ), 
+      FC_ASSERT( validate_asset_symbol( distribution_asset ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", distribution_asset ) );
-      FC_ASSERT( is_valid_symbol( fund_asset ), 
+      FC_ASSERT( validate_asset_symbol( fund_asset ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", fund_asset ) );
 
       if( json.size() > 0 )
@@ -4616,12 +4966,11 @@ namespace node { namespace protocol {
 
    void asset_distribution_fund_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( sender );
       
-      FC_ASSERT( is_valid_symbol( distribution_asset ), 
+      FC_ASSERT( validate_asset_symbol( distribution_asset ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", distribution_asset ) );
-      FC_ASSERT( is_valid_symbol( amount.symbol ), 
+      FC_ASSERT( validate_asset_symbol( amount.symbol ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol ) );
       FC_ASSERT( amount.amount > 0, 
          "Fund amount must be greater than 0." );
@@ -4629,10 +4978,9 @@ namespace node { namespace protocol {
 
    void asset_option_exercise_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       
-      FC_ASSERT( is_valid_symbol( amount.symbol ), 
+      FC_ASSERT( validate_asset_symbol( amount.symbol ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol ) );
       FC_ASSERT( amount.amount > 0, 
          "Fund amount must be greater than 0." );
@@ -4640,22 +4988,20 @@ namespace node { namespace protocol {
 
    void asset_stimulus_fund_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       
-      FC_ASSERT( is_valid_symbol( amount.symbol ), 
+      FC_ASSERT( validate_asset_symbol( amount.symbol ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol ) );
       FC_ASSERT( amount.amount > 0, 
          "Fund amount must be greater than 0." );
-      FC_ASSERT( is_valid_symbol( stimulus_asset ), 
+      FC_ASSERT( validate_asset_symbol( stimulus_asset ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", stimulus_asset ) );
    }
 
-   void asset_update_feed_producers_operation::validate() const
+   void asset_update_feed_producers_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( issuer );
-      FC_ASSERT( is_valid_symbol( asset_to_update ),
+      FC_ASSERT( validate_asset_symbol( asset_to_update ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", asset_to_update ) );
 
       for( auto name : new_feed_producers )
@@ -4666,9 +5012,8 @@ namespace node { namespace protocol {
 
    void asset_publish_feed_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( publisher );
-      FC_ASSERT( is_valid_symbol( symbol ), 
+      FC_ASSERT( validate_asset_symbol( symbol ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", symbol) );
 
       feed.validate();
@@ -4679,21 +5024,19 @@ namespace node { namespace protocol {
          "Price feed must be for symbol." );
    }
 
-   void asset_settle_operation::validate() const
+   void asset_settle_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( account );
       FC_ASSERT( amount.amount >= 0,
          "Amount must be greater than or equal to zero." );
-      FC_ASSERT( is_valid_symbol( amount.symbol ), 
+      FC_ASSERT( validate_asset_symbol( amount.symbol ), 
          "Symbol ${symbol} is not a valid symbol", ("symbol", amount.symbol) );
    }
 
    void asset_global_settle_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( issuer );
-      FC_ASSERT( is_valid_symbol( asset_to_settle ),
+      FC_ASSERT( validate_asset_symbol( asset_to_settle ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", asset_to_settle ) );
       FC_ASSERT( asset_to_settle == settle_price.base.symbol,
          "Asset to settle must be the same asset as base of settlement price." );
@@ -4701,16 +5044,15 @@ namespace node { namespace protocol {
 
    void asset_collateral_bid_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( bidder );
 
       FC_ASSERT( collateral.amount > 0,
          "Additional Collateral must be greater than zero." );
-      FC_ASSERT( is_valid_symbol( collateral.symbol ),
+      FC_ASSERT( validate_asset_symbol( collateral.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", collateral.symbol) );
       FC_ASSERT( debt.amount > 0,
          "Debt covered must be greater than zero." );
-      FC_ASSERT( is_valid_symbol( debt.symbol ),
+      FC_ASSERT( validate_asset_symbol( debt.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", debt.symbol) );
    }
 
@@ -4720,7 +5062,7 @@ namespace node { namespace protocol {
    //=====================================//
 
 
-   void chain_properties::validate() const
+   void chain_properties::validate()const
    {
       FC_ASSERT( account_creation_fee.symbol == SYMBOL_COIN,
             "Acccount creation fee must be in the core asset." );
@@ -4816,16 +5158,11 @@ namespace node { namespace protocol {
          "Max stake intervals must be between 104 and 10400." );
       FC_ASSERT( max_unstake_intervals >= MAX_ASSET_UNSTAKE_INTERVALS && max_unstake_intervals <= 100 * MAX_ASSET_UNSTAKE_INTERVALS,
          "Max unstake intervals must be between 104 and 10400." );
-      FC_ASSERT( max_exec_budget.symbol == SYMBOL_CREDIT,
-         "Max Excutive Budget must be in the CREDIT asset." );
-      FC_ASSERT( max_exec_budget >= MAX_EXEC_BUDGET,
-         "Max Excutive Budget must be less than or equal to 1,000,000 MCR." );
    }
 
 
-   void producer_update_operation::validate() const
+   void producer_update_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( owner );
 
       FC_ASSERT( details.size() > 0,
@@ -4866,7 +5203,7 @@ namespace node { namespace protocol {
       typedef void result_type;
 
       template< typename PowType >
-      void operator()( const PowType& pow )const
+      void operator()(const PowType& pow )const
       {
          pow.validate();
       }
@@ -4885,7 +5222,7 @@ namespace node { namespace protocol {
          : _required_active( required_active ) {}
 
       template< typename PowType >
-      void operator()( const PowType& work )const
+      void operator()(const PowType& work )const
       {
          _required_active.insert( work.input.miner_account );
       }
@@ -4965,7 +5302,7 @@ namespace node { namespace protocol {
          "Reported work does not match calculated work" );
    }
 
-   void equihash_proof_of_work::validate() const
+   void equihash_proof_of_work::validate()const
    {
       validate_account_name( input.miner_account );
       auto seed = fc::sha256::hash( input );
@@ -4982,17 +5319,15 @@ namespace node { namespace protocol {
 
    void verify_block_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( producer );
    }
 
    void commit_block_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( producer );
       FC_ASSERT( commitment_stake.amount >= BLOCKCHAIN_PRECISION,
          "Commitment Stake must be greater than zero." );
-      FC_ASSERT( is_valid_symbol( commitment_stake.symbol ),
+      FC_ASSERT( validate_asset_symbol( commitment_stake.symbol ),
          "Symbol ${symbol} is not a valid symbol", ("symbol", commitment_stake.symbol ) );
       FC_ASSERT( commitment_stake.symbol == SYMBOL_COIN,
          "Commitment Stake must be denominated in the core asset." );
@@ -5002,7 +5337,6 @@ namespace node { namespace protocol {
 
    void producer_violation_operation::validate()const
    {
-      validate_account_name( signatory );
       validate_account_name( reporter );
    }
 
@@ -5012,14 +5346,14 @@ namespace node { namespace protocol {
    //===========================//
 
 
-   void custom_operation::validate() const 
+   void custom_operation::validate()const 
    {
       /// required auth accounts are the ones whose bandwidth is consumed
       FC_ASSERT( required_auths.size() > 0, 
          "At least on account must be specified." );
    }
 
-   void custom_json_operation::validate() const 
+   void custom_json_operation::validate()const 
    {
       /// required auth accounts are the ones whose bandwidth is consumed
       FC_ASSERT( ( required_auths.size() + required_posting_auths.size() ) > 0,

@@ -49,7 +49,6 @@ BOOST_AUTO_TEST_CASE( market_history_test )
 
       limit_order_operation limit;
 
-      limit.signatory = "alice";
       limit.owner = "alice";
       limit.order_id = "9f42232f-2c75-46d5-90cd-15a41b737d2c";
       limit.amount_to_sell = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -68,7 +67,6 @@ BOOST_AUTO_TEST_CASE( market_history_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      limit.signatory = "bob";
       limit.owner = "bob";
       limit.order_id = "af8a566e-1394-40ce-9e37-d21ab64273f1";
       limit.amount_to_sell = asset( BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -85,7 +83,6 @@ BOOST_AUTO_TEST_CASE( market_history_test )
 
       auto fill_order_b_time = now();
 
-      limit.signatory = "candice";
       limit.owner = "candice";
       limit.order_id = "004a1e0a-5a1c-4898-9315-40f3a098ca24";
       limit.amount_to_sell = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -99,7 +96,6 @@ BOOST_AUTO_TEST_CASE( market_history_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      limit.signatory = "dan";
       limit.owner = "dan";
       limit.order_id = "49d29c23-6493-4111-a4bc-14d9a1d4d0fb";
       limit.amount_to_sell = asset( 105000000, SYMBOL_USD );
@@ -117,7 +113,6 @@ BOOST_AUTO_TEST_CASE( market_history_test )
 
       auto fill_order_c_time = now();
 
-      limit.signatory = "alice";
       limit.owner = "alice";
       limit.order_id = "bc4cfa8f-76ff-494f-b98e-7e0eb5c4bd76";
       limit.amount_to_sell = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -131,7 +126,6 @@ BOOST_AUTO_TEST_CASE( market_history_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      limit.signatory = "bob";
       limit.owner = "bob";
       limit.order_id = "1e1fe2e6-bc4a-4a9e-98cd-156eb652250b";
       limit.amount_to_sell = asset( 95000000, SYMBOL_USD );
@@ -148,7 +142,6 @@ BOOST_AUTO_TEST_CASE( market_history_test )
 
       auto fill_order_d_time = now();
 
-      limit.signatory = "candice";
       limit.owner = "candice";
       limit.order_id = "5d006a9f-1359-419f-a2ab-d3fe4a596009";
       limit.amount_to_sell = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
@@ -162,7 +155,6 @@ BOOST_AUTO_TEST_CASE( market_history_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      limit.signatory = "dan";
       limit.owner = "dan";
       limit.order_id = "a2320964-55f0-461a-b281-238cb1103bcb";
       limit.amount_to_sell = asset( BLOCKCHAIN_PRECISION, SYMBOL_USD );

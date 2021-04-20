@@ -30,20 +30,11 @@ namespace node { namespace chain {
 
 void limit_order_evaluator::do_apply( const limit_order_operation& o )
 { try {
-   const account_name_type& signed_for = o.owner;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
+   const account_object& owner = _db.get_account( o.owner );
+   FC_ASSERT( owner.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.owner) );
+   
    time_point now = _db.head_block_time();
    asset liquid = _db.get_liquid_balance( o.owner, o.amount_to_sell.symbol );
    
@@ -144,21 +135,10 @@ void limit_order_evaluator::do_apply( const limit_order_operation& o )
 
 void margin_order_evaluator::do_apply( const margin_order_operation& o )
 { try {
-   const account_name_type& signed_for = o.owner;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
-
    const account_object& owner = _db.get_account( o.owner );
+   FC_ASSERT( owner.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.owner) );
    const median_chain_property_object& median_props = _db.get_median_chain_properties();
    time_point now = _db.head_block_time();
    FC_ASSERT( o.expiration > now,
@@ -450,19 +430,10 @@ void margin_order_evaluator::do_apply( const margin_order_operation& o )
 
 void auction_order_evaluator::do_apply( const auction_order_operation& o )
 { try {
-   const account_name_type& signed_for = o.owner;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& owner = _db.get_account( o.owner );
+   FC_ASSERT( owner.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.owner) );
 
    time_point now = _db.head_block_time();
 
@@ -547,19 +518,10 @@ void auction_order_evaluator::do_apply( const auction_order_operation& o )
 
 void call_order_evaluator::do_apply( const call_order_operation& o )
 { try {
-   const account_name_type& signed_for = o.owner;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ), 
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& owner = _db.get_account( o.owner );
+   FC_ASSERT( owner.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.owner) );
 
    time_point now = _db.head_block_time();
    const asset_object& debt_asset = _db.get_asset( o.debt.symbol );
@@ -686,19 +648,10 @@ void call_order_evaluator::do_apply( const call_order_operation& o )
 
 void option_order_evaluator::do_apply( const option_order_operation& o )
 { try {
-   const account_name_type& signed_for = o.owner;
-   const account_object& signatory = _db.get_account( o.signatory );
-   FC_ASSERT( signatory.active, 
-      "Account: ${s} must be active to broadcast transaction.",("s", o.signatory) );
-   if( o.signatory != signed_for )
-   {
-      const account_object& signed_acc = _db.get_account( signed_for );
-      FC_ASSERT( signed_acc.active, 
-         "Account: ${s} must be active to broadcast transaction.",("s", signed_acc) );
-      const account_business_object& b = _db.get_account_business( signed_for );
-      FC_ASSERT( b.is_authorized_transfer( o.signatory, _db.get_account_permissions( signed_for ) ),
-         "Account: ${s} is not authorized to act as signatory for Account: ${a}.",("s", o.signatory)("a", signed_for) );
-   }
+   const account_object& owner = _db.get_account( o.owner );
+   FC_ASSERT( owner.active, 
+      "Account: ${s} must be active to broadcast transaction.",
+      ("s", o.owner) );
 
    FC_ASSERT( o.options_issued.amount % BLOCKCHAIN_PRECISION == 0, 
       "Option assets can only be issued in units of 1." );

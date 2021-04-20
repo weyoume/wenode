@@ -44,11 +44,11 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      generate_blocks( BLOCKS_PER_DAY );
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
       comment_operation comment;
 
-      comment.signatory = "alice";
+      comment.editor = "alice";
       comment.author = "alice";
       comment.permlink = "lorem";
       comment.title = "Lorem Ipsum";
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
       comment.url = "https://www.url.com";
-      comment.community = INIT_COMMUNITY;
+      comment.community = INIT_PUBLIC_COMMUNITY;
       comment.public_key = string();
       comment.tags.push_back( tag_name_type( "test" ) );
       comment.interface = INIT_ACCOUNT;
@@ -160,6 +160,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( alice_comment.weight == 0 );
       BOOST_REQUIRE( alice_comment.max_weight == 0 );
 
+      BOOST_REQUIRE( alice_comment.channel == false );
       BOOST_REQUIRE( alice_comment.allow_replies == true );
       BOOST_REQUIRE( alice_comment.allow_votes == true );
       BOOST_REQUIRE( alice_comment.allow_views == true );
@@ -172,7 +173,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: failure when posting a comment on a non-existent comment" );
 
-      comment.signatory = "bob";
+      comment.editor = "bob";
       comment.author = "bob";
       comment.permlink = "ipsum";
       comment.parent_author = "alice";
@@ -247,6 +248,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( bob_comment.content_rewards.amount.value == 0 );
       BOOST_REQUIRE( bob_comment.percent_liquid == PERCENT_100 );
 
+      BOOST_REQUIRE( bob_comment.channel == false );
       BOOST_REQUIRE( bob_comment.allow_replies == true );
       BOOST_REQUIRE( bob_comment.allow_votes == true );
       BOOST_REQUIRE( bob_comment.allow_views == true );
@@ -262,7 +264,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: posting a comment on additional previous comment" );
 
-      comment.signatory = "candice";
+      comment.editor = "candice";
       comment.author = "candice";
       comment.permlink = "dolor";
       comment.parent_author = "bob";
@@ -317,6 +319,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
       BOOST_REQUIRE( candice_comment.content_rewards.amount.value == 0 );
       BOOST_REQUIRE( candice_comment.percent_liquid == PERCENT_100 );
 
+      BOOST_REQUIRE( candice_comment.channel == false );
       BOOST_REQUIRE( candice_comment.allow_replies == true );
       BOOST_REQUIRE( candice_comment.allow_votes == true );
       BOOST_REQUIRE( candice_comment.allow_views == true );
@@ -445,7 +448,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       comment_vote_operation vote;
 
-      vote.signatory = "alice";
       vote.voter = "alice";
       vote.author = "candice";
       vote.permlink = "dolor";
@@ -480,7 +482,7 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: success when altering beneficiaries before voting" );
 
-      comment.signatory = "bob";
+      comment.editor = "bob";
       comment.author = "bob";
       comment.permlink = "ipsum";
       comment.parent_author = "alice";
@@ -517,7 +519,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       BOOST_TEST_MESSAGE( "│   ├── Testing: Payout and verify rewards were split properly" );
 
-      vote.signatory = "alice";
       vote.voter = "alice";
       vote.author = "alice";
       vote.permlink = "lorem";
@@ -531,7 +532,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       generate_blocks( 10 );
 
-      vote.signatory = "bob";
       vote.voter = "bob";
       vote.author = "bob";
       vote.permlink = "ipsum";
@@ -545,7 +545,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       generate_blocks( 10 );
 
-      vote.signatory = "candice";
       vote.voter = "candice";
       vote.author = "candice";
       vote.permlink = "dolor";
@@ -559,7 +558,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       generate_blocks( 10 );
 
-      vote.signatory = "candice";
       vote.voter = "candice";
       vote.author = "alice";
       vote.permlink = "lorem";
@@ -573,7 +571,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       generate_blocks( 10 );
 
-      vote.signatory = "alice";
       vote.voter = "alice";
       vote.author = "bob";
       vote.permlink = "ipsum";
@@ -587,7 +584,6 @@ BOOST_AUTO_TEST_CASE( comment_operation_test )
 
       generate_blocks( 10 );
 
-      vote.signatory = "bob";
       vote.voter = "bob";
       vote.author = "candice";
       vote.permlink = "dolor";
@@ -860,7 +856,7 @@ BOOST_AUTO_TEST_CASE( comment_vote_operation_test )
       fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      generate_blocks( TOTAL_PRODUCERS );
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
       const auto& vote_idx = db.get_index< comment_vote_index >().indices().get< by_comment_voter >();
 
@@ -868,7 +864,7 @@ BOOST_AUTO_TEST_CASE( comment_vote_operation_test )
 
       comment_operation comment;
 
-      comment.signatory = "alice";
+      comment.editor = "alice";
       comment.author = "alice";
       comment.permlink = "lorem";
       comment.title = "Lorem Ipsum";
@@ -876,7 +872,7 @@ BOOST_AUTO_TEST_CASE( comment_vote_operation_test )
       comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
       comment.url = "https://www.url.com";
-      comment.community = INIT_COMMUNITY;
+      comment.community = INIT_PUBLIC_COMMUNITY;
       comment.tags.push_back( tag_name_type( "test" ) );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
@@ -897,6 +893,7 @@ BOOST_AUTO_TEST_CASE( comment_vote_operation_test )
       comment.validate();
 
       tx.operations.push_back( comment );
+      tx.set_reference_block( db.head_block_id() );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -906,7 +903,6 @@ BOOST_AUTO_TEST_CASE( comment_vote_operation_test )
 
       comment_vote_operation vote;
 
-      vote.signatory = "bob";
       vote.voter = "bob";
       vote.author = "alice";
       vote.permlink = "supercalafragilisticexpealadocious";    // Permlink does not exist
@@ -972,7 +968,6 @@ BOOST_AUTO_TEST_CASE( comment_vote_operation_test )
 
       old_voting_power = candice.voting_power;
 
-      vote.signatory = "candice";
       vote.voter = "candice";
       vote.weight = -1 * PERCENT_100;
 
@@ -1075,7 +1070,7 @@ BOOST_AUTO_TEST_CASE( comment_view_operation_test )
 
       comment_operation comment;
 
-      comment.signatory = "alice";
+      comment.editor = "alice";
       comment.author = "alice";
       comment.permlink = "lorem";
       comment.title = "Lorem Ipsum";
@@ -1083,7 +1078,7 @@ BOOST_AUTO_TEST_CASE( comment_view_operation_test )
       comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
       comment.url = "https://www.url.com";
-      comment.community = INIT_COMMUNITY;
+      comment.community = INIT_PUBLIC_COMMUNITY;
       comment.tags.push_back( tag_name_type( "test" ) );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
@@ -1115,7 +1110,6 @@ BOOST_AUTO_TEST_CASE( comment_view_operation_test )
 
       comment_view_operation view;
 
-      view.signatory = "bob";
       view.viewer = "bob";
       view.author = "alice";
       view.permlink = "supercalafragilisticexpealadocious";    // Permlink does not exist
@@ -1205,7 +1199,7 @@ BOOST_AUTO_TEST_CASE( comment_share_operation_test )
       fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      generate_blocks( TOTAL_PRODUCERS );
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
       const auto& share_idx = db.get_index< comment_share_index >().indices().get< by_comment_sharer >();
 
@@ -1213,7 +1207,7 @@ BOOST_AUTO_TEST_CASE( comment_share_operation_test )
 
       comment_operation comment;
 
-      comment.signatory = "alice";
+      comment.editor = "alice";
       comment.author = "alice";
       comment.permlink = "lorem";
       comment.title = "Lorem Ipsum";
@@ -1221,7 +1215,7 @@ BOOST_AUTO_TEST_CASE( comment_share_operation_test )
       comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
       comment.url = "https://www.url.com";
-      comment.community = INIT_COMMUNITY;
+      comment.community = INIT_PUBLIC_COMMUNITY;
       comment.tags.push_back( tag_name_type( "test" ) );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
@@ -1242,6 +1236,7 @@ BOOST_AUTO_TEST_CASE( comment_share_operation_test )
       comment.validate();
 
       tx.operations.push_back( comment );
+      tx.set_reference_block( db.head_block_id() );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -1251,7 +1246,6 @@ BOOST_AUTO_TEST_CASE( comment_share_operation_test )
 
       comment_share_operation share;
 
-      share.signatory = "bob";
       share.sharer = "bob";
       share.author = "alice";
       share.permlink = "supercalafragilisticexpealadocious";    // Permlink does not exist
@@ -1327,8 +1321,9 @@ BOOST_AUTO_TEST_CASE( comment_moderation_operation_test )
 
       ACTORS( (alice)(bob)(candice)(dan) );
 
-      fund_stake( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
-      fund_liquid( "alice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_stake( "alice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
+      fund_liquid( "alice", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_USD ) );
 
       fund_stake( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "bob", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
@@ -1339,13 +1334,13 @@ BOOST_AUTO_TEST_CASE( comment_moderation_operation_test )
       fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      generate_blocks( TOTAL_PRODUCERS );
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
       signed_transaction tx;
 
       comment_operation comment;
 
-      comment.signatory = "alice";
+      comment.editor = "alice";
       comment.author = "alice";
       comment.permlink = "lorem";
       comment.title = "Lorem Ipsum";
@@ -1353,7 +1348,7 @@ BOOST_AUTO_TEST_CASE( comment_moderation_operation_test )
       comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
       comment.url = "https://www.url.com";
-      comment.community = INIT_COMMUNITY;
+      comment.community = INIT_PUBLIC_COMMUNITY;
       comment.tags.push_back( tag_name_type( "test" ) );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
@@ -1365,15 +1360,16 @@ BOOST_AUTO_TEST_CASE( comment_moderation_operation_test )
       comment.comment_price = asset( 0, SYMBOL_COIN );
       comment.premium_price = asset( 0, SYMBOL_COIN );
 
-      comment_options options;
+      comment_options com_options;
 
-      options.post_type = "article";
-      options.reach = "tag";
-      options.rating = 1;
-      comment.options = options;
+      com_options.post_type = "article";
+      com_options.reach = "tag";
+      com_options.rating = 1;
+      comment.options = com_options;
       comment.validate();
 
       tx.operations.push_back( comment );
+      tx.set_reference_block( db.head_block_id() );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -1383,7 +1379,6 @@ BOOST_AUTO_TEST_CASE( comment_moderation_operation_test )
 
       comment_moderation_operation tag;
 
-      tag.signatory = "bob";
       tag.moderator = "bob";
       tag.author = "alice";
       tag.permlink = "supercalafragilisticexpealadocious";    // Permlink does not exist
@@ -1425,45 +1420,93 @@ BOOST_AUTO_TEST_CASE( comment_moderation_operation_test )
 
       account_membership_operation mem;
 
-      mem.signatory = "bob";
-      mem.account = "bob";
+      mem.account = "alice";
       mem.membership_type = "top";
       mem.months = 1;
       mem.interface = INIT_ACCOUNT;
       mem.validate();
 
       tx.operations.push_back( mem );
-      tx.sign( bob_private_active_key, db.get_chain_id() );
+      tx.sign( alice_private_active_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      governance_update_operation gov;
-      
-      gov.signatory = "bob";
-      gov.account = "bob";
-      gov.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
-      gov.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
-      gov.json = "{\"cookie_price\":\"3.50000000 MUSD\"}";
-      gov.validate();
+      asset_options as_options;
 
-      tx.operations.push_back( gov );
-      tx.sign( bob_private_owner_key, db.get_chain_id() );
+      as_options.display_symbol = "GOVERN";
+      as_options.details = "Details";
+      as_options.json = "{ \"valid\": true }";
+      as_options.url = "https://www.url.com";
+      as_options.buyback_price = price( asset( BLOCKCHAIN_PRECISION, SYMBOL_USD ), asset( BLOCKCHAIN_PRECISION, "GOVACCOUNTCR") );
+      as_options.validate();
+
+      governance_create_operation governance_create;
+
+      governance_create.founder = "alice";
+      governance_create.new_governance_name = "govaccount";
+      governance_create.new_governance_display_name = "GOVERNANCE ACCOUNT";
+      governance_create.details = "My Details: About 8 Storeys tall, crustacean from the Paleozoic era.";
+      governance_create.url = "https://en.wikipedia.org/wiki/Loch_Ness_Monster";
+      governance_create.secure_public_key = string( alice_public_posting_key );
+      governance_create.connection_public_key = string( alice_public_posting_key );
+      governance_create.friend_public_key = string( alice_public_posting_key );
+      governance_create.companion_public_key = string( alice_public_posting_key );
+      governance_create.interface = INIT_ACCOUNT;
+      governance_create.equity_asset = "GOVACCOUNTEQ";
+      governance_create.equity_revenue_share = 5 * PERCENT_1;
+      governance_create.equity_options = as_options;
+      governance_create.credit_asset = "GOVACCOUNTCR";
+      governance_create.credit_revenue_share = 5 * PERCENT_1;
+      governance_create.credit_options = as_options;
+      governance_create.public_community = "govaccount.discussion";
+      governance_create.public_display_name = "Governance Discussion";
+      governance_create.public_community_member_key = string( alice_public_posting_key );
+      governance_create.public_community_moderator_key = string( alice_public_posting_key );
+      governance_create.public_community_admin_key = string( alice_public_posting_key );
+      governance_create.public_community_secure_key = string( alice_public_posting_key );
+      governance_create.public_community_standard_premium_key = string( alice_public_posting_key );
+      governance_create.public_community_mid_premium_key = string( alice_public_posting_key );
+      governance_create.public_community_top_premium_key = string( alice_public_posting_key );
+      governance_create.private_community = "govaccount.private";
+      governance_create.private_display_name = "Governance Discussion";
+      governance_create.private_community_member_key = string( alice_public_posting_key );
+      governance_create.private_community_moderator_key = string( alice_public_posting_key );
+      governance_create.private_community_admin_key = string( alice_public_posting_key );
+      governance_create.private_community_secure_key = string( alice_public_posting_key );
+      governance_create.private_community_standard_premium_key = string( alice_public_posting_key );
+      governance_create.private_community_mid_premium_key = string( alice_public_posting_key );
+      governance_create.private_community_top_premium_key = string( alice_public_posting_key );
+      governance_create.reward_currency = SYMBOL_COIN;
+      governance_create.standard_membership_price = asset( BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      governance_create.mid_membership_price = asset( 10*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      governance_create.top_membership_price = asset( 100*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      governance_create.coin_liquidity = asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      governance_create.usd_liquidity = asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_USD );
+      governance_create.credit_liquidity = asset( 1000*BLOCKCHAIN_PRECISION, "GOVACCOUNTEQ" );
+      governance_create.fee = asset( 50 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      governance_create.delegation = asset( 50 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );
+      governance_create.validate();
+
+      tx.operations.push_back( governance_create );
+      tx.sign( alice_private_owner_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
       tx.signatures.clear();
 
-      const governance_account_object& governance = db.get_governance_account( account_name_type( "bob" ) );
+      const governance_object& governance = db.get_governance( account_name_type( "govaccount" ) );
       
-      BOOST_REQUIRE( governance.active == true );
+      BOOST_REQUIRE( governance.account == account_name_type( "govaccount" ) );
+
+      tag.moderator = "govaccount";
 
       tx.operations.clear();
       tx.signatures.clear();
 
       tx.operations.push_back( tag );
-      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tx.operations.clear();
@@ -1472,7 +1515,7 @@ BOOST_AUTO_TEST_CASE( comment_moderation_operation_test )
       const comment_object& alice_comment = db.get_comment( account_name_type( "alice" ), string( "lorem" ) );
 
       const auto& tag_idx = db.get_index< comment_moderation_index >().indices().get< by_comment_moderator >();
-      auto tag_itr = tag_idx.find( std::make_tuple( alice_comment.id, account_name_type( "bob" ) ) );
+      auto tag_itr = tag_idx.find( std::make_tuple( alice_comment.id, account_name_type( "govaccount" ) ) );
 
       BOOST_REQUIRE( tag_itr != tag_idx.end() );
       BOOST_REQUIRE( to_string( tag_itr->details ) == tag.details );
@@ -1487,7 +1530,7 @@ BOOST_AUTO_TEST_CASE( comment_moderation_operation_test )
       tag.applied = false;
 
       tx.operations.push_back( tag );
-      tx.sign( bob_private_posting_key, db.get_chain_id() );
+      tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
 
       tag_itr = tag_idx.find( std::make_tuple( alice_comment.id, account_name_type( "bob" ) ) );
@@ -1502,7 +1545,6 @@ BOOST_AUTO_TEST_CASE( comment_moderation_operation_test )
    }
    FC_LOG_AND_RETHROW()
 }
-
 
 
 BOOST_AUTO_TEST_CASE( message_operation_test )
@@ -1527,7 +1569,7 @@ BOOST_AUTO_TEST_CASE( message_operation_test )
       fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      generate_blocks( TOTAL_PRODUCERS );
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
       string alice_private_connection_wif = graphene::utilities::key_to_wif( alice_private_connection_key );
       string bob_private_connection_wif = graphene::utilities::key_to_wif( bob_private_connection_key );
@@ -1536,7 +1578,6 @@ BOOST_AUTO_TEST_CASE( message_operation_test )
 
       message_operation message;
 
-      message.signatory = "alice";
       message.sender = "alice";
       message.recipient = "bob";
       message.public_key = string( bob_public_secure_key );
@@ -1548,6 +1589,7 @@ BOOST_AUTO_TEST_CASE( message_operation_test )
       message.validate();
 
       tx.operations.push_back( message );
+      tx.set_reference_block( db.head_block_id() );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       REQUIRE_THROW( db.push_transaction( tx, 0 ), fc::exception );
@@ -1561,7 +1603,6 @@ BOOST_AUTO_TEST_CASE( message_operation_test )
 
       account_connection_operation connection;
 
-      connection.signatory = "bob";
       connection.account = "bob";
       connection.connecting_account = "alice";
       connection.connection_type = "connection";
@@ -1577,7 +1618,6 @@ BOOST_AUTO_TEST_CASE( message_operation_test )
       tx.operations.clear();
       tx.signatures.clear();
 
-      connection.signatory = "alice";
       connection.account = "alice";
       connection.connecting_account = "bob";
       connection.connection_type = "connection";
@@ -1629,13 +1669,13 @@ BOOST_AUTO_TEST_CASE( list_operation_test )
       fund_stake( "bob", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "bob", asset( 10000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      generate_blocks( TOTAL_PRODUCERS );
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
       signed_transaction tx;
 
       comment_operation comment;
 
-      comment.signatory = "alice";
+      comment.editor = "alice";
       comment.author = "alice";
       comment.permlink = "lorem";
       comment.title = "Lorem Ipsum";
@@ -1643,7 +1683,7 @@ BOOST_AUTO_TEST_CASE( list_operation_test )
       comment.ipfs = "QmZdqQYUhA6yD1911YnkLYKpc4YVKL3vk6UfKUafRt5BpB";
       comment.magnet = "magnet:?xt=urn:btih:2b415a885a3e2210a6ef1d6c57eba325f20d8bc6&";
       comment.url = "https://www.url.com";
-      comment.community = INIT_COMMUNITY;
+      comment.community = INIT_PUBLIC_COMMUNITY;
       comment.tags.push_back( tag_name_type( "test" ) );
       comment.interface = INIT_ACCOUNT;
       comment.language = "en";
@@ -1664,6 +1704,7 @@ BOOST_AUTO_TEST_CASE( list_operation_test )
       comment.validate();
 
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
+      tx.set_reference_block( db.head_block_id() );
       tx.operations.push_back( comment );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -1675,7 +1716,6 @@ BOOST_AUTO_TEST_CASE( list_operation_test )
 
       list_operation list;
 
-      list.signatory = "alice";
       list.creator = "alice";
       list.list_id = "8a5c4916-6008-4d40-a1f2-3d50b44ac535";
       list.name = "Alice's Favourites";
@@ -1730,13 +1770,12 @@ BOOST_AUTO_TEST_CASE( poll_operation_test )
       fund_stake( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "dan", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      generate_blocks( TOTAL_PRODUCERS );
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
       signed_transaction tx;
 
       poll_operation poll;
 
-      poll.signatory = "alice";
       poll.creator = "alice";
       poll.poll_id = "2aafe6cf-8d37-4467-a8ce-d55d12a3f492";
       poll.details = "Would you rather fight 100 duck sized horses, or 1 horse sized duck?";
@@ -1746,6 +1785,7 @@ BOOST_AUTO_TEST_CASE( poll_operation_test )
       poll.validate();
 
       tx.operations.push_back( poll );
+      tx.set_reference_block( db.head_block_id() );
       tx.set_expiration( now() + fc::seconds( MAX_TIME_UNTIL_EXPIRATION ) );
       tx.sign( alice_private_posting_key, db.get_chain_id() );
       db.push_transaction( tx, 0 );
@@ -1767,7 +1807,6 @@ BOOST_AUTO_TEST_CASE( poll_operation_test )
 
       poll_vote_operation vote;
 
-      vote.signatory = "bob";
       vote.voter = "bob";
       vote.creator = "alice";
       vote.poll_id = "2aafe6cf-8d37-4467-a8ce-d55d12a3f492";
@@ -1816,16 +1855,16 @@ BOOST_AUTO_TEST_CASE( premium_operation_test_sequence )
       fund_stake( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       fund_liquid( "candice", asset( 1000*BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
 
-      generate_blocks( BLOCKS_PER_DAY );
+      generate_blocks( 2 * BLOCKS_PER_HOUR );
 
-      private_key_type alice_private_premium_key = get_private_key( "alice", "lorem", INIT_ACCOUNT_PASSWORD );
-      public_key_type alice_public_premium_key = get_public_key( "alice", "lorem", INIT_ACCOUNT_PASSWORD );
+      private_key_type alice_private_premium_key = get_private_key( "alice", "lorem", INIT_PASSWORD );
+      public_key_type alice_public_premium_key = get_public_key( "alice", "lorem", INIT_PASSWORD );
 
       string alice_private_premium_wif = graphene::utilities::key_to_wif( alice_private_premium_key );
 
       comment_operation comment;
 
-      comment.signatory = "alice";
+      comment.editor = "alice";
       comment.author = "alice";
       comment.permlink = "lorem";
       comment.parent_author = ROOT_POST_PARENT;
@@ -1842,7 +1881,7 @@ BOOST_AUTO_TEST_CASE( premium_operation_test_sequence )
       comment.json = "{ \"valid\": true }";
       comment.json_private = get_encrypted_message( alice_private_secure_key, alice_public_secure_key, alice_public_premium_key, string( "#{ \"valid\": true }" ) );
       comment.language = "en";
-      comment.community = INIT_COMMUNITY;
+      comment.community = INIT_PUBLIC_COMMUNITY;
       comment.public_key = string( alice_public_premium_key );
       comment.tags.push_back( tag_name_type( "test" ) );
       comment.supernodes.push_back( INIT_ACCOUNT );
@@ -1875,7 +1914,6 @@ BOOST_AUTO_TEST_CASE( premium_operation_test_sequence )
 
       premium_purchase_operation purchase;
 
-      purchase.signatory = "bob";
       purchase.account = "bob";
       purchase.author = "alice";
       purchase.permlink = "lorem";
@@ -1905,7 +1943,6 @@ BOOST_AUTO_TEST_CASE( premium_operation_test_sequence )
 
       premium_release_operation release;
 
-      release.signatory = INIT_ACCOUNT;
       release.provider = INIT_ACCOUNT;
       release.account = "bob";
       release.author = "alice";
@@ -1923,7 +1960,6 @@ BOOST_AUTO_TEST_CASE( premium_operation_test_sequence )
 
       comment_view_operation view;
 
-      view.signatory = "bob";
       view.viewer = "bob";
       view.author = "alice";
       view.permlink = "lorem";

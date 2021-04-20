@@ -47,15 +47,12 @@ namespace node { namespace chain {
    using node::protocol::date_type;
   
    using node::protocol::beneficiary_route_type;
-   using node::protocol::executive_officer_set;
    using chainbase::shared_vector;
 
    using node::protocol::community_permission_type;
    using node::protocol::community_federation_type;
-   using node::protocol::business_structure_type;
    using node::protocol::membership_tier_type;
    using node::protocol::network_officer_role_type;
-   using node::protocol::executive_role_type;
    using node::protocol::product_auction_type;
    using node::protocol::asset_property_type;
    using node::protocol::ad_format_type;
@@ -172,8 +169,6 @@ namespace node { namespace chain {
          uint8_t                max_stake_intervals = MAX_ASSET_STAKE_INTERVALS;               ///< Maximum weeks that an asset can stake over.
 
          uint8_t                max_unstake_intervals = MAX_ASSET_UNSTAKE_INTERVALS;           ///< Maximum weeks that an asset can unstake over.
-
-         asset                  max_exec_budget = MAX_EXEC_BUDGET;                             ///< Maximum budget that an executive board can claim.
    };
 
 
@@ -199,6 +194,8 @@ namespace node { namespace chain {
 #include <node/chain/pool_object.hpp>
 #include <node/chain/comment_object.hpp>
 #include <node/chain/account_object.hpp>
+#include <node/chain/business_object.hpp>
+#include <node/chain/governance_object.hpp>
 #include <node/chain/community_object.hpp>
 #include <node/chain/ad_object.hpp>
 #include <node/chain/graph_object.hpp>
@@ -246,7 +243,6 @@ FC_REFLECT( node::chain::median_chain_property_object,
          (maximum_asset_whitelist_authorities)
          (max_stake_intervals)
          (max_unstake_intervals)
-         (max_exec_budget)
          );
 
 CHAINBASE_SET_INDEX_TYPE( node::chain::median_chain_property_object, node::chain::median_chain_property_index );

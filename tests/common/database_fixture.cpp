@@ -22,7 +22,7 @@
 
 //using namespace node::chain::test;
 
-fc::time_point TESTING_GENESIS_TIMESTAMP = fc::time_point(fc::microseconds(1588839092000000));
+fc::time_point TESTING_GENESIS_TIMESTAMP = GENESIS_TIME;
 
 namespace node { namespace chain {
 
@@ -62,10 +62,11 @@ clean_database_fixture::clean_database_fixture()
       generate_liquid( INIT_ACCOUNT, asset( 3000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN ) );
       generate_liquid( INIT_ACCOUNT, asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_EQUITY ) );
       generate_liquid( INIT_ACCOUNT, asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_CREDIT ) );
+      generate_liquid( INIT_ACCOUNT, asset( 1000000 * BLOCKCHAIN_PRECISION, GOVERNANCE_EQUITY_SYMBOL ) );
+      generate_liquid( INIT_ACCOUNT, asset( 1000000 * BLOCKCHAIN_PRECISION, GOVERNANCE_CREDIT_SYMBOL ) );
 
       call_order_operation call;
 
-      call.signatory = INIT_ACCOUNT;
       call.owner = INIT_ACCOUNT;
       call.collateral = asset( 2000000 * BLOCKCHAIN_PRECISION, SYMBOL_COIN );  // 2x collateralization
       call.debt = asset( 1000000 * BLOCKCHAIN_PRECISION, SYMBOL_USD );
@@ -253,7 +254,6 @@ const account_object& database_fixture::account_create(
    {
       account_create_operation op;
 
-      op.signatory = INIT_ACCOUNT;
       op.registrar = INIT_ACCOUNT;
       op.new_account_name = new_account_name;
       op.referrer = INIT_ACCOUNT;
@@ -324,19 +324,18 @@ const community_object& database_fixture::community_create(
 {
    try
    {
-      public_key_type public_member_key = get_public_key( name, MEMBER_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      public_key_type public_moderator_key = get_public_key( name, MODERATOR_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      public_key_type public_admin_key = get_public_key( name, ADMIN_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      public_key_type public_secure_key = get_public_key( name, SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      public_key_type public_standard_premium_key = get_public_key( name, STANDARD_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      public_key_type public_mid_premium_key = get_public_key( name, MID_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
-      public_key_type public_top_premium_key = get_public_key( name, TOP_PREMIUM_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      public_key_type public_member_key = get_public_key( name, MEMBER_KEY_STR, INIT_PASSWORD );
+      public_key_type public_moderator_key = get_public_key( name, MODERATOR_KEY_STR, INIT_PASSWORD );
+      public_key_type public_admin_key = get_public_key( name, ADMIN_KEY_STR, INIT_PASSWORD );
+      public_key_type public_secure_key = get_public_key( name, SECURE_KEY_STR, INIT_PASSWORD );
+      public_key_type public_standard_premium_key = get_public_key( name, STANDARD_PREMIUM_KEY_STR, INIT_PASSWORD );
+      public_key_type public_mid_premium_key = get_public_key( name, MID_PREMIUM_KEY_STR, INIT_PASSWORD );
+      public_key_type public_top_premium_key = get_public_key( name, TOP_PREMIUM_KEY_STR, INIT_PASSWORD );
 
-      private_key_type private_secure_key = get_private_key( name, SECURE_KEY_STR, INIT_ACCOUNT_PASSWORD );
+      private_key_type private_secure_key = get_private_key( name, SECURE_KEY_STR, INIT_PASSWORD );
    
       community_create_operation op;
 
-      op.signatory = founder;
       op.founder = founder;
       op.name = name;
       op.display_name = name;
@@ -348,6 +347,7 @@ const community_object& database_fixture::community_create(
       op.json_private = get_encrypted_message( private_secure_key, public_secure_key, public_member_key, string( "#{ \"valid\": true }" ) );
       op.tags.insert( "test" );
       op.private_community = false;
+      op.channel = false;
       op.author_permission = "all";
       op.reply_permission = "all";
       op.vote_permission = "all";
@@ -411,7 +411,6 @@ const asset_object& database_fixture::asset_create(
    {
       asset_create_operation op;
 
-      op.signatory = issuer;
       op.issuer = issuer;
       op.symbol = symbol;
       op.asset_type = asset_type;
@@ -449,12 +448,11 @@ const producer_object& database_fixture::producer_create(
    {
       producer_update_operation op;
 
-      op.signatory = owner;
       op.owner = owner;
       op.details = "details";
       op.url = "https://www.url.com";
       op.json = "{ \"valid\": true }";
-      op.block_signing_key = string( node::protocol::get_public_key( owner, PRODUCER_KEY_STR, INIT_ACCOUNT_PASSWORD ) );
+      op.block_signing_key = string( node::protocol::get_public_key( owner, PRODUCER_KEY_STR, INIT_PASSWORD ) );
       op.latitude = 37.8136;
       op.longitude = 144.9631;
       op.active = true;
@@ -484,7 +482,6 @@ const producer_vote_object& database_fixture::producer_vote(
    {
       account_producer_vote_operation op;
 
-      op.signatory = owner;
       op.account = owner;
       op.producer = owner;
       op.vote_rank = 1;
@@ -518,17 +515,18 @@ const comment_object& database_fixture::comment_create(
    {
       comment_operation op;
 
-      op.signatory = author;
+      op.editor = author;
       op.author = author;
       op.permlink = permlink;
       op.parent_author = ROOT_POST_PARENT;
       op.parent_permlink = permlink;
       op.title = "test";
       op.body = "test";
-      op.community = INIT_COMMUNITY;
+      op.community = INIT_PUBLIC_COMMUNITY;
       op.public_key = "";
       op.language = "en";
       op.interface = INIT_ACCOUNT;
+      op.supernodes.push_back( INIT_ACCOUNT );
       op.tags.push_back( tag_name_type( "test" ) );
       op.json = "{ \"valid\": true }";
       op.url = "https://www.url.com";
@@ -597,7 +595,6 @@ void database_fixture::fund_liquid(
 {
    transfer_operation op;
 
-   op.signatory = INIT_ACCOUNT;
    op.from = INIT_ACCOUNT;
    op.to = account_name;
    op.amount = amount;
@@ -621,7 +618,6 @@ void database_fixture::fund_stake(
 {
    stake_asset_operation op;
 
-   op.signatory = INIT_ACCOUNT;
    op.from = INIT_ACCOUNT;
    op.to = account_name;
    op.amount = amount;
@@ -644,7 +640,6 @@ void database_fixture::fund_savings(
 {
    transfer_to_savings_operation op;
 
-   op.signatory = INIT_ACCOUNT;
    op.from = INIT_ACCOUNT;
    op.to = account_name;
    op.amount = amount;
